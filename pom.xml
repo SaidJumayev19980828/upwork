@@ -86,7 +86,7 @@
                 <version>${spring.boot.version}</version>
                 <configuration>
                     <mainClass>${start-class}</mainClass>
-                    <layout>zip</layout>
+                    <layout>ZIP</layout>
                 </configuration>
                 <executions>
                     <execution>
