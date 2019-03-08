@@ -20,7 +20,7 @@ import java.util.Properties;
 
 @Configuration
 @EnableTransactionManagement
-@EnableJpaRepositories(basePackages = "com.nasnav.persistence")
+@EnableJpaRepositories(basePackages = "com.nasnav.dao")
 public class PersistenceConfig {
 
     @Autowired

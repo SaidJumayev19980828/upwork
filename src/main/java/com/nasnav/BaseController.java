@@ -1,6 +1,6 @@
 package com.nasnav;
 
-import com.nasnav.persistence.OrganizationRepository;
+import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.Organization;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;

@@ -1,7 +1,8 @@
-package com.nasnav.persistence;
+package com.nasnav.dao;
 
 import java.util.List;
 
+import com.nasnav.persistence.OrganizationEntity;
 import org.springframework.data.repository.CrudRepository;
 
 public interface OrganizationRepository extends CrudRepository<OrganizationEntity, Integer> {

@@ -1,5 +1,6 @@
-package com.nasnav.persistence;
+package com.nasnav.dao;
 
+import com.nasnav.persistence.BrandsEntity;
 import org.springframework.data.repository.CrudRepository;
 
 import java.util.List;

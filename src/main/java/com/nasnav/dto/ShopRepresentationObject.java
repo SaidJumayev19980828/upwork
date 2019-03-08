@@ -26,37 +26,37 @@ import java.util.List;
         "work_time"
 })
 @Data
-public class ShopRepresentationObject {
+public class ShopRepresentationObject extends BaseRepresentationObject{
 
     @JsonProperty("id")
-    public Long id;
+    private Long id;
     @JsonProperty("name")
-    public String name;
+    private String name;
     @JsonProperty("p_name")
-    public String pName;
+    private String pName;
     @JsonProperty("area")
-    public Object area;
+    private Object area;
     @JsonProperty("p_area")
-    public String pArea;
+    private String pArea;
     @JsonProperty("country")
-    public String country;
+    private String country;
     @JsonProperty("city")
-    public Object city;
+    private Object city;
     @JsonProperty("street")
-    public String street;
+    private String street;
     @JsonProperty("floor")
-    public String floor;
+    private String floor;
     @JsonProperty("lat")
-    public String lat;
+    private String lat;
     @JsonProperty("lng")
-    public String lng;
+    private String lng;
     @JsonProperty("logo")
-    public String logo;
+    private String logo;
     @JsonProperty("cover_image")
-    public String cover_image;
+    private String cover_image;
     @JsonProperty("panorama_link")
-    public String panorama_link;
+    private String panorama_link;
     @JsonProperty("work_time")
-    public List<WorkTime> workTime = null;
+    private List<WorkTimeRepresentationObject> workTime = null;
 
 }

@@ -14,13 +14,13 @@ import java.util.Date;
         "closing"
 })
 @Data
-public class WorkTime {
+public class WorkTimeRepresentationObject {
 
     @JsonProperty("day")
-    public Date day;
+    private Date day;
     @JsonProperty("opening")
-    public String opening;
+    private String opening;
     @JsonProperty("closing")
-    public String closing;
+    private String closing;
 
 }

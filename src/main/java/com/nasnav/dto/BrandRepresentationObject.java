@@ -18,16 +18,16 @@ import lombok.Data;
 public class BrandRepresentationObject extends BaseRepresentationObject {
 
     @JsonProperty("id")
-    public Integer id;
+    private Integer id;
     @JsonProperty("name")
-    public String name;
+    private String name;
     @JsonProperty("p_name")
-    public String pName;
+    private String pName;
     @JsonProperty("display_name")
-    public String displayName;
+    private String displayName;
     @JsonProperty("category_id")
-    public Integer categoryId;
+    private Integer categoryId;
     @JsonProperty("logo_url")
-    public String logoUrl;
+    private String logoUrl;
 
 }

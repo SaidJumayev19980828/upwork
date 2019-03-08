@@ -1,5 +1,9 @@
 package com.nasnav.service;
 
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.OrganizationThemeRepository;
+import com.nasnav.dao.SocialRepository;
 import com.nasnav.dto.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.*;

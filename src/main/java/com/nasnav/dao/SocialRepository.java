@@ -1,5 +1,6 @@
-package com.nasnav.persistence;
+package com.nasnav.dao;
 
+import com.nasnav.persistence.SocialEntity;
 import org.springframework.data.repository.CrudRepository;
 
 public interface SocialRepository extends CrudRepository<SocialEntity, Integer> {

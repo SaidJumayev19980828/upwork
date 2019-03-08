@@ -28,28 +28,28 @@ import java.util.List;
 public class OrganizationThemesRepresentationObject extends BaseRepresentationObject{
 
     @JsonProperty("logo_url")
-    public String logoUrl;
+    private String logoUrl;
     @JsonProperty("first_color")
-    public String firstColor;
+    private String firstColor;
     @JsonProperty("second_color")
-    public String secondColor;
+    private String secondColor;
     @JsonProperty("first_section")
-    public Boolean firstSection;
+    private Boolean firstSection;
     @JsonProperty("first_section_product")
-    public Integer firstSectionProduct;
+    private Integer firstSectionProduct;
     @JsonProperty("first_section_image_url")
-    public String firstSectionImageUrl;
+    private String firstSectionImageUrl;
     @JsonProperty("second_section")
-    public Boolean secondSection;
+    private Boolean secondSection;
     @JsonProperty("second_section_product")
-    public Integer secondSectionProduct;
+    private Integer secondSectionProduct;
     @JsonProperty("second_section_image_url")
-    public String secondSectionImageUrl;
+    private String secondSectionImageUrl;
     @JsonProperty("slider_body")
-    public Boolean sliderBody;
+    private Boolean sliderBody;
     @JsonProperty("slider_header")
-    public String sliderHeader;
+    private String sliderHeader;
     @JsonProperty("slider_images_urls")
-    public String[] sliderImagesUrls = null;
+    private String[] sliderImagesUrls = null;
 
 }

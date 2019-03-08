@@ -1,7 +1,6 @@
 package com.nasnav.dao;
 
 import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.OrganizationRepository;
 import org.json.JSONObject;
 
 import java.util.List;

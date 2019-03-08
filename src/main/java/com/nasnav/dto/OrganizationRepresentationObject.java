@@ -23,18 +23,18 @@ import java.util.List;
 public class OrganizationRepresentationObject extends BaseRepresentationObject{
 
     @JsonProperty("id")
-    public Long id;
+    private Long id;
     @JsonProperty("name")
-    public String name;
+    private String name;
     @JsonProperty("description")
-    public String description;
+    private String description;
     @JsonProperty("type")
-    public String type;
+    private String type;
     @JsonProperty("brands")
-    public List<BrandRepresentationObject> brands = null;
+    private List<BrandRepresentationObject> brands = null;
     @JsonProperty("social")
-    public SocialRepresentationObject social;
+    private SocialRepresentationObject social;
     @JsonProperty("themes")
-    public OrganizationThemesRepresentationObject themes;
+    private OrganizationThemesRepresentationObject themes;
 }
 

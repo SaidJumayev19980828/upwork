@@ -13,14 +13,14 @@ import lombok.Data;
         "logo_url"
 })
 @Data
-public class CategoryRepresentationObject {
+public class CategoryRepresentationObject extends BaseRepresentationObject{
 
     @JsonProperty("id")
     private Long id;
     @JsonProperty("name")
     private String name;
     @JsonProperty("p_name")
-    private String pname;
+    private String pName;
     @JsonProperty("logo_url")
     private String logoUrl;
 

@@ -17,10 +17,10 @@ import lombok.EqualsAndHashCode;
 public class SocialRepresentationObject extends BaseRepresentationObject{
 
     @JsonProperty("facebook")
-    public String facebook;
+    private String facebook;
     @JsonProperty("twitter")
-    public String twitter;
+    private String twitter;
     @JsonProperty("instagram")
-    public String instagram;
+    private String instagram;
 
 }
