@@ -2,12 +2,21 @@ package com.nasnav.persistence;
 
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.dto.OrganizationRepresentationObject;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.data.jpa.domain.AbstractPersistable;
+
+import java.util.Date;
 
 @Entity
 @Table(name = "organizations")
+@Data
+@EqualsAndHashCode(callSuper = false)
 //@NamedQuery(name = "User.findByTheUsersName", query = "from User u where u.username = ?1")
-public class OrganizationEntity extends AbstractPersistable<Long> {
+public class OrganizationEntity extends AbstractPersistable<Long> implements BaseEntity {
 
     public enum Type { Brand, Mall, Store, Pharmacies, Unknown }
 
@@ -19,36 +28,28 @@ public class OrganizationEntity extends AbstractPersistable<Long> {
 
     private String description;
     private String type;
-    private String p_name;
+    @Column(name = "p_name")
+    private String pName;
+    @Column(name = "created_at")
+    private Date createdAt;
+    @Column(name = "updated_at")
+    private Date updatedAt;
+
+    @OneToOne(mappedBy = "organizationEntity")
+    @JsonIgnore
+    private OrganizationThemeEntity organizationThemeEntity;
+
+    @OneToOne(mappedBy = "organizationEntity")
+    @JsonIgnore
+    private SocialEntity socialEntity;
 
     public OrganizationEntity() {
         id = null;
     }
 
-    @Override
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public Type getType() {
         switch (this.type) {
-            case "Brand":
+            case "BrandRepresentationObject":
                 return Type.Brand;
             case "Mall":
                 return Type.Mall;
@@ -61,24 +62,22 @@ public class OrganizationEntity extends AbstractPersistable<Long> {
         }
     }
 
-    public void setType(Type type) {
-        this.type = type.name();
-    }
-
-    public String getPName() {
-        return p_name;
-    }
-
-    public void setPName(String p_name) {
-        this.p_name = p_name;
-    }
-
     @Override
     public String toString() {
         return String.format(
                 "OrganizationEntity[id=%d, name='%s', p_name='%s', type='%s']",
-                id, name, p_name, type);
+                id, name, pName, type);
     }
 
+
+    @Override
+    public BaseRepresentationObject getRepresentation() {
+        OrganizationRepresentationObject organizationRepresentationObject = new OrganizationRepresentationObject();
+        organizationRepresentationObject.setId(getId());
+        organizationRepresentationObject.setDescription(getDescription());
+        organizationRepresentationObject.setName(getName());
+        organizationRepresentationObject.setType(getType()!=null?getType().name():null);
+        return organizationRepresentationObject;
+    }
 
 }
