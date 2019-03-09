@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -68,6 +70,16 @@ public class OrganizationServiceImpl implements OrganizationService{
 
     @Override
     public CategoryRepresentationObject getOrganizationCategories(Long organizationId) {
+
+        List<BrandsEntity> brandsEntities = brandsRepository.findByOrganizationEntity_Id(organizationId);
+
+        if(brandsEntities!=null && !brandsEntities.isEmpty()){
+            List<String> categories = new ArrayList<>(brandsEntities.size());
+
+//            brandsEntities.forEach(brandsEntity -> categories.add(brandsEntity.getCategories()));
+        }
+
+        //TODO brands table fix of categories Varchar [] to bigint []
         return null;
     }
 
