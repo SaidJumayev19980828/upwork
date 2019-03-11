@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment</title>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+    <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="https://qnbalahli.test.gateway.mastercard.com/checkout/version/51/checkout.js"
+            data-error="errorCallback"
+            data-cancel="cancelCallback">
+    </script>
+
+    <script type="text/javascript">
+            function errorCallback(error) {
+                  console.log(JSON.stringify(error));
+            }
+            function cancelCallback() {
+                  console.log('Payment cancelled');
+            }
+
+            Checkout.configure({
+                merchant: 'testqnbaatest001',
+                order: {
+                    amount: function() {
+                        return 820;
+                    },
+                    currency: 'EGP',
+                    description: 'Ordered goods',
+                   id: '38848929399'
+                },
+                interaction: {
+                    merchant: {
+                        name: 'Your merchant name',
+                        address: {
+                            line1: '200 Sample St',
+                            line2: '1234 Example Town'
+                        }
+                    }
+                                                                }
+            });
+        </script>
+    <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
+    <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="span12">
+            <form class="form-horizontal span6">
+                <fieldset>
+                    <legend>Payment</legend>
+
+                    <div class="control-group">
+                        <label class="control-label">Card Holder's Name</label>
+                        <div class="controls">
+                            <input type="text" class="input-block-level" pattern="\w+ \w+.*" title="Fill your first and last name" required>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Card Number</label>
+                        <div class="controls">
+                            <div class="row-fluid">
+                                <div class="span3">
+                                    <input type="text" class="input-block-level" autocomplete="off" minlength="16" maxlength="16" pattern="\d{16}" title="Card number of 16 digits" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Card Expiry Date</label>
+                        <div class="controls">
+                            <div class="row-fluid">
+                                <div class="span9">
+                                    <select class="input-block-level">
+                                        <option>January</option>
+                                        <option>February</option>
+                                        <option>March</option>
+                                        <option>April</option>
+                                        <option>May</option>
+                                        <option>June</option>
+                                        <option>July</option>
+                                        <option>August</option>
+                                        <option>September</option>
+                                        <option>October</option>
+                                        <option>November</option>
+                                        <option>December</option>
+                                    </select>
+                                </div>
+                                <div class="span3">
+                                    <select class="input-block-level">
+                                        <option>2019</option>
+                                        <option>2020</option>
+                                        <option>2021</option>
+                                        <option>2022</option>
+                                        <option>2023</option>
+                                        <option>2024</option>
+                                        <option>2025</option>
+                                        <option>2026</option>
+                                        <option>2027</option>
+                                        <option>2028</option>
+                                        <option>2029</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Card CVV</label>
+                        <div class="controls">
+                            <div class="row-fluid">
+                                <div class="span3">
+                                    <input type="text" class="input-block-level" autocomplete="off" maxlength="3" pattern="\d{3}" title="Three digits at back of your card" required>
+                                </div>
+                                <div class="span8">
+                                    <!-- screenshot may be here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" onclick="Checkout.showLightbox()">Submit</button>
+                        <button type="button" class="btn">Cancel</button>
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
