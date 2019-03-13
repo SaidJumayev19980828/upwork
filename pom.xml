@@ -14,7 +14,7 @@
         <spring.data.version>2.1.5.RELEASE</spring.data.version>
         <hibernate.version>5.4.1.Final</hibernate.version>
         <postgresql.version>42.2.5</postgresql.version>
-		<lombok.version>1.18.2</lombok.version>
+        <lombok.version>1.18.2</lombok.version>
         <start-class>com.nasnav.NavBox</start-class>
     </properties>
 
@@ -63,6 +63,16 @@
             <artifactId>hibernate-entitymanager</artifactId>
             <version>${hibernate.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -71,10 +81,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-            <scope>provided</scope>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+            <version>${spring.boot.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

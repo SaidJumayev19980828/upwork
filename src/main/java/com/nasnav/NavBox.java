@@ -2,6 +2,7 @@ package com.nasnav;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -16,7 +17,6 @@ public class NavBox
 
     public static void main(String[] args) throws IOException
     {
-
         Resource resource = new ClassPathResource("application.properties");
         Properties baseProperties = PropertiesLoaderUtils.loadProperties(resource);
         Resource databasePropertiesFile = new FileSystemResource(baseProperties.getProperty("database.properties"));

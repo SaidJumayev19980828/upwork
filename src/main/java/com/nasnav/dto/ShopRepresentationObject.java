@@ -1,9 +1,12 @@
+
 package com.nasnav.dto;
+
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
@@ -25,7 +28,9 @@ import java.util.List;
         "panorama_link",
         "work_time"
 })
+
 @Data
+@EqualsAndHashCode(callSuper=true)
 public class ShopRepresentationObject extends BaseRepresentationObject{
 
     @JsonProperty("id")

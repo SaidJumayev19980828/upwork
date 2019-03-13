@@ -18,7 +18,7 @@ public class BrandsEntity implements BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
     @Column(name = "category_id")
     private Integer categoryId;
     private String name;

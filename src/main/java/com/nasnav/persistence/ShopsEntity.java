@@ -36,9 +36,9 @@ public class ShopsEntity {
     @Column(name = "updated_at")
     private Date updatedAt;
     @Column(name = "remote_id")
-    private Long remoteId;
+    private Integer remoteId;
     @Column(name = "building_id")
-    private Long buildingId;
+    private Integer buildingId;
     @Column(name = "work_times")
     private String workTimes;
     @Column(name = "view_image")
