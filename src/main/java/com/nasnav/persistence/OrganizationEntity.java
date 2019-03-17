@@ -1,15 +1,23 @@
 package com.nasnav.persistence;
 
-import javax.persistence.*;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
+import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrganizationRepresentationObject;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.springframework.data.jpa.domain.AbstractPersistable;
-
-import java.util.Date;
 
 @Entity
 @Table(name = "organizations")
@@ -42,7 +50,7 @@ public class OrganizationEntity extends AbstractPersistable<Long> implements Bas
     @OneToOne(mappedBy = "organizationEntity")
     @JsonIgnore
     private SocialEntity socialEntity;
-
+    
     public OrganizationEntity() {
         id = null;
     }

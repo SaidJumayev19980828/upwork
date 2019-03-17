@@ -15,18 +15,10 @@ import java.util.List;
         "id",
         "name",
         "p_name",
-        "area",
-        "p_area",
-        "country",
-        "city",
-        "street",
-        "floor",
-        "lat",
-        "lng",
+        "address",
         "logo",
-        "cover_image",
-        "panorama_link",
-        "work_time"
+        "banner",
+        "open"
 })
 
 @Data
@@ -39,29 +31,13 @@ public class ShopRepresentationObject extends BaseRepresentationObject{
     private String name;
     @JsonProperty("p_name")
     private String pName;
-    @JsonProperty("area")
-    private Object area;
-    @JsonProperty("p_area")
-    private String pArea;
-    @JsonProperty("country")
-    private String country;
-    @JsonProperty("city")
-    private Object city;
-    @JsonProperty("street")
-    private String street;
-    @JsonProperty("floor")
-    private String floor;
-    @JsonProperty("lat")
-    private String lat;
-    @JsonProperty("lng")
-    private String lng;
+
+    private Address address;
+
     @JsonProperty("logo")
     private String logo;
-    @JsonProperty("cover_image")
-    private String cover_image;
-    @JsonProperty("panorama_link")
-    private String panorama_link;
-    @JsonProperty("work_time")
-    private List<WorkTimeRepresentationObject> workTime = null;
+    private String banner;
+    @JsonProperty("open")
+    private OpenWorkingDays openWorkingDays;
 
 }

@@ -31,7 +31,7 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     @JsonProperty("type")
     private String type;
     @JsonProperty("brands")
-    private List<BrandRepresentationObject> brands = null;
+    private List<Organization_BrandRepresentationObject> brands = null;
     @JsonProperty("social")
     private SocialRepresentationObject social;
     @JsonProperty("themes")

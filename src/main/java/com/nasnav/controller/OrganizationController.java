@@ -1,42 +1,41 @@
 package com.nasnav.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.OrganizationService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/navbox")
 public class OrganizationController {
 
+	private final OrganizationService organizationService;
 
-    private final OrganizationService organizationService;
-
-    @Autowired
+	@Autowired
     public OrganizationController(OrganizationService organizationService) {
         this.organizationService = organizationService;
     }
 
-    @GetMapping("/organization/{requested_name}")
+	@GetMapping(value="/navbox/organization")
     @ResponseStatus(value = HttpStatus.OK)
     public @ResponseBody
-    OrganizationRepresentationObject getOrganizationByName(@PathVariable("requested_name") String organizationName) throws BusinessException {
+    OrganizationRepresentationObject getOrganizationByName(@RequestParam(name="p_name",required=false) String organizationName,@RequestParam(name="org_id",required=false) Long organizationId) throws BusinessException {
 
-        return organizationService.getOrganizationByName(organizationName);
+		if(organizationName==null && organizationId==null)
+			throw new BusinessException("Provide org_id or p_name request params", null, HttpStatus.BAD_REQUEST);
+		
+		if(organizationName!=null)
+			return organizationService.getOrganizationByName(organizationName);
+		
+		return organizationService.getOrganizationById(organizationId);
+    	
+        
     }
 
-    @GetMapping("/categories/{organization_id}")
-    public ResponseEntity<?> getOrganizationCategories(@PathVariable("organization_id") Long organizationId) throws BusinessException {
-
-        return null;
-    }
-
-    @GetMapping("/shopRepresentationObjects/{organization_id}")
-    public ResponseEntity<?> getOrganizationShops(@PathVariable("organization_id") Long organizationId) throws BusinessException {
-
-        return null;
-    }
 }

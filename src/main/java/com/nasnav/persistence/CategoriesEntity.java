@@ -1,5 +1,6 @@
 package com.nasnav.persistence;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -17,5 +18,8 @@ public class CategoriesEntity {
     private String pName;
     private String logo;
 
+//    @OneToOne(mappedBy = "categoriesEntity")
+//    @JsonIgnore
+//    private ProductEntity productEntity;
 
 }

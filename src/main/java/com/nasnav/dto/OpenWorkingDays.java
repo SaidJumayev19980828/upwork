@@ -9,18 +9,15 @@ import java.util.Date;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "day",
-        "opening",
-        "closing"
 })
 @Data
-public class WorkTimeRepresentationObject {
+public class OpenWorkingDays {
 
-    @JsonProperty("day")
-    private Date day;
-    @JsonProperty("opening")
-    private String opening;
-    @JsonProperty("closing")
-    private String closing;
-
+    private WorkingDayDurationList mon;
+    private WorkingDayDurationList tue;
+    private WorkingDayDurationList wed;
+    private WorkingDayDurationList thu;
+    private WorkingDayDurationList fri;
+    private WorkingDayDurationList sat;
+    private WorkingDayDurationList sun;
 }

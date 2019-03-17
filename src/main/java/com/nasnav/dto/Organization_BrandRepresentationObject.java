@@ -1,10 +1,13 @@
 package com.nasnav.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import javax.persistence.Column;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
@@ -18,7 +21,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper=true)
-public class BrandRepresentationObject extends BaseRepresentationObject {
+public class Organization_BrandRepresentationObject extends BaseRepresentationObject {
 
     @JsonProperty("id")
     private Long id;
@@ -32,5 +35,7 @@ public class BrandRepresentationObject extends BaseRepresentationObject {
     private Integer categoryId;
     @JsonProperty("logo_url")
     private String logoUrl;
+    @JsonIgnore
+    private String banner;
 
 }

@@ -2,7 +2,7 @@ package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
-import com.nasnav.dto.BrandRepresentationObject;
+import com.nasnav.dto.Organization_BrandRepresentationObject;
 import lombok.Data;
 import org.hibernate.annotations.*;
 
@@ -76,9 +76,14 @@ public class BrandsEntity implements BaseEntity{
     @JsonIgnore
     private OrganizationEntity organizationEntity;
 
+
+//    @JsonIgnore
+//    @OneToOne(mappedBy = "brandsEntity")
+//    private  ProductEntity productEntity;
+
     @Override
     public BaseRepresentationObject getRepresentation() {
-        BrandRepresentationObject brandRepresentationObject = new BrandRepresentationObject();
+        Organization_BrandRepresentationObject brandRepresentationObject = new Organization_BrandRepresentationObject();
         brandRepresentationObject.setCategoryId(getCategoryId());
         brandRepresentationObject.setDisplayName(getDisplayName());
         brandRepresentationObject.setId(getId());
