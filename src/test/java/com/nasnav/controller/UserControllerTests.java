@@ -1,9 +1,10 @@
 package com.nasnav.controller;
 
 import com.nasnav.NavBox;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.response.ApiResponse;
 import com.nasnav.response.ResponseStatus;
-import com.nasnav.service.UserServiceI;
+import com.nasnav.service.UserService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,7 +38,7 @@ public class UserControllerTests {
     private TestRestTemplate template;
 
     @Autowired
-    UserServiceI userService;
+    UserRepository userRepository;
 
     @Before
     public void setup() {
@@ -48,13 +49,13 @@ public class UserControllerTests {
     public void testUserShouldBeRegistered()  {
         HttpEntity<Object> userJson = getHttpEntity(
                 "{\t\n" +
-                        "\t\"name\":\"Ahmed.Ragab\",\n" +
+                        "\t\"name\":\"Ahmed\",\n" +
                         "\t\"email\":\"Foo.Bar@Foo.Bar.com\"\n" +
                         "}");
         ResponseEntity<ApiResponse> response = template.postForEntity(
                 "/user/register", userJson, ApiResponse.class);
         //Delete this user
-        userService.deleteUser(response.getBody().getEntityId());
+        new UserService(userRepository).deleteUser(response.getBody().getEntityId());
         Assert.assertTrue(response.getBody().isSuccess());
         Assert.assertEquals(200,response.getStatusCode().value());
     }
@@ -63,7 +64,7 @@ public class UserControllerTests {
     public void testEmailExistence() {
         HttpEntity<Object> userJson = getHttpEntity(
                 "{\t\n" +
-                        "\t\"name\":\"Ahmed.Ragab\",\n" +
+                        "\t\"name\":\"Ahmed\",\n" +
                         "\t\"email\":\"Foo.Bar@Foo.Bar.com\"\n" +
                         "}");
         ResponseEntity<ApiResponse> response = template.postForEntity(
@@ -78,7 +79,7 @@ public class UserControllerTests {
         // response status should contain INVALID_EMAIL
         Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.EMAIL_EXISTS));
         //Delete this user
-        userService.deleteUser(userId);
+        new UserService(userRepository).deleteUser(userId);
         Assert.assertEquals(200,response.getStatusCode().value());
     }
 
@@ -86,7 +87,7 @@ public class UserControllerTests {
     public void testInvalidEmailRegistration()  {
         HttpEntity<Object> userJson = getHttpEntity(
                 "{\t\n" +
-                        "\t\"name\":\"Ahmed.Ragab\",\n" +
+                        "\t\"name\":\"Ahmed\",\n" +
                         "\t\"email\":\"Foo.Bar.com\"\n" +
                         "}");
         ResponseEntity<ApiResponse> response = template.postForEntity(
