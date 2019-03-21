@@ -9,10 +9,6 @@ import java.util.List;
 
 
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
-
-    List<UserEntity> findByEmail(String email);
-//    List<UserEntity> findById(Long id);
-
     /**
      * Ensure that the new email is not registered to another user
      *

@@ -1,44 +1,37 @@
 package com.nasnav.controller;
 
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ApiResponse;
-import com.nasnav.response.ResponseStatus;
 import com.nasnav.service.UserService;
-import com.nasnav.dao.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/user")
 public class UserController {
 
+    private UserService userService;
     @Autowired
-    private UserRepository userRepository;
-
-
-
-    @PostMapping("/register")
-    public String registerUser(HttpServletRequest request)
-    {
-        return new UserService().register(userRepository, request.getParameterMap());
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
+
 
     /**
      * API for registering new user.
      *
-     * @param request JSON object contain name and email.
+     * @param userJson JSON object contain name and email.
      * @return ApiResponse object which is either success or fail response.
      */
     @RequestMapping(value = "register",
             method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ApiResponse createUser(@RequestBody String request) {
-        return new UserService(userRepository).registerUser(request);
+    public ApiResponse createUser(@RequestBody String userJson) {
+        return this.userService.registerUser(userJson);
     }
 
 }

@@ -1,7 +1,6 @@
 package com.nasnav.controller;
 
 import com.nasnav.NavBox;
-import com.nasnav.dao.UserRepository;
 import com.nasnav.response.ApiResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.service.UserService;
@@ -38,7 +37,7 @@ public class UserControllerTests {
     private TestRestTemplate template;
 
     @Autowired
-    UserRepository userRepository;
+    UserService userService;
 
     @Before
     public void setup() {
@@ -55,7 +54,7 @@ public class UserControllerTests {
         ResponseEntity<ApiResponse> response = template.postForEntity(
                 "/user/register", userJson, ApiResponse.class);
         //Delete this user
-        new UserService(userRepository).deleteUser(response.getBody().getEntityId());
+        userService.deleteUser(response.getBody().getEntityId());
         Assert.assertTrue(response.getBody().isSuccess());
         Assert.assertEquals(200,response.getStatusCode().value());
     }
@@ -79,7 +78,7 @@ public class UserControllerTests {
         // response status should contain INVALID_EMAIL
         Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.EMAIL_EXISTS));
         //Delete this user
-        new UserService(userRepository).deleteUser(userId);
+        userService.deleteUser(userId);
         Assert.assertEquals(200,response.getStatusCode().value());
     }
 
