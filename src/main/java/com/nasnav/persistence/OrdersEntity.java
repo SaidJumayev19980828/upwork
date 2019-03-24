@@ -15,8 +15,6 @@ import javax.persistence.TemporalType;
 
 import org.hibernate.annotations.Type;
 
-import com.nasnav.dto.BaseRepresentationObject;
-import com.nasnav.dto.OrderRepresentationObject;
 
 import lombok.Data;
 
