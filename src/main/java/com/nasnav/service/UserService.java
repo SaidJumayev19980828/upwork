@@ -1,5 +1,8 @@
 package com.nasnav.service;
 
+import java.util.Optional;
+
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ApiResponse;
 
 public interface UserService {
@@ -20,5 +23,7 @@ public interface UserService {
      * @param userId To be used to delete user by
      */
     void deleteUser(Long userId);
+    
+    UserEntity findUserById(Long userId);
 
 }

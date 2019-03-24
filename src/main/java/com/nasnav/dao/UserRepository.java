@@ -6,6 +6,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
@@ -16,6 +17,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
      * @return true if the passed email parameter exists
      */
     boolean existsByEmail(String email);
+    
+    Optional<UserEntity> findById(Long id);
 }
 
 

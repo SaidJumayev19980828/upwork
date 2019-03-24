@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -118,4 +119,11 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(Long userId) {
         userRepository.deleteById(userId);
     }
+
+	@Override
+	public UserEntity findUserById(Long userId) {
+		Optional<UserEntity> optional =  userRepository.findById(userId);
+		return optional.isPresent() ? optional.get() : null;
+		
+	}
 }
