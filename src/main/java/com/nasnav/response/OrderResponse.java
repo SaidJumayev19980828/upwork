@@ -17,10 +17,6 @@ import org.springframework.http.HttpStatus;
 @Data
 public class OrderResponse implements Serializable {
 
-	
-    /**
-	 * 
-	 */
 	private static final long serialVersionUID = -2071547898771698563L;
 
 	@JsonProperty
@@ -65,12 +61,6 @@ public class OrderResponse implements Serializable {
     	this.code = code;
     }
 
-    /**
-     * Constructor representing success response
-     *
-     * @param entityId Entity Object Id
-     * @param responseStatuses List of ResponseStatus
-     */
     public OrderResponse(Long orderId, BigDecimal price) {
         this.success = true;
         this.orderId = orderId;
@@ -78,12 +68,6 @@ public class OrderResponse implements Serializable {
         code = HttpStatus.OK;
     }
     
-    /**
-     * Constructor representing success response
-     *
-     * @param entityId Entity Object Id
-     * @param responseStatuses List of ResponseStatus
-     */
     public OrderResponse(OrdersEntity entity) {
         this.success = true;
         this.entity = entity;

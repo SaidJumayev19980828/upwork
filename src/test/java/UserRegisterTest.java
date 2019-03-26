@@ -1,6 +1,6 @@
-package com.nasnav.controller;
-
 import com.nasnav.NavBox;
+import com.nasnav.controller.UserController;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.response.ApiResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.service.UserService;
@@ -19,14 +19,15 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-@PropertySource("classpath:database.properties")
-public class UserControllerTests {
+@PropertySource("classpath:database.test.properties")
+public class UserRegisterTest {
 
     private MockMvc mockMvc;
 
@@ -37,7 +38,13 @@ public class UserControllerTests {
     private TestRestTemplate template;
 
     @Autowired
+    private WebTestClient webClient;
+
+    @Autowired
     UserService userService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Before
     public void setup() {
@@ -46,7 +53,7 @@ public class UserControllerTests {
 
     @Test
     public void testUserShouldBeRegistered()  {
-        HttpEntity<Object> userJson = getHttpEntity(
+        HttpEntity<Object> userJson = TestCommons.getHttpEntity(
                 "{\t\n" +
                         "\t\"name\":\"Ahmed\",\n" +
                         "\t\"email\":\"Foo.Bar@Foo.Bar.com\"\n" +
@@ -61,7 +68,7 @@ public class UserControllerTests {
 
     @Test
     public void testEmailExistence() {
-        HttpEntity<Object> userJson = getHttpEntity(
+        HttpEntity<Object> userJson = TestCommons.getHttpEntity(
                 "{\t\n" +
                         "\t\"name\":\"Ahmed\",\n" +
                         "\t\"email\":\"Foo.Bar@Foo.Bar.com\"\n" +
@@ -75,7 +82,6 @@ public class UserControllerTests {
         response = template.postForEntity(
                 "/user/register", userJson, ApiResponse.class);
         Assert.assertFalse(response.getBody().isSuccess());
-        // response status should contain INVALID_EMAIL
         Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.EMAIL_EXISTS));
         //Delete this user
         userService.deleteUser(userId);
@@ -84,7 +90,7 @@ public class UserControllerTests {
 
     @Test
     public void testInvalidEmailRegistration()  {
-        HttpEntity<Object> userJson = getHttpEntity(
+        HttpEntity<Object> userJson = TestCommons.getHttpEntity(
                 "{\t\n" +
                         "\t\"name\":\"Ahmed\",\n" +
                         "\t\"email\":\"Foo.Bar.com\"\n" +
@@ -100,7 +106,7 @@ public class UserControllerTests {
 
     @Test
     public void testInvalidNameRegistration()  {
-        HttpEntity<Object> userJson = getHttpEntity(
+        HttpEntity<Object> userJson = TestCommons.getHttpEntity(
                 "{\t\n" +
                         "\t\"name\":\"Ahmed123\",\n" +
                         "\t\"email\":\"Foo.Bar@Foo.Bar.com\"\n" +
@@ -116,7 +122,7 @@ public class UserControllerTests {
 
     @Test
     public void testInvalidJsonForUserRegisteration()  {
-        HttpEntity<Object> userJson = getHttpEntity(
+        HttpEntity<Object> userJson = TestCommons.getHttpEntity(
                 "{}");
         ResponseEntity<ApiResponse> response = template.postForEntity(
                 "/user/register", userJson, ApiResponse.class);
@@ -129,9 +135,42 @@ public class UserControllerTests {
     }
 
 
-    private HttpEntity<Object> getHttpEntity(Object body) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        return new HttpEntity<>(body, headers);
+
+
+    @Test
+    public void missingDataTest() {
+        WebTestClient.ResponseSpec response = webClient.post().uri(TestCommons.BaseURL + "/user/register").attribute("name", "Michal").exchange();
+        response.expectStatus().isOk();
+        response.expectBody()
+                .jsonPath("$.success").isNotEmpty()
+                .jsonPath("$.success").isEqualTo(false);
     }
+
+/*
+    public void simpleUserCreationTest() {
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("name", "John Smith");
+        formData.add("email", "testemail@nasnav.com");
+
+        WebTestClient.ResponseSpec response = webClient.post().uri(TestCommons.BaseURL + "/user/register")
+                .body(BodyInserters.fromFormData(formData)).exchange();
+
+        JSONObject jsonResponse = new JSONObject(
+                new String(
+                        response
+                                .expectStatus().isOk()
+                                .expectBody()
+                                .jsonPath("$.success").isNotEmpty()
+                                .jsonPath("$.success").isEqualTo(true)
+                                .returnResult().getResponseBody()
+                )
+        );
+
+        // if succesful, clean up the database by removing the record created
+        long createdUserId = jsonResponse.getInt("id");
+        UserEntity ue = userRepository.findById(createdUserId).get();
+        userRepository.delete(ue);
+    }
+*/
+
 }
