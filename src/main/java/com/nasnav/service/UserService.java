@@ -1,7 +1,5 @@
 package com.nasnav.service;
 
-import java.util.Optional;
-
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ApiResponse;
 

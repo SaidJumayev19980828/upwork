@@ -24,32 +24,38 @@ public class OrderServiceImpl implements OrderService {
 
     private OrdersRepository ordersRepository;
     
-    private UserRepository userRepository;
-
     @Autowired
     public OrderServiceImpl(OrdersRepository ordersRepository){
         this.ordersRepository = ordersRepository;
     }
 
     public OrderResponse updateOrder(String orderJson){
-    	OrdersEntity orderEntity;
-		try {
-			orderEntity = new ObjectMapper().readValue(orderJson, OrdersEntity.class);
-		} catch (IOException e) {
-			throw new OrderValidationException("Error Occured while parsing order object", OrderFailedStatus.UNAUTHENTICATED);
-		}
-		if(orderEntity.getStatus() == 0 && orderEntity.getBasket().isEmpty()) {
+    	OrdersEntity orderEntity = mapOrderStringToJson(orderJson);
+    	System.out.println("status" + orderEntity.getStatus());
+		if(orderEntity.getStatus() == 0 && (orderEntity.getBasket() == null || orderEntity.getBasket().isEmpty())) {
 			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
 		}
 		    	
-        return updateOrCreateOrdeEntity(orderEntity);
+        return updateOrCreateOrderEntity(orderEntity);
     }
 
-	private OrderResponse updateOrCreateOrdeEntity(OrdersEntity orderEntity) {
+	private OrdersEntity mapOrderStringToJson(String orderJson) {
+		OrdersEntity orderEntity;
+		try {
+			orderEntity = new ObjectMapper().readValue(orderJson, OrdersEntity.class);
+		} catch (IOException e) {
+			throw new OrderValidationException("Error Occured while parsing order object", OrderFailedStatus.INVALID_ORDER);
+		}
+		return orderEntity;
+	}
+
+	private OrderResponse updateOrCreateOrderEntity(OrdersEntity orderEntity) {
 		OrdersEntity createdOrderEntity = orderEntity;
     	if(orderEntity.getId() != null && orderEntity.getId() != 0) {
     		Optional<OrdersEntity> foundOrdersEntity = ordersRepository.findById(orderEntity.getId());
     		if(foundOrdersEntity == null || !foundOrdersEntity.isPresent()) {
+    			System.out.println("entity id is: " + orderEntity.getId().TYPE);
+    			System.out.println("entity not present");
     			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
     		}
     		createdOrderEntity = foundOrdersEntity.get();
@@ -61,7 +67,7 @@ public class OrderServiceImpl implements OrderService {
 	    	createdOrderEntity.setAmount(new BigDecimal(new Random().nextDouble()));
     	}
     	createdOrderEntity.setStatus(orderEntity.getStatus());
-    	if(!orderEntity.getBasket().isEmpty()) {
+    	if(orderEntity.getBasket() != null && !orderEntity.getBasket().isEmpty()) {
     		createdOrderEntity.setBasket(orderEntity.getBasket());
     	}
     	createdOrderEntity.setAddress(orderEntity.getAddress());
@@ -72,11 +78,10 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public OrderResponse getOrderInfo(Long orderId) {
 		Optional<OrdersEntity> entity = ordersRepository.findById(orderId);
-		if(!entity.isPresent()) {
-			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
-		} else {
+		if(entity.isPresent()) {
 			return new OrderResponse(entity.get());
 		}
+		return new OrderResponse(OrderFailedStatus.UNAUTHENTICATED, HttpStatus.NOT_ACCEPTABLE);
 	}
 
 }

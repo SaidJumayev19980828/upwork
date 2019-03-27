@@ -28,9 +28,7 @@ public class OrderResponse implements Serializable {
 	
 	@JsonIgnore
 	private HttpStatus code;
-	
-	
-	// set property name to order_id as per API requirements
+		
 	@JsonIgnore
     private OrdersEntity entity;
 	
@@ -45,7 +43,7 @@ public class OrderResponse implements Serializable {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private BigDecimal price;
     
- // set property name to responseStatuses as per API requirements
+ // set property name to status as per API requirements
     @JsonProperty(value = "status")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     OrderFailedStatus status;
@@ -68,8 +66,8 @@ public class OrderResponse implements Serializable {
     /**
      * Constructor representing success response
      *
-     * @param entityId Entity Object Id
-     * @param responseStatuses List of ResponseStatus
+     * @param oderId 
+     * @param price
      */
     public OrderResponse(Long orderId, BigDecimal price) {
         this.success = true;
@@ -81,8 +79,7 @@ public class OrderResponse implements Serializable {
     /**
      * Constructor representing success response
      *
-     * @param entityId Entity Object Id
-     * @param responseStatuses List of ResponseStatus
+     * @param entity Entity Object 
      */
     public OrderResponse(OrdersEntity entity) {
         this.success = true;
