@@ -53,7 +53,6 @@ public class OrdersController {
     	OrderResponse response;
     	if(userToken == null || userService.findUserById(userId) == null) {
     		response = new OrderResponse(OrderFailedStatus.UNAUTHENTICATED, HttpStatus.UNAUTHORIZED);
-    		return new ResponseEntity<>(response, response.getCode());
     	} else {
         	response = this.orderService.getOrderInfo(orderId);
         	if(response.getCode().equals(HttpStatus.OK)) {
