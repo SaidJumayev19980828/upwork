@@ -17,10 +17,6 @@ import org.springframework.http.HttpStatus;
 @Data
 public class OrderResponse implements Serializable {
 
-	
-    /**
-	 * 
-	 */
 	private static final long serialVersionUID = -2071547898771698563L;
 
 	@JsonProperty
@@ -28,7 +24,9 @@ public class OrderResponse implements Serializable {
 	
 	@JsonIgnore
 	private HttpStatus code;
-		
+	
+	
+	// set property name to order_id as per API requirements
 	@JsonIgnore
     private OrdersEntity entity;
 	
@@ -43,7 +41,7 @@ public class OrderResponse implements Serializable {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private BigDecimal price;
     
- // set property name to status as per API requirements
+ // set property name to responseStatuses as per API requirements
     @JsonProperty(value = "status")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     OrderFailedStatus status;
@@ -63,12 +61,6 @@ public class OrderResponse implements Serializable {
     	this.code = code;
     }
 
-    /**
-     * Constructor representing success response
-     *
-     * @param oderId 
-     * @param price
-     */
     public OrderResponse(Long orderId, BigDecimal price) {
         this.success = true;
         this.orderId = orderId;
@@ -76,11 +68,6 @@ public class OrderResponse implements Serializable {
         code = HttpStatus.OK;
     }
     
-    /**
-     * Constructor representing success response
-     *
-     * @param entity Entity Object 
-     */
     public OrderResponse(OrdersEntity entity) {
         this.success = true;
         this.entity = entity;

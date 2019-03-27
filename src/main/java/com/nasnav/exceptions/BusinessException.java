@@ -8,10 +8,6 @@ import org.springframework.http.HttpStatus;
 @EqualsAndHashCode(callSuper = false)
 public class BusinessException extends Exception {
 
-
-    /**
-	 * 
-	 */
 	private static final long serialVersionUID = -8526630656781493983L;
 
 	private String errorMessage;

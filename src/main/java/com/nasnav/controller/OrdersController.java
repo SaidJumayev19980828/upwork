@@ -22,7 +22,6 @@ import com.nasnav.service.UserService;
 @RequestMapping("/order")
 public class OrdersController {
 
-
     @Autowired
     private OrderService orderService;
     
@@ -42,7 +41,6 @@ public class OrdersController {
     	} else {
         	response = this.orderService.updateOrder(orderJson);	
     	}        
-    	
         return new ResponseEntity<>(response, response.getCode());
     }
     
