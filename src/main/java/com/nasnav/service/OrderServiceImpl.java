@@ -3,7 +3,9 @@ package com.nasnav.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.UserRepository;
+import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.enumerations.OrderFailedStatus;
+import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.response.exception.OrderValidationException;
@@ -13,6 +15,8 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Random;
+
+import javax.persistence.criteria.Order;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,24 +33,49 @@ public class OrderServiceImpl implements OrderService {
         this.ordersRepository = ordersRepository;
     }
 
-    public OrderResponse updateOrder(String orderJson){
-    	OrdersEntity orderEntity = mapOrderStringToJson(orderJson);
-    	System.out.println("status" + orderEntity.getStatus());
-		if(orderEntity.getStatus() == 0 && (orderEntity.getBasket() == null || orderEntity.getBasket().isEmpty())) {
+    public OrderResponse updateOrder(String orderString){
+    	OrderJsonDto orderJson = mapOrderStringToOrderJsonDto(orderString);
+    	// TODO: add to basket table
+    	Object[] basket = orderJson.getBasket();
+    	// check if status is null or new while basket is empty
+    	if((orderJson.getStatus() == null || orderJson.getStatus().equals(OrderStatus.NEW.toString())) && (orderJson.getBasket() == null || orderJson.getBasket().length == 0)) {
 			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
 		}
-		    	
-        return updateOrCreateOrderEntity(orderEntity);
+    	
+    	// map order object from API to OrdersEntity
+    	OrderResponse orderMappingResponse = mapOrderJsonToOrderEntity(orderJson);
+    	if(orderMappingResponse.getCode().equals(HttpStatus.NOT_ACCEPTABLE)) {
+    		return orderMappingResponse;
+    	}
+    	    	
+        return updateOrCreateOrderEntity(orderMappingResponse.getEntity());
     }
 
-	private OrdersEntity mapOrderStringToJson(String orderJson) {
-		OrdersEntity orderEntity;
+	private OrderResponse mapOrderJsonToOrderEntity(OrderJsonDto orderJson) {
+		OrdersEntity entity = new OrdersEntity();
+		entity.setId(orderJson.getId());
+		if(orderJson.getStatus() != null && !orderJson.getStatus().isEmpty()) {
+			OrderStatus statusEnum = OrderStatus.findEnum(orderJson.getStatus());
+			if(statusEnum == null) {
+				return new OrderResponse(OrderFailedStatus.INVALID_STATUS, HttpStatus.NOT_ACCEPTABLE);
+			}
+			entity.setStatus(statusEnum.ordinal());
+		} else {
+			entity.setStatus(0);
+		}
+		entity.setAddress(orderJson.getAddress());
+		entity.setBasket(orderJson.getBasket().toString());
+		return new OrderResponse(entity);
+	}
+
+	private OrderJsonDto mapOrderStringToOrderJsonDto(String orderString) {
+		OrderJsonDto orderJson;
 		try {
-			orderEntity = new ObjectMapper().readValue(orderJson, OrdersEntity.class);
+			orderJson = new ObjectMapper().readValue(orderString, OrderJsonDto.class);
 		} catch (IOException e) {
 			throw new OrderValidationException("Error Occured while parsing order object", OrderFailedStatus.INVALID_ORDER);
 		}
-		return orderEntity;
+		return orderJson;
 	}
 
 	private OrderResponse updateOrCreateOrderEntity(OrdersEntity orderEntity) {
@@ -54,12 +83,13 @@ public class OrderServiceImpl implements OrderService {
     	if(orderEntity.getId() != null && orderEntity.getId() != 0) {
     		Optional<OrdersEntity> foundOrdersEntity = ordersRepository.findById(orderEntity.getId());
     		if(foundOrdersEntity == null || !foundOrdersEntity.isPresent()) {
-    			System.out.println("entity id is: " + orderEntity.getId().TYPE);
-    			System.out.println("entity not present");
     			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
     		}
     		createdOrderEntity = foundOrdersEntity.get();
     	} else {
+    		if(orderEntity.getStatus() != null && orderEntity.getStatus() != 0) {
+    			return new OrderResponse(OrderFailedStatus.INVALID_STATUS, HttpStatus.NOT_ACCEPTABLE);
+    		}
     		createdOrderEntity = new OrdersEntity();
     	
 	    	createdOrderEntity.setCreatedAt(new Date(System.currentTimeMillis()));
@@ -68,7 +98,7 @@ public class OrderServiceImpl implements OrderService {
     	}
     	createdOrderEntity.setStatus(orderEntity.getStatus());
     	if(orderEntity.getBasket() != null && !orderEntity.getBasket().isEmpty()) {
-    		createdOrderEntity.setBasket(orderEntity.getBasket());
+    		createdOrderEntity.setBasket(orderEntity.getBasket().toString());
     	}
     	createdOrderEntity.setAddress(orderEntity.getAddress());
     	ordersRepository.save(createdOrderEntity);
