@@ -7,4 +7,3 @@
 *.lst
 .idea/**
 /target
-/.classpath

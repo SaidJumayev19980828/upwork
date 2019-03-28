@@ -5,6 +5,7 @@ import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @MappedSuperclass
@@ -17,14 +18,14 @@ public abstract class DefaultBusinessEntity<T extends Serializable> extends Abst
     private T id;
 
     @Column(name = "created_at")
-    public Date createdAt;
+    public LocalDateTime createdAt;
 
     @Column(name = "updated_at")
-    public Date updatedAt;
+    public LocalDateTime updatedAt;
 
     protected DefaultBusinessEntity() {
         this.id = null;
-        this.createdAt = new Date();
-        this.updatedAt = new Date();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 }

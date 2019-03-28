@@ -1,6 +1,9 @@
 package com.nasnav.exceptions;
 
+import com.nasnav.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.ConversionNotSupportedException;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpHeaders;
@@ -31,6 +34,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @Slf4j
 public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 
+    private final Logger exceptionLogger = LoggerFactory.getLogger(ErrorResponseHandler.class.getName());
+
     @ExceptionHandler(BusinessException.class)
     @ResponseBody
     public ResponseEntity<ErrorResponseDTO> handleBusinessException(BusinessException e, WebRequest request) {
@@ -58,6 +63,28 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
         ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage());
 
         return new ResponseEntity<>(errorResponseDTO, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * Handle EntityValidationException exception
+     *
+     * @param ex      EntityValidationException to be handled
+     * @param request WebRequest that result in that EntityValidationException
+     * @return ApiResponse object to the requester
+     */
+    @ExceptionHandler(EntityValidationException.class)
+    public final ResponseEntity<ApiResponse> handleValidationException(EntityValidationException ex, WebRequest request) {
+        logException(request, ex);
+        return new ResponseEntity<ApiResponse>(ex.getApiResponse(), ex.getHttpStatus());
+    }
+    /**
+     * Log failed request with exception details
+     *
+     * @param request WebRequest that result in that Exception
+     * @param ex      Exception to be handled
+     */
+    private void logException(WebRequest request, Exception ex) {
+        exceptionLogger.error(" Exception: Unable to process this request :  " + request.getDescription(false), ex);
     }
 
 
