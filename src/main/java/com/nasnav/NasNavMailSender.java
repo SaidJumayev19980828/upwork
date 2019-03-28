@@ -5,17 +5,23 @@ import com.nasnav.service.ConfigurationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 import javax.annotation.PostConstruct;
 import java.util.Properties;
 
+@PropertySource(value = "classpath:mail.properties")
 public class NasNavMailSender extends JavaMailSenderImpl {
 
     private static final Logger logger = LoggerFactory.getLogger(NasNavMailSender.class);
 
     @Autowired
     private ConfigurationService configService;
+
+    @Autowired
+    private Environment env;
 
     public NasNavMailSender() {
         setHost("");
@@ -31,16 +37,16 @@ public class NasNavMailSender extends JavaMailSenderImpl {
     @PostConstruct
     public void init() {
         setJavaMailProperties(createJavaMailProperties());
-        String host = configService.getConfigValue(ConfigurationKey.MAIL_SERVER_HOST_NAME, null);
+        String host = env.getProperty(ConfigurationKey.MAIL_SERVER_HOST_NAME.getValue());
         logger.info("Mail Host : " + host);
         setHost(host);
-        Integer port = configService.getConfigIntValue(ConfigurationKey.MAIL_SERVER_PORT, 0);
+        Integer port = Integer.parseInt(env.getProperty(ConfigurationKey.MAIL_SERVER_PORT.getValue()));
         logger.info("Mail Port : " + port);
         setPort(port);
-        String email = configService.getConfigValue(ConfigurationKey.MAIL_SERVER_EMAIL, null);
+        String email = env.getProperty(ConfigurationKey.MAIL_SERVER_EMAIL.getValue());
         logger.info("Email From : " + email);
         setUsername(email);
-        String password = configService.getConfigValue(ConfigurationKey.MAIL_SERVER_PASSWORD, null);
+        String password = env.getProperty(ConfigurationKey.MAIL_SERVER_PASSWORD.getValue());
         logger.info("Email Password : " + password);
         setPassword(password);
     }
