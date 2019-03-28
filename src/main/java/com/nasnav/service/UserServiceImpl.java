@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -127,6 +128,13 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(Long userId) {
         userRepository.deleteById(userId);
     }
+
+	@Override
+	public UserEntity findUserById(Long userId) {
+		Optional<UserEntity> optional =  userRepository.findById(userId);
+		return optional.isPresent() ? optional.get() : null;
+		
+	}
 
     @Override
     public UserEntity getUserById(Long userId) {

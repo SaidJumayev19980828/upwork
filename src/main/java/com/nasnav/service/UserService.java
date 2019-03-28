@@ -22,6 +22,8 @@ public interface UserService {
      */
     void deleteUser(Long userId);
 
+    UserEntity findUserById(Long userId);
+
     /**
      * Load user by passed userId
      * @param userId

@@ -26,7 +26,7 @@ import org.w3c.dom.Entity;
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
-public class UserControllerTests {
+public class UserRegisterTest {
 
     private MockMvc mockMvc;
 
