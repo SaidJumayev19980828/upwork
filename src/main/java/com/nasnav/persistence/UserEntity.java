@@ -5,6 +5,7 @@ import lombok.Data;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Data
@@ -25,10 +26,10 @@ public class UserEntity extends DefaultBusinessEntity<Long> {
     private int signInCount;
 
     @Column(name="last_sign_in_at")
-    private Date lastSignInDate;
+    private LocalDateTime lastSignInDate;
 
     @Column(name="current_sign_in_at")
-    private Date currentSignInDate;
+    private LocalDateTime currentSignInDate;
 
     @Column(name="authentication_token")
     private String authenticationToken;
@@ -44,6 +45,12 @@ public class UserEntity extends DefaultBusinessEntity<Long> {
 
     @Column(name="phone_number")
     private String phoneNumber;
+
+    @Column(name="reset_password_token")
+    private String resetPasswordToken;
+
+    @Column(name="reset_password_sent_at")
+    private LocalDateTime resetPasswordSentAt;
 
     public UserEntity() {
         super();
