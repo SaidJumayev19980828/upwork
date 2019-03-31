@@ -6,6 +6,7 @@ import org.springframework.util.MultiValueMap;
 public class TestCommons {
 
     public static String BaseURL = "";
+    public static String TestUserEmail = "nonexistent@nasnav.com";
 
     private static HttpHeaders authHeaders(long userId, String authToken) {
         HttpHeaders headers = new HttpHeaders();

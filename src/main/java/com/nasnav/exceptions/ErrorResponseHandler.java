@@ -1,6 +1,6 @@
 package com.nasnav.exceptions;
 
-import com.nasnav.response.ApiResponse;
+import com.nasnav.response.UserApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,11 +26,9 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.NoHandlerFoundException;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @RestControllerAdvice
-@EnableWebMvc
 @Slf4j
 public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 
@@ -39,7 +37,6 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     @ResponseBody
     public ResponseEntity<ErrorResponseDTO> handleBusinessException(BusinessException e, WebRequest request) {
-
         ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getErrorMessage(), e.getErrorCode());
 
         return new ResponseEntity<>(errorResponseDTO, e.getHttpStatus() != null ? e.getHttpStatus() : HttpStatus.INTERNAL_SERVER_ERROR);
@@ -70,12 +67,12 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
      *
      * @param ex      EntityValidationException to be handled
      * @param request WebRequest that result in that EntityValidationException
-     * @return ApiResponse object to the requester
+     * @return UserApiResponse object to the requester
      */
     @ExceptionHandler(EntityValidationException.class)
-    public final ResponseEntity<ApiResponse> handleValidationException(EntityValidationException ex, WebRequest request) {
+    public final ResponseEntity<UserApiResponse> handleValidationException(EntityValidationException ex, WebRequest request) {
         logException(request, ex);
-        return new ResponseEntity<ApiResponse>(ex.getApiResponse(), ex.getHttpStatus());
+        return new ResponseEntity<UserApiResponse>(ex.getUserApiResponse(), ex.getHttpStatus());
     }
     /**
      * Log failed request with exception details

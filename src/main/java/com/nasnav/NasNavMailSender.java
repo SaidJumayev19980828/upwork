@@ -1,7 +1,6 @@
 package com.nasnav;
 
 import com.nasnav.constatnts.EntityConstants.ConfigurationKey;
-import com.nasnav.service.ConfigurationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,15 +9,11 @@ import org.springframework.core.env.Environment;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 import javax.annotation.PostConstruct;
-import java.util.Properties;
 
 @PropertySource(value = "classpath:mail.properties")
 public class NasNavMailSender extends JavaMailSenderImpl {
 
     private static final Logger logger = LoggerFactory.getLogger(NasNavMailSender.class);
-
-    @Autowired
-    private ConfigurationService configService;
 
     @Autowired
     private Environment env;
@@ -36,7 +31,7 @@ public class NasNavMailSender extends JavaMailSenderImpl {
      */
     @PostConstruct
     public void init() {
-        setJavaMailProperties(createJavaMailProperties());
+//        setJavaMailProperties(createJavaMailProperties());
         String host = env.getProperty(ConfigurationKey.MAIL_SERVER_HOST_NAME.getValue());
         logger.info("Mail Host : " + host);
         setHost(host);
@@ -56,6 +51,7 @@ public class NasNavMailSender extends JavaMailSenderImpl {
      *
      * @return Properties object.
      */
+/*
     private Properties createJavaMailProperties() {
         Properties props = new Properties();
         props.put("mail.transport.protocol", configService.getConfigValue(ConfigurationKey.MAIL_SERVER_PROTOCOL, "smtp"));
@@ -64,5 +60,6 @@ public class NasNavMailSender extends JavaMailSenderImpl {
         props.put("mail.smtp.ssl.trust", configService.getConfigValue(ConfigurationKey.MAIL_SERVER_HOST_NAME, "true"));
         return props;
     }
+*/
 }
 

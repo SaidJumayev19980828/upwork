@@ -11,7 +11,7 @@ import java.util.List;
 
 
 @Data
-public class ApiResponse implements Serializable {
+public class UserApiResponse implements Serializable {
 
     @JsonProperty
     private boolean success;
@@ -49,8 +49,8 @@ public class ApiResponse implements Serializable {
     @JsonProperty(value = "store_id")
     private Long storeId;
 
-    public ApiResponse(boolean success, Long entityId, List<ResponseStatus> responseStatuses,
-                         String token, List<String> roles, Long organizationId, Long storeId) {
+    public UserApiResponse(boolean success, Long entityId, List<ResponseStatus> responseStatuses,
+                           String token, List<String> roles, Long organizationId, Long storeId) {
         this.success = success;
         this.entityId = entityId;
         this.responseStatuses = responseStatuses;
@@ -60,7 +60,7 @@ public class ApiResponse implements Serializable {
         this.storeId = storeId;
     }
 
-    public ApiResponse(){
+    public UserApiResponse(){
 
     }
 
@@ -69,7 +69,7 @@ public class ApiResponse implements Serializable {
      *
      * @param responseStatuses List of ResponseStatus
      */
-    private ApiResponse(List<ResponseStatus> responseStatuses) {
+    private UserApiResponse(List<ResponseStatus> responseStatuses) {
         this();
         this.responseStatuses = responseStatuses;
     }
@@ -80,7 +80,7 @@ public class ApiResponse implements Serializable {
      * @param entityId Entity Object Id
      * @param responseStatuses List of ResponseStatus
      */
-    private ApiResponse(Long entityId, List<ResponseStatus> responseStatuses) {
+    private UserApiResponse(Long entityId, List<ResponseStatus> responseStatuses) {
         this(responseStatuses);
         this.success = true;
         this.entityId = entityId;
@@ -91,7 +91,7 @@ public class ApiResponse implements Serializable {
      * @param success
      * @param responseStatuses
      */
-    private ApiResponse(boolean success, List<ResponseStatus> responseStatuses) {
+    private UserApiResponse(boolean success, List<ResponseStatus> responseStatuses) {
         this.success = success;
         if(EntityUtils.isNotBlankOrNull(responseStatuses)){
             List<String> messagesList= new ArrayList<>();
@@ -106,30 +106,30 @@ public class ApiResponse implements Serializable {
      *
      * @param success
      * @param responseStatuses
-     * @return ApiResponse object holding message property
+     * @return UserApiResponse object holding message property
      */
-    public static ApiResponse  createMessagesApiResponse(boolean success, List<ResponseStatus> responseStatuses){
-        return new ApiResponse(success, responseStatuses);
+    public static UserApiResponse createMessagesApiResponse(boolean success, List<ResponseStatus> responseStatuses){
+        return new UserApiResponse(success, responseStatuses);
     }
 
 
     /**
      * @param entityId entityId
      * @param responseStatuses success statuses
-     * @return ApiResponse object holding status property
+     * @return UserApiResponse object holding status property
      */
-    public static ApiResponse  createStatusApiResponse(Long entityId, List<ResponseStatus> responseStatuses){
-        return new ApiResponse(entityId, responseStatuses);
+    public static UserApiResponse createStatusApiResponse(Long entityId, List<ResponseStatus> responseStatuses){
+        return new UserApiResponse(entityId, responseStatuses);
     }
 
 
     /**
      *
      * @param responseStatuses failed statuses
-     * @return ApiResponse object holding status property
+     * @return UserApiResponse object holding status property
      */
-    public static ApiResponse  createStatusApiResponse( List<ResponseStatus> responseStatuses){
-        return new ApiResponse( responseStatuses);
+    public static UserApiResponse createStatusApiResponse(List<ResponseStatus> responseStatuses){
+        return new UserApiResponse( responseStatuses);
     }
 
 }

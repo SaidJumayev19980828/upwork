@@ -52,6 +52,9 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
      * @return true if authenticationToken already exists
      */
     boolean existsByAuthenticationToken(String authenticationToken);
+
+    boolean existsByIdAndAuthenticationToken(long id, String authenticationToken);
+
 }
 
 

@@ -1,7 +1,8 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.UserDTOs;
 import com.nasnav.persistence.UserEntity;
-import com.nasnav.response.ApiResponse;
+import com.nasnav.response.UserApiResponse;
 
 public interface UserService {
 
@@ -13,7 +14,7 @@ public interface UserService {
      * @param userJson UserJson string
      * @return User entity after saving to DB
      */
-    ApiResponse registerUser(String userJson);
+    UserApiResponse registerUser(UserDTOs.UserRegistrationObject userJson);
 
     /**
      * Delete user entity by id
@@ -42,25 +43,33 @@ public interface UserService {
      * Used to send the user a recovery token to reset his password
      *
      * @param email user email
-     * @return ApiResponse object holding the status
+     * @return UserApiResponse object holding the status
      */
-    ApiResponse sendEmailRecovery(String email);
+    UserApiResponse sendEmailRecovery(String email);
 
 
     /**
      * change user password
      *
      * @param body json object containing token and new password
-     * @return ApiResponse object holding the status
+     * @return UserApiResponse object holding the status
      */
-    ApiResponse recoverUser(String body);
+    UserApiResponse recoverUser(UserDTOs.PasswordResetObject  body);
 
     /**
      * login user to system
      *
      * @param body json object containing email and password
-     * @return ApiResponse object holding the status
+     * @return UserApiResponse object holding the status
      */
-    ApiResponse login(String body);
+    UserApiResponse login(UserDTOs.UserLoginObject body);
 
+    /**
+     * login user to system
+     *
+     * @param userId user's ID
+     * @param authToken token generated on log-in
+     * @return true if user is authenticated (token is valid)
+     */
+    boolean checkAuthToken(long userId, String authToken);
 }

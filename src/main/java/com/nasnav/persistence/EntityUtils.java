@@ -1,13 +1,9 @@
 package com.nasnav.persistence;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.exceptions.EntityValidationException;
-import com.nasnav.response.ApiResponse;
+import com.nasnav.response.UserApiResponse;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
-import org.springframework.http.HttpStatus;
 
 import java.util.*;
 
@@ -105,9 +101,9 @@ public class EntityUtils {
      * Create failed login api response
      *
      * @param responseStatuses failed response statuses
-     * @return ApiResponse
+     * @return UserApiResponse
      */
-    public static ApiResponse createFailedLoginResponse(List<ResponseStatus> responseStatuses) {
+    public static UserApiResponse createFailedLoginResponse(List<ResponseStatus> responseStatuses) {
         return new ApiResponseBuilder().setSuccess(false).setResponseStatuses(responseStatuses).build();
     }
 }

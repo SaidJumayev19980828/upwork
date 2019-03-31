@@ -20,17 +20,16 @@ import java.util.Map;
 public class MailServiceImpl implements MailService {
 
     private final JavaMailSender mailSender;
-    private final ConfigurationService configurationService;
+    private final String _from = "customer-service@nasnav.com"; // TODO: load from properties
 
     @Autowired
-    public MailServiceImpl(JavaMailSender mailSender, ConfigurationService configurationService) {
+    public MailServiceImpl(JavaMailSender mailSender) {
         this.mailSender = mailSender;
-        this.configurationService = configurationService;
     }
 
     @Override
-    public void send(String to, String subject, String body) throws MessagingException {
-        sendMessage(to, subject, body);
+    public void send(String to, String subject, String body, boolean dryRun) throws MessagingException {
+        sendMessage(to, subject, body, dryRun);
     }
 
     /**
@@ -41,29 +40,32 @@ public class MailServiceImpl implements MailService {
      * @param body Email-Body
      * @throws MessagingException If message failed to be sent.
      */
-    private void sendMessage(String to, String subject, String body) throws MessagingException {
+    private void sendMessage(String to, String subject, String body, boolean dryRun) throws MessagingException {
         if (mailSender == null) {
             return;
         }
         final MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
-        String from = configurationService.getConfigValue(ConfigurationKey.MAIL_SERVER_EMAIL, "");
-        helper.setFrom(from);
+        helper.setFrom(_from);
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(body, true);
-        mailSender.send(mimeMessage);
+        if (dryRun) {
+            System.out.println("Sending email to: " + to + "\n-------\n" + body);
+        } else {
+            mailSender.send(mimeMessage);
+        }
     }
 
 
     @Override
-    public void send(String to, String subject, String template, Map<String, String> parametersMap) throws IOException, MessagingException {
+    public void send(String to, String subject, String template, Map<String, String> parametersMap, boolean dryRun) throws IOException, MessagingException {
         Resource resource = new ClassPathResource(template);
         String body = new String(Files.readAllBytes(Paths.get(resource.getFile().getAbsolutePath())));
         for (Map.Entry<String, String> entry : parametersMap.entrySet()) {
             body = body.replaceAll(entry.getKey(), entry.getValue());
         }
-        sendMessage(to, subject, body);
+        sendMessage(to, subject, body, dryRun);
 
     }
 }

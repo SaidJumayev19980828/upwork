@@ -4,11 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dto.UserDTOs;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.Role;
-import com.nasnav.response.ApiResponse;
+import com.nasnav.response.UserApiResponse;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,32 +42,22 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 
     @Override
-    public ApiResponse login(String body) {
-        String email;
-        String password;
-        try {
-            JsonNode jsonBody = new ObjectMapper().readTree(body);
-            email = jsonBody.get("email").asText();
-            password = jsonBody.get("password").asText();
-        } catch (Exception e) {
-            ApiResponse failedLoginResponse = EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_PARAMETERS));
-            throw new EntityValidationException("INVALID_PARAMETERS ", failedLoginResponse, HttpStatus.NOT_ACCEPTABLE);
-        }
-        EmployeeUserEntity employeeUserEntity = this.employeeUserRepository.getByEmail(email);
+    public UserApiResponse login(UserDTOs.UserLoginObject body) {
+        EmployeeUserEntity employeeUserEntity = this.employeeUserRepository.getByEmail(body.email);
         if (employeeUserEntity != null) {
             // check if account needs activation
             boolean accountNeedActivation = isEmployeeUserNeedActivation(employeeUserEntity);
             if (accountNeedActivation) {
-                ApiResponse failedLoginResponse = EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.NEED_ACTIVATION));
+                UserApiResponse failedLoginResponse = EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.NEED_ACTIVATION));
                 throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, HttpStatus.LOCKED);
             }
             // ensure that password matched
-            boolean passwordMatched = passwordEncoder.matches(password, employeeUserEntity.getEncryptedPassword());
+            boolean passwordMatched = passwordEncoder.matches(body.password, employeeUserEntity.getEncryptedPassword());
             if (passwordMatched) {
                 // check if account is locked
                 boolean accountIsLocked = isAccountLocked(employeeUserEntity);
                 if (accountIsLocked) {
-                    ApiResponse failedLoginResponse = EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.ACCOUNT_SUSPENDED));
+                    UserApiResponse failedLoginResponse = EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.ACCOUNT_SUSPENDED));
                     throw new EntityValidationException("ACCOUNT_SUSPENDED ", failedLoginResponse, HttpStatus.LOCKED);
                 }
                 // generate new AuthenticationToken and perform post login updates
@@ -152,9 +143,9 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
      * Create success login Api response
      *
      * @param employeeUserEntity success EmployeeUser entity
-     * @return ApiResponse
+     * @return UserApiResponse
      */
-    private ApiResponse createSuccessLoginResponse(EmployeeUserEntity employeeUserEntity) {
+    private UserApiResponse createSuccessLoginResponse(EmployeeUserEntity employeeUserEntity) {
         Integer organizationId = employeeUserEntity.getOrganizationId();
         Long shopId = employeeUserEntity.getShopId();
         return new ApiResponseBuilder().setSuccess(true).setEntityId(employeeUserEntity.getId().longValue())

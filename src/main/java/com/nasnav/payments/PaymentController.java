@@ -1,5 +1,6 @@
 package com.nasnav.payments;
 
+import io.swagger.annotations.Api;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @RestController
 @RequestMapping("/nasnav")
+@Api(description = "Work-in-progress.")
 public class PaymentController {
 
 

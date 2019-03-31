@@ -21,8 +21,8 @@ public class ApiResponseBuilder implements Serializable {
     public ApiResponseBuilder() {
     }
 
-    public ApiResponse build() {
-        return new ApiResponse(success, entityId, responseStatuses,
+    public UserApiResponse build() {
+        return new UserApiResponse(success, entityId, responseStatuses,
                 token, roles, organizationId, storeId);
     }
 

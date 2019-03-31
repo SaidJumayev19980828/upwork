@@ -33,8 +33,7 @@ public class OrderServiceImpl implements OrderService {
         this.ordersRepository = ordersRepository;
     }
 
-    public OrderResponse updateOrder(String orderString){
-    	OrderJsonDto orderJson = mapOrderStringToOrderJsonDto(orderString);
+    public OrderResponse updateOrder(OrderJsonDto orderJson){
     	// TODO: add to basket table
     	Object[] basket = orderJson.getBasket();
     	// check if status is null or new while basket is empty

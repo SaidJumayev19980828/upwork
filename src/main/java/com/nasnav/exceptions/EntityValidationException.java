@@ -1,6 +1,6 @@
 package com.nasnav.exceptions;
 
-import com.nasnav.response.ApiResponse;
+import com.nasnav.response.UserApiResponse;
 import lombok.Data;
 import org.springframework.http.HttpStatus;
 
@@ -10,20 +10,20 @@ import org.springframework.http.HttpStatus;
 @Data
 public class EntityValidationException extends RuntimeException {
 
-    private ApiResponse apiResponse;
+    private UserApiResponse userApiResponse;
     private HttpStatus httpStatus = HttpStatus.BAD_REQUEST; // set default to bad request
 
     public EntityValidationException(String message) {
         super(message);
     }
 
-    public EntityValidationException(String message, ApiResponse apiResponse) {
+    public EntityValidationException(String message, UserApiResponse userApiResponse) {
         this(message);
-        this.apiResponse = apiResponse;
+        this.userApiResponse = userApiResponse;
     }
 
-    public EntityValidationException(String message, ApiResponse apiResponse, HttpStatus httpStatus) {
-        this(message, apiResponse);
+    public EntityValidationException(String message, UserApiResponse userApiResponse, HttpStatus httpStatus) {
+        this(message, userApiResponse);
         this.httpStatus = httpStatus;
     }
 

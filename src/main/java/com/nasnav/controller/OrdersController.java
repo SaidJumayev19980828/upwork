@@ -1,16 +1,14 @@
 package com.nasnav.controller;
 
+import com.nasnav.dto.OrderJsonDto;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.exceptions.BusinessException;
@@ -20,6 +18,7 @@ import com.nasnav.service.UserService;
 
 @RestController
 @RequestMapping("/order")
+@Api(description = "Basket and order management.")
 public class OrdersController {
 
     @Autowired
@@ -27,16 +26,23 @@ public class OrdersController {
     
     @Autowired UserService userService;
 
-    @RequestMapping(value = "update",
-            method = RequestMethod.POST,
+    @ApiOperation(value = "Register a new user", nickname = "userRegister", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Order created or updated"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "update",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<?> updateOrder(@RequestHeader(name = "User-ID", required = true) String userId,
-            @RequestHeader(name = "User-Token", required = true) String userToken, @RequestBody String orderJson) 
+    public ResponseEntity<?> updateOrder(
+            @RequestHeader(name = "User-ID") String userId,
+            @RequestHeader(name = "User-Token") String userToken,
+            @RequestBody OrderJsonDto orderJson)
             		throws BusinessException {
     	OrderResponse response;
     	long parsedUserId = Long.parseLong(userId);
-    	if(userToken == null || userService.findUserById(parsedUserId) == null) {
+    	if(userToken == null || userService.findUserById(parsedUserId) == null || !userService.checkAuthToken(parsedUserId, userToken)) {
     		response = new OrderResponse(OrderFailedStatus.UNAUTHENTICATED, HttpStatus.UNAUTHORIZED);
     	} else {
         	response = this.orderService.updateOrder(orderJson);	

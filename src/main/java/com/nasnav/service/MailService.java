@@ -11,9 +11,10 @@ public interface MailService {
      * @param to Email-TO
      * @param subject Email-Subject
      * @param body Email-Body
+     * @param dryRun Email-Body
      * @throws MessagingException If message failed to be sent.
      */
-    void send(String to, String subject, String body) throws MessagingException;
+    void send(String to, String subject, String body, boolean dryRun) throws MessagingException;
 
     /**
      * Send Email using the passed html template.
@@ -25,5 +26,5 @@ public interface MailService {
      * @throws MessagingException
      * @throws IOException
      */
-    void send(String to, String subject, String template, Map<String, String> parametersMap) throws MessagingException, IOException;
+    void send(String to, String subject, String template, Map<String, String> parametersMap, boolean dryRun) throws MessagingException, IOException;
 }

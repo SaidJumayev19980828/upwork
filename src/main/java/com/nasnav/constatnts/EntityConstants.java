@@ -6,7 +6,7 @@ import lombok.Getter;
  * Contain all constants related to Entities.
  */
 public final class EntityConstants {
-    public static final String INITIAL_PASSWORD = "!needs_reset!";
+    public static final String INITIAL_PASSWORD = "";
     public static final String EMAIL_PATTERN = "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,6}$";
     public static final String Name_PATTERN = "^[a-zA-z \']+$";
 
@@ -21,9 +21,6 @@ public final class EntityConstants {
     public static final int TOKEN_VALIDITY = 2;
 
 
-    /**
-     *Enum represent Keys of each {@link com.nasnav.persistence.Configuration} Entity in DB
-     */
     public enum ConfigurationKey {
 
         MAIL_SERVER_HOST_NAME("email.hostname"),
@@ -51,9 +48,6 @@ public final class EntityConstants {
     }
 
 
-    /**
-     *Enum represent Keys of each {@link com.nasnav.persistence.Configuration} Entity in DB
-     */
     public enum Roles {
 
         CUSTOMER("CUSTOMER"),
