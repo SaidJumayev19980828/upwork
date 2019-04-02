@@ -1,12 +1,14 @@
 package com.nasnav.persistence;
 
 import java.util.Date;
+import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -50,6 +52,15 @@ public class OrganizationEntity extends AbstractPersistable<Long> implements Bas
     @OneToOne(mappedBy = "organizationEntity")
     @JsonIgnore
     private SocialEntity socialEntity;
+    
+    @OneToMany(mappedBy="organizationEntity")
+    @JsonIgnore
+    private Set<OrdersEntity> ordersEntity;
+    
+    @OneToMany(mappedBy="organizationEntity")
+    @JsonIgnore
+    private Set<StocksEntity> stocksEntities;
+
     
     public OrganizationEntity() {
         id = null;

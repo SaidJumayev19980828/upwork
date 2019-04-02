@@ -13,7 +13,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
@@ -100,8 +99,15 @@ public class ShopsEntity extends AbstractPersistable<Long> implements BaseEntity
     @OneToMany(mappedBy="shopsEntity")
     @JsonIgnore
     private Set<ShopsOpeningTimesEntity> shopsOpeningTimesEntities;
+    
+    @OneToMany(mappedBy="shopsEntity")
+    @JsonIgnore
+    private Set<OrdersEntity> ordersEntity;
 
-
+    @OneToMany(mappedBy="shopsEntity")
+    @JsonIgnore
+    private Set<StocksEntity> stocksEntities;
+    
     @Override
     public BaseRepresentationObject getRepresentation() {
         ShopRepresentationObject shopRepresentationObject = new ShopRepresentationObject();

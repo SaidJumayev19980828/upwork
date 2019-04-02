@@ -1,8 +1,9 @@
 package com.nasnav.dto;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -22,7 +23,7 @@ public class OrderJsonDto{
 
 	@ApiModelProperty(value = "User's basket items", required = true)
 	@JsonProperty("basket")
-	private Object[] basket;
+	private List<BasketItem> basket;
 
 	@ApiModelProperty(value = "Delivery address", example = "Somewhere behind a grocery store")
 	@JsonProperty("delivery_address")

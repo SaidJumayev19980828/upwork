@@ -5,7 +5,7 @@ import com.nasnav.response.OrderResponse;
 
 public interface OrderService {
 
-	public OrderResponse updateOrder(OrderJsonDto orderJson);
+	public OrderResponse updateOrder(OrderJsonDto orderJson,Long userId);
 
 	public OrderResponse getOrderInfo(Long orderId);
 	

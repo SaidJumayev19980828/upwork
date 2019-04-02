@@ -1,11 +1,20 @@
 package com.nasnav.enumerations;
 
+import lombok.Getter;
+
 /**
  * Hold Response Status constants
  */
 public enum OrderStatus {
-	NEW, 
-	CLIENT_CONFIRMED;
+	NEW(0), 
+	CLIENT_CONFIRMED(1);
+	
+	@Getter
+	private Integer value;
+	
+	OrderStatus(Integer value){
+		this.value = value;
+	}
 	
 	public static OrderStatus findEnum(String statusString) {
 		for(OrderStatus status : OrderStatus.values()) {
