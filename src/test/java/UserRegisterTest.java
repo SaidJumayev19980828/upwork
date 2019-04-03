@@ -1,13 +1,12 @@
 import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.controller.UserController;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.service.UserService;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +19,10 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import java.time.LocalDateTime;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
@@ -27,6 +30,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 public class UserRegisterTest {
 
     private MockMvc mockMvc;
+    private UserEntity persistentUser;
 
     @Mock
     private UserController userController;
@@ -37,18 +41,46 @@ public class UserRegisterTest {
     @Autowired
     UserService userService;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @Before
     public void setup() {
         mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
+        cleanup();
+    }
+
+    @After
+    public void cleanup() {
+        UserEntity user = userRepository.getByEmail(TestCommons.TestUserEmail);
+        if (user != null) {
+            userRepository.delete(user);
+        }
+    }
+
+    @PostConstruct
+    public void setupLoginUser() {
+        persistentUser = userRepository.getByEmail("unavailable@nasnav.com");
+        if (persistentUser == null) {
+            persistentUser = new UserEntity();
+            persistentUser.setName("John Smith");
+            persistentUser.setEmail("unavailable@nasnav.com");
+        }
+        persistentUser.setEncPassword("---");
+        userRepository.save(persistentUser);
+    }
+
+    @PreDestroy
+    public void removeLoginUser() {
+        if (persistentUser != null) {
+            userRepository.delete(persistentUser);
+        }
     }
 
     @Test
     public void testUserShouldBeRegistered() {
         HttpEntity<Object> userJson = getHttpEntity(
-                "{\t\n" +
-                        "\t\"name\":\"Ahmed\",\n" +
-                        "\t\"email\":\"Foo.Bar@Foo.Bar.com\"\n" +
-                        "}");
+                "{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\"}");
         ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/register", userJson, UserApiResponse.class);
         //Delete this user
@@ -60,10 +92,7 @@ public class UserRegisterTest {
     @Test
     public void testEmailExistence() {
         HttpEntity<Object> userJson = getHttpEntity(
-                "{\t\n" +
-                        "\t\"name\":\"Ahmed\",\n" +
-                        "\t\"email\":\"Foo.Bar@Foo.Bar.com\"\n" +
-                        "}");
+                "{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\"}");
         ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/register", userJson, UserApiResponse.class);
         // get userId for deletion after test
@@ -83,10 +112,7 @@ public class UserRegisterTest {
     @Test
     public void testInvalidEmailRegistration() {
         HttpEntity<Object> userJson = getHttpEntity(
-                "{\t\n" +
-                        "\t\"name\":\"Ahmed\",\n" +
-                        "\t\"email\":\"Foo.Bar.com\"\n" +
-                        "}");
+                "{\"name\":\"Ahmed\",\"email\":\"Foo.bar.com\"}");
         ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/register", userJson, UserApiResponse.class);
         // success should be false
@@ -99,10 +125,7 @@ public class UserRegisterTest {
     @Test
     public void testInvalidNameRegistration() {
         HttpEntity<Object> userJson = getHttpEntity(
-                "{\t\n" +
-                        "\t\"name\":\"Ahmed123\",\n" +
-                        "\t\"email\":\"Foo.Bar@Foo.Bar.com\"\n" +
-                        "}");
+                "{\"name\":\"Ahmed234\",\"email\":\"" + TestCommons.TestUserEmail + "\"}");
         ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/register", userJson, UserApiResponse.class);
         // success should be false
@@ -115,7 +138,7 @@ public class UserRegisterTest {
     @Test
     public void testInvalidJsonForUserRegisteration() {
         HttpEntity<Object> userJson = getHttpEntity(
-                "{}");
+                "{,,}");
         ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/register", userJson, UserApiResponse.class);
         // success should be false
@@ -126,23 +149,22 @@ public class UserRegisterTest {
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
+/*
     @Test
     public void testSendResetPasswordTokenEmail() {
         HttpEntity<Object> userJson = getHttpEntity(
-                "{\t\n" +
-                        "\t\"name\":\"Ahmed\",\n" +
-                        "\t\"email\":\"ahmed.elbastawesy@nasnav.com\"\n" +
-                        "}");
+                "{\"name\":\"" + persistentUser.getName() + "\"," +
+                        "\"email\":\"" + persistentUser.getEmail() + "\"}");
         ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/register", userJson, UserApiResponse.class);
 
         long userId = response.getBody().getEntityId();
-        response = getResponseFromGet("/user/recover?email=ahmed.elbastawesy@nasnav.com", UserApiResponse.class);
+        response = getResponseFromGet("/user/recover?email=" + persistentUser.getEmail(), UserApiResponse.class);
         //Delete this user
-        userService.deleteUser(userId);
         Assert.assertTrue(response.getBody().isSuccess());
         Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
     }
+*/
 
     @Test
     public void testSendResetPasswordTokenForInvalidMail() {
@@ -171,59 +193,51 @@ public class UserRegisterTest {
 
     @Test
     public void testPasswordShouldBeReset() {
-        HttpEntity<Object> userJson = getHttpEntity(
-                "{\t\n" +
-                        "\t\"name\":\"Ahmed\",\n" +
-                        "\t\"email\":\"ahmed.elbastawesy@nasnav.com\"\n" +
-                        "}");
-        ResponseEntity<UserApiResponse> response = template.postForEntity(
-                "/user/register", userJson, UserApiResponse.class);
 
-        long userId = response.getBody().getEntityId();
+        persistentUser.setResetPasswordToken("ABC");
+        userService.update(persistentUser);
 
-        getResponseFromGet("/user/recover?email=ahmed.elbastawesy@nasnav.com", UserApiResponse.class);
+        getResponseFromGet("/user/recover?email=" + persistentUser.getEmail(), UserApiResponse.class);
+        // refresh the entity
+        persistentUser = userRepository.findById(persistentUser.getId()).get();
+        String token = persistentUser.getResetPasswordToken();
+        Assert.assertNotEquals("ABC", token);
 
-        String token = userService.getUserById(userId).getResetPasswordToken();
-        userJson = getHttpEntity("{\t\n" +
+        HttpEntity<Object> userJson = getHttpEntity("{\t\n" +
                 "\t\"token\":\"" + token + "\",\n" +
-                "\t\"password\":\"password\"\n" +
+                "\t\"password\":\"NewPassword\"\n" +
                 "}");
 
-        response = template.postForEntity(
+        ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/recover", userJson, UserApiResponse.class);
 
-        //Delete this user
-        userService.deleteUser(userId);
         Assert.assertTrue(response.getBody().isSuccess());
         Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
+
+        userJson = getHttpEntity(
+                "{\"password\":\"" + "NewPassword" + "\"," +
+                        "\"email\":\"" + persistentUser.getEmail() + "\"}");
+        response = template.postForEntity(
+                "/user/login", userJson, UserApiResponse.class);
+
+        //Delete this user
+        Assert.assertTrue(response.getBody().isSuccess());
+        Assert.assertEquals(200, response.getStatusCode().value());
+
     }
 
 
     @Test
     public void testInvalidJsonForPasswordRecovery() {
-        HttpEntity<Object> userJson = getHttpEntity(
-                "{\t\n" +
-                        "\t\"name\":\"Ahmed\",\n" +
-                        "\t\"email\":\"ahmed.elbastawesy@nasnav.com\"\n" +
-                        "}");
+
+        getResponseFromGet("/user/recover?email=" + persistentUser.getEmail(), UserApiResponse.class);
+
+        HttpEntity<Object> userJson = getHttpEntity("{\t\n" +
+                "\t\"token\": \"QWER\",, \"password\"}");
+
         ResponseEntity<UserApiResponse> response = template.postForEntity(
-                "/user/register", userJson, UserApiResponse.class);
-
-        long userId = response.getBody().getEntityId();
-
-        getResponseFromGet("/user/recover?email=ahmed.elbastawesy@nasnav.com", UserApiResponse.class);
-
-        String token = userService.getUserById(userId).getResetPasswordToken();
-        userJson = getHttpEntity("{\t\n" +
-                "\t\"token\": ,\n" +
-                "\t\"password\"" +
-                "}");
-
-        response = template.postForEntity(
                 "/user/recover", userJson, UserApiResponse.class);
 
-        //Delete this user
-        userService.deleteUser(userId);
         Assert.assertFalse(response.getBody().isSuccess());
         Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_PARAMETERS));
         Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
@@ -231,65 +245,40 @@ public class UserRegisterTest {
 
 
     @Test
-    public void testInvalidPassword() {
+    public void testSetInvalidPassword() {
+
+        getResponseFromGet("/user/recover?email=" + persistentUser.getEmail(), UserApiResponse.class);
+
+        // refresh user
+        persistentUser = userService.getUserById(persistentUser.getId());
         HttpEntity<Object> userJson = getHttpEntity(
-                "{\t\n" +
-                        "\t\"name\":\"Ahmed\",\n" +
-                        "\t\"email\":\"ahmed.elbastawesy@nasnav.com\"\n" +
-                        "}");
+                "{\"token\":\"" + persistentUser.getResetPasswordToken() + "\"," +
+                        "\"password\":\"123\"}");
+
         ResponseEntity<UserApiResponse> response = template.postForEntity(
-                "/user/register", userJson, UserApiResponse.class);
-
-        long userId = response.getBody().getEntityId();
-
-        getResponseFromGet("/user/recover?email=ahmed.elbastawesy@nasnav.com", UserApiResponse.class);
-
-        String token = userService.getUserById(userId).getResetPasswordToken();
-        userJson = getHttpEntity("{\t\n" +
-                "\t\"token\":\"" + token + "\",\n" +
-                "\t\"password\":\"123\"\n" +
-                "}");
-
-        response = template.postForEntity(
                 "/user/recover", userJson, UserApiResponse.class);
 
-        //Delete this user
-        userService.deleteUser(userId);
+System.out.println("###" + response.getBody().toString());
         Assert.assertFalse(response.getBody().isSuccess());
         Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_PASSWORD));
         Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
     }
 
-
     @Test
     public void testExpiredToken() {
-        HttpEntity<Object> userJson = getHttpEntity(
-                "{\t\n" +
-                        "\t\"name\":\"Ahmed\",\n" +
-                        "\t\"email\":\"ahmed.elbastawesy@nasnav.com\"\n" +
-                        "}");
-        ResponseEntity<UserApiResponse> response = template.postForEntity(
-                "/user/register", userJson, UserApiResponse.class);
+        persistentUser.setResetPasswordSentAt(LocalDateTime.now().minusHours(EntityConstants.TOKEN_VALIDITY + 1));
+        String token = "ABC123XYZ";
+        persistentUser.setResetPasswordToken(token);
+        userService.update(persistentUser);
 
-        long userId = response.getBody().getEntityId();
-
-        getResponseFromGet("/user/recover?email=ahmed.elbastawesy@nasnav.com", UserApiResponse.class);
-
-        UserEntity userEntity = userService.getUserById(userId);
-        userEntity.setResetPasswordSentAt(userEntity.getResetPasswordSentAt().minusHours(EntityConstants.TOKEN_VALIDITY + 1));
-        userService.update(userEntity);
-
-        String token = userEntity.getResetPasswordToken();
-        userJson = getHttpEntity("{\t\n" +
+        HttpEntity<Object> userJson = getHttpEntity("{\t\n" +
                 "\t\"token\":\"" + token + "\",\n" +
                 "\t\"password\":\"password\"\n" +
                 "}");
 
-        response = template.postForEntity(
+        ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/recover", userJson, UserApiResponse.class);
 
-        //Delete this user
-        userService.deleteUser(userId);
         Assert.assertFalse(response.getBody().isSuccess());
         Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.EXPIRED_TOKEN));
         Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
@@ -299,38 +288,28 @@ public class UserRegisterTest {
 
     @Test
     public void testUserShouldLogin() {
-        HttpEntity<Object> userJson = getHttpEntity(
-                "{\t\n" +
-                        "\t\"name\":\"Ahmed\",\n" +
-                        "\t\"email\":\"ahmed.elbastawesy@nasnav.com\"\n" +
-                        "}");
-        ResponseEntity<UserApiResponse> response = template.postForEntity(
-                "/user/register", userJson, UserApiResponse.class);
-        Long userId = response.getBody().getEntityId();
-
         // send token to user
-        getResponseFromGet("/user/recover?email=ahmed.elbastawesy@nasnav.com", UserApiResponse.class);
+        getResponseFromGet("/user/recover?email=" + persistentUser.getEmail(), UserApiResponse.class);
 
+        // refresh the user entity
+        persistentUser = userService.getUserById(persistentUser.getId());
         // use token to change password
-        String token = userService.getUserById(userId).getResetPasswordToken();
-        userJson = getHttpEntity("{\t\n" +
+        String token = persistentUser.getResetPasswordToken();
+        HttpEntity<Object> userJson = getHttpEntity("{\t\n" +
                 "\t\"token\":\"" + token + "\",\n" +
-                "\t\"password\":\"password\"\n" +
+                "\t\"password\":\"New_Password\"\n" +
                 "}");
 
         template.postForEntity(
                 "/user/recover", userJson, UserApiResponse.class);
 
         // login using the new password
-        userJson = getHttpEntity("{\t\n" +
-                "\t\"password\":\"password\",\n" +
-                "\t\"email\":\"ahmed.elbastawesy@nasnav.com\"\n" +
-                "}");
-
-        response = template.postForEntity(
+        userJson = getHttpEntity(
+                "{\"password\":\"" + "New_Password" + "\"," +
+                        "\"email\":\"" + persistentUser.getEmail() + "\"}");
+        ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/login", userJson, UserApiResponse.class);
-        //Delete this user
-        userService.deleteUser(userId);
+
         Assert.assertTrue(response.getBody().isSuccess());
         Assert.assertEquals(200, response.getStatusCode().value());
     }
@@ -338,56 +317,32 @@ public class UserRegisterTest {
 
     @Test
     public void testInvalidCredentialsLogin() {
-        // register new user
-        HttpEntity<Object> userJson = getHttpEntity(
-                "{\t\n" +
-                        "\t\"name\":\"Ahmed\",\n" +
-                        "\t\"email\":\"ahmed.elbastawesy@nasnav.com\"\n" +
-                        "}");
-        ResponseEntity<UserApiResponse> response = template.postForEntity(
-                "/user/register", userJson, UserApiResponse.class);
-        Long userId = response.getBody().getEntityId();
 
-        // try to login with another emial not existed
-        String password = userService.getUserById(userId).getResetPasswordToken();
-        userJson = getHttpEntity("{\t\n" +
-                "\t\"password\":\"" + password + "\",\n" +
-                "\t\"email\":\"ahmed.bastawesy@foo.com\"\n" +
+        HttpEntity<Object> userJson = getHttpEntity("{\t\n" +
+                "\t\"password\":\"" + "Invalid_Password" + "\",\n" +
+                "\t\"email\":\"" + persistentUser.getEmail() + "\"\n" +
                 "}");
 
-        response = template.postForEntity(
+        ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/login", userJson, UserApiResponse.class);
 
-        //Delete this user
-        userService.deleteUser(userId);
         Assert.assertFalse(response.getBody().isSuccess());
         Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_CREDENTIALS));
         Assert.assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatusCode().value());
     }
 
 
-//    @Test TODO: need to fix after changes
+    @Test
     public void testInvalidJsonForLogin() {
-        // register new user
-        HttpEntity<Object> userJson = getHttpEntity(
-                "{\t\n" +
-                        "\t\"name\":\"Ahmed\",\n" +
-                        "\t\"email\":\"ahmed.elbastawesy@nasnav.com\"\n" +
-                        "}");
-        ResponseEntity<UserApiResponse> response = template.postForEntity(
-                "/user/register", userJson, UserApiResponse.class);
-        Long userId = response.getBody().getEntityId();
-
         // try to login using invalid json
-        userJson = getHttpEntity("{\t\n" +
+        HttpEntity<Object> userJson  = getHttpEntity("{\t\n" +
                 "\t\"password" +
                 "\t\"email\":\"\"\n" +
                 "}");
 
-        response = template.postForEntity(
+        ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/login", userJson, UserApiResponse.class);
-        //Delete this user
-        userService.deleteUser(userId);
+
         Assert.assertFalse(response.getBody().isSuccess());
         Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_PARAMETERS));
         Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
@@ -398,10 +353,8 @@ public class UserRegisterTest {
     public void testLoginForNeedActivationUser() {
         // registe new user
         HttpEntity<Object> userJson = getHttpEntity(
-                "{\t\n" +
-                        "\t\"name\":\"Ahmed\",\n" +
-                        "\t\"email\":\"ahmed.elbastawesy@nasnav.com\"\n" +
-                        "}");
+                "{\"name\":\"" + "Some New Name" + "\"," +
+                        "\"email\":\"" + "another_email@nasnav.com" + "\"}");
         ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/register", userJson, UserApiResponse.class);
         Long userId = response.getBody().getEntityId();
@@ -409,7 +362,7 @@ public class UserRegisterTest {
         // directly login without changing his passwrod
         userJson = getHttpEntity("{\t\n" +
                 "\t\"password\":\"" + EntityConstants.INITIAL_PASSWORD + "\",\n" +
-                "\t\"email\":\"ahmed.elbastawesy@nasnav.com\"\n" +
+                "\t\"email\":\"" + "another_email@nasnav.com" + "\"\n" +
                 "}");
 
         response = template.postForEntity(
