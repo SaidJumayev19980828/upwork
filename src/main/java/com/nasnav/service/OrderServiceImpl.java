@@ -57,14 +57,13 @@ public class OrderServiceImpl implements OrderService {
 			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
 		}
 
-		if (orderJson.getStatus() != null && OrderStatus.findEnum(orderJson.getStatus()) == null) {
-			return new OrderResponse(OrderFailedStatus.INVALID_STATUS, HttpStatus.NOT_ACCEPTABLE);
-		}
 
 		if (orderJson.getId() == null || orderJson.getId() == 0) {
 			return createNewOrderAndBasketItems(orderJson, userId);
-		} else {
+		} else if(orderJson.getStatus() != null){
 			return updateCurrentOrderStatus(orderJson);
+		}else {
+			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
 		}
 		// map order object from API to OrdersEntity
 //		OrderResponse orderMappingResponse = mapOrderJsonToOrderEntity(orderJson);
@@ -79,7 +78,7 @@ public class OrderServiceImpl implements OrderService {
 		// Getting the stocks related to current order
 		List<StocksEntity> stocksEntites = new ArrayList<>(orderJsonDto.getBasket().size());
 
-		orderJsonDto.getBasket().forEach(basketItem -> {
+		orderJsonDto.getBasket().stream().filter(basketItem->basketItem.getStockId()!=null).forEach(basketItem -> {
 			Optional<StocksEntity> optionalStocksEntity = stockRepository.findById(basketItem.getStockId());
 
 			if (optionalStocksEntity == null || !optionalStocksEntity.isPresent()
@@ -151,7 +150,22 @@ public class OrderServiceImpl implements OrderService {
 
 	private OrderResponse updateCurrentOrderStatus(OrderJsonDto orderJsonDto) {
 
-		return null;
+		OrderStatus orderStatus = OrderStatus.findEnum(orderJsonDto.getStatus());
+		
+		if(orderStatus==null) {
+			return new OrderResponse(OrderFailedStatus.INVALID_STATUS, HttpStatus.NOT_ACCEPTABLE);
+		}
+		Optional<OrdersEntity> orderOptional = ordersRepository.findById(orderJsonDto.getId());
+		
+		if(orderOptional==null || !orderOptional.isPresent()) {
+			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.BAD_REQUEST);
+		}
+		OrdersEntity orderEntity = orderOptional.get();
+		orderEntity.setStatus(orderStatus.getValue());
+		
+		ordersRepository.save(orderEntity);
+		
+		return new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
 	}
 
 	private OrderResponse mapOrderJsonToOrderEntity(OrderJsonDto orderJson) {

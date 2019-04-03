@@ -1,19 +1,10 @@
-import com.nasnav.NavBox;
-import com.nasnav.controller.OrdersController;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.UserRepository;
-import com.nasnav.enumerations.OrderFailedStatus;
-import com.nasnav.persistence.UserEntity;
-import com.nasnav.response.UserApiResponse;
-import com.nasnav.response.OrderResponse;
-import com.nasnav.service.UserService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,7 +14,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import com.nasnav.NavBox;
+import com.nasnav.controller.OrdersController;
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.UserRepository;
+import com.nasnav.enumerations.OrderFailedStatus;
+import com.nasnav.persistence.UserEntity;
+import com.nasnav.response.OrderResponse;
+import com.nasnav.response.UserApiResponse;
+import com.nasnav.service.UserService;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -44,6 +45,9 @@ public class OrderServiceTest {
     
     @Autowired
     private OrdersRepository orderRepository;
+    
+    @Mock
+    private StockRepository stockRepository;
 
     @Autowired
     UserService userService;
@@ -158,7 +162,7 @@ public class OrderServiceTest {
     }
     
     @Test
-    public void createOrderNonNewStatusTest()  {
+    public void createOrderWithoutProvidingValidStockIdTest()  {
     	// try updating with a non-existing order number
         ResponseEntity<OrderResponse> response = template.postForEntity(
                 "/order/update",
@@ -167,7 +171,23 @@ public class OrderServiceTest {
                         , _testUserId, _authToken), OrderResponse.class);
 
         Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(),response.getStatusCode().value());
-        Assert.assertEquals(OrderFailedStatus.INVALID_STATUS,response.getBody().getStatus());
+        Assert.assertEquals(OrderFailedStatus.INVALID_ORDER,response.getBody().getStatus());
+        Assert.assertFalse(response.getBody().isSuccess());  
+    }
+    
+//    @Test
+    public void createnewOrder()  {
+    	
+    	
+    	// try updating with a non-existing order number
+        ResponseEntity<OrderResponse> response = template.postForEntity(
+                "/order/update",
+                TestCommons.getHttpEntity(
+                		"{ \"order_id\":\"123\", \"status\" : \"CLIENT_CONFIRMED\", \"basket\": [{ \"stock_id\": 1234, \"quantity\": 4}] }"
+                        , _testUserId, _authToken), OrderResponse.class);
+
+        Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(),response.getStatusCode().value());
+        Assert.assertEquals(OrderFailedStatus.INVALID_ORDER,response.getBody().getStatus());
         Assert.assertFalse(response.getBody().isSuccess());  
     }
     
@@ -177,7 +197,7 @@ public class OrderServiceTest {
         ResponseEntity<OrderResponse> response = template.postForEntity(
                 "/order/update",
                 TestCommons.getHttpEntity(
-                        "{\"status\" : \"NON_EXISTING_STATUS\", \"basket\": [{ \"product\": 1234, \"quantity\": 4}] }"
+                        "{ \"order_id\":\"123\", \"status\" : \"NON_EXISTING_STATUS\", \"basket\": [{ \"product\": 1234, \"quantity\": 4}] }"
                         , _testUserId, _authToken), OrderResponse.class);
 
         Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(),response.getStatusCode().value());

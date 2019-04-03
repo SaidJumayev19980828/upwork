@@ -137,8 +137,9 @@ public class UserRegisterTest {
 
     @Test
     public void testInvalidJsonForUserRegisteration() {
-        HttpEntity<Object> userJson = getHttpEntity(
-                "{,,}");
+		// {,,} is not valid json body
+		HttpEntity<Object> userJson = getHttpEntity("{\"name\":\"12\",\"email\":\"a@\"}");
+
         ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/register", userJson, UserApiResponse.class);
         // success should be false
