@@ -1,7 +1,6 @@
 package com.nasnav.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.UserRepository;
@@ -24,8 +23,6 @@ import java.util.Optional;
 @Service
 public class UserServiceImpl implements UserService {
 
-    boolean dryRun = true; // TODO for now, do not actually send the email, just display - change to deployment parameter
-
     private UserRepository userRepository;
     private MailService mailService;
     private PasswordEncoder passwordEncoder;
@@ -37,6 +34,9 @@ public class UserServiceImpl implements UserService {
         this.mailService = mailService;
         this.passwordEncoder = passwordEncoder;
     }
+
+    @Autowired
+    AppConfig appConfig;
 
     @Override
     public UserApiResponse registerUser(UserDTOs.UserRegistrationObject userJson) {
@@ -52,7 +52,7 @@ public class UserServiceImpl implements UserService {
         UserEntity userEntity = userRepository.save(user);
         // send activation email
         userEntity = generateResetPasswordToken(userEntity);
-        sendRecoveryMail(userEntity, dryRun);
+        sendRecoveryMail(userEntity);
         return UserApiResponse.createStatusApiResponse(userEntity.getId(), Arrays.asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
     }
 
@@ -109,7 +109,7 @@ public class UserServiceImpl implements UserService {
 	public UserEntity findUserById(Long userId) {
 		Optional<UserEntity> optional =  userRepository.findById(userId);
 		return optional.isPresent() ? optional.get() : null;
-		
+
 	}
 
     @Override
@@ -126,7 +126,7 @@ public class UserServiceImpl implements UserService {
     public UserApiResponse sendEmailRecovery(String email) {
         UserEntity userEntity = getUserEntityByEmail(email);
         userEntity = generateResetPasswordToken(userEntity);
-        return sendRecoveryMail(userEntity, dryRun);
+        return sendRecoveryMail(userEntity);
     }
 
     /**
@@ -169,17 +169,17 @@ public class UserServiceImpl implements UserService {
      * @param userEntity user entity
      * @return UserApiResponse representing the status of sending email.
      */
-    private UserApiResponse sendRecoveryMail(UserEntity userEntity, boolean dryRun) {
+    private UserApiResponse sendRecoveryMail(UserEntity userEntity) {
         UserApiResponse userApiResponse = new UserApiResponse();
         try {
             // create parameter map to replace parameter by actual UserEntity data.
             Map<String, String> parametersMap = new HashMap<>();
             parametersMap.put(EmailConstants.USERNAME_PARAMETER, userEntity.getName());
             parametersMap.put(EmailConstants.CHANGE_PASSWORD_URL_PARAMETER,
-                    EmailConstants.CHANGE_PASSWORD_URL.concat(userEntity.getResetPasswordToken()));
+                    appConfig.mailRecoveryUrl.concat(userEntity.getResetPasswordToken()));
             // send Recovery mail to user
                 this.mailService.send(userEntity.getEmail(), EmailConstants.CHANGE_PASSWORD_EMAIL_SUBJECT,
-                        EmailConstants.CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap, dryRun);
+                        EmailConstants.CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap);
             // set success to true after sending mail.
             userApiResponse.setSuccess(true);
         } catch (Exception e) {
@@ -390,8 +390,6 @@ public class UserServiceImpl implements UserService {
     }
 
     public boolean checkAuthToken(long userId, String authToken) {
-
-        System.out.println("####" + userRepository.existsByIdAndAuthenticationToken(userId, authToken));
         return userRepository.existsByIdAndAuthenticationToken(userId, authToken);
     }
 
