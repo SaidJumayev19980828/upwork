@@ -10,10 +10,13 @@ import org.springframework.stereotype.Service;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class MailServiceImpl implements MailService {
@@ -63,7 +66,8 @@ public class MailServiceImpl implements MailService {
     @Override
     public void send(String to, String subject, String template, Map<String, String> parametersMap) throws IOException, MessagingException {
         Resource resource = new ClassPathResource(template);
-        String body = new String(Files.readAllBytes(Paths.get(resource.getFile().getAbsolutePath())));
+        String body = new BufferedReader(new InputStreamReader(resource.getInputStream()))
+                .lines().collect(Collectors.joining("\n"));
         for (Map.Entry<String, String> entry : parametersMap.entrySet()) {
             body = body.replaceAll(entry.getKey(), entry.getValue());
         }
