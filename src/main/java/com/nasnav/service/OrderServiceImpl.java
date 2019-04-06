@@ -79,7 +79,7 @@ public class OrderServiceImpl implements OrderService {
 	private OrderResponse createNewOrderAndBasketItems(OrderJsonDto orderJsonDto, Long userId) {
 
 		// Getting the stocks related to current order
-		 List<StocksEntity> stocksEntites = getCurrentStock(orderJsonDto);
+		List<StocksEntity> stocksEntites = getCurrentStock(orderJsonDto);
 		// Getting the actual added stock items
 		Long availableStock = stocksEntites.stream().filter(stock -> stock != null).count();
 
@@ -309,7 +309,7 @@ public class OrderServiceImpl implements OrderService {
 		if (entity.isPresent()) {
 			return new OrderResponse(entity.get());
 		}
-		return new OrderResponse(OrderFailedStatus.UNAUTHENTICATED, HttpStatus.NOT_ACCEPTABLE);
+		return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
 	}
 
 }

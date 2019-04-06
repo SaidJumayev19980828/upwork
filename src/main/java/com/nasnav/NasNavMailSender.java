@@ -17,8 +17,8 @@ public class NasNavMailSender extends JavaMailSenderImpl {
     @Autowired
     private AppConfig config;
 
-    public boolean dryRun = false;
-    public String senderAddress = "";
+    private boolean dryRun = false;
+    private String senderAddress = "";
 
     public NasNavMailSender() {
         setHost("");
@@ -33,8 +33,8 @@ public class NasNavMailSender extends JavaMailSenderImpl {
      */
     @PostConstruct
     public void init() {
-        logger.info("DryRun : " + dryRun);
         dryRun = config.mailDryRun;
+        logger.info("DryRun : " + dryRun);
         logger.info("Mail Host : " + config.mailHostname + ":" + config.mailHostPort);
         setHost(config.mailHostname);
         setPort(config.mailHostPort);

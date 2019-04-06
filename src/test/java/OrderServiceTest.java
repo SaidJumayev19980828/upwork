@@ -36,14 +36,20 @@ import com.nasnav.response.OrderResponse;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.UserService;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
+import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
 public class OrderServiceTest {
 
-    private static String _authToken = "TestAuthToken";
-    private Long _testUserId = null;
+//    private static String _authToken = "TestAuthToken";
+//    private Long _testUserId = null;
+    private UserEntity persistentUser;
 
     private MockMvc mockMvc;
 
@@ -79,34 +85,41 @@ public class OrderServiceTest {
     private OrdersController ordersController;
 
 
+    @PostConstruct
+    public void setupLoginUser() {
+        persistentUser = userRepository.getByEmail("unavailable@nasnav.com");
+        if (persistentUser == null) {
+            persistentUser = new UserEntity();
+            persistentUser.setName("John Smith");
+            persistentUser.setEmail("unavailable@nasnav.com");
+        }
+        persistentUser.setEncPassword("---");
+        userRepository.save(persistentUser);
+    }
+
+    @PreDestroy
+    public void removeLoginUser() {
+        if (persistentUser != null) {
+            userRepository.delete(persistentUser);
+        }
+    }
+
     @Before
     public void setup() {
-        UserEntity user = userRepository.getByEmail(TestCommons.TestUserEmail);
-        if (user == null) {
-            user = new UserEntity();
-            user.setEmail(TestCommons.TestUserEmail);
-            user.setName("Some Test User");
-            user.setEncPassword("");
-        }
-        user.setAuthenticationToken(_authToken);
-        userRepository.save(user);
-        Assert.assertNotNull(user.getId());
-        _testUserId = user.getId();
     }
 
     @After
     public void cleanup() {
-//        userService.deleteUser(_testUserId);
     }
 
-    // @Test
+    @Test
     public void unregisteredUser()  {
 
-        ResponseEntity<UserApiResponse> response = template.postForEntity(
+        ResponseEntity<OrderResponse> response = template.postForEntity(
                 "/order/update",
                 TestCommons.getHttpEntity(
-                        "{ \"basket\": [ { \"product\": 1234, \"quantity\": 4} ] }"
-                        , 1, "XX"), UserApiResponse.class);
+                        "{ \"basket\": [ { \"product\": 1234, \"quantity\": 4} ] }",
+                        1, "XX"), OrderResponse.class);
         Assert.assertEquals(HttpStatus.UNAUTHORIZED.value(),response.getStatusCode().value());
     }
 
@@ -117,8 +130,8 @@ public class OrderServiceTest {
         ResponseEntity<OrderResponse> response = template.postForEntity(
                 "/order/update",
                 TestCommons.getHttpEntity(
-                        "{ \"basket\": [{ \"product\": 1234, \"quantity\": 4}] }"
-                        , _testUserId, _authToken), OrderResponse.class);
+                        "{ \"basket\": [{ \"product\": 1234, \"quantity\": 4}] }",
+                        persistentUser.getId(), persistentUser.getAuthenticationToken()), OrderResponse.class);
 
         Assert.assertEquals(HttpStatus.OK.value(),response.getStatusCode().value());
         Assert.assertTrue(response.getBody().isSuccess());
@@ -133,8 +146,8 @@ public class OrderServiceTest {
         ResponseEntity<OrderResponse> response = template.postForEntity(
                 "/order/update",
                 TestCommons.getHttpEntity(
-                        "{ \"status\": \"NEW\", \"basket\": [] }"
-                        , _testUserId, _authToken), OrderResponse.class);
+                        "{ \"status\": \"NEW\", \"basket\": [] }",
+                        persistentUser.getId(), persistentUser.getAuthenticationToken()), OrderResponse.class);
 
         Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(),response.getStatusCode().value());
         Assert.assertFalse(response.getBody().isSuccess());
@@ -147,8 +160,8 @@ public class OrderServiceTest {
         ResponseEntity<OrderResponse> response = template.postForEntity(
                 "/order/update",
                 TestCommons.getHttpEntity(
-                        "{\"basket\": [{ \"product\": 1234, \"quantity\": 4}] }"
-                        , _testUserId, _authToken), OrderResponse.class);
+                        "{\"basket\": [{ \"product\": 1234, \"quantity\": 4}] }",
+                        persistentUser.getId(), persistentUser.getAuthenticationToken()), OrderResponse.class);
 
         Assert.assertEquals(HttpStatus.OK.value(),response.getStatusCode().value());
         Assert.assertTrue(response.getBody().isSuccess());
@@ -160,8 +173,8 @@ public class OrderServiceTest {
         response = template.postForEntity(
                 "/order/update",
                 TestCommons.getHttpEntity(
-                        "{\"id\":" + orderId + ", \"status\" : \"CLIENT_CONFIRMED\", \"basket\": [{ \"product\": 1234, \"quantity\": 4}] }"
-                        , _testUserId, _authToken), OrderResponse.class);
+                        "{\"id\":" + orderId + ", \"status\" : \"CLIENT_CONFIRMED\", \"basket\": [{ \"product\": 1234, \"quantity\": 4}] }",
+                        persistentUser.getId(), persistentUser.getAuthenticationToken()), OrderResponse.class);
 
         Assert.assertEquals(HttpStatus.OK.value(),response.getStatusCode().value());
         Assert.assertTrue(response.getBody().isSuccess());
@@ -176,8 +189,8 @@ public class OrderServiceTest {
         ResponseEntity<OrderResponse> response = template.postForEntity(
                 "/order/update",
                 TestCommons.getHttpEntity(
-                        "{\"id\": 250, \"status\" : \"CLIENT_CONFIRMED\", \"basket\": [{ \"product\": 1234, \"quantity\": 4}] }"
-                        , _testUserId, _authToken), OrderResponse.class);
+                        "{\"id\": 250, \"status\" : \"CLIENT_CONFIRMED\", \"basket\": [{ \"product\": 1234, \"quantity\": 4}] }",
+                        persistentUser.getId(), persistentUser.getAuthenticationToken()), OrderResponse.class);
 
         Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(),response.getStatusCode().value());
         Assert.assertFalse(response.getBody().isSuccess());  
@@ -189,54 +202,68 @@ public class OrderServiceTest {
         ResponseEntity<OrderResponse> response = template.postForEntity(
                 "/order/update",
                 TestCommons.getHttpEntity(
-                        "{\"status\" : \"CLIENT_CONFIRMED\", \"basket\": [{ \"product\": 1234, \"quantity\": 4}] }"
-                        , _testUserId, _authToken), OrderResponse.class);
+                        "{\"status\" : \"CLIENT_CONFIRMED\", \"basket\": [{ \"product\": 1234, \"quantity\": 4}] }",
+                        persistentUser.getId(), persistentUser.getAuthenticationToken()), OrderResponse.class);
 
         Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(),response.getStatusCode().value());
-        Assert.assertEquals(OrderFailedStatus.INVALID_ORDER,response.getBody().getStatus());
+        Assert.assertEquals(INVALID_ORDER,response.getBody().getStatus());
         Assert.assertFalse(response.getBody().isSuccess());  
     }
     
     @Test
     public void createnewOrder()  {
 
-
-    	ShopsEntity shopsEntity = new ShopsEntity();
-    	shopsEntity.setName("any");
-    	shopsEntity.setCreatedAt(new Date());
-    	shopsEntity.setUpdatedAt(new Date());
-
-    	shopsEntity = shopsRepository.save(shopsEntity);
     	Integer quantity=5;
     	BigDecimal itemPrice = new BigDecimal(500).setScale(2);
-    	Long stockId=null;
-    	StocksEntity stocksEntity = new StocksEntity();
-    	stocksEntity.setCreationDate(new Date());
-    	stocksEntity.setPrice(itemPrice);
-    	stocksEntity.setQuantity(quantity);
-    	stocksEntity.setUpdateDate(new Date());
-    	stocksEntity.setShopsEntity(shopsEntity);
-    	stocksEntity = stockRepository.save(stocksEntity);
 
-    	stockId= stocksEntity.getId();
+    	// scope == 1: both price and quantity available in the table
+    	for (int scope = 1; scope < 3; scope++) {
+            ShopsEntity shopsEntity = new ShopsEntity();
+            shopsEntity.setName("any");
+            shopsEntity.setCreatedAt(new Date());
+            shopsEntity.setUpdatedAt(new Date());
+            shopsEntity = shopsRepository.save(shopsEntity);
 
-    	// try updating with a non-existing order number
-        ResponseEntity<OrderResponse> response = template.postForEntity(
-                "/order/update",
-                TestCommons.getHttpEntity(
-                		"{ \"status\" : \"NEW\", \"basket\": [{ \"stock_id\": "+stockId+", \"quantity\": "+quantity+"}] }"
-                        , _testUserId, _authToken), OrderResponse.class);
+            StocksEntity stocksEntity = new StocksEntity();
+            stocksEntity.setCreationDate(new Date());
+            if (scope < 3) {
+                stocksEntity.setPrice(itemPrice);
+            } else {
+                stocksEntity.setPrice(new BigDecimal(0));
+            }
+            if (scope != 2) {
+                stocksEntity.setQuantity(quantity);
+            } else {
+                stocksEntity.setQuantity(0);
+            }
+            stocksEntity.setUpdateDate(new Date());
+            stocksEntity.setShopsEntity(shopsEntity);
+            stocksEntity = stockRepository.save(stocksEntity);
 
-        basketRepository.deleteByOrdersEntity_Id(response.getBody().getOrderId());
-    	stockRepository.delete(stocksEntity);
-    	shopsRepository.delete(shopsEntity);
-    	orderRepository.deleteById(response.getBody().getOrderId());
+            ResponseEntity<OrderResponse> response = template.postForEntity(
+                    "/order/update",
+                    TestCommons.getHttpEntity(
+                            "{ \"status\" : \"NEW\", \"basket\": [{ \"stock_id\": " + stocksEntity.getId() + ", \"quantity\": " + quantity + "}] }",
+                            persistentUser.getId(), persistentUser.getAuthenticationToken()), OrderResponse.class);
 
-        Assert.assertEquals(HttpStatus.CREATED.value(),response.getStatusCode().value());
-        Assert.assertNull(response.getBody().getStatus());
-        Assert.assertTrue(response.getBody().isSuccess());
-        Assert.assertEquals(itemPrice.multiply(new BigDecimal(quantity)),response.getBody().getPrice());
-        Assert.assertNotNull(response.getBody().getOrderId());
+            basketRepository.deleteByOrdersEntity_Id(response.getBody().getOrderId());
+            stockRepository.delete(stocksEntity);
+            orderRepository.deleteById(response.getBody().getOrderId());
+            shopsRepository.delete(shopsEntity);
+
+            if (scope != 2) {
+                Assert.assertEquals(HttpStatus.CREATED.value(), response.getStatusCode().value());
+                Assert.assertNull(response.getBody().getStatus());
+                Assert.assertTrue(response.getBody().isSuccess());
+                Assert.assertEquals(itemPrice.multiply(new BigDecimal(quantity)), response.getBody().getPrice());
+                Assert.assertNotNull(response.getBody().getOrderId());
+            } else {
+                // with quantity = 0, order shall not be placed
+                Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode().value());
+                Assert.assertEquals(INVALID_ORDER, response.getBody().getStatus());
+
+            }
+        }
     }
 
 
@@ -277,13 +304,13 @@ public class OrderServiceTest {
         ResponseEntity<OrderResponse> response = template.postForEntity(
                 "/order/update",
                 TestCommons.getHttpEntity(
-                		"{ \"order_id\":\""+ordersEntity.getId()+"\",\"status\" : \"CLIENT_CONFIRMED\", \"basket\": [{ \"stock_id\": "+stockId+", \"quantity\": "+quantity+"}] }"
-                        , _testUserId, _authToken), OrderResponse.class);
+                		"{ \"order_id\":\""+ordersEntity.getId()+"\",\"status\" : \"CLIENT_CONFIRMED\", \"basket\": [{ \"stock_id\": "+stockId+", \"quantity\": "+quantity+"}] }",
+                        persistentUser.getId(), persistentUser.getAuthenticationToken()), OrderResponse.class);
 
         basketRepository.deleteByOrdersEntity_Id(response.getBody().getOrderId());
         stockRepository.delete(stocksEntity);
-        shopsRepository.delete(shopsEntity);
         orderRepository.deleteById(response.getBody().getOrderId());
+        shopsRepository.delete(shopsEntity);
 
         Assert.assertEquals(HttpStatus.OK.value(),response.getStatusCode().value());
         Assert.assertNull(response.getBody().getStatus());
@@ -297,11 +324,11 @@ public class OrderServiceTest {
         ResponseEntity<OrderResponse> response = template.postForEntity(
                 "/order/update",
                 TestCommons.getHttpEntity(
-                        "{ \"order_id\":\"123\", \"status\" : \"NON_EXISTING_STATUS\", \"basket\": [{ \"product\": 1234, \"quantity\": 4}] }"
-                        , _testUserId, _authToken), OrderResponse.class);
+                        "{ \"order_id\":\"123\", \"status\" : \"NON_EXISTING_STATUS\", \"basket\": [{ \"product\": 1234, \"quantity\": 4}] }",
+                        persistentUser.getId(), persistentUser.getAuthenticationToken()), OrderResponse.class);
 
         Assert.assertEquals(HttpStatus.BAD_REQUEST.value(),response.getStatusCode().value());
-        Assert.assertEquals(OrderFailedStatus.INVALID_ORDER,response.getBody().getStatus());
+        Assert.assertEquals(INVALID_ORDER,response.getBody().getStatus());
         Assert.assertFalse(response.getBody().isSuccess());  
     }
 
