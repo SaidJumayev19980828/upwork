@@ -1,10 +1,12 @@
+import java.math.BigDecimal;
+import java.util.Date;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,10 +19,18 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.nasnav.NavBox;
 import com.nasnav.controller.OrdersController;
+import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.enumerations.OrderFailedStatus;
+import com.nasnav.enumerations.OrderStatus;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.response.UserApiResponse;
@@ -46,9 +56,21 @@ public class OrderServiceTest {
     @Autowired
     private OrdersRepository orderRepository;
     
-    @Mock
+    @Autowired
     private StockRepository stockRepository;
+    
+    @Autowired
+    private BasketRepository basketRepository;
+    
+    @Autowired
+    private OrganizationRepository organizationRepository;
 
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private ShopsRepository shopsRepository;
+    
     @Autowired
     UserService userService;
 
@@ -74,7 +96,7 @@ public class OrderServiceTest {
 
     @After
     public void cleanup() {
-        userService.deleteUser(_testUserId);
+//        userService.deleteUser(_testUserId);
     }
 
     // @Test
@@ -175,22 +197,94 @@ public class OrderServiceTest {
         Assert.assertFalse(response.getBody().isSuccess());  
     }
     
-//    @Test
+    @Test
     public void createnewOrder()  {
+
     	
+    	ShopsEntity shopsEntity = new ShopsEntity();
+    	shopsEntity.setName("any");
+    	shopsEntity.setCreatedAt(new Date());
+    	shopsEntity.setUpdatedAt(new Date());
+    	
+    	shopsEntity = shopsRepository.save(shopsEntity);
+    	Integer quantity=5;
+    	BigDecimal itemPrice = new BigDecimal(500).setScale(2);
+    	Long stockId=null;
+    	StocksEntity stocksEntity = new StocksEntity();
+    	stocksEntity.setCreationDate(new Date());
+    	stocksEntity.setPrice(itemPrice);
+    	stocksEntity.setQuantity(quantity);
+    	stocksEntity.setUpdateDate(new Date());
+    	stocksEntity.setShopsEntity(shopsEntity);
+    	stocksEntity = stockRepository.save(stocksEntity);
+    	
+    	stockId= stocksEntity.getId();
     	
     	// try updating with a non-existing order number
         ResponseEntity<OrderResponse> response = template.postForEntity(
                 "/order/update",
                 TestCommons.getHttpEntity(
-                		"{ \"order_id\":\"123\", \"status\" : \"CLIENT_CONFIRMED\", \"basket\": [{ \"stock_id\": 1234, \"quantity\": 4}] }"
+                		"{ \"status\" : \"NEW\", \"basket\": [{ \"stock_id\": "+stockId+", \"quantity\": "+quantity+"}] }"
                         , _testUserId, _authToken), OrderResponse.class);
 
-        Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(),response.getStatusCode().value());
-        Assert.assertEquals(OrderFailedStatus.INVALID_ORDER,response.getBody().getStatus());
-        Assert.assertFalse(response.getBody().isSuccess());  
+//        basketRepository.deleteByOrdersEntity_Id(response.getBody().getOrderId());
+//    	stockRepository.deleteById(stockId);
+//    	shopsRepository.deleteById(shopsEntity.getId());
+
+        Assert.assertEquals(HttpStatus.CREATED.value(),response.getStatusCode().value());
+        Assert.assertNull(response.getBody().getStatus());
+        Assert.assertTrue(response.getBody().isSuccess());
+        Assert.assertEquals(itemPrice.multiply(new BigDecimal(quantity)),response.getBody().getPrice());
+        Assert.assertNotNull(response.getBody().getOrderId());
     }
+
     
+    @Test
+    public void updateCurrentOrder()  {
+
+    	BigDecimal amount = new BigDecimal(500.25);
+
+    	ShopsEntity shopsEntity = new ShopsEntity();
+    	shopsEntity.setName("any");
+    	shopsEntity.setCreatedAt(new Date());
+    	shopsEntity.setUpdatedAt(new Date());
+    	
+    	shopsEntity = shopsRepository.save(shopsEntity);
+    	Integer quantity=5;
+    	BigDecimal itemPrice = new BigDecimal(500).setScale(2);
+    	Long stockId=null;
+    	StocksEntity stocksEntity = new StocksEntity();
+    	stocksEntity.setCreationDate(new Date());
+    	stocksEntity.setPrice(itemPrice);
+    	stocksEntity.setQuantity(quantity);
+    	stocksEntity.setUpdateDate(new Date());
+    	stocksEntity.setShopsEntity(shopsEntity);
+    	stocksEntity = stockRepository.save(stocksEntity);
+    	
+    	stockId= stocksEntity.getId();
+
+    	OrdersEntity ordersEntity = new OrdersEntity();
+    	ordersEntity.setCreationDate(new Date());
+    	
+    	ordersEntity.setAmount(amount);
+    	ordersEntity.setShopsEntity(shopsEntity);
+    	ordersEntity.setStatus(OrderStatus.NEW.getValue());
+    	ordersEntity.setUpdateDate(new Date());
+    	ordersEntity = orderRepository.save(ordersEntity);
+
+    	// try updating with a non-existing order number
+        ResponseEntity<OrderResponse> response = template.postForEntity(
+                "/order/update",
+                TestCommons.getHttpEntity(
+                		"{ \"order_id\":\""+ordersEntity.getId()+"\",\"status\" : \"CLIENT_CONFIRMED\", \"basket\": [{ \"stock_id\": "+stockId+", \"quantity\": "+quantity+"}] }"
+                        , _testUserId, _authToken), OrderResponse.class);
+
+        Assert.assertEquals(HttpStatus.OK.value(),response.getStatusCode().value());
+        Assert.assertNull(response.getBody().getStatus());
+        Assert.assertTrue(response.getBody().isSuccess());
+        Assert.assertNotNull(response.getBody().getOrderId());
+    }
+
     @Test
     public void updateOrderNonExistingStatusTest()  {
     	// try updating with a non-existing order number
@@ -200,8 +294,8 @@ public class OrderServiceTest {
                         "{ \"order_id\":\"123\", \"status\" : \"NON_EXISTING_STATUS\", \"basket\": [{ \"product\": 1234, \"quantity\": 4}] }"
                         , _testUserId, _authToken), OrderResponse.class);
 
-        Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(),response.getStatusCode().value());
-        Assert.assertEquals(OrderFailedStatus.INVALID_STATUS,response.getBody().getStatus());
+        Assert.assertEquals(HttpStatus.BAD_REQUEST.value(),response.getStatusCode().value());
+        Assert.assertEquals(OrderFailedStatus.INVALID_ORDER,response.getBody().getStatus());
         Assert.assertFalse(response.getBody().isSuccess());  
     }
 

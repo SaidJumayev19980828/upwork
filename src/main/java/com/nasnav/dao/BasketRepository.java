@@ -9,4 +9,6 @@ import com.nasnav.persistence.BasketsEntity;
 public interface BasketRepository extends CrudRepository<BasketsEntity, Long>{
 
 	List<BasketsEntity> findByOrdersEntity_Id(Long orderId);
+	
+	void deleteByOrdersEntity_Id(Long orderId);
 }

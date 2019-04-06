@@ -33,12 +33,12 @@ public class BasketsEntity extends AbstractPersistable<Long> implements BaseEnti
 	private BigDecimal price;
 	private Integer currency;
 	
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "order_id", referencedColumnName = "id")
     @JsonIgnore
     private OrdersEntity ordersEntity;
    
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "stock_id", referencedColumnName = "id")
     @JsonIgnore
     private StocksEntity stocksEntity;

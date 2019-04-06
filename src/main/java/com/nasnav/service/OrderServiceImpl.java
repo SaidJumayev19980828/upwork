@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -35,7 +37,9 @@ public class OrderServiceImpl implements OrderService {
 	private final BasketRepository basketRepository;
 
 	private final StockRepository stockRepository;
-	
+
+	private final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class.getName());
+
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
 			StockRepository stockRepository) {
@@ -57,12 +61,11 @@ public class OrderServiceImpl implements OrderService {
 			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
 		}
 
-
 		if (orderJson.getId() == null || orderJson.getId() == 0) {
 			return createNewOrderAndBasketItems(orderJson, userId);
-		} else if(orderJson.getStatus() != null){
-			return updateCurrentOrderStatus(orderJson);
-		}else {
+		} else if (orderJson.getStatus() != null) {
+			return updateCurrentOrder(orderJson);
+		} else {
 			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
 		}
 		// map order object from API to OrdersEntity
@@ -78,7 +81,7 @@ public class OrderServiceImpl implements OrderService {
 		// Getting the stocks related to current order
 		List<StocksEntity> stocksEntites = new ArrayList<>(orderJsonDto.getBasket().size());
 
-		orderJsonDto.getBasket().stream().filter(basketItem->basketItem.getStockId()!=null).forEach(basketItem -> {
+		orderJsonDto.getBasket().stream().filter(basketItem -> basketItem.getStockId() != null).forEach(basketItem -> {
 			Optional<StocksEntity> optionalStocksEntity = stockRepository.findById(basketItem.getStockId());
 
 			if (optionalStocksEntity == null || !optionalStocksEntity.isPresent()
@@ -114,58 +117,122 @@ public class OrderServiceImpl implements OrderService {
 
 		orderEntity = ordersRepository.save(orderEntity);
 		
-		for(BasketItem basketItem : orderJsonDto.getBasket()) {
-			StocksEntity stocksEntity = stocksEntites.stream().filter(stock->stock.getId()==basketItem.getStockId()).findFirst().get();
-			BasketsEntity basketsEntity = new BasketsEntity();
-			basketsEntity.setStocksEntity(stocksEntity);
-			basketsEntity.setOrdersEntity(orderEntity);
-			//TODO make sure price here means item price multiplied by quantity
-			basketsEntity.setPrice(new BigDecimal(basketItem.getQuantity()).multiply(stocksEntity.getPrice()));
-			basketsEntity.setQuantity(new BigDecimal(basketItem.getQuantity()));
-			
-			//TODO how currency determined for specific order
-			basketsEntity.setCurrency(TransactionCurrency.EGP.getValue());
-			
-			basketRepository.save(basketsEntity);
+		addItemsToBasket(orderJsonDto, orderEntity, stocksEntites);
+
+		OrderResponse orderResponse = new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
+		orderResponse.setCode(HttpStatus.CREATED);
+		return orderResponse;
+
+	}
+
+	private OrderResponse updateCurrentOrder(OrderJsonDto orderJsonDto) {
+
+		OrderStatus newStatus = OrderStatus.findEnum(orderJsonDto.getStatus());
+
+		if (newStatus == null && (orderJsonDto.getBasket() == null || orderJsonDto.getBasket().isEmpty())) {
+			log.error("Order update should be either status or changing basket items");
+			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
+		}
+		Optional<OrdersEntity> orderOptional = ordersRepository.findById(orderJsonDto.getId());
+
+		if (orderOptional == null || !orderOptional.isPresent()) {
+			log.error("Supplied Order Id was not found");
+			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.BAD_REQUEST);
 		}
 
+		OrdersEntity orderEntity = orderOptional.get();
+
+		OrderStatus currentOrderStatus = OrderStatus.findEnum(orderEntity.getStatus());
+
+		OrderResponse orderResponse = null;
+		if (newStatus != null) {
+			orderResponse = updateCurrentOrderStatus(orderJsonDto, orderEntity, newStatus, currentOrderStatus);
+		}
+
+		if (orderJsonDto.getBasket() != null && !orderJsonDto.getBasket().isEmpty()) {
+			orderResponse = updateCurrentOrderBasket(orderJsonDto, orderEntity);
+		}
+
+		return orderResponse;
+	}
+
+	private OrderResponse updateCurrentOrderBasket(OrderJsonDto orderJsonDto, OrdersEntity orderEntity) {
+
+		basketRepository.deleteByOrdersEntity_Id(orderJsonDto.getId());
+		
+		// Getting the stocks related to current order
+		List<StocksEntity> stocksEntites = new ArrayList<>(orderJsonDto.getBasket().size());
+
+		orderJsonDto.getBasket().stream().filter(basketItem -> basketItem.getStockId() != null).forEach(basketItem -> {
+			Optional<StocksEntity> optionalStocksEntity = stockRepository.findById(basketItem.getStockId());
+
+			if (optionalStocksEntity == null || !optionalStocksEntity.isPresent()
+					|| basketItem.getQuantity() > optionalStocksEntity.get().getQuantity()) {
+				// stock Id is invalid or available quantity is less than required
+				log.error("Stock Id {} is invalid",basketItem.getStockId());
+				return;
+			}
+			stocksEntites.add(optionalStocksEntity.get());
+		});
+
+		orderEntity.setAmount(calculateOrderAmount(orderJsonDto, stocksEntites));
+		orderEntity.setShopsEntity(stocksEntites.get(0).getShopsEntity());
+		orderEntity.setUpdateDate(new Date());
+		orderEntity = ordersRepository.save(orderEntity);
+		
+		addItemsToBasket(orderJsonDto, orderEntity, stocksEntites);
+		
 		return new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
 
 	}
 
+	private OrderResponse updateCurrentOrderStatus(OrderJsonDto orderJsonDto, OrdersEntity orderEntity,
+			OrderStatus newStatus, OrderStatus currentOrderStatus) {
+
+		if ((newStatus.getValue() >= currentOrderStatus.getValue())
+				&& (orderJsonDto.getBasket() == null || orderJsonDto.getBasket().isEmpty())) {
+			// TODO check with Marek if this valid from business perspective
+			log.error("Cannot update order staus to previous status");
+			return new OrderResponse(OrderFailedStatus.INVALID_STATUS, HttpStatus.BAD_REQUEST);
+		}
+
+		orderEntity.setStatus(newStatus.getValue());
+		orderEntity.setUpdateDate(new Date());
+		orderEntity = ordersRepository.save(orderEntity);
+
+		return new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
+	}
+
+	private void addItemsToBasket(OrderJsonDto orderJsonDto,OrdersEntity orderEntity,List<StocksEntity> stocksEntites ) {
+
+		for (BasketItem basketItem : orderJsonDto.getBasket()) {
+			StocksEntity stocksEntity = stocksEntites.stream().filter(stock -> stock.getId() == basketItem.getStockId())
+					.findFirst().get();
+			BasketsEntity basketsEntity = new BasketsEntity();
+			basketsEntity.setStocksEntity(stocksEntity);
+			basketsEntity.setOrdersEntity(orderEntity);
+			// TODO make sure price here means item price multiplied by quantity
+			basketsEntity.setPrice(new BigDecimal(basketItem.getQuantity()).multiply(stocksEntity.getPrice()));
+			basketsEntity.setQuantity(new BigDecimal(basketItem.getQuantity()));
+
+			// TODO how currency determined for specific order
+			basketsEntity.setCurrency(TransactionCurrency.EGP.getValue());
+
+			basketRepository.save(basketsEntity);
+		}
+
+	}
 	private BigDecimal calculateOrderAmount(OrderJsonDto orderJsonDto, List<StocksEntity> stocksEntites) {
 
-		BigDecimal totalAmount = new BigDecimal(0);
-		orderJsonDto.getBasket().stream().forEach(basketItem -> {
+		return orderJsonDto.getBasket().stream().map(basketItem -> {
 
 			BigDecimal price = stocksEntites.stream().filter(stock -> stock.getId() == basketItem.getStockId())
 					.findFirst().get().getPrice();
 			// TODO Discount rules to be applied if required
 
-			totalAmount.add(price.multiply(new BigDecimal(basketItem.getQuantity())));
-		});
+			return price.multiply(new BigDecimal(basketItem.getQuantity()));
+		}).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-		return totalAmount;
-	}
-
-	private OrderResponse updateCurrentOrderStatus(OrderJsonDto orderJsonDto) {
-
-		OrderStatus orderStatus = OrderStatus.findEnum(orderJsonDto.getStatus());
-		
-		if(orderStatus==null) {
-			return new OrderResponse(OrderFailedStatus.INVALID_STATUS, HttpStatus.NOT_ACCEPTABLE);
-		}
-		Optional<OrdersEntity> orderOptional = ordersRepository.findById(orderJsonDto.getId());
-		
-		if(orderOptional==null || !orderOptional.isPresent()) {
-			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.BAD_REQUEST);
-		}
-		OrdersEntity orderEntity = orderOptional.get();
-		orderEntity.setStatus(orderStatus.getValue());
-		
-		ordersRepository.save(orderEntity);
-		
-		return new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
 	}
 
 	private OrderResponse mapOrderJsonToOrderEntity(OrderJsonDto orderJson) {
