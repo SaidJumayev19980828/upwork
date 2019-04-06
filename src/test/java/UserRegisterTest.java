@@ -1,3 +1,4 @@
+import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.controller.UserController;
@@ -39,6 +40,9 @@ public class UserRegisterTest {
     private TestRestTemplate template;
 
     @Autowired
+    private AppConfig config;
+
+    @Autowired
     UserService userService;
 
     @Autowired
@@ -46,6 +50,7 @@ public class UserRegisterTest {
 
     @Before
     public void setup() {
+        config.mailDryRun = true;
         mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
         cleanup();
     }
@@ -143,9 +148,6 @@ public class UserRegisterTest {
                 "/user/register", userJson, UserApiResponse.class);
         // success should be false
         Assert.assertFalse(response.getBody().isSuccess());
-        // response status should contain INVALID_NAME
-        Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_NAME));
-        Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_EMAIL));
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
@@ -258,7 +260,6 @@ public class UserRegisterTest {
         ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/recover", userJson, UserApiResponse.class);
 
-System.out.println("###" + response.getBody().toString());
         Assert.assertFalse(response.getBody().isSuccess());
         Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_PASSWORD));
         Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());

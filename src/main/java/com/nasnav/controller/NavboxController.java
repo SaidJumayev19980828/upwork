@@ -37,14 +37,11 @@ public class NavboxController {
     @Autowired
     private ProductService productService;
 
-/*
-    @GetMapping("/categories/{organization_id}")
-    public ResponseEntity<?> getOrganizationCategories(@PathVariable("organization_id") Long organizationId) throws BusinessException {
-
-        return null;
-    }
-*/
-
+    @ApiOperation(value = "Get information about brand by its ID", nickname = "brandInfo")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+            @io.swagger.annotations.ApiResponse(code = 404, message = "No brand data for the supplied ID found"),
+    })
     @GetMapping(value = "/brand")
     public ResponseEntity<?> getBrandById(@RequestParam(name = "brand_id") Long brandId) throws BusinessException {
 
@@ -57,19 +54,19 @@ public class NavboxController {
         response.put("name",brandRepresentationObject.getName());
         response.put("p_name",brandRepresentationObject.getPName());
         response.put("logo",brandRepresentationObject.getLogoUrl());
-        response.put("banner",brandRepresentationObject.getBanner());
+        response.put("banner",brandRepresentationObject.getBannerImage());
 
         return new ResponseEntity<>(response.toString(), HttpStatus.OK);
     }
 
     @ResponseStatus(value = HttpStatus.OK)
-    @RequestMapping(value="/organization",
-            method = RequestMethod.GET,
-            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE,
+    @GetMapping(value="/organization",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Get organization's info by name", notes = "Searches organization by either org_id or p_name", response = OrganizationRepresentationObject.class)
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success", response = OrganizationRepresentationObject.class)
+            @ApiResponse(code = 200, message = "Success", response = OrganizationRepresentationObject.class),
+            @ApiResponse(code = 404, message = "Not found. No data for the supplied parameter", response = OrganizationRepresentationObject.class),
+            @ApiResponse(code = 400, message = "Missing parameter. Either org_id or p_name is required", response = OrganizationRepresentationObject.class)
     })
     public @ResponseBody
     OrganizationRepresentationObject getOrganizationByName(@RequestParam(name="p_name",required=false) String organizationName, @RequestParam(name="org_id",required=false) Long organizationId) throws BusinessException {
@@ -84,19 +81,30 @@ public class NavboxController {
     }
 
 
+    @ApiOperation(value = "Get selected organization's shops", nickname = "orgShops")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+            @io.swagger.annotations.ApiResponse(code = 404, message = "There are no shops matching this org_id"),
+    })
     @GetMapping("/shops")
-    public ResponseEntity<?> getShopByIdOrShopsByOrganization(
-            @RequestParam(name = "shop_id", required = false) Long shopId,
-            @RequestParam(name = "org_id", required = false) Long orgId) throws BusinessException {
-
-        if (shopId == null && orgId == null) {
-            throw new BusinessException("Provide either shop_id or org_id request param", null, HttpStatus.BAD_REQUEST);
-        }
-        if (shopId != null)
-            return new ResponseEntity<>(shopService.getShopById(shopId), HttpStatus.OK);
+    public ResponseEntity<?> getShopsByOrganization(
+            @RequestParam(name = "org_id") Long orgId) throws BusinessException {
 
         return new ResponseEntity<>(shopService.getOrganizationShops(orgId), HttpStatus.OK);
     }
+
+    @ApiOperation(value = "Get specific shop's info", nickname = "shopInfo")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+            @io.swagger.annotations.ApiResponse(code = 404, message = "No shop matching the supplied ID found"),
+    })
+    @GetMapping("/shop")
+    public ResponseEntity<?> getShopById(
+            @RequestParam(name = "shop_id") Long shopId) throws BusinessException {
+
+        return new ResponseEntity<>(shopService.getShopById(shopId), HttpStatus.OK);
+    }
+
 
     @GetMapping("/products")
     public ResponseEntity<?> getProducts(@RequestParam(name = "org_id",required = false) Long organizationId,

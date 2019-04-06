@@ -1,24 +1,30 @@
 package com.nasnav.persistence;
 
 import java.util.Date;
+import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.ProductRepresentationObject;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Entity
 @Table(name = "products")
 @Data
+@EqualsAndHashCode(callSuper=false)
 public class ProductEntity extends AbstractPersistable<Long> implements BaseEntity {
 
     @Id
@@ -42,9 +48,9 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
     private String itemId;
 
     @Column(name = "created_at")
-    private Date createdAt;
+    private Date creationdDate;
     @Column(name = "updated_at")
-    private Date updatedAt;
+    private Date updateDate;
 
     @Column(name="organization_id")
     private Long organizationId;
@@ -54,6 +60,15 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
     
     @Column(name="brand_id")
     private Long brandId;
+
+    @OneToMany(mappedBy="productEntity")
+    @JsonIgnore
+    private Set<StocksEntity> stocksEntities;
+
+    @OneToOne(mappedBy = "productEntity")
+    @JsonIgnore
+    private ProductVariants productVariants;
+
 //    @JsonIgnore
 //    @OneToOne(cascade = CascadeType.ALL)
 //    @JoinColumn(name = "category_id", referencedColumnName = "id")

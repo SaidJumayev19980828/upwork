@@ -13,7 +13,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
@@ -40,6 +39,9 @@ public class ShopsEntity extends AbstractPersistable<Long> implements BaseEntity
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
+    @Column(name = "p_name")
+    private String pName;
+
     private String country;
     private String city;
     private String zip;
@@ -49,43 +51,44 @@ public class ShopsEntity extends AbstractPersistable<Long> implements BaseEntity
     private String floor;
     @Column(name = "phone_number")
     private String phoneNumber;
-    @Column(name = "brand_id")
-    private Long brandId;
-    private BigDecimal lat;
-    private BigDecimal lng;
-    @Column(name = "created_at")
-    private Date createdAt;
-    @Column(name = "updated_at")
-    private Date updatedAt;
-    @Column(name = "remote_id")
-    private Integer remoteId;
-    @Column(name = "building_id")
-    private Integer buildingId;
-    @Column(name = "work_times")
-    private String workTimes;
-    @Column(name = "view_image")
-    private String viewImage;
-    @Column(name = "p_street")
-    private String pStreet;
-    @Column(name = "time_from")
-    private Timestamp timeFrom;
-    @Column(name = "time_to")
-    private Timestamp timeTo;
-
-    @Type(type = "com.nasnav.persistence.GenericArrayType")
-    @Column(name = "work_days")
-    private String[] workDays;
-
-    private String logo;
-    @Column(name = "enable_logo")
-    private Boolean enableLogo;
-    private String address;
-    private String banner;
-    @Column(name = "p_name")
-    private String pName;
     private String area;
     @Column(name = "p_area")
     private String pArea;
+    @Column(precision=10, scale=2)
+    private BigDecimal lat;
+    @Column(precision=10, scale=2)
+    private BigDecimal lng;
+
+//    @Column(name = "brand_id")
+//    private Long brandId;
+    @Column(name = "created_at")
+    private Date createdAt;
+    @Column(name = "updated_at")
+    private Date updatedAt = new Date();;
+//    @Column(name = "remote_id")
+//    private Integer remoteId;
+//    @Column(name = "building_id")
+//    private Integer buildingId;
+//    @Column(name = "work_times")
+//    private String workTimes;
+//    @Column(name = "view_image")
+//    private String viewImage;
+//    @Column(name = "p_street")
+//    private String pStreet;
+//    @Column(name = "time_from")
+//    private Timestamp timeFrom;
+//    @Column(name = "time_to")
+//    private Timestamp timeTo;
+
+//    @Type(type = "com.nasnav.persistence.GenericArrayType")
+//    @Column(name = "work_days")
+//    private String[] workDays;
+
+    private String logo;
+//    @Column(name = "enable_logo")
+//    private Boolean enableLogo;
+//    private String address;
+    private String banner;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "mall_id", referencedColumnName = "id")
@@ -101,6 +104,13 @@ public class ShopsEntity extends AbstractPersistable<Long> implements BaseEntity
     @JsonIgnore
     private Set<ShopsOpeningTimesEntity> shopsOpeningTimesEntities;
 
+    @OneToMany(mappedBy="shopsEntity")
+    @JsonIgnore
+    private Set<OrdersEntity> ordersEntity;
+
+    @OneToMany(mappedBy="shopsEntity")
+    @JsonIgnore
+    private Set<StocksEntity> stocksEntities;
 
     @Override
     public BaseRepresentationObject getRepresentation() {

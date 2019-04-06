@@ -1,20 +1,27 @@
 package com.nasnav.controller;
 
-import com.nasnav.dto.OrderJsonDto;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.OrderService;
 import com.nasnav.service.UserService;
+
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponses;
 
 @RestController
 @RequestMapping("/order")
@@ -45,7 +52,7 @@ public class OrdersController {
     	if(userToken == null || userService.findUserById(parsedUserId) == null || !userService.checkAuthToken(parsedUserId, userToken)) {
     		response = new OrderResponse(OrderFailedStatus.UNAUTHENTICATED, HttpStatus.UNAUTHORIZED);
     	} else {
-        	response = this.orderService.updateOrder(orderJson);	
+        	response = this.orderService.updateOrder(orderJson,parsedUserId);
     	}        
         return new ResponseEntity<>(response, response.getCode());
     }

@@ -7,8 +7,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import javax.persistence.Column;
-
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
         "id",
@@ -16,7 +14,8 @@ import javax.persistence.Column;
         "p_name",
         "display_name",
         "category_id",
-        "logo_url"
+        "logo_url",
+        "banner"
 })
 
 @Data
@@ -35,7 +34,7 @@ public class Organization_BrandRepresentationObject extends BaseRepresentationOb
     private Integer categoryId;
     @JsonProperty("logo_url")
     private String logoUrl;
-    @JsonIgnore
-    private String banner;
+    @JsonProperty("banner")
+    private String bannerImage;
 
 }

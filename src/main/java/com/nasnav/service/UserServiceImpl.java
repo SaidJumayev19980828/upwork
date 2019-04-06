@@ -284,8 +284,7 @@ public class UserServiceImpl implements UserService {
             boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncPassword());
             if (passwordMatched) {
                 // check if account is locked
-                boolean accountIsLocked = isAccountLocked(userEntity);
-                if (accountIsLocked) {
+                if (isAccountLocked(userEntity)) { //NOSONAR
                     UserApiResponse failedLoginResponse = EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.ACCOUNT_SUSPENDED));
                     throw new EntityValidationException("ACCOUNT_SUSPENDED ", failedLoginResponse, HttpStatus.LOCKED);
                 }

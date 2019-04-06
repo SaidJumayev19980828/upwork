@@ -38,7 +38,7 @@ public class NasNavMailSender extends JavaMailSenderImpl {
         logger.info("Mail Host : " + config.mailHostname + ":" + config.mailHostPort);
         setHost(config.mailHostname);
         setPort(config.mailHostPort);
-        if (config.mailUsername != null && config.mailUsername != "") {
+        if (config.mailUsername != null && !config.mailUsername.equals("")) {
             Properties props = new Properties();
             props.put("mail.transport.protocol", "smtp");
             props.put("mail.smtp.auth", true);
