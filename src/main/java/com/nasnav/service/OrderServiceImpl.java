@@ -79,19 +79,7 @@ public class OrderServiceImpl implements OrderService {
 	private OrderResponse createNewOrderAndBasketItems(OrderJsonDto orderJsonDto, Long userId) {
 
 		// Getting the stocks related to current order
-		List<StocksEntity> stocksEntites = new ArrayList<>(orderJsonDto.getBasket().size());
-
-		orderJsonDto.getBasket().stream().filter(basketItem -> basketItem.getStockId() != null).forEach(basketItem -> {
-			Optional<StocksEntity> optionalStocksEntity = stockRepository.findById(basketItem.getStockId());
-
-			if (optionalStocksEntity == null || !optionalStocksEntity.isPresent()
-					|| basketItem.getQuantity() > optionalStocksEntity.get().getQuantity()) {
-				// stock Id is invalid or available quantity is less than required
-				return;
-			}
-			stocksEntites.add(optionalStocksEntity.get());
-		});
-
+		 List<StocksEntity> stocksEntites = getCurrentStock(orderJsonDto);
 		// Getting the actual added stock items
 		Long availableStock = stocksEntites.stream().filter(stock -> stock != null).count();
 
@@ -116,13 +104,32 @@ public class OrderServiceImpl implements OrderService {
 		orderEntity.setUser_id(userId);
 
 		orderEntity = ordersRepository.save(orderEntity);
-		
+
 		addItemsToBasket(orderJsonDto, orderEntity, stocksEntites);
 
 		OrderResponse orderResponse = new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
 		orderResponse.setCode(HttpStatus.CREATED);
 		return orderResponse;
 
+	}
+
+	private List<StocksEntity> getCurrentStock(OrderJsonDto orderJsonDto) {
+		// Getting the stocks related to current order
+		List<StocksEntity> stocksEntites = new ArrayList<>(orderJsonDto.getBasket().size());
+
+		orderJsonDto.getBasket().stream().filter(basketItem -> basketItem.getStockId() != null).forEach(basketItem -> {
+			Optional<StocksEntity> optionalStocksEntity = stockRepository.findById(basketItem.getStockId());
+
+			if (optionalStocksEntity == null || !optionalStocksEntity.isPresent()
+					|| basketItem.getQuantity() > optionalStocksEntity.get().getQuantity()) {
+				// stock Id is invalid or available quantity is less than required
+				return;
+			}
+			stocksEntites.add(optionalStocksEntity.get());
+		});
+
+		//TODO check for pending orders logic and what to do
+		return stocksEntites;
 	}
 
 	private OrderResponse updateCurrentOrder(OrderJsonDto orderJsonDto) {
@@ -159,7 +166,7 @@ public class OrderServiceImpl implements OrderService {
 	private OrderResponse updateCurrentOrderBasket(OrderJsonDto orderJsonDto, OrdersEntity orderEntity) {
 
 		basketRepository.deleteByOrdersEntity_Id(orderJsonDto.getId());
-		
+
 		// Getting the stocks related to current order
 		List<StocksEntity> stocksEntites = new ArrayList<>(orderJsonDto.getBasket().size());
 
@@ -169,7 +176,7 @@ public class OrderServiceImpl implements OrderService {
 			if (optionalStocksEntity == null || !optionalStocksEntity.isPresent()
 					|| basketItem.getQuantity() > optionalStocksEntity.get().getQuantity()) {
 				// stock Id is invalid or available quantity is less than required
-				log.error("Stock Id {} is invalid",basketItem.getStockId());
+				log.error("Stock Id {} is invalid", basketItem.getStockId());
 				return;
 			}
 			stocksEntites.add(optionalStocksEntity.get());
@@ -179,9 +186,9 @@ public class OrderServiceImpl implements OrderService {
 		orderEntity.setShopsEntity(stocksEntites.get(0).getShopsEntity());
 		orderEntity.setUpdateDate(new Date());
 		orderEntity = ordersRepository.save(orderEntity);
-		
+
 		addItemsToBasket(orderJsonDto, orderEntity, stocksEntites);
-		
+
 		return new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
 
 	}
@@ -203,7 +210,8 @@ public class OrderServiceImpl implements OrderService {
 		return new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
 	}
 
-	private void addItemsToBasket(OrderJsonDto orderJsonDto,OrdersEntity orderEntity,List<StocksEntity> stocksEntites ) {
+	private void addItemsToBasket(OrderJsonDto orderJsonDto, OrdersEntity orderEntity,
+			List<StocksEntity> stocksEntites) {
 
 		for (BasketItem basketItem : orderJsonDto.getBasket()) {
 			StocksEntity stocksEntity = stocksEntites.stream().filter(stock -> stock.getId() == basketItem.getStockId())
@@ -222,6 +230,7 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 	}
+
 	private BigDecimal calculateOrderAmount(OrderJsonDto orderJsonDto, List<StocksEntity> stocksEntites) {
 
 		return orderJsonDto.getBasket().stream().map(basketItem -> {
