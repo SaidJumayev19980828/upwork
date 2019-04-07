@@ -117,18 +117,21 @@ public class OrderServiceImpl implements OrderService {
 		// Getting the stocks related to current order
 		List<StocksEntity> stocksEntites = new ArrayList<>(orderJsonDto.getBasket().size());
 
-		orderJsonDto.getBasket().stream().filter(basketItem -> basketItem.getStockId() != null).forEach(basketItem -> {
-			Optional<StocksEntity> optionalStocksEntity = stockRepository.findById(basketItem.getStockId());
+		orderJsonDto.getBasket().stream()
+				.filter(basketItem -> basketItem.getQuantity() > 0 && basketItem.getStockId() != null)
+				.forEach(basketItem -> {
+					Optional<StocksEntity> optionalStocksEntity = stockRepository.findById(basketItem.getStockId());
 
-			if (optionalStocksEntity == null || !optionalStocksEntity.isPresent()
-					|| basketItem.getQuantity() > optionalStocksEntity.get().getQuantity()) {
-				// stock Id is invalid or available quantity is less than required
-				return;
-			}
-			stocksEntites.add(optionalStocksEntity.get());
-		});
+					if (optionalStocksEntity == null || !optionalStocksEntity.isPresent()
+							|| basketItem.getQuantity() > optionalStocksEntity.get().getQuantity()
+							|| optionalStocksEntity.get().getPrice().doubleValue() <= 0) {
+						// stock Id is invalid or available quantity is less than required
+						return;
+					}
+					stocksEntites.add(optionalStocksEntity.get());
+				});
 
-		//TODO check for pending orders logic and what to do
+		// TODO check for pending orders logic and what to do
 		return stocksEntites;
 	}
 
@@ -293,9 +296,9 @@ public class OrderServiceImpl implements OrderService {
 		}
 		createdOrderEntity.setStatus(orderEntity.getStatus());
 
-		if (orderEntity.getBasketsEntities() != null && !orderEntity.getBasketsEntities().isEmpty()) {
-//    		createdOrderEntity.setBasket(orderEntity.getBasketsEntity().toString());
-		}
+//		if (orderEntity.getBasketsEntities() != null && !orderEntity.getBasketsEntities().isEmpty()) {
+////    		createdOrderEntity.setBasket(orderEntity.getBasketsEntity().toString());
+//		}
 
 		createdOrderEntity.setAddress(orderEntity.getAddress());
 		ordersRepository.save(createdOrderEntity);

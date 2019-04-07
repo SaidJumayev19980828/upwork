@@ -32,9 +32,9 @@ public class MallsEntity {
     @JsonIgnore
     private CitiesEntity citiesEntity;
 
-    @OneToOne(mappedBy = "mallsEntity")
-    @JsonIgnore
-    private ShopsEntity shopsEntity;
+//    @OneToOne(mappedBy = "mallsEntity")
+//    @JsonIgnore
+//    private ShopsEntity shopsEntity;
 
 
 }

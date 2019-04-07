@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -76,9 +77,9 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	@JoinColumn(name = "organization_id", nullable = false)
 	private OrganizationEntity organizationEntity;
 
-    @JsonIgnore
-    @OneToMany(mappedBy="ordersEntity")
-    private Set<BasketsEntity> basketsEntities;
+//    @JsonIgnore
+//    @OneToMany(mappedBy="ordersEntity")
+//    private Set<BasketsEntity> basketsEntities;
 
 	@Override
 	public BaseRepresentationObject getRepresentation() {

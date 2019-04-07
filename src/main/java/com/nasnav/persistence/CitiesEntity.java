@@ -25,7 +25,7 @@ public class CitiesEntity {
     @JsonIgnore
     private CountriesEntity countriesEntity;
 
-    @OneToOne(mappedBy = "citiesEntity")
-    private MallsEntity mallsEntity;
+//    @OneToOne(mappedBy = "citiesEntity")
+//    private MallsEntity mallsEntity;
 
 }

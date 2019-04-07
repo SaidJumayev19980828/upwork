@@ -100,13 +100,13 @@ public class ShopsEntity extends AbstractPersistable<Long> implements BaseEntity
     @JsonIgnore
     private OrganizationEntity organizationEntity;
     
-    @OneToMany(mappedBy="shopsEntity")
-    @JsonIgnore
-    private Set<ShopsOpeningTimesEntity> shopsOpeningTimesEntities;
+//    @OneToMany(mappedBy="shopsEntity")
+//    @JsonIgnore
+//    private Set<ShopsOpeningTimesEntity> shopsOpeningTimesEntities;
 
-    @OneToMany(mappedBy="shopsEntity")
-    @JsonIgnore
-    private Set<OrdersEntity> ordersEntity;
+//    @OneToMany(mappedBy="shopsEntity")
+//    @JsonIgnore
+//    private Set<OrdersEntity> ordersEntity;
 
     @OneToMany(mappedBy="shopsEntity")
     @JsonIgnore

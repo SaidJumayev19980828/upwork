@@ -45,21 +45,21 @@ public class OrganizationEntity extends AbstractPersistable<Long> implements Bas
     @Column(name = "updated_at")
     private Date updatedAt = new Date();
 
-    @OneToOne(mappedBy = "organizationEntity")
-    @JsonIgnore
-    private OrganizationThemeEntity organizationThemeEntity;
+//    @OneToOne(mappedBy = "organizationEntity")
+//    @JsonIgnore
+//    private OrganizationThemeEntity organizationThemeEntity;
 
-    @OneToOne(mappedBy = "organizationEntity")
-    @JsonIgnore
-    private SocialEntity socialEntity;
+//    @OneToOne(mappedBy = "organizationEntity")
+//    @JsonIgnore
+//    private SocialEntity socialEntity;
     
-    @OneToMany(mappedBy="organizationEntity")
-    @JsonIgnore
-    private Set<OrdersEntity> ordersEntity;
+//    @OneToMany(mappedBy="organizationEntity")
+//    @JsonIgnore
+//    private Set<OrdersEntity> ordersEntity;
 
-    @OneToMany(mappedBy="organizationEntity")
-    @JsonIgnore
-    private Set<StocksEntity> stocksEntities;
+//    @OneToMany(mappedBy="organizationEntity")
+//    @JsonIgnore
+//    private Set<StocksEntity> stocksEntities;
 
 
     public OrganizationEntity() {

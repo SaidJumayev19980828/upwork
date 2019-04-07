@@ -61,13 +61,13 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
     @Column(name="brand_id")
     private Long brandId;
 
-    @OneToMany(mappedBy="productEntity")
-    @JsonIgnore
-    private Set<StocksEntity> stocksEntities;
+//    @OneToMany(mappedBy="productEntity")
+//    @JsonIgnore
+//    private Set<StocksEntity> stocksEntities;
 
-    @OneToOne(mappedBy = "productEntity")
-    @JsonIgnore
-    private ProductVariants productVariants;
+//    @OneToOne(mappedBy = "productEntity")
+//    @JsonIgnore
+//    private ProductVariants productVariants;
 
 //    @JsonIgnore
 //    @OneToOne(cascade = CascadeType.ALL)

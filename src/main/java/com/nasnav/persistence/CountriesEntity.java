@@ -20,8 +20,8 @@ public class CountriesEntity {
     @Column(name = "updated_at")
     private Date updatedAt;
 
-    @OneToOne(mappedBy = "countriesEntity")
-    @JsonIgnore
-    private CitiesEntity citiesEntity;
+//    @OneToOne(mappedBy = "countriesEntity")
+//    @JsonIgnore
+//    private CitiesEntity citiesEntity;
 
 }
