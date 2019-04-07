@@ -9,7 +9,7 @@ public class Address{
     @JsonProperty("area")
     private Object area;
     @JsonProperty("p_area")
-    private String pArea;
+    private String parea;
     @JsonProperty("country")
     private String country;
     @JsonProperty("city")

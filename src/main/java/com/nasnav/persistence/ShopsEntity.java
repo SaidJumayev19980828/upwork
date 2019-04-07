@@ -40,7 +40,7 @@ public class ShopsEntity extends AbstractPersistable<Long> implements BaseEntity
     private Long id;
     private String name;
     @Column(name = "p_name")
-    private String pName;
+    private String pname;
 
     private String country;
     private String city;
@@ -53,7 +53,7 @@ public class ShopsEntity extends AbstractPersistable<Long> implements BaseEntity
     private String phoneNumber;
     private String area;
     @Column(name = "p_area")
-    private String pArea;
+    private String parea;
     @Column(precision=10, scale=2)
     private BigDecimal lat;
     @Column(precision=10, scale=2)
@@ -119,10 +119,10 @@ public class ShopsEntity extends AbstractPersistable<Long> implements BaseEntity
         shopRepresentationObject.setLogo(getLogo());
         shopRepresentationObject.setBanner(getBanner());
         shopRepresentationObject.setName(getName());
-        shopRepresentationObject.setPName(getPName());
+        shopRepresentationObject.setPname(getPname());
         Address address = new Address();
         address.setArea(getArea());
-        address.setPArea(getPArea());
+        address.setParea(getParea());
         address.setCity(getCity());
         address.setCountry(getCountry());
         address.setStreet(getStreet());

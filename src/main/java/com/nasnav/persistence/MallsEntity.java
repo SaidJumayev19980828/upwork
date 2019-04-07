@@ -19,7 +19,7 @@ public class MallsEntity {
     private String address;
     private String area;
     @Column(name="p_area")
-    private String pArea;
+    private String parea;
     private BigDecimal lat;
     private BigDecimal lng;
     @Column(name = "created_at")

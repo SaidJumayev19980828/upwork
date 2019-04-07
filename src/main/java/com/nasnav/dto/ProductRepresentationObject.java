@@ -1,11 +1,11 @@
 package com.nasnav.dto;
 
-import lombok.Data;
-
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+
+import lombok.Data;
 
 @Data
 public class ProductRepresentationObject extends BaseRepresentationObject{
@@ -17,7 +17,7 @@ public class ProductRepresentationObject extends BaseRepresentationObject{
     @Column(name = "image_url")
     private String imageUrl;
     @Column(name = "p_name")
-    private String  pName;
+    private String  pname;
     private Double price;
     private Boolean available;
 

@@ -31,7 +31,7 @@ public class BrandsEntity implements BaseEntity{
     private Date updatedAt;
 
     @Column(name = "p_name")
-    private String pName;
+    private String pname;
     @Column(name = "following_standards")
     private Boolean followingStandards;
 //    @Type(type = "com.nasnav.persistence.GenericArrayType")
@@ -93,7 +93,7 @@ public class BrandsEntity implements BaseEntity{
         brandRepresentationObject.setId(getId());
         brandRepresentationObject.setLogoUrl(getLogo());
         brandRepresentationObject.setName(getName());
-        brandRepresentationObject.setPName(getPName());
+        brandRepresentationObject.setPname(getPname());
         brandRepresentationObject.setBannerImage(getBannerImage());
         return brandRepresentationObject;
     }

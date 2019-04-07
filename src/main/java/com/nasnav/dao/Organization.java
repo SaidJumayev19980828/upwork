@@ -26,7 +26,7 @@ public class Organization {
         }
         json.put("id", organizationEntity.getId());
         json.put("name", organizationEntity.getName());
-        json.put("pname", organizationEntity.getPName());
+        json.put("pname", organizationEntity.getPname());
         json.put("description", organizationEntity.getDescription());
         json.put("type", organizationEntity.getType().name());
         return json.toString();

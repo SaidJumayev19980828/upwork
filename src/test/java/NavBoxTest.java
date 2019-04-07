@@ -54,7 +54,7 @@ public class NavBoxTest {
     public void testBrands() {
         BrandsEntity brand = new BrandsEntity();
         brand.setName("MazooTestBrand");
-        brand.setPName("mtb");
+        brand.setPname("mtb");
         brand.setBannerImage("/some/banner/image.png");
         brand.setLogo("/bright/logo/image.png");
         brand.setCreatedAt(new Date());
@@ -91,7 +91,7 @@ public class NavBoxTest {
         long orgId = org.getId();
         shop.setOrganizationEntity(org);
         shop.setName("SomeTestShop");
-        shop.setPName("sts");
+        shop.setPname("sts");
         shop.setLogo("/bright/logo/image.png");
         shop.setBanner("/some/shop/banner.png");
         shop.setArea("Some Area");

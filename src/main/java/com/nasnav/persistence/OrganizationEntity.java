@@ -39,7 +39,7 @@ public class OrganizationEntity extends AbstractPersistable<Long> implements Bas
     private String description;
     private String type;
     @Column(name = "p_name")
-    private String pName;
+    private String pname;
     @Column(name = "created_at")
     private Date createdAt;
     @Column(name = "updated_at")
@@ -85,7 +85,7 @@ public class OrganizationEntity extends AbstractPersistable<Long> implements Bas
     public String toString() {
         return String.format(
                 "OrganizationEntity[id=%d, name='%s', p_name='%s', type='%s']",
-                id, name, pName, type);
+                id, name, pname, type);
     }
 
 

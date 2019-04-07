@@ -30,7 +30,7 @@ public class ShopRepresentationObject extends BaseRepresentationObject{
     @JsonProperty("name")
     private String name;
     @JsonProperty("p_name")
-    private String pName;
+    private String pname;
 
     private Address address;
 

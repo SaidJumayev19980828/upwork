@@ -23,7 +23,7 @@ public class CategoryRepresentationObject extends BaseRepresentationObject{
     @JsonProperty("name")
     private String name;
     @JsonProperty("p_name")
-    private String pName;
+    private String pname;
     @JsonProperty("logo_url")
     private String logoUrl;
 

@@ -52,7 +52,7 @@ public class NavboxController {
         }
         JSONObject response = new JSONObject();
         response.put("name",brandRepresentationObject.getName());
-        response.put("p_name",brandRepresentationObject.getPName());
+        response.put("p_name",brandRepresentationObject.getPname());
         response.put("logo",brandRepresentationObject.getLogoUrl());
         response.put("banner",brandRepresentationObject.getBannerImage());
 

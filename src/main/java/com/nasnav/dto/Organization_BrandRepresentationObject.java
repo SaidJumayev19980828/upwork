@@ -27,7 +27,7 @@ public class Organization_BrandRepresentationObject extends BaseRepresentationOb
     @JsonProperty("name")
     private String name;
     @JsonProperty("p_name")
-    private String pName;
+    private String pname;
     @JsonProperty("display_name")
     private String displayName;
     @JsonProperty("category_id")

@@ -15,7 +15,7 @@ public class CategoriesEntity {
     private Long id;
     private String name;
     @Column(name = "p_name")
-    private String pName;
+    private String pname;
     private String logo;
 
 //    @OneToOne(mappedBy = "categoriesEntity")
