@@ -21,26 +21,26 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper=false)
 public class ProductVariants {
 
-	
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	private Long id;
-	
-	@Column(name="feature_spec")
-	private String featureSpec="{}";
-	
-	private String name;
-	
-	private String p_name;
-	
-	private String description;
-	
-	private String barcode;
-	
+
+    @Id
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name="feature_spec")
+    private String featureSpec="{}";
+
+    private String name;
+
+    private String p_name;
+
+    private String description;
+
+    private String barcode;
+
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "product_id", referencedColumnName = "id")
     @JsonIgnore
     private ProductEntity productEntity;
 
-		;
+    ;
 }

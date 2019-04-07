@@ -55,8 +55,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
             boolean passwordMatched = passwordEncoder.matches(body.password, employeeUserEntity.getEncryptedPassword());
             if (passwordMatched) {
                 // check if account is locked
-                boolean accountIsLocked = isAccountLocked(employeeUserEntity);
-                if (accountIsLocked) {
+                if (isAccountLocked(employeeUserEntity)) {  //TODO: so far there is no lockdown, so always false //NOSONAR
                     UserApiResponse failedLoginResponse = EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.ACCOUNT_SUSPENDED));
                     throw new EntityValidationException("ACCOUNT_SUSPENDED ", failedLoginResponse, HttpStatus.LOCKED);
                 }

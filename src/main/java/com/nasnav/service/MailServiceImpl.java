@@ -1,8 +1,7 @@
 package com.nasnav.service;
 
-import com.nasnav.constatnts.EntityConstants.ConfigurationKey;
+import com.nasnav.AppConfig;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -11,25 +10,31 @@ import org.springframework.stereotype.Service;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class MailServiceImpl implements MailService {
 
     private final JavaMailSender mailSender;
-    private final String _from = "customer-service@nasnav.com"; // TODO: load from properties
 
     @Autowired
     public MailServiceImpl(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
 
+    @Autowired
+    private AppConfig config;
+
+
     @Override
-    public void send(String to, String subject, String body, boolean dryRun) throws MessagingException {
-        sendMessage(to, subject, body, dryRun);
+    public void send(String to, String subject, String body) throws MessagingException {
+        sendMessage(to, subject, body);
     }
 
     /**
@@ -40,17 +45,17 @@ public class MailServiceImpl implements MailService {
      * @param body Email-Body
      * @throws MessagingException If message failed to be sent.
      */
-    private void sendMessage(String to, String subject, String body, boolean dryRun) throws MessagingException {
+    private void sendMessage(String to, String subject, String body) throws MessagingException {
         if (mailSender == null) {
             return;
         }
         final MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
-        helper.setFrom(_from);
+        helper.setFrom(config.mailSenderAddress);
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(body, true);
-        if (dryRun) {
+        if (config.mailDryRun) {
             System.out.println("Sending email to: " + to + "\n-------\n" + body);
         } else {
             mailSender.send(mimeMessage);
@@ -59,13 +64,14 @@ public class MailServiceImpl implements MailService {
 
 
     @Override
-    public void send(String to, String subject, String template, Map<String, String> parametersMap, boolean dryRun) throws IOException, MessagingException {
+    public void send(String to, String subject, String template, Map<String, String> parametersMap) throws IOException, MessagingException {
         Resource resource = new ClassPathResource(template);
-        String body = new String(Files.readAllBytes(Paths.get(resource.getFile().getAbsolutePath())));
+        String body = new BufferedReader(new InputStreamReader(resource.getInputStream()))
+                .lines().collect(Collectors.joining("\n"));
         for (Map.Entry<String, String> entry : parametersMap.entrySet()) {
             body = body.replaceAll(entry.getKey(), entry.getValue());
         }
-        sendMessage(to, subject, body, dryRun);
+        sendMessage(to, subject, body);
 
     }
 }

@@ -33,9 +33,9 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	@Id
 	@Column(name = "id", unique = true, nullable = false)
 	private Long id;
-	@Column(name = "address", length = 150)		
+	@Column(name = "address", length = 150)
 	private String address;
-	@Column(name = "email", length = 40)	
+	@Column(name = "email", length = 40)
 	private String email;
 	@Column(name = "name", length = 40)
 	private String name;
@@ -44,23 +44,23 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	private Long user_id;
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "created_at", nullable = false, length = 29)
-	private Date creationDate;		
+	private Date creationDate;
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "updated_at", nullable = false, length = 29)
-	private Date updateDate;		
+	private Date updateDate;
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "date_delivery", nullable = false, length = 29)
-	private Date deliveryDate;	
+	private Date deliveryDate;
 	private Integer status;
     @Type(type = "com.nasnav.persistence.GenericArrayType")
-	private String []cancelation_reasons;	
+	private String []cancelation_reasons;
 	private String driver_name;
 	private Boolean equipped;
-	private BigDecimal amount;	
-	
+	private BigDecimal amount;
+
 
 //	private Integer currency;
-	
+
 
 //	@Column(name ="shop_id")
 //	private Long shopId;
@@ -69,7 +69,7 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "shop_id", nullable = false)
 	private ShopsEntity shopsEntity;
-	
+
 	//TODO decide if deprecated or not
 	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -79,7 +79,7 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
     @JsonIgnore
     @OneToMany(mappedBy="ordersEntity")
     private Set<BasketsEntity> basketsEntities;
-	
+
 	@Override
 	public BaseRepresentationObject getRepresentation() {
 		// TODO Auto-generated method stub

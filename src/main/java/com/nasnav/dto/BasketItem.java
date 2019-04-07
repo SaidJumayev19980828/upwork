@@ -7,9 +7,9 @@ import lombok.Data;
 @Data
 public class BasketItem {
 
-	@JsonProperty("stock_id")
-	private Long stockId; 
-    private Long quantity; 
+    @JsonProperty("stock_id")
+    private Long stockId;
+    private Long quantity;
     private String unit;
 
 }

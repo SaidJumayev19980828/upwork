@@ -6,5 +6,5 @@ import com.nasnav.persistence.StocksEntity;
 
 public interface StockRepository extends CrudRepository<StocksEntity, Long>{
 
-	
+
 }

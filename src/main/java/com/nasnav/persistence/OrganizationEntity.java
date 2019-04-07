@@ -43,7 +43,7 @@ public class OrganizationEntity extends AbstractPersistable<Long> implements Bas
     @Column(name = "created_at")
     private Date createdAt;
     @Column(name = "updated_at")
-    private Date updatedAt;
+    private Date updatedAt = new Date();
 
     @OneToOne(mappedBy = "organizationEntity")
     @JsonIgnore
@@ -56,12 +56,12 @@ public class OrganizationEntity extends AbstractPersistable<Long> implements Bas
     @OneToMany(mappedBy="organizationEntity")
     @JsonIgnore
     private Set<OrdersEntity> ordersEntity;
-    
+
     @OneToMany(mappedBy="organizationEntity")
     @JsonIgnore
     private Set<StocksEntity> stocksEntities;
 
-    
+
     public OrganizationEntity() {
         id = null;
     }

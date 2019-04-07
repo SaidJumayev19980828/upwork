@@ -33,7 +33,7 @@ public class OrdersController {
     
     @Autowired UserService userService;
 
-    @ApiOperation(value = "Register a new user", nickname = "userRegister", code = 201)
+    @ApiOperation(value = "Create or update an order", nickname = "orderUpdate", code = 201)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Order created or updated"),
             @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
@@ -43,34 +43,39 @@ public class OrdersController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<?> updateOrder(
-            @RequestHeader(name = "User-ID") String userId,
+            @RequestHeader(name = "User-ID") Long userId,
             @RequestHeader(name = "User-Token") String userToken,
             @RequestBody OrderJsonDto orderJson)
             		throws BusinessException {
     	OrderResponse response;
-    	long parsedUserId = Long.parseLong(userId);
-    	if(userToken == null || userService.findUserById(parsedUserId) == null || !userService.checkAuthToken(parsedUserId, userToken)) {
+    	if(userToken == null || !userService.checkAuthToken(userId, userToken)) {
     		response = new OrderResponse(OrderFailedStatus.UNAUTHENTICATED, HttpStatus.UNAUTHORIZED);
     	} else {
-        	response = this.orderService.updateOrder(orderJson,parsedUserId);	
+        	response = this.orderService.updateOrder(orderJson,userId);
     	}        
         return new ResponseEntity<>(response, response.getCode());
     }
-    
+
+	@ApiOperation(value = "Get information about order", nickname = "orderInfo", code = 201)
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+	})
     @GetMapping(value = "/info")
-    public ResponseEntity<?> getOrderInfo(@RequestHeader(name = "User-ID", required = true) long userId,
+    public ResponseEntity<?> getOrderInfo(
+    		@RequestHeader(name = "User-ID", required = true) Long userId,
             @RequestHeader(name = "User-Token", required = true) String userToken,
             @RequestParam(name = "order_id") Long orderId){
     	OrderResponse response;
-    	if(userToken == null || userService.findUserById(userId) == null) {
+System.out.println("id: " + userId + " token: " + userToken + " auth: " + userService.checkAuthToken(userId, userToken));
+		if(userToken == null || !userService.checkAuthToken(userId, userToken)) {
     		response = new OrderResponse(OrderFailedStatus.UNAUTHENTICATED, HttpStatus.UNAUTHORIZED);
     	} else {
-        	response = this.orderService.getOrderInfo(orderId);
+			response = this.orderService.getOrderInfo(orderId);
         	if(response.getCode().equals(HttpStatus.OK)) {
             	return new ResponseEntity<>(response.getEntity(), response.getCode());
         	}
-    	} 
-    	
+    	}
     	return new ResponseEntity<>(response, response.getCode());
     }
 }

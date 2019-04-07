@@ -25,27 +25,27 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper=false)
 public class BasketsEntity extends AbstractPersistable<Long> implements BaseEntity{
-	
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	private Long id;		
-	private BigDecimal quantity;
-	private BigDecimal price;
-	private Integer currency;
-	
+
+    @Id
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    private Long id;
+    private BigDecimal quantity;
+    private BigDecimal price;
+    private Integer currency;
+
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "order_id", referencedColumnName = "id")
     @JsonIgnore
     private OrdersEntity ordersEntity;
-   
+
     @OneToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "stock_id", referencedColumnName = "id")
     @JsonIgnore
     private StocksEntity stocksEntity;
 
-	@Override
-	public BaseRepresentationObject getRepresentation() {
-		return null;
-	}
+    @Override
+    public BaseRepresentationObject getRepresentation() {
+        return null;
+    }
 
 }

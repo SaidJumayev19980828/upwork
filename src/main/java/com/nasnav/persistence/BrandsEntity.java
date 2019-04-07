@@ -34,8 +34,8 @@ public class BrandsEntity implements BaseEntity{
     private String pName;
     @Column(name = "following_standards")
     private Boolean followingStandards;
-    @Type(type = "com.nasnav.persistence.GenericArrayType")
-    private String[] categories;
+//    @Type(type = "com.nasnav.persistence.GenericArrayType")
+//    private String[] categories;
     private String facebook;
     private String twitter;
     private String instagram;
@@ -47,6 +47,7 @@ public class BrandsEntity implements BaseEntity{
     private String snapchat;
     @Column(name = "google_plus")
     private String googlePlus;
+/*
     @Column(name = "sat")
     private Boolean saturday;
     @Column(name = "sun")
@@ -61,11 +62,14 @@ public class BrandsEntity implements BaseEntity{
     private Boolean thursday;
     @Column(name = "fri")
     private Boolean friday;
+*/
+/*
     @Type(type = "com.nasnav.persistence.GenericArrayType")
     private String[] websites;
     @Column(name = "phone_numbers")
     @Type(type = "com.nasnav.persistence.GenericArrayType")
     private String[] phoneNumbers;
+*/
     @Column(name = "display_name")
     private String displayName;
     @Column(name = "dark_logo")
@@ -90,6 +94,7 @@ public class BrandsEntity implements BaseEntity{
         brandRepresentationObject.setLogoUrl(getLogo());
         brandRepresentationObject.setName(getName());
         brandRepresentationObject.setPName(getPName());
+        brandRepresentationObject.setBannerImage(getBannerImage());
         return brandRepresentationObject;
     }
 }

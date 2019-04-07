@@ -1,27 +1,25 @@
 package com.nasnav;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import javax.annotation.PostConstruct;
-import java.io.IOException;
-import java.util.Properties;
-
 @Configuration
+@PropertySource("classpath:application.properties")
 public class AppConfig {
 
-    @PostConstruct
-    public void init() throws IOException {
-        Resource resource = new ClassPathResource("mail.properties");
-        Properties mailProperties = PropertiesLoaderUtils.loadProperties(resource);
-        mailProperties.forEach((key, value) -> System.setProperty((String)key, (String)value));
-    }
+    @Value("${email.dryrun}")      public boolean mailDryRun;
+    @Value("${email.hostname}")    public String mailHostname;
+    @Value("${email.mailfrom}")    public String mailSenderAddress;
+    @Value("${email.username}")    public String mailUsername;
+    @Value("${email.password}")    public String mailPassword;
+    @Value("${email.recoveryurl}") public String mailRecoveryUrl = "";
+    @Value("${email.port}")        public int    mailHostPort;
+    @Value("${email.ssl}")         public boolean mailUseSSL;
 
     /**
      * Register password encoder bean
