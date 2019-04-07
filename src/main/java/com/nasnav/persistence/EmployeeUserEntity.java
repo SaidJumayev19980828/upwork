@@ -1,6 +1,7 @@
 package com.nasnav.persistence;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "employee_users")
+@EqualsAndHashCode(callSuper=false)
 public class EmployeeUserEntity extends DefaultBusinessEntity<Integer> {
 
     @Column(name = "name")

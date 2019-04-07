@@ -1,18 +1,14 @@
 package com.nasnav.persistence;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import javax.persistence.*;
-import java.io.Serializable;
-import java.util.Date;
 
-/**
- *
- * @author ahmed.bastawesy
- */
 @Data
 @Entity
 @Table(name = "role_employee_users")
+@EqualsAndHashCode(callSuper=false)
 public class RoleEmployeeUser extends DefaultBusinessEntity<Integer> {
 
 

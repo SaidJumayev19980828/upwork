@@ -2,12 +2,14 @@ package com.nasnav.exceptions;
 
 import com.nasnav.response.UserApiResponse;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.http.HttpStatus;
 
 /**
  * Represent all kind of EntityValidationException.
  */
 @Data
+@EqualsAndHashCode(callSuper=false)
 public class EntityValidationException extends RuntimeException {
 
     private UserApiResponse userApiResponse;

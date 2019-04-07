@@ -1,16 +1,17 @@
 package com.nasnav.persistence;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Data
 @Entity
 @Table(name = "users")
+@EqualsAndHashCode(callSuper=false)
 public class UserEntity extends DefaultBusinessEntity<Long> {
 
     @Column(name="email", unique = true)
@@ -51,6 +52,12 @@ public class UserEntity extends DefaultBusinessEntity<Long> {
 
     @Column(name="reset_password_sent_at")
     private LocalDateTime resetPasswordSentAt;
+
+    @Column(name = "created_at")
+    public LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    public LocalDateTime updatedAt;
 
     public UserEntity() {
         super();

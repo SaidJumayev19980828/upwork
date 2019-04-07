@@ -217,7 +217,7 @@ public class OrderServiceImpl implements OrderService {
 			List<StocksEntity> stocksEntites) {
 
 		for (BasketItem basketItem : orderJsonDto.getBasket()) {
-			StocksEntity stocksEntity = stocksEntites.stream().filter(stock -> stock.getId() == basketItem.getStockId())
+			StocksEntity stocksEntity = stocksEntites.stream().filter(stock -> stock.getId().equals(basketItem.getStockId()))
 					.findFirst().get();
 			BasketsEntity basketsEntity = new BasketsEntity();
 			basketsEntity.setStocksEntity(stocksEntity);
@@ -238,7 +238,7 @@ public class OrderServiceImpl implements OrderService {
 
 		return orderJsonDto.getBasket().stream().map(basketItem -> {
 
-			BigDecimal price = stocksEntites.stream().filter(stock -> stock.getId() == basketItem.getStockId())
+			BigDecimal price = stocksEntites.stream().filter(stock -> stock.getId().equals(basketItem.getStockId()))
 					.findFirst().get().getPrice();
 			// TODO Discount rules to be applied if required
 
@@ -291,8 +291,8 @@ public class OrderServiceImpl implements OrderService {
 
 			createdOrderEntity.setCreationDate(new Date(System.currentTimeMillis()));
 			createdOrderEntity.setUpdateDate(new Date(System.currentTimeMillis()));
-
-			createdOrderEntity.setAmount(new BigDecimal(new Random().nextDouble()));
+			// FIXME: HOW COME THE AMOUNT IS SET AS RANDOM VALUE??
+			createdOrderEntity.setAmount(BigDecimal.valueOf(new Random().nextDouble()));
 		}
 		createdOrderEntity.setStatus(orderEntity.getStatus());
 

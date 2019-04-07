@@ -49,6 +49,8 @@ public class UserServiceImpl implements UserService {
         // validate user entity against business rules.
         this.validateBusinessRules(user);
         // save to DB.
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
         UserEntity userEntity = userRepository.save(user);
         // send activation email
         userEntity = generateResetPasswordToken(userEntity);
