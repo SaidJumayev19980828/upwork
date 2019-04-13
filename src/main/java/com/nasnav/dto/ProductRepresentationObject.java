@@ -1,5 +1,7 @@
 package com.nasnav.dto;
 
+import java.math.BigDecimal;
+
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -20,7 +22,7 @@ public class ProductRepresentationObject extends BaseRepresentationObject{
     private String imageUrl;
     @Column(name = "p_name")
     private String  pname;
-    private Double price;
+    private BigDecimal price;
     private Boolean available;
 
 }
