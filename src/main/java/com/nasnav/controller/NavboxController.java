@@ -1,25 +1,31 @@
 package com.nasnav.controller;
 
-import com.nasnav.dto.OrganizationRepresentationObject;
-import com.nasnav.dto.ProductSortOptions;
-import com.nasnav.dto.ProductsResponse;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.ShopService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
+import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.ProductSortOptions;
+import com.nasnav.dto.ProductsResponse;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.BrandService;
+import com.nasnav.service.OrganizationService;
+import com.nasnav.service.ProductService;
+import com.nasnav.service.ShopService;
+
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 
 @RestController
 @RequestMapping("/navbox")
@@ -120,13 +126,13 @@ public class NavboxController {
 		ProductsResponse productsResponse = null;
 		if (organizationId != null) {
 
-			productsResponse = productService.getProductsResponseByOrganizationId(organizationId, categoryId, start, count, sort,
-					order);
+			productsResponse = productService.getProductsResponseByOrganizationId(organizationId, categoryId, start,
+					count, sort, order);
 
 		} else if (shopId != null) {
 
-			productsResponse = productService.getProductsResponseByShopId(shopId, categoryId, start, count,
-					sort, order);
+			productsResponse = productService.getProductsResponseByShopId(shopId, categoryId, start, count, sort,
+					order);
 		} else {
 			throw new BusinessException("Shop Id or Organization Id shall be provided", null, HttpStatus.BAD_REQUEST);
 		}
@@ -136,6 +142,13 @@ public class NavboxController {
 		}
 
 		return new ResponseEntity<>(productsResponse, HttpStatus.OK);
+	}
+
+	@GetMapping(value="/product",produces=MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getProduct(@RequestParam(name = "product_id") Long productId,
+			@RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
+
+		return new ResponseEntity<>(productService.getProduct(productId, shopId),HttpStatus.OK);
 	}
 
 }

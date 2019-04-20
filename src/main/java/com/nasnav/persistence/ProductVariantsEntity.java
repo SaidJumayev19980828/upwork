@@ -7,7 +7,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -19,7 +19,7 @@ import lombok.EqualsAndHashCode;
 @Table(name="product_variants")
 @Data
 @EqualsAndHashCode(callSuper=false)
-public class ProductVariants {
+public class ProductVariantsEntity {
 
 
     @Id
@@ -29,18 +29,21 @@ public class ProductVariants {
     @Column(name="feature_spec")
     private String featureSpec="{}";
 
+    @Column(name="name")
     private String name;
 
-    private String p_name;
+    @Column(name="p_name")
+    private String pname;
 
+    @Column(name="description")
     private String description;
 
+    @Column(name="barcode")
     private String barcode;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.DETACH)
     @JoinColumn(name = "product_id", referencedColumnName = "id")
     @JsonIgnore
     private ProductEntity productEntity;
 
-    ;
 }
