@@ -20,11 +20,14 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
 
 import com.nasnav.NavBox;
 import com.nasnav.controller.OrdersController;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
@@ -42,7 +45,11 @@ import com.nasnav.service.UserService;
 @PropertySource("classpath:database.properties")
 public class OrderServiceTest {
 
+//    private static String _authToken = "TestAuthToken";
+//    private Long _testUserId = null;
 	private UserEntity persistentUser;
+
+	private MockMvc mockMvc;
 
 	@Autowired
 	private TestRestTemplate template;
@@ -57,6 +64,12 @@ public class OrderServiceTest {
 
 	@Autowired
 	private BasketRepository basketRepository;
+
+	@Autowired
+	private OrganizationRepository organizationRepository;
+
+	@Autowired
+	private ProductRepository productRepository;
 
 	@Autowired
 	private ShopsRepository shopsRepository;

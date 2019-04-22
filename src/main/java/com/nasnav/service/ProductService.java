@@ -1,32 +1,21 @@
 package com.nasnav.service;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductSortOptions;
 import com.nasnav.dto.ProductsResponse;
-import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ProductImagesEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
 
 @Service
@@ -45,206 +34,10 @@ public class ProductService {
 
 	private final StockRepository stockRepository;
 
-	private final ProductImagesRepository productImagesRepository;
-
-	private final ProductVariantsRepository productVariantsRepository;
-
-	private final ProductFeaturesRepository productFeaturesRepository;
-
 	@Autowired
-	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
-			ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
-			ProductFeaturesRepository productFeaturesRepository) {
+	public ProductService(ProductRepository productRepository, StockRepository stockRepository) {
 		this.productRepository = productRepository;
 		this.stockRepository = stockRepository;
-		this.productImagesRepository = productImagesRepository;
-		this.productVariantsRepository = productVariantsRepository;
-		this.productFeaturesRepository = productFeaturesRepository;
-	}
-
-	public String getProduct(Long productId, Long shopId) throws BusinessException {
-
-		Optional<ProductEntity> optionalProduct = productRepository.findById(productId);
-		if (optionalProduct == null || !optionalProduct.isPresent()) {
-			throw new BusinessException("Product " + productId + " not found", null, HttpStatus.NOT_FOUND);
-		}
-
-		JSONObject response = new JSONObject();
-		response.put("name", optionalProduct.get().getName());
-		response.put("p_name", optionalProduct.get().getPname());
-		response.put("description", optionalProduct.get().getDescription());
-		response.put("category_id", optionalProduct.get().getCategoryId());
-
-		JSONArray productImages = getProductImages(productId);
-
-		if (productImages != null && !productImages.isEmpty()) {
-			response.put("images", productImages);
-		}
-
-		List<ProductVariantsEntity> productVariants = productVariantsRepository.findByProductEntity_Id(productId);
-
-		JSONArray variantJsonArray = null;
-		JSONArray variantFeaturesJsonArray = null;
-		if (productVariants != null && !productVariants.isEmpty()) {
-			variantJsonArray = getVariantsJSONArray(productVariants, productId, shopId);
-			variantFeaturesJsonArray = getVariantFeatures(productVariants);
-		} else {
-			JSONArray stockArray = getStockJsonArray(productId, shopId, null);
-			if (stockArray != null) {
-				JSONObject variantObj = new JSONObject();
-				variantObj.put("id", 0);
-				variantJsonArray = new JSONArray();
-				variantJsonArray.put(variantObj);
-				variantObj.put("stocks", stockArray);
-			}
-		}
-
-		if (variantFeaturesJsonArray != null && !variantFeaturesJsonArray.isEmpty()) {
-			response.put("variant_features", variantFeaturesJsonArray);
-		}
-		if (variantJsonArray!=null && !variantJsonArray.isEmpty()) {
-			response.put("variants", variantJsonArray);
-		}
-
-		return response.toString();
-	}
-
-	private JSONArray getVariantsJSONArray(List<ProductVariantsEntity> productVariants, Long productId, Long shopId) {
-
-		JSONArray variantJsonArray = new JSONArray();
-
-		productVariants.forEach(variant -> {
-
-			JSONObject variantObj = new JSONObject();
-			variantObj.put("id", variant.getId());
-			variantObj.put("barcode", variant.getBarcode());
-
-			variantObj.put("stocks", getStockJsonArray(productId, shopId, variant.getId()));
-
-			setProductFeatureNameAndValue(variant, variantObj);
-
-			JSONArray variantImages = getProductVariantImages(variant.getId());
-			if (variantImages != null && !variantImages.isEmpty()) {
-				variantObj.put("images", variantImages);
-			}
-			variantJsonArray.put(variantObj);
-		});
-
-		return variantJsonArray;
-	}
-
-	private void setProductFeatureNameAndValue(ProductVariantsEntity variant, JSONObject variantObj) {
-
-		if (variant.getFeatureSpec() != null && !variant.getFeatureSpec().isEmpty()) {
-
-			String[] keyValueVariant = variant.getFeatureSpec().replace("{", "").replace("}", "").split(",");
-
-			List<String> keyValueVariantList = Arrays.asList(keyValueVariant);
-
-			keyValueVariantList.forEach(feature -> {
-				String[] kvPair = feature.split(":");
-				Optional<ProductFeaturesEntity> optionalFeature = productFeaturesRepository
-						.findById(Integer.parseInt(kvPair[0]));
-				if (optionalFeature != null && optionalFeature.isPresent()) {
-					variantObj.put(optionalFeature.get().getName(), kvPair[1]);
-				}
-			});
-		}
-	}
-
-	private JSONArray getVariantFeatures(List<ProductVariantsEntity> productVariants) {
-
-		JSONArray variantFeaturesJsonArray = new JSONArray();
-
-		productVariants.forEach(variant -> {
-
-			if (variant.getFeatureSpec() != null && !variant.getFeatureSpec().isEmpty()) {
-
-				String[] keyValueVariant = variant.getFeatureSpec().replace("{", "").replace("}", "").split(",");
-
-				List<String> keyValueVariantList = Arrays.asList(keyValueVariant);
-
-				keyValueVariantList.forEach(feature -> {
-					String[] kvPair = feature.split(":");
-					Optional<ProductFeaturesEntity> optionalFeature = productFeaturesRepository
-							.findById(Integer.parseInt(kvPair[0]));
-					if (optionalFeature != null && optionalFeature.isPresent()) {
-						JSONObject variantFeatureObj = new JSONObject();
-						variantFeatureObj.put("name", optionalFeature.get().getName());
-						variantFeatureObj.put("label", optionalFeature.get().getPname());
-						variantFeaturesJsonArray.put(variantFeatureObj);
-					}
-				});
-			}
-		});
-		return variantFeaturesJsonArray;
-	}
-
-	private JSONArray getProductImages(Long productId) {
-
-		List<ProductImagesEntity> productImages = productImagesRepository.findByProductEntity_Id(productId);
-
-		if (productImages != null && !productImages.isEmpty()) {
-			JSONArray variantImagesArray = new JSONArray();
-
-			productImages.forEach(image -> {
-				JSONObject imageJson = new JSONObject();
-				imageJson.put("url", image.getUri());
-				imageJson.put("priority", image.getPriority());
-				variantImagesArray.put(imageJson);
-
-			});
-			return variantImagesArray;
-		}
-		return null;
-	}
-
-	private JSONArray getProductVariantImages(Long variantId) {
-		List<ProductImagesEntity> variantImages = productImagesRepository.findByProductVariantsEntity_Id(variantId);
-
-		if (variantImages != null && !variantImages.isEmpty()) {
-			JSONArray variantImagesArray = new JSONArray();
-
-			variantImages.forEach(image -> {
-				JSONObject imageJson = new JSONObject();
-				imageJson.put("url", image.getUri());
-				imageJson.put("priority", image.getPriority());
-				variantImagesArray.put(imageJson);
-			});
-			return variantImagesArray;
-		}
-		return null;
-	}
-
-	private JSONArray getStockJsonArray(Long productId, Long shopId, Long variantId) {
-
-		if (shopId == null) {
-			return null;
-		}
-		List<StocksEntity> stocks = null;
-		if (variantId != null) {
-			stocks = stockRepository.findByProductEntity_IdAndShopsEntity_IdAndProductVariantsEntity_Id(productId,
-					shopId, variantId);
-		} else {
-			stocks = stockRepository.findByProductEntity_IdAndShopsEntity_Id(productId, shopId);
-		}
-
-		if (stocks != null && !stocks.isEmpty()) {
-
-			JSONArray stocksArray = new JSONArray();
-
-			stocks.forEach(stock -> {
-				JSONObject stockObject = new JSONObject();
-				stockObject.put("shop_id", shopId);
-				stockObject.put("quantity", stock.getQuantity());
-				stockObject.put("price", stock.getPrice());
-				stockObject.put("discount", stock.getDiscount());
-				stocksArray.put(stockObject);
-			});
-			return stocksArray;
-		}
-		return null;
-
 	}
 
 	public ProductsResponse getProductsResponseByShopId(Long shopId, Long categoryId, Integer start, Integer count,
@@ -477,15 +270,15 @@ public class ProductService {
 					});
 				}
 			}
-			int lastProductIndex = productsRep.size() - 1;
-			if (start > lastProductIndex) {
-				// TODO proper start handling(maybe default) or error massage
+			int lastProductIndex = productsRep.size()-1;
+			if(start>lastProductIndex) {
+				//TODO proper start handling(maybe default) or error massage
 				return null;
 			}
-			int toIndex = start + count;
-			if (toIndex > lastProductIndex)
+			int toIndex = start+count;
+			if(toIndex> lastProductIndex)
 				toIndex = productsRep.size();
-
+			
 			productsResponse.setProducts(productsRep.subList(start, toIndex));
 			productsResponse.setTotal(stocks.stream().mapToLong(stock -> stock.getQuantity()).sum());
 		}
