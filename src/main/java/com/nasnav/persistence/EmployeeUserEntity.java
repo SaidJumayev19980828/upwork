@@ -6,6 +6,10 @@ import lombok.EqualsAndHashCode;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+
+import com.nasnav.constatnts.EntityConstants;
+import com.nasnav.dto.UserDTOs;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -88,6 +92,20 @@ public class EmployeeUserEntity extends DefaultBusinessEntity<Integer> {
 
     public EmployeeUserEntity() {
         super();
+    }
+    
+    public static EmployeeUserEntity createEmployeeUser(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
+        // parse Json to EmployeeUserEntity
+        EmployeeUserEntity employeeUser = new EmployeeUserEntity();
+        employeeUser.setName(employeeUserJson.name);
+        employeeUser.setEmail(employeeUserJson.email);
+        employeeUser.setEncryptedPassword(EntityConstants.INITIAL_PASSWORD);
+        employeeUser.setOrganizationId(employeeUserJson.org_id);
+        employeeUser.setShopId(employeeUser.shopId);
+        employeeUser.setCreatedAt(LocalDateTime.now());
+        employeeUser.setUpdatedAt(LocalDateTime.now());
+        
+        return employeeUser;
     }
 
 }

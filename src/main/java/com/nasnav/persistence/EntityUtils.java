@@ -1,11 +1,15 @@
 package com.nasnav.persistence;
 
 import com.nasnav.constatnts.EntityConstants;
+import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 
 import java.util.*;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.http.HttpStatus;
 
 /**
  * Hold all common methods related to entity classes
@@ -106,4 +110,24 @@ public class EntityUtils {
     public static UserApiResponse createFailedLoginResponse(List<ResponseStatus> responseStatuses) {
         return new ApiResponseBuilder().setSuccess(false).setResponseStatuses(responseStatuses).build();
     }
+    
+    /**
+     * called pre save user to
+     * validateBusinessRules fields of user entity
+     *
+     * @param user name
+     * @param user email     */
+    public static void validateNameAndEmail(String name, String email) {
+        List<ResponseStatus> responseStatusList = new ArrayList<>();
+        if (!EntityUtils.validateName(name)) {
+            responseStatusList.add(ResponseStatus.INVALID_NAME);
+        }
+        if (!EntityUtils.validateEmail(email)) {
+            responseStatusList.add(ResponseStatus.INVALID_EMAIL);
+        }
+        if (!responseStatusList.isEmpty()) {
+            throw new EntityValidationException("Invalid User Entity", UserApiResponse.createStatusApiResponse(responseStatusList), HttpStatus.NOT_ACCEPTABLE);
+        }
+    }
+    
 }

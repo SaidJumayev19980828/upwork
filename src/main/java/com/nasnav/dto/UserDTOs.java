@@ -8,16 +8,25 @@ import lombok.EqualsAndHashCode;
 
 @Data
 public class UserDTOs {
-
-    @ApiModel(value = "User Registration Data")
-    public static class UserRegistrationObject {
-        @ApiModelProperty(value = "User's name", example = "John Smith", required = true)
-        @JsonProperty("name")
-        public String name;
+	
+	
+    public static class GenericUserObject {
 
         @ApiModelProperty(value = "User's email", example = "testuser@nasnav.com", required = true)
         @JsonProperty("email")
         public String email;
+        
+        @ApiModelProperty(value = "Organization id thew client wants to log into", example = "123", required = false)
+        @JsonProperty("organization_id")
+        public Integer org_id;
+    }
+
+
+    @ApiModel(value = "User Registration Data")
+    public static class UserRegistrationObject extends GenericUserObject{
+    	@ApiModelProperty(value = "User's name", example = "John Smith", required = true)
+        @JsonProperty("name")
+        public String name;
     }
 
     @ApiModel(value = "Password Reset Data")
@@ -32,13 +41,29 @@ public class UserDTOs {
     }
 
     @ApiModel(value = "User Login Data")
-    public static class UserLoginObject {
-        @ApiModelProperty(value = "User's email", example = "testuser@nasnav.com", required = true)
-        @JsonProperty("email")
-        public String email;
+    public static class UserLoginObject extends GenericUserObject{
 
-        @ApiModelProperty(value = "New ueser's password", example = "PaSSworD", required = true)
+        @ApiModelProperty(value = "New user's password", example = "PaSSworD", required = true)
         @JsonProperty("password")
         public String password;
+        
+        @ApiModelProperty(value = "If user is an employee or not", example = "true", required = false)
+        @JsonProperty("employee")
+        public boolean employee;
+    }
+
+    @ApiModel(value = "Employee User Creation Data")
+	public class EmployeeUserCreationObject extends GenericUserObject{
+    	@ApiModelProperty(value = "User's name", example = "John Smith", required = true)
+        @JsonProperty("name")
+        public String name;
+    	
+        @ApiModelProperty(value = "Roles Separated by Comma", example = "STORE_ADMIN,ORGANIZATION_EMPLOYEE", required = true)
+        @JsonProperty("role")
+        public String role;
+        
+        @ApiModelProperty(value = "User's email", example = "testuser@nasnav.com", required = false)
+        @JsonProperty("store_id")
+        public Long store_id;
     }
 }

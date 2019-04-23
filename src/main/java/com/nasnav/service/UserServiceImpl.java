@@ -5,6 +5,7 @@ import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.UserDTOs;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.UserEntity;
@@ -40,18 +41,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserApiResponse registerUser(UserDTOs.UserRegistrationObject userJson) {
-        // parse Json to User entity.
-        UserEntity user = new UserEntity();
-        user.setName(userJson.name);
-        user.setEmail(userJson.email);
-        user.setEncPassword(EntityConstants.INITIAL_PASSWORD);
-//        UserEntity user = this.createUserFromJson(userJson);
-        // validate user entity against business rules.
-        this.validateBusinessRules(user);
-        // save to DB.
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdatedAt(LocalDateTime.now());
-        UserEntity userEntity = userRepository.save(user);
+    	// validate user entity against business rules.
+        this.validateBusinessRules(userJson);
+        //create and save a user from the json object
+        UserEntity userEntity = createUserEntity(userJson);
         // send activation email
         userEntity = generateResetPasswordToken(userEntity);
         sendRecoveryMail(userEntity);
@@ -59,34 +52,24 @@ public class UserServiceImpl implements UserService {
     }
 
 
+	private UserEntity createUserEntity(UserDTOs.UserRegistrationObject userJson) {
+		// parse Json to User entity.
+        UserEntity user = UserEntity.createUser(userJson);
+        
+        // save to DB        
+        UserEntity userEntity = userRepository.save(user);
+		return userEntity;
+	}
+
+
     /**
      * validateBusinessRules passed user entity against business rules
      *
      * @param user User entity to be validated
      */
-    private void validateBusinessRules(UserEntity user) {
-        this.validateNameAndEmail(user);
-        this.checkEmailExistence(user);
-    }
-
-
-    /**
-     * called pre save user to
-     * validateBusinessRules fields of user entity
-     *
-     * @param user User entity to be processed before registering
-     */
-    private void validateNameAndEmail(UserEntity user) {
-        List<ResponseStatus> responseStatusList = new ArrayList<>();
-        if (!EntityUtils.validateName(user.getName())) {
-            responseStatusList.add(ResponseStatus.INVALID_NAME);
-        }
-        if (!EntityUtils.validateEmail(user.getEmail())) {
-            responseStatusList.add(ResponseStatus.INVALID_EMAIL);
-        }
-        if (!responseStatusList.isEmpty()) {
-            throw new EntityValidationException("Invalid User Entity, responseStatusList", UserApiResponse.createStatusApiResponse(responseStatusList), HttpStatus.NOT_ACCEPTABLE);
-        }
+    private void validateBusinessRules(UserDTOs.UserRegistrationObject userJson) {
+        EntityUtils.validateNameAndEmail(userJson.name, userJson.email);
+        this.checkEmailExistence(userJson.email);
     }
 
     /**
@@ -94,8 +77,8 @@ public class UserServiceImpl implements UserService {
      *
      * @param user User entity containing email to be checked
      */
-    private void checkEmailExistence(UserEntity user) {
-        boolean emailAlreadyExists = userRepository.existsByEmail(user.getEmail());
+    private void checkEmailExistence(String userEmail) {
+        boolean emailAlreadyExists = userRepository.existsByEmail(userEmail);
         if (emailAlreadyExists) {
             throw new EntityValidationException("Invalid User Entity " + ResponseStatus.EMAIL_EXISTS.name(),
                     UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.EMAIL_EXISTS)), HttpStatus.NOT_ACCEPTABLE);
@@ -387,7 +370,7 @@ public class UserServiceImpl implements UserService {
      */
     private List<String> getUserRoles() {
         // for now, return default role which is Customer
-        return Collections.singletonList(EntityConstants.Roles.CUSTOMER.getValue());
+        return Collections.singletonList(Roles.CUSTOMER.name());
     }
 
     public boolean checkAuthToken(long userId, String authToken) {

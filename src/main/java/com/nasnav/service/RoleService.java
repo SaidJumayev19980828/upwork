@@ -8,9 +8,9 @@ public interface RoleService {
     /**
      * Gel list of roles assigned to passed employeeUserId
      *
-     * @param employeeUserId Id of employee user entity.
+     * @param integer Id of employee user entity.
      * @return list or roles
      */
-    List<Role> getRolesOfEmployeeUser(Integer employeeUserId);
+    List<Role> getRolesOfEmployeeUser(Integer integer);
 
 }

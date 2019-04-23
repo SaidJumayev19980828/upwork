@@ -24,6 +24,19 @@ public class UserController {
         this.userService = userService;
         this.employeeUserService = employeeUserService;
     }
+    
+    @ApiOperation(value = "Create a new employee user", nickname = "employeeUserCreation", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 201, message = "account needs activation"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "provided email is invalid"),
+    })
+    @PostMapping(value = "create",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public UserApiResponse createEmployeeUser(@RequestBody UserDTOs.EmployeeUserCreationObject employeeUserJson) {
+        return this.employeeUserService.createEmployeeUser(employeeUserJson);
+    }
 
 
     @ApiOperation(value = "Register a new user", nickname = "userRegister", code = 201)
@@ -35,7 +48,7 @@ public class UserController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public UserApiResponse createUser(@RequestBody UserDTOs.UserRegistrationObject userJson) {
+    public UserApiResponse registerUser(@RequestBody UserDTOs.UserRegistrationObject userJson) {
         return this.userService.registerUser(userJson);
     }
 

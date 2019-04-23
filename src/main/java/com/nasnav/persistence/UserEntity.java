@@ -6,6 +6,10 @@ import lombok.EqualsAndHashCode;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+
+import com.nasnav.constatnts.EntityConstants;
+import com.nasnav.dto.UserDTOs;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -14,11 +18,14 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper=false)
 public class UserEntity extends DefaultBusinessEntity<Long> {
 
-    @Column(name="email", unique = true)
+    @Column(name="email")
     private String email;
 
     @Column(name="user_name", unique = true)
     private String name;
+    
+    @Column(name = "organization_id")
+    private Integer organizationId;
 
     @Column(name="encrypted_password")
     private String encPassword;
@@ -61,6 +68,17 @@ public class UserEntity extends DefaultBusinessEntity<Long> {
 
     public UserEntity() {
         super();
+    }
+    
+    public static UserEntity createUser(UserDTOs.UserRegistrationObject userJson) {
+    	UserEntity user = new UserEntity();
+        user.setName(userJson.name);
+        user.setEmail(userJson.email);
+        user.setEncPassword(EntityConstants.INITIAL_PASSWORD);
+        user.setOrganizationId(userJson.org_id);
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        return user;
     }
 
 }
