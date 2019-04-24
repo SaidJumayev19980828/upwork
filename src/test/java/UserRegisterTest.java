@@ -70,6 +70,7 @@ public class UserRegisterTest {
             persistentUser = new UserEntity();
             persistentUser.setName("John Smith");
             persistentUser.setEmail("unavailable@nasnav.com");
+            persistentUser.setOrganizationId(1);
         }
         persistentUser.setEncPassword("---");
         userRepository.save(persistentUser);
@@ -85,7 +86,7 @@ public class UserRegisterTest {
     @Test
     public void testUserShouldBeRegistered() {
         HttpEntity<Object> userJson = getHttpEntity(
-                "{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\"}");
+                "{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 2}");
         ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/register", userJson, UserApiResponse.class);
         //Delete this user
@@ -93,25 +94,51 @@ public class UserRegisterTest {
         Assert.assertTrue(response.getBody().isSuccess());
         Assert.assertEquals(201, response.getStatusCode().value());
     }
-
+    
     @Test
-    public void testEmailExistence() {
+    public void testSameEmailDifferentOrgId() {
         HttpEntity<Object> userJson = getHttpEntity(
-                "{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\"}");
+                "{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 3}");
+        
+        HttpEntity<Object> userJsonNewOrgId = getHttpEntity(
+                "{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 4}");
+        
         ResponseEntity<UserApiResponse> response = template.postForEntity(
                 "/user/register", userJson, UserApiResponse.class);
         // get userId for deletion after test
         Long userId = response.getBody().getEntityId();
 
-        //try to re register with the same email
+        //try to re register with the same email and different org_id
+        response = template.postForEntity(
+                "/user/register", userJsonNewOrgId, UserApiResponse.class);
+        Assert.assertTrue(response.getBody().isSuccess());
+        Long newUserId = response.getBody().getEntityId();
+        // response status should contain ACTIVATION_SENT
+        Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.ACTIVATION_SENT));
+        Assert.assertEquals(201, response.getStatusCode().value());
+        //Delete this user
+        userService.deleteUser(userId);
+        userService.deleteUser(newUserId);
+    }
+
+    @Test
+    public void testEmailAndOrgIdExistence() {
+        HttpEntity<Object> userJson = getHttpEntity(
+                "{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 3}");
+        ResponseEntity<UserApiResponse> response = template.postForEntity(
+                "/user/register", userJson, UserApiResponse.class);
+        // get userId for deletion after test
+        Long userId = response.getBody().getEntityId();
+
+        //try to re register with the same email and org_id
         response = template.postForEntity(
                 "/user/register", userJson, UserApiResponse.class);
         Assert.assertFalse(response.getBody().isSuccess());
         // response status should contain EMAIL_EXISTS
         Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.EMAIL_EXISTS));
+        Assert.assertEquals(406, response.getStatusCode().value());
         //Delete this user
         userService.deleteUser(userId);
-        Assert.assertEquals(406, response.getStatusCode().value());
     }
 
     @Test

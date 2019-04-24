@@ -22,60 +22,27 @@ import java.util.*;
 import java.util.Optional;
 
 @Service
-public class UserServiceImpl extends CommonUserServiceImpl implements UserService{
+public class CommonUserServiceImpl implements CommonUserServiceInterface {
 
     private UserRepository userRepository;
     private MailService mailService;
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository,
+    public CommonUserServiceImpl(UserRepository userRepository,
                            MailService mailService, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.mailService = mailService;
         this.passwordEncoder = passwordEncoder;
     }
 
-    @Autowired
-    AppConfig appConfig;
-
-    @Override
-    public UserApiResponse registerUser(UserDTOs.UserRegistrationObject userJson) {
-    	// validate user entity against business rules.
-        this.validateBusinessRules(userJson);
-        // check if a user with the same email and org_Id already exists
-        if(userRepository.existsByEmailAndOrgId(userJson.email, userJson.org_id) == null) {
-	        //create and save a user from the json object
-	        UserEntity userEntity = createUserEntity(userJson);
-	        // send activation email
-	        userEntity = generateResetPasswordToken(userEntity);
-	        sendRecoveryMail(userEntity);
-	        return UserApiResponse.createStatusApiResponse(userEntity.getId(), Arrays.asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
-        }
-        throw new EntityValidationException("Invalid User Entity: " + ResponseStatus.EMAIL_EXISTS.name(),
-                UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.EMAIL_EXISTS)), HttpStatus.NOT_ACCEPTABLE);
-    }
-
-
-	private UserEntity createUserEntity(UserDTOs.UserRegistrationObject userJson) {
-		// parse Json to User entity.
-        UserEntity user = UserEntity.createUser(userJson);
-        
-        // save to DB        
-        UserEntity userEntity = userRepository.save(user);
-		return userEntity;
+    public CommonUserServiceImpl() {
+		// TODO Auto-generated constructor stub
 	}
 
+	@Autowired
+    AppConfig appConfig;
 
-    /**
-     * validateBusinessRules passed user entity against business rules
-     *
-     * @param user User entity to be validated
-     */
-    private void validateBusinessRules(UserDTOs.UserRegistrationObject userJson) {
-        EntityUtils.validateNameAndEmail(userJson.name, userJson.email);
-        this.checkEmailExistence(userJson.email);
-    }
 
     /**
      * Ensure that the new email is not registered to another user

@@ -17,7 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 @Service
-public class EmployeeUserServiceImpl implements EmployeeUserService {
+public class EmployeeUserServiceImpl extends CommonUserServiceImpl implements EmployeeUserService {
 	
 	private EmployeeUserServiceHelper helper;
 
