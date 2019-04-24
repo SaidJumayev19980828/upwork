@@ -43,20 +43,6 @@ public class CommonUserServiceImpl implements CommonUserServiceInterface {
 	@Autowired
     AppConfig appConfig;
 
-
-    /**
-     * Ensure that the new email is not registered to another user
-     *
-     * @param user User entity containing email to be checked
-     */
-    private void checkEmailExistence(String userEmail) {
-        boolean emailAlreadyExists = userRepository.existsByEmail(userEmail);
-        if (emailAlreadyExists) {
-            throw new EntityValidationException("Invalid User Entity: " + ResponseStatus.EMAIL_EXISTS.name(),
-                    UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.EMAIL_EXISTS)), HttpStatus.NOT_ACCEPTABLE);
-        }
-    }
-
     @Override
     public void deleteUser(Long userId) {
         userRepository.deleteById(userId);
