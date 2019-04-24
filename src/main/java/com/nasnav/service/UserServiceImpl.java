@@ -43,12 +43,17 @@ public class UserServiceImpl implements UserService {
     public UserApiResponse registerUser(UserDTOs.UserRegistrationObject userJson) {
     	// validate user entity against business rules.
         this.validateBusinessRules(userJson);
-        //create and save a user from the json object
-        UserEntity userEntity = createUserEntity(userJson);
-        // send activation email
-        userEntity = generateResetPasswordToken(userEntity);
-        sendRecoveryMail(userEntity);
-        return UserApiResponse.createStatusApiResponse(userEntity.getId(), Arrays.asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
+        // check if a user with the same email and org_Id already exists
+        if(userRepository.existsByEmailAndOrgId(userJson.email, userJson.org_id) == null) {
+	        //create and save a user from the json object
+	        UserEntity userEntity = createUserEntity(userJson);
+	        // send activation email
+	        userEntity = generateResetPasswordToken(userEntity);
+	        sendRecoveryMail(userEntity);
+	        return UserApiResponse.createStatusApiResponse(userEntity.getId(), Arrays.asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
+        }
+        throw new EntityValidationException("Invalid User Entity: " + ResponseStatus.EMAIL_EXISTS.name(),
+                UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.EMAIL_EXISTS)), HttpStatus.NOT_ACCEPTABLE);
     }
 
 
@@ -80,7 +85,7 @@ public class UserServiceImpl implements UserService {
     private void checkEmailExistence(String userEmail) {
         boolean emailAlreadyExists = userRepository.existsByEmail(userEmail);
         if (emailAlreadyExists) {
-            throw new EntityValidationException("Invalid User Entity " + ResponseStatus.EMAIL_EXISTS.name(),
+            throw new EntityValidationException("Invalid User Entity: " + ResponseStatus.EMAIL_EXISTS.name(),
                     UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.EMAIL_EXISTS)), HttpStatus.NOT_ACCEPTABLE);
         }
     }

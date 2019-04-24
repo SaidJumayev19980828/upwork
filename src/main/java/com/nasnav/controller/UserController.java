@@ -27,8 +27,8 @@ public class UserController {
     
     @ApiOperation(value = "Create a new employee user", nickname = "employeeUserCreation", code = 200)
     @ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 201, message = "account needs activation"),
-            @io.swagger.annotations.ApiResponse(code = 406, message = "provided email is invalid"),
+            @io.swagger.annotations.ApiResponse(code = 200, message = "account needs activation"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "the email is already registered in the database"),
     })
     @PostMapping(value = "create",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
@@ -86,6 +86,11 @@ public class UserController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public UserApiResponse login(@RequestBody UserDTOs.UserLoginObject login) {
+    	if (login.employee) {
         return this.employeeUserService.login(login);
+    	}
+		// try to login using users table if employee_users does not contain current
+		// login.
+		return this.userService.login(login);
     }
 }

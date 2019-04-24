@@ -1,8 +1,11 @@
 package com.nasnav.dao;
 
+import com.nasnav.persistence.Role;
 import com.nasnav.persistence.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -54,6 +57,16 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     boolean existsByAuthenticationToken(String authenticationToken);
 
     boolean existsByIdAndAuthenticationToken(long id, String authenticationToken);
+    
+    /**
+     * check if the created user has the same email and org_id
+     *
+     * @param userEmail
+     * @param userOrg_Id
+     * @return UserEntity if a user exists having both email and org_id
+     */
+    @Query("select * from  UserEntity users where users.email = :userEmail and users.organizationId = :userOrgId")
+    UserEntity existsByEmailAndOrgId(@Param("userEmail") String userEmail, @Param("userOrgId") Integer userOrgId);
 
 }
 
