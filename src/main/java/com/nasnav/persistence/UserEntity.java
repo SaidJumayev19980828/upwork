@@ -21,7 +21,7 @@ public class UserEntity extends DefaultBusinessEntity<Long> {
     @Column(name="email")
     private String email;
 
-    @Column(name="user_name", unique = true)
+    @Column(name="user_name")
     private String name;
     
     @Column(name = "organization_id")
@@ -70,7 +70,7 @@ public class UserEntity extends DefaultBusinessEntity<Long> {
         super();
     }
     
-    public static UserEntity createUser(UserDTOs.UserRegistrationObject userJson) {
+    public static UserEntity registerUser(UserDTOs.UserRegistrationObject userJson) {
     	UserEntity user = new UserEntity();
         user.setName(userJson.name);
         user.setEmail(userJson.email);

@@ -1,10 +1,16 @@
 package com.nasnav.service;
 
+import com.nasnav.AppConfig;
+import com.nasnav.constatnts.EmailConstants;
+import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dto.UserDTOs;
+import com.nasnav.dto.UserDTOs.PasswordResetObject;
 import com.nasnav.exceptions.EntityValidationException;
+import com.nasnav.persistence.DefaultBusinessEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.EntityUtils;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import com.nasnav.response.ResponseStatus;
@@ -13,42 +19,63 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
-public class EmployeeUserServiceImpl extends CommonUserServiceImpl implements EmployeeUserService {
-	
+public class EmployeeUserServiceImpl implements EmployeeUserService {
+
 	private EmployeeUserServiceHelper helper;
 
 	private EmployeeUserRepository employeeUserRepository;
+	private MailService mailService;
 	private PasswordEncoder passwordEncoder;
 
 	@Autowired
-	public EmployeeUserServiceImpl(EmployeeUserRepository userRepository, PasswordEncoder passwordEncoder) {
-		this.employeeUserRepository = userRepository;
+	public EmployeeUserServiceImpl(EmployeeUserRepository employeeUserRepository, MailService mailService, PasswordEncoder passwordEncoder) {
+		this.employeeUserRepository = employeeUserRepository;
+		this.mailService = mailService;
 		this.passwordEncoder = passwordEncoder;
 	}
+	
+	@Autowired
+	AppConfig appConfig;
 
 	@Override
 	public UserApiResponse createEmployeeUser(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
+		System.out.println("-----------------0000000000000000000000000---------------");
+
 		EntityUtils.validateNameAndEmail(employeeUserJson.name, employeeUserJson.email);
+		System.out.println("-----------------0000000000000000000000000---------------");
 		// check if email already exists
 		if (employeeUserRepository.getByEmail(employeeUserJson.email) == null) {
+			System.out.println("-----------------111111111111---------------");
 			String[] rolesList = employeeUserJson.role.split(",");
 			// check if at least one of the roles can create a user
 			if (helper.roleCanCreateUser(rolesList)) {
-				// parse Json to EmployeeUserEntity
-				EmployeeUserEntity employeeUserEntity = helper.createEmployeeUser(employeeUserJson);
+				System.out.println("-----------------22222222222222---------------");
+				if ((!helper.hasOrganizationRole(rolesList)
+						|| (helper.hasOrganizationRole(rolesList) && employeeUserJson.org_id != 0))
+						|| (helper.hasStoreRole(rolesList)
+								|| (helper.hasStoreRole(rolesList) && employeeUserJson.store_id != 0))) {
+					// parse Json to EmployeeUserEntity
+					EmployeeUserEntity employeeUserEntity = helper.createEmployeeUser(employeeUserJson);
+					System.out.println("-----------------333333333333333333333---------------");
 
-				// create Role and RoleEmployeeUser entities from the roles array
-				helper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.org_id);
-
-				return UserApiResponse.createStatusApiResponse(Integer.toUnsignedLong(employeeUserEntity.getId()),
-						Arrays.asList(ResponseStatus.NEED_ACTIVATION));
+					// create Role and RoleEmployeeUser entities from the roles array
+					helper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.org_id);
+					System.out.println("-----------------44444444444444444---------------");
+					return UserApiResponse.createStatusApiResponse(Integer.toUnsignedLong(employeeUserEntity.getId()),
+							Arrays.asList(ResponseStatus.NEED_ACTIVATION));
+				}
 			}
+			System.out.println("-----------------5555555555555555555555555---------------");
 			return EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS));
 		}
+		System.out.println("-----------------666666666666666666---------------");
 		throw new EntityValidationException(ResponseStatus.EMAIL_EXISTS.name(),
 				EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.EMAIL_EXISTS)),
 				HttpStatus.NOT_ACCEPTABLE);
@@ -85,4 +112,141 @@ public class EmployeeUserServiceImpl extends CommonUserServiceImpl implements Em
 				.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_CREDENTIALS));
 		throw new EntityValidationException("INVALID_CREDENTIALS ", failedLoginResponse, HttpStatus.UNAUTHORIZED);
 	}
+
+	@Override
+	public void deleteUser(Long userId) {
+		employeeUserRepository.deleteById(userId);
+	}
+
+	@Override
+	public DefaultBusinessEntity<?> findUserById(Long userId) {
+
+		return employeeUserRepository.findById(userId).orElse(null);
+	}
+
+	@Override
+	public DefaultBusinessEntity<?> getUserById(Long userId) {
+		return employeeUserRepository.findById(userId).orElse(null);
+	}
+
+	@Override
+	public DefaultBusinessEntity<?> update(DefaultBusinessEntity<?> employeeUserEntity) {
+		return employeeUserRepository.saveAndFlush((EmployeeUserEntity) employeeUserEntity);
+	}
+
+	@Override
+	public UserApiResponse sendEmailRecovery(String email) {
+		EmployeeUserEntity employeeUserEntity = getEmployeeUserByEmail(email);
+		employeeUserEntity = generateResetPasswordToken(employeeUserEntity);
+		return sendRecoveryMail(employeeUserEntity);
+	}
+
+	@Override
+	public UserApiResponse recoverUser(PasswordResetObject body) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean checkAuthToken(long userId, String authToken) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	/**
+	 * Get employee user by passed email
+	 *
+	 * @param email user entity email
+	 * @return employee user entity
+	 */
+	private EmployeeUserEntity getEmployeeUserByEmail(String email) {
+		// first ensure that email is valid
+		if (!EntityUtils.validateEmail(email)) {
+			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
+					Collections.singletonList(ResponseStatus.INVALID_EMAIL));
+			throw new EntityValidationException("INVALID_EMAIL :" + email, userApiResponse, HttpStatus.NOT_ACCEPTABLE);
+		}
+		// load user entity by email
+		EmployeeUserEntity employeeUserEntity = this.employeeUserRepository.getByEmail(email);
+		if (EntityUtils.isBlankOrNull(employeeUserEntity)) {
+			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
+					Collections.singletonList(ResponseStatus.EMAIL_NOT_EXIST));
+			throw new EntityValidationException("EMAIL_NOT_EXIST", userApiResponse, HttpStatus.NOT_ACCEPTABLE);
+		}
+		return employeeUserEntity;
+	}
+	
+	/**
+	 * Generate ResetPasswordToken and assign it to passed user entity
+	 *
+	 * @param employeeUserEntity
+	 * @return user entity after generating ResetPasswordToken and updating entity.
+	 */
+	private EmployeeUserEntity generateResetPasswordToken(EmployeeUserEntity employeeUserEntity) {
+		String generatedToken = generateResetPasswordToken(EntityConstants.TOKEN_LENGTH);
+		employeeUserEntity.setResetPasswordToken(generatedToken);
+		employeeUserEntity.setResetPasswordSentAt(LocalDateTime.now());
+		return employeeUserRepository.saveAndFlush(employeeUserEntity);
+	}
+	
+	/**
+	 * generate new ResetPasswordToken and ensure that this ResetPasswordToken is
+	 * never used before.
+	 *
+	 * @param tokenLength length of generated ResetPasswordToken
+	 * @return unique generated ResetPasswordToken.
+	 */
+	private String generateResetPasswordToken(int tokenLength) {
+		String generatedToken = EntityUtils.generateToken(tokenLength);
+		boolean existsByToken = employeeUserRepository.existsByResetPasswordToken(generatedToken);
+		if (existsByToken) {
+			return reGenerateResetPasswordToken(tokenLength);
+		}
+		return generatedToken;
+	}
+	
+	/**
+	 * regenerate ResetPasswordToken and if token already exists, make recursive
+	 * call until generating new ResetPasswordToken.
+	 *
+	 * @param tokenLength length of generated ResetPasswordToken
+	 * @return unique generated ResetPasswordToken.
+	 */
+	private String reGenerateResetPasswordToken(int tokenLength) {
+		String generatedToken = EntityUtils.generateToken(tokenLength);
+		boolean existsByToken = employeeUserRepository.existsByResetPasswordToken(generatedToken);
+		if (existsByToken) {
+			return reGenerateResetPasswordToken(tokenLength);
+		}
+		return generatedToken;
+	}
+	
+	/**
+	 * Send An Email to user.
+	 *
+	 * @param userEntity user entity
+	 * @return UserApiResponse representing the status of sending email.
+	 */
+	private UserApiResponse sendRecoveryMail(EmployeeUserEntity employeeUserEntity) {
+		UserApiResponse userApiResponse = new UserApiResponse();
+		try {
+			// create parameter map to replace parameter by actual UserEntity data.
+			Map<String, String> parametersMap = new HashMap<>();
+			parametersMap.put(EmailConstants.USERNAME_PARAMETER, employeeUserEntity.getName());
+			parametersMap.put(EmailConstants.CHANGE_PASSWORD_URL_PARAMETER,
+					appConfig.mailRecoveryUrl.concat(employeeUserEntity.getResetPasswordToken()));
+			// send Recovery mail to user
+			this.mailService.send(employeeUserEntity.getEmail(), EmailConstants.CHANGE_PASSWORD_EMAIL_SUBJECT,
+					EmailConstants.CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap);
+			// set success to true after sending mail.
+			userApiResponse.setSuccess(true);
+		} catch (Exception e) {
+			userApiResponse.setSuccess(false);
+			userApiResponse.setMessages(Collections.singletonList(e.getMessage()));
+			throw new EntityValidationException("Could not send Email ", userApiResponse,
+					HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return userApiResponse;
+	}
+
 }

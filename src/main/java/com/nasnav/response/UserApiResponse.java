@@ -29,7 +29,7 @@ public class UserApiResponse implements Serializable {
     private List<ResponseStatus> responseStatuses;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @JsonProperty(value = "message")
+    @JsonProperty(value = "messages")
     private List<String> messages;
 
 

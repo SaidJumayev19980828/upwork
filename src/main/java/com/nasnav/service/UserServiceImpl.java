@@ -7,6 +7,7 @@ import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.EntityValidationException;
+import com.nasnav.persistence.DefaultBusinessEntity;
 import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.UserApiResponse;
@@ -19,10 +20,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.Optional;
 
 @Service
-public class UserServiceImpl extends CommonUserServiceImpl implements UserService {
+public class UserServiceImpl implements UserService {
 
 	private UserRepository userRepository;
 	private MailService mailService;
@@ -49,17 +49,19 @@ public class UserServiceImpl extends CommonUserServiceImpl implements UserServic
 			// send activation email
 			userEntity = generateResetPasswordToken(userEntity);
 			sendRecoveryMail(userEntity);
-			return UserApiResponse.createStatusApiResponse(userEntity.getId(),
+			UserApiResponse api = UserApiResponse.createStatusApiResponse(userEntity.getId(),
 					Arrays.asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
+			api.setMessages(new ArrayList<>());
+			return api;
 		}
-		throw new EntityValidationException("Invalid User Entity: " + ResponseStatus.EMAIL_EXISTS.name(),
+		throw new EntityValidationException("Invalid User Entity: " + ResponseStatus.EMAIL_EXISTS,
 				UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.EMAIL_EXISTS)),
 				HttpStatus.NOT_ACCEPTABLE);
 	}
 
 	private UserEntity createUserEntity(UserDTOs.UserRegistrationObject userJson) {
 		// parse Json to User entity.
-		UserEntity user = UserEntity.createUser(userJson);
+		UserEntity user = UserEntity.registerUser(userJson);
 
 		// save to DB
 		UserEntity userEntity = userRepository.save(user);
@@ -93,8 +95,8 @@ public class UserServiceImpl extends CommonUserServiceImpl implements UserServic
 	}
 
 	@Override
-	public UserEntity update(UserEntity userEntity) {
-		return userRepository.saveAndFlush(userEntity);
+	public DefaultBusinessEntity<?> update(DefaultBusinessEntity<?> userEntity) {
+		return userRepository.saveAndFlush((UserEntity) userEntity);
 	}
 
 	@Override

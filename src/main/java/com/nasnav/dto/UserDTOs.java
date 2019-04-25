@@ -16,8 +16,8 @@ public class UserDTOs {
         @JsonProperty("email")
         public String email;
         
-        @ApiModelProperty(value = "Organization id thew client wants to log into", example = "123", required = false)
-        @JsonProperty("organization_id")
+        @ApiModelProperty(value = "Organization id that client wants to log into", example = "123", required = false)
+        @JsonProperty("org_id")
         public Integer org_id;
     }
 
@@ -35,7 +35,7 @@ public class UserDTOs {
         @JsonProperty("token")
         public String token;
 
-        @ApiModelProperty(value = "New ueser's password", example = "PaSSworD", required = true)
+        @ApiModelProperty(value = "New user's password", example = "PaSSworD", required = true)
         @JsonProperty("password")
         public String password;
     }
@@ -62,7 +62,7 @@ public class UserDTOs {
         @JsonProperty("role")
         public String role;
         
-        @ApiModelProperty(value = "User's email", example = "testuser@nasnav.com", required = false)
+        @ApiModelProperty(value = "Store Id", example = "1234", required = false)
         @JsonProperty("store_id")
         public Long store_id;
     }

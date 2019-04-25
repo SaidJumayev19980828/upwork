@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import com.nasnav.dto.UserDTOs;
+import com.nasnav.persistence.DefaultBusinessEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.UserApiResponse;
 
@@ -13,21 +14,21 @@ public interface CommonUserServiceInterface {
      */
     void deleteUser(Long userId);
 
-    UserEntity findUserById(Long userId);
+    DefaultBusinessEntity<?> findUserById(Long userId);
 
     /**
      * Load user by passed userId
      * @param userId
      * @return
      */
-    UserEntity getUserById(Long userId);
+    DefaultBusinessEntity<?> getUserById(Long userId);
 
     /**
      * update the passed user entity
      * @param userEntity user entity
      * @return user entity after update
      */
-    UserEntity update(UserEntity userEntity);
+    DefaultBusinessEntity<?> update(DefaultBusinessEntity<?> userEntity);
 
     /**
      * Used to send the user a recovery token to reset his password

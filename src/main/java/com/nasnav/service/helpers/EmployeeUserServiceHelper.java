@@ -2,6 +2,7 @@ package com.nasnav.service.helpers;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,20 +24,20 @@ import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.RoleService;
 
 public class EmployeeUserServiceHelper {
-	
+
 	private EmployeeUserRepository employeeUserRepository;
 	private RoleRepository roleRepository;
 	private RoleEmployeeUserRepository roleEmployeeUserRepository;
 	private RoleService roleService;
-	
+
 	@Autowired
-	public EmployeeUserServiceHelper(EmployeeUserRepository userRepository, RoleRepository roleRepository, RoleEmployeeUserRepository roleEmployeeUserRepository,
-			RoleService roleService) {
+	public EmployeeUserServiceHelper(EmployeeUserRepository userRepository, RoleRepository roleRepository,
+			RoleEmployeeUserRepository roleEmployeeUserRepository, RoleService roleService) {
 		this.employeeUserRepository = userRepository;
 		this.roleEmployeeUserRepository = roleEmployeeUserRepository;
 		this.roleService = roleService;
 	}
-	
+
 	public void createRoles(String[] rolesList, Integer employeeUserId, Integer org_id) {
 		for (String role : rolesList) {
 			try {
@@ -51,7 +52,7 @@ public class EmployeeUserServiceHelper {
 			}
 		}
 	}
-	
+
 	private void createRoleEmployeeUser(Integer employeeUserId, Integer roleId) {
 		RoleEmployeeUser roleEmployeeUser = new RoleEmployeeUser();
 		roleEmployeeUser.setRoleId(roleId);
@@ -61,7 +62,7 @@ public class EmployeeUserServiceHelper {
 
 	// create a Role entity and return its id
 	private Integer createRole(Integer org_id, Roles roleEnum) {
-		//create a role entity
+		// create a role entity
 		Role role = new Role();
 		role.setOrganizationId(org_id);
 		role.setName(roleEnum.name());
@@ -71,7 +72,8 @@ public class EmployeeUserServiceHelper {
 		return roleId;
 	}
 
-	// check if the current list of roles has a role authorized to create users or not
+	// check if the current list of roles has a role authorized to create users or
+	// not
 	public boolean roleCanCreateUser(String[] rolesList) {
 		for (String role : rolesList) {
 			if (role.equals(Roles.NASNAV_ADMIN.name()) || role.equals(Roles.ORGANIZATION_ADMIN.name())
@@ -82,11 +84,20 @@ public class EmployeeUserServiceHelper {
 		return false;
 	}
 
-	public EmployeeUserEntity createEmployeeUser(EmployeeUserCreationObject employeeUserJson) {
-		return employeeUserRepository
-				.save(EmployeeUserEntity.createEmployeeUser(employeeUserJson));
+	// check if the current roles is an organization admin role
+	public boolean hasOrganizationRole(String[] rolesList) {
+		return Arrays.stream(rolesList).anyMatch(Roles.ORGANIZATION_ADMIN.getValue()::equals);
 	}
-	
+
+	// check if the current roles is a store admin role
+	public boolean hasStoreRole(String[] rolesList) {
+		return Arrays.stream(rolesList).anyMatch(Roles.STORE_ADMIN.getValue()::equals);
+	}
+
+	public EmployeeUserEntity createEmployeeUser(EmployeeUserCreationObject employeeUserJson) {
+		return employeeUserRepository.save(EmployeeUserEntity.createEmployeeUser(employeeUserJson));
+	}
+
 	/**
 	 * Generate new AuthenticationToken and perform post login updates.
 	 *
@@ -187,7 +198,5 @@ public class EmployeeUserServiceHelper {
 		}
 		return employessUserRoles;
 	}
-	
-
 
 }
