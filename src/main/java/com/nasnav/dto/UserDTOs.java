@@ -53,7 +53,7 @@ public class UserDTOs {
     }
 
     @ApiModel(value = "Employee User Creation Data")
-	public class EmployeeUserCreationObject extends GenericUserObject{
+	public static class EmployeeUserCreationObject extends GenericUserObject{
     	@ApiModelProperty(value = "User's name", example = "John Smith", required = true)
         @JsonProperty("name")
         public String name;

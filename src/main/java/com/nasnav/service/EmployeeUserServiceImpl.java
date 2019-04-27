@@ -35,7 +35,8 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	private PasswordEncoder passwordEncoder;
 
 	@Autowired
-	public EmployeeUserServiceImpl(EmployeeUserRepository employeeUserRepository, MailService mailService, PasswordEncoder passwordEncoder) {
+	public EmployeeUserServiceImpl(EmployeeUserServiceHelper helper, EmployeeUserRepository employeeUserRepository, MailService mailService, PasswordEncoder passwordEncoder) {
+		this.helper = helper;
 		this.employeeUserRepository = employeeUserRepository;
 		this.mailService = mailService;
 		this.passwordEncoder = passwordEncoder;
@@ -46,36 +47,31 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	@Override
 	public UserApiResponse createEmployeeUser(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
-		System.out.println("-----------------0000000000000000000000000---------------");
-
-		EntityUtils.validateNameAndEmail(employeeUserJson.name, employeeUserJson.email);
-		System.out.println("-----------------0000000000000000000000000---------------");
+		String[] rolesList = employeeUserJson.role.split(",");
+		helper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, rolesList);
 		// check if email already exists
 		if (employeeUserRepository.getByEmail(employeeUserJson.email) == null) {
-			System.out.println("-----------------111111111111---------------");
-			String[] rolesList = employeeUserJson.role.split(",");
 			// check if at least one of the roles can create a user
 			if (helper.roleCanCreateUser(rolesList)) {
-				System.out.println("-----------------22222222222222---------------");
-				if ((!helper.hasOrganizationRole(rolesList)
-						|| (helper.hasOrganizationRole(rolesList) && employeeUserJson.org_id != 0))
-						|| (helper.hasStoreRole(rolesList)
-								|| (helper.hasStoreRole(rolesList) && employeeUserJson.store_id != 0))) {
-					// parse Json to EmployeeUserEntity
-					EmployeeUserEntity employeeUserEntity = helper.createEmployeeUser(employeeUserJson);
-					System.out.println("-----------------333333333333333333333---------------");
-
-					// create Role and RoleEmployeeUser entities from the roles array
-					helper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.org_id);
-					System.out.println("-----------------44444444444444444---------------");
-					return UserApiResponse.createStatusApiResponse(Integer.toUnsignedLong(employeeUserEntity.getId()),
-							Arrays.asList(ResponseStatus.NEED_ACTIVATION));
+				if(helper.hasOrganizationRole(rolesList) && employeeUserJson.org_id <= 0) {
+					throw new EntityValidationException("Error Occurred during user creation:: " + ResponseStatus.INVALID_ORGANIZATION,
+							EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_ORGANIZATION)), HttpStatus.NOT_ACCEPTABLE);
+				} else if(helper.hasStoreRole(rolesList) && employeeUserJson.store_id <= 0) {
+					throw new EntityValidationException("Error Occurred during user creation:: " + ResponseStatus.INVALID_STORE,
+							EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_STORE)), HttpStatus.NOT_ACCEPTABLE);
 				}
+				// parse Json to EmployeeUserEntity
+				EmployeeUserEntity employeeUserEntity = helper.createEmployeeUser(employeeUserJson);
+
+				// create Role and RoleEmployeeUser entities from the roles array
+				helper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.org_id);
+				return UserApiResponse.createStatusApiResponse(Integer.toUnsignedLong(employeeUserEntity.getId()),
+						Arrays.asList(ResponseStatus.NEED_ACTIVATION));
+
 			}
-			System.out.println("-----------------5555555555555555555555555---------------");
-			return EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS));
+			throw new EntityValidationException("Insufficient Rights ",
+					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
 		}
-		System.out.println("-----------------666666666666666666---------------");
 		throw new EntityValidationException(ResponseStatus.EMAIL_EXISTS.name(),
 				EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.EMAIL_EXISTS)),
 				HttpStatus.NOT_ACCEPTABLE);
@@ -115,18 +111,18 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	@Override
 	public void deleteUser(Long userId) {
-		employeeUserRepository.deleteById(userId);
+		employeeUserRepository.deleteById(userId.intValue());
 	}
 
 	@Override
 	public DefaultBusinessEntity<?> findUserById(Long userId) {
 
-		return employeeUserRepository.findById(userId).orElse(null);
+		return employeeUserRepository.findById(userId.intValue()).orElse(null);
 	}
 
 	@Override
 	public DefaultBusinessEntity<?> getUserById(Long userId) {
-		return employeeUserRepository.findById(userId).orElse(null);
+		return employeeUserRepository.findById(userId.intValue()).orElse(null);
 	}
 
 	@Override
@@ -224,7 +220,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	/**
 	 * Send An Email to user.
 	 *
-	 * @param userEntity user entity
+	 * @param employeeUserEntity user entity
 	 * @return UserApiResponse representing the status of sending email.
 	 */
 	private UserApiResponse sendRecoveryMail(EmployeeUserEntity employeeUserEntity) {

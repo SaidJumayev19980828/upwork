@@ -71,7 +71,7 @@ public class UserServiceImpl implements UserService {
 	/**
 	 * validateBusinessRules passed user entity against business rules
 	 *
-	 * @param user User entity to be validated
+	 * @param userJson User entity to be validated
 	 */
 	private void validateBusinessRules(UserDTOs.UserRegistrationObject userJson) {
 		EntityUtils.validateNameAndEmail(userJson.name, userJson.email);

@@ -35,7 +35,6 @@ public class UserController {
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public UserApiResponse createEmployeeUser(@RequestBody UserDTOs.EmployeeUserCreationObject employeeUserJson) {
-    	System.out.println(employeeUserJson);
         return this.employeeUserService.createEmployeeUser(employeeUserJson);
     }
 

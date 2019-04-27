@@ -22,7 +22,9 @@ import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.RoleService;
+import org.springframework.stereotype.Service;
 
+@Service
 public class EmployeeUserServiceHelper {
 
 	private EmployeeUserRepository employeeUserRepository;
@@ -34,22 +36,17 @@ public class EmployeeUserServiceHelper {
 	public EmployeeUserServiceHelper(EmployeeUserRepository userRepository, RoleRepository roleRepository,
 			RoleEmployeeUserRepository roleEmployeeUserRepository, RoleService roleService) {
 		this.employeeUserRepository = userRepository;
+		this.roleRepository = roleRepository;
 		this.roleEmployeeUserRepository = roleEmployeeUserRepository;
 		this.roleService = roleService;
 	}
 
 	public void createRoles(String[] rolesList, Integer employeeUserId, Integer org_id) {
 		for (String role : rolesList) {
-			try {
-				// find the Role enum from the string value
-				Roles roleEnum = Roles.valueOf(role);
-				Integer roleId = createRole(org_id, roleEnum);
-				createRoleEmployeeUser(employeeUserId, roleId);
-			} catch (IllegalArgumentException ex) {
-				throw new EntityValidationException(ResponseStatus.INVALID_ROLE.name(),
-						EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_ROLE)),
-						HttpStatus.NOT_ACCEPTABLE);
-			}
+			// find the Role enum from the string value
+			Roles roleEnum = Roles.valueOf(role);
+			Integer roleId = createRole(org_id, roleEnum);
+			createRoleEmployeeUser(employeeUserId, roleId);
 		}
 	}
 
@@ -57,6 +54,9 @@ public class EmployeeUserServiceHelper {
 		RoleEmployeeUser roleEmployeeUser = new RoleEmployeeUser();
 		roleEmployeeUser.setRoleId(roleId);
 		roleEmployeeUser.setEmployeeUserId(employeeUserId);
+		//TODO: check if these fields will be removed from the DB or not
+		roleEmployeeUser.setCreatedAt(LocalDateTime.now());
+		roleEmployeeUser.setUpdatedAt(LocalDateTime.now());
 		roleEmployeeUserRepository.save(roleEmployeeUser);
 	}
 
@@ -66,18 +66,36 @@ public class EmployeeUserServiceHelper {
 		Role role = new Role();
 		role.setOrganizationId(org_id);
 		role.setName(roleEnum.name());
+		//TODO: check if these fields will be removed from the DB or not
+		role.setCreatedAt(LocalDateTime.now());
+		role.setUpdatedAt(LocalDateTime.now());
 		Role roleEntity = roleRepository.save(role);
 		// get the create role id to create a RoleEmployeeUser entity using it
 		Integer roleId = roleEntity.getId();
 		return roleId;
 	}
 
+	public boolean isValidRolesList(String[] rolesList){
+		for (String role : rolesList) {
+			Roles roleEnum;
+			try {
+				roleEnum = Roles.valueOf(role);
+			} catch (IllegalArgumentException ex) {
+				throw new EntityValidationException(ResponseStatus.INVALID_ROLE.name(),
+						EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_ROLE)),
+						HttpStatus.NOT_ACCEPTABLE);
+			}
+		}
+		return true;
+	}
+
 	// check if the current list of roles has a role authorized to create users or
 	// not
 	public boolean roleCanCreateUser(String[] rolesList) {
 		for (String role : rolesList) {
-			if (role.equals(Roles.NASNAV_ADMIN.name()) || role.equals(Roles.ORGANIZATION_ADMIN.name())
-					|| role.equals(Roles.STORE_ADMIN.name())) {
+			Roles roleEnum = Roles.valueOf(role);
+			if (roleEnum == Roles.NASNAV_ADMIN || roleEnum == Roles.ORGANIZATION_ADMIN
+					|| roleEnum == Roles.STORE_ADMIN) {
 				return true;
 			}
 		}
@@ -189,14 +207,18 @@ public class EmployeeUserServiceHelper {
 	 * @return Role list
 	 */
 	private List<String> getEmployeeUserRoles(Integer integer) {
-		List<String> employessUserRoles = new ArrayList<>();
+		List<String> employeeUserRoles = new ArrayList<>();
 		List<Role> rolesOfEmployeeUser = this.roleService.getRolesOfEmployeeUser(integer);
 		if (EntityUtils.isNotBlankOrNull(rolesOfEmployeeUser)) {
 			rolesOfEmployeeUser.forEach(role -> {
-				employessUserRoles.add(role.getName());
+				employeeUserRoles.add(role.getName());
 			});
 		}
-		return employessUserRoles;
+		return employeeUserRoles;
 	}
 
+	public void validateBusinessRules(String name, String email, String[] rolesList) {
+		EntityUtils.validateNameAndEmail(name, email);
+		isValidRolesList(rolesList);
+	}
 }

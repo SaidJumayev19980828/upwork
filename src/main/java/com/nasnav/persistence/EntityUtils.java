@@ -115,21 +115,18 @@ public class EntityUtils {
 	/**
 	 * called pre save user to validateBusinessRules fields of user entity
 	 *
-	 * @param user name
-	 * @param user email
+	 * @param name
+	 * @param email
 	 */
 	public static void validateNameAndEmail(String name, String email) {
-		System.out.println("-----------------0000000000000000000//////////---------------");
 		List<ResponseStatus> responseStatusList = new ArrayList<>();
 		if (!EntityUtils.validateName(name)) {
-			System.out.println("name is: " + name);
 			responseStatusList.add(ResponseStatus.INVALID_NAME);
 		}
 		if (!EntityUtils.validateEmail(email)) {
 			responseStatusList.add(ResponseStatus.INVALID_EMAIL);
 		}
 		if (!responseStatusList.isEmpty()) {
-			System.out.println("-----------------//////////////1111111111111/////////////////---------------");
 			throw new EntityValidationException("Invalid User Entity: " + responseStatusList,
 					UserApiResponse.createStatusApiResponse(responseStatusList), HttpStatus.NOT_ACCEPTABLE);
 		}
