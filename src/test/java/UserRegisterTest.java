@@ -2,8 +2,10 @@ import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.controller.UserController;
+import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.exceptions.EntityValidationException;
+import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.response.ResponseStatus;
@@ -34,6 +36,7 @@ public class UserRegisterTest {
 
 	private MockMvc mockMvc;
 	private UserEntity persistentUser;
+	private OrganizationEntity organization;
 
 	@Mock
 	private UserController userController;
@@ -49,6 +52,10 @@ public class UserRegisterTest {
 
 	@Autowired
 	private UserRepository userRepository;
+
+	@Autowired
+	private OrganizationRepository organizationRepository;
+
 
 	@Before
 	public void setup() {
@@ -72,12 +79,27 @@ public class UserRegisterTest {
 			persistentUser = new UserEntity();
 			persistentUser.setName("John Smith");
 			persistentUser.setEmail("unavailable@nasnav.com");
-			persistentUser.setOrganizationId(1L);
 			persistentUser.setCreatedAt(LocalDateTime.now());
 			persistentUser.setUpdatedAt(LocalDateTime.now());
+
+			//create a new organization and save its id to the user entity
+			organization = createOrganization();
+			persistentUser.setOrganizationId(organization.getId());
 		}
 		persistentUser.setEncPassword("---");
 		userRepository.save(persistentUser);
+	}
+
+	private OrganizationEntity createOrganization() {
+		//create new organization
+		OrganizationEntity org = new OrganizationEntity();
+		org.setName("Test Organization");
+		org.setCreatedAt(new Date());
+		org.setUpdatedAt(new Date());
+		org.setDescription("Test Organization Description");
+
+		OrganizationEntity organization = organizationRepository.save(org);
+		return organization;
 	}
 
 	@PreDestroy
@@ -85,34 +107,45 @@ public class UserRegisterTest {
 		if (persistentUser != null) {
 			userRepository.delete(persistentUser);
 		}
+
+		if(organization != null){
+			organizationRepository.delete(organization);
+		}
 	}
 
 	@Test
 	public void testUserShouldBeRegistered() {
+		//create new organization
+		OrganizationEntity org = createOrganization();
+
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 2}");
+				"{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\":" + org.getId() + "}");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/register", userJson,
 				UserApiResponse.class);
 		// Delete this user
 		userService.deleteUser(response.getBody().getEntityId());
+		//delete created organization
+		organizationRepository.delete(org);
 		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertEquals(201, response.getStatusCode().value());
 	}
 
 	@Test
 	public void testSameEmailDifferentOrgId() {
+		//create new organization
+		OrganizationEntity org = createOrganization();
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 3}");
+				"{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\":" + org.getId() + "}");
 
+		//create new organization
+		OrganizationEntity newOrg = createOrganization();
 		HttpEntity<Object> userJsonNewOrgId = getHttpEntity(
-				"{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 4}");
+				"{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": " + newOrg.getId() + "}");
 
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/register", userJson,
 				UserApiResponse.class);
 		// get userId for deletion after test
 		Long userId = response.getBody().getEntityId();
-		
-		System.out.println("id: " + userId);
 
 		
 		// try to re register with the same email and different org_id
@@ -126,6 +159,10 @@ public class UserRegisterTest {
 		// Delete this user
 		userService.deleteUser(userId);
 		userService.deleteUser(newUserId);
+
+		//delete created organizations
+		organizationRepository.delete(org);
+		organizationRepository.delete(newOrg);
 	}
 
 	public void testSameEmailAndOrgId() {
