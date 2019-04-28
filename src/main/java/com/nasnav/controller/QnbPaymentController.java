@@ -45,17 +45,18 @@ public class QnbPaymentController {
     @Autowired
     private StockRepository stockRepository;
 
+    @Autowired
+    Session session;
 
     @RequestMapping(value = "/test/payment/init",produces=MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<?> testPayment(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
 
         Account account = new Account();
-        Session session = new Session(account);
-
+        session.setMerchantAccount(account);
         Session.TransactionCurrency currency = EGP;
 
         if (session.initialize(orderId, currency)) {
-
+            System.out.println("--------------reached inside session initialize---------------");
             return new ResponseEntity<>(paymentService.getConfiguredHtml(orderId, session), HttpStatus.OK);
         };
 
@@ -65,14 +66,13 @@ public class QnbPaymentController {
     public ResponseEntity<?> initPayment(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
 
         Account account = new Account();
-        Session s = new Session(account);
 
         // TODO: mockup, later retrieve from order
         long orderPriceInCents = 35000;
         Session.TransactionCurrency currency = EGP;
 
-        if (s.initialize(orderId, currency)) {
-            OrderSessionResponse response = createOrderResponseJson(s, orderId);
+        if (session.initialize(orderId, currency)) {
+            OrderSessionResponse response = createOrderResponseJson(session, orderId);
 
             return new ResponseEntity<>(response.toString(), HttpStatus.OK);
         };

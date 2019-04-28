@@ -146,7 +146,7 @@ public class OrderServiceTest {
 	}
 
 	// This needs fixing as it doesn't correctly use baskets
-	// @Test
+	@Test
 	public void updateOrderSuccessTest() {
 		// create a new order, then take it's oder id and try to make an update using it
 		ResponseEntity<OrderResponse> response = template.postForEntity("/order/update",
@@ -154,11 +154,15 @@ public class OrderServiceTest {
 						persistentUser.getId(), persistentUser.getAuthenticationToken()),
 				OrderResponse.class);
 
+		// get the returned orderId
+		System.out.println("----------response-----------------" + response);
+		long orderId = response.getBody().getOrderId();
+		System.out.println("----------order id-----------------" + orderId);
+
 		Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
 		Assert.assertTrue(response.getBody().isSuccess());
 
-		// get the returned orderId
-		long orderId = response.getBody().getOrderId();
+
 
 		// make a new request using the created order
 		response = template.postForEntity("/order/update",
@@ -171,7 +175,7 @@ public class OrderServiceTest {
 		Assert.assertTrue(response.getBody().isSuccess());
 
 		// delete the order after assertion
-		orderRepository.deleteById(orderId);
+		//orderRepository.deleteById(orderId);
 	}
 
 	@Test

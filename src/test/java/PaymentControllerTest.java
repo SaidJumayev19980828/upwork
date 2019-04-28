@@ -1,11 +1,22 @@
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.net.Authenticator;
 import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
+import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.nasnav.controller.QnbPaymentController;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.StocksEntity;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,22 +67,35 @@ public class PaymentControllerTest {
 	@Autowired
 	private BasketRepository basketRepository;
 
+	@Autowired
+	private StockRepository stockRepository;
+
+	@Autowired
+	private ProductRepository productRepository;
 
 	final static LinkedList<WebWindow> windows = new LinkedList<WebWindow>();
 
 	@Before
 	public void setup() {
+		Authenticator.setDefault(new Authenticator() {
+			@Override
+			protected PasswordAuthentication getPasswordAuthentication() {
+				return new PasswordAuthentication("merchant.testqnbaatest001", "password".toCharArray());
+			}
+		});
 	}
 
 	@Test
 	public void testLightPaymentRedirection() throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 
-		Long orderId = 56466l;
+		Long orderId = createOrder();
 		int orderValue = 1000;
 		// ... set up other values, like items etc.
 
 		String url = "/payment/qnb/test/payment/init";
 		WebClient webClient = new WebClient();
+		webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+		webClient.getOptions().setThrowExceptionOnScriptError(false);
 		webClient.getOptions().setCssEnabled(false);
 		webClient.getOptions().setJavaScriptEnabled(true);
 		webClient.getOptions().setRedirectEnabled(true);
@@ -107,14 +131,53 @@ public class PaymentControllerTest {
 		lightPaymentButton.click();
 		HtmlPage lightHtmlPage = getPopupPage();
 		Assert.assertTrue(lightHtmlPage.asText().contains("Hosted Checkout"));
-				
+
+		//delete created order
+		orderRepository.deleteById(orderId);
+		List<BasketsEntity> baskets = basketRepository.findByOrdersEntity_Id(orderId);
+		for(BasketsEntity basket : baskets){
+			productRepository.delete(basket.getStocksEntity().getProductEntity());
+			stockRepository.delete(basket.getStocksEntity());
+			basketRepository.delete(basket);
+		}
 		webClient.close();
+	}
+
+	private Long createOrder() {
+		//create product
+		ProductEntity product = new ProductEntity();
+		product.setName("product one");
+		product.setCreationdDate(new Date());
+		product.setUpdateDate(new Date());
+		ProductEntity productEntity = productRepository.save(product);
+		//create stock
+		StocksEntity stock = new StocksEntity();
+		stock.setPrice(new BigDecimal(100));
+		stock.setCreationDate(new Date());
+		stock.setUpdateDate(new Date());
+		stock.setProductEntity(productEntity);
+		StocksEntity stockEntity = stockRepository.save(stock);
+
+		// create order
+		OrdersEntity order = new OrdersEntity();
+		order.setCreationDate(new Date());
+		order.setUpdateDate(new Date());
+		order.setAmount(new BigDecimal(50));
+		OrdersEntity orderEntity = orderRepository.save(order);
+		BasketsEntity basket = new BasketsEntity();
+		basket.setCurrency(1);
+		basket.setPrice(new BigDecimal(100));
+		basket.setQuantity(new BigDecimal(5));
+		basket.setStocksEntity(stockEntity);
+		basket.setOrdersEntity(orderEntity);
+		BasketsEntity basketEntity = basketRepository.save(basket);
+		return orderEntity.getId();
 	}
 
 	@Test
 	public void testCompletePaymentRedirection() throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 
-		Long orderId = 3294l;
+		Long orderId = createOrder();
 		int orderValue = 1000;
 		// ... set up other values, like items etc.
 

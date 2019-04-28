@@ -3,6 +3,8 @@ package com.nasnav.payments.qnb;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dto.OrderSessionBasket;
 import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.ProductEntity;
+import lombok.Setter;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -14,15 +16,19 @@ import org.apache.tomcat.util.codec.binary.Base64;
 import org.json.JSONObject;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+@Service
 public class Session {
 
     @Autowired
@@ -44,6 +50,7 @@ public class Session {
     	}
     };
 
+    @Setter
     Account merchantAccount;
     String result;
     String indicator;
@@ -74,11 +81,9 @@ public class Session {
     }
 
     public boolean initialize(long orderId, TransactionCurrency currency) {
-
-        String authString = merchantAccount.getApiUsername()
+        String authString = "merchant."+merchantAccount.getMerchantId()
                 + ":" + merchantAccount.getApiPassword();
-        String authStringEnc = new String(
-                Base64.encodeBase64(authString.getBytes()));
+        String authStringEnc = new String(Base64.encodeBase64(authString.getBytes()));
 
         JSONObject order = new JSONObject();
         orderUid = Long.toString(orderId) + "#" + Long.toString(new Date().getTime());
@@ -87,9 +92,13 @@ public class Session {
         order.put("basket", getBasketFromOrderId(orderId));
         order.put("order_value", getBasketsTotalAmount(orderId));
 
+        JSONObject interaction = new JSONObject();
+        interaction.put("operation", "NONE");
+
         JSONObject data = new JSONObject();
         data.put("apiOperation", "CREATE_CHECKOUT_SESSION");
         data.put("order", order);
+        data.put("interaction", interaction);
 
 
 
@@ -97,18 +106,21 @@ public class Session {
             HttpClient client= HttpClientBuilder.create().build();
             HttpPost request = new HttpPost(merchantAccount.getApiUrl()
                     + "/merchant/" + merchantAccount.getMerchantId() +"/session");
-
             StringEntity requestEntity = new StringEntity(data.toString(), ContentType.APPLICATION_JSON);
             request.setEntity(requestEntity);
             request.setHeader("Authorization", "Basic " + authStringEnc);
 
-            HttpResponse response = client.execute(request);
+            HttpResponse response = null;
+            response = client.execute(request);
+            System.out.println("-----------------response-----------------------" + response);
             int status = response.getStatusLine().getStatusCode();
             if (status > 299) {
+                System.out.println("-----------------000000000000000-----------------------");
                 StringBuilder errorResponse = readInputStream(response.getEntity().getContent());
                 qnbLogger.error("Attempt to set up hosted session resulted in {}. Error provided: {}", status, errorResponse);
                 return false;
             }
+            System.out.print("-----------------11111111111111111111111111-----------------------");
             JSONObject jsonResult = new JSONObject(readInputStream(response.getEntity().getContent()).toString());
             result = jsonResult.getString("result");
             indicator = jsonResult.getString("successIndicator");
@@ -116,8 +128,9 @@ public class Session {
             updateStatus = jsonSession.getString("updateStatus");
             sessionId = jsonSession.getString("id");
             version = jsonSession.getString("version");
-
+            System.out.print("-----------------222222222222222222222-----------------------");
             if ("SUCCESS".equalsIgnoreCase(result) && "SUCCESS".equalsIgnoreCase(updateStatus)) {
+                System.out.print("-----------------333333333333333333333333333-----------------------");
                 return true;
             }
             qnbLogger.error("Unable to set up hosted session, response: {}", jsonResult.toString());
@@ -145,7 +158,12 @@ public class Session {
         List<BasketsEntity> basketsEntity = basketRepository.findByOrdersEntity_Id(order_id);
         for (BasketsEntity basketEntity : basketsEntity){
             OrderSessionBasket basket = new OrderSessionBasket();
-            basket.setName(basketEntity.getStocksEntity().getProductEntity().getName());
+            ProductEntity product = basketEntity.getStocksEntity().getProductEntity();
+            String productName = null;
+            if(product != null && product.getName() != null){
+                productName = product.getName();
+            }
+            basket.setName(productName);
             basket.setPrice(basketEntity.getPrice());
             basket.setQuantity(basketEntity.getQuantity());
             baskets.add(basket);
