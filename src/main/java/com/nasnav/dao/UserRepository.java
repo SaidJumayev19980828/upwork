@@ -60,9 +60,9 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	 * check if the created user has the same email and org_id
 	 *
 	 * @param userEmail
-	 * @param userOrg_Id
+	 * @param userOrgId
 	 * @return UserEntity if a user exists having both email and org_id
 	 */
 	@Query("select users from  UserEntity users where users.email = :userEmail and users.organizationId = :userOrgId")
-	UserEntity existsByEmailAndOrgId(@Param("userEmail") String userEmail, @Param("userOrgId") Integer userOrgId);
+	UserEntity existsByEmailAndOrgId(@Param("userEmail") String userEmail, @Param("userOrgId") Long userOrgId);
 }

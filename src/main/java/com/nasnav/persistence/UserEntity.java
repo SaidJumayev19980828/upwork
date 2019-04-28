@@ -25,7 +25,7 @@ public class UserEntity extends DefaultBusinessEntity<Long> {
     private String name;
     
     @Column(name = "organization_id")
-    private Integer organizationId;
+    private Long organizationId;
 
     @Column(name="encrypted_password")
     private String encPassword;

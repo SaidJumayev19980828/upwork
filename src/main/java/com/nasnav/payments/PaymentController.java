@@ -1,22 +1,31 @@
 package com.nasnav.payments;
 
-import io.swagger.annotations.Api;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+//import com.nasnav.payments.qnb.PaymentService;
 
 @RestController
 @RequestMapping("/nasnav")
-@Api(description = "Work-in-progress.")
 public class PaymentController {
 
 
+	
+//	@Autowired
+//	private PaymentService paymentService;
+//	
+//	@PostMapping(value = "/payment/qnb/initialize/{order_id}") 
+//	public ResponseEntity<?> initializeSession(@PathVariable(name="order_id",required=true) Long orderId){
+//		
+//		paymentService.initializeCheckoutSession(orderId);
+//		
+//		return ResponseEntity.noContent().build();
+//	}
 
     @PostMapping(value = "/checkout/order/{order_id}")
     public ResponseEntity<?> checkoutUsingQNBGateway(@PathVariable(name = "order_id") String orderId){

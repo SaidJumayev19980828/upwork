@@ -20,7 +20,7 @@ public class Roles implements java.io.Serializable {
 	private String name;
 	private Date createdAt;
 	private Date updatedAt;
-	private Integer organizationId;
+	private Long organizationId;
 
 	public Roles() {
 	}
@@ -31,7 +31,7 @@ public class Roles implements java.io.Serializable {
 		this.updatedAt = updatedAt;
 	}
 
-	public Roles(int id, String name, Date createdAt, Date updatedAt, Integer organizationId) {
+	public Roles(int id, String name, Date createdAt, Date updatedAt, Long organizationId) {
 		this.id = id;
 		this.name = name;
 		this.createdAt = createdAt;
@@ -80,11 +80,11 @@ public class Roles implements java.io.Serializable {
 	}
 
 	@Column(name = "organization_id")
-	public Integer getOrganizationId() {
+	public Long getOrganizationId() {
 		return this.organizationId;
 	}
 
-	public void setOrganizationId(Integer organizationId) {
+	public void setOrganizationId(Long organizationId) {
 		this.organizationId = organizationId;
 	}
 

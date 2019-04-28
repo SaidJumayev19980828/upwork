@@ -18,7 +18,7 @@ public class Role extends DefaultBusinessEntity<Integer>{
     private String name;
 
     @Column(name = "organization_id")
-    private Integer organizationId;
+    private Long organizationId;
 
     @Column(name = "created_at")
    public LocalDateTime createdAt;

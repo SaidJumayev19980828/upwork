@@ -11,7 +11,7 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -77,9 +77,8 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	@JoinColumn(name = "organization_id", nullable = false)
 	private OrganizationEntity organizationEntity;
 
-//    @JsonIgnore
-//    @OneToMany(mappedBy="ordersEntity")
-//    private Set<BasketsEntity> basketsEntities;
+    @OneToOne(mappedBy = "ordersEntity")
+    private BasketsEntity basketsEntity;
 
 	@Override
 	public BaseRepresentationObject getRepresentation() {

@@ -64,7 +64,7 @@ public class EmployeeUserEntity extends DefaultBusinessEntity<Integer> {
     private String avatar;
 
     @Column(name = "organization_id")
-    private Integer organizationId;
+    private Long organizationId;
 
     @Column(name = "authentication_token")
     private String authenticationToken;

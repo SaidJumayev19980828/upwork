@@ -41,7 +41,7 @@ public class EmployeeUserServiceHelper {
 		this.roleService = roleService;
 	}
 
-	public void createRoles(String[] rolesList, Integer employeeUserId, Integer org_id) {
+	public void createRoles(String[] rolesList, Integer employeeUserId, Long org_id) {
 		for (String role : rolesList) {
 			// find the Role enum from the string value
 			Roles roleEnum = Roles.valueOf(role);
@@ -61,7 +61,7 @@ public class EmployeeUserServiceHelper {
 	}
 
 	// create a Role entity and return its id
-	private Integer createRole(Integer org_id, Roles roleEnum) {
+	private Integer createRole(Long org_id, Roles roleEnum) {
 		// create a role entity
 		Role role = new Role();
 		role.setOrganizationId(org_id);
@@ -192,7 +192,7 @@ public class EmployeeUserServiceHelper {
 	 * @return UserApiResponse
 	 */
 	public UserApiResponse createSuccessLoginResponse(EmployeeUserEntity employeeUserEntity) {
-		Integer organizationId = employeeUserEntity.getOrganizationId();
+		Long organizationId = employeeUserEntity.getOrganizationId();
 		Long shopId = employeeUserEntity.getShopId();
 		return new ApiResponseBuilder().setSuccess(true).setEntityId(employeeUserEntity.getId().longValue())
 				.setToken(employeeUserEntity.getAuthenticationToken())

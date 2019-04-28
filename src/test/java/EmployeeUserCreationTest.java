@@ -71,7 +71,7 @@ public class EmployeeUserCreationTest {
 			persistentUser = new EmployeeUserEntity();
 			persistentUser.setName("John Smith");
 			persistentUser.setEmail("unavailable@nasnav.com");
-			persistentUser.setOrganizationId(1);
+			persistentUser.setOrganizationId(1L);
 			persistentUser.setShopId((long) 10);
 			persistentUser.setCreatedAt(LocalDateTime.now());
 			persistentUser.setUpdatedAt(LocalDateTime.now());
