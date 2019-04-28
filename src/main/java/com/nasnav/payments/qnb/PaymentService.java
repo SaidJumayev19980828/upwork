@@ -76,8 +76,8 @@ public class PaymentService {
 				.replace("$currency", Session.TransactionCurrency.getTransactionCurrency(currencyId).name())
 				.replace("$email", email)
 				.replace("$session_id", session.getSessionId())
-				.replace("$order_value", total+"")
-				.replace("$basket", session.getBasketFromOrderId(orderId));
+				.replace("$order_value", total+"");
+				//.replace("$basket", session.getBasketFromOrderId(orderId));
 
 		return modified;
 	}
