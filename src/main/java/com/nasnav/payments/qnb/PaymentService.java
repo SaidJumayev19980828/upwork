@@ -31,22 +31,17 @@ public class PaymentService {
 	private OrderRepository orderRepository;
 
 	public String getConfiguredHtml(Long orderId, Session session) throws BusinessException {
-
 		Optional<OrdersEntity> ordersEntityOptional = orderRepository.findById(orderId);
-
 		if(ordersEntityOptional==null || !ordersEntityOptional.isPresent()) {
 			throw new BusinessException("Order not found", null, HttpStatus.NOT_FOUND);
 		}
 		List<BasketsEntity> orderBaskets = basketRepository.findByOrdersEntity_Id(orderId);
-
 		if(orderBaskets==null || orderBaskets.isEmpty()) {
 			throw new BusinessException("Order not found", null, HttpStatus.NOT_FOUND);
 		}
-
 		BigDecimal total = orderBaskets.stream().map(BasketsEntity::getPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
-		String email = ordersEntityOptional.get().getEmail();
+		String email = ordersEntityOptional.get() != null ? ordersEntityOptional.get().getEmail(): null;
 		int currencyId = orderBaskets.get(0).getCurrency();
-
 		/*
 		String email = "ahmed.saeed@nasnav.com";
 		int currencyId = 0;
@@ -68,16 +63,14 @@ public class PaymentService {
 			e.printStackTrace();
 			throw new BusinessException(e.getMessage(), null, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-
 		String modified = htmlPage.toString();
 		modified = modified.replace("$order_id", session.getOrderRef())
-				.replace("$merchant", session.getMerchantId())
-				.replace("$amount", total + "")
-				.replace("$currency", Session.TransactionCurrency.getTransactionCurrency(currencyId).name())
-				.replace("$email", email)
-				.replace("$session_id", session.getSessionId())
-				.replace("$order_value", total+"");
-				//.replace("$basket", session.getBasketFromOrderId(orderId));
+			.replace("$merchant", session.getMerchantId())
+			.replace("$amount", total.toString())
+			.replace("$currency", Session.TransactionCurrency.getTransactionCurrency(currencyId).name())
+			.replace("$email", email)
+			.replace("$session_id", session.getSessionId())
+			.replace("$order_value", total.toString());
 
 		return modified;
 	}

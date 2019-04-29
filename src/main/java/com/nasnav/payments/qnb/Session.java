@@ -89,8 +89,9 @@ public class Session {
         orderUid = Long.toString(orderId) + "#" + Long.toString(new Date().getTime());
         order.put("id", orderUid);
         order.put("currency", getCurrencyStr(currency));
-        order.put("basket", getBasketFromOrderId(orderId));
-        order.put("order_value", getBasketsTotalAmount(orderId));
+        order.put("id", orderId);
+        //order.put("basket", getBasketFromOrderId(orderId));
+        //order.put("order_value", getBasketsTotalAmount(orderId));
 
         JSONObject interaction = new JSONObject();
         interaction.put("operation", "NONE");
@@ -99,6 +100,7 @@ public class Session {
         data.put("apiOperation", "CREATE_CHECKOUT_SESSION");
         data.put("order", order);
         data.put("interaction", interaction);
+
 
 
 
@@ -112,15 +114,12 @@ public class Session {
 
             HttpResponse response = null;
             response = client.execute(request);
-            System.out.println("-----------------response-----------------------" + response);
             int status = response.getStatusLine().getStatusCode();
             if (status > 299) {
-                System.out.println("-----------------000000000000000-----------------------");
                 StringBuilder errorResponse = readInputStream(response.getEntity().getContent());
                 qnbLogger.error("Attempt to set up hosted session resulted in {}. Error provided: {}", status, errorResponse);
                 return false;
             }
-            System.out.print("-----------------11111111111111111111111111-----------------------");
             JSONObject jsonResult = new JSONObject(readInputStream(response.getEntity().getContent()).toString());
             result = jsonResult.getString("result");
             indicator = jsonResult.getString("successIndicator");
@@ -128,9 +127,7 @@ public class Session {
             updateStatus = jsonSession.getString("updateStatus");
             sessionId = jsonSession.getString("id");
             version = jsonSession.getString("version");
-            System.out.print("-----------------222222222222222222222-----------------------");
             if ("SUCCESS".equalsIgnoreCase(result) && "SUCCESS".equalsIgnoreCase(updateStatus)) {
-                System.out.print("-----------------333333333333333333333333333-----------------------");
                 return true;
             }
             qnbLogger.error("Unable to set up hosted session, response: {}", jsonResult.toString());

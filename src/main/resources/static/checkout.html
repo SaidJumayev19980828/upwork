@@ -1,0 +1,81 @@
+<html>
+	
+    <head> 
+    
+       <script src="https://qnbalahli.test.gateway.mastercard.com/checkout/version/43/checkout.js"
+               	 data-error="errorCallback"
+               	 data-cancel="cancelCallback"
+                >
+       </script>
+
+       <script type="text/javascript">
+            function errorCallback(error) {
+                  alert(JSON.stringify(error));
+            }
+            
+            function completeCallback(resultIndicator, sessionVersion) {
+                  alert("Result Indicator");
+				  				alert(JSON.stringify(resultIndicator));
+                  alert("Session Version:");
+				  				alert(JSON.stringify(sessionVersion));
+				  				alert("Successful Payment");
+            }
+           
+            function cancelCallback() {
+                  alert('Payment cancelled');
+            
+            }
+
+
+            Checkout.configure({
+    					merchant   : '$merchant',
+    					order      : {
+                            amount     : "$amount",
+                            currency   : "$currency",
+                            description: 'Checkout Test Order - Return to Merchant ',
+                            id				 : "$order_id",
+                            item			 : {
+                                brand: 'Mastercard',
+                                description: 'Checkout Test Item - Return to Merchant',
+                                name: 'HostedCheckoutItem',
+                                quantity: '1',
+                                unitPrice: '1.00',
+                                unitTaxAmount: '1.00'
+                            }
+                        },
+    					billing    : {
+    						address  : {
+    							street: '300 Adelaide Street',
+    							stateProvince: 'QLD',
+    							city: 'Brisbane',
+    							company: 'Mastercard Pty Ltd',		
+    							postcodeZip: '4000',
+    							country: 'AUS'
+    						}
+    					},
+    					customer :{
+    						email: '$email'    				  },
+    					interaction: {
+        				merchant: {
+            		name: 'Jonny Test Merchant for QNB Checkout',
+            			address: {
+            				line1: '300 Adelaide Street',
+            				line2: 'Brisbane Queensland 4000'
+        					},
+        					  logo:  'https://www.albemarle-london.com/OnlineBooking/Albemarle/ShowPics/ALBAniv.png'
+        				}
+    					},
+    					session: { 
+            			id: "$session_id"       						}
+						});
+						
+        </script>
+    
+    </head>
+    
+    <body>
+        <p style="text-align:center;"><input type="button" value="Pay with Lightbox" onclick="Checkout.showLightbox();" /></p>
+        <p style="text-align:center;"><input type="button" value="Pay with Payment Page" onclick="Checkout.showPaymentPage();" /></p>				
+        <p style="text-align:center;"><a href= "http://bne-opsts-01/Jonny/index.html"><br><br><input type="button" value="Cancel Payment and Return to Main Index Page" /></a></p>
+    </body>
+</html>

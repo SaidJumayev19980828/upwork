@@ -12,7 +12,6 @@ import com.nasnav.payments.qnb.ActiveSessions;
 import com.nasnav.payments.qnb.PaymentService;
 import com.nasnav.payments.qnb.Session;
 import com.nasnav.persistence.BasketsEntity;
-import com.nasnav.persistence.OrdersEntity;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -46,7 +45,7 @@ public class QnbPaymentController {
     private StockRepository stockRepository;
 
     @Autowired
-    Session session;
+    private Session session;
 
     @RequestMapping(value = "/test/payment/init",produces=MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<?> testPayment(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
@@ -56,7 +55,7 @@ public class QnbPaymentController {
         Session.TransactionCurrency currency = EGP;
 
         if (session.initialize(orderId, currency)) {
-            System.out.println("--------------reached inside session initialize---------------");
+            System.out.println("-----------------444444444444-----------------------");
             return new ResponseEntity<>(paymentService.getConfiguredHtml(orderId, session), HttpStatus.OK);
         };
 
@@ -66,33 +65,29 @@ public class QnbPaymentController {
     public ResponseEntity<?> initPayment(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
 
         Account account = new Account();
-
+        session.setMerchantAccount(account);
         // TODO: mockup, later retrieve from order
         long orderPriceInCents = 35000;
         Session.TransactionCurrency currency = EGP;
 
         if (session.initialize(orderId, currency)) {
-            OrderSessionResponse response = createOrderResponseJson(session, orderId);
-
+            OrderSessionResponse response = createOrderResponseJson(orderId);
             return new ResponseEntity<>(response.toString(), HttpStatus.OK);
-        };
+        }
 
         throw new BusinessException("Unable to initialize QNB payment session",null,HttpStatus.BAD_GATEWAY);
     }
 
-    private OrderSessionResponse createOrderResponseJson(Session s, Long order_id) {
+    private OrderSessionResponse createOrderResponseJson(Long order_id) {
         OrderSessionResponse response = new OrderSessionResponse();
         // TODO: just initial few items for now, will need to add remaining params
         response.setSuccess(true);
-        response.setSession_id(s.getSessionId());
-        response.setMerchant_id(s.getMerchantId());
-        response.setOrder_ref(s.getOrderRef());
-        response.setBasket(s.getBasketFromOrderId(order_id));
+        response.setSession_id(session.getSessionId());
+        response.setMerchant_id(session.getMerchantId());
+        response.setOrder_ref(session.getOrderRef());
+        response.setBasket(session.getBasketFromOrderId(order_id));
         response.setOrder_currency(Currency.findById(orderRepository.findById(order_id).get().getBasketsEntity().getCurrency()));
-        response.setOrder_value(s.getBasketsTotalAmount(order_id));
+        response.setOrder_value(session.getBasketsTotalAmount(order_id));
         return response;
     }
-
-
-
 }
