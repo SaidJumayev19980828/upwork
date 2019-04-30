@@ -55,7 +55,6 @@ public class QnbPaymentController {
         Session.TransactionCurrency currency = EGP;
 
         if (session.initialize(orderId, currency)) {
-            System.out.println("-----------------444444444444-----------------------");
             return new ResponseEntity<>(paymentService.getConfiguredHtml(orderId, session), HttpStatus.OK);
         };
 
@@ -82,7 +81,9 @@ public class QnbPaymentController {
         OrderSessionResponse response = new OrderSessionResponse();
         // TODO: just initial few items for now, will need to add remaining params
         response.setSuccess(true);
-        response.setSession_id(session.getSessionId());
+        OrderSessionResponse.ResponseSession responseSession = new OrderSessionResponse.ResponseSession();
+        responseSession.setId(session.getSessionId());
+        response.setSession(responseSession);
         response.setMerchant_id(session.getMerchantId());
         response.setOrder_ref(session.getOrderRef());
         response.setBasket(session.getBasketFromOrderId(order_id));
