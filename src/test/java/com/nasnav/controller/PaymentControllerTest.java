@@ -1,11 +1,23 @@
 package com.nasnav.controller;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.net.Authenticator;
 import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
+import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.nasnav.controller.QnbPaymentController;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.StocksEntity;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,33 +61,47 @@ public class PaymentControllerTest {
 
 	@LocalServerPort
 	int randomServerPort;
-	
+
 	@Autowired
 	private OrderRepository orderRepository;
-	
+
 	@Autowired
 	private BasketRepository basketRepository;
 
+	@Autowired
+	private StockRepository stockRepository;
+
+	@Autowired
+	private ProductRepository productRepository;
 
 	final static LinkedList<WebWindow> windows = new LinkedList<WebWindow>();
 
 	@Before
 	public void setup() {
+		Authenticator.setDefault(new Authenticator() {
+			@Override
+			protected PasswordAuthentication getPasswordAuthentication() {
+				return new PasswordAuthentication("merchant.testqnbaatest001", "password".toCharArray());
+			}
+		});
 	}
 
 	@Test
 	public void testLightPaymentRedirection() throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 
-		Long orderId = 56466l;
-		int orderValue = 1000;
+		// create an order and get its total value
+		Long orderId = createOrder();
+		BigDecimal orderValue = getOrderValue(orderId);
+
 		// ... set up other values, like items etc.
 
 		String url = "/payment/qnb/test/payment/init";
 		WebClient webClient = new WebClient();
+		webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+		webClient.getOptions().setThrowExceptionOnScriptError(false);
 		webClient.getOptions().setCssEnabled(false);
 		webClient.getOptions().setJavaScriptEnabled(true);
 		webClient.getOptions().setRedirectEnabled(true);
-		webClient.getOptions().setThrowExceptionOnScriptError(false);
 		webClient.addWebWindowListener(new WebWindowListener() {
 			public void webWindowClosed(WebWindowEvent event) {
 			}
@@ -107,19 +133,30 @@ public class PaymentControllerTest {
 		lightPaymentButton.click();
 		HtmlPage lightHtmlPage = getPopupPage();
 		Assert.assertTrue(lightHtmlPage.asText().contains("Hosted Checkout"));
-				
+
+		//delete baskets
+		List<BasketsEntity> baskets = basketRepository.findByOrdersEntity_Id(orderId);
+		for(BasketsEntity basket : baskets){
+			basketRepository.delete(basket);
+			stockRepository.delete(basket.getStocksEntity());
+			productRepository.delete(basket.getStocksEntity().getProductEntity());
+		}
+		//delete created order
+		orderRepository.deleteById(orderId);
+
 		webClient.close();
 	}
 
 	@Test
 	public void testCompletePaymentRedirection() throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 
-		Long orderId = 3294l;
-		int orderValue = 1000;
+		Long orderId = createOrder();
+		BigDecimal orderValue = getOrderValue(orderId);
 		// ... set up other values, like items etc.
 
 		String url = "/payment/qnb/test/payment/init";
 		WebClient webClient = new WebClient();
+		webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
 		webClient.getOptions().setCssEnabled(false);
 		webClient.getOptions().setJavaScriptEnabled(true);
 		webClient.getOptions().setRedirectEnabled(true);
@@ -153,7 +190,7 @@ public class PaymentControllerTest {
 
 		HtmlButtonInput paymentPageButton = (HtmlButtonInput) page.getByXPath("//input[@type='button']").get(1);
 		paymentPageButton.click();
-		
+
 		HtmlPage fullQNBHtmlPage = getPopupPage();
 		Assert.assertTrue(fullQNBHtmlPage.asText().contains("Hosted Checkout"));
 
@@ -164,8 +201,46 @@ public class PaymentControllerTest {
 		WebWindow latestWindow = windows.getLast();
 		return (HtmlPage) latestWindow.getEnclosedPage();
 	}
-	
+
 	private void addOrderAndBasketToDB() {
 		//TODO add the necesary params to signature
+	}
+
+	private BigDecimal getOrderValue(Long orderId) {
+		return basketRepository.findByOrdersEntity_Id(orderId).stream().map(BasketsEntity::getPrice).reduce(BigDecimal::add).get();
+	}
+
+	private Long createOrder() {
+		//create product
+		ProductEntity product = new ProductEntity();
+		product.setName("product one");
+		product.setCreationdDate(new Date());
+		product.setUpdateDate(new Date());
+		ProductEntity productEntity = productRepository.save(product);
+		//create stock
+		StocksEntity stock = new StocksEntity();
+		stock.setPrice(new BigDecimal(100));
+		stock.setCreationDate(new Date());
+		stock.setUpdateDate(new Date());
+		stock.setProductEntity(productEntity);
+		StocksEntity stockEntity = stockRepository.save(stock);
+
+		// create order
+		OrdersEntity order = new OrdersEntity();
+		order.setCreationDate(new Date());
+		order.setUpdateDate(new Date());
+		order.setAmount(new BigDecimal(50));
+		order.setEmail("test@nasnav.com");
+		OrdersEntity orderEntity = orderRepository.save(order);
+		BasketsEntity basket = new BasketsEntity();
+		basket.setCurrency(1);
+		basket.setPrice(new BigDecimal(100));
+		basket.setQuantity(new BigDecimal(5));
+		basket.setStocksEntity(stockEntity);
+		basket.setOrdersEntity(orderEntity);
+		BasketsEntity basketEntity = basketRepository.save(basket);
+		order.setBasketsEntity(basketEntity);
+		orderEntity = orderRepository.save(order);
+		return orderEntity.getId();
 	}
 }
