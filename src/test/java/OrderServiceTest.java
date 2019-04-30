@@ -1,11 +1,15 @@
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import com.nasnav.dto.BasketItem;
+import com.nasnav.persistence.*;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -32,10 +36,6 @@ import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.enumerations.OrderStatus;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.UserService;
 
@@ -110,11 +110,12 @@ public class OrderServiceTest {
 
 	@Test
 	public void unregisteredUser() {
-
+		StocksEntity stock = createStock();
 		ResponseEntity<OrderResponse> response = template.postForEntity("/order/update",
-				TestCommons.getHttpEntity("{ \"basket\": [ { \"product\": 1234, \"quantity\": 4} ] }", 1, "XX"),
+				TestCommons.getHttpEntity("{ \"status\" : \"NEW\", \"basket\": [ { \"stock_id\":" + stock.getId() + ", \"quantity\": " +  stock.getQuantity() + "} ] }", 1, "XX"),
 				OrderResponse.class);
 		Assert.assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatusCode().value());
+		stockRepository.delete(stock);
 	}
 
 	// This needs fixing as it doesn't correctly use baskets
@@ -148,34 +149,46 @@ public class OrderServiceTest {
 	// This needs fixing as it doesn't correctly use baskets
 	@Test
 	public void updateOrderSuccessTest() {
+		StocksEntity stock = createStock();
 		// create a new order, then take it's oder id and try to make an update using it
-		ResponseEntity<OrderResponse> response = template.postForEntity("/order/update",
-				TestCommons.getHttpEntity("{\"basket\": [{ \"product\": 1234, \"quantity\": 4}] }",
-						persistentUser.getId(), persistentUser.getAuthenticationToken()),
-				OrderResponse.class);
+		ResponseEntity<OrderResponse> response = null;
+		response = template.postForEntity("/order/update",
+					TestCommons.getHttpEntity("{ \"status\" : \"NEW\", \"basket\": [ { \"stock_id\":" + stock.getId() + ", \"quantity\": " +  stock.getQuantity() + "} ] }",
+							persistentUser.getId(), persistentUser.getAuthenticationToken()),
+					OrderResponse.class);
 
 		// get the returned orderId
-		System.out.println("----------response-----------------" + response);
 		long orderId = response.getBody().getOrderId();
-		System.out.println("----------order id-----------------" + orderId);
+
+		Assert.assertEquals(HttpStatus.CREATED.value(), response.getStatusCode().value());
+		Assert.assertTrue(response.getBody().isSuccess());
+
+
+		try {
+			// make a new request using the created order
+			response = template.postForEntity("/order/update",
+					TestCommons.getHttpEntity("{\"order_id\":" + orderId
+									+ ", \"status\" : \"CLIENT_CONFIRMED\"}",
+							persistentUser.getId(), persistentUser.getAuthenticationToken()),
+					OrderResponse.class);
+			System.out.println("----------response-----------------" + response);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 
 		Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
 		Assert.assertTrue(response.getBody().isSuccess());
 
-
-
-		// make a new request using the created order
-		response = template.postForEntity("/order/update",
-				TestCommons.getHttpEntity("{\"id\":" + orderId
-						+ ", \"status\" : \"CLIENT_CONFIRMED\", \"basket\": [{ \"product\": 1234, \"quantity\": 4}] }",
-						persistentUser.getId(), persistentUser.getAuthenticationToken()),
-				OrderResponse.class);
-
-		Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
-		Assert.assertTrue(response.getBody().isSuccess());
+		//delete baskets
+		List<BasketsEntity> baskets = basketRepository.findByOrdersEntity_Id(orderId);
+		for(BasketsEntity basket : baskets){
+			basketRepository.delete(basket);
+			stockRepository.delete(basket.getStocksEntity());
+			productRepository.delete(basket.getStocksEntity().getProductEntity());
+		}
 
 		// delete the order after assertion
-		//orderRepository.deleteById(orderId);
+		orderRepository.deleteById(orderId);
 	}
 
 	@Test
@@ -313,13 +326,62 @@ public class OrderServiceTest {
 
 	@Test
 	public void updateOrderNonExistingStatusTest() {
-		// try updating with a non-existing order number
-		ResponseEntity<OrderResponse> response = template.postForEntity("/order/update", TestCommons.getHttpEntity(
-				"{ \"order_id\":\"123\", \"status\" : \"NON_EXISTING_STATUS\", \"basket\": [{ \"product\": 1234, \"quantity\": 4}] }",
+		StocksEntity stock = createStock();
+		// create a new order, then take it's oder id and try to make an update using it
+		ResponseEntity<OrderResponse> response = null;
+		response = template.postForEntity("/order/update",
+				TestCommons.getHttpEntity("{ \"status\" : \"NEW\", \"basket\": [ { \"stock_id\":" + stock.getId() + ", \"quantity\": " +  stock.getQuantity() + "} ] }",
+						persistentUser.getId(), persistentUser.getAuthenticationToken()),
+				OrderResponse.class);
+
+		// get the returned orderId
+		long orderId = response.getBody().getOrderId();
+		// try updating with a non-existing status
+		response = template.postForEntity("/order/update", TestCommons.getHttpEntity(
+				"{ \"order_id\": " + orderId + ", \"status\" : \"NON_EXISTING_STATUS\"}",
 				persistentUser.getId(), persistentUser.getAuthenticationToken()), OrderResponse.class);
 
-		Assert.assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatusCode().value());
+		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 		Assert.assertFalse(response.getBody().isSuccess());
+
+		//delete baskets
+		List<BasketsEntity> baskets = basketRepository.findByOrdersEntity_Id(orderId);
+		for(BasketsEntity basket : baskets){
+			basketRepository.delete(basket);
+			stockRepository.delete(basket.getStocksEntity());
+			productRepository.delete(basket.getStocksEntity().getProductEntity());
+		}
+
+		orderRepository.deleteById(orderId);
+	}
+
+	private StocksEntity createStock() {
+		//create product
+		ProductEntity product = new ProductEntity();
+		product.setName("product one");
+		product.setCreationdDate(new Date());
+		product.setUpdateDate(new Date());
+		ProductEntity productEntity = productRepository.save(product);
+
+		BigDecimal amount = new BigDecimal(500.25);
+		ShopsEntity shopsEntity = new ShopsEntity();
+		shopsEntity.setName("any");
+		shopsEntity.setCreatedAt(new Date());
+		shopsEntity.setUpdatedAt(new Date());
+		shopsEntity = shopsRepository.save(shopsEntity);
+		Integer quantity = 5;
+		BigDecimal itemPrice = new BigDecimal(500).setScale(2);
+		Long stockId = null;
+		//create stock
+		StocksEntity stock = new StocksEntity();
+		stock.setPrice(new BigDecimal(100));
+		stock.setCreationDate(new Date());
+		stock.setUpdateDate(new Date());
+		stock.setProductEntity(productEntity);
+		stock.setQuantity(100);
+		stock.setShopsEntity(shopsEntity);
+		StocksEntity stockEntity = stockRepository.save(stock);
+		return stockEntity;
 	}
 
 }

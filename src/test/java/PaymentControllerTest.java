@@ -101,7 +101,6 @@ public class PaymentControllerTest {
 		webClient.getOptions().setCssEnabled(false);
 		webClient.getOptions().setJavaScriptEnabled(true);
 		webClient.getOptions().setRedirectEnabled(true);
-		webClient.getOptions().setThrowExceptionOnScriptError(false);
 		webClient.addWebWindowListener(new WebWindowListener() {
 			public void webWindowClosed(WebWindowEvent event) {
 			}

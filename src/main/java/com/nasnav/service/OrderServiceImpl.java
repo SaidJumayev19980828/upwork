@@ -138,7 +138,6 @@ public class OrderServiceImpl implements OrderService {
 	private OrderResponse updateCurrentOrder(OrderJsonDto orderJsonDto) {
 
 		OrderStatus newStatus = OrderStatus.findEnum(orderJsonDto.getStatus());
-
 		if (newStatus == null && (orderJsonDto.getBasket() == null || orderJsonDto.getBasket().isEmpty())) {
 			log.error("Order update should be either status or changing basket items");
 			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
@@ -199,12 +198,17 @@ public class OrderServiceImpl implements OrderService {
 	private OrderResponse updateCurrentOrderStatus(OrderJsonDto orderJsonDto, OrdersEntity orderEntity,
 			OrderStatus newStatus, OrderStatus currentOrderStatus) {
 
+
+		// commented as baskets are required only for new orders
+		/*
 		if ((newStatus.getValue() >= currentOrderStatus.getValue())
 				&& (orderJsonDto.getBasket() == null || orderJsonDto.getBasket().isEmpty())) {
 			// TODO check with Marek if this valid from business perspective
 			log.error("Cannot update order staus to previous status");
 			return new OrderResponse(OrderFailedStatus.INVALID_STATUS, HttpStatus.BAD_REQUEST);
 		}
+
+		 */
 
 		orderEntity.setStatus(newStatus.getValue());
 		orderEntity.setUpdateDate(new Date());

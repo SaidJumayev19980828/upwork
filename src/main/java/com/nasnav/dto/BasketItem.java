@@ -9,6 +9,7 @@ public class BasketItem {
 
     @JsonProperty("stock_id")
     private Long stockId;
+    @JsonProperty("quantity")
     private Long quantity;
     private String unit;
 
