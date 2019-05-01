@@ -3,8 +3,8 @@ package com.nasnav.controller;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.OrderRepository;
 import com.nasnav.dao.StockRepository;
-import com.nasnav.dto.Currency;
 import com.nasnav.dto.OrderSessionResponse;
+import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.qnb.Account;
 import com.nasnav.payments.qnb.ActiveSessions;
@@ -19,7 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import static com.nasnav.payments.qnb.Session.TransactionCurrency.EGP;
+import static com.nasnav.enumerations.TransactionCurrency.EGP;
+
 
 @RestController
 @RequestMapping("/payment/qnb")
@@ -48,7 +49,7 @@ public class QnbPaymentController {
 
         Account account = new Account();
         session.setMerchantAccount(account);
-        Session.TransactionCurrency currency = EGP;
+        TransactionCurrency currency = EGP;
 
         if (session.initialize(orderId, currency)) {
             return new ResponseEntity<>(paymentService.getConfiguredHtml(orderId, session), HttpStatus.OK);
@@ -63,7 +64,7 @@ public class QnbPaymentController {
         session.setMerchantAccount(account);
         // TODO: mockup, later retrieve from order
         long orderPriceInCents = 35000;
-        Session.TransactionCurrency currency = EGP;
+        TransactionCurrency currency = EGP;
 
         if (session.initialize(orderId, currency)) {
             OrderSessionResponse response = createOrderResponseJson(orderId);
@@ -83,7 +84,7 @@ public class QnbPaymentController {
             response.setMerchant_id(session.getMerchantId());
             response.setOrder_ref(session.getOrderRef());
             response.setBasket(session.getBasketFromOrderId(order_id));
-            response.setOrder_currency(Currency.findById(orderRepository.findById(order_id).get().getBasketsEntity().getCurrency()));
+            response.setOrder_currency(TransactionCurrency.getTransactionCurrency(orderRepository.findById(order_id).get().getBasketsEntity().getCurrency()));
             response.setOrder_value(session.getBasketsTotalAmount(order_id));
             return response;
         }catch(Exception ex){

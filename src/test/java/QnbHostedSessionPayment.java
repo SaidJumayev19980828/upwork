@@ -3,6 +3,7 @@ import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.OrderRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.StockRepository;
+import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.payments.qnb.Account;
 import com.nasnav.payments.qnb.Session;
 import com.nasnav.persistence.BasketsEntity;
@@ -56,7 +57,7 @@ public class QnbHostedSessionPayment {
     public void rawSessionCreationTest() {
         session.setMerchantAccount(testAccount);
         Long orderId = createOrder();
-        Assert.assertTrue(session.initialize(orderId, Session.TransactionCurrency.EGP));
+        Assert.assertTrue(session.initialize(orderId, TransactionCurrency.EGP));
 
         //delete baskets
         List<BasketsEntity> baskets = basketRepository.findByOrdersEntity_Id(orderId);
@@ -82,6 +83,14 @@ public class QnbHostedSessionPayment {
                     .expectBody()
                     .jsonPath("$.success").isNotEmpty()
                     .jsonPath("$.success").isEqualTo(true)
+                    .jsonPath("$.merchant").isEqualTo(session.getMerchantId())
+                    .jsonPath("$.id").isEqualTo(session.getOrderRef())
+                    .jsonPath("$.order_value").isEqualTo(100.0)
+                    .jsonPath("$.currency").isEqualTo(TransactionCurrency.USD.name())
+                    .jsonPath("$.session.id").isEqualTo(session.getSessionId())
+                    .jsonPath("$.basket").isNotEmpty()
+                    .jsonPath("$.basket[0].quantity").isEqualTo(5)
+                    .jsonPath("$.basket.size()").isEqualTo(1)
                     .returnResult().getResponseBody();
         }catch(Exception e){
             e.printStackTrace();

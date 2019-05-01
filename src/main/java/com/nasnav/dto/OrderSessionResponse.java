@@ -1,6 +1,7 @@
 package com.nasnav.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.persistence.BasketsEntity;
 import io.swagger.annotations.ApiModel;
 import lombok.Data;
@@ -33,7 +34,7 @@ public class OrderSessionResponse {
     private BigDecimal order_value;
 
     @JsonProperty("currency")
-    private Currency order_currency;
+    private TransactionCurrency order_currency;
 
     @Data
     public static class ResponseSession{

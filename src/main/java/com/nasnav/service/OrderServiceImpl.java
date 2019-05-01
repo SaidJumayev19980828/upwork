@@ -20,7 +20,7 @@ import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.OrderJsonDto;
-import com.nasnav.dto.TransactionCurrency;
+import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.persistence.BasketsEntity;

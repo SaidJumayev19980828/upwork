@@ -1,4 +1,4 @@
-package com.nasnav.dto;
+package com.nasnav.enumerations;
 
 import lombok.Getter;
 

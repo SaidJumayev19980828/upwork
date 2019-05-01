@@ -2,6 +2,7 @@ package com.nasnav.payments.qnb;
 
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dto.OrderSessionBasket;
+import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.ProductEntity;
 import lombok.Setter;
@@ -33,22 +34,6 @@ public class Session {
 
     @Autowired
     private BasketRepository basketRepository;
-
-    public static enum TransactionCurrency { 
-    	EGP(0),USD(1);
-    	int value;
-    	private TransactionCurrency(int value) {
-			this.value = value;
-		}
-    	public static TransactionCurrency getTransactionCurrency(int value) {
-    		
-    		for(TransactionCurrency transactionCurrency : TransactionCurrency.values()) {
-    			if(transactionCurrency.value==value)
-    				return transactionCurrency;
-    		}
-    		return null;
-    	}
-    };
 
     @Setter
     Account merchantAccount;

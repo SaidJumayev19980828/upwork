@@ -12,6 +12,7 @@ import java.util.Optional;
 
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.OrderRepository;
+import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.OrdersEntity;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,7 +68,7 @@ public class PaymentService {
 		modified = modified.replace("$order_id", session.getOrderRef())
 			.replace("$merchant", session.getMerchantId())
 			.replace("$amount", total.toString())
-			.replace("$currency", Session.TransactionCurrency.getTransactionCurrency(currencyId).name())
+			.replace("$currency", TransactionCurrency.getTransactionCurrency(currencyId).name())
 			.replace("$email", email)
 			.replace("$session_id", session.getSessionId())
 			.replace("$order_value", total.toString());
