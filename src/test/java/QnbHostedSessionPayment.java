@@ -80,8 +80,8 @@ public class QnbHostedSessionPayment {
         try {
             response.expectStatus().isOk()
                     .expectBody()
-                    //.jsonPath("$.success").isNotEmpty()
-                    //.jsonPath("$.success").isEqualTo(true)
+                    .jsonPath("$.success").isNotEmpty()
+                    .jsonPath("$.success").isEqualTo(true)
                     .returnResult().getResponseBody();
         }catch(Exception e){
             e.printStackTrace();

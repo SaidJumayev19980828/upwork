@@ -67,7 +67,7 @@ public class QnbPaymentController {
 
         if (session.initialize(orderId, currency)) {
             OrderSessionResponse response = createOrderResponseJson(orderId);
-            return new ResponseEntity<>(response.toString(), HttpStatus.OK);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }
 
         throw new BusinessException("Unable to initialize QNB payment session",null,HttpStatus.BAD_GATEWAY);
