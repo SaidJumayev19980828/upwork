@@ -2,6 +2,7 @@ package com.nasnav.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nasnav.persistence.BasketsEntity;
+import io.swagger.annotations.ApiModel;
 import lombok.Data;
 import lombok.Getter;
 
@@ -10,8 +11,10 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Data
-public class OrderSessionResponse implements Serializable {
+@ApiModel(value = "Returned Session Order")
+public class OrderSessionResponse {
 
+    @JsonProperty("success")
     private boolean success;
 
     @JsonProperty("session")
@@ -33,7 +36,7 @@ public class OrderSessionResponse implements Serializable {
     private Currency order_currency;
 
     @Data
-    public static class ResponseSession implements Serializable{
+    public static class ResponseSession{
         @JsonProperty("id")
         private String id;
     }
