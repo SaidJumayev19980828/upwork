@@ -1,15 +1,10 @@
 import com.nasnav.NavBox;
-import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.OrderRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.*;
+import com.nasnav.dto.BasketItem;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.payments.qnb.Account;
 import com.nasnav.payments.qnb.Session;
-import com.nasnav.persistence.BasketsEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.*;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -25,8 +20,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -51,7 +45,13 @@ public class QnbHostedSessionPayment {
     private StockRepository stockRepository;
 
     @Autowired
+    private ShopsRepository shopsRepository;
+
+    @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private OrganizationRepository organizationRepository;
 
     @Test
     public void rawSessionCreationTest() {
@@ -76,17 +76,17 @@ public class QnbHostedSessionPayment {
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("order_id", orderId.toString());
 
-        WebTestClient.ResponseSpec response = webClient.post().uri("/payment/qnb/initialize")
-                .body(BodyInserters.fromFormData(formData)).exchange();
         try {
+            WebTestClient.ResponseSpec response = webClient.post().uri("/payment/qnb/initialize")
+                    .body(BodyInserters.fromFormData(formData)).exchange();
             response.expectStatus().isOk()
                     .expectBody()
                     .jsonPath("$.success").isNotEmpty()
                     .jsonPath("$.success").isEqualTo(true)
                     .jsonPath("$.merchant").isEqualTo(session.getMerchantId())
                     .jsonPath("$.id").isEqualTo(session.getOrderRef())
-                    .jsonPath("$.order_value").isEqualTo(100.0)
-                    .jsonPath("$.currency").isEqualTo(TransactionCurrency.USD.name())
+                    .jsonPath("$.order_value").isEqualTo(500.0)
+                    .jsonPath("$.currency").isEqualTo(TransactionCurrency.EGP.name())
                     .jsonPath("$.session.id").isEqualTo(session.getSessionId())
                     .jsonPath("$.basket").isNotEmpty()
                     .jsonPath("$.basket[0].quantity").isEqualTo(5)
@@ -108,38 +108,55 @@ public class QnbHostedSessionPayment {
     }
 
     private Long createOrder() {
+
+        //create organization
+        OrganizationEntity org = new OrganizationEntity();
+        org.setName("organization");
+        org.setDescription("org descr");
+        org.setCreatedAt(new Date());
+        org.setUpdatedAt(new Date());
+        org = organizationRepository.save(org);
         //create product
         ProductEntity product = new ProductEntity();
         product.setName("product one");
         product.setCreationdDate(new Date());
         product.setUpdateDate(new Date());
         ProductEntity productEntity = productRepository.save(product);
+
+        //create shop
+        ShopsEntity shop = new ShopsEntity();
+        shop.setCreatedAt(new Date());
+        shop.setUpdatedAt(new Date());
+        ShopsEntity shopEntity = shopsRepository.save(shop);
+
         //create stock
         StocksEntity stock = new StocksEntity();
         stock.setPrice(new BigDecimal(100));
         stock.setCreationDate(new Date());
         stock.setUpdateDate(new Date());
         stock.setProductEntity(productEntity);
+        stock.setQuantity(5);
+        stock.setShopsEntity(shopEntity);
         StocksEntity stockEntity = stockRepository.save(stock);
 
         // create order
         OrdersEntity order = new OrdersEntity();
         order.setCreationDate(new Date());
         order.setUpdateDate(new Date());
-        order.setAmount(new BigDecimal(50));
+        order.setAmount(new BigDecimal(500));
+        order.setShopsEntity(shopEntity);
         order.setEmail("test@nasnav.com");
+        order.setOrganizationEntity(org);
         OrdersEntity orderEntity = orderRepository.save(order);
+
         BasketsEntity basket = new BasketsEntity();
-        basket.setCurrency(1);
-        basket.setPrice(new BigDecimal(100));
+        basket.setOrdersEntity(orderEntity);
         basket.setQuantity(new BigDecimal(5));
         basket.setStocksEntity(stockEntity);
-        basket.setOrdersEntity(orderEntity);
-        BasketsEntity basketEntity = basketRepository.save(basket);
-        order.setBasketsEntity(basketEntity);
+        basket.setPrice(stockEntity.getPrice());
+        basket = basketRepository.save(basket);
+        orderEntity.setBasketsEntity(basket);
         orderEntity = orderRepository.save(order);
         return orderEntity.getId();
     }
-
-
 }

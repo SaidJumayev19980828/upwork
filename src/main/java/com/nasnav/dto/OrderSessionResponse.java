@@ -18,6 +18,12 @@ public class OrderSessionResponse {
     @JsonProperty("success")
     private boolean success;
 
+    @JsonProperty("customer")
+    private Customer customer;
+
+    @JsonProperty("seller")
+    private Seller seller;
+
     @JsonProperty("session")
     private ResponseSession session;
 
@@ -41,5 +47,27 @@ public class OrderSessionResponse {
         @JsonProperty("id")
         private String id;
     }
+
+    @Data
+    public static class Customer{
+        @JsonProperty("name")
+        private String name;
+
+        @JsonProperty("email")
+        private String email;
+    }
+
+    @Data
+    public static class Seller{
+        @JsonProperty("organizationName")
+        private String name;
+
+        @JsonProperty("address")
+        private String address;
+
+        @JsonProperty("organizationUrl")
+        private String url;
+    }
+
 
 }

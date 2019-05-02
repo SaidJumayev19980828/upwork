@@ -4,7 +4,9 @@ import com.nasnav.dao.BasketRepository;
 import com.nasnav.dto.OrderSessionBasket;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.StocksEntity;
 import lombok.Setter;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -14,6 +16,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.tomcat.util.codec.binary.Base64;
+import org.hibernate.internal.CriteriaImpl;
 import org.json.JSONObject;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class Session {
@@ -135,9 +139,9 @@ public class Session {
         return this.merchantAccount == null ? null : this.merchantAccount.getMerchantId();
     }
 
-    public List<OrderSessionBasket> getBasketFromOrderId(Long order_id) {
+    public List<OrderSessionBasket> getBasketFromOrderId(OrdersEntity order) {
         List<OrderSessionBasket> baskets = new ArrayList<>();
-        List<BasketsEntity> basketsEntity = basketRepository.findByOrdersEntity_Id(order_id);
+        List<BasketsEntity> basketsEntity = basketRepository.findByOrdersEntity_Id(order.getId());
         for (BasketsEntity basketEntity : basketsEntity){
             OrderSessionBasket basket = new OrderSessionBasket();
             ProductEntity product = basketEntity.getStocksEntity().getProductEntity();
@@ -146,15 +150,14 @@ public class Session {
                 productName = product.getName();
             }
             basket.setName(productName);
-            basket.setPrice(basketEntity.getPrice());
-            basket.setQuantity(basketEntity.getQuantity());
+            basket.setPrice(basketEntity.getStocksEntity().getPrice());
+            basket.setQuantity(new BigDecimal(basketEntity.getStocksEntity().getQuantity()));
             baskets.add(basket);
         }
         return baskets;
     }
 
-    public BigDecimal getBasketsTotalAmount(Long order_id){
-        List<BasketsEntity> basketsEntity = basketRepository.findByOrdersEntity_Id(order_id);
-        return basketsEntity.stream().map(BasketsEntity::getPrice).reduce(BigDecimal::add).get();
+    public BigDecimal getTotalAmount(Set<StocksEntity> stocks){
+        return stocks.stream().map(stock -> stock.getPrice().multiply(new BigDecimal(stock.getQuantity()))).reduce(BigDecimal::add).get();
     }
 }

@@ -58,7 +58,7 @@ public class StocksEntity extends AbstractPersistable<Long> implements BaseEntit
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "shop_id", nullable = false)
-	@JsonIgnore
+	//@JsonIgnore
 	private ShopsEntity shopsEntity;
 
 	@ManyToOne(fetch = FetchType.LAZY)

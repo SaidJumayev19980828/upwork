@@ -10,6 +10,9 @@ import com.nasnav.payments.qnb.Account;
 import com.nasnav.payments.qnb.ActiveSessions;
 import com.nasnav.payments.qnb.PaymentService;
 import com.nasnav.payments.qnb.Session;
+import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.OrdersEntity;
+import org.hibernate.criterion.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -18,6 +21,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Collections;
+import java.util.List;
 
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 
@@ -59,7 +65,10 @@ public class QnbPaymentController {
     }
     @PostMapping(value = "/initialize")
     public ResponseEntity<?> initPayment(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
-
+        OrdersEntity order = orderRepository.findById(orderId).get();
+        if(order == null){
+            throw new BusinessException("No Order Exists with that id", "406",HttpStatus.BAD_REQUEST);
+        }
         Account account = new Account();
         session.setMerchantAccount(account);
         // TODO: mockup, later retrieve from order
@@ -67,14 +76,15 @@ public class QnbPaymentController {
         TransactionCurrency currency = EGP;
 
         if (session.initialize(orderId, currency)) {
-            OrderSessionResponse response = createOrderResponseJson(orderId);
+            OrderSessionResponse response = createOrderResponseJson(order);
+            System.out.println("-------response-----------" + response);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
 
         throw new BusinessException("Unable to initialize QNB payment session",null,HttpStatus.BAD_GATEWAY);
     }
 
-    private OrderSessionResponse createOrderResponseJson(Long order_id) {
+    private OrderSessionResponse createOrderResponseJson(OrdersEntity order) {
         OrderSessionResponse response = new OrderSessionResponse();
         try {
             response.setSuccess(true);
@@ -83,12 +93,27 @@ public class QnbPaymentController {
             response.setSession(responseSession);
             response.setMerchant_id(session.getMerchantId());
             response.setOrder_ref(session.getOrderRef());
-            response.setBasket(session.getBasketFromOrderId(order_id));
-            response.setOrder_currency(TransactionCurrency.getTransactionCurrency(orderRepository.findById(order_id).get().getBasketsEntity().getCurrency()));
-            response.setOrder_value(session.getBasketsTotalAmount(order_id));
+            response.setBasket(session.getBasketFromOrderId(order));
+
+            OrderSessionResponse.Customer customer = new OrderSessionResponse.Customer();
+            customer.setName(order.getName());
+            customer.setEmail(order.getEmail());
+            response.setCustomer(customer);
+
+            OrderSessionResponse.Seller seller = new OrderSessionResponse.Seller();
+            seller.setName(order.getOrganizationEntity().getName());
+            response.setSeller(seller);
+
+            List<BasketsEntity> baskets = basketRepository.findByOrdersEntity_Id(order.getId());
+            baskets.stream().forEach( basket -> basket.getStocksEntity());
+
+            //TODO : add currency to stocks and retrieve it from there
+            response.setOrder_currency(EGP);
+            response.setOrder_value(order.getAmount());
             return response;
         }catch(Exception ex){
             response.setSuccess(false);
+            ex.printStackTrace();
             return response;
         }
     }

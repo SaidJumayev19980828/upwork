@@ -109,7 +109,7 @@ public class ShopsEntity extends AbstractPersistable<Long> implements BaseEntity
 //    private Set<OrdersEntity> ordersEntity;
 
     @OneToMany(mappedBy="shopsEntity")
-    @JsonIgnore
+    //@JsonIgnore
     private Set<StocksEntity> stocksEntities;
 
     @Override

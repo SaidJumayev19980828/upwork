@@ -66,7 +66,7 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 //	@Column(name ="shop_id")
 //	private Long shopId;
 	//TODO decide between relational or not
-	@JsonIgnore
+	//@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "shop_id", nullable = false)
 	private ShopsEntity shopsEntity;
