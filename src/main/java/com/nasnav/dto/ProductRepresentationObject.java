@@ -8,6 +8,8 @@ import javax.persistence.Id;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.math.BigDecimal;
+
 @Data
 @EqualsAndHashCode(callSuper=false)
 public class ProductRepresentationObject extends BaseRepresentationObject{
@@ -20,7 +22,7 @@ public class ProductRepresentationObject extends BaseRepresentationObject{
     private String imageUrl;
     @Column(name = "p_name")
     private String  pname;
-    private Double price;
+    private BigDecimal price;
     private Boolean available;
 
 }

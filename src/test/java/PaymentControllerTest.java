@@ -1,5 +1,3 @@
-package com.nasnav.controller;
-
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.Authenticator;
@@ -187,7 +185,7 @@ public class PaymentControllerTest {
 		Assert.assertTrue(Pattern.compile("amount\\s+:\\s+." + orderValue).matcher(jsConfig).find());
 		Assert.assertTrue(Pattern.compile("id: .SESSION[0-9A-Z]{10,}").matcher(jsConfig).find());
 		// check for other values ....
-
+System.out.println(page.asXml());
 		HtmlButtonInput paymentPageButton = (HtmlButtonInput) page.getByXPath("//input[@type='button']").get(1);
 		paymentPageButton.click();
 
@@ -214,7 +212,7 @@ public class PaymentControllerTest {
 		//create product
 		ProductEntity product = new ProductEntity();
 		product.setName("product one");
-		product.setCreationdDate(new Date());
+		product.setCreationDate(new Date());
 		product.setUpdateDate(new Date());
 		ProductEntity productEntity = productRepository.save(product);
 		//create stock

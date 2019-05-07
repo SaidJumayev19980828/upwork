@@ -2,15 +2,7 @@ package com.nasnav.persistence;
 
 import java.math.BigDecimal;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
@@ -30,6 +22,8 @@ public class BasketsEntity extends AbstractPersistable<Long> implements BaseEnti
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
     private BigDecimal quantity;
+
+    @Column(name="price", precision=10, scale=2)
     private BigDecimal price;
     private Integer currency;
 

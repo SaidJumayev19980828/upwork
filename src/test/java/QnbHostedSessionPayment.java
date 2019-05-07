@@ -1,11 +1,9 @@
 import com.nasnav.NavBox;
 import com.nasnav.dao.*;
-import com.nasnav.dto.BasketItem;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.payments.qnb.Account;
 import com.nasnav.payments.qnb.Session;
 import com.nasnav.persistence.*;
-import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -119,7 +117,7 @@ public class QnbHostedSessionPayment {
         //create product
         ProductEntity product = new ProductEntity();
         product.setName("product one");
-        product.setCreationdDate(new Date());
+        product.setCreationDate(new Date());
         product.setUpdateDate(new Date());
         ProductEntity productEntity = productRepository.save(product);
 

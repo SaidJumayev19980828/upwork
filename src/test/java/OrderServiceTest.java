@@ -1,14 +1,12 @@
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import com.nasnav.dto.BasketItem;
 import com.nasnav.persistence.*;
 import org.junit.After;
 import org.junit.Assert;
@@ -359,7 +357,7 @@ public class OrderServiceTest {
 		//create product
 		ProductEntity product = new ProductEntity();
 		product.setName("product one");
-		product.setCreationdDate(new Date());
+		product.setCreationDate(new Date());
 		product.setUpdateDate(new Date());
 		ProductEntity productEntity = productRepository.save(product);
 

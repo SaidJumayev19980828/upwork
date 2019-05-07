@@ -19,6 +19,7 @@ import org.apache.tomcat.util.codec.binary.Base64;
 import org.hibernate.internal.CriteriaImpl;
 import org.json.JSONObject;
 import org.apache.logging.log4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +36,8 @@ import java.util.Set;
 
 @Service
 public class Session {
+
+    private static final org.slf4j.Logger logger = LoggerFactory.getLogger("QNB Session");
 
     @Autowired
     private BasketRepository basketRepository;

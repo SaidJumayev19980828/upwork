@@ -48,7 +48,7 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
     private String itemId;
 
     @Column(name = "created_at")
-    private Date creationdDate;
+    private Date creationDate;
     @Column(name = "updated_at")
     private Date updateDate;
 
