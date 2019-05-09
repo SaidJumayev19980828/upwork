@@ -1,18 +1,16 @@
 <html>
-	
     <head> 
-    
        <script src="https://qnbalahli.test.gateway.mastercard.com/checkout/version/43/checkout.js"
-               	 data-error="errorCallback"
-               	 data-cancel="cancelCallback"
-                >
-       </script>
+               data-error="errorCallback" data-cancel="cancelCallback"></script>
 
        <script type="text/javascript">
             function errorCallback(error) {
                   alert(JSON.stringify(error));
             }
-            
+            function cancelCallback() {
+                alert('Payment cancelled');
+            }
+
             function completeCallback(resultIndicator, sessionVersion) {
                   alert("Result Indicator");
 				  				alert(JSON.stringify(resultIndicator));
@@ -20,28 +18,14 @@
 				  				alert(JSON.stringify(sessionVersion));
 				  				alert("Successful Payment");
             }
-           
-            function cancelCallback() {
-                  alert('Payment cancelled');
-            
-            }
-
 
             Checkout.configure({
                 merchant   : '$merchant',
                 order      : {
                     amount     : "$amount",
                     currency   : "$currency",
-                    description: 'Checkout Test Order - Return to Merchant ',
+                    description: '$description',
                     id				 : "$order_id",
-                    item			 : {
-                        brand: 'Mastercard',
-                        description: 'Checkout Test Item - Return to Merchant',
-                        name: 'HostedCheckoutItem',
-                        quantity: '1',
-                        unitPrice: '1.00',
-                        unitTaxAmount: '1.00'
-                    }
                 },
                 billing    : {
                     address  : {
@@ -58,25 +42,50 @@
                 },
                 interaction: {
                     merchant: {
-                    name: 'Jonny Test Merchant for QNB Checkout',
+                    name: '$seller_name',
                     address: {
-                        line1: '300 Adelaide Street',
-                        line2: 'Brisbane Queensland 4000'
+                        line1: '$seller_address_1',
+                        line2: '$seller_address_2'
                         },
-                          logo:  'https://www.albemarle-london.com/OnlineBooking/Albemarle/ShowPics/ALBAniv.png'
+                          logo:  '$seller_logo'
                     }
                 },
                 session: {
                     id: "$session_id"       						}
                 });
-
         </script>
-    
     </head>
     
     <body>
+        <h4>JSON</h4>
+            <pre>$rawJSON</pre>
+        <h4>Session</h4>
+        <table border="0">
+            <tr><td>Account:</td><td>$merchant</td></tr>
+            <tr><td>Session:</td><td>$session_id</td></tr>
+        </table>
+        <h4>Order Data</h4>
+        <table border="0">
+            <tr><td>Order Ref:</td><td>$order_ref</td></tr>
+            <tr><td>Amount:</td><td>$amount</td></tr>
+            <tr><td>Currency:</td><td>$currency</td></tr>
+            <tr><td>Description:</td><td>$description</td></tr>
+        </table>
+        <h4>Customer</h4>
+        <table border="0">
+            <tr><td>Email:</td><td>$email</td></tr>
+        </table>
+        <h4>Seller</h4>
+        <table border="0">
+            <tr><td>Name:</td><td>$seller_name</td></tr>
+            <tr><td>Address 1:</td><td>$seller_address_1</td></tr>
+            <tr><td>Address 2:</td><td>$seller_address_2</td></tr>
+            <tr><td>Logo:</td><td>$seller_logo</td></tr>
+        </table>
         <p style="text-align:center;"><input type="button" value="Pay with Lightbox" onclick="Checkout.showLightbox();" /></p>
         <p style="text-align:center;"><input type="button" value="Pay with Payment Page" onclick="Checkout.showPaymentPage();" /></p>				
-        <p style="text-align:center;"><a href= "http://bne-opsts-01/Jonny/index.html"><br><br><input type="button" value="Cancel Payment and Return to Main Index Page" /></a></p>
+        <p style="text-align:center;">
+            <a href= "http://bne-opsts-01/Jonny/index.html"><input type="button" value="Cancel Payment and Return to Main Index Page" /></a>
+        </p>
     </body>
 </html>

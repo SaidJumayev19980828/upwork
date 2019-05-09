@@ -66,7 +66,7 @@ public class ProductService {
 
 		Optional<ProductEntity> optionalProduct = productRepository.findById(productId);
 		if (optionalProduct == null || !optionalProduct.isPresent()) {
-			throw new BusinessException("Product " + productId + " not found", null, HttpStatus.NOT_FOUND);
+			return null;
 		}
 
 		JSONObject response = new JSONObject();

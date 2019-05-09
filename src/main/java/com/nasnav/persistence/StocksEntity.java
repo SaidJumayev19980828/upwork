@@ -5,6 +5,7 @@ import java.util.Date;
 
 import javax.persistence.*;
 
+import com.nasnav.enumerations.TransactionCurrency;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -34,12 +35,24 @@ public class StocksEntity extends AbstractPersistable<Long> implements BaseEntit
 	@Column(name = "updated_at", nullable = false, length = 29)
 	private Date updateDate;
 
+	@Column(name = "price")
 	private BigDecimal price;
+
+	@Column(name = "currency")
+	private int currency;
+
+	public TransactionCurrency getCurrency() {
+		return TransactionCurrency.getTransactionCurrency(this.currency);
+	}
+	public void setCurrency(TransactionCurrency currency) {
+		this.currency = currency.getValue();
+	}
+
+
 	private BigDecimal discount;
 
 	@Column(name = "sub_product_id")
 	private Long subProductId;
-
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "organization_id", nullable = false)

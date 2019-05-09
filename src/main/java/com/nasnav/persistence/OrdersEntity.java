@@ -16,6 +16,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.nasnav.enumerations.PaymentStatus;
 import org.hibernate.annotations.Type;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
@@ -34,25 +35,45 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	@Id
 	@Column(name = "id", unique = true, nullable = false)
 	private Long id;
+
 	@Column(name = "address", length = 150)
 	private String address;
+
 	@Column(name = "email", length = 40)
 	private String email;
+
 	@Column(name = "name", length = 40)
 	private String name;
+
 	@Column(name = "payment_type")
 	private Integer payment_type;
+
+	@Column(name = "payment_status", nullable = false)
+	private Integer paymentStatus;
+
+	public PaymentStatus getPaymentStatus() {
+		return PaymentStatus.getPaymentStatus(this.status);
+	}
+	public void setPaymentStatus(PaymentStatus status) {
+		this.status = status.getValue();
+	}
+
 	private Long user_id;
+
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "created_at", nullable = false, length = 29)
 	private Date creationDate;
+
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "updated_at", nullable = false, length = 29)
 	private Date updateDate;
+
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "date_delivery", nullable = false, length = 29)
 	private Date deliveryDate;
+
 	private Integer status;
+
     @Type(type = "com.nasnav.persistence.GenericArrayType")
 	private String []cancelation_reasons;
 	private String driver_name;
@@ -84,5 +105,10 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	public BaseRepresentationObject getRepresentation() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public OrdersEntity() {
+		this.paymentStatus = PaymentStatus.UNPAID.getValue();
+		this.creationDate = new Date();
 	}
 }

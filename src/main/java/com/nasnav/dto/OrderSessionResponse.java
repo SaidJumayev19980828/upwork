@@ -18,56 +18,25 @@ public class OrderSessionResponse {
     @JsonProperty("success")
     private boolean success;
 
-    @JsonProperty("customer")
-    private Customer customer;
+//    @JsonProperty("merchant")
+//    private String merchantId;
 
-    @JsonProperty("seller")
-    private Seller seller;
+    @JsonProperty("order_uid")
+    private String orderRef;
 
-    @JsonProperty("session")
-    private ResponseSession session;
+//    @JsonProperty("basket")
+//    private List<OrderSessionBasket> basket;
 
-    @JsonProperty("merchant")
-    private String merchant_id;
+    @JsonProperty("order_amount")
+    private BigDecimal orderAmount;
 
-    @JsonProperty("id")
-    private String order_ref;
+    @JsonProperty("order_currency")
+    private TransactionCurrency orderCurrency;
 
-    @JsonProperty("basket")
-    private List<OrderSessionBasket> basket;
+    @JsonProperty("execute_url")
+    private String executeUrl;
 
-    @JsonProperty("order_value")
-    private BigDecimal order_value;
-
-    @JsonProperty("currency")
-    private TransactionCurrency order_currency;
-
-    @Data
-    public static class ResponseSession{
-        @JsonProperty("id")
-        private String id;
-    }
-
-    @Data
-    public static class Customer{
-        @JsonProperty("name")
-        private String name;
-
-        @JsonProperty("email")
-        private String email;
-    }
-
-    @Data
-    public static class Seller{
-        @JsonProperty("organizationName")
-        private String name;
-
-        @JsonProperty("address")
-        private String address;
-
-        @JsonProperty("organizationUrl")
-        private String url;
-    }
-
+    @JsonProperty("session_id")
+    private String sessionId;
 
 }

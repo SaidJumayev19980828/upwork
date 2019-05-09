@@ -18,8 +18,8 @@ public class NavBox
     {
         Resource resource = new ClassPathResource("application.properties");
         Properties baseProperties = PropertiesLoaderUtils.loadProperties(resource);
-        Resource databasePropertiesFile = new FileSystemResource(baseProperties.getProperty("database.properties"));
-        Properties databaseProperties = PropertiesLoaderUtils.loadProperties(databasePropertiesFile);
+        Resource database = new ClassPathResource("database.properties");
+        Properties databaseProperties = PropertiesLoaderUtils.loadProperties(database);
         databaseProperties.forEach((key, value) -> System.setProperty((String)key, (String)value));
 
         SpringApplication.run(NavBox.class, args);

@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
+import com.nasnav.dto.OrderSessionBasket;
+import com.nasnav.persistence.ProductEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,9 @@ import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.response.exception.OrderValidationException;
 
+import static com.nasnav.enumerations.TransactionCurrency.EGP;
+import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
+
 @Service
 public class OrderServiceImpl implements OrderService {
 
@@ -46,6 +51,26 @@ public class OrderServiceImpl implements OrderService {
 		this.ordersRepository = ordersRepository;
 		this.stockRepository = stockRepository;
 		this.basketRepository = basketRepository;
+	}
+
+	public OrderValue getOrderValue(OrdersEntity order) {
+		TransactionCurrency currency = null;
+		BigDecimal amount = new BigDecimal(0);
+
+		List<BasketsEntity> basketsEntity = basketRepository.findByOrdersEntity_Id(order.getId());
+		for (BasketsEntity basketEntity : basketsEntity) {
+			amount = amount.add(basketEntity.getStocksEntity().getPrice().multiply(basketEntity.getQuantity()));
+			if (currency == null) {
+				currency = basketEntity.getStocksEntity().getCurrency();
+			} else if (currency != basketEntity.getStocksEntity().getCurrency()) {
+				currency = UNSPECIFIED;
+			}
+		}
+		OrderValue value = new OrderValue();
+		value.amount = amount;
+		value.currency = currency;
+
+		return value;
 	}
 
 	public OrderResponse updateOrder(OrderJsonDto orderJson, Long userId) {
@@ -96,7 +121,7 @@ public class OrderServiceImpl implements OrderService {
 		OrdersEntity orderEntity = new OrdersEntity();
 		orderEntity.setAddress(orderJsonDto.getAddress());
 		orderEntity.setAmount(calculateOrderAmount(orderJsonDto, stocksEntites));
-		orderEntity.setCreationDate(new Date());
+//		orderEntity.setCreationDate(new Date());
 		// TODO ordersEntity.setPayment_type(payment_type);
 		orderEntity.setShopsEntity(stocksEntites.get(0).getShopsEntity());
 		orderEntity.setStatus(OrderStatus.NEW.getValue());

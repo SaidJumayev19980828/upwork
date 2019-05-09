@@ -12,9 +12,11 @@ import java.util.Optional;
 
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.OrderRepository;
+import com.nasnav.dto.OrderSessionResponse;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.OrdersEntity;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -31,48 +33,41 @@ public class PaymentService {
 	@Autowired
 	private OrderRepository orderRepository;
 
-	public String getConfiguredHtml(Long orderId, Session session) throws BusinessException {
-		Optional<OrdersEntity> ordersEntityOptional = orderRepository.findById(orderId);
-		if(ordersEntityOptional==null || !ordersEntityOptional.isPresent()) {
-			throw new BusinessException("Order not found", null, HttpStatus.NOT_FOUND);
-		}
-		List<BasketsEntity> orderBaskets = basketRepository.findByOrdersEntity_Id(orderId);
-		if(orderBaskets==null || orderBaskets.isEmpty()) {
-			throw new BusinessException("Order not found", null, HttpStatus.NOT_FOUND);
-		}
-		BigDecimal total = orderBaskets.stream().map(BasketsEntity::getPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
-		String email = ordersEntityOptional.get() != null ? ordersEntityOptional.get().getEmail(): null;
-		int currencyId = orderBaskets.get(0).getCurrency();
-		/*
-		String email = "ahmed.saeed@nasnav.com";
-		int currencyId = 0;
-		Double total = 1000d; */
+	// For testing purposes only!
+	public String getConfiguredHtml(String jsonResult) throws BusinessException {
 
 		StringBuilder htmlPage = null;
-		File file = null;
 		try {
-			file = ResourceUtils.getFile("classpath:static/checkout.html");
-
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
-			throw new BusinessException(e1.getMessage(), null, HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-
-		try {
+			File file = ResourceUtils.getFile("classpath:static/session.html");
 			htmlPage = readInputStream(new FileInputStream(file));
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new BusinessException(e.getMessage(), null, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		String modified = htmlPage.toString();
-		modified = modified.replace("$order_id", session.getOrderRef())
-			.replace("$merchant", session.getMerchantId())
-			.replace("$amount", total.toString())
-			.replace("$currency", TransactionCurrency.getTransactionCurrency(currencyId).name())
-			.replace("$email", email)
-			.replace("$session_id", session.getSessionId())
-			.replace("$order_value", total.toString());
-
+		String modified = htmlPage.toString().replace("$rawJSON", jsonResult);
+		try {
+			JSONObject data = new JSONObject(jsonResult);
+			modified = modified
+					.replace("$order_id", data.getString("order_uid"))
+					.replace("$session_id", data.getString("session_id"))
+//					.replace("$merchant", data.getString("merchant"))
+					.replace("$amount", data.getBigDecimal("order_amount").toString())
+					.replace("$currency", data.getString("order_currency"))
+					.replace("$confirm_url", data.getString("execute_url"));
+//			if (data.getJSONObject("session") != null) {
+//				modified = modified.replace("$session_id", data.getJSONObject("session").getString("id"));
+//			}
+/*
+			if (data.getJSONObject("seller") != null) {
+				modified = modified.replace("$seller_name", data.getJSONObject("seller").getString("organization_name"));
+				modified = modified.replace("$seller_address_1", data.getJSONObject("seller").getString("address_line1"));
+				modified = modified.replace("$seller_address_2", data.getJSONObject("seller").getString("address_line2"));
+				modified = modified.replace("$seller_logo", data.getJSONObject("seller").getString("logo_url"));
+			}
+*/
+		} catch (Exception ex) {
+			System.out.println(ex);
+		}
 		return modified;
 	}
 

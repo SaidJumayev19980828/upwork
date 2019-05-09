@@ -102,6 +102,11 @@ public class NavboxController {
 		return new ResponseEntity<>(shopService.getShopById(shopId), HttpStatus.OK);
 	}
 
+	@ApiOperation(value = "Get list of products", nickname = "productList")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 204, message = "Empty product list"),
+			@io.swagger.annotations.ApiResponse(code = 400, message = "Invalid query parameters"), })
 	@GetMapping("/products")
 	public ResponseEntity<?> getProducts(@RequestParam(name = "org_id", required = false) Long organizationId,
 										 @RequestParam(name = "shop_id", required = false) Long shopId,
@@ -144,11 +149,17 @@ public class NavboxController {
 		return new ResponseEntity<>(productsResponse, HttpStatus.OK);
 	}
 
+	@ApiOperation(value = "Get information about a specific product", nickname = "productInfo")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 204, message = "Product does not exist")
+			})
 	@GetMapping(value="/product",produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getProduct(@RequestParam(name = "product_id") Long productId,
 										@RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
 
-		return new ResponseEntity<>(productService.getProduct(productId, shopId),HttpStatus.OK);
+		String response = productService.getProduct(productId, shopId);
+		return response == null ? new ResponseEntity<>(HttpStatus.NO_CONTENT) : new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
 }
