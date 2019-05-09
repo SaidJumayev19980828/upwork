@@ -297,7 +297,7 @@ public class OrderServiceTest {
 		stockId = stocksEntity.getId();
 
 		OrdersEntity ordersEntity = new OrdersEntity();
-		ordersEntity.setCreationDate(new Date());
+//		ordersEntity.setCreationDate(new Date());
 
 		ordersEntity.setAmount(amount);
 		ordersEntity.setShopsEntity(shopsEntity);

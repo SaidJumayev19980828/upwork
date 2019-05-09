@@ -2,20 +2,12 @@ package com.nasnav.payments.qnb;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Optional;
 
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.OrderRepository;
-import com.nasnav.dto.OrderSessionResponse;
-import com.nasnav.enumerations.TransactionCurrency;
-import com.nasnav.persistence.BasketsEntity;
-import com.nasnav.persistence.OrdersEntity;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,18 +19,13 @@ import com.nasnav.exceptions.BusinessException;
 @Service
 public class PaymentService {
 
-	@Autowired
-	private BasketRepository basketRepository;
-
-	@Autowired
-	private OrderRepository orderRepository;
-
 	// For testing purposes only!
 	public String getConfiguredHtml(String jsonResult) throws BusinessException {
 
 		StringBuilder htmlPage = null;
 		try {
 			File file = ResourceUtils.getFile("classpath:static/session.html");
+//			htmlPage = new Scanner(AppropriateClass.class.getResourceAsStream("static/session.html"), "UTF-8").useDelimiter("\\A").next();
 			htmlPage = readInputStream(new FileInputStream(file));
 		} catch (IOException e) {
 			e.printStackTrace();

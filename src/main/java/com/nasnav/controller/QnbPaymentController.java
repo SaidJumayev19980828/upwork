@@ -19,9 +19,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.Optional;
-
 
 @RestController
 @RequestMapping("/payment/qnb")
@@ -44,6 +44,7 @@ public class QnbPaymentController {
     }
 
 
+	@ApiIgnore
     @RequestMapping(value = "/test/payment",produces=MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<?> testPayment(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
         String initResult = initPayment(orderId).getBody().toString();
