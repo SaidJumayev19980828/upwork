@@ -1,18 +1,11 @@
 package com.nasnav.payments.qnb;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.stream.Collectors;
 
-import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.OrderRepository;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ResourceUtils;
 
 import com.nasnav.exceptions.BusinessException;
 
@@ -22,16 +15,23 @@ public class PaymentService {
 	// For testing purposes only!
 	public String getConfiguredHtml(String jsonResult) throws BusinessException {
 
-		StringBuilder htmlPage = null;
-		try {
-			File file = ResourceUtils.getFile("classpath:static/session.html");
-//			htmlPage = new Scanner(AppropriateClass.class.getResourceAsStream("static/session.html"), "UTF-8").useDelimiter("\\A").next();
-			htmlPage = readInputStream(new FileInputStream(file));
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new BusinessException(e.getMessage(), null, HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		String modified = htmlPage.toString().replace("$rawJSON", jsonResult);
+		String htmlPage = null;
+//		try {
+			InputStream is = getClass().getClassLoader().getResourceAsStream("static/session.html");
+			if (is == null) {
+				System.err.println("######## FILE NOT AVAILABLE");
+			}
+			BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+			htmlPage = reader.lines().collect(Collectors.joining(System.lineSeparator()));
+
+//			File file = ResourceUtils.getFile("classpath:static/session.html");
+//			htmlPage = new Scanner(getClass().getResourceAsStream("classpath:static/session.html"), "UTF-8").useDelimiter("\\A").next();
+//			htmlPage = readInputStream(new FileInputStream(file));
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//			throw new BusinessException(e.getMessage(), null, HttpStatus.INTERNAL_SERVER_ERROR);
+//		}
+		String modified = htmlPage.replace("$rawJSON", jsonResult);
 		try {
 			JSONObject data = new JSONObject(jsonResult);
 			modified = modified
