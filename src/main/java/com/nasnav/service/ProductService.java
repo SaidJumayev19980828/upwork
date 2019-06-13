@@ -1,33 +1,18 @@
 package com.nasnav.service;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ProductImagesRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductSortOptions;
 import com.nasnav.dto.ProductsResponse;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ProductImagesEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
@@ -43,6 +28,8 @@ public class ProductService {
 
 	private final ProductRepository productRepository;
 
+	private final BundleRepository bundleRepository;
+
 	private final StockRepository stockRepository;
 
 	private final ProductImagesRepository productImagesRepository;
@@ -54,13 +41,17 @@ public class ProductService {
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
 			ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
-			ProductFeaturesRepository productFeaturesRepository) {
+			ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository) {
 		this.productRepository = productRepository;
 		this.stockRepository = stockRepository;
 		this.productImagesRepository = productImagesRepository;
 		this.productVariantsRepository = productVariantsRepository;
 		this.productFeaturesRepository = productFeaturesRepository;
+		this.bundleRepository = bundleRepository;
 	}
+
+
+
 
 	public String getProduct(Long productId, Long shopId) throws BusinessException {
 
@@ -68,12 +59,13 @@ public class ProductService {
 		if (optionalProduct == null || !optionalProduct.isPresent()) {
 			return null;
 		}
-
+		ProductEntity product = optionalProduct.get();
 		JSONObject response = new JSONObject();
-		response.put("name", optionalProduct.get().getName());
-		response.put("p_name", optionalProduct.get().getPname());
-		response.put("description", optionalProduct.get().getDescription());
-		response.put("category_id", optionalProduct.get().getCategoryId());
+		response.put("name", product.getName());
+		response.put("p_name", product.getPname());
+		response.put("description", product.getDescription());
+		response.put("category_id", product.getCategoryId());
+		response.put("product_type" , product.getProductType());
 
 		JSONArray productImages = getProductImages(productId);
 
@@ -93,9 +85,9 @@ public class ProductService {
 			if (stockArray != null) {
 				JSONObject variantObj = new JSONObject();
 				variantObj.put("id", 0);
+				variantObj.put("stocks", stockArray);
 				variantJsonArray = new JSONArray();
 				variantJsonArray.put(variantObj);
-				variantObj.put("stocks", stockArray);
 			}
 		}
 
@@ -105,11 +97,27 @@ public class ProductService {
 		if (variantJsonArray!=null && !variantJsonArray.isEmpty()) {
 			response.put("variants", variantJsonArray);
 		}
+		if (product.getProductType() == ProductTypes.BUNDLE){
+		    response.put("bundle_items", getBundleItems(product));
+        }
 
 		return response.toString();
 	}
 
-	private JSONArray getVariantsJSONArray(List<ProductVariantsEntity> productVariants, Long productId, Long shopId) {
+
+
+    private JSONArray getBundleItems(ProductEntity product) {
+        List<Long> bundleProductsIdList = bundleRepository.GetBundleItemsProductIds(product.getId());
+        List<ProductEntity> bundleProducts = this.getProductsByIds(bundleProductsIdList , "asc", "name");
+        ProductsResponse response = this.getProductsResponse(bundleProducts,"asc" , "name" , 0, Integer.MAX_VALUE );
+        List productRepList = response == null? new ArrayList() : response.getProducts();
+        return new JSONArray(productRepList);
+    }
+
+
+
+
+    private JSONArray getVariantsJSONArray(List<ProductVariantsEntity> productVariants, Long productId, Long shopId) {
 
 		JSONArray variantJsonArray = new JSONArray();
 
@@ -199,6 +207,8 @@ public class ProductService {
 		return null;
 	}
 
+
+
 	private JSONArray getProductVariantImages(Long variantId) {
 		List<ProductImagesEntity> variantImages = productImagesRepository.findByProductVariantsEntity_Id(variantId);
 
@@ -216,6 +226,8 @@ public class ProductService {
 		return null;
 	}
 
+
+
 	private JSONArray getStockJsonArray(Long productId, Long shopId, Long variantId) {
 
 		if (shopId == null) {
@@ -226,19 +238,13 @@ public class ProductService {
 			stocks = stockRepository.findByProductEntity_IdAndShopsEntity_IdAndProductVariantsEntity_Id(productId,
 					shopId, variantId);
 		} else {
-			stocks = stockRepository.findByProductEntity_IdAndShopsEntity_Id(productId, shopId);
+			stocks = getProductStockForShop(productId, shopId);
 		}
 
 		if (stocks != null && !stocks.isEmpty()) {
-
 			JSONArray stocksArray = new JSONArray();
-
 			stocks.forEach(stock -> {
-				JSONObject stockObject = new JSONObject();
-				stockObject.put("shop_id", shopId);
-				stockObject.put("quantity", stock.getQuantity());
-				stockObject.put("price", stock.getPrice());
-				stockObject.put("discount", stock.getDiscount());
+                JSONObject stockObject = createStockJSONObject(shopId, stock);
 				stocksArray.put(stockObject);
 			});
 			return stocksArray;
@@ -247,7 +253,59 @@ public class ProductService {
 
 	}
 
-	public ProductsResponse getProductsResponseByShopId(Long shopId, Long categoryId, Integer start, Integer count,
+
+
+
+    private JSONObject createStockJSONObject(Long shopId, StocksEntity stock) {
+        JSONObject stockObject = new JSONObject();
+        stockObject.put("shop_id", shopId);
+        stockObject.put("quantity", stock.getQuantity());
+        stockObject.put("price", stock.getPrice());
+        stockObject.put("discount", stock.getDiscount());
+        return stockObject;
+    }
+
+
+    private List<StocksEntity> getProductStockForShop(Long productId, Long shopId) {
+		Optional<ProductEntity> prodOpt = productRepository.findById(productId);
+		if(prodOpt == null || !prodOpt.isPresent())
+			return null;
+
+        List<StocksEntity> stocks  = stockRepository.findByProductEntity_IdAndShopsEntity_Id(productId, shopId);;
+
+        //TODO : i think we should throw business exception here
+        if(stocks == null || stocks.isEmpty())
+            return null;
+
+		Integer productType = prodOpt.get().getProductType();
+
+		if(productType == ProductTypes.BUNDLE ){
+            setBundleStockQuantity(productId, stocks);
+        }
+
+		return stocks;
+	}
+
+
+
+	/**
+     * if the product is bundle , its quantity is limited by the lowest quantity of its items.
+     * if the bundle stock quantity is set to zero , then the bundle is not active anymore.
+     * Set all stocks of the bundle to the calculated quantity.
+     * */
+    private void setBundleStockQuantity(Long productId, List<StocksEntity> stocks) {
+        Integer quantity = 0;
+        if( stocks.get(0).getQuantity() > 0 ){
+            quantity = bundleRepository.getStockQuantity(productId);
+        }
+        for(StocksEntity stock : stocks)
+            stock.setQuantity(quantity);
+    }
+
+
+
+
+    public ProductsResponse getProductsResponseByShopId(Long shopId, Long categoryId, Integer start, Integer count,
 			String sort, String order) {
 
 		if (start == null)
@@ -492,4 +550,5 @@ public class ProductService {
 
 		return productsResponse;
 	}
+
 }

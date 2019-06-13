@@ -121,7 +121,7 @@ public class OrderServiceImpl implements OrderService {
 		OrdersEntity orderEntity = new OrdersEntity();
 		orderEntity.setAddress(orderJsonDto.getAddress());
 		orderEntity.setAmount(calculateOrderAmount(orderJsonDto, stocksEntites));
-//		orderEntity.setCreationDate(new Date());
+		orderEntity.setCreationDate(new Date());
 		// TODO ordersEntity.setPayment_type(payment_type);
 		orderEntity.setShopsEntity(stocksEntites.get(0).getShopsEntity());
 		orderEntity.setStatus(OrderStatus.NEW.getValue());

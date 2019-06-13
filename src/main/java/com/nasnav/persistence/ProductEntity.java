@@ -1,28 +1,21 @@
 package com.nasnav.persistence;
 
-import java.util.Date;
-import java.util.Set;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-
-import org.springframework.data.jpa.domain.AbstractPersistable;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.ProductRepresentationObject;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.DiscriminatorFormula;
+import org.springframework.data.jpa.domain.AbstractPersistable;
+
+import javax.persistence.*;
+import java.util.Date;
 
 @Entity
 @Table(name = "products")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name="product_type",  discriminatorType = DiscriminatorType.INTEGER)
+@DiscriminatorValue("0")
+@DiscriminatorFormula("COALESCE(product_type,0)")        //TODO: we only need this until the Column PRODUCTS.PRODUCT_TYPE is set as non-null
 @Data
 @EqualsAndHashCode(callSuper=false)
 public class ProductEntity extends AbstractPersistable<Long> implements BaseEntity {
@@ -60,6 +53,14 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
     
     @Column(name="brand_id")
     private Long brandId;
+
+    @Column(name="product_type")
+    private Integer productType = ProductTypes.DEFAULT;
+
+    //TODO : we only need this until the Column PRODUCTS.PRODUCT_TYPE is set as non-null
+    public Integer getProductType(){
+        return productType == null ? ProductTypes.DEFAULT : productType;
+    }
 
 //    @OneToMany(mappedBy="productEntity")
 //    @JsonIgnore

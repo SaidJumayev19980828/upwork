@@ -149,6 +149,9 @@ public class NavboxController {
 		return new ResponseEntity<>(productsResponse, HttpStatus.OK);
 	}
 
+
+
+
 	@ApiOperation(value = "Get information about a specific product", nickname = "productInfo")
 	@ApiResponses(value = {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),

@@ -1,6 +1,7 @@
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -85,6 +86,8 @@ public class OrderServiceTest {
 			persistentUser = new UserEntity();
 			persistentUser.setName("John Smith");
 			persistentUser.setEmail("unavailable@nasnav.com");
+			persistentUser.setCreatedAt(LocalDateTime.now());
+			persistentUser.setUpdatedAt(LocalDateTime.now());
 		}
 		persistentUser.setEncPassword("---");
 		userRepository.save(persistentUser);
