@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
 @Service
 public class ProductService {
 
-//	@Value("${products.default.start}") // TODO: FIX defaults
-	private Integer defaultStart = 1;
+//	@Value("${products.default.start}")
+	private Integer defaultStart = 0;
 //	@Value("${products.default.count}")
 	private Integer defaultCount = 10;
 //	@Value("${products.default.sort.attribute}")
@@ -545,10 +545,21 @@ public class ProductService {
 				toIndex = productsRep.size();
 
 			productsResponse.setProducts(productsRep.subList(start, toIndex));
-			productsResponse.setTotal(stocks.stream().mapToLong(stock -> stock.getQuantity()).sum());
+			//Bundles and services quantities in stock table are not counted
+			productsResponse.setTotal(getActualStockItemsSum(stocks));
 		}
 
 		return productsResponse;
 	}
+
+
+
+
+    private long getActualStockItemsSum(List<StocksEntity> stocks) {
+        return stocks.stream()
+                    .filter(s -> s.getProductEntity().getProductType() == ProductTypes.STOCK_ITEM)
+                    .mapToLong(stock -> stock.getQuantity())
+                    .sum();
+    }
 
 }
