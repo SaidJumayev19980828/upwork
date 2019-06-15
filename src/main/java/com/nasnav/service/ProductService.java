@@ -17,7 +17,8 @@ import java.util.stream.Collectors;
 @Service
 public class ProductService {
 
-//	@Value("${products.default.start}")
+
+    //	@Value("${products.default.start}")
 	private Integer defaultStart = 0;
 //	@Value("${products.default.count}")
 	private Integer defaultCount = 10;
@@ -38,16 +39,20 @@ public class ProductService {
 
 	private final ProductFeaturesRepository productFeaturesRepository;
 
+    private final StockServiceImpl stockService;
+
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
 			ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
-			ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository) {
+			ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
+             StockServiceImpl stockService) {
 		this.productRepository = productRepository;
 		this.stockRepository = stockRepository;
 		this.productImagesRepository = productImagesRepository;
 		this.productVariantsRepository = productVariantsRepository;
 		this.productFeaturesRepository = productFeaturesRepository;
 		this.bundleRepository = bundleRepository;
+		this.stockService = stockService;
 	}
 
 
@@ -267,40 +272,14 @@ public class ProductService {
 
 
     private List<StocksEntity> getProductStockForShop(Long productId, Long shopId) {
-		Optional<ProductEntity> prodOpt = productRepository.findById(productId);
-		if(prodOpt == null || !prodOpt.isPresent())
-			return null;
 
-        List<StocksEntity> stocks  = stockRepository.findByProductEntity_IdAndShopsEntity_Id(productId, shopId);;
+	    return stockService.getProductStockForShop(productId, shopId);
 
-        //TODO : i think we should throw business exception here
-        if(stocks == null || stocks.isEmpty())
-            return null;
-
-		Integer productType = prodOpt.get().getProductType();
-
-		if(productType == ProductTypes.BUNDLE ){
-            setBundleStockQuantity(productId, stocks);
-        }
-
-		return stocks;
 	}
 
 
 
-	/**
-     * if the product is bundle , its quantity is limited by the lowest quantity of its items.
-     * if the bundle stock quantity is set to zero , then the bundle is not active anymore.
-     * Set all stocks of the bundle to the calculated quantity.
-     * */
-    private void setBundleStockQuantity(Long productId, List<StocksEntity> stocks) {
-        Integer quantity = 0;
-        if( stocks.get(0).getQuantity() > 0 ){
-            quantity = bundleRepository.getStockQuantity(productId);
-        }
-        for(StocksEntity stock : stocks)
-            stock.setQuantity(quantity);
-    }
+
 
 
 
@@ -545,21 +524,12 @@ public class ProductService {
 				toIndex = productsRep.size();
 
 			productsResponse.setProducts(productsRep.subList(start, toIndex));
-			//Bundles and services quantities in stock table are not counted
-			productsResponse.setTotal(getActualStockItemsSum(stocks));
+			productsResponse.setTotal(stockService.getStockItemsQuantitySum(stocks));
 		}
 
 		return productsResponse;
 	}
 
 
-
-
-    private long getActualStockItemsSum(List<StocksEntity> stocks) {
-        return stocks.stream()
-                    .filter(s -> s.getProductEntity().getProductType() == ProductTypes.STOCK_ITEM)
-                    .mapToLong(stock -> stock.getQuantity())
-                    .sum();
-    }
 
 }

@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
-import com.nasnav.dto.OrderSessionBasket;
-import com.nasnav.persistence.ProductEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +29,6 @@ import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.response.exception.OrderValidationException;
 
-import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
 
 @Service
@@ -43,14 +40,17 @@ public class OrderServiceImpl implements OrderService {
 
 	private final StockRepository stockRepository;
 
+	private final StockServiceImpl stockService;
+
 	private final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class.getName());
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
-			StockRepository stockRepository) {
+							StockRepository stockRepository ,StockServiceImpl stockService) {
 		this.ordersRepository = ordersRepository;
 		this.stockRepository = stockRepository;
 		this.basketRepository = basketRepository;
+		this.stockService = stockService;
 	}
 
 	public OrderValue getOrderValue(OrdersEntity order) {
@@ -147,10 +147,7 @@ public class OrderServiceImpl implements OrderService {
 				.forEach(basketItem -> {
 					Optional<StocksEntity> optionalStocksEntity = stockRepository.findById(basketItem.getStockId());
 
-					if (optionalStocksEntity == null || !optionalStocksEntity.isPresent()
-							|| basketItem.getQuantity() > optionalStocksEntity.get().getQuantity()
-							|| optionalStocksEntity.get().getPrice().doubleValue() <= 0) {
-						// stock Id is invalid or available quantity is less than required
+					if (isInvalidStock(basketItem, optionalStocksEntity)) {
 						return;
 					}
 					stocksEntites.add(optionalStocksEntity.get());
@@ -159,6 +156,19 @@ public class OrderServiceImpl implements OrderService {
 		// TODO check for pending orders logic and what to do
 		return stocksEntites;
 	}
+
+
+	/**
+	 * @return if stock Id is invalid or available quantity is less than required
+	 * */
+	private boolean isInvalidStock(BasketItem basketItem, Optional<StocksEntity> optionalStocksEntity) {
+		Integer q = stockService.getStockQuantity(optionalStocksEntity.get());
+		return optionalStocksEntity == null || !optionalStocksEntity.isPresent()
+				|| basketItem.getQuantity() > q
+				|| optionalStocksEntity.get().getPrice().doubleValue() <= 0;
+	}
+
+
 
 	private OrderResponse updateCurrentOrder(OrderJsonDto orderJsonDto) {
 
@@ -200,8 +210,7 @@ public class OrderServiceImpl implements OrderService {
 		orderJsonDto.getBasket().stream().filter(basketItem -> basketItem.getStockId() != null).forEach(basketItem -> {
 			Optional<StocksEntity> optionalStocksEntity = stockRepository.findById(basketItem.getStockId());
 
-			if (optionalStocksEntity == null || !optionalStocksEntity.isPresent()
-					|| basketItem.getQuantity() > optionalStocksEntity.get().getQuantity()) {
+			if (isInvalidStock(basketItem , optionalStocksEntity)) {
 				// stock Id is invalid or available quantity is less than required
 				log.error("Stock Id {} is invalid", basketItem.getStockId());
 				return;
@@ -221,7 +230,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private OrderResponse updateCurrentOrderStatus(OrderJsonDto orderJsonDto, OrdersEntity orderEntity,
-			OrderStatus newStatus, OrderStatus currentOrderStatus) {
+												   OrderStatus newStatus, OrderStatus currentOrderStatus) {
 
 
 		// commented as baskets are required only for new orders
@@ -243,7 +252,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private void addItemsToBasket(OrderJsonDto orderJsonDto, OrdersEntity orderEntity,
-			List<StocksEntity> stocksEntites) {
+								  List<StocksEntity> stocksEntites) {
 
 		for (BasketItem basketItem : orderJsonDto.getBasket()) {
 			StocksEntity stocksEntity = stocksEntites.stream().filter(stock -> stock.getId().equals(basketItem.getStockId()))
