@@ -13,17 +13,27 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.skyscreamer.jsonassert.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.*;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
+import javax.sql.DataSource;
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Date;
+
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNull;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -36,6 +46,15 @@ public class NavBoxTest {
 
     @Autowired
     private TestRestTemplate template;
+
+    @Value("classpath:sql/extra_attributes_test_data_Insert.sql")
+    private Resource extraAttributesDataInsert;
+
+    @Value("classpath:sql/extra_attributes_test_data_Delete.sql")
+    private Resource extraAttributesDataDelete;
+
+    @Autowired
+    private DataSource datasource;
 
     @Autowired  private BrandsRepository brandsRepository;
     @Autowired  private ShopsRepository shopsRepository;
@@ -140,6 +159,51 @@ public class NavBoxTest {
         shopResponse =  template.exchange(
                 "/navbox/shop?shop_id=" + 1243124312341243L,
                 HttpMethod.GET, new HttpEntity<>(headers), String.class);
+    }
+
+    @Test
+    public void testExtraAttributes() {
+        prepareExtraAttributesTestData();
+        performExtraAttributesResponseTest();
+        RemoveExtraAttributesTestData();
+    }
+
+    private void prepareExtraAttributesTestData(){
+        try (Connection con = datasource.getConnection()) {
+            ScriptUtils.executeSqlScript(con, this.extraAttributesDataInsert);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void RemoveExtraAttributesTestData(){
+        try (Connection con = datasource.getConnection()) {
+            ScriptUtils.executeSqlScript(con, this.extraAttributesDataDelete);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void performExtraAttributesResponseTest(){
+        //// testing extra attributes with no organization filter ////
+        ResponseEntity<String> response = template.getForEntity("/navbox/attributes", String.class);
+        System.out.println(response.getBody());
+        JSONArray  json = (JSONArray) JSONParser.parseJSON(response.getBody());
+
+        assertEquals("there are total 2 attributes",2 , json.length());
+
+
+        //// testing extra attributes with organization filter = 401 ////
+        response = template.getForEntity("/navbox/attributes?org_id=401", String.class);
+        System.out.println(response.getBody());
+        json = (JSONArray) JSONParser.parseJSON(response.getBody());
+        assertEquals("there are total 1 attributes with organization = 401",1 , json.length());
+
+
+        //// testing extra attributes with false organization filter ////
+        response = template.getForEntity("/navbox/attributes?org_id=403", String.class);
+        System.out.println(response.getBody());
+        assertNull("there are no attributes with organization = 403",response.getBody());
     }
 
 /*
