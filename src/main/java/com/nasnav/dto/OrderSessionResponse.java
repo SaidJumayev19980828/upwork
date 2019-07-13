@@ -18,8 +18,11 @@ public class OrderSessionResponse {
     @JsonProperty("success")
     private boolean success;
 
-//    @JsonProperty("merchant")
-//    private String merchantId;
+//    @JsonProperty("successIndicator")
+//    private String successIndicator;
+
+    @JsonProperty("merchant")
+    private String merchantId;
 
     @JsonProperty("order_uid")
     private String orderRef;

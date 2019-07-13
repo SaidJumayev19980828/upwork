@@ -46,7 +46,14 @@ public class QnbPaymentController {
     @RequestMapping(value = "/test/payment",produces=MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<?> testPayment(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
         String initResult = initPayment(orderId).getBody().toString();
-        return new ResponseEntity<>(paymentService.getConfiguredHtml(initResult), HttpStatus.OK);
+        return new ResponseEntity<>(paymentService.getConfiguredHtml(initResult, "static/session.html"), HttpStatus.OK);
+    }
+
+    @ApiIgnore
+    @RequestMapping(value = "/test/lightbox",produces=MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<?> testLightbox(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
+        String initResult = initPayment(orderId).getBody().toString();
+        return new ResponseEntity<>(paymentService.getConfiguredHtml(initResult, "static/lightbox.html"), HttpStatus.OK);
     }
 
     @ApiOperation(value = "Execute the payment after setup and user's data collection", nickname = "qnbExecute")
@@ -67,7 +74,29 @@ public class QnbPaymentController {
         }
     }
 
-    @ApiOperation(value = "Execute the payment after setup and user data collectiob", nickname = "qnbExecute")
+    @ApiOperation(value = "Verify that the payment initiated via lightbox has successfully completed", nickname = "qnbVerify")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Payment session set up"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid input data, for example order_uid"),
+            @io.swagger.annotations.ApiResponse(code = 408, message = "Confirmation too late, waiting time too long"),
+            @io.swagger.annotations.ApiResponse(code = 409, message = "Invalid confirmation code (paymentIndicator)"),
+            @io.swagger.annotations.ApiResponse(code = 500, message = "Internal error, incoherent data in the payment table"),
+    })
+    @GetMapping(value = "/verify")
+    public ResponseEntity<?> checkStatus(
+            @RequestParam(name = "order_uid") String orderId,
+            @RequestParam(name = "resultIndicator") String resultIndicator
+    ) {
+        try {
+            session.verifyAndStore(orderId, resultIndicator);
+            return  new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
+        } catch (BusinessException ex) {
+            return new ResponseEntity<>("{\"status\": \"FAILED\", \"code\": \""
+                    + ex.getErrorCode() + "\", \"message\": \"" + ex.getErrorMessage() + "\"}", ex.getHttpStatus());
+        }
+    }
+
+    @ApiOperation(value = "Execute the payment after setup and user data collection", nickname = "qnbExecute")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Payment session set up"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid input data"),
@@ -90,6 +119,7 @@ public class QnbPaymentController {
                 response.setOrderRef(session.getOrderRef());
                 response.setOrderRef(session.getOrderRef());
                 response.setSessionId(session.getSessionId());
+                response.setMerchantId(session.getMerchantId());
 
                 if (session.getOrderValue() != null) {
                     response.setOrderCurrency(session.getOrderValue().currency);

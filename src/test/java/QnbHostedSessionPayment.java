@@ -50,13 +50,16 @@ public class QnbHostedSessionPayment {
     private ProductRepository productRepository;
 
     @Autowired
+    private PaymentsRepository paymentsRepository;
+
+    @Autowired
     private OrganizationRepository organizationRepository;
 
     @Test
     public void rawSessionCreationTest() throws BusinessException {
         session.setMerchantAccount(testAccount);
         Long orderId = createOrder();
-        Assert.assertTrue(session.initialize(orderRepository.findById(orderId).get()));
+        Assert.assertNotNull(session.initialize(orderRepository.findById(orderId).get()));
 
         //delete baskets
         List<BasketsEntity> baskets = basketRepository.findByOrdersEntity_Id(orderId);
@@ -65,6 +68,8 @@ public class QnbHostedSessionPayment {
             stockRepository.delete(basket.getStocksEntity());
             productRepository.delete(basket.getStocksEntity().getProductEntity());
         }
+        //delete payment
+        paymentsRepository.deleteById(paymentsRepository.findByUid(session.getOrderRef()).get().getId());
         //delete created order
         orderRepository.deleteById(orderId);
     }
@@ -101,6 +106,8 @@ public class QnbHostedSessionPayment {
             stockRepository.delete(basket.getStocksEntity());
             productRepository.delete(basket.getStocksEntity().getProductEntity());
         }
+        //delete payment
+        paymentsRepository.deleteById(paymentsRepository.findByUid(session.getOrderRef()).get().getId());
         //delete created order
         orderRepository.deleteById(orderId);
     }

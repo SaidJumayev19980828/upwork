@@ -24,12 +24,17 @@ public class Account {
             safeApiUrl = apiUrl;
             safeApiUsername = apiUsername;
             safeApiPassword = apiPassword;
+            safeApiVersion = apiVersion;
         }
     }
 
     @Value("${qnb.merchant_id}")
     private String merchantId;
     private static String safeMerchantId;
+
+    @Value("${qnb.api_version}")
+    private String apiVersion;
+    private static String safeApiVersion;
 
     @Value("${qnb.api_username}")
     private String apiUsername;
@@ -57,6 +62,10 @@ public class Account {
 
     public String getApiUrl() {
         return safeApiUrl;
+    }
+
+    public String getApiVersion() {
+        return safeApiVersion;
     }
 
 }
