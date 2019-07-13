@@ -4,15 +4,18 @@ import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.OrganizationThemeRepository;
 import com.nasnav.dao.SocialRepository;
+import com.nasnav.dao.ExtraAttributesRepository;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.dto.OrganizationThemesRepresentationObject;
 import com.nasnav.dto.Organization_BrandRepresentationObject;
 import com.nasnav.dto.SocialRepresentationObject;
+import com.nasnav.dto.ExtraAttributesRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.OrganizationThemeEntity;
 import com.nasnav.persistence.SocialEntity;
+import com.nasnav.persistence.ExtraAttributesEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -32,12 +35,16 @@ public class OrganizationService {
 
     private final BrandsRepository brandsRepository;
 
+    private final ExtraAttributesRepository extraAttributesRepository;
+
     @Autowired
-    public OrganizationService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository, SocialRepository socialRepository, OrganizationThemeRepository organizationThemeRepository) {
+    public OrganizationService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository, SocialRepository socialRepository,
+                               OrganizationThemeRepository organizationThemeRepository,ExtraAttributesRepository extraAttributesRepository) {
         this.organizationRepository = organizationRepository;
         this.socialRepository = socialRepository;
         this.organizationThemeRepository = organizationThemeRepository;
         this.brandsRepository = brandsRepository;
+        this.extraAttributesRepository = extraAttributesRepository;
     }
 
    public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
@@ -102,6 +109,21 @@ public class OrganizationService {
             organizationRepresentationObject.setBrands(repList);
         }
         return organizationRepresentationObject;
+    }
+
+
+    public List<ExtraAttributesRepresentationObject> getOrganizationExtraAttributesById(Long organizationId){
+        List<ExtraAttributesEntity> extraAttributes = null;
+        if (organizationId == null) {
+            extraAttributes = extraAttributesRepository.findAll();
+        } else {
+            extraAttributes = extraAttributesRepository.findByOrganizationId(organizationId);
+        }
+        List<ExtraAttributesRepresentationObject> response;
+        response = extraAttributes.stream()
+                .map(extraAttribute -> (ExtraAttributesRepresentationObject) extraAttribute.getRepresentation())
+                .collect(Collectors.toList());
+        return response;
     }
 
 }

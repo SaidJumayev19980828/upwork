@@ -12,10 +12,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nasnav.dto.ExtraAttributesRepresentationObject;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.dto.Organization_BrandRepresentationObject;
 import com.nasnav.dto.ProductSortOptions;
 import com.nasnav.dto.ProductsResponse;
+
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.BrandService;
 import com.nasnav.service.OrganizationService;
@@ -26,6 +28,8 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/navbox")
@@ -114,7 +118,8 @@ public class NavboxController {
 										 @RequestParam(name = "start", required = false) Integer start,
 										 @RequestParam(name = "count", required = false) Integer count,
 										 @RequestParam(name = "sort", required = false) String sort,
-										 @RequestParam(name = "order", required = false) String order) throws BusinessException {
+										 @RequestParam(name = "order", required = false) String order,
+										 @RequestParam(name = "brand_id", required = false) Long brandId) throws BusinessException {
 
 		if (sort != null && ProductSortOptions.getProductSortOptions(sort) == null)
 			throw new BusinessException("Sort is limited to id, name, pname, price", null, HttpStatus.BAD_REQUEST);
@@ -131,13 +136,13 @@ public class NavboxController {
 		ProductsResponse productsResponse = null;
 		if (organizationId != null) {
 
-			productsResponse = productService.getProductsResponseByOrganizationId(organizationId, categoryId, start,
-					count, sort, order);
+			productsResponse = productService.getProductsResponseByOrganizationId(organizationId, categoryId, brandId,
+					start, count, sort, order);
 
 		} else if (shopId != null) {
 
-			productsResponse = productService.getProductsResponseByShopId(shopId, categoryId, start, count, sort,
-					order);
+			productsResponse = productService.getProductsResponseByShopId(shopId, categoryId, brandId, start, count,
+					sort, order);
 		} else {
 			throw new BusinessException("Shop Id or Organization Id shall be provided", null, HttpStatus.BAD_REQUEST);
 		}
@@ -163,6 +168,18 @@ public class NavboxController {
 
 		String response = productService.getProduct(productId, shopId);
 		return response == null ? new ResponseEntity<>(HttpStatus.NO_CONTENT) : new ResponseEntity<>(response, HttpStatus.OK);
+	}
+
+
+	@ApiOperation(value = "Get information about a specific Organization's extra attributes", nickname = "organizationInfo")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 204, message = "Attributes does not exist")
+	})
+	@GetMapping(value="/attributes",produces=MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getOrganizationAttributes(@RequestParam(name = "org_id", required = false) Long organizationId) throws BusinessException {
+		List<ExtraAttributesRepresentationObject> response = organizationService.getOrganizationExtraAttributesById(organizationId);
+		return response.size() == 0 ? new ResponseEntity<>(HttpStatus.NO_CONTENT) : new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
 }

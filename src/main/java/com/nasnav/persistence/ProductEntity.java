@@ -92,6 +92,8 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
         productRepresentationObject.setImageUrl(getCoverImage());
         productRepresentationObject.setName(getName());
         productRepresentationObject.setPname(getPname());
+        productRepresentationObject.setCategoryId(getCategoryId());
+        productRepresentationObject.setBrandId(getBrandId());
 
         return productRepresentationObject;
     }

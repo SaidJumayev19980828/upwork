@@ -24,5 +24,8 @@ public class ProductRepresentationObject extends BaseRepresentationObject{
     private String  pname;
     private BigDecimal price;
     private Boolean available;
-
+    @Column(name = "category_id")
+    private Long categoryId;
+    @Column(name = "brand_id")
+    private Long brandId;
 }

@@ -71,6 +71,7 @@ public class ProductService {
 		response.put("description", product.getDescription());
 		response.put("category_id", product.getCategoryId());
 		response.put("product_type" , product.getProductType());
+		response.put("brand_id" , product.getBrandId());
 
 		JSONArray productImages = getProductImages(productId);
 
@@ -284,8 +285,8 @@ public class ProductService {
 
 
 
-    public ProductsResponse getProductsResponseByShopId(Long shopId, Long categoryId, Integer start, Integer count,
-			String sort, String order) {
+    public ProductsResponse getProductsResponseByShopId(Long shopId, Long categoryId, Long brandId, Integer start,
+			Integer count, String sort, String order) {
 
 		if (start == null)
 			start = defaultStart;
@@ -306,18 +307,22 @@ public class ProductService {
 			List<Long> productsIds = stocks.stream().filter(stock -> stock.getProductEntity() != null)
 					.map(stock -> stock.getProductEntity().getId()).collect(Collectors.toList());
 
-			if (categoryId == null) {
+			if (categoryId == null && brandId == null) {
 				products = getProductsByIds(productsIds, order, sort);
-			} else {
+			} else if (categoryId != null && brandId == null){
 				products = getProductsByIdsAndCategoryId(productsIds, categoryId, order, sort);
+			} else if (categoryId == null && brandId != null){
+				products = getProductsByIdsAndBrandId(productsIds, brandId, order, sort);
+			} else {
+				products = getProductsByIdsAndCategoryIdAndBrandId(productsIds, categoryId, brandId, order, sort);
 			}
 		}
 		return getProductsResponse(products, order, sort, start, count);
 
 	}
 
-	public ProductsResponse getProductsResponseByOrganizationId(Long organizationId, Long categoryId, Integer start,
-			Integer count, String sort, String order) {
+	public ProductsResponse getProductsResponseByOrganizationId(Long organizationId, Long categoryId, Long brandId,
+			Integer start, Integer count, String sort, String order) {
 		if (start == null)
 			start = defaultStart;
 		if (count == null)
@@ -330,10 +335,14 @@ public class ProductService {
 			order = defaultOrder;
 
 		List<ProductEntity> products = null;
-		if (categoryId == null) {
+		if (categoryId == null && brandId == null) {
 			products = getProductsForOrganizationId(organizationId, order, sort);
-		} else {
+		} else if (categoryId != null && brandId == null){
 			products = getProductsForOrganizationIdAndCategoryId(organizationId, categoryId, order, sort);
+		} else if (categoryId == null && brandId != null){
+			products = getProductsForOrganizationIdAndBrandId(organizationId, brandId, order, sort);
+		} else {
+			products = getProductsForOrganizationIdAndCategoryIdAndBrandId(organizationId, categoryId, brandId, order, sort);
 		}
 
 		return getProductsResponse(products, order, sort, start, count);
@@ -401,6 +410,75 @@ public class ProductService {
 		return products;
 	}
 
+	private List<ProductEntity> getProductsForOrganizationIdAndBrandId(Long organizationId, Long brandId,
+																		  String order, String sort) {
+		List<ProductEntity> products = null;
+
+		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.ID) {
+			if (order.equals("asc")) {
+				products = productRepository.findByOrganizationIdAndBrandIdOrderByIdAsc(organizationId, brandId);
+			} else {
+				products = productRepository.findByOrganizationIdAndBrandIdOrderByIdDesc(organizationId, brandId);
+			}
+		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.NAME) {
+
+			if (order.equals("asc")) {
+				products = productRepository.findByOrganizationIdAndBrandIdOrderByNameAsc(organizationId,
+						brandId);
+			} else {
+				products = productRepository.findByOrganizationIdAndBrandIdOrderByNameDesc(organizationId,
+						brandId);
+			}
+		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.P_NAME) {
+			if (order.equals("asc")) {
+				products = productRepository.findByOrganizationIdAndBrandIdOrderByPnameAsc(organizationId,
+						brandId);
+			} else {
+				products = productRepository.findByOrganizationIdAndBrandIdOrderByPnameDesc(organizationId,
+						brandId);
+			}
+		} else {
+			products = productRepository.findByOrganizationIdAndBrandId(organizationId, brandId);
+		}
+		return products;
+	}
+
+	private List<ProductEntity> getProductsForOrganizationIdAndCategoryIdAndBrandId(Long organizationId,
+															Long categoryId, Long brandId, String order, String sort) {
+		List<ProductEntity> products = null;
+
+		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.ID) {
+			if (order.equals("asc")) {
+				products = productRepository.findByOrganizationIdAndCategoryIdAndBrandIdOrderByIdAsc(organizationId,
+						categoryId, brandId);
+			} else {
+				products = productRepository.findByOrganizationIdAndCategoryIdAndBrandIdOrderByIdDesc(organizationId,
+						categoryId, brandId);
+			}
+		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.NAME) {
+
+			if (order.equals("asc")) {
+				products = productRepository.findByOrganizationIdAndCategoryIdAndBrandIdOrderByNameAsc(organizationId,
+						categoryId, brandId);
+			} else {
+				products = productRepository.findByOrganizationIdAndCategoryIdAndBrandIdOrderByNameDesc(organizationId,
+						categoryId, brandId);
+			}
+		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.P_NAME) {
+			if (order.equals("asc")) {
+				products = productRepository.findByOrganizationIdAndCategoryIdAndBrandIdOrderByPnameAsc(organizationId,
+						categoryId, brandId);
+			} else {
+				products = productRepository.findByOrganizationIdAndCategoryIdAndBrandIdOrderByPnameDesc(organizationId,
+						categoryId, brandId);
+			}
+		} else {
+			products = productRepository.findByOrganizationIdAndCategoryIdAndBrandId(organizationId, categoryId,
+						brandId);
+		}
+		return products;
+	}
+
 	private List<ProductEntity> getProductsByIds(List<Long> productsIds, String order, String sort) {
 
 		List<ProductEntity> products = null;
@@ -453,6 +531,66 @@ public class ProductService {
 			}
 		} else {
 			products = productRepository.findByIdInAndCategoryId(productsIds, categoryId);
+		}
+		return products;
+	}
+
+	private List<ProductEntity> getProductsByIdsAndBrandId(List<Long> productsIds, Long brandId, String order,
+															  String sort) {
+		List<ProductEntity> products = null;
+
+		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.ID) {
+			if (order.equals("asc")) {
+				products = productRepository.findByIdInAndBrandIdOrderByIdAsc(productsIds, brandId);
+			} else {
+				products = productRepository.findByIdInAndBrandIdOrderByIdDesc(productsIds, brandId);
+			}
+		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.NAME) {
+			if (order.equals("asc")) {
+				products = productRepository.findByIdInAndBrandIdOrderByNameAsc(productsIds, brandId);
+			} else {
+				products = productRepository.findByIdInAndBrandIdOrderByNameDesc(productsIds, brandId);
+			}
+		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.P_NAME) {
+			if (order.equals("asc")) {
+				products = productRepository.findByIdInAndBrandIdOrderByPnameAsc(productsIds, brandId);
+			} else {
+				products = productRepository.findByIdInAndBrandIdOrderByPnameDesc(productsIds, brandId);
+			}
+		} else {
+			products = productRepository.findByIdInAndBrandId(productsIds, brandId);
+		}
+		return products;
+	}
+
+	private List<ProductEntity> getProductsByIdsAndCategoryIdAndBrandId(List<Long> productsIds, Long categoryId,
+																		Long brandId, String order, String sort) {
+		List<ProductEntity> products = null;
+
+		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.ID) {
+			if (order.equals("asc")) {
+				products = productRepository.findByIdInAndCategoryIdAndBrandIdOrderByIdAsc(productsIds, categoryId, brandId);
+			} else {
+				products = productRepository.findByIdInAndCategoryIdAndBrandIdOrderByIdDesc(productsIds, categoryId, brandId);
+			}
+		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.NAME) {
+			if (order.equals("asc")) {
+				products = productRepository.findByIdInAndCategoryIdAndBrandIdOrderByNameAsc(productsIds, categoryId,
+						brandId);
+			} else {
+				products = productRepository.findByIdInAndCategoryIdAndBrandIdOrderByNameDesc(productsIds, categoryId,
+						brandId);
+			}
+		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.P_NAME) {
+			if (order.equals("asc")) {
+				products = productRepository.findByIdInAndCategoryIdAndBrandIdOrderByPnameAsc(productsIds, categoryId,
+						brandId);
+			} else {
+				products = productRepository.findByIdInAndCategoryIdAndBrandIdOrderByPnameDesc(productsIds, categoryId,
+						brandId);
+			}
+		} else {
+			products = productRepository.findByIdInAndCategoryIdAndBrandId(productsIds, categoryId, brandId);
 		}
 		return products;
 	}
