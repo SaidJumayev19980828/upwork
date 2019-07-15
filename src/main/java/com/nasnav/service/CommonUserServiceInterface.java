@@ -36,7 +36,7 @@ public interface CommonUserServiceInterface {
      * @param email user email
      * @return UserApiResponse object holding the status
      */
-    UserApiResponse sendEmailRecovery(String email);
+    UserApiResponse sendEmailRecovery(String email, Long orgId);
 
 
     /**

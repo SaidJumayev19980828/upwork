@@ -7,6 +7,7 @@ public class TestCommons {
 
     public static String BaseURL = "";
     public static String TestUserEmail = "nonexistent@nasnav.com";
+    public static long OrgId = 11;
 
     private static HttpHeaders authHeaders(long userId, String authToken) {
         HttpHeaders headers = new HttpHeaders();

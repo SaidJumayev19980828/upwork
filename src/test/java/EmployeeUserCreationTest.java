@@ -74,7 +74,7 @@ public class EmployeeUserCreationTest {
 
 	@After
 	public void cleanup() {
-		EmployeeUserEntity user = employeeUserRepository.getByEmail(TestCommons.TestUserEmail);
+		EmployeeUserEntity user = employeeUserRepository.getByEmailAndOrganizationId(TestCommons.TestUserEmail, TestCommons.OrgId);
 		if (user != null) {
 			employeeUserRepository.delete(user);
 		}
@@ -82,7 +82,7 @@ public class EmployeeUserCreationTest {
 
 	@PostConstruct
 	public void setupLoginUser() {
-		persistentUser = employeeUserRepository.getByEmail("unavailable@nasnav.com");
+		persistentUser = employeeUserRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", (long)(15));
 		if (persistentUser == null) {
 			persistentUser = new EmployeeUserEntity();
 			persistentUser.setName("John Smith");
