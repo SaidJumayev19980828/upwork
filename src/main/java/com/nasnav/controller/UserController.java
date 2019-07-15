@@ -59,9 +59,8 @@ public class UserController {
     })
     @GetMapping(value = "recover",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public UserApiResponse sendEmailRecovery(@RequestParam(value = "email") String email,
-                                             @RequestParam(value = "org_id") Long orgId) {
-        return this.userService.sendEmailRecovery(email, orgId);
+    public UserApiResponse sendEmailRecovery(@RequestParam(value = "email") String email) {
+        return this.userService.sendEmailRecovery(email);
     }
 
     @ApiOperation(value = "Change user's password ", nickname = "userPasswordReset")

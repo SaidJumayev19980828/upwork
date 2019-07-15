@@ -74,7 +74,7 @@ public class UserServiceImpl implements UserService {
 	 * @param userJson User entity to be validated
 	 */
 	private void validateBusinessRules(UserDTOs.UserRegistrationObject userJson) {
-		EntityUtils.validateNameAndEmail(userJson.name, userJson.email, userJson.org_id);
+		EntityUtils.validateNameAndEmail(userJson.name, userJson.email);
 	}
 
 	@Override
@@ -100,19 +100,19 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserApiResponse sendEmailRecovery(String email, Long orgId) {
-		UserEntity userEntity = getUserEntityByEmailAndOrgId(email, orgId);
+	public UserApiResponse sendEmailRecovery(String email) {
+		UserEntity userEntity = getUserEntityByEmail(email);
 		userEntity = generateResetPasswordToken(userEntity);
 		return sendRecoveryMail(userEntity);
 	}
 
 	/**
-	 * Get user by passed email and organization id
+	 * Get user by passed email
 	 *
 	 * @param email user entity email
 	 * @return user entity
 	 */
-	private UserEntity getUserEntityByEmailAndOrgId(String email, Long orgId) {
+	private UserEntity getUserEntityByEmail(String email) {
 		// first ensure that email is valid
 		if (!EntityUtils.validateEmail(email)) {
 			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
@@ -120,7 +120,7 @@ public class UserServiceImpl implements UserService {
 			throw new EntityValidationException("INVALID_EMAIL :" + email, userApiResponse, HttpStatus.NOT_ACCEPTABLE);
 		}
 		// load user entity by email
-		UserEntity userEntity = this.userRepository.getByEmailAndOrganizationId(email, orgId);
+		UserEntity userEntity = this.userRepository.getByEmail(email);
 		if (EntityUtils.isBlankOrNull(userEntity)) {
 			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
 					Collections.singletonList(ResponseStatus.EMAIL_NOT_EXIST));
@@ -249,7 +249,7 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public UserApiResponse login(UserDTOs.UserLoginObject loginData) {
-		UserEntity userEntity = this.userRepository.getByEmailAndOrganizationId(loginData.email, loginData.org_id);
+		UserEntity userEntity = this.userRepository.getByEmail(loginData.email);
 		if (userEntity != null) {
 			// check if account needs activation
 			boolean accountNeedActivation = isUserNeedActivation(userEntity);

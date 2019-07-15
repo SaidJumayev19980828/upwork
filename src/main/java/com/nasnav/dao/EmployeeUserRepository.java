@@ -19,12 +19,10 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
     /**
      * Find the user by email.
      *
-     * @param email email and orgId of user.
+     * @param email email of user.
      * @return EmployeeUserEntity
      */
-    EmployeeUserEntity getByEmailAndOrganizationId(String email, Long orgId);
-
-
+    EmployeeUserEntity getByEmail(String email);
     
     /**
 	 * Check if the passed resetPasswordToken already exist before or not.

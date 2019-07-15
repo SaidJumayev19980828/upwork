@@ -217,8 +217,8 @@ public class EmployeeUserServiceHelper {
 		return employeeUserRoles;
 	}
 
-	public void validateBusinessRules(String name, String email, Long orgId, String[] rolesList) {
-		EntityUtils.validateNameAndEmail(name, email, orgId);
+	public void validateBusinessRules(String name, String email, String[] rolesList) {
+		EntityUtils.validateNameAndEmail(name, email);
 		isValidRolesList(rolesList);
 	}
 }

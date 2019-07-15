@@ -66,7 +66,7 @@ public class UserRegisterTest {
 
 	@After
 	public void cleanup() {
-		UserEntity user = userRepository.getByEmailAndOrganizationId(TestCommons.TestUserEmail, TestCommons.OrgId);
+		UserEntity user = userRepository.getByEmail(TestCommons.TestUserEmail);
 		if (user != null) {
 			userRepository.delete(user);
 		}
@@ -74,7 +74,7 @@ public class UserRegisterTest {
 
 	@PostConstruct
 	public void setupLoginUser() {
-		persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", (long)(23));
+		persistentUser = userRepository.getByEmail("unavailable@nasnav.com");
 		if (persistentUser == null) {
 			persistentUser = new UserEntity();
 			persistentUser.setName("John Smith");

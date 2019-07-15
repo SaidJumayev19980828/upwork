@@ -48,9 +48,9 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	@Override
 	public UserApiResponse createEmployeeUser(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
 		String[] rolesList = employeeUserJson.role.split(",");
-		helper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.org_id, rolesList);
+		helper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, rolesList);
 		// check if email already exists
-		if (employeeUserRepository.getByEmailAndOrganizationId(employeeUserJson.email, employeeUserJson.org_id) == null) {
+		if (employeeUserRepository.getByEmail(employeeUserJson.email) == null) {
 			// check if at least one of the roles can create a user
 			if (helper.roleCanCreateUser(rolesList)) {
 				if(helper.hasOrganizationRole(rolesList) && employeeUserJson.org_id <= 0) {
@@ -79,7 +79,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	@Override
 	public UserApiResponse login(UserDTOs.UserLoginObject body) {
-		EmployeeUserEntity employeeUserEntity = this.employeeUserRepository.getByEmailAndOrganizationId(body.email, body.org_id);
+		EmployeeUserEntity employeeUserEntity = this.employeeUserRepository.getByEmail(body.email);
 		if (employeeUserEntity != null) {
 			// check if account needs activation
 			boolean accountNeedActivation = helper.isEmployeeUserNeedActivation(employeeUserEntity);
@@ -131,8 +131,8 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 	@Override
-	public UserApiResponse sendEmailRecovery(String email, Long orgId) {
-		EmployeeUserEntity employeeUserEntity = getEmployeeUserByEmail(email, orgId);
+	public UserApiResponse sendEmailRecovery(String email) {
+		EmployeeUserEntity employeeUserEntity = getEmployeeUserByEmail(email);
 		employeeUserEntity = generateResetPasswordToken(employeeUserEntity);
 		return sendRecoveryMail(employeeUserEntity);
 	}
@@ -155,7 +155,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	 * @param email user entity email
 	 * @return employee user entity
 	 */
-	private EmployeeUserEntity getEmployeeUserByEmail(String email, Long orgId) {
+	private EmployeeUserEntity getEmployeeUserByEmail(String email) {
 		// first ensure that email is valid
 		if (!EntityUtils.validateEmail(email)) {
 			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
@@ -163,7 +163,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 			throw new EntityValidationException("INVALID_EMAIL :" + email, userApiResponse, HttpStatus.NOT_ACCEPTABLE);
 		}
 		// load user entity by email
-		EmployeeUserEntity employeeUserEntity = this.employeeUserRepository.getByEmailAndOrganizationId(email, orgId);
+		EmployeeUserEntity employeeUserEntity = this.employeeUserRepository.getByEmail(email);
 		if (EntityUtils.isBlankOrNull(employeeUserEntity)) {
 			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
 					Collections.singletonList(ResponseStatus.EMAIL_NOT_EXIST));
