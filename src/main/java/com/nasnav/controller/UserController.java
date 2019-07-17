@@ -34,8 +34,10 @@ public class UserController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public UserApiResponse createEmployeeUser(@RequestBody UserDTOs.EmployeeUserCreationObject employeeUserJson) {
-        return this.employeeUserService.createEmployeeUser(employeeUserJson);
+    public UserApiResponse createEmployeeUser(@RequestHeader (value = "User-ID", required = true) Integer userId,
+                                              @RequestHeader (value = "User-Token", required = true) String userToken,
+                                              @RequestBody UserDTOs.EmployeeUserCreationObject employeeUserJson) {
+        return this.employeeUserService.createEmployeeUser(userId, employeeUserJson);
     }
 
 
@@ -48,7 +50,8 @@ public class UserController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public UserApiResponse registerUser(@RequestBody UserDTOs.UserRegistrationObject userJson) {
+    public UserApiResponse registerUser(
+                                        @RequestBody UserDTOs.UserRegistrationObject userJson) {
         return this.userService.registerUser(userJson);
     }
 
@@ -59,8 +62,9 @@ public class UserController {
     })
     @GetMapping(value = "recover",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public UserApiResponse sendEmailRecovery(@RequestParam(value = "email") String email) {
-        return this.userService.sendEmailRecovery(email);
+    public UserApiResponse sendEmailRecovery(@RequestParam(value = "email") String email,
+                                             @RequestParam(value = "org_id") Long orgId) {
+        return this.userService.sendEmailRecovery(email, orgId);
     }
 
     @ApiOperation(value = "Change user's password ", nickname = "userPasswordReset")

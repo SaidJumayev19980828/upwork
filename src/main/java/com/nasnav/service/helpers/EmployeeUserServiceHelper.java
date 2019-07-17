@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import com.nasnav.constatnts.EntityConstants;
@@ -41,11 +43,20 @@ public class EmployeeUserServiceHelper {
 		this.roleService = roleService;
 	}
 
-	public void createRoles(String[] rolesList, Integer employeeUserId, Long org_id) {
+	public void createRoles(List<String> rolesList, Integer employeeUserId, Long org_id) {
+		List<Role> existingRoles = roleRepository.findAll();
+		List<String> existingRolesListNames = existingRoles.stream().map( role -> role.getName()).collect(Collectors.toList());
+		Integer roleId;
+		Roles roleEnum;
 		for (String role : rolesList) {
-			// find the Role enum from the string value
-			Roles roleEnum = Roles.valueOf(role);
-			Integer roleId = createRole(org_id, roleEnum);
+			// check if role exists in db
+			if (!existingRolesListNames.contains(role)) {
+				// find the Role enum from the string value
+				roleEnum = Roles.valueOf(role);
+				roleId = createRole(org_id, roleEnum);
+			} else {
+				roleId = roleRepository.findByName(role).getId();
+			}
 			createRoleEmployeeUser(employeeUserId, roleId);
 		}
 	}
@@ -75,7 +86,7 @@ public class EmployeeUserServiceHelper {
 		return roleId;
 	}
 
-	public boolean isValidRolesList(String[] rolesList){
+	public boolean isValidRolesList(List<String> rolesList){
 		for (String role : rolesList) {
 			Roles roleEnum;
 			try {
@@ -91,15 +102,18 @@ public class EmployeeUserServiceHelper {
 
 	// check if the current list of roles has a role authorized to create users or
 	// not
-	public boolean roleCanCreateUser(String[] rolesList) {
-		for (String role : rolesList) {
-			Roles roleEnum = Roles.valueOf(role);
-			if (roleEnum == Roles.NASNAV_ADMIN || roleEnum == Roles.ORGANIZATION_ADMIN
-					|| roleEnum == Roles.STORE_ADMIN) {
-				return true;
-			}
+	public Integer roleCanCreateUser(Integer id) {
+		// get list of roles belong to current user
+		List<Role> rolesList = roleRepository.getRolesOfEmployeeUser(id);
+		List<Roles> rolesListNames = rolesList.stream().map( role -> Roles.valueOf(role.getName())).collect(Collectors.toList());
+		if (rolesListNames.contains(Roles.NASNAV_ADMIN)) {
+			return 1;
+		} else if (rolesListNames.contains(Roles.ORGANIZATION_ADMIN)) {
+			return 2;
+		} else if (rolesListNames.contains(Roles.STORE_ADMIN)) {
+			return 3;
 		}
-		return false;
+		return -1;
 	}
 
 	// check if the current roles is an organization admin role
@@ -217,8 +231,8 @@ public class EmployeeUserServiceHelper {
 		return employeeUserRoles;
 	}
 
-	public void validateBusinessRules(String name, String email, String[] rolesList) {
-		EntityUtils.validateNameAndEmail(name, email);
+	public void validateBusinessRules(String name, String email, Long orgId, List<String> rolesList) {
+		EntityUtils.validateNameAndEmail(name, email, orgId);
 		isValidRolesList(rolesList);
 	}
 }

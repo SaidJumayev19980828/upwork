@@ -117,14 +117,18 @@ public class EntityUtils {
 	 *
 	 * @param name
 	 * @param email
+	 * @param orgId
 	 */
-	public static void validateNameAndEmail(String name, String email) {
+	public static void validateNameAndEmail(String name, String email, Long orgId) {
 		List<ResponseStatus> responseStatusList = new ArrayList<>();
 		if (!EntityUtils.validateName(name)) {
 			responseStatusList.add(ResponseStatus.INVALID_NAME);
 		}
 		if (!EntityUtils.validateEmail(email)) {
 			responseStatusList.add(ResponseStatus.INVALID_EMAIL);
+		}
+		if (EntityUtils.isBlankOrNull(orgId) || orgId <= 0){
+			responseStatusList.add(ResponseStatus.INVALID_ORGANIZATION);
 		}
 		if (!responseStatusList.isEmpty()) {
 			throw new EntityValidationException("Invalid User Entity: " + responseStatusList,

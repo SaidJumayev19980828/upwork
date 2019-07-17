@@ -34,9 +34,10 @@ public interface CommonUserServiceInterface {
      * Used to send the user a recovery token to reset his password
      *
      * @param email user email
+     * @param orgId user organization id
      * @return UserApiResponse object holding the status
      */
-    UserApiResponse sendEmailRecovery(String email);
+    UserApiResponse sendEmailRecovery(String email, Long orgId);
 
 
     /**
