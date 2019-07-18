@@ -51,7 +51,7 @@ public class EmployeeUserServiceHelper {
 		List<String> existingRolesListNames = existingRoles.stream().map( role -> role.getName()).collect(Collectors.toList());
 		Integer roleId;
 		Roles roleEnum;
-		roleEmployeeUserRepository.deleteAll(); //delete all existing rolesemployeeuser relations
+		roleEmployeeUserRepository.deleteByEmployeeUserId(employeeUserId); //delete all existing rolesemployeeuser relations
 		for (String role : rolesList) {
 			// check if role exists in db
 			if (!existingRolesListNames.contains(role)) {

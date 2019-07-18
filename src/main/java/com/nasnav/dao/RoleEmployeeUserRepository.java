@@ -14,4 +14,6 @@ public interface RoleEmployeeUserRepository extends JpaRepository<RoleEmployeeUs
     List<RoleEmployeeUser> findRoleEmployeeUsersById(@Param("employeeUserId") Integer employeeUserId);
 
     boolean existsByEmployeeUserIdAndRoleId(Integer employeeUserId, Integer roleId);
+
+    void deleteByEmployeeUserId(Integer employeeUserId);
 }
