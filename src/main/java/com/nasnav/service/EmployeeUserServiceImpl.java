@@ -47,7 +47,12 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	AppConfig appConfig;
 
 	@Override
-	public UserApiResponse createEmployeeUser(Integer userId, UserDTOs.EmployeeUserCreationObject employeeUserJson) {
+	public UserApiResponse createEmployeeUser(Integer userId, String userToken, UserDTOs.EmployeeUserCreationObject employeeUserJson) {
+		// check if user is authenticated
+		if (!employeeUserRepository.existsByAuthenticationToken(userToken)) {
+			throw new EntityValidationException("Insufficient Rights ",
+					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
+		}
 		List<String> rolesList = Arrays.asList(employeeUserJson.role.split(","));
 		helper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.org_id, rolesList);
 		// get current logged in user

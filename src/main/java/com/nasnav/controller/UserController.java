@@ -37,7 +37,7 @@ public class UserController {
     public UserApiResponse createEmployeeUser(@RequestHeader (value = "User-ID", required = true) Integer userId,
                                               @RequestHeader (value = "User-Token", required = true) String userToken,
                                               @RequestBody UserDTOs.EmployeeUserCreationObject employeeUserJson) {
-        return this.employeeUserService.createEmployeeUser(userId, employeeUserJson);
+        return this.employeeUserService.createEmployeeUser(userId, userToken, employeeUserJson);
     }
 
 
