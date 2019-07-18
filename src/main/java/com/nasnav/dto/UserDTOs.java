@@ -66,4 +66,23 @@ public class UserDTOs {
         @JsonProperty("store_id")
         public Long store_id;
     }
+
+    @ApiModel(value = "Employee User Updating Data")
+    public static class EmployeeUserUpdatingObject extends GenericUserObject{
+        @ApiModelProperty(value = "Updated user id", example = "1234", required = false)
+        @JsonProperty("updated_user_id")
+        public Long updated_user_id;
+
+        @ApiModelProperty(value = "User's name", example = "John Smith", required = true)
+        @JsonProperty("name")
+        public String name;
+
+        @ApiModelProperty(value = "Roles Separated by Comma", example = "STORE_ADMIN,ORGANIZATION_EMPLOYEE", required = true)
+        @JsonProperty("role")
+        public String role;
+
+        @ApiModelProperty(value = "Store Id", example = "1234", required = false)
+        @JsonProperty("store_id")
+        public Long store_id;
+    }
 }

@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.nasnav.dto.UserDTOs;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import com.nasnav.constatnts.EntityConstants;
@@ -33,6 +34,8 @@ public class EmployeeUserServiceHelper {
 	private RoleRepository roleRepository;
 	private RoleEmployeeUserRepository roleEmployeeUserRepository;
 	private RoleService roleService;
+	private List<String> nonStoreRolesList = Arrays.asList("NASNAV_ADMIN", "ORGANIZATION_ADMIN", "ORGANIZATION_MANAGER", "ORGANIZATION_EMPLOYEE");
+	private List<String> nonOrgRolesList = Arrays.asList("NASNAV_ADMIN", "STORE_ADMIN", "STORE_MANAGER", "STORE_EMPLOYEE");
 
 	@Autowired
 	public EmployeeUserServiceHelper(EmployeeUserRepository userRepository, RoleRepository roleRepository,
@@ -48,6 +51,7 @@ public class EmployeeUserServiceHelper {
 		List<String> existingRolesListNames = existingRoles.stream().map( role -> role.getName()).collect(Collectors.toList());
 		Integer roleId;
 		Roles roleEnum;
+		roleEmployeeUserRepository.deleteAll(); //delete all existing rolesemployeeuser relations
 		for (String role : rolesList) {
 			// check if role exists in db
 			if (!existingRolesListNames.contains(role)) {
@@ -128,6 +132,62 @@ public class EmployeeUserServiceHelper {
 
 	public EmployeeUserEntity createEmployeeUser(EmployeeUserCreationObject employeeUserJson) {
 		return employeeUserRepository.save(EmployeeUserEntity.createEmployeeUser(employeeUserJson));
+	}
+
+	public boolean checkOrganizationRolesRights(List<String> roles) {
+		return !Collections.disjoint(roles, nonOrgRolesList);
+	}
+
+	public boolean checkStoreRolesRights(List<String> roles) {
+		return !Collections.disjoint(roles, nonStoreRolesList);
+	}
+
+	public EmployeeUserEntity updateEmployeeUser(EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+		List<ResponseStatus> responseStatusList = new ArrayList<>();
+		List<String> rolesList = new ArrayList<>();
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.email)) {
+			if (EntityUtils.validateEmail(employeeUserJson.email)) {
+				employeeUserEntity.setEmail(employeeUserJson.email);
+			} else {
+				responseStatusList.add(ResponseStatus.INVALID_EMAIL);
+			}
+		}
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.name)) {
+			if (EntityUtils.validateName(employeeUserJson.name)) {
+				employeeUserEntity.setName(employeeUserJson.name);
+			} else {
+			responseStatusList.add(ResponseStatus.INVALID_NAME);
+			}
+		}
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.org_id) && employeeUserJson.org_id >= 0) {
+			employeeUserEntity.setOrganizationId(employeeUserJson.org_id);
+		}
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.store_id) && employeeUserJson.store_id >= 0) {
+			employeeUserEntity.setShopId(employeeUserJson.store_id);
+		}
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.role)){
+			rolesList = Arrays.asList(employeeUserJson.role.split(","));
+			int userType = roleCanCreateUser(employeeUserEntity.getId()); // check if can update employees roles
+			if (userType != -1) { // can update employees roles
+				if (userType == 2) { // can update employees roles within the same organization
+					if (checkOrganizationRolesRights(rolesList)) { // check roles list to update
+						responseStatusList.add(ResponseStatus.INSUFFICIENT_RIGHTS);
+					}
+				} else if (userType == 3) { // can update employees roles within the same store
+					if (checkStoreRolesRights(rolesList)) { // check roles list to update
+						responseStatusList.add(ResponseStatus.INSUFFICIENT_RIGHTS);
+					}
+				}
+			}
+		}
+		if (!responseStatusList.isEmpty()) {
+			throw new EntityValidationException("Invalid User Entity: " + responseStatusList,
+					UserApiResponse.createStatusApiResponse(responseStatusList), HttpStatus.NOT_ACCEPTABLE);
+		}
+		if (!responseStatusList.contains(ResponseStatus.INSUFFICIENT_RIGHTS)) {
+			createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.org_id);
+		}
+		return employeeUserRepository.save(employeeUserEntity);
 	}
 
 	/**

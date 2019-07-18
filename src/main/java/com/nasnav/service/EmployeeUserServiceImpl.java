@@ -57,8 +57,6 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		helper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.org_id, rolesList);
 		// get current logged in user
 		EmployeeUserEntity currentUser = employeeUserRepository.getById(userId);
-		List<String> nonOrgRolesList = Arrays.asList("NASNAV_ADMIN", "STORE_ADMIN", "STORE_MANAGER", "STORE_EMPLOYEE");
-		List<String> nonStoreRolesList = Arrays.asList("NASNAV_ADMIN", "STORE_ADMIN", "STORE_MANAGER", "STORE_EMPLOYEE");
 		// check if email and organization id already exists
 		if (employeeUserRepository.getByEmailAndOrganizationId(employeeUserJson.email, employeeUserJson.org_id) == null) {
 			int userType = helper.roleCanCreateUser(currentUser.getId());
@@ -68,7 +66,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 						throw new EntityValidationException("Error Occurred during user creation:: " + ResponseStatus.INVALID_ORGANIZATION,
 								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_ORGANIZATION)), HttpStatus.NOT_ACCEPTABLE);
 					}
-					if (!Collections.disjoint(rolesList, nonOrgRolesList)) {
+					if (helper.checkOrganizationRolesRights(rolesList)) {
 						throw new EntityValidationException("Insufficient Rights ",
 								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
 					}
@@ -77,7 +75,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 						throw new EntityValidationException("Error Occurred during user creation:: " + ResponseStatus.INVALID_STORE,
 								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_STORE)), HttpStatus.NOT_ACCEPTABLE);
 					}
-					if (!Collections.disjoint(rolesList, nonStoreRolesList)) {
+					if (helper.checkStoreRolesRights(rolesList)) {
 						throw new EntityValidationException("Insufficient Rights ",
 								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
 					}
@@ -88,7 +86,6 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 				helper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.org_id);
 				return UserApiResponse.createStatusApiResponse(Integer.toUnsignedLong(employeeUserEntity.getId()),
 						Arrays.asList(ResponseStatus.NEED_ACTIVATION));
-
 			}
 			throw new EntityValidationException("Insufficient Rights ",
 					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
@@ -96,6 +93,35 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		throw new EntityValidationException(ResponseStatus.EMAIL_EXISTS.name(),
 				EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.EMAIL_EXISTS)),
 				HttpStatus.NOT_ACCEPTABLE);
+	}
+
+	@Override
+	public UserApiResponse updateEmployeeUser(Integer userId, String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+		EmployeeUserEntity updateUser;
+		// check if same user doing the update
+		if (EntityUtils.isBlankOrNull(employeeUserJson.updated_user_id)) {
+			updateUser = employeeUserRepository.getById(userId);
+		} else {
+			updateUser = employeeUserRepository.getById(employeeUserJson.updated_user_id.intValue());
+			int userType = helper.roleCanCreateUser(updateUser.getId());
+			if (userType != -1) { // can update employees
+				if (userType == 2) { // can update employees within the same organization
+					if (!updateUser.getOrganizationId().equals(employeeUserJson.org_id)) { //not the same organization
+						throw new EntityValidationException("Error Occurred during user update:: " + ResponseStatus.INVALID_ORGANIZATION,
+								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_ORGANIZATION)), HttpStatus.NOT_ACCEPTABLE);
+					}
+				} else if (userType == 3) {
+					if (!updateUser.getShopId().equals(employeeUserJson.store_id)) { //not the same Store
+						throw new EntityValidationException("Error Occurred during user update:: " + ResponseStatus.INVALID_STORE,
+								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_STORE)), HttpStatus.NOT_ACCEPTABLE);
+					}
+				}
+			}
+		}
+		// parse Json to EmployeeUserEntity
+		EmployeeUserEntity employeeUserEntity = helper.updateEmployeeUser(updateUser, employeeUserJson);
+		return UserApiResponse.createMessagesApiResponse(true,
+				Arrays.asList(ResponseStatus.ACTIVATED));
 	}
 
 	@Override

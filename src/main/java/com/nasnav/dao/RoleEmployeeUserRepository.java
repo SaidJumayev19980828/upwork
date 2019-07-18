@@ -12,4 +12,6 @@ public interface RoleEmployeeUserRepository extends JpaRepository<RoleEmployeeUs
 
     @Query("select roleEmp from RoleEmployeeUser roleEmp where roleEmp.employeeUserId = :employeeUserId")
     List<RoleEmployeeUser> findRoleEmployeeUsersById(@Param("employeeUserId") Integer employeeUserId);
+
+    boolean existsByEmployeeUserIdAndRoleId(Integer employeeUserId, Integer roleId);
 }
