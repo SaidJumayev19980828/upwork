@@ -15,7 +15,7 @@ public class UserDTOs {
         @ApiModelProperty(value = "User's email", example = "testuser@nasnav.com", required = true)
         @JsonProperty("email")
         public String email;
-        
+
         @ApiModelProperty(value = "Organization id that client wants to log into", example = "123", required = false)
         @JsonProperty("org_id")
         public Long org_id;
@@ -61,6 +61,10 @@ public class UserDTOs {
         @ApiModelProperty(value = "Roles Separated by Comma", example = "STORE_ADMIN,ORGANIZATION_EMPLOYEE", required = true)
         @JsonProperty("role")
         public String role;
+
+        @ApiModelProperty(value = "Organization Id", example = "123", required = true)
+        @JsonProperty("org_id")
+        public Long org_id;
         
         @ApiModelProperty(value = "Store Id", example = "1234", required = false)
         @JsonProperty("store_id")
@@ -73,11 +77,11 @@ public class UserDTOs {
         @JsonProperty("updated_user_id")
         public Long updated_user_id;
 
-        @ApiModelProperty(value = "User's name", example = "John Smith", required = true)
+        @ApiModelProperty(value = "User's name", example = "John Smith", required = false)
         @JsonProperty("name")
         public String name;
 
-        @ApiModelProperty(value = "Roles Separated by Comma", example = "STORE_ADMIN,ORGANIZATION_EMPLOYEE", required = true)
+        @ApiModelProperty(value = "Roles Separated by Comma", example = "STORE_ADMIN,ORGANIZATION_EMPLOYEE", required = false)
         @JsonProperty("role")
         public String role;
 

@@ -5,6 +5,7 @@ import com.nasnav.persistence.RoleEmployeeUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -15,5 +16,6 @@ public interface RoleEmployeeUserRepository extends JpaRepository<RoleEmployeeUs
 
     boolean existsByEmployeeUserIdAndRoleId(Integer employeeUserId, Integer roleId);
 
+    @Transactional
     void deleteByEmployeeUserId(Integer employeeUserId);
 }

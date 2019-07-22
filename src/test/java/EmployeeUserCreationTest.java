@@ -1,7 +1,5 @@
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
-import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.controller.UserController;
 import com.nasnav.dao.*;
 import com.nasnav.persistence.EmployeeUserEntity;
@@ -11,7 +9,6 @@ import com.nasnav.persistence.RoleEmployeeUser;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.EmployeeUserService;
-import org.apache.tomcat.jni.Local;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -28,12 +25,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -71,10 +65,10 @@ public class EmployeeUserCreationTest {
 	@Autowired
 	private RoleEmployeeUserRepository roleEmployeeUserRepository;
 
-	@Value("classpath:sql/Test_Creat_EmpUser_Auth_Data.sql")
+	@Value("classpath:sql/Test_Create_EmpUser_Auth_Data.sql")
 	private Resource userDataInsert;
 
-	@Value("classpath:sql/Test_Creat_EmpUser_Auth_Data_Delete.sql")
+	@Value("classpath:sql/Test_Create_EmpUser_Auth_Data_Delete.sql")
 	private Resource userDataDelete;
 
 	@Autowired
@@ -328,32 +322,28 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(HttpStatus.LOCKED.value(), response.getStatusCode().value());
 		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.NEED_ACTIVATION));
 	}
-
-	@Test
-	public void createEmployeeUserNoOrgIdTest() {
-		//create organization
-		OrganizationEntity org = createOrganization();
-		// create employee user with an email
-		String body = "{\"name\":\"Ahmed\", \"email\":\"" + TestCommons.TestUserEmail + "\", \"role\": \"CUSTOMER\"}";
-		HttpEntity<Object> employeeUserJson = getHttpEntity(body);
-		ResponseEntity<UserApiResponse> response = template.postForEntity(
-				"/user/create", employeeUserJson, UserApiResponse.class);
-		Long id = response.getBody().getEntityId();
-		System.out.println(response.getBody().toString());
-
-		//delete created organization
-		organizationRepository.delete(org);
-
-		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_ORGANIZATION));
-	}*/
+	*/
 
 	////EmpUser Authentication Tests ////
 
 	@Test
 	public void TestCreatUserAuthentication(){
 		peformSqlDataScript(userDataInsert);
-		createEmployeeUserAuthTest();
+		createEmployeeUserAuthTestSuccess();
+		createEmployeeUserAuthTestDifferentRoleSuccess();
+		createEmployeeUserAuthTestDifferentOrgFail();
+		createEmployeeUserAuthTestFail();
+		createEmployeeUserNoOrgIdTest();
+		peformSqlDataScript(userDataDelete);
+	}
+
+	@Test
+	public void TestUpdateUserAuthentication(){
+		peformSqlDataScript(userDataInsert);
+		updateSelfEmployeeUserAuthTest();
+		updateOtherEmployeeUserAuthTest();
+		updateOtherEmployeeUserAuthTest_2();
+		updateOtherEmployeeUserAuthTest_3();
 		peformSqlDataScript(userDataDelete);
 	}
 
@@ -366,51 +356,111 @@ public class EmployeeUserCreationTest {
 	}
 
 	@Test
-	public void createEmployeeUserAuthTest() {
+	public void createEmployeeUserAuthTestSuccess() {
 		// nasnav_admin role test
 		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 801" + ", \"store_id\": 10, \"role\": \"NASNAV_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
-
 		Long id = response.getBody().getEntityId();
 		//Delete created user
 		employeeUserService.deleteUser(id);
-
 		// delete created roles
 		deleteRoleEmployeeUsers(id.intValue());
-
 		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertEquals(200, response.getStatusCode().value());
+	}
 
+	@Test
+	public void createEmployeeUserAuthTestDifferentRoleSuccess() {
 		// organization_admin role test success
-		body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 801" + ", \"store_id\": 10, \"role\": \"ORGANIZATION_ADMIN\"}";
-		employeeUserJson = getHttpEntity(body, "abcdefg", "68");
-		response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
-
-		id = response.getBody().getEntityId();
+		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 801" + ", \"store_id\": 10, \"role\": \"ORGANIZATION_ADMIN\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+		Long id = response.getBody().getEntityId();
 		//Delete created user
 		employeeUserService.deleteUser(id);
-
 		// delete created roles
 		deleteRoleEmployeeUsers(id.intValue());
+		Assert.assertTrue(response.getBody().isSuccess());
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+
+	@Test
+	public void createEmployeeUserAuthTestDifferentOrgFail() {
+		// organization_admin role test fail (different organization)
+		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 802" + ", \"store_id\": 10, \"role\": \"ORGANIZATION_ADMIN\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm", "69");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+		Assert.assertFalse(response.getBody().isSuccess());
+		Assert.assertEquals(406, response.getStatusCode().value());
+	}
+
+	@Test
+	public void createEmployeeUserAuthTestFail() {
+		// organization_admin role test fail (same organization but assigning NASNAV_ADMIN role without authority)
+		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 801" + ", \"store_id\": 10, \"role\": \"NASNAV_ADMIN\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm", "69");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+		Assert.assertFalse(response.getBody().isSuccess());
+		Assert.assertEquals(401, response.getStatusCode().value());
+	}
+
+	@Test
+	public void createEmployeeUserNoOrgIdTest() {
+		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser5@nasnav.com" + "\" , \"role\": \"NASNAV_ADMIN\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+		Long id = response.getBody().getEntityId();
+
+		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_ORGANIZATION));
+	}
+
+	@Test
+	public void updateSelfEmployeeUserAuthTest() {
+		// update self data test success
+		String body = "{\"name\":\"Ahmad\",\"email\":\"" + "ahmad.user@nasnav.com" + "\" }";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+		Long id = response.getBody().getEntityId();
+		System.out.println(response.getBody());
+		Assert.assertTrue(response.getBody().isSuccess());
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+
+	@Test
+	public void updateOtherEmployeeUserAuthTest() {
+		// update user with id 158 success
+		String body = "{\"updated_user_id\":\"158\",\"name\":\"hussien\",\"email\":\"" + "hussien.Test@nasnav.com" + "\", \"org_id\": 802" + ", \"role\": \"ORGANIZATION_MANAGER\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+		Long id = response.getBody().getEntityId();
 
 		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertEquals(200, response.getStatusCode().value());
+	}
 
-		// organization_admin role test fail (different organization)
-		body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 802" + ", \"store_id\": 10, \"role\": \"ORGANIZATION_ADMIN\"}";
-		employeeUserJson = getHttpEntity(body, "hijkllm", "69");
-		response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+	@Test
+	public void updateOtherEmployeeUserAuthTest_2() {
+		// update user with id 158 fail(unauthorized assigning NASNAV_ADMIN role)
+		String body = "{\"updated_user_id\":\"158\", \"role\": \"NASNAV_ADMIN\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijklm", "69");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+		Long id = response.getBody().getEntityId();
 
 		Assert.assertFalse(response.getBody().isSuccess());
 		Assert.assertEquals(406, response.getStatusCode().value());
+	}
 
-		// organization_admin role test fail (same organization but assigning NASNAV_ADMIN role without authority)
-		body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 801" + ", \"store_id\": 10, \"role\": \"NASNAV_ADMIN\"}";
-		employeeUserJson = getHttpEntity(body, "hijkllm", "69");
-		response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+	@Test
+	public void updateOtherEmployeeUserAuthTest_3() {
+		// update user with id 158 fail(invalid name and email)
+		String body = "{\"updated_user_id\":\"158\",\"name\":\"74man\",\"email\":\"" + "boda  Test@nasnav.com" + "\", \"org_id\": 801" + "}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+		Long id = response.getBody().getEntityId();
 
 		Assert.assertFalse(response.getBody().isSuccess());
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
 }

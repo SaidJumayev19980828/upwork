@@ -142,7 +142,7 @@ public class EmployeeUserServiceHelper {
 		return !Collections.disjoint(roles, nonStoreRolesList);
 	}
 
-	public EmployeeUserEntity updateEmployeeUser(EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+	public EmployeeUserEntity updateEmployeeUser(Integer userType, EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
 		List<ResponseStatus> responseStatusList = new ArrayList<>();
 		List<String> rolesList = new ArrayList<>();
 		if (EntityUtils.isNotBlankOrNull(employeeUserJson.email)) {
@@ -159,15 +159,24 @@ public class EmployeeUserServiceHelper {
 			responseStatusList.add(ResponseStatus.INVALID_NAME);
 			}
 		}
-		if (EntityUtils.isNotBlankOrNull(employeeUserJson.org_id) && employeeUserJson.org_id >= 0) {
-			employeeUserEntity.setOrganizationId(employeeUserJson.org_id);
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.org_id)) {
+			if (employeeUserJson.org_id >= 0) {
+				employeeUserEntity.setOrganizationId(employeeUserJson.org_id);
+			} else {
+				responseStatusList.add(ResponseStatus.INVALID_ORGANIZATION);
+			}
+
 		}
-		if (EntityUtils.isNotBlankOrNull(employeeUserJson.store_id) && employeeUserJson.store_id >= 0) {
-			employeeUserEntity.setShopId(employeeUserJson.store_id);
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.store_id)) {
+			if (employeeUserJson.store_id >= 0) {
+				employeeUserEntity.setShopId(employeeUserJson.store_id);
+			} else {
+				responseStatusList.add(ResponseStatus.INVALID_STORE);
+			}
 		}
 		if (EntityUtils.isNotBlankOrNull(employeeUserJson.role)){
 			rolesList = Arrays.asList(employeeUserJson.role.split(","));
-			int userType = roleCanCreateUser(employeeUserEntity.getId()); // check if can update employees roles
+			// check if can update employees roles
 			if (userType != -1) { // can update employees roles
 				if (userType == 2) { // can update employees roles within the same organization
 					if (checkOrganizationRolesRights(rolesList)) { // check roles list to update
@@ -178,14 +187,14 @@ public class EmployeeUserServiceHelper {
 						responseStatusList.add(ResponseStatus.INSUFFICIENT_RIGHTS);
 					}
 				}
+				if (!responseStatusList.contains(ResponseStatus.INSUFFICIENT_RIGHTS)) {
+					createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.org_id);
+				}
 			}
 		}
 		if (!responseStatusList.isEmpty()) {
 			throw new EntityValidationException("Invalid User Entity: " + responseStatusList,
 					UserApiResponse.createStatusApiResponse(responseStatusList), HttpStatus.NOT_ACCEPTABLE);
-		}
-		if (!responseStatusList.contains(ResponseStatus.INSUFFICIENT_RIGHTS)) {
-			createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.org_id);
 		}
 		return employeeUserRepository.save(employeeUserEntity);
 	}

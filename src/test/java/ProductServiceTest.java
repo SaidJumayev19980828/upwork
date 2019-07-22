@@ -383,31 +383,23 @@ public class ProductServiceTest {
 
 	private void performTestProductResponseByFilters() {
 		//// testing brand_id filter ////
-		ResponseEntity<String> response = template.getForEntity(
-				"/navbox/products?org_id=401",
-				String.class);
+		ResponseEntity<String> response = template.getForEntity("/navbox/products?org_id=401", String.class);
 		System.out.println(response.getBody());
 		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
-		/*Iterator<String> keys = json.keys();
-		while(keys.hasNext()) {
-			System.out.println(json.get(keys.next()));
-		}*/
 		long total = json.getLong("total");
 		assertEquals("there are total 16 products with with org_id = 401 and no brand_id filter"
 				,16 , total);
 
-		response = template.getForEntity(
-				"/navbox/products?org_id=401&brand_id=101",
-				String.class);
+
+		response = template.getForEntity("/navbox/products?org_id=401&brand_id=101", String.class);
 		System.out.println(response.getBody());
 		json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		total = json.getLong("total");
 		assertEquals("there are 10 products with brand_id = 101"
 				,10 , total);
 
-		response = template.getForEntity(
-				"/navbox/products?org_id=401&brand_id=102",
-				String.class);
+
+		response = template.getForEntity("/navbox/products?org_id=401&brand_id=102", String.class);
 		System.out.println(response.getBody());
 		json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		total = json.getLong("total");
