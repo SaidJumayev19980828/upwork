@@ -380,6 +380,8 @@ public class ProductServiceTest {
 			e.printStackTrace();
 		}
 	}
+	
+	
 
 	private void performTestProductResponseByFilters() {
 		//// testing brand_id filter ////
@@ -415,17 +417,27 @@ public class ProductServiceTest {
 				,6 , total);
 		//// finish test
 
-		//// test brand_id and category_id existance in both "product" and "products" apis
+		//// test fields existance in both "product" and "products" apis
 		response = template.getForEntity("/navbox/products?org_id=401", String.class);
-		System.out.println(response.getBody().toString());
-		assertTrue(response.getBody().toString().contains("brandId"));
-		assertTrue(response.getBody().toString().contains("categoryId"));
+		assertJsonFieldExists(response);
 
 		response = template.getForEntity("/navbox/product?product_id=1001", String.class);
-		System.out.println(response.getBody());
+		System.out.println("response JSON >>>  "+ response.getBody().toString());
 		assertTrue(response.getBody().toString().contains("brand_id"));
 		assertTrue(response.getBody().toString().contains("category_id"));
+		
+		
 		//// finish test
+	}
+	
+	
+
+	private void assertJsonFieldExists(ResponseEntity<String> response) {
+		System.out.println("response JSON >>>  "+ response.getBody().toString());
+		assertTrue(response.getBody().toString().contains("brand_id"));
+		assertTrue(response.getBody().toString().contains("category_id"));
+		assertTrue(response.getBody().toString().contains("p_name"));
+		assertTrue(response.getBody().toString().contains("image_url"));
 	}
 
 }
