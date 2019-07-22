@@ -8,21 +8,13 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class ProductRepresentationObject extends BaseRepresentationObject{
-
-    private Long id;
-    private String name;
-    private String imageUrl;    
+public class StockDTO extends BaseRepresentationObject {
+	private Long shop_id;
+    private Integer quantity;
     private BigDecimal price;
-    private Boolean available;
-    private Long categoryId;
-    private Long brandId;
-    
-    @JsonProperty("p_name")
-    private String  pname;
+    private BigDecimal discount;
 }

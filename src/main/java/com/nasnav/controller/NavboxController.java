@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.nasnav.dto.ExtraAttributesRepresentationObject;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductSortOptions;
 import com.nasnav.dto.ProductsResponse;
 
@@ -166,7 +167,7 @@ public class NavboxController {
 	public ResponseEntity<?> getProduct(@RequestParam(name = "product_id") Long productId,
 										@RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
 
-		String response = productService.getProduct(productId, shopId);
+		ProductDetailsDTO response = productService.getProduct(productId, shopId);
 		return response == null ? new ResponseEntity<>(HttpStatus.NO_CONTENT) : new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
