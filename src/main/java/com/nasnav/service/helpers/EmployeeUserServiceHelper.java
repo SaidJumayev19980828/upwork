@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import com.nasnav.dto.UserDTOs;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import com.nasnav.constatnts.EntityConstants;
@@ -31,6 +34,8 @@ public class EmployeeUserServiceHelper {
 	private RoleRepository roleRepository;
 	private RoleEmployeeUserRepository roleEmployeeUserRepository;
 	private RoleService roleService;
+	private List<String> nonStoreRolesList = Arrays.asList("NASNAV_ADMIN", "ORGANIZATION_ADMIN", "ORGANIZATION_MANAGER", "ORGANIZATION_EMPLOYEE");
+	private List<String> nonOrgRolesList = Arrays.asList("NASNAV_ADMIN", "STORE_ADMIN", "STORE_MANAGER", "STORE_EMPLOYEE");
 
 	@Autowired
 	public EmployeeUserServiceHelper(EmployeeUserRepository userRepository, RoleRepository roleRepository,
@@ -41,11 +46,21 @@ public class EmployeeUserServiceHelper {
 		this.roleService = roleService;
 	}
 
-	public void createRoles(String[] rolesList, Integer employeeUserId, Long org_id) {
+	public void createRoles(List<String> rolesList, Integer employeeUserId, Long org_id) {
+		List<Role> existingRoles = roleRepository.findAll();
+		List<String> existingRolesListNames = existingRoles.stream().map( role -> role.getName()).collect(Collectors.toList());
+		Integer roleId;
+		Roles roleEnum;
+		roleEmployeeUserRepository.deleteByEmployeeUserId(employeeUserId); //delete all existing rolesemployeeuser relations
 		for (String role : rolesList) {
-			// find the Role enum from the string value
-			Roles roleEnum = Roles.valueOf(role);
-			Integer roleId = createRole(org_id, roleEnum);
+			// check if role exists in db
+			if (!existingRolesListNames.contains(role)) {
+				// find the Role enum from the string value
+				roleEnum = Roles.valueOf(role);
+				roleId = createRole(org_id, roleEnum);
+			} else {
+				roleId = roleRepository.findByName(role).getId();
+			}
 			createRoleEmployeeUser(employeeUserId, roleId);
 		}
 	}
@@ -75,7 +90,7 @@ public class EmployeeUserServiceHelper {
 		return roleId;
 	}
 
-	public boolean isValidRolesList(String[] rolesList){
+	public boolean isValidRolesList(List<String> rolesList){
 		for (String role : rolesList) {
 			Roles roleEnum;
 			try {
@@ -91,15 +106,18 @@ public class EmployeeUserServiceHelper {
 
 	// check if the current list of roles has a role authorized to create users or
 	// not
-	public boolean roleCanCreateUser(String[] rolesList) {
-		for (String role : rolesList) {
-			Roles roleEnum = Roles.valueOf(role);
-			if (roleEnum == Roles.NASNAV_ADMIN || roleEnum == Roles.ORGANIZATION_ADMIN
-					|| roleEnum == Roles.STORE_ADMIN) {
-				return true;
-			}
+	public Integer roleCanCreateUser(Integer id) {
+		// get list of roles belong to current user
+		List<Role> rolesList = roleRepository.getRolesOfEmployeeUser(id);
+		List<Roles> rolesListNames = rolesList.stream().map( role -> Roles.valueOf(role.getName())).collect(Collectors.toList());
+		if (rolesListNames.contains(Roles.NASNAV_ADMIN)) {
+			return 1;
+		} else if (rolesListNames.contains(Roles.ORGANIZATION_ADMIN)) {
+			return 2;
+		} else if (rolesListNames.contains(Roles.STORE_ADMIN)) {
+			return 3;
 		}
-		return false;
+		return -1;
 	}
 
 	// check if the current roles is an organization admin role
@@ -114,6 +132,71 @@ public class EmployeeUserServiceHelper {
 
 	public EmployeeUserEntity createEmployeeUser(EmployeeUserCreationObject employeeUserJson) {
 		return employeeUserRepository.save(EmployeeUserEntity.createEmployeeUser(employeeUserJson));
+	}
+
+	public boolean checkOrganizationRolesRights(List<String> roles) {
+		return !Collections.disjoint(roles, nonOrgRolesList);
+	}
+
+	public boolean checkStoreRolesRights(List<String> roles) {
+		return !Collections.disjoint(roles, nonStoreRolesList);
+	}
+
+	public EmployeeUserEntity updateEmployeeUser(Integer userType, EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+		List<ResponseStatus> responseStatusList = new ArrayList<>();
+		List<String> rolesList = new ArrayList<>();
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.email)) {
+			if (EntityUtils.validateEmail(employeeUserJson.email)) {
+				employeeUserEntity.setEmail(employeeUserJson.email);
+			} else {
+				responseStatusList.add(ResponseStatus.INVALID_EMAIL);
+			}
+		}
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.name)) {
+			if (EntityUtils.validateName(employeeUserJson.name)) {
+				employeeUserEntity.setName(employeeUserJson.name);
+			} else {
+			responseStatusList.add(ResponseStatus.INVALID_NAME);
+			}
+		}
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.org_id)) {
+			if (employeeUserJson.org_id >= 0) {
+				employeeUserEntity.setOrganizationId(employeeUserJson.org_id);
+			} else {
+				responseStatusList.add(ResponseStatus.INVALID_ORGANIZATION);
+			}
+
+		}
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.store_id)) {
+			if (employeeUserJson.store_id >= 0) {
+				employeeUserEntity.setShopId(employeeUserJson.store_id);
+			} else {
+				responseStatusList.add(ResponseStatus.INVALID_STORE);
+			}
+		}
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.role)){
+			rolesList = Arrays.asList(employeeUserJson.role.split(","));
+			// check if can update employees roles
+			if (userType != -1) { // can update employees roles
+				if (userType == 2) { // can update employees roles within the same organization
+					if (checkOrganizationRolesRights(rolesList)) { // check roles list to update
+						responseStatusList.add(ResponseStatus.INSUFFICIENT_RIGHTS);
+					}
+				} else if (userType == 3) { // can update employees roles within the same store
+					if (checkStoreRolesRights(rolesList)) { // check roles list to update
+						responseStatusList.add(ResponseStatus.INSUFFICIENT_RIGHTS);
+					}
+				}
+				if (!responseStatusList.contains(ResponseStatus.INSUFFICIENT_RIGHTS)) {
+					createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.org_id);
+				}
+			}
+		}
+		if (!responseStatusList.isEmpty()) {
+			throw new EntityValidationException("Invalid User Entity: " + responseStatusList,
+					UserApiResponse.createStatusApiResponse(responseStatusList), HttpStatus.NOT_ACCEPTABLE);
+		}
+		return employeeUserRepository.save(employeeUserEntity);
 	}
 
 	/**
@@ -217,8 +300,8 @@ public class EmployeeUserServiceHelper {
 		return employeeUserRoles;
 	}
 
-	public void validateBusinessRules(String name, String email, String[] rolesList) {
-		EntityUtils.validateNameAndEmail(name, email);
+	public void validateBusinessRules(String name, String email, Long orgId, List<String> rolesList) {
+		EntityUtils.validateNameAndEmail(name, email, orgId);
 		isValidRolesList(rolesList);
 	}
 }

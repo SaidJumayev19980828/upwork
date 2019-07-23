@@ -17,12 +17,13 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
     boolean existsByAuthenticationToken(String authenticationToken);
 
     /**
-     * Find the user by email.
+     * Find the user by email and orgId.
      *
      * @param email email of user.
+	 * @param orgId Organization id of the user
      * @return EmployeeUserEntity
      */
-    EmployeeUserEntity getByEmail(String email);
+    EmployeeUserEntity getByEmailAndOrganizationId(String email, Long orgId);
     
     /**
 	 * Check if the passed resetPasswordToken already exist before or not.
@@ -39,6 +40,16 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	 * @return UserEntity
 	 */
 	EmployeeUserEntity getByResetPasswordToken(String resetPasswordToken);
+
+	/**
+	 * Get userEntity by AuthenticationToken.
+	 *
+	 * @param authToken
+	 * @return UserEntity
+	 */
+	EmployeeUserEntity getByAuthenticationToken(String authToken);
+
+	EmployeeUserEntity getById(Integer id);
 }
 
 

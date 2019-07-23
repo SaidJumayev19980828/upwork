@@ -81,7 +81,7 @@ public class OrderServiceTest {
 
 	@PostConstruct
 	public void setupLoginUser() {
-		persistentUser = userRepository.getByEmail("unavailable@nasnav.com");
+		persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com",(long)15);
 		if (persistentUser == null) {
 			persistentUser = new UserEntity();
 			persistentUser.setName("John Smith");
