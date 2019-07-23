@@ -1,38 +1,16 @@
 package com.nasnav.service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.json.JSONArray;
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.*;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.stereotype.Service;
 
-import com.nasnav.dao.BundleRepository;
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ProductImagesRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dto.ProductDetailsDTO;
-import com.nasnav.dto.ProductImgDTO;
-import com.nasnav.dto.ProductRepresentationObject;
-import com.nasnav.dto.ProductSortOptions;
-import com.nasnav.dto.ProductsResponse;
-import com.nasnav.dto.VariantFeatureDTO;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ProductImagesEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.StocksEntity;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
@@ -84,49 +62,43 @@ public class ProductService {
 		if (optionalProduct == null || !optionalProduct.isPresent()) {
 			return null;
 		}
+
 		ProductEntity product = optionalProduct.get();
-		ProductDetailsDTO response = new ProductDetailsDTO(product);
-		
-		
-		response.setImages( getProductImages(productId) );
-		
 
 		List<ProductVariantsEntity> productVariants = productVariantsRepository.findByProductEntity_Id(productId);
 
-		
-		
-		JSONArray variantJsonArray = null;
-		
+		List<VariantDTO> variantsDTOList;
 		if (productVariants != null && !productVariants.isEmpty()) {
-			variantJsonArray = getVariantsJSONArray(productVariants, productId, shopId);
+			variantsDTOList = getVariantDTOList(productVariants, productId, shopId);
 		} else {
-			JSONArray stockArray = getStockJsonArray(productId, shopId, null);
-			if (stockArray != null) {
-				JSONObject variantObj = new JSONObject();
-				variantObj.put("id", 0);
-				variantObj.put("stocks", stockArray);
-				variantJsonArray = new JSONArray();
-				variantJsonArray.put(variantObj);
-			}
+			variantsDTOList = createDummyVariantWithProductStocks(productId, shopId);
 		}
-		
-		
-		response.setVariantFeatures( getVariantFeatures(productVariants) );
-		
-		
-		if (variantJsonArray!=null && !variantJsonArray.isEmpty()) {
-			response.put("variants", variantJsonArray);
-		}
-		
-		response.setBundleItems( getBundleItems(product));
-        
 
-		return response;
+		ProductDetailsDTO productDTO = new ProductDetailsDTO(product);
+		productDTO.setVariants(variantsDTOList);
+		productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
+		productDTO.setBundleItems( getBundleItems(product));
+		productDTO.setImages( getProductImages(productId) );
+
+		return productDTO;
+	}
+
+	private List<VariantDTO> createDummyVariantWithProductStocks(Long productId, Long shopId) {
+		List<VariantDTO> variantsDTOList = new ArrayList<>();
+
+		List<StockDTO> productStocks = getStockJsonArray(productId, shopId, null);
+		if (productStocks != null) {
+			VariantDTO variantObj = new VariantDTO();
+			variantObj.setId(0L);
+			variantObj.setStocks(productStocks);
+			variantsDTOList.add(variantObj);
+		}
+
+		return variantsDTOList;
 	}
 
 
-
-    private List<ProductRepresentationObject> getBundleItems(ProductEntity product) {
+	private List<ProductRepresentationObject> getBundleItems(ProductEntity product) {
     	
         List<Long> bundleProductsIdList = bundleRepository.GetBundleItemsProductIds(product.getId());
         List<ProductEntity> bundleProducts = this.getProductsByIds(bundleProductsIdList , "asc", "name");
@@ -138,76 +110,77 @@ public class ProductService {
 
 
 
-    private JSONArray getVariantsJSONArray(List<ProductVariantsEntity> productVariants, Long productId, Long shopId) {
+    private List<VariantDTO> getVariantDTOList(List<ProductVariantsEntity> productVariants, Long productId, Long shopId) {
 
-		JSONArray variantJsonArray = new JSONArray();
+		List<VariantDTO> variantDTOList = new ArrayList<>();
 
 		productVariants.forEach(variant -> {
 
-			JSONObject variantObj = new JSONObject();
-			variantObj.put("id", variant.getId());
-			variantObj.put("barcode", variant.getBarcode());
+			VariantDTO variantObj = new VariantDTO();
+			variantObj.setId(variant.getId());
+			variantObj.setBarcode( variant.getBarcode() );
+			variantObj.setStocks( getStockJsonArray(productId, shopId, variant.getId()));
+			variantObj.setVariantFeatures( getVariantFeaturesValues(variant) );
+			variantObj.setImages( getProductVariantImages(variant.getId()) );
 
-			variantObj.put("stocks", getStockJsonArray(productId, shopId, variant.getId()));
-
-			setProductFeatureNameAndValue(variant, variantObj);
-
-			JSONArray variantImages = getProductVariantImages(variant.getId());
-			if (variantImages != null && !variantImages.isEmpty()) {
-				variantObj.put("images", variantImages);
-			}
-			variantJsonArray.put(variantObj);
+			variantDTOList.add(variantObj);
 		});
 
-		return variantJsonArray;
+		return variantDTOList;
 	}
 
-	private void setProductFeatureNameAndValue(ProductVariantsEntity variant, JSONObject variantObj) {
+	private Map<String,String> getVariantFeaturesValues(ProductVariantsEntity variant) {
+		if(variant == null || !hasFeatures(variant))
+			return null;
 
-		if (hasFeatures(variant)) {
-
-			String[] keyValueVariant = variant.getFeatureSpec().replace("{", "").replace("}", "").split(",");
-
-			List<String> keyValueVariantList = Arrays.asList(keyValueVariant);
-
-			keyValueVariantList.forEach(feature -> {
-				String[] kvPair = feature.split(":");
-				Optional<ProductFeaturesEntity> optionalFeature = productFeaturesRepository
-						.findById(Integer.parseInt(kvPair[0]));
-				if (optionalFeature != null && optionalFeature.isPresent()) {
-					variantObj.put(optionalFeature.get().getName(), kvPair[1]);
-				}
-			});
-		}
+		JacksonJsonParser parser = new JacksonJsonParser();
+		Map<String, Object> keyValueMap =  parser.parseMap(variant.getFeatureSpec());
+		return keyValueMap.entrySet()
+				.stream()
+				.map(this::getVariantFeatureMapEntry)
+				.filter(entry -> entry != null)
+				.collect(Collectors.toMap(Map.Entry::getKey , Map.Entry::getValue))
+				;
 	}
-	
-	
-	
-	
+
+	private Map.Entry<String,String> getVariantFeatureMapEntry(Map.Entry<String,Object> entry) {
+		if(entry == null || entry.getKey() == null)
+			return null;
+
+		Integer id = Integer.parseInt(entry.getKey());
+		Optional<ProductFeaturesEntity> opt = productFeaturesRepository.findById(id);
+		if(opt == null || !opt.isPresent())
+			return null;
+
+		return new AbstractMap.SimpleEntry<>(
+						opt.get().getName()
+						, entry.getValue().toString());
+
+	}
+
 
 	private List<VariantFeatureDTO> getVariantFeatures(List<ProductVariantsEntity> productVariants) {
 		List<VariantFeatureDTO> features = new ArrayList<>();
 		
 		if(productVariants != null ) {
 			features =  productVariants
-					.stream()
-					.filter(this::hasFeatures)
-					.map(variant -> extractVariantFeatures(variant) )
-					.flatMap(List::stream)
-					.collect(Collectors.toList());				
+							.stream()
+							.filter(this::hasFeatures)
+							.map(this::extractVariantFeatures)
+							.flatMap(List::stream)
+							.collect(Collectors.toList());
 		}
 			
 		return features;
-		
 	}
 	
 	
 	
 	
-	public List<VariantFeatureDTO> extractVariantFeatures(ProductVariantsEntity variant){
+	private List<VariantFeatureDTO> extractVariantFeatures(ProductVariantsEntity variant){
 		JacksonJsonParser parser = new JacksonJsonParser();
-		Map<String, Object> keyVal =  parser.parseMap(variant.getFeatureSpec());
-		return keyVal.keySet()
+		Map<String, Object> keyValueMap =  parser.parseMap(variant.getFeatureSpec());
+		return keyValueMap.keySet()
 					.stream()
 					.map(Integer::parseInt)
 					.map(productFeaturesRepository::findById)
@@ -241,31 +214,30 @@ public class ProductService {
 
 
 
-	private JSONArray getProductVariantImages(Long variantId) {
+	private List<ProductImgDTO> getProductVariantImages(Long variantId) {
 		List<ProductImagesEntity> variantImages = productImagesRepository.findByProductVariantsEntity_Id(variantId);
 
+		List<ProductImgDTO> variantImagesArray = null;
 		if (variantImages != null && !variantImages.isEmpty()) {
-			JSONArray variantImagesArray = new JSONArray();
-
-			variantImages.forEach(image -> {
-				JSONObject imageJson = new JSONObject();
-				imageJson.put("url", image.getUri());
-				imageJson.put("priority", image.getPriority());
-				variantImagesArray.put(imageJson);
-			});
-			return variantImagesArray;
+			variantImagesArray = variantImages.stream()
+										.filter(img-> img != null)
+										.map(ProductImgDTO::new)
+										.collect(Collectors.toList());
 		}
-		return null;
+
+		return variantImagesArray;
 	}
 
 
 
-	private JSONArray getStockJsonArray(Long productId, Long shopId, Long variantId) {
+	private List<StockDTO> getStockJsonArray(Long productId, Long shopId, Long variantId) {
+		List<StockDTO> stocksArray = null;
 
 		if (shopId == null) {
-			return null;
+			return stocksArray;
 		}
-		List<StocksEntity> stocks = null;
+
+		List<StocksEntity> stocks;
 		if (variantId != null) {
 			stocks = stockRepository.findByProductEntity_IdAndShopsEntity_IdAndProductVariantsEntity_Id(productId,
 					shopId, variantId);
@@ -274,15 +246,13 @@ public class ProductService {
 		}
 
 		if (stocks != null && !stocks.isEmpty()) {
-			JSONArray stocksArray = new JSONArray();
-			stocks.forEach(stock -> {
-                JSONObject stockObject = createStockJSONObject(shopId, stock);
-				stocksArray.put(stockObject);
-			});
-			return stocksArray;
+			stocksArray = stocks.stream()
+							.filter(stock -> stock != null)
+							.map(stock -> new StockDTO(stock,shopId))
+							.collect(Collectors.toList());
 		}
-		return null;
 
+		return stocksArray;
 	}
 
 
