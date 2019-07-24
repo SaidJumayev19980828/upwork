@@ -9,7 +9,7 @@ import java.util.Set;
 @Entity
 @DiscriminatorValue("1")
 @Data
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper=false)
 public class BundleEntity extends ProductEntity{
     @ManyToMany(cascade = CascadeType.ALL )
     @JoinTable(name = "product_bundles"

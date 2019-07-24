@@ -251,6 +251,7 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public UserApiResponse login(UserDTOs.UserLoginObject loginData) {
 		UserEntity userEntity = this.userRepository.getByEmailAndOrganizationId(loginData.email, loginData.org_id);
+
 		if (userEntity != null) {
 			// check if account needs activation
 			boolean accountNeedActivation = isUserNeedActivation(userEntity);
@@ -261,6 +262,7 @@ public class UserServiceImpl implements UserService {
 			}
 			// ensure that password matched
 			boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncPassword());
+
 			if (passwordMatched) {
 				// check if account is locked
 				if (isAccountLocked(userEntity)) { // NOSONAR

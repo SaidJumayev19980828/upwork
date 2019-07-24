@@ -74,7 +74,11 @@ public class UserRegisterTest {
 
 	@PostConstruct
 	public void setupLoginUser() {
-		persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com",(long) 15);
+		if (organization == null) {
+			organization = createOrganization();
+		}
+
+		persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", organization.getId());
 		if (persistentUser == null) {
 			persistentUser = new UserEntity();
 			persistentUser.setName("John Smith");
@@ -83,7 +87,6 @@ public class UserRegisterTest {
 			persistentUser.setUpdatedAt(LocalDateTime.now());
 
 			//create a new organization and save its id to the user entity
-			organization = createOrganization();
 			persistentUser.setOrganizationId(organization.getId());
 		}
 		persistentUser.setEncPassword("---");
@@ -98,7 +101,7 @@ public class UserRegisterTest {
 		org.setUpdatedAt(new Date());
 		org.setDescription("Test Organization Description");
 
-		OrganizationEntity organization = organizationRepository.save(org);
+		OrganizationEntity organization = organizationRepository.saveAndFlush(org);
 		return organization;
 	}
 
@@ -238,7 +241,8 @@ public class UserRegisterTest {
 	@Test
 	public void testSendResetPasswordTokenForInvalidMail() {
 
-		ResponseEntity<UserApiResponse> response = getResponseFromGet("/user/recover?email=foo", UserApiResponse.class);
+		ResponseEntity<UserApiResponse> response = getResponseFromGet("/user/recover?email=foo" + "&org_id=" + organization.getId(), UserApiResponse.class);
+System.out.println("###############" + response.getBody().getMessages());
 		Assert.assertTrue(response.getBody().getMessages().contains(ResponseStatus.INVALID_EMAIL.name()));
 		Assert.assertFalse(response.getBody().isSuccess());
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
@@ -246,7 +250,7 @@ public class UserRegisterTest {
 
 	@Test
 	public void testSendResetPasswordTokenForValidButFakeMail() {
-		ResponseEntity<UserApiResponse> response = getResponseFromGet("/user/recover?email=foo@foo.foo",
+		ResponseEntity<UserApiResponse> response = getResponseFromGet("/user/recover?email=foo@foo.foo" + "&org_id=" + organization.getId(),
 				UserApiResponse.class);
 		Assert.assertTrue(response.getBody().getMessages().contains(ResponseStatus.EMAIL_NOT_EXIST.name()));
 		Assert.assertFalse(response.getBody().isSuccess());
@@ -255,7 +259,7 @@ public class UserRegisterTest {
 
 	@Test
 	public void testSendResetPasswordTokenForNoPassedMail() {
-		ResponseEntity<UserApiResponse> response = getResponseFromGet("/user/recover?email=", UserApiResponse.class);
+		ResponseEntity<UserApiResponse> response = getResponseFromGet("/user/recover?email=&org_id=12", UserApiResponse.class);
 		Assert.assertTrue(response.getBody().getMessages().contains(ResponseStatus.INVALID_EMAIL.name()));
 		Assert.assertFalse(response.getBody().isSuccess());
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
@@ -264,14 +268,14 @@ public class UserRegisterTest {
 	@Test
 	public void testPasswordShouldBeReset() {
 
-		persistentUser.setResetPasswordToken("ABC");
+		persistentUser.setResetPasswordToken("ABCX");
 		userService.update(persistentUser);
 
-		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail(), UserApiResponse.class);
+		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId(), UserApiResponse.class);
 		// refresh the entity
 		persistentUser = userRepository.findById(persistentUser.getId()).get();
 		String token = persistentUser.getResetPasswordToken();
-		Assert.assertNotEquals("ABC", token);
+		Assert.assertNotEquals("ABCX", token);
 
 		HttpEntity<Object> userJson = getHttpEntity(
 				"{\t\n" + "\t\"token\":\"" + token + "\",\n" + "\t\"password\":\"NewPassword\"\n" + "}");
@@ -283,7 +287,8 @@ public class UserRegisterTest {
 		Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
 
 		userJson = getHttpEntity(
-				"{\"password\":\"" + "NewPassword" + "\"," + "\"email\":\"" + persistentUser.getEmail() + "\"}");
+				"{\"password\":\"" + "NewPassword" + "\"," + "\"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + " }");
+
 		response = template.postForEntity("/user/login", userJson, UserApiResponse.class);
 
 		// Delete this user
@@ -295,7 +300,7 @@ public class UserRegisterTest {
 	@Test
 	public void testInvalidJsonForPasswordRecovery() {
 
-		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail(), UserApiResponse.class);
+		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId(), UserApiResponse.class);
 
 		HttpEntity<Object> userJson = getHttpEntity("{\t\n" + "\t\"token\": \"QWER\",, \"password\"}");
 
@@ -310,7 +315,7 @@ public class UserRegisterTest {
 	@Test
 	public void testSetInvalidPassword() {
 
-		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail(), UserApiResponse.class);
+		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId(), UserApiResponse.class);
 
 		// refresh user
 		persistentUser = (UserEntity) userService.getUserById(persistentUser.getId());
@@ -346,7 +351,7 @@ public class UserRegisterTest {
 	@Test
 	public void testUserShouldLogin() {
 		// send token to user
-		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail(), UserApiResponse.class);
+		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId(), UserApiResponse.class);
 
 		// refresh the user entity
 		persistentUser = (UserEntity) userService.getUserById(persistentUser.getId());
@@ -359,7 +364,7 @@ public class UserRegisterTest {
 
 		// login using the new password
 		userJson = getHttpEntity(
-				"{\"password\":\"" + "New_Password" + "\"," + "\"email\":\"" + persistentUser.getEmail() + "\"}");
+				"{\"password\":\"" + "New_Password" + "\", \"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + " }");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
 
@@ -371,7 +376,7 @@ public class UserRegisterTest {
 	public void testInvalidCredentialsLogin() {
 
 		HttpEntity<Object> userJson = getHttpEntity("{\t\n" + "\t\"password\":\"" + "Invalid_Password" + "\",\n"
-				+ "\t\"email\":\"" + persistentUser.getEmail() + "\"\n" + "}");
+				+ "\t\"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + "}");
 
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
@@ -398,14 +403,15 @@ public class UserRegisterTest {
 	public void testLoginForNeedActivationUser() {
 		// registe new user
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"name\":\"" + "Some New Name" + "\"," + "\"email\":\"" + "another_email@nasnav.com" + "\"}");
+				"{\"name\":\"" + "Some New Name" + "\"," + "\"email\":\"" + "another_email@nasnav.com"
+						+ "\", \"org_id\": " +  organization.getId() + " }");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/register", userJson,
 				UserApiResponse.class);
 		Long userId = response.getBody().getEntityId();
 
 		// directly login without changing his passwrod
 		userJson = getHttpEntity("{\t\n" + "\t\"password\":\"" + EntityConstants.INITIAL_PASSWORD + "\",\n"
-				+ "\t\"email\":\"" + "another_email@nasnav.com" + "\"\n" + "}");
+				+ "\t\"email\":\"" + "another_email@nasnav.com" + "\", \"org_id\": " +  organization.getId() + " }");
 
 		response = template.postForEntity("/user/login", userJson, UserApiResponse.class);
 		// Delete this user
