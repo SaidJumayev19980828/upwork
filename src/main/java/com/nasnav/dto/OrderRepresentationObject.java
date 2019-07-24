@@ -11,6 +11,8 @@ import lombok.EqualsAndHashCode;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
+        "user_id",
+        "store_id",
         "order_id",
         "price"
 })
@@ -18,8 +20,18 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper=true)
 public class OrderRepresentationObject extends BaseRepresentationObject{
 
-	@JsonProperty("order_id")
-    private long order_id;
+    @JsonProperty("order_id")
+    private long id;
+
+    @JsonProperty("user_id")
+    private long userId;
+
+    @JsonProperty("store_id")
+    private long shopId;
+
+    /*@JsonProperty("status")
+    private long status;
+
 	@JsonProperty("price")
-    private BigDecimal price;
+    private BigDecimal price;*/
 }

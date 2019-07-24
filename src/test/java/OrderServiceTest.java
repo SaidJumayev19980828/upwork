@@ -1,27 +1,35 @@
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.sql.DataSource;
 
 import com.nasnav.persistence.*;
+import org.json.JSONArray;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.Request;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -76,12 +84,21 @@ public class OrderServiceTest {
 	@Autowired
 	UserService userService;
 
+	@Value("classpath:sql/Orders_Test_Data_Insert.sql")
+	private Resource ordersDataInsert;
+
+	@Value("classpath:sql/Orders_Test_Data_Delete.sql")
+	private Resource ordersDataDelete;
+
+	@Autowired
+	private DataSource datasource;
+
 	@Mock
 	private OrdersController ordersController;
 
 	@PostConstruct
 	public void setupLoginUser() {
-		persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com",(long)15);
+		persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com",(long)801);
 		if (persistentUser == null) {
 			persistentUser = new UserEntity();
 			persistentUser.setName("John Smith");
@@ -102,11 +119,29 @@ public class OrderServiceTest {
 
 	@Before
 	public void setup() {
+		performInsertSqlDataScript();
 	}
 
 	@After
 	public void cleanup() {
 //        userService.deleteUser(_testUserId);
+		performDeleteSqlDataScript();
+	}
+
+	public void performInsertSqlDataScript() {
+		try (Connection con = datasource.getConnection()) {
+			ScriptUtils.executeSqlScript(con, ordersDataInsert);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void performDeleteSqlDataScript() {
+		try (Connection con = datasource.getConnection()) {
+			ScriptUtils.executeSqlScript(con, ordersDataDelete);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Test
@@ -385,4 +420,100 @@ public class OrderServiceTest {
 		return stockEntity;
 	}
 
+
+	@Test
+	public void ordersListDifferentFiltersTest() {
+		// by store_id only
+		ResponseEntity<String> response = template.exchange("/order/list?store_id=501", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders(88, "abdcefg")), String.class);
+		JSONArray body = new JSONArray(response.getBody());
+		long count = body.length();
+		System.out.println(body.toString() + " " + count);
+
+		Assert.assertTrue(200 == response.getStatusCode().value());
+		Assert.assertEquals("8 orders with order_id = 501",8,count);
+
+
+		// by store_id and status
+		response = template.exchange("/order/list?store_id=501&status=NEW", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders(88, "abdcefg")), String.class);
+		body = new JSONArray(response.getBody());
+		count = body.length();
+		System.out.println(body.toString() + " " + count);
+
+		Assert.assertTrue(200 == response.getStatusCode().value());
+		Assert.assertEquals("4 orders with order_id = 501 and status = NEW",4,count);
+
+
+		// by user_id and status
+		response = template.exchange("/order/list?user_id=88&status=NEW", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders(88, "abdcefg")), String.class);
+		body = new JSONArray(response.getBody());
+		count = body.length();
+		System.out.println(body.toString() + " " + count);
+
+		Assert.assertTrue(200 == response.getStatusCode().value());
+		Assert.assertEquals("4 orders with user_id = 88 and status = NEW",4,count);
+
+
+		// by user_id, store_id and status
+		response = template.exchange("/order/list?user_id=88&store_id=501&status=NEW", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders(88, "abdcefg")), String.class);
+		body = new JSONArray(response.getBody());
+		count = body.length();
+		System.out.println(body.toString() + " " + count);
+
+		Assert.assertTrue(200 == response.getStatusCode().value());
+		Assert.assertEquals("2 orders with user_id = 88 and store_id = 501 and status = NEW",2,count);
+	}
+
+	@Test
+	public void ordersListUnAuthTest() {
+		// invalid user-id test
+		ResponseEntity<String> response = template.exchange("/order/list?store_id=501", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders(90, "abdcefg")), String.class); //no user with id = 90
+
+		Assert.assertTrue(401 == response.getStatusCode().value());
+		Assert.assertEquals(HttpStatus.UNAUTHORIZED,response.getStatusCode());
+
+		// invalid user-token test
+		response = template.exchange("/order/list?store_id=501", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders(88, "invalidtoken")), String.class); //no user with id = 90
+
+		Assert.assertTrue(401 == response.getStatusCode().value());
+		Assert.assertEquals(HttpStatus.UNAUTHORIZED,response.getStatusCode());
+	}
+
+	@Test
+	public void ordersListInvalidfiltersTest() {
+		// by store_id only
+		ResponseEntity<String> response = template.exchange("/order/list?store_id=503", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders(88, "abdcefg")), String.class);
+		JSONArray body = new JSONArray(response.getBody());
+		long count = body.length();
+		System.out.println(body.toString() + " " + count);
+
+		Assert.assertTrue(200 == response.getStatusCode().value());
+		Assert.assertEquals("No orders with store_id = 503 ", 0, count);
+
+		// by user_id
+		response = template.exchange("/order/list?user_id=90", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders(88, "abdcefg")), String.class);
+		body = new JSONArray(response.getBody());
+		count = body.length();
+		System.out.println(body.toString() + " " + count);
+
+		Assert.assertTrue(200 == response.getStatusCode().value());
+		Assert.assertEquals("no orders with user_id = 90",0,count);
+
+		// by status
+		response = template.exchange("/order/list?user_id=88&status=invalid_status", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders(88, "abdcefg")), String.class);
+		body = new JSONArray(response.getBody());
+		count = body.length();
+		System.out.println(body.toString() + " " + count);
+
+		Assert.assertTrue(200 == response.getStatusCode().value());
+		Assert.assertEquals("no orders with status = invalid_status",0,count);
+	}
 }

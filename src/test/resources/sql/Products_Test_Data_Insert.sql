@@ -1,12 +1,13 @@
------deleting previous data-----
-delete from public.stocks where id between 601and 604;
+----------------------------deleting previous data----------------------------
+delete from public.stocks where id between 601 and 604;
 delete from public.products where id between 1001 and 1008;
-delete from public.shops where id between 501 and 502;
 delete from public.categories where id between 201 and 202;
+delete from public.shops where id between 501 and 502;
 delete from public.brands where id between 101 and 102;
 delete from public.organizations where id between 801 and 802;
 
------inserting dummy data-----
+----------------------------inserting dummy data----------------------------
+
 --inserting organizations
 INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (801, 'organization_1', now(), now());
 INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (802, 'organization_2', now(), now());
@@ -38,4 +39,5 @@ insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organiz
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(602, 501, 8, now(), now(), 801, 1200.0, 1002);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(603, 501, 4, now(), now(), 802, 200.0, 1003);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(604, 502, 6, now(), now(), 801, 700.0, 1004);
+
 

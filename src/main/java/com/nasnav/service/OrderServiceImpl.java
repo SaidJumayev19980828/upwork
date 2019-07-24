@@ -7,10 +7,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 
+import com.nasnav.dto.OrderRepresentationObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.configurationprocessor.json.JSONArray;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -126,7 +129,7 @@ public class OrderServiceImpl implements OrderService {
 		orderEntity.setShopsEntity(stocksEntites.get(0).getShopsEntity());
 		orderEntity.setStatus(OrderStatus.NEW.getValue());
 		orderEntity.setUpdateDate(new Date());
-		orderEntity.setUser_id(userId);
+		orderEntity.setUserId(userId);
 
 		orderEntity = ordersRepository.save(orderEntity);
 
@@ -353,4 +356,34 @@ public class OrderServiceImpl implements OrderService {
 		return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
 	}
 
+	@Override
+	public List<OrderRepresentationObject> getOrdersList(Long userId, Long storeId, String status){
+		List<OrdersEntity> ordersEntityList;
+		List<OrderRepresentationObject> ordersRep= new ArrayList<>();
+		Integer statusId;
+		if (status != null){
+			if ((OrderStatus.findEnum(status)) == null) {
+				return ordersRep;
+			}
+			statusId = (OrderStatus.findEnum(status)).getValue();
+			if (userId != null && storeId != null) {
+				ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatusAndUserId(storeId, statusId, userId);
+			} else if (userId != null) {
+				ordersEntityList = ordersRepository.findByUserIdAndStatus(userId, statusId);
+			} else {
+				ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatus(storeId, statusId);
+			}
+		} else {
+			if (userId != null && storeId != null) {
+				ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndUserId(storeId, userId);
+			} else if (userId != null) {
+				ordersEntityList = ordersRepository.findByUserId(userId);
+			} else {
+				ordersEntityList = ordersRepository.findByshopsEntityId(storeId);
+			}
+		}
+		ordersRep = ordersEntityList.stream().map(order -> (OrderRepresentationObject) order.getRepresentation())
+				.collect(Collectors.toList());
+		return ordersRep;
+	}
 }
