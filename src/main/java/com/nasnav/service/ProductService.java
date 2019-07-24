@@ -68,8 +68,8 @@ public class ProductService {
 		List<ProductVariantsEntity> productVariants = productVariantsRepository.findByProductEntity_Id(productId);
 
 		List<VariantDTO> variantsDTOList;
-		if (productVariants != null && !productVariants.isEmpty() && false) {
-			variantsDTOList = getVariantDTOList(productVariants, productId, shopId);
+		if (productVariants != null && !productVariants.isEmpty()) {
+			variantsDTOList = getVariantsList(productVariants, productId, shopId);
 		} else {
 			variantsDTOList = createDummyVariantWithProductStocks(productId, shopId);
 		}
@@ -86,7 +86,7 @@ public class ProductService {
 	private List<VariantDTO> createDummyVariantWithProductStocks(Long productId, Long shopId) {
 		List<VariantDTO> variantsDTOList = new ArrayList<>();
 
-		List<StockDTO> productStocks = getStockJsonArray(productId, shopId, null);
+		List<StockDTO> productStocks = getStockList(productId, shopId, null);
 		if (productStocks != null) {
 			VariantDTO variantObj = new VariantDTO();
 			variantObj.setId(0L);
@@ -110,7 +110,7 @@ public class ProductService {
 
 
 
-	private List<VariantDTO> getVariantDTOList(List<ProductVariantsEntity> productVariants, Long productId, Long shopId) {
+    private List<VariantDTO> getVariantsList(List<ProductVariantsEntity> productVariants, Long productId, Long shopId) {
 
 		List<VariantDTO> variantDTOList = new ArrayList<>();
 
@@ -119,7 +119,7 @@ public class ProductService {
 			VariantDTO variantObj = new VariantDTO();
 			variantObj.setId(variant.getId());
 			variantObj.setBarcode( variant.getBarcode() );
-			variantObj.setStocks( getStockJsonArray(productId, shopId, variant.getId()));
+			variantObj.setStocks( getStockList(productId, shopId, variant.getId()));
 			variantObj.setVariantFeatures( getVariantFeaturesValues(variant) );
 			variantObj.setImages( getProductVariantImages(variant.getId()) );
 
@@ -149,7 +149,7 @@ public class ProductService {
 
 		Integer id = Integer.parseInt(entry.getKey());
 		Optional<ProductFeaturesEntity> opt = productFeaturesRepository.findById(id);
-		if(opt == null || !opt.isPresent())
+		if(!opt.isPresent())
 			return null;
 
 		return new AbstractMap.SimpleEntry<>(
@@ -230,7 +230,7 @@ public class ProductService {
 
 
 
-	private List<StockDTO> getStockJsonArray(Long productId, Long shopId, Long variantId) {
+	private List<StockDTO> getStockList(Long productId, Long shopId, Long variantId) {
 		List<StockDTO> stocksArray = null;
 
 		if (shopId == null) {

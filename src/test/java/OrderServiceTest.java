@@ -89,8 +89,6 @@ public class OrderServiceTest {
 			organization.setDescription("Test Organization Description");
 			organizationRepository.saveAndFlush(organization);
 		}
-		System.out.println("!!!!!!!!!!!!2 " + organization.getId());
-		System.out.println("!!!!!!!!!!!!3 " + userRepository);
 		persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", organization.getId());
 		if (persistentUser == null) {
 			persistentUser = new UserEntity();

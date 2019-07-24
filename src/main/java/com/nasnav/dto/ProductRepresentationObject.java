@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 @Data
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @EqualsAndHashCode(callSuper=false)
 public class ProductRepresentationObject extends BaseRepresentationObject{
 
@@ -35,3 +36,4 @@ public class ProductRepresentationObject extends BaseRepresentationObject{
     @Column(name = "brand_id")
     private Long brandId;
 }
+

@@ -1,5 +1,7 @@
 package com.nasnav.dto;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
@@ -16,5 +18,16 @@ public class VariantDTO extends BaseRepresentationObject {
 	private String barcode;
 	private List<StockDTO> stocks;
 	private List<ProductImgDTO> images;
+
+	//this will be inserted unwrapped in JSON by @JsonAnyGetter , we don't
+	//want it to be inserted twice
+	@JsonIgnore
 	private Map<String,String> variantFeatures;
+
+	// used to insert the variant features key-value pairs into the
+	// generated JSON of VariantDTO
+	@JsonAnyGetter
+	public Map<String,String> getVariantFeaturesMap() {
+	    return variantFeatures;
+	}
 }
