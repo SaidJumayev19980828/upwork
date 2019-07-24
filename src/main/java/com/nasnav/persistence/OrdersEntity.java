@@ -16,7 +16,6 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.enumerations.PaymentStatus;
 import org.hibernate.annotations.Type;
 import org.springframework.data.jpa.domain.AbstractPersistable;
@@ -46,9 +45,6 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	@Column(name = "name", length = 40)
 	private String name;
 
-	@Column(name = "user_id")
-	private Long userId;
-
 	@Column(name = "payment_type")
 	private Integer payment_type;
 
@@ -61,6 +57,8 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	public void setPaymentStatus(PaymentStatus status) {
 		this.status = status.getValue();
 	}
+
+	private Long user_id;
 
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "created_at", nullable = false, length = 29)
@@ -105,11 +103,8 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 
 	@Override
 	public BaseRepresentationObject getRepresentation() {
-		OrderRepresentationObject orderRepresentationObject = new OrderRepresentationObject();
-		orderRepresentationObject.setId(getId());
-		orderRepresentationObject.setUserId(getUserId());
-		orderRepresentationObject.setShopId(shopsEntity.getId());
-		return orderRepresentationObject;
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	public OrdersEntity() {

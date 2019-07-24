@@ -47,10 +47,10 @@ public class NavBoxTest {
     @Autowired
     private TestRestTemplate template;
 
-    @Value("classpath:sql/ExtraArrtibutes_Test_Data_Insert.sql")
+    @Value("classpath:sql/extra_attributes_test_data_Insert.sql")
     private Resource extraAttributesDataInsert;
 
-    @Value("classpath:sql/ExtraArrtibutes_Test_Data_Delete.sql")
+    @Value("classpath:sql/extra_attributes_test_data_Delete.sql")
     private Resource extraAttributesDataDelete;
 
     @Autowired
@@ -194,16 +194,16 @@ public class NavBoxTest {
 
 
         //// testing extra attributes with organization filter = 401 ////
-        response = template.getForEntity("/navbox/attributes?org_id=801", String.class);
+        response = template.getForEntity("/navbox/attributes?org_id=401", String.class);
         System.out.println(response.getBody());
         json = (JSONArray) JSONParser.parseJSON(response.getBody());
-        assertEquals("there are total 1 attributes with organization = 801",1 , json.length());
+        assertEquals("there are total 1 attributes with organization = 401",1 , json.length());
 
 
         //// testing extra attributes with false organization filter ////
-        response = template.getForEntity("/navbox/attributes?org_id=803", String.class);
+        response = template.getForEntity("/navbox/attributes?org_id=403", String.class);
         System.out.println(response.getBody());
-        assertNull("there are no attributes with organization = 803",response.getBody());
+        assertNull("there are no attributes with organization = 403",response.getBody());
     }
 
 /*

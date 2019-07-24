@@ -4,7 +4,6 @@ import com.nasnav.persistence.OrdersEntity;
 
 import java.util.Date;
 import java.util.Optional;
-import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -21,13 +20,4 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
     @Modifying
     @Query("update OrdersEntity set payment_status = :paymentStatus, updated_at = :updateTimestamp where id = :orderId")
     void setPaymentStatusForOrder(@Param("orderId") Long orderId, @Param("paymentStatus") Integer paymentStatus, @Param("updateTimestamp") Date updateTimestamp);
-
-    List<OrdersEntity> findByUserId(Long userId);
-    List<OrdersEntity> findByUserIdAndStatus(Long userId, Integer status);
-
-    List<OrdersEntity> findByshopsEntityId(Long shopId);
-    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndStatus(Long shopId, Integer status);
-
-    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndUserId(Long shopId, Long userId);
-    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndStatusAndUserId(Long shopId, Integer status, Long userId);
 }
