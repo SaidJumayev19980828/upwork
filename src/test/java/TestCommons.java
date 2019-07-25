@@ -33,4 +33,11 @@ public class TestCommons {
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         return new HttpEntity<>(parameters, headers);
     }
+
+    public static HttpHeaders getHeaders(long userId, String authToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("User-ID", Long.toString(userId));
+        headers.add("User-Token", authToken);
+        return headers;
+    }
 }

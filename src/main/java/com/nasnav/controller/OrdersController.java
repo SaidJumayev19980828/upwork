@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.exceptions.BusinessException;
@@ -22,6 +23,9 @@ import com.nasnav.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/order")
@@ -78,4 +82,25 @@ System.out.println("id: " + userId + " token: " + userToken + " auth: " + userSe
     	}
     	return new ResponseEntity<>(response, response.getCode());
     }
+
+	@ApiOperation(value = "Get list of orders", nickname = "orderList", code = 200)
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "returned orders list"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+			//@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+	})
+	@GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	public ResponseEntity<?> updateOrder(@RequestHeader(name = "User-ID", required = true) Long loggedUserId,
+										 @RequestHeader(name = "User-Token", required = true) String userToken,
+										 @RequestParam(name = "user_id", required = false) Long userId,  //search parameter
+										 @RequestParam(name = "store_id", required = false) Long storeId,
+										 @RequestParam(name = "status", required = false) String status) throws BusinessException {
+		List<OrderRepresentationObject> response = new ArrayList<>();
+		if(userToken == null || !userService.checkAuthToken(loggedUserId, userToken)) {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		} else if (userId != null || storeId != null) {
+			response = this.orderService.getOrdersList(userId, storeId, status);
+		}
+		return new ResponseEntity<>(response, HttpStatus.OK);
+	}
 }

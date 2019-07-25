@@ -48,10 +48,10 @@ public class ProductServiceTest {
 	@Value("classpath:sql/bundle_test_data_insert.sql")
 	private Resource bundleDataInsert;
 
-	@Value("classpath:sql/products_test_data_Insert.sql")
+	@Value("classpath:sql/Products_Test_Data_Insert.sql")
 	private Resource productsDataInsert;
 
-	@Value("classpath:sql/products_test_data_Delete.sql")
+	@Value("classpath:sql/Products_Test_Data_Delete.sql")
 	private Resource productsDataDelete;
 
 	@Autowired

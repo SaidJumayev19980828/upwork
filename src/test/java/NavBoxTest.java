@@ -47,10 +47,10 @@ public class NavBoxTest {
     @Autowired
     private TestRestTemplate template;
 
-    @Value("classpath:sql/extra_attributes_test_data_Insert.sql")
+    @Value("classpath:sql/ExtraArrtibutes_Test_Data_Insert.sql")
     private Resource extraAttributesDataInsert;
 
-    @Value("classpath:sql/extra_attributes_test_data_Delete.sql")
+    @Value("classpath:sql/ExtraArrtibutes_Test_Data_Delete.sql")
     private Resource extraAttributesDataDelete;
 
     @Autowired

@@ -64,10 +64,10 @@ public class EmployeeUserCreationTest {
 	@Autowired
 	private RoleEmployeeUserRepository roleEmployeeUserRepository;
 
-	@Value("classpath:sql/Test_Create_EmpUser_Auth_Data.sql")
+	@Value("classpath:sql/EmpUsers_Test_Data_Insert.sql")
 	private Resource userDataInsert;
 
-	@Value("classpath:sql/Test_Create_EmpUser_Auth_Data_Delete.sql")
+	@Value("classpath:sql/EmpUsers_Test_Data_Delete.sql")
 	private Resource userDataDelete;
 
 	@Autowired

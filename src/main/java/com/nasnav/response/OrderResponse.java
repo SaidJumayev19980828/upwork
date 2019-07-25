@@ -5,11 +5,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.dto.OrderRepresentationObject;
 
 import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.List;
 
 import org.springframework.http.HttpStatus;
 
@@ -45,6 +47,9 @@ public class OrderResponse implements Serializable {
     @JsonProperty(value = "status")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     OrderFailedStatus status;
+
+    @JsonIgnore
+    private List<OrderRepresentationObject> orders;
 
     public OrderResponse() {
     }
