@@ -350,6 +350,7 @@ public class ProductServiceTest {
 	public void testProductResponse(){
 		prepareProductsTestData();
 		performTestProductResponseByFilters();
+		productBarcodeTest();
 		RemoveProductsTestData();
 	}
 
@@ -414,4 +415,15 @@ public class ProductServiceTest {
 		assertTrue(response.getBody().toString().contains("image_url"));
 	}
 
+	public void productBarcodeTest() {
+		// product 1001 doesn't have barcode
+		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=1001", String.class);
+		System.out.println(response.getBody());
+		Assert.assertTrue(response.getBody().contains("barcode\":null"));
+
+		// product 1001 has barcode = 123456789
+		response = template.getForEntity("/navbox/product?product_id=1002", String.class);
+		System.out.println(response.getBody());
+		Assert.assertTrue(response.getBody().contains("barcode\":\"123456789"));
+	}
 }

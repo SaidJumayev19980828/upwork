@@ -54,6 +54,9 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
     @Column(name="brand_id")
     private Long brandId;
 
+    @Column(name="barcode")
+    private String barcode;
+
     @Column(name="product_type")
     private Integer productType = ProductTypes.DEFAULT;
 
@@ -94,7 +97,7 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
         productRepresentationObject.setPname(getPname());
         productRepresentationObject.setCategoryId(getCategoryId());
         productRepresentationObject.setBrandId(getBrandId());
-
+        productRepresentationObject.setBarcode(getBarcode());
         return productRepresentationObject;
     }
 }

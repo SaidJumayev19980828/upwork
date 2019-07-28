@@ -35,5 +35,7 @@ public class ProductRepresentationObject extends BaseRepresentationObject{
     private Long categoryId;
     @Column(name = "brand_id")
     private Long brandId;
+    @Column(name="barcode")
+    private String barcode;
 }
 
