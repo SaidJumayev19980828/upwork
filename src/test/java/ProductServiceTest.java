@@ -421,7 +421,7 @@ public class ProductServiceTest {
 		System.out.println(response.getBody());
 		Assert.assertTrue(response.getBody().contains("barcode\":null"));
 
-		// product 1001 has barcode = 123456789
+		// product 1002 has barcode = 123456789
 		response = template.getForEntity("/navbox/product?product_id=1002", String.class);
 		System.out.println(response.getBody());
 		Assert.assertTrue(response.getBody().contains("barcode\":\"123456789"));
