@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
@@ -47,12 +49,8 @@ public class Session {
     @Setter
     Account merchantAccount;
 
-//    String result;
-//    String indicator;
-//    String updateStatus;
     private String sessionId;
     private String orderUid;
-//    String version;
 
     private OrdersEntity order = null;
     private OrderService.OrderValue orderValue = null;
@@ -81,7 +79,7 @@ public class Session {
         try {
             // Prepare the request
             HttpClient client= HttpClientBuilder.create().build();
-            HttpPut request = new HttpPut(merchantAccount.getApiUrl() + "/merchant/"
+            HttpPut request = new HttpPut(merchantAccount.getApiUrl() + merchantAccount.getApiVersion() + "/merchant/"
                     + merchantAccount.getMerchantId() + "/order/" + this.orderUid + "/transaction/" + transactionId);
 
             // Set up the payload
@@ -114,7 +112,8 @@ public class Session {
             String responseReceived = readInputStream(response.getEntity().getContent());
             this.sessionId = null; // disable current session as it is used up
 
-            PaymentEntity payment = new PaymentEntity();
+            List<PaymentEntity> paymentOpt = paymentsRepository.findRecentByOrdersEntity_Id(this.order.getId());
+            PaymentEntity payment = paymentOpt.size() > 0 ? paymentOpt.get(0) : new PaymentEntity();
             payment.setOperator(paymentOperator);
             payment.setObject(responseReceived);
             payment.setOrdersEntity(this.order);
@@ -151,6 +150,39 @@ public class Session {
         }
     }
 
+    public boolean verifyAndStore(String orderUid, String paymentIndicator) throws BusinessException {
+
+        Optional<PaymentEntity> paymentOpt = paymentsRepository.findByUid(orderUid);
+        if (!paymentOpt.isPresent()) {
+            qnbLogger.warn("No payment associated with order {}", this.order.getId());
+            throw new BusinessException("There is no initiated payment associated with the order", "INVALID_INPUT", HttpStatus.NOT_ACCEPTABLE);
+        }
+        PaymentEntity payment = paymentOpt.get();
+        JSONObject json = new JSONObject(payment.getObject());
+        if (!json.has("successIndicator")) {
+            qnbLogger.error("Payment {} for order {} does not contain successIndicator!", payment.getId(), this.order.getId());
+            throw new BusinessException("Payment for order does not contain successIndicator", "INTERNAL_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        if (new Date().getTime() - payment.getExecuted().getTime() > 300000) {  // limit confirmation to 5 minutes
+            qnbLogger.error("Attempt to confirm payment initiated on {}", payment.getExecuted());
+            throw new BusinessException("Payment confirmation too late after initiation - more than 5 minutes", "REQUEST_TIMEOUT", HttpStatus.REQUEST_TIMEOUT);
+        }
+        if (payment.getStatus() != PaymentStatus.STARTED) {
+            qnbLogger.error("Invalid state ({}) for payment {}", payment.getStatus(), payment.getId());
+            throw new BusinessException("Invalid state for the payment ", "INVALID_INPUT", HttpStatus.NOT_ACCEPTABLE);
+        }
+        if (json.getString("successIndicator").equals(paymentIndicator)) {
+//            payment.setOrdersEntity(this.order);
+            payment.setUid("CFM-" + payment.getUid());
+            payment.setExecuted(new Date());
+            payment.setStatus(PaymentStatus.PAID);
+            paymentsRepository.saveAndFlush(payment);
+            ordersRepository.setPaymentStatusForOrder(this.order.getId(), PaymentStatus.PAID.getValue(), payment.getExecuted());
+            return true;
+        }
+        throw new BusinessException("Provided payment code does not match successIndicator", "INTVALID_CODE", HttpStatus.CONFLICT);
+    }
+
     public boolean initialize(OrdersEntity orderEntity) throws BusinessException {
 
         this.order = orderEntity;
@@ -180,7 +212,7 @@ public class Session {
 
         try {
             HttpClient client= HttpClientBuilder.create().build();
-            HttpPost request = new HttpPost(merchantAccount.getApiUrl()
+            HttpPost request = new HttpPost(merchantAccount.getApiUrl() + merchantAccount.getApiVersion()
                     + "/merchant/" + merchantAccount.getMerchantId() +"/session");
             StringEntity requestEntity = new StringEntity(data.toString(), ContentType.APPLICATION_JSON);
             request.setEntity(requestEntity);
@@ -195,12 +227,21 @@ public class Session {
             }
             JSONObject jsonResult = new JSONObject(readInputStream(response.getEntity().getContent()));
             String result = jsonResult.getString("result");
-//            String indicator = jsonResult.getString("successIndicator");
+            String indicator = jsonResult.getString("successIndicator");
             JSONObject jsonSession = jsonResult.getJSONObject("session");
             String updateStatus = jsonSession.getString("updateStatus");
             sessionId = jsonSession.getString("id");
-//            String version = jsonSession.getString("version");
             if ("SUCCESS".equalsIgnoreCase(result) && "SUCCESS".equalsIgnoreCase(updateStatus)) {
+                PaymentEntity payment = new PaymentEntity();
+                payment.setOperator("QNB");
+                payment.setOrdersEntity(this.order);
+                payment.setUid(orderUid);
+                payment.setExecuted(new Date());
+                payment.setStatus(PaymentStatus.STARTED);
+                payment.setAmount(orderValue.amount);
+                payment.setCurrency(orderValue.currency);
+                payment.setObject("{\"successIndicator\": \"" + indicator + "\"}");
+                paymentsRepository.saveAndFlush(payment);
                 return true;
             }
             qnbLogger.error("Unable to set up hosted session, response: {}", jsonResult.toString());

@@ -6,6 +6,7 @@ delete from public.shops where id between 501 and 502;
 delete from public.brands where id between 101 and 102;
 delete from public.organizations where id between 801 and 802;
 
+
 --///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 --inserting organizations
 INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (801, 'organization_1', now(), now());

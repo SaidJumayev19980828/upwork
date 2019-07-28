@@ -12,12 +12,7 @@ import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
 
 import com.nasnav.persistence.*;
-import org.json.JSONArray;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.Request;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +51,8 @@ public class OrderServiceTest {
 
 //    private static String _authToken = "TestAuthToken";
 //    private Long _testUserId = null;
-	private UserEntity persistentUser;
+	private static UserEntity persistentUser;
+	private static OrganizationEntity organization;
 
 	private MockMvc mockMvc;
 
@@ -99,23 +95,39 @@ public class OrderServiceTest {
 	private DataSource datasource;
 
 	@PostConstruct
+	@Before
 	public void setupLoginUser() {
-		persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com",(long)15);
+		//create new organization
+		organization = organizationRepository.findOneById(239541L);
+		if (organization == null) {
+			organization = new OrganizationEntity();
+			organization.setName("Test Organization");
+			organization.setCreatedAt(new Date());
+			organization.setUpdatedAt(new Date());
+			organization.setDescription("Test Organization Description");
+			organizationRepository.saveAndFlush(organization);
+		}
+		persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", organization.getId());
 		if (persistentUser == null) {
 			persistentUser = new UserEntity();
 			persistentUser.setName("John Smith");
 			persistentUser.setEmail("unavailable@nasnav.com");
 			persistentUser.setCreatedAt(LocalDateTime.now());
 			persistentUser.setUpdatedAt(LocalDateTime.now());
+			persistentUser.setAuthenticationToken("2lzEscCTumJriRLz");
+			persistentUser.setOrganizationId(organization.getId());
+			persistentUser.setEncPassword("---");
+			userRepository.save(persistentUser);
 		}
-		persistentUser.setEncPassword("---");
-		userRepository.save(persistentUser);
 	}
 
-	@PreDestroy
-	public void removeLoginUser() {
+	@After
+	public  void removeLoginUser() {
 		if (persistentUser != null) {
 			userRepository.delete(persistentUser);
+		}
+		if (organization != null) {
+			organizationRepository.delete(organization);
 		}
 	}
 

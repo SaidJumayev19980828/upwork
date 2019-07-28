@@ -3,7 +3,7 @@ package com.nasnav.enumerations;
 import lombok.Getter;
 
 public enum PaymentStatus {
-    UNPAID(0), PAID(1), FAILED(2), ERROR(3);
+    UNPAID(0), PAID(1), FAILED(2), ERROR(3), STARTED(4);
 
     @Getter
     private int value;

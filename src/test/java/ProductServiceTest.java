@@ -94,8 +94,8 @@ public class ProductServiceTest {
 	private final String PRODUCT_FEATURE_1_P_NAME = "lipstick color";
 	private final String PRODUCT_FEATURE_2_NAME = "flavour";
 	private final String PRODUCT_FEATURE_2_P_NAME = "lipstick flavour";
-	private String PRODUCT_VARIANT_FEATURE_SEPC = "{FEATURE_ID_1:" + PRODUCT_FEATURE_1_VALUE + ",FEATURE_ID_2:"
-			+ PRODUCT_FEATURE_2_VALUE + "}";
+	private String PRODUCT_VARIANT_FEATURE_SEPC = "{\"FEATURE_ID_1\":\"" + PRODUCT_FEATURE_1_VALUE + "\",\"FEATURE_ID_2\":\""
+			+ PRODUCT_FEATURE_2_VALUE + "\"}";
 
 	private final Double PRODUCT_PRICE = 10.5;
 	private final Integer QUANTITY = 100;
@@ -132,25 +132,26 @@ public class ProductServiceTest {
 		productVariantsEntity.setProductEntity(productEntity);
 		productVariantsEntity = productVariantsRepository.save(productVariantsEntity);
 
-		ResponseEntity<Object> response = template.getForEntity("/navbox/product?product_id=" + productEntity.getId(),
-				Object.class);
+		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=" + productEntity.getId(),
+				String.class);
 
+		System.out.println("product without stocks >>> " + response.getBody());
 		Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
-		assertTrue(response.getBody().toString().contains("name=" + PRODUCT_NAME));
-		assertTrue(response.getBody().toString().contains("p_name=" + PRODUCT_P_NAME));
-		assertTrue(response.getBody().toString().contains("category_id=" + CATEGORY_ID));
-		assertTrue(response.getBody().toString().contains("barcode=" + PRODUCT_VARIANT_BARCODE));
-		assertTrue(response.getBody().toString().contains("variant_features"));
-		assertTrue(response.getBody().toString().contains("variants"));
-		assertTrue(response.getBody().toString().contains("name=" + PRODUCT_FEATURE_1_NAME));
-		assertTrue(response.getBody().toString().contains("label=" + PRODUCT_FEATURE_1_P_NAME));
-		assertTrue(response.getBody().toString().contains("name=" + PRODUCT_FEATURE_2_NAME));
-		assertTrue(response.getBody().toString().contains("label=" + PRODUCT_FEATURE_2_P_NAME));
+		assertTrue(response.getBody().toString().contains("\"name\":\"" + PRODUCT_NAME + "\""));
+		assertTrue(response.getBody().toString().contains("\"p_name\":\"" + PRODUCT_P_NAME + "\""));
+		assertTrue(response.getBody().toString().contains("\"category_id\":" + CATEGORY_ID));
+		assertTrue(response.getBody().toString().contains("\"barcode\":\"" + PRODUCT_VARIANT_BARCODE + "\""));
+		assertTrue(response.getBody().toString().contains("\"variant_features\""));
+		assertTrue(response.getBody().toString().contains("\"variants\""));
+		assertTrue(response.getBody().toString().contains("\"name\":\"" + PRODUCT_FEATURE_1_NAME + "\""));
+		assertTrue(response.getBody().toString().contains("\"label\":\"" + PRODUCT_FEATURE_1_P_NAME + "\""));
+		assertTrue(response.getBody().toString().contains("\"name\":\"" + PRODUCT_FEATURE_2_NAME + "\""));
+		assertTrue(response.getBody().toString().contains("\"label\":\"" + PRODUCT_FEATURE_2_P_NAME + "\""));
 		assertTrue(
-				response.getBody().toString().contains(PRODUCT_FEATURE_1_NAME + "=" + PRODUCT_FEATURE_1_VALUE));
+				response.getBody().toString().contains("\"" + PRODUCT_FEATURE_1_NAME + "\":\"" + PRODUCT_FEATURE_1_VALUE + "\""));
 		assertTrue(
-				response.getBody().toString().contains(PRODUCT_FEATURE_2_NAME + "=" + PRODUCT_FEATURE_2_VALUE));
-		assertTrue(response.getBody().toString().contains("barcode=" + PRODUCT_VARIANT_BARCODE));
+				response.getBody().toString().contains("\"" + PRODUCT_FEATURE_2_NAME + "\":\"" + PRODUCT_FEATURE_2_VALUE + "\""));
+		assertTrue(response.getBody().toString().contains("\"barcode\":\"" + PRODUCT_VARIANT_BARCODE + "\""));
 
 		productVariantsRepository.delete(productVariantsEntity);
 		productFeaturesRepository.delete(productFeaturesEntity_1);
@@ -215,30 +216,32 @@ public class ProductServiceTest {
 		stocksEntity.setShopsEntity(shopsEntity);
 		stocksEntity = stockRepository.save(stocksEntity);
 
-		ResponseEntity<Object> response = template.getForEntity(
+		ResponseEntity<String> response = template.getForEntity(
 				"/navbox/product?product_id=" + productEntity.getId() + "&shop_id=" + shopsEntity.getId(),
-				Object.class);
+				String.class);
+
+		System.out.println( "product with stocks >>> " +response.getBody());
 
 		Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
-		assertTrue(response.getBody().toString().contains("name=" + PRODUCT_NAME));
-		assertTrue(response.getBody().toString().contains("p_name=" + PRODUCT_P_NAME));
-		assertTrue(response.getBody().toString().contains("category_id=" + CATEGORY_ID));
-		assertTrue(response.getBody().toString().contains("barcode=" + PRODUCT_VARIANT_BARCODE));
-		assertTrue(response.getBody().toString().contains("variant_features"));
-		assertTrue(response.getBody().toString().contains("variants"));
-		assertTrue(response.getBody().toString().contains("name=" + PRODUCT_FEATURE_1_NAME));
-		assertTrue(response.getBody().toString().contains("label=" + PRODUCT_FEATURE_1_P_NAME));
-		assertTrue(response.getBody().toString().contains("name=" + PRODUCT_FEATURE_2_NAME));
-		assertTrue(response.getBody().toString().contains("label=" + PRODUCT_FEATURE_2_P_NAME));
+		assertTrue(response.getBody().toString().contains("\"name\":\"" + PRODUCT_NAME + "\""));
+		assertTrue(response.getBody().toString().contains("\"p_name\":\"" + PRODUCT_P_NAME + "\""));
+		assertTrue(response.getBody().toString().contains("\"category_id\":" + CATEGORY_ID ));
+		assertTrue(response.getBody().toString().contains("\"barcode\":\"" + PRODUCT_VARIANT_BARCODE + "\""));
+		assertTrue(response.getBody().toString().contains("\"variant_features\""));
+		assertTrue(response.getBody().toString().contains("\"variants\":"));
+		assertTrue(response.getBody().toString().contains("\"name\":\"" + PRODUCT_FEATURE_1_NAME + "\""));
+		assertTrue(response.getBody().toString().contains("\"label\":\"" + PRODUCT_FEATURE_1_P_NAME + "\""));
+		assertTrue(response.getBody().toString().contains("\"name\":\"" + PRODUCT_FEATURE_2_NAME + "\""));
+		assertTrue(response.getBody().toString().contains("\"label\":\"" + PRODUCT_FEATURE_2_P_NAME + "\""));
 		assertTrue(
-				response.getBody().toString().contains(PRODUCT_FEATURE_1_NAME + "=" + PRODUCT_FEATURE_1_VALUE));
+				response.getBody().toString().contains("\"" + PRODUCT_FEATURE_1_NAME + "\":\"" + PRODUCT_FEATURE_1_VALUE + "\""));
 		assertTrue(
-				response.getBody().toString().contains(PRODUCT_FEATURE_2_NAME + "=" + PRODUCT_FEATURE_2_VALUE));
-		assertTrue(response.getBody().toString().contains("barcode=" + PRODUCT_VARIANT_BARCODE));
-		assertTrue(response.getBody().toString().contains("shop_id=" + shopsEntity.getId()));
-		assertTrue(response.getBody().toString().contains("quantity=" + QUANTITY));
-		assertTrue(response.getBody().toString().contains("price=" + PRODUCT_PRICE));
-		assertTrue(response.getBody().toString().contains("discount=" + 0));
+				response.getBody().toString().contains("\"" + PRODUCT_FEATURE_2_NAME + "\":\"" + PRODUCT_FEATURE_2_VALUE + "\""));
+		assertTrue(response.getBody().toString().contains("\"barcode\":\"" + PRODUCT_VARIANT_BARCODE + "\""));
+		assertTrue(response.getBody().toString().contains("\"shop_id\":" + shopsEntity.getId() ));
+		assertTrue(response.getBody().toString().contains("\"quantity\":" + QUANTITY ));
+		assertTrue(response.getBody().toString().contains("\"price\":" + PRODUCT_PRICE ));
+		assertTrue(response.getBody().toString().contains("\"discount\":" + 0 ));
 
 		stockRepository.delete(stocksEntity);
 		shopsRepository.delete(shopsEntity);
@@ -391,17 +394,24 @@ public class ProductServiceTest {
 				,6 , total);
 		//// finish test
 
-		//// test brand_id and category_id existance in both "product" and "products" apis
+		//// test fields existance in both "product" and "products" apis
 		response = template.getForEntity("/navbox/products?org_id=801", String.class);
-		System.out.println(response.getBody().toString());
-		assertTrue(response.getBody().toString().contains("brandId"));
-		assertTrue(response.getBody().toString().contains("categoryId"));
+
+		assertJsonFieldExists(response);
 
 		response = template.getForEntity("/navbox/product?product_id=1001", String.class);
-		System.out.println(response.getBody());
+		System.out.println("response JSON >>>  "+ response.getBody().toString());
 		assertTrue(response.getBody().toString().contains("brand_id"));
 		assertTrue(response.getBody().toString().contains("category_id"));
 		//// finish test
+	}
+
+	private void assertJsonFieldExists(ResponseEntity<String> response) {
+		System.out.println("response JSON >>>  "+ response.getBody().toString());
+		assertTrue(response.getBody().toString().contains("brand_id"));
+		assertTrue(response.getBody().toString().contains("category_id"));
+		assertTrue(response.getBody().toString().contains("p_name"));
+		assertTrue(response.getBody().toString().contains("image_url"));
 	}
 
 }

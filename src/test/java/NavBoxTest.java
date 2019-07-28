@@ -193,11 +193,11 @@ public class NavBoxTest {
         assertEquals("there are total 2 attributes",2 , json.length());
 
 
-        //// testing extra attributes with organization filter = 401 ////
-        response = template.getForEntity("/navbox/attributes?org_id=401", String.class);
+        //// testing extra attributes with organization filter = 801 ////
+        response = template.getForEntity("/navbox/attributes?org_id=801", String.class);
         System.out.println(response.getBody());
         json = (JSONArray) JSONParser.parseJSON(response.getBody());
-        assertEquals("there are total 1 attributes with organization = 401",1 , json.length());
+        assertEquals("there are total 1 attributes with organization = 801",1 , json.length());
 
 
         //// testing extra attributes with false organization filter ////
