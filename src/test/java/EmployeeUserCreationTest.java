@@ -364,4 +364,175 @@ System.out.println(response.getBody());
 		Assert.assertFalse(response.getBody().isSuccess());
 		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+	//NASNAV_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
+
+	//NASNAV_ADMIN changing roles to NASNAV_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
+	@Test
+	public void updateToNasnavAdminByNasnavAdminTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"NASNAV_ADMIN\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertTrue(response.getBody().isSuccess());
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+
+	@Test
+	public void updateToOrganizationAdminByNasnavAdminTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_ADMIN\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertTrue(response.getBody().isSuccess());
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+
+	@Test
+	public void updateToOrganizationEmployeeByNasnavAdminTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_EMPLOYEE\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertTrue(response.getBody().isSuccess());
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+
+	@Test
+	public void updateToStoreEmployeeByNasnavAdminTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"STORE_EMPLOYEE\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertTrue(response.getBody().isSuccess());
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+	//finish Nasnav_admin role test
+
+	//ORGANIZATION_ADMIN changing roles to NASNAV_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
+	@Test
+	public void updateToNasnavAdminByOrganizationAdminTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"NASNAV_ADMIN\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm", "69");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertFalse(response.getBody().isSuccess());
+		Assert.assertEquals(406, response.getStatusCode().value());
+	}
+
+	@Test
+	public void updateToOrganizationAdminByOrganizationAdminTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_ADMIN\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm", "69");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertTrue(response.getBody().isSuccess());
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+
+	@Test
+	public void updateToOrganizationEmployeeByOrganizationAdminTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_EMPLOYEE\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm", "69");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertTrue(response.getBody().isSuccess());
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+
+	@Test
+	public void updateToStoreEmployeeByOrganizationAdminTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"STORE_EMPLOYEE\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm", "69");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertFalse(response.getBody().isSuccess());
+		Assert.assertEquals(406, response.getStatusCode().value());
+	}
+	//finish ORGANIZATION_ADMIN role test
+
+	//ORGANIZATION_EMPLOYEE changing roles to NASNAV_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
+	@Test
+	public void updateToNasnavAdminByOrganizationEmployeeTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"NASNAV_ADMIN\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123", "70");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertFalse(response.getBody().isSuccess());
+		Assert.assertEquals(401, response.getStatusCode().value());
+	}
+
+	@Test
+	public void updateToOrganizationAdminByOrganizationEmployeeTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_ADMIN\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123", "70");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertFalse(response.getBody().isSuccess());
+		Assert.assertEquals(401, response.getStatusCode().value());
+	}
+
+	@Test
+	public void updateToOrganizationEmployeeByOrganizationEmployeeTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_EMPLOYEE\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123", "70");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertFalse(response.getBody().isSuccess());
+		Assert.assertEquals(401, response.getStatusCode().value());
+	}
+
+	@Test
+	public void updateToStoreEmployeeByOrganizationEmployeeTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"STORE_EMPLOYEE\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123", "70");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertFalse(response.getBody().isSuccess());
+		Assert.assertEquals(401, response.getStatusCode().value());
+	}
+	//finish ORGANIZATION_EMPLOYEE role test
+
+
+	//STORE_EMPLOYEE changing roles to NASNAV_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
+	@Test
+	public void updateToNasnavAdminByStoreEmployeeTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"NASNAV_ADMIN\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "456", "71");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertFalse(response.getBody().isSuccess());
+		Assert.assertEquals(401, response.getStatusCode().value());
+	}
+
+	@Test
+	public void updateToOrganizationAdminByStoreEmployeeTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_ADMIN\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "456", "71");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertFalse(response.getBody().isSuccess());
+		Assert.assertEquals(401, response.getStatusCode().value());
+	}
+
+	@Test
+	public void updateToOrganizationEmployeeByStoreEmployeeTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_EMPLOYEE\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "456", "71");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertFalse(response.getBody().isSuccess());
+		Assert.assertEquals(401, response.getStatusCode().value());
+	}
+
+	@Test
+	public void updateToStoreEmployeeByStoreEmployeeTest() {
+		String body = "{\"updated_user_id\":\"158\",\"role\":\"STORE_EMPLOYEE\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "456", "71");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+
+		Assert.assertFalse(response.getBody().isSuccess());
+		Assert.assertEquals(401, response.getStatusCode().value());
+	}
+	//finish STORE_EMPLOYEE role test
 }

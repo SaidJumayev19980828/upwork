@@ -104,25 +104,24 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.UNAUTHENTICATED)), HttpStatus.NOT_ACCEPTABLE);
 		}
 		int userType = helper.roleCanCreateUser(userId); //check user privileges
-		// check if same user doing the update
-		if (EntityUtils.isBlankOrNull(employeeUserJson.updated_user_id)) {
+		if (userType == -1) { // can't update employees
+			throw new EntityValidationException(""+ResponseStatus.INSUFFICIENT_RIGHTS,
+					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
+		}
+		currentUser = employeeUserRepository.getById(userId);
+		if (EntityUtils.isBlankOrNull(employeeUserJson.updated_user_id)) {// check if same user doing the update
 			updateUser = employeeUserRepository.getById(userId);
 		} else {
 			updateUser = employeeUserRepository.getById(employeeUserJson.updated_user_id.intValue());
-			currentUser =employeeUserRepository.getById(userId);
-			if (userType != -1) { // can update employees
-				if (userType == 2) { // can update employees within the same organization
-					if (!updateUser.getOrganizationId().equals(currentUser.getOrganizationId())) { //not the same organization
-						throw new EntityValidationException("Error Occurred during user update:: " + ResponseStatus.INSUFFICIENT_RIGHTS,
-								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
-					}
-				} else if (userType == 3) {
-					if (!updateUser.getShopId().equals(currentUser.getShopId())) { //not the same Store
-						throw new EntityValidationException("Error Occurred during user update:: " + ResponseStatus.INSUFFICIENT_RIGHTS,
-								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
-					}
-				}
-			}
+		}
+		if ((userType == 2) && (!updateUser.getOrganizationId().equals(currentUser.getOrganizationId()))) {
+			// can update employees within the same organization and they are not in the same organization
+			throw new EntityValidationException("Not in the same Organization " + ResponseStatus.INSUFFICIENT_RIGHTS,
+					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
+		} else if ((userType == 3) && (!updateUser.getShopId().equals(currentUser.getShopId()))) {
+			// can update employees within the same Store and they are not in the same Store
+			throw new EntityValidationException("Not in the same Store " + ResponseStatus.INSUFFICIENT_RIGHTS,
+					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
 		}
 		// parse Json to EmployeeUserEntity
 		EmployeeUserEntity employeeUserEntity = helper.updateEmployeeUser(userType, updateUser, employeeUserJson);
