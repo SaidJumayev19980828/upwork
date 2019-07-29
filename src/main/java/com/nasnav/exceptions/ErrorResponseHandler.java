@@ -1,7 +1,18 @@
 package com.nasnav.exceptions;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,178 +49,288 @@ import lombok.extern.slf4j.Slf4j;
 @RestControllerAdvice
 @Slf4j
 public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
+	
+	
 
 	private final Logger exceptionLogger = LoggerFactory.getLogger(ErrorResponseHandler.class.getName());
 
 	@ExceptionHandler(BusinessException.class)
 	@ResponseBody
-	public ResponseEntity<ErrorResponseDTO> handleBusinessException(BusinessException e, WebRequest request) {
+	public ResponseEntity<ErrorResponseDTO> handleBusinessException(BusinessException e, WebRequest requestInfo , HttpServletRequest request) {
+		logException(requestInfo, request , e);
+		
 		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getErrorMessage(), e.getErrorCode());
 
 		return new ResponseEntity<>(errorResponseDTO,
 				e.getHttpStatus() != null ? e.getHttpStatus() : HttpStatus.INTERNAL_SERVER_ERROR);
 	}
+	
+	
+	
+	
 
 	@ExceptionHandler(Exception.class)
 	@ResponseBody
-	public ResponseEntity<ErrorResponseDTO> handleGeneralException(Exception e, WebRequest request) {
+	public ResponseEntity<ErrorResponseDTO> handleGeneralException(Exception e, WebRequest requestInfo, HttpServletRequest request) {
+		logException(requestInfo, request , e);
 
 		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage());
 
 		return new ResponseEntity<>(errorResponseDTO, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
+	
+	
+	
 
 	@ExceptionHandler(Throwable.class)
 	@ResponseBody
-	public ResponseEntity<ErrorResponseDTO> handleThrowable(Throwable e, WebRequest request) {
+	public ResponseEntity<ErrorResponseDTO> handleThrowable(Throwable e, WebRequest requestInfo ,HttpServletRequest request) {
+		logException(requestInfo, request , e);
 
 		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage());
 
 		return new ResponseEntity<>(errorResponseDTO, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
+	
+	
+	
 
 	/**
 	 * Handle EntityValidationException exception
 	 *
 	 * @param ex      EntityValidationException to be handled
-	 * @param request WebRequest that result in that EntityValidationException
+	 * @param requestInfo WebRequest that result in that EntityValidationException
 	 * @return UserApiResponse object to the requester
 	 */
 	@ExceptionHandler(EntityValidationException.class)
 	public final ResponseEntity<UserApiResponse> handleValidationException(EntityValidationException ex,
-			WebRequest request) {
-		logException(request, ex);
+			WebRequest requestInfo , HttpServletRequest request) {
+		logException(requestInfo, request , ex);
 		return new ResponseEntity<UserApiResponse>(ex.getUserApiResponse(), ex.getHttpStatus());
 	}
+	
+	
+	
+	
+	/**
+	 * Log failed request with exception details
+	 *
+	 * @param requestInfo WebRequest that result in that Exception
+	 * @param ex      Exception to be handled
+	 */
+	private void logException(WebRequest requestInfo, HttpServletRequest request, Throwable ex) {
+		StringBuilder msg = new StringBuilder( );
+		
+		Map<String, String> paramMap = readParametersMap(requestInfo);								
+		
+		msg.append(" Exception: Unable to process this request :  ")
+			.append(requestInfo.getDescription(false))
+			.append("\nWith Parameters: ")
+			.append(paramMap);
+		
+		//This will not work, unless we are using ContentCachingRequestWrapper as 
+		//HTTPServletRequest implementation.
+		//Because the HTTPServletRequest.getInputStream() returns the request payload, and the
+		//stream is closed after being called once.
+		//only ContentCachingRequestWrapper caches the payload into it, and it can be called using
+		//ContentCachingRequestWrapper.getBody()
+		
+//		if(request != null ){
+//			try(InputStream in = request) {
+//				msg.append("\n>> Request Body : ");
+//				msg.append(readAsString(in));			
+//			} catch (IOException e) {			
+//				msg.append(" <ERROR> FAILED TO READ REQUEST BODY DUE TO EXCEPTION : ")
+//					.append(e.getMessage());
+//				
+//				exceptionLogger.error(e.getMessage() ,e);
+//			}
+//		}
+						
+		
+		exceptionLogger.error(msg.toString() , ex);
+	}
+
+
+
+
+
+	private Map<String, String> readParametersMap(WebRequest requestInfo) {
+		return requestInfo.getParameterMap().entrySet().stream()
+				.map(this::getRequstParamAsStr)
+				.collect(Collectors.toMap(Entry<String, String>::getKey, Entry<String, String>::getValue));
+	}
+
+
+
+
+
+	private Entry<String, String> getRequstParamAsStr(Entry<String, String[]> e) {
+		return new AbstractMap.SimpleEntry<String, String>(e.getKey(), Arrays.toString(e.getValue()));
+	}
+	
+	
 
 	/**
 	 * Log failed request with exception details
 	 *
-	 * @param request WebRequest that result in that Exception
+	 * @param requestInfo WebRequest that result in that Exception
 	 * @param ex      Exception to be handled
 	 */
-	private void logException(WebRequest request, Exception ex) {
-		exceptionLogger.error(" Exception: Unable to process this request :  " + request.getDescription(false), ex);
+	private void logException(WebRequest requestInfo, Throwable ex) {
+		logException(requestInfo, null, ex);
 	}
+	
+	
+	
 
 	@Override
 	protected ResponseEntity<Object> handleHttpMediaTypeNotAcceptable(HttpMediaTypeNotAcceptableException e,
-			HttpHeaders headers, HttpStatus status, WebRequest request) {
-
-		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.name(),
-				HttpStatus.BAD_REQUEST.name());
-
-		return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
+			HttpHeaders headers, HttpStatus status, WebRequest requestInfo) {
+		logException(requestInfo, e);
+		
+		return createBadRequestHttpResponse(e);
 	}
-
+	
+	
+	
+	
 	@Override
 	protected ResponseEntity<Object> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException e,
-			HttpHeaders headers, HttpStatus status, WebRequest request) {
-
+			HttpHeaders headers, HttpStatus status, WebRequest requestInfo) {
+		logException(requestInfo, e);
+		
 		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage(),
 				HttpStatus.UNSUPPORTED_MEDIA_TYPE.name(), HttpStatus.UNSUPPORTED_MEDIA_TYPE.name());
 
 		return new ResponseEntity<>(errorResponseDTO, HttpStatus.UNSUPPORTED_MEDIA_TYPE);
 	}
+	
+	
+	
 
 	@Override
 	protected ResponseEntity<Object> handleConversionNotSupported(ConversionNotSupportedException e,
-			HttpHeaders headers, HttpStatus status, WebRequest request) {
-
-		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.name(),
-				HttpStatus.BAD_REQUEST.name());
-
-		return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
+			HttpHeaders headers, HttpStatus status, WebRequest requestInfo) {
+		logException(requestInfo, e);
+		
+		return createBadRequestHttpResponse(e);
 	}
+	
+	
+	
 
 	@Override
 	protected ResponseEntity<Object> handleMissingPathVariable(MissingPathVariableException e, HttpHeaders headers,
-			HttpStatus status, WebRequest request) {
-		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.name(),
-				HttpStatus.BAD_REQUEST.name());
-
-		return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
+			HttpStatus status, WebRequest requestInfo) {
+		logException(requestInfo, e);
+		
+		return createBadRequestHttpResponse(e);		
 	}
+	
+	
+	
 
 	@Override
 	protected ResponseEntity<Object> handleMissingServletRequestPart(MissingServletRequestPartException e,
-			HttpHeaders headers, HttpStatus status, WebRequest request) {
-		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.name(),
-				HttpStatus.BAD_REQUEST.name());
-
-		return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
+			HttpHeaders headers, HttpStatus status, WebRequest requestInfo) {
+		logException(requestInfo, e);
+		
+		return createBadRequestHttpResponse(e);	
 	}
+	
+	
+	
 
 	@Override
 	protected ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException e, HttpHeaders headers,
 
-			HttpStatus status, WebRequest request) {
-		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.name(),
-				HttpStatus.BAD_REQUEST.name());
-
-		return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
+			HttpStatus status, WebRequest requestInfo) {
+		logException(requestInfo, e);
+		
+		return createBadRequestHttpResponse(e);
 	}
+	
+	
+	
+	
 
 	@Override
 	protected ResponseEntity<Object> handleServletRequestBindingException(ServletRequestBindingException e,
-			HttpHeaders headers, HttpStatus status, WebRequest request) {
-
-		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.name(),
-				HttpStatus.BAD_REQUEST.name());
-
-		return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
+			HttpHeaders headers, HttpStatus status, WebRequest requestInfo) {
+		logException(requestInfo, e);
+		
+		return createBadRequestHttpResponse(e);
 	}
+	
+	
+	
 
 	@Override
 	protected ResponseEntity<Object> handleTypeMismatch(TypeMismatchException e, HttpHeaders headers, HttpStatus status,
-			WebRequest request) {
-		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.name(),
-				HttpStatus.BAD_REQUEST.name());
-
-		return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
+			WebRequest requestInfo) {
+		logException(requestInfo, e);
+		
+		return createBadRequestHttpResponse(e);
 	}
+	
+	
+	
 
 	@Override
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException e,
-			HttpHeaders headers, HttpStatus status, WebRequest request) {
+			HttpHeaders headers, HttpStatus status, WebRequest requestInfo) {
+		logException(requestInfo, e);
+		
 		StringBuilder stringBuilder = new StringBuilder();
 		for (org.springframework.validation.FieldError fieldError : e.getBindingResult().getFieldErrors()) {
 			stringBuilder.append(fieldError.getDefaultMessage()).append(", ");
 		}
 		stringBuilder.delete(stringBuilder.length() - 2, stringBuilder.length());
-
+		
 		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(stringBuilder.toString(),
 				HttpStatus.BAD_REQUEST.name(), HttpStatus.BAD_REQUEST.name());
 
 		return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
 
 	}
+	
+	
+	
+	
 
 	@Override
 	protected ResponseEntity<Object> handleMissingServletRequestParameter(MissingServletRequestParameterException e,
-			HttpHeaders headers, HttpStatus status, WebRequest request) {
-		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.name(),
-				HttpStatus.BAD_REQUEST.name());
-
-		return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
+			HttpHeaders headers, HttpStatus status, WebRequest requestInfo) {
+		logException(requestInfo, e);
+		
+		return createBadRequestHttpResponse(e);
 	}
+	
+	
+	
 
 	@Override
 	protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException e,
-			HttpHeaders headers, HttpStatus status, WebRequest request) {
-
+			HttpHeaders headers, HttpStatus status, WebRequest requestInfo) {
+		logException(requestInfo, e);
+		
 		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage(), HttpStatus.METHOD_NOT_ALLOWED.name(),
 				HttpStatus.METHOD_NOT_ALLOWED.name());
 
 		return new ResponseEntity<>(errorResponseDTO, HttpStatus.METHOD_NOT_ALLOWED);
 
 	}
+	
+	
+	
 
 	@Override
 	protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException e,
-			HttpHeaders headers, HttpStatus status, WebRequest request) {
-
-		if (((ServletWebRequest) request).getRequest().getServletPath().contains("/user")) {
+			HttpHeaders headers, HttpStatus status, WebRequest requestInfo) {
+		logException(requestInfo, e);
+		
+		if (((ServletWebRequest) requestInfo).getRequest().getServletPath().contains("/user")) {
 			List<ResponseStatus> respStatuses = new ArrayList<ResponseStatus>(1);
 			respStatuses.add(ResponseStatus.INVALID_PARAMETERS);
 
@@ -221,31 +342,77 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 
 		return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
 	}
+	
+	
+	
 
 	@Override
 	protected ResponseEntity<Object> handleBindException(BindException e, HttpHeaders headers, HttpStatus status,
-			WebRequest request) {
+			WebRequest requestInfo) {
+		logException(requestInfo, e);
+		
+		return createBadRequestHttpResponse(e);		
+	}
+	
+	
+	
+
+	@Override
+	protected ResponseEntity<Object> handleAsyncRequestTimeoutException(AsyncRequestTimeoutException ex,
+			HttpHeaders headers, HttpStatus status, WebRequest webRequest) {
+		logException(webRequest, ex);
+		return super.handleAsyncRequestTimeoutException(ex, headers, status, webRequest);
+	}
+	
+	
+	
+
+	@Override
+	protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
+			HttpStatus status, WebRequest requestInfo) {
+		logException(requestInfo, ex);
+		return super.handleExceptionInternal(ex, body, headers, status, requestInfo);
+	}
+	
+	
+	
+	
+
+	@Override
+	protected ResponseEntity<Object> handleHttpMessageNotWritable(HttpMessageNotWritableException ex,
+			HttpHeaders headers, HttpStatus status, WebRequest requestInfo) {
+		logException(requestInfo, ex);
+		
+		return super.handleHttpMessageNotWritable(ex, headers, status, requestInfo);
+	}
+	
+	
+	
+
+
+	private ResponseEntity<Object> createBadRequestHttpResponse(Exception e) {
 		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.name(),
 				HttpStatus.BAD_REQUEST.name());
 
 		return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
 	}
-
-	@Override
-	protected ResponseEntity<Object> handleAsyncRequestTimeoutException(AsyncRequestTimeoutException ex,
-			HttpHeaders headers, HttpStatus status, WebRequest webRequest) {
-		return super.handleAsyncRequestTimeoutException(ex, headers, status, webRequest);
-	}
-
-	@Override
-	protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
-			HttpStatus status, WebRequest request) {
-		return super.handleExceptionInternal(ex, body, headers, status, request);
-	}
-
-	@Override
-	protected ResponseEntity<Object> handleHttpMessageNotWritable(HttpMessageNotWritableException ex,
-			HttpHeaders headers, HttpStatus status, WebRequest request) {
-		return super.handleHttpMessageNotWritable(ex, headers, status, request);
+	
+	
+	
+	
+	private String readAsString(InputStream in) throws IOException {
+		if(in == null)
+			return "";
+		
+		String newLine = System.getProperty("line.separator");
+		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+		StringBuilder result = new StringBuilder();
+		
+		boolean flag = false;
+		for (String line; (line = reader.readLine()) != null; ) {
+		    result.append(flag? newLine: "").append(line);
+		    flag = true;
+		}
+		return result.toString();
 	}
 }
