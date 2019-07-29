@@ -356,8 +356,8 @@ public class UserServiceImpl implements UserService {
 	 */
 	private UserApiResponse createSuccessLoginResponse(UserEntity userEntity) {
 		return new ApiResponseBuilder().setSuccess(true).setEntityId(userEntity.getId())
-				.setToken(userEntity.getAuthenticationToken()).setRoles(getUserRoles()).setOrganizationId(0L)
-				.setStoreId(0L).build();
+				.setToken(userEntity.getAuthenticationToken()).setRoles(getUserRoles())
+				.setOrganizationId(userEntity.getOrganizationId()).build();
 	}
 
 	/**
@@ -370,7 +370,7 @@ public class UserServiceImpl implements UserService {
 		return Collections.singletonList(Roles.CUSTOMER.name());
 	}
 
-	public boolean checkAuthToken(long userId, String authToken) {
+	public boolean checkAuthToken(Integer userId, String authToken) {
 		return userRepository.existsByIdAndAuthenticationToken(userId, authToken);
 	}
 

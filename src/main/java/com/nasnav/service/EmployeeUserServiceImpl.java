@@ -10,7 +10,6 @@ import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.persistence.DefaultBusinessEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.EntityUtils;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import com.nasnav.response.ResponseStatus;
@@ -49,9 +48,9 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	@Override
 	public UserApiResponse createEmployeeUser(Integer userId, String userToken, UserDTOs.EmployeeUserCreationObject employeeUserJson) {
 		// check if user is authenticated
-		if (!employeeUserRepository.existsByAuthenticationToken(userToken)) {
-			throw new EntityValidationException("Insufficient Rights ",
-					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
+		if (!checkAuthToken(userId, userToken)){
+			throw new EntityValidationException("" + ResponseStatus.UNAUTHENTICATED,
+					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.UNAUTHENTICATED)), HttpStatus.UNAUTHORIZED);
 		}
 		List<String> rolesList = Arrays.asList(employeeUserJson.role.split(","));
 		helper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.org_id, rolesList);
@@ -84,8 +83,10 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 				EmployeeUserEntity employeeUserEntity = helper.createEmployeeUser(employeeUserJson);
 				// create Role and RoleEmployeeUser entities from the roles array
 				helper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.org_id);
+				employeeUserEntity = generateResetPasswordToken(employeeUserEntity);
+				sendRecoveryMail(employeeUserEntity);
 				return UserApiResponse.createStatusApiResponse(Integer.toUnsignedLong(employeeUserEntity.getId()),
-						Arrays.asList(ResponseStatus.NEED_ACTIVATION));
+						Arrays.asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
 			}
 			throw new EntityValidationException("Insufficient Rights ",
 					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
@@ -98,6 +99,10 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	@Override
 	public UserApiResponse updateEmployeeUser(Integer userId, String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
 		EmployeeUserEntity updateUser,currentUser;
+		if (!checkAuthToken(userId, userToken)){
+			throw new EntityValidationException("" + ResponseStatus.UNAUTHENTICATED,
+					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.UNAUTHENTICATED)), HttpStatus.NOT_ACCEPTABLE);
+		}
 		int userType = helper.roleCanCreateUser(userId); //check user privileges
 		// check if same user doing the update
 		if (EntityUtils.isBlankOrNull(employeeUserJson.updated_user_id)) {
@@ -192,9 +197,8 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 	@Override
-	public boolean checkAuthToken(long userId, String authToken) {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean checkAuthToken(Integer userId, String authToken) {
+		return employeeUserRepository.existsByIdAndAuthenticationToken(userId, authToken);
 	}
 
 	/**

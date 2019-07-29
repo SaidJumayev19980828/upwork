@@ -15,7 +15,6 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
      * @return true if authenticationToken already exists
      */
     boolean existsByAuthenticationToken(String authenticationToken);
-
     /**
      * Find the user by email and orgId.
      *
@@ -50,6 +49,8 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	EmployeeUserEntity getByAuthenticationToken(String authToken);
 
 	EmployeeUserEntity getById(Integer id);
+
+	boolean existsByIdAndAuthenticationToken(Integer userId, String authenticationToken);
 }
 
 
