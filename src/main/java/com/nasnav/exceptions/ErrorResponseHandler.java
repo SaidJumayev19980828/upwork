@@ -40,6 +40,7 @@ import org.springframework.web.context.request.async.AsyncRequestTimeoutExceptio
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
@@ -64,21 +65,6 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 		return new ResponseEntity<>(errorResponseDTO,
 				e.getHttpStatus() != null ? e.getHttpStatus() : HttpStatus.INTERNAL_SERVER_ERROR);
 	}
-	
-	
-	
-	
-
-	@ExceptionHandler(Exception.class)
-	@ResponseBody
-	public ResponseEntity<ErrorResponseDTO> handleGeneralException(Exception e, WebRequest requestInfo, HttpServletRequest request) {
-		logException(requestInfo, request , e);
-
-		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage());
-
-		return new ResponseEntity<>(errorResponseDTO, HttpStatus.INTERNAL_SERVER_ERROR);
-	}
-	
 	
 	
 
@@ -128,24 +114,17 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 			.append("\nWith Parameters: ")
 			.append(paramMap);
 		
-		//This will not work, unless we are using ContentCachingRequestWrapper as 
-		//HTTPServletRequest implementation.
-		//Because the HTTPServletRequest.getInputStream() returns the request payload, and the
-		//stream is closed after being called once.
-		//only ContentCachingRequestWrapper caches the payload into it, and it can be called using
-		//ContentCachingRequestWrapper.getBody()
 		
-//		if(request != null ){
-//			try(InputStream in = request) {
-//				msg.append("\n>> Request Body : ");
-//				msg.append(readAsString(in));			
-//			} catch (IOException e) {			
-//				msg.append(" <ERROR> FAILED TO READ REQUEST BODY DUE TO EXCEPTION : ")
-//					.append(e.getMessage());
-//				
-//				exceptionLogger.error(e.getMessage() ,e);
-//			}
-//		}
+		//This will work only if we add RequestBodyCachingFilter to the request filters, which
+		//wraps the request as ContentCachingRequestWrapper.
+		//for more info refer to RequestBodyCachingFilter javadoc
+		if(request != null && request instanceof ContentCachingRequestWrapper){	
+			ContentCachingRequestWrapper req = (ContentCachingRequestWrapper)request;
+			String requestBody = new String( req.getContentAsByteArray());
+			
+			msg.append("\n>> Request Body: ");
+			msg.append(requestBody);
+		}
 						
 		
 		exceptionLogger.error(msg.toString() , ex);
@@ -395,24 +374,5 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 				HttpStatus.BAD_REQUEST.name());
 
 		return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
-	}
-	
-	
-	
-	
-	private String readAsString(InputStream in) throws IOException {
-		if(in == null)
-			return "";
-		
-		String newLine = System.getProperty("line.separator");
-		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-		StringBuilder result = new StringBuilder();
-		
-		boolean flag = false;
-		for (String line; (line = reader.readLine()) != null; ) {
-		    result.append(flag? newLine: "").append(line);
-		    flag = true;
-		}
-		return result.toString();
 	}
 }
