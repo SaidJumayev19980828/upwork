@@ -5,18 +5,7 @@ import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.util.Date;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import com.nasnav.controller.QnbPaymentController;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.persistence.BasketsEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.StocksEntity;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,19 +22,26 @@ import com.gargoylesoftware.htmlunit.CookieManager;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebWindow;
-import com.gargoylesoftware.htmlunit.WebWindowEvent;
-import com.gargoylesoftware.htmlunit.WebWindowListener;
-import com.gargoylesoftware.htmlunit.html.HtmlButtonInput;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.nasnav.NavBox;
+import com.nasnav.controller.QnbPaymentController;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.OrderRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.StockRepository;
 import com.nasnav.payments.qnb.PaymentService;
+import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.StocksEntity;
+
+import net.jcip.annotations.NotThreadSafe;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-@PropertySource("classpath:sample.database.properties")
+@PropertySource("classpath:database.properties")
+@NotThreadSafe
 public class PaymentControllerTest {
 
 	@Mock

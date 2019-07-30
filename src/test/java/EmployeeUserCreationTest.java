@@ -1,16 +1,12 @@
-import com.nasnav.AppConfig;
-import com.nasnav.NavBox;
-import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.controller.UserController;
-import com.nasnav.dao.*;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.Role;
-import com.nasnav.persistence.RoleEmployeeUser;
-import com.nasnav.response.ResponseStatus;
-import com.nasnav.response.UserApiResponse;
-import com.nasnav.service.EmployeeUserService;
-import org.junit.*;
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,21 +16,36 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.List;
+import com.nasnav.AppConfig;
+import com.nasnav.NavBox;
+import com.nasnav.constatnts.EntityConstants;
+import com.nasnav.controller.UserController;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.RoleEmployeeUserRepository;
+import com.nasnav.dao.RoleRepository;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.response.ResponseStatus;
+import com.nasnav.response.UserApiResponse;
+import com.nasnav.service.EmployeeUserService;
+
+import net.jcip.annotations.NotThreadSafe;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
+@NotThreadSafe 
 @PropertySource("classpath:database.properties")
 public class EmployeeUserCreationTest {
 
@@ -245,20 +256,21 @@ public class EmployeeUserCreationTest {
 	@Test
 	public void employeeUserLoginNeedsActivationTest() {
 		// create employee user with an email
-		String userBody = "{\"name\":\"Ahmed\", \"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 801, \"store_id\": 100, \"role\": \"NASNAV_ADMIN\"}";
+		String userBody = "{\"name\":\"Ahmed\", \"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 801, \"store_id\": 100, \"role\": \"ORGANIZATION_EMPLOYEE\"}";
 		String loginBody = "{\"email\":\"" + TestCommons.TestUserEmail + "\", \"password\": \"" + EntityConstants.INITIAL_PASSWORD + "\", \"org_id\": 801, \"employee\": true}";
 		//create a new employee user
 		HttpEntity<Object> employeeUserJson = getHttpEntity(userBody, "abcdefg", "68");
 		HttpEntity<Object> employeeUserLoginJson = getHttpEntity(loginBody, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
 		Long id = response.getBody().getEntityId();
+		
 		// try to login with this user email before activation
-		response = template.postForEntity(
+		ResponseEntity<UserApiResponse> loginResponse = template.postForEntity(
 				"/user/login", employeeUserLoginJson, UserApiResponse.class);
 
-		Assert.assertFalse(response.getBody().isSuccess());
-		Assert.assertEquals(HttpStatus.LOCKED.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.NEED_ACTIVATION));
+		Assert.assertFalse(loginResponse.getBody().isSuccess());
+		Assert.assertEquals(HttpStatus.LOCKED.value(), loginResponse.getStatusCode().value());
+		Assert.assertEquals(true, loginResponse.getBody().getResponseStatuses().contains(ResponseStatus.NEED_ACTIVATION));
 	}
 
 	@Test

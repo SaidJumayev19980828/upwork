@@ -1,16 +1,13 @@
-import com.nasnav.AppConfig;
-import com.nasnav.NavBox;
-import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.controller.UserController;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.UserRepository;
-import com.nasnav.exceptions.EntityValidationException;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.UserEntity;
-import com.nasnav.response.UserApiResponse;
-import com.nasnav.response.ResponseStatus;
-import com.nasnav.service.UserService;
-import org.junit.*;
+import java.time.LocalDateTime;
+import java.util.Date;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,20 +15,35 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.time.LocalDateTime;
-import java.util.Date;
+import com.nasnav.AppConfig;
+import com.nasnav.NavBox;
+import com.nasnav.constatnts.EntityConstants;
+import com.nasnav.controller.UserController;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.UserRepository;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.UserEntity;
+import com.nasnav.response.ResponseStatus;
+import com.nasnav.response.UserApiResponse;
+import com.nasnav.service.UserService;
+
+import net.jcip.annotations.NotThreadSafe;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
+@NotThreadSafe
 public class UserRegisterTest {
 
 	private MockMvc mockMvc;
