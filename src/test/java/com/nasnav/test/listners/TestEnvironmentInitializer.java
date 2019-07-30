@@ -27,8 +27,7 @@ import org.springframework.test.context.jdbc.Sql;
 public class TestEnvironmentInitializer extends RunListener {
 	
 	private final String PROPERTIES_FILE_PATH = "database.properties";
-	private final String CLEAR_DB_SCRIPT = "sql/clear-tables-postgres.sql";
-	
+
 	private Logger logger = Logger.getLogger(getClass());
      
 	 @Override	 
@@ -54,7 +53,7 @@ public class TestEnvironmentInitializer extends RunListener {
 	private void clearDB() {
 		logger.info(">>> Clear Test Database start ...");
 		 try {
-			 truncateTestDbTables();
+//			 truncateTestDbTables();
 		 }catch(Exception e) {
 			 logger.error(">>> Failed to Clear Test Database with error ..." ,e);
 		 }
@@ -62,28 +61,7 @@ public class TestEnvironmentInitializer extends RunListener {
 	     logger.info(">>> Clear Test Database finish ...");
 	}
 	 
-	 
-	 
-	 
-	 
-	 private void truncateTestDbTables() {
-		 Properties props = getConnectionProps();
-		 
-		 String url = props.getProperty("db.uri");
-		 String username = props.getProperty("db.user");
-		 String password = props.getProperty("db.password");
-		 
-		 
-		 String sql = readSqlFile(CLEAR_DB_SCRIPT);
-		 
-		 //jdbi is a library for simplifying running sql
-		 Jdbi jdbi = Jdbi.create(url, username, password);
-		 jdbi.withHandle(handle -> handle.execute(sql));
-	 }
-	 
-	 
-	 
-	 
+
 	private Properties getConnectionProps() {
 		Properties properties = new Properties();
 			

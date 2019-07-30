@@ -55,10 +55,10 @@ public class NavBoxTest {
     @Autowired
     private TestRestTemplate template;
 
-    @Value("classpath:sql/ExtraArrtibutes_Test_Data_Insert.sql")
+    @Value("classpath:sql/ExtraAttributes_Test_Data_Insert.sql")
     private Resource extraAttributesDataInsert;
 
-    @Value("classpath:sql/ExtraArrtibutes_Test_Data_Delete.sql")
+    @Value("classpath:sql/ExtraAttributes_Test_Data_Delete.sql")
     private Resource extraAttributesDataDelete;
 
     @Autowired
@@ -201,11 +201,11 @@ public class NavBoxTest {
         assertEquals("there are total 2 attributes",2 , json.length());
 
 
-        //// testing extra attributes with organization filter = 801 ////
-        response = template.getForEntity("/navbox/attributes?org_id=801", String.class);
+        //// testing extra attributes with organization filter = 99001 ////
+        response = template.getForEntity("/navbox/attributes?org_id=99001", String.class);
         System.out.println(response.getBody());
         json = (JSONArray) JSONParser.parseJSON(response.getBody());
-        assertEquals("there are total 1 attributes with organization = 801",1 , json.length());
+        assertEquals("there are total 1 attributes with organization = 99001",1 , json.length());
 
 
         //// testing extra attributes with false organization filter ////

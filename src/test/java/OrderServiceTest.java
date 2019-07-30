@@ -105,7 +105,6 @@ public class OrderServiceTest {
 	@Autowired
 	private DataSource datasource;
 
-	@PostConstruct
 	@Before
 	public void setupLoginUser() {
 		//create new organization
