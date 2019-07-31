@@ -16,7 +16,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.jdbc.Sql;
 
 /**
- * A Junit test listner that clears the whole testing database before running any tests.
+ * A Junit test listner that clears the  testing data before running any tests.
  * We do this to ensure a determinitic results for running the tests, as some tests doesn't clean
  * up the data it used before, and any existing data can make conflicts with the test data and cause
  * unexpected results. 
@@ -27,6 +27,7 @@ import org.springframework.test.context.jdbc.Sql;
 public class TestEnvironmentInitializer extends RunListener {
 	
 	private final String PROPERTIES_FILE_PATH = "database.properties";
+	private final String CLEAN_DB_SCRIPT = "/sql/database_cleanup.sql";
 
 	private Logger logger = Logger.getLogger(getClass());
      
@@ -53,13 +54,32 @@ public class TestEnvironmentInitializer extends RunListener {
 	private void clearDB() {
 		logger.info(">>> Clear Test Database start ...");
 		 try {
-//			 truncateTestDbTables();
+			 cleanTestingData();
 		 }catch(Exception e) {
 			 logger.error(">>> Failed to Clear Test Database with error ..." ,e);
 		 }
 	     
 	     logger.info(">>> Clear Test Database finish ...");
 	}
+	
+	
+	
+	
+	private void cleanTestingData() {
+		 Properties props = getConnectionProps();
+		 
+		 String url = props.getProperty("db.uri");
+		 String username = props.getProperty("db.user");
+		 String password = props.getProperty("db.password");
+		 
+		 
+		 String sql = readSqlFile(CLEAN_DB_SCRIPT);
+		 
+		 //jdbi is a library for simplifying running sql
+		 Jdbi jdbi = Jdbi.create(url, username, password);
+		 jdbi.withHandle(handle -> handle.execute(sql));
+	 }
+	
 	 
 
 	private Properties getConnectionProps() {

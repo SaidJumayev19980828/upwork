@@ -108,7 +108,7 @@ public class OrderServiceTest {
 	@Before
 	public void setupLoginUser() {
 		//create new organization
-		organization = organizationRepository.findOneById(239541L);
+		organization = organizationRepository.findOneById(99009L);
 		if (organization == null) {
 			organization = new OrganizationEntity();
 			organization.setName("Test Organization");

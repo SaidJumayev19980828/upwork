@@ -21,6 +21,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -44,6 +47,8 @@ import net.jcip.annotations.NotThreadSafe;
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
 @NotThreadSafe
+@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/UserRegisterTest.sql"})
+@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 public class UserRegisterTest {
 
 	private MockMvc mockMvc;
@@ -68,54 +73,74 @@ public class UserRegisterTest {
 	@Autowired
 	private OrganizationRepository organizationRepository;
 
+	
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@Before
 	public void setup() {
 		config.mailDryRun = true;
 		mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
-		cleanup();
 	}
 
-	@After
-	public void cleanup() {
-		UserEntity user = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", (long)15);
-		if (user != null) {
-			userRepository.delete(user);
-		}
-	}
 
-	@PostConstruct
+	
+	
+	@Before
 	public void setupLoginUser() {
 		if (organization == null) {
-			organization = createOrganization();
+			organization = organizationRepository.findOneById(99001L);
 		}
 
 		persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", organization.getId());
 		if (persistentUser == null) {
-			persistentUser = new UserEntity();
-			persistentUser.setName("John Smith");
-			persistentUser.setEmail("unavailable@nasnav.com");
-			persistentUser.setCreatedAt(LocalDateTime.now());
-			persistentUser.setUpdatedAt(LocalDateTime.now());
-
-			//create a new organization and save its id to the user entity
-			persistentUser.setOrganizationId(organization.getId());
-		}
-		persistentUser.setEncPassword("---");
-		userRepository.save(persistentUser);
+			persistentUser = createUser();
+			persistentUser = userRepository.save(persistentUser);
+		}		
+		
 	}
 
+
+
+
+	private UserEntity createUser() {
+		UserEntity persistentUser = new UserEntity();
+		persistentUser.setName("John Smith");
+		persistentUser.setEmail("unavailable@nasnav.com");
+		persistentUser.setCreatedAt(LocalDateTime.now());
+		persistentUser.setUpdatedAt(LocalDateTime.now());
+		persistentUser.setEncPassword("---");
+		persistentUser.setOrganizationId(organization.getId());
+		
+		return persistentUser;
+	}
+	
+	
+
 	private OrganizationEntity createOrganization() {
-		//create new organization
 		OrganizationEntity org = new OrganizationEntity();
+		org.setId(getNewDummyOrgId());
 		org.setName("Test Organization");
 		org.setCreatedAt(new Date());
 		org.setUpdatedAt(new Date());
-		org.setDescription("Test Organization Description");
+		org.setDescription("Test Organization Description");		
 
 		OrganizationEntity organization = organizationRepository.saveAndFlush(org);
 		return organization;
 	}
+	
+	
+	/**
+	 * Dummy organizations that we can use in tests have id's between 99000 and 99999
+	 * */
+	private Long getNewDummyOrgId() {
+		String sql = "SELECT MAX(ID) + 1 FROM PUBLIC.ORGANIZATIONS WHERE ID BETWEEN 99000 AND 99999";
+		Long newId = jdbcTemplate.queryForObject(sql, Long.class);
+		return newId != null? newId : 99000L;
+	}
+
+
+
 
 	@PreDestroy
 	public void removeLoginUser() {
@@ -235,26 +260,13 @@ public class UserRegisterTest {
 		Assert.assertEquals(406, response.getStatusCode().value());
 	}
 
-	/*
-	 * @Test public void testSendResetPasswordTokenEmail() { HttpEntity<Object>
-	 * userJson = getHttpEntity( "{\"name\":\"" + persistentUser.getName() + "\"," +
-	 * "\"email\":\"" + persistentUser.getEmail() + "\"}");
-	 * ResponseEntity<UserApiResponse> response = template.postForEntity(
-	 * "/user/register", userJson, UserApiResponse.class);
-	 * 
-	 * long userId = response.getBody().getEntityId(); response =
-	 * getResponseFromGet("/user/recover?email=" + persistentUser.getEmail(),
-	 * UserApiResponse.class); //Delete this user
-	 * Assert.assertTrue(response.getBody().isSuccess());
-	 * Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
-	 * }
-	 */
+	
 
 	@Test
 	public void testSendResetPasswordTokenForInvalidMail() {
 
 		ResponseEntity<UserApiResponse> response = getResponseFromGet("/user/recover?email=foo" + "&org_id=" + organization.getId(), UserApiResponse.class);
-System.out.println("###############" + response.getBody().getMessages());
+		System.out.println("###############" + response.getBody().getMessages());
 		Assert.assertTrue(response.getBody().getMessages().contains(ResponseStatus.INVALID_EMAIL.name()));
 		Assert.assertFalse(response.getBody().isSuccess());
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
