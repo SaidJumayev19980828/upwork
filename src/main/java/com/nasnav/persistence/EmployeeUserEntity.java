@@ -1,7 +1,6 @@
 package com.nasnav.persistence;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -15,13 +14,19 @@ import org.hibernate.annotations.Type;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dto.UserDTOs;
 
-import java.time.LocalDateTime;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Data
 @Entity
 @Table(name = "employee_users")
 @EqualsAndHashCode(callSuper=false)
+@NoArgsConstructor
 public class EmployeeUserEntity extends BaseUserEntity {
+	
+	@Column(name = "name")
+	private String name;
 	
     @Column(name = "job_title")
     private String jobTitle;
@@ -53,9 +58,19 @@ public class EmployeeUserEntity extends BaseUserEntity {
     @Column(name = "organization_manager_id")
     private Long organizationManagerId;
 
-    public EmployeeUserEntity() {
-        super();
-    }
+    
+    
+    
+    //TODO: this is a work around because the column type of employee_users.id is int4 which is not converted into Long
+    //by hibernate
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    @Type(type = "com.nasnav.persistence.mapping.customtypes.IntgerAsLongType")
+    private Long id;
+    
+
+    
     
     public static EmployeeUserEntity createEmployeeUser(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
         // parse Json to EmployeeUserEntity

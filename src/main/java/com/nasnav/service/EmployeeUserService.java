@@ -11,7 +11,7 @@ public interface EmployeeUserService extends CommonUserServiceInterface {
      * @param employeeUserJson json object containing email, password, name, org_id, store_id, role string
      * @return UserApiResponse object holding the employee user id
      */
-	public UserApiResponse createEmployeeUser(Integer userId, String userToken, UserDTOs.EmployeeUserCreationObject employeeUserJson);
+	public UserApiResponse createEmployeeUser(Long userId, String userToken, UserDTOs.EmployeeUserCreationObject employeeUserJson);
 
 	/**
 	 * update employee user on the system
@@ -19,5 +19,5 @@ public interface EmployeeUserService extends CommonUserServiceInterface {
 	 * @param employeeUserJson json object containing email, password, name, org_id, store_id, role string
 	 * @return UserApiResponse object holding the employee user id
 	 */
-	public UserApiResponse updateEmployeeUser(Integer userId, String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson);
+	public UserApiResponse updateEmployeeUser(Long userId, String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson);
 }

@@ -52,7 +52,7 @@ public class OrdersController {
             @RequestBody OrderJsonDto orderJson)
             		throws BusinessException {
     	OrderResponse response;
-    	if(userToken == null || !userService.checkAuthToken(userId.intValue(), userToken)) {
+    	if(userToken == null || !userService.checkAuthToken(userId, userToken)) {
     		response = new OrderResponse(OrderFailedStatus.UNAUTHENTICATED, HttpStatus.UNAUTHORIZED);
     	} else {
         	response = this.orderService.updateOrder(orderJson,userId);
@@ -71,8 +71,8 @@ public class OrdersController {
             @RequestHeader(name = "User-Token", required = true) String userToken,
             @RequestParam(name = "order_id") Long orderId){
     	OrderResponse response;
-System.out.println("id: " + userId + " token: " + userToken + " auth: " + userService.checkAuthToken(userId.intValue(), userToken));
-		if(userToken == null || !userService.checkAuthToken(userId.intValue(), userToken)) {
+System.out.println("id: " + userId + " token: " + userToken + " auth: " + userService.checkAuthToken(userId, userToken));
+		if(userToken == null || !userService.checkAuthToken(userId, userToken)) {
     		response = new OrderResponse(OrderFailedStatus.UNAUTHENTICATED, HttpStatus.UNAUTHORIZED);
     	} else {
 			response = this.orderService.getOrderInfo(orderId);
@@ -96,7 +96,7 @@ System.out.println("id: " + userId + " token: " + userToken + " auth: " + userSe
 										 @RequestParam(name = "store_id", required = false) Long storeId,
 										 @RequestParam(name = "status", required = false) String status) throws BusinessException {
 		List<OrderRepresentationObject> response = new ArrayList<>();
-		if(userToken == null || !userService.checkAuthToken(loggedUserId.intValue(), userToken)) {
+		if(userToken == null || !userService.checkAuthToken(loggedUserId, userToken)) {
 			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
 		} else if (userId != null || storeId != null) {
 			response = this.orderService.getOrdersList(userId, storeId, status);

@@ -1,5 +1,19 @@
 package com.nasnav.service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
@@ -7,19 +21,13 @@ import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.EntityValidationException;
+import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.DefaultBusinessEntity;
 import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.UserEntity;
-import com.nasnav.response.UserApiResponse;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.*;
+import com.nasnav.response.UserApiResponse;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -95,7 +103,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public DefaultBusinessEntity<?> update(DefaultBusinessEntity<?> userEntity) {
+	public BaseUserEntity update(BaseUserEntity userEntity) {
 		return userRepository.saveAndFlush((UserEntity) userEntity);
 	}
 
@@ -370,7 +378,8 @@ public class UserServiceImpl implements UserService {
 		return Collections.singletonList(Roles.CUSTOMER.name());
 	}
 
-	public boolean checkAuthToken(Integer userId, String authToken) {
+	@Override
+	public boolean checkAuthToken(Long userId, String authToken) {
 		return userRepository.existsByIdAndAuthenticationToken(userId, authToken);
 	}
 

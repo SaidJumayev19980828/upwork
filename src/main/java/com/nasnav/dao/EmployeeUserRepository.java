@@ -6,7 +6,7 @@ import com.nasnav.persistence.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 
-public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity, Integer> {
+public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity, Long> {
 
     /**
      * Check if the passed authenticationToken already exist before or not
@@ -48,9 +48,9 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	 */
 	EmployeeUserEntity getByAuthenticationToken(String authToken);
 
-	EmployeeUserEntity getById(Integer id);
+	EmployeeUserEntity getById(Long id);
 
-	boolean existsByIdAndAuthenticationToken(Integer userId, String authenticationToken);
+	boolean existsByIdAndAuthenticationToken(Long userId, String authenticationToken);
 }
 
 

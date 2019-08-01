@@ -17,5 +17,5 @@ public interface RoleEmployeeUserRepository extends JpaRepository<RoleEmployeeUs
     boolean existsByEmployeeUserIdAndRoleId(Integer employeeUserId, Integer roleId);
 
     @Transactional
-    void deleteByEmployeeUserId(Integer employeeUserId);
+    void deleteByEmployeeUserId(Long employeeUserId);
 }

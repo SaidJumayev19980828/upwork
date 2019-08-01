@@ -23,6 +23,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class UserEntity extends BaseUserEntity{
 	
+	@Column(name = "user_name")
+	private String name;
+	
     @Column(name="address")
     private String address;
 
@@ -31,6 +34,14 @@ public class UserEntity extends BaseUserEntity{
 
     @Column(name="city")
     private String addressCity;
+    
+    
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    Long id;
+
 
     
     public static UserEntity registerUser(UserDTOs.UserRegistrationObject userJson) {
