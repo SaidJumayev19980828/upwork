@@ -206,9 +206,9 @@ public class EmployeeUserServiceHelper {
 	 * @return employeeUserEntity
 	 */
 	public EmployeeUserEntity updatePostLogin(EmployeeUserEntity employeeUserEntity) {
-		LocalDateTime currentSignInDate = employeeUserEntity.getCurrentSignInAt();
-		employeeUserEntity.setLastSignInAt(currentSignInDate);
-		employeeUserEntity.setCurrentSignInAt(LocalDateTime.now());
+		LocalDateTime currentSignInDate = employeeUserEntity.getCurrentSignInDate();
+		employeeUserEntity.setLastSignInDate(currentSignInDate);
+		employeeUserEntity.setCurrentSignInDate(LocalDateTime.now());
 		employeeUserEntity.setAuthenticationToken(generateAuthenticationToken(EntityConstants.TOKEN_LENGTH));
 		return employeeUserRepository.saveAndFlush(employeeUserEntity);
 	}

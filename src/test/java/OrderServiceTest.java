@@ -126,7 +126,7 @@ public class OrderServiceTest {
 			persistentUser.setUpdatedAt(LocalDateTime.now());
 			persistentUser.setAuthenticationToken("2lzEscCTumJriRLz");
 			persistentUser.setOrganizationId(organization.getId());
-			persistentUser.setEncPassword("---");
+			persistentUser.setEncryptedPassword("---");
 			userRepository.save(persistentUser);
 		}
 	}

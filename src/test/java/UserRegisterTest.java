@@ -101,7 +101,7 @@ public class UserRegisterTest {
 			//create a new organization and save its id to the user entity
 			persistentUser.setOrganizationId(organization.getId());
 		}
-		persistentUser.setEncPassword("---");
+		persistentUser.setEncryptedPassword("---");
 		userRepository.save(persistentUser);
 	}
 
@@ -285,7 +285,7 @@ System.out.println("###############" + response.getBody().getMessages());
 
 		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId(), UserApiResponse.class);
 		// refresh the entity
-		persistentUser = userRepository.findById(persistentUser.getId()).get();
+		persistentUser = userRepository.findById((long)persistentUser.getId()).get();
 		String token = persistentUser.getResetPasswordToken();
 		Assert.assertNotEquals("ABCX", token);
 
@@ -330,7 +330,7 @@ System.out.println("###############" + response.getBody().getMessages());
 		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId(), UserApiResponse.class);
 
 		// refresh user
-		persistentUser = (UserEntity) userService.getUserById(persistentUser.getId());
+		persistentUser = (UserEntity) userService.getUserById((long)persistentUser.getId());
 		HttpEntity<Object> userJson = getHttpEntity(
 				"{\"token\":\"" + persistentUser.getResetPasswordToken() + "\"," + "\"password\":\"123\"}");
 
@@ -366,7 +366,7 @@ System.out.println("###############" + response.getBody().getMessages());
 		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId(), UserApiResponse.class);
 
 		// refresh the user entity
-		persistentUser = (UserEntity) userService.getUserById(persistentUser.getId());
+		persistentUser = (UserEntity) userService.getUserById((long)persistentUser.getId());
 		// use token to change password
 		String token = persistentUser.getResetPasswordToken();
 		HttpEntity<Object> userJson = getHttpEntity(

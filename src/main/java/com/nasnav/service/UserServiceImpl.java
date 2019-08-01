@@ -49,7 +49,7 @@ public class UserServiceImpl implements UserService {
 			// send activation email
 			userEntity = generateResetPasswordToken(userEntity);
 			sendRecoveryMail(userEntity);
-			UserApiResponse api = UserApiResponse.createStatusApiResponse(userEntity.getId(),
+			UserApiResponse api = UserApiResponse.createStatusApiResponse((long)userEntity.getId(),
 					Arrays.asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
 			api.setMessages(new ArrayList<>());
 			return api;
@@ -213,7 +213,7 @@ public class UserServiceImpl implements UserService {
 			checkResetPasswordTokenExpiry(userEntity);
 			userEntity.setResetPasswordToken(null);
 			userEntity.setResetPasswordSentAt(null);
-			userEntity.setEncPassword(passwordEncoder.encode(data.password));
+			userEntity.setEncryptedPassword(passwordEncoder.encode(data.password));
 			userRepository.saveAndFlush(userEntity);
 		} else {
 			throw new EntityValidationException("INVALID_TOKEN  ",
@@ -221,7 +221,7 @@ public class UserServiceImpl implements UserService {
 					HttpStatus.NOT_ACCEPTABLE);
 		}
 
-		return UserApiResponse.createStatusApiResponse(userEntity.getId(), null);
+		return UserApiResponse.createStatusApiResponse((long)userEntity.getId(), null);
 	}
 
 	private void validateNewPassword(String newPassword) {
@@ -261,7 +261,7 @@ public class UserServiceImpl implements UserService {
 				throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, HttpStatus.LOCKED);
 			}
 			// ensure that password matched
-			boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncPassword());
+			boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncryptedPassword());
 
 			if (passwordMatched) {
 				// check if account is locked
@@ -344,7 +344,7 @@ public class UserServiceImpl implements UserService {
 	 * @return true if current user entity's account needs activation.
 	 */
 	private boolean isUserNeedActivation(UserEntity userEntity) {
-		String encPassword = userEntity.getEncPassword();
+		String encPassword = userEntity.getEncryptedPassword();
 		return EntityUtils.isBlankOrNull(encPassword) || EntityConstants.INITIAL_PASSWORD.equals(encPassword);
 	}
 
@@ -355,7 +355,7 @@ public class UserServiceImpl implements UserService {
 	 * @return UserApiResponse
 	 */
 	private UserApiResponse createSuccessLoginResponse(UserEntity userEntity) {
-		return new ApiResponseBuilder().setSuccess(true).setEntityId(userEntity.getId())
+		return new ApiResponseBuilder().setSuccess(true).setEntityId((long)userEntity.getId())
 				.setToken(userEntity.getAuthenticationToken()).setRoles(getUserRoles())
 				.setOrganizationId(userEntity.getOrganizationId()).build();
 	}
