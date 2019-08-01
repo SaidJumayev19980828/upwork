@@ -9,7 +9,10 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import com.nasnav.dao.*;
 import com.nasnav.dto.OrderRepresentationObject;
+import com.nasnav.persistence.*;
+import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,17 +20,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
-import com.nasnav.persistence.BasketsEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.response.exception.OrderValidationException;
 
@@ -44,15 +41,24 @@ public class OrderServiceImpl implements OrderService {
 
 	private final StockServiceImpl stockService;
 
+	private final EmployeeUserRepository employeeUserRepository;
+
+	private final EmployeeUserServiceHelper employeeUserServiceHelper;
+	private final UserRepository userRepository;
+
 	private final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class.getName());
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
-							StockRepository stockRepository ,StockServiceImpl stockService) {
+							StockRepository stockRepository ,StockServiceImpl stockService, UserRepository userRepository,
+	                        EmployeeUserServiceHelper employeeUserServiceHelper, EmployeeUserRepository employeeUserRepository) {
 		this.ordersRepository = ordersRepository;
 		this.stockRepository = stockRepository;
 		this.basketRepository = basketRepository;
 		this.stockService = stockService;
+		this.userRepository = userRepository;
+		this.employeeUserServiceHelper = employeeUserServiceHelper;
+		this.employeeUserRepository = employeeUserRepository;
 	}
 
 	public OrderValue getOrderValue(OrdersEntity order) {
@@ -356,29 +362,75 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	@Override
-	public List<OrderRepresentationObject> getOrdersList(Long userId, Long storeId, String status){
-		List<OrdersEntity> ordersEntityList;
-		List<OrderRepresentationObject> ordersRep= new ArrayList<>();
-		Integer statusId;
+	public List<OrderRepresentationObject> getOrdersList(Long loggedUserId, String userToken, Long userId, Long storeId,
+														 Long orgId, String status){
+		List<OrdersEntity> ordersEntityList = new ArrayList<>();
+		List<OrderRepresentationObject> ordersRep = new ArrayList<>();
+		Integer statusId = -1;
 		if (status != null){
-			if ((OrderStatus.findEnum(status)) == null) {
-				return ordersRep;
+			if ((OrderStatus.findEnum(status)) != null) {
+				statusId = (OrderStatus.findEnum(status)).getValue();
 			}
-			statusId = (OrderStatus.findEnum(status)).getValue();
-			if (userId != null && storeId != null) {
-				ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatusAndUserId(storeId, statusId, userId);
-			} else if (userId != null) {
-				ordersEntityList = ordersRepository.findByUserIdAndStatus(userId, statusId);
-			} else {
-				ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatus(storeId, statusId);
+		}
+		List<String> employeeUserRoles = employeeUserServiceHelper.getEmployeeUserRoles(loggedUserId.intValue());
+		UserEntity user = userRepository.getByIdAndAuthenticationToken(loggedUserId, userToken);
+		if (user == null){ // EmployeeUser
+			EmployeeUserEntity employeeUser = employeeUserRepository.getByIdAndAuthenticationToken(loggedUserId.intValue(), userToken);
+			if (employeeUserRoles.contains("STORE_ADMIN") || employeeUserRoles.contains("STORE_MANAGER") || employeeUserRoles.contains("STORE_EMPLOYEE")){
+				storeId = employeeUser.getShopId();
+			} else if (employeeUserRoles.contains("ORGANIZATION_ADMIN") || employeeUserRoles.contains("ORGANIZATION_MANAGER") || employeeUserRoles.contains("ORGANIZATION_EMPLOYEE")) {
+				orgId = employeeUser.getOrganizationId();
 			}
-		} else {
-			if (userId != null && storeId != null) {
-				ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndUserId(storeId, userId);
-			} else if (userId != null) {
-				ordersEntityList = ordersRepository.findByUserId(userId);
+			if (statusId != -1){
+				if (orgId != null){
+					if (userId != null && storeId != null) {
+						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatusAndUserIdAndOrganizationEntityId(storeId, statusId, userId, orgId);
+					} else if (userId != null) {
+						ordersEntityList = ordersRepository.findByOrganizationEntityIdAndStatusAndUserId(orgId, statusId, userId);
+					} else if (storeId != null){
+						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatusAndOrganizationEntityId(storeId, statusId, orgId);
+					} else {
+						ordersEntityList = ordersRepository.findByOrganizationEntityIdAndStatus(orgId, statusId);
+					}
+				} else {
+					if (userId != null && storeId != null) {
+						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatusAndUserId(storeId, statusId, userId);
+					} else if (userId != null) {
+						ordersEntityList = ordersRepository.findByUserIdAndStatus(userId, statusId);
+					} else if (storeId != null){
+						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatus(storeId, statusId);
+					} else {
+						ordersEntityList = ordersRepository.findByStatus(statusId);
+					}
+				}
 			} else {
-				ordersEntityList = ordersRepository.findByshopsEntityId(storeId);
+				if (orgId != null){
+					if (userId != null && storeId != null) {
+						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndUserIdAndOrganizationEntityId(storeId, userId, orgId);
+					} else if (userId != null) {
+						ordersEntityList = ordersRepository.findByOrganizationEntityIdAndUserId(orgId, userId);
+					} else if (storeId != null){
+						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndOrganizationEntityId(storeId, orgId);
+					} else {
+						ordersEntityList = ordersRepository.findByOrganizationEntityId(orgId);
+					}
+				} else {
+					if (userId != null && storeId != null) {
+						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndUserId(storeId, userId);
+					} else if (userId != null) {
+						ordersEntityList = ordersRepository.findByUserId(userId);
+					} else if (storeId != null){
+						ordersEntityList = ordersRepository.findByshopsEntityId(storeId);
+					} else {
+						ordersEntityList = ordersRepository.findAll();
+					}
+				}
+			}
+		} else { // User
+			if (statusId != -1){
+				ordersEntityList = ordersRepository.findByUserIdAndStatus(loggedUserId, statusId);
+			} else {
+				ordersEntityList = ordersRepository.findByUserId(loggedUserId);
 			}
 		}
 		ordersRep = ordersEntityList.stream().map(order -> (OrderRepresentationObject) order.getRepresentation())

@@ -289,7 +289,7 @@ public class EmployeeUserServiceHelper {
 	 *
 	 * @return Role list
 	 */
-	private List<String> getEmployeeUserRoles(Integer integer) {
+	public List<String> getEmployeeUserRoles(Integer integer) {
 		List<String> employeeUserRoles = new ArrayList<>();
 		List<Role> rolesOfEmployeeUser = this.roleService.getRolesOfEmployeeUser(integer);
 		if (EntityUtils.isNotBlankOrNull(rolesOfEmployeeUser)) {

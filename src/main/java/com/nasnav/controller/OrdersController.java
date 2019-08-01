@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+import com.nasnav.service.EmployeeUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -35,7 +36,11 @@ public class OrdersController {
     @Autowired
     private OrderService orderService;
     
-    @Autowired UserService userService;
+    @Autowired
+	private UserService userService;
+
+	@Autowired
+	private EmployeeUserService employeeUserService;
 
     @ApiOperation(value = "Create or update an order", nickname = "orderUpdate", code = 201)
     @ApiResponses(value = {
@@ -86,7 +91,7 @@ System.out.println("id: " + userId + " token: " + userToken + " auth: " + userSe
 	@ApiOperation(value = "Get list of orders", nickname = "orderList", code = 200)
 	@ApiResponses(value = {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "returned orders list"),
-			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "UnAuthorized"),
 			//@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
 	})
 	@GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -94,13 +99,14 @@ System.out.println("id: " + userId + " token: " + userToken + " auth: " + userSe
 										 @RequestHeader(name = "User-Token", required = true) String userToken,
 										 @RequestParam(name = "user_id", required = false) Long userId,  //search parameter
 										 @RequestParam(name = "store_id", required = false) Long storeId,
+										 @RequestParam(name = "org_id", required = false) Long orgId,
 										 @RequestParam(name = "status", required = false) String status) throws BusinessException {
 		List<OrderRepresentationObject> response = new ArrayList<>();
-		if(userToken == null || !userService.checkAuthToken(loggedUserId.intValue(), userToken)) {
+		if(userToken == null ||
+				(!userService.checkAuthToken(loggedUserId.intValue(), userToken) && !employeeUserService.checkAuthToken(loggedUserId.intValue(), userToken))) {
 			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-		} else if (userId != null || storeId != null) {
-			response = this.orderService.getOrdersList(userId, storeId, status);
 		}
+		response = this.orderService.getOrdersList(loggedUserId, userToken, userId, storeId, orgId, status);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 }
