@@ -370,7 +370,7 @@ public class UserServiceImpl implements UserService {
 		return Collections.singletonList(Roles.CUSTOMER.name());
 	}
 
-	public boolean checkAuthToken(Integer userId, String authToken) {
+	public boolean checkAuthToken(Long userId, String authToken) {
 		return userRepository.existsByIdAndAuthenticationToken(userId, authToken);
 	}
 

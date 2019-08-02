@@ -46,7 +46,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	AppConfig appConfig;
 
 	@Override
-	public UserApiResponse createEmployeeUser(Integer userId, String userToken, UserDTOs.EmployeeUserCreationObject employeeUserJson) {
+	public UserApiResponse createEmployeeUser(Long userId, String userToken, UserDTOs.EmployeeUserCreationObject employeeUserJson) {
 		// check if user is authenticated
 		if (!checkAuthToken(userId, userToken)){
 			throw new EntityValidationException("" + ResponseStatus.UNAUTHENTICATED,
@@ -85,7 +85,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 				helper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.org_id);
 				employeeUserEntity = generateResetPasswordToken(employeeUserEntity);
 				sendRecoveryMail(employeeUserEntity);
-				return UserApiResponse.createStatusApiResponse(Integer.toUnsignedLong(employeeUserEntity.getId()),
+				return UserApiResponse.createStatusApiResponse(employeeUserEntity.getId(),
 						Arrays.asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
 			}
 			throw new EntityValidationException("Insufficient Rights ",
@@ -97,7 +97,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 	@Override
-	public UserApiResponse updateEmployeeUser(Integer userId, String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+	public UserApiResponse updateEmployeeUser(Long userId, String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
 		EmployeeUserEntity updateUser,currentUser;
 		if (!checkAuthToken(userId, userToken)){
 			throw new EntityValidationException("" + ResponseStatus.UNAUTHENTICATED,
@@ -112,7 +112,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		if (EntityUtils.isBlankOrNull(employeeUserJson.updated_user_id)) {// check if same user doing the update
 			updateUser = employeeUserRepository.getById(userId);
 		} else {
-			updateUser = employeeUserRepository.getById(employeeUserJson.updated_user_id.intValue());
+			updateUser = employeeUserRepository.getById(employeeUserJson.updated_user_id.longValue());
 		}
 		if ((userType == 2) && (!updateUser.getOrganizationId().equals(currentUser.getOrganizationId()))) {
 			// can update employees within the same organization and they are not in the same organization
@@ -196,7 +196,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 	@Override
-	public boolean checkAuthToken(Integer userId, String authToken) {
+	public boolean checkAuthToken(Long userId, String authToken) {
 		return employeeUserRepository.existsByIdAndAuthenticationToken(userId, authToken);
 	}
 

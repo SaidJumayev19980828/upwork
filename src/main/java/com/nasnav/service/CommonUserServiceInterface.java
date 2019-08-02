@@ -63,5 +63,5 @@ public interface CommonUserServiceInterface {
      * @param authToken token generated on log-in
      * @return true if user is authenticated (token is valid)
      */
-    boolean checkAuthToken(Integer userId, String authToken);
+    boolean checkAuthToken(Long userId, String authToken);
 }

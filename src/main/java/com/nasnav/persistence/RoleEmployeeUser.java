@@ -14,7 +14,7 @@ public class RoleEmployeeUser extends DefaultBusinessEntity<Integer> {
 
 
     @Column(name = "employee_user_id")
-    private Integer employeeUserId;
+    private Long employeeUserId;
 
     @Column(name = "role_id")
     private Integer roleId;

@@ -34,7 +34,7 @@ public class UserController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public UserApiResponse createEmployeeUser(@RequestHeader (value = "User-ID", required = true) Integer userId,
+    public UserApiResponse createEmployeeUser(@RequestHeader (value = "User-ID", required = true) Long userId,
                                               @RequestHeader (value = "User-Token", required = true) String userToken,
                                               @RequestBody UserDTOs.EmployeeUserCreationObject employeeUserJson) {
         return this.employeeUserService.createEmployeeUser(userId, userToken, employeeUserJson);
@@ -107,7 +107,7 @@ public class UserController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public UserApiResponse updateEmployeeUser(@RequestHeader (value = "User-ID", required = true) Integer userId,
+    public UserApiResponse updateEmployeeUser(@RequestHeader (value = "User-ID", required = true) Long userId,
                                               @RequestHeader (value = "User-Token", required = true) String userToken,
                                               @RequestBody UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
         return this.employeeUserService.updateEmployeeUser(userId, userToken, employeeUserJson);

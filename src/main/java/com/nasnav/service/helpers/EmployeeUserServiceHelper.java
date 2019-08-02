@@ -46,7 +46,7 @@ public class EmployeeUserServiceHelper {
 		this.roleService = roleService;
 	}
 
-	public void createRoles(List<String> rolesList, Integer employeeUserId, Long org_id) {
+	public void createRoles(List<String> rolesList, Long employeeUserId, Long org_id) {
 		List<Role> existingRoles = roleRepository.findAll();
 		List<String> existingRolesListNames = existingRoles.stream().map( role -> role.getName()).collect(Collectors.toList());
 		Integer roleId;
@@ -65,7 +65,7 @@ public class EmployeeUserServiceHelper {
 		}
 	}
 
-	private void createRoleEmployeeUser(Integer employeeUserId, Integer roleId) {
+	private void createRoleEmployeeUser(Long employeeUserId, Integer roleId) {
 		RoleEmployeeUser roleEmployeeUser = new RoleEmployeeUser();
 		roleEmployeeUser.setRoleId(roleId);
 		roleEmployeeUser.setEmployeeUserId(employeeUserId);
@@ -106,7 +106,7 @@ public class EmployeeUserServiceHelper {
 
 	// check if the current list of roles has a role authorized to create users or
 	// not
-	public Integer roleCanCreateUser(Integer id) {
+	public Integer roleCanCreateUser(Long id) {
 		// get list of roles belong to current user
 		List<Role> rolesList = roleRepository.getRolesOfEmployeeUser(id);
 		List<Roles> rolesListNames = rolesList.stream().map( role -> Roles.valueOf(role.getName())).collect(Collectors.toList());
@@ -289,7 +289,7 @@ public class EmployeeUserServiceHelper {
 	 *
 	 * @return Role list
 	 */
-	private List<String> getEmployeeUserRoles(Integer integer) {
+	private List<String> getEmployeeUserRoles(Long integer) {
 		List<String> employeeUserRoles = new ArrayList<>();
 		List<Role> rolesOfEmployeeUser = this.roleService.getRolesOfEmployeeUser(integer);
 		if (EntityUtils.isNotBlankOrNull(rolesOfEmployeeUser)) {

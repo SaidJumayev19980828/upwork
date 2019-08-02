@@ -15,7 +15,7 @@ public interface RoleRepository extends JpaRepository<Role, Integer> {
      * @return list or roles
      */
     @Query("from Role  role where role.id in (select empRole.roleId from  RoleEmployeeUser empRole where empRole.employeeUserId = :employeeUserId)")
-    List<Role> getRolesOfEmployeeUser(@Param("employeeUserId") Integer employeeUserId);
+    List<Role> getRolesOfEmployeeUser(@Param("employeeUserId") Long employeeUserId);
 
     // get all existing roles
     List<Role> findAll();

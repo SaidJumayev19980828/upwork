@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "employee_users")
 @EqualsAndHashCode(callSuper=false)
-public class EmployeeUserEntity extends DefaultBusinessEntity<Integer> {
+public class EmployeeUserEntity extends DefaultBusinessEntity<Long> {
 
     @Column(name = "name")
     private String name;
