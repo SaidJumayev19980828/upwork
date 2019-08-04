@@ -57,4 +57,8 @@ public abstract class BaseUserEntity extends DefaultBusinessEntity<Long>{
 	@Column(name = "sign_in_count")
 	private int signInCount;
 	
+	
+	abstract public String getName();
+	abstract public void setName(String name);
+	
 }

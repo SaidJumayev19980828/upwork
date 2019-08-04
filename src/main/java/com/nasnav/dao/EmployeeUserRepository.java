@@ -1,9 +1,10 @@
 package com.nasnav.dao;
 
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.UserEntity;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.nasnav.persistence.EmployeeUserEntity;
 
 
 public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity, Long> {
@@ -48,9 +49,13 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	 */
 	EmployeeUserEntity getByAuthenticationToken(String authToken);
 
+	Optional<EmployeeUserEntity> findByAuthenticationToken(String authToken);
+
 	EmployeeUserEntity getById(Long id);
 
 	boolean existsByIdAndAuthenticationToken(Long userId, String authenticationToken);
+	
+	
 }
 
 
