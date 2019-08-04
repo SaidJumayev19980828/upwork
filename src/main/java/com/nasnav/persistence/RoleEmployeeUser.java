@@ -1,15 +1,10 @@
 package com.nasnav.persistence;
 
-import java.time.LocalDateTime;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-
-import org.hibernate.annotations.Type;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -19,7 +14,6 @@ public class RoleEmployeeUser extends DefaultBusinessEntity<Integer> {
 
 
     @Column(name = "employee_user_id")
-    @Type(type = "com.nasnav.persistence.mapping.customtypes.IntgerAsLongType")
     private Long employeeUserId;
 
     @Column(name = "role_id")

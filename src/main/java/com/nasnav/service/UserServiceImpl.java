@@ -22,7 +22,6 @@ import com.nasnav.dto.UserDTOs;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.DefaultBusinessEntity;
 import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ApiResponseBuilder;
@@ -57,7 +56,7 @@ public class UserServiceImpl implements UserService {
 			// send activation email
 			userEntity = generateResetPasswordToken(userEntity);
 			sendRecoveryMail(userEntity);
-			UserApiResponse api = UserApiResponse.createStatusApiResponse((long)userEntity.getId(),
+			UserApiResponse api = UserApiResponse.createStatusApiResponse(userEntity.getId(),
 					Arrays.asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
 			api.setMessages(new ArrayList<>());
 			return api;
@@ -229,7 +228,7 @@ public class UserServiceImpl implements UserService {
 					HttpStatus.NOT_ACCEPTABLE);
 		}
 
-		return UserApiResponse.createStatusApiResponse((long)userEntity.getId(), null);
+		return UserApiResponse.createStatusApiResponse(userEntity.getId(), null);
 	}
 
 	private void validateNewPassword(String newPassword) {
@@ -363,7 +362,7 @@ public class UserServiceImpl implements UserService {
 	 * @return UserApiResponse
 	 */
 	private UserApiResponse createSuccessLoginResponse(UserEntity userEntity) {
-		return new ApiResponseBuilder().setSuccess(true).setEntityId((long)userEntity.getId())
+		return new ApiResponseBuilder().setSuccess(true).setEntityId(userEntity.getId())
 				.setToken(userEntity.getAuthenticationToken()).setRoles(getUserRoles())
 				.setOrganizationId(userEntity.getOrganizationId()).build();
 	}

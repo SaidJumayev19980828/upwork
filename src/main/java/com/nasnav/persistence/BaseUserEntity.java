@@ -14,7 +14,7 @@ import lombok.EqualsAndHashCode;
 @MappedSuperclass
 @Data
 @EqualsAndHashCode(callSuper=false)
-public abstract class BaseUserEntity {	
+public abstract class BaseUserEntity extends DefaultBusinessEntity<Long>{	
 
 	@Column(name = "created_at")
 	@CreationTimestamp
@@ -56,13 +56,5 @@ public abstract class BaseUserEntity {
 
 	@Column(name = "sign_in_count")
 	private int signInCount;
-	
-	
-	//TODO: this is a work around because the column type of employee_users.id is int4 which is not converted into Long
-    //by hibernate.
-	//So, we can't make id as a common property for all subclasses , instead we leave it to each subclass to implement
-	//its id property 
-	abstract Long getId();
-	abstract void setId(Long id);
 	
 }

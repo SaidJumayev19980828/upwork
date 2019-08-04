@@ -37,12 +37,6 @@ public class UserEntity extends BaseUserEntity{
     
     
     
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    Long id;
-
-
     
     public static UserEntity registerUser(UserDTOs.UserRegistrationObject userJson) {
     	UserEntity user = new UserEntity();

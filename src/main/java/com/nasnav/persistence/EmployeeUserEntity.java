@@ -4,12 +4,7 @@ import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import javax.persistence.Table;
-
-import org.hibernate.annotations.Type;
 
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dto.UserDTOs;
@@ -58,19 +53,6 @@ public class EmployeeUserEntity extends BaseUserEntity {
     @Column(name = "organization_manager_id")
     private Long organizationManagerId;
 
-    
-    
-    
-    //TODO: this is a work around because the column type of employee_users.id is int4 which is not converted into Long
-    //by hibernate
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    @Type(type = "com.nasnav.persistence.mapping.customtypes.IntgerAsLongType")
-    private Long id;
-    
-
-    
     
     public static EmployeeUserEntity createEmployeeUser(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
         // parse Json to EmployeeUserEntity
