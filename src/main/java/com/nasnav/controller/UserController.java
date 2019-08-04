@@ -63,7 +63,11 @@ public class UserController {
     @GetMapping(value = "recover",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public UserApiResponse sendEmailRecovery(@RequestParam(value = "email") String email,
-                                             @RequestParam(value = "org_id") Long orgId) {
+                                             @RequestParam(value = "org_id") Long orgId,
+                                             @RequestParam(value = "employee") boolean employee) {
+        if (employee){
+            return this.employeeUserService.sendEmailRecovery(email, orgId);
+        }
         return this.userService.sendEmailRecovery(email, orgId);
     }
 
@@ -76,6 +80,9 @@ public class UserController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public UserApiResponse recoverUser(@RequestBody UserDTOs.PasswordResetObject json) {
+        if (json.employee){
+            return this.employeeUserService.recoverUser(json);
+        }
         return this.userService.recoverUser(json);
     }
 

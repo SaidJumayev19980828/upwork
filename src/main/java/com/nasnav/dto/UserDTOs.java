@@ -38,6 +38,10 @@ public class UserDTOs {
         @ApiModelProperty(value = "New user's password", example = "PaSSworD", required = true)
         @JsonProperty("password")
         public String password;
+
+        @ApiModelProperty(value = "true if user is employee", example = "true", required = true)
+        @JsonProperty("employee")
+        public boolean employee;
     }
 
     @ApiModel(value = "User Login Data")

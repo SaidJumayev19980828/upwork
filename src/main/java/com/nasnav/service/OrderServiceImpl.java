@@ -364,8 +364,8 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public List<OrderRepresentationObject> getOrdersList(Long loggedUserId, String userToken, Long userId, Long storeId,
 														 Long orgId, String status){
-		List<OrdersEntity> ordersEntityList = new ArrayList<>();
-		List<OrderRepresentationObject> ordersRep = new ArrayList<>();
+		List<OrdersEntity> ordersEntityList;
+		List<OrderRepresentationObject> ordersRep;
 		Integer statusId = -1;
 		if (status != null){
 			if ((OrderStatus.findEnum(status)) != null) {

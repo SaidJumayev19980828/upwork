@@ -190,9 +190,42 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 	@Override
-	public UserApiResponse recoverUser(PasswordResetObject body) {
-		// TODO Auto-generated method stub
-		return null;
+	public UserApiResponse recoverUser(PasswordResetObject data) {
+		validateNewPassword(data.password);
+		EmployeeUserEntity employeeUserEntity = employeeUserRepository.getByResetPasswordToken(data.token);
+		if (EntityUtils.isNotBlankOrNull(employeeUserEntity)) {
+			// if resetPasswordToken is not active, throw exception for invalid
+			// resetPasswordToken
+			checkResetPasswordTokenExpiry(employeeUserEntity);
+			employeeUserEntity.setResetPasswordToken(null);
+			employeeUserEntity.setResetPasswordSentAt(null);
+			employeeUserEntity.setEncryptedPassword(passwordEncoder.encode(data.password));
+			employeeUserRepository.saveAndFlush(employeeUserEntity);
+		} else {
+			throw new EntityValidationException("INVALID_TOKEN  ",
+					UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.INVALID_TOKEN)),
+					HttpStatus.NOT_ACCEPTABLE);
+		}
+		return UserApiResponse.createStatusApiResponse((long)employeeUserEntity.getId(), null);
+	}
+
+	private void validateNewPassword(String newPassword) {
+		if (EntityUtils.isBlankOrNull(newPassword) || newPassword.length() > EntityConstants.PASSWORD_MAX_LENGTH
+				|| newPassword.length() < EntityConstants.PASSWORD_MIN_LENGTH) {
+			throw new EntityValidationException("INVALID_PASSWORD  ",
+					UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.INVALID_PASSWORD)),
+					HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+	private void checkResetPasswordTokenExpiry(EmployeeUserEntity employeeUserEntity) {
+		LocalDateTime resetPasswordSentAt = employeeUserEntity.getResetPasswordSentAt();
+		LocalDateTime tokenExpiryDate = resetPasswordSentAt.plusHours(EntityConstants.TOKEN_VALIDITY);
+		if (LocalDateTime.now().isAfter(tokenExpiryDate)) {
+			throw new EntityValidationException("EXPIRED_TOKEN  ",
+					UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.EXPIRED_TOKEN)),
+					HttpStatus.NOT_ACCEPTABLE);
+		}
 	}
 
 	@Override

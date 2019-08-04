@@ -101,7 +101,7 @@ System.out.println("id: " + userId + " token: " + userToken + " auth: " + userSe
 										 @RequestParam(name = "store_id", required = false) Long storeId,
 										 @RequestParam(name = "org_id", required = false) Long orgId,
 										 @RequestParam(name = "status", required = false) String status) throws BusinessException {
-		List<OrderRepresentationObject> response = new ArrayList<>();
+		List<OrderRepresentationObject> response;
 		if(userToken == null ||
 				(!userService.checkAuthToken(loggedUserId.intValue(), userToken) && !employeeUserService.checkAuthToken(loggedUserId.intValue(), userToken))) {
 			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
