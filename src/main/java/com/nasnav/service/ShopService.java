@@ -1,27 +1,43 @@
 package com.nasnav.service;
 
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.nasnav.dao.*;
+import com.nasnav.service.helpers.ShopServiceHelper;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dto.ShopJsonDTO;
+import com.nasnav.response.ResponseStatus;
+import com.nasnav.response.ShopResponse;
+import com.nasnav.service.helpers.EmployeeUserServiceHelper;
+
 import com.nasnav.exceptions.BusinessException;
+
 import com.nasnav.persistence.ShopsEntity;
 
 @Service
 public class ShopService {
 
-
     private final ShopsRepository shopsRepository;
+    private final EmployeeUserServiceHelper employeeUserServicehelper;
+    private final EmployeeUserRepository employeeUserRepository;
+    private final ShopServiceHelper shopServiceHelper;
 
     @Autowired
-    public ShopService(ShopsRepository shopsRepository){
+    public ShopService(ShopsRepository shopsRepository, EmployeeUserServiceHelper employeeUserServicehelper,
+                       EmployeeUserRepository employeeUserRepository, ShopServiceHelper shopServiceHelper){
         this.shopsRepository = shopsRepository;
+        this.employeeUserServicehelper = employeeUserServicehelper;
+        this.employeeUserRepository = employeeUserRepository;
+        this.shopServiceHelper = shopServiceHelper;
     }
 
     public List<ShopRepresentationObject> getOrganizationShops(Long organizationId) throws BusinessException {
@@ -49,4 +65,44 @@ public class ShopService {
         return  ((ShopRepresentationObject)shopsEntityOptional.get().getRepresentation());
     }
 
+    public ShopResponse createShop(Integer userId, ShopJsonDTO shopJson){
+        List<String> userRoles = employeeUserServicehelper.getEmployeeUserRoles(userId);
+        Long employeeUserOrgId = employeeUserRepository.getById(userId).getOrganizationId();
+        if (!userRoles.contains("ORGANIZATION_MANAGER") || !employeeUserOrgId.equals(shopJson.getOrgId())){
+            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.UNAUTHORIZED);
+        }
+        ShopsEntity shopsEntity = new ShopsEntity();
+        BeanUtils.copyProperties(shopJson, shopsEntity);
+        //shopsEntity.setOrganizationEntity(organizationRepository.findOneById(shopJson.getOrgId()));
+        shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson);
+        shopsEntity.setCreatedAt(new Date());
+        shopsEntity.setUpdatedAt(new Date());
+        shopsRepository.save(shopsEntity);
+        return new ShopResponse(shopsEntity.getId(), HttpStatus.OK);
+    }
+
+    public ShopResponse updateShop(Integer userId, ShopJsonDTO shopJson){
+        List<String> userRoles = employeeUserServicehelper.getEmployeeUserRoles(userId);
+        Long employeeUserOrgId = employeeUserRepository.getById(userId).getOrganizationId();
+        Integer employeeUserShopId = employeeUserRepository.getById(userId).getId();
+        if (!userRoles.contains("ORGANIZATION_MANAGER") && !userRoles.contains("STORE_MANAGER")){
+            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.UNAUTHORIZED);
+        }
+        if (userRoles.contains("ORGANIZATION_MANAGER") && !employeeUserOrgId.equals(shopJson.getOrgId())){
+            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.UNAUTHORIZED);
+        }
+        if (userRoles.contains("STORE_MANAGER") && !employeeUserShopId.equals(shopJson.getId())){
+            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.UNAUTHORIZED);
+        }
+        ShopsEntity shopsEntity = shopsRepository.findById(shopJson.getId()).get();
+        if ( shopsEntity == null) {
+            return new ShopResponse(Collections.singletonList(ResponseStatus.INVALID_STORE), HttpStatus.NOT_FOUND);
+        }
+        BeanUtils.copyProperties(shopJson, shopsEntity, shopServiceHelper.getNullProperties(shopJson));
+        //shopsEntity.setOrganizationEntity(organizationRepository.findOneById(shopJson.getOrgId()));
+        shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson);
+        shopsEntity.setUpdatedAt(new Date());
+        shopsRepository.save(shopsEntity);
+        return new ShopResponse(shopsEntity.getId(), HttpStatus.OK);
+    }
 }

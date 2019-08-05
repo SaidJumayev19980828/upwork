@@ -58,9 +58,8 @@ public class ShopsEntity extends AbstractPersistable<Long> implements BaseEntity
     private BigDecimal lat;
     @Column(precision=10, scale=2)
     private BigDecimal lng;
-
-//    @Column(name = "brand_id")
-//    private Long brandId;
+    @Column(name = "brand_id")
+    private Long brandId;
     @Column(name = "created_at")
     private Date createdAt;
     @Column(name = "updated_at")
@@ -73,8 +72,8 @@ public class ShopsEntity extends AbstractPersistable<Long> implements BaseEntity
 //    private String workTimes;
 //    @Column(name = "view_image")
 //    private String viewImage;
-//    @Column(name = "p_street")
-//    private String pStreet;
+    @Column(name = "p_street")
+    private String pStreet;
 //    @Column(name = "time_from")
 //    private Timestamp timeFrom;
 //    @Column(name = "time_to")
