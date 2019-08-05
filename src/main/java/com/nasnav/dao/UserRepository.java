@@ -70,5 +70,5 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	
 	
 	
-	Optional<EmployeeUserEntity> findByAuthenticationToken(String authToken);
+	Optional<UserEntity> findByAuthenticationToken(String authToken);
 }

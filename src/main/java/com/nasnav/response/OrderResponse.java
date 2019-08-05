@@ -8,6 +8,7 @@ import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.dto.OrderRepresentationObject;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -17,7 +18,8 @@ import org.springframework.http.HttpStatus;
 
 
 @Data
-public class OrderResponse implements Serializable {
+@EqualsAndHashCode(callSuper = false)
+public class OrderResponse  extends BaseResponse implements Serializable {
 
 	private static final long serialVersionUID = -2071547898771698563L;
 
@@ -78,6 +80,7 @@ public class OrderResponse implements Serializable {
         this.entity = entity;
         code = HttpStatus.OK;
     }
+
 
 
 }

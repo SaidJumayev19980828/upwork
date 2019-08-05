@@ -3,11 +3,12 @@ package com.nasnav.dao;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 
 import com.nasnav.persistence.BaseUserEntity;
 
 
-
+@Repository
 public class CommonUserRepositoryImp implements CommonUserRepository {
 
 	@Autowired

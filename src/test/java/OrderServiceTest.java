@@ -60,8 +60,8 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 public class OrderServiceTest {
 
-//    private static String _authToken = "TestAuthToken";
-//    private Long _testUserId = null;
+
+	private static final long DUMMY_ORG_ID = 99001L;
 	private static UserEntity persistentUser;
 	private static OrganizationEntity organization;
 
@@ -107,28 +107,26 @@ public class OrderServiceTest {
 
 	@Before
 	public void setupLoginUser() {
-		//create new organization
-		organization = organizationRepository.findOneById(99009L);
-		if (organization == null) {
-			organization = new OrganizationEntity();
-			organization.setName("Test Organization");
-			organization.setCreatedAt(new Date());
-			organization.setUpdatedAt(new Date());
-			organization.setDescription("Test Organization Description");
-			organizationRepository.saveAndFlush(organization);
-		}
-		persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", organization.getId());
-		if (persistentUser == null) {
-			persistentUser = new UserEntity();
-			persistentUser.setName("John Smith");
-			persistentUser.setEmail("unavailable@nasnav.com");
-			persistentUser.setCreatedAt(LocalDateTime.now());
-			persistentUser.setUpdatedAt(LocalDateTime.now());
-			persistentUser.setAuthenticationToken("2lzEscCTumJriRLz");
-			persistentUser.setOrganizationId(organization.getId());
-			persistentUser.setEncryptedPassword("---");
-			userRepository.save(persistentUser);
-		}
+		//THE ORGANIZATION AND THE USER ARE ALREADY INSERTED BY THE SCRIPTS
+		organization = organizationRepository.findOneById(DUMMY_ORG_ID);
+		organization = new OrganizationEntity();
+		organization.setName("Test Organization");
+		organization.setCreatedAt(new Date());
+		organization.setUpdatedAt(new Date());
+		organization.setDescription("Test Organization Description");
+		organization = organizationRepository.saveAndFlush(organization);
+			
+		persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", organization.getId());		
+		persistentUser = new UserEntity();
+		persistentUser.setName("John Smith");
+		persistentUser.setEmail("unavailable@nasnav.com");
+		persistentUser.setCreatedAt(LocalDateTime.now());
+		persistentUser.setUpdatedAt(LocalDateTime.now());
+		persistentUser.setAuthenticationToken("2lzEscCTumJriRLz");
+		persistentUser.setOrganizationId(organization.getId());
+		persistentUser.setEncryptedPassword("---");
+		userRepository.save(persistentUser);
+		
 	}
 
 	@After
@@ -171,9 +169,10 @@ public class OrderServiceTest {
 	@Test
 	public void unregisteredUser() {
 		StocksEntity stock = createStock();
-		ResponseEntity<OrderResponse> response = template.postForEntity("/order/update",
+		
+		ResponseEntity response = template.postForEntity("/order/update",
 				TestCommons.getHttpEntity("{ \"status\" : \"NEW\", \"basket\": [ { \"stock_id\":" + stock.getId() + ", \"quantity\": " +  stock.getQuantity() + "} ] }", 1, "XX"),
-				OrderResponse.class);
+				Object.class);
 		Assert.assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatusCode().value());
 		stockRepository.delete(stock);
 	}

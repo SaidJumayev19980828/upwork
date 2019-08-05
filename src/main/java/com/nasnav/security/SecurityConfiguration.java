@@ -20,6 +20,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -27,21 +28,34 @@ import java.util.List;
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
 
-    private static final RequestMatcher PROTECTED_URLS = new OrRequestMatcher(
-            new AntPathRequestMatcher("/**")
-    );
+    private static  RequestMatcher protectedUrlList ;
+    
+    //TODO: currently the AuthenticationFilter calls the authentication process
+    //and it takes the PROTECTED_URLS list to work on
+    //which means,any url is permitted by default, this should be changed, but 
+    //currently PUBLIC_URLS can't intersected with PROTECTED_URLS.
+    private static final List<String> PROTECTED_URLS = 
+    		Arrays.asList("/order/**"
+    					, "/stock/**"
+    					, "/shop/**"
+    					, "/user/list"
+    					, "/user/update");
 
     private static final List<String> PUBLIC_URLS =
             Arrays.asList("/navbox/**"
                         , "/user/recover"
                         , "/user/login"
-                        , "/user/register");
+                        , "/user/register"
+                        , "/payment/**");
 
     AuthenticationProvider provider;
 
     public SecurityConfiguration(final AuthenticationProvider authenticationProvider) {
         super();
-        this.provider = authenticationProvider;
+        this.provider = authenticationProvider;        
+        
+        List<RequestMatcher> requestMatcherList = PROTECTED_URLS.stream().map(AntPathRequestMatcher::new).collect(Collectors.toList());
+        protectedUrlList = new OrRequestMatcher( requestMatcherList );
     }
 
     @Override
@@ -61,15 +75,14 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
-        http.sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                .exceptionHandling()
+        http
+        .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)                
                 .and()
                 .authenticationProvider(provider)
                 .addFilterBefore(authenticationFilter(), AnonymousAuthenticationFilter.class)
                 .authorizeRequests()
-                .requestMatchers(PROTECTED_URLS)
+                .requestMatchers(protectedUrlList)
                 .authenticated()
                 .and()
                 .csrf().disable()
@@ -82,7 +95,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Bean
     AuthenticationFilter authenticationFilter() throws Exception {
-        final AuthenticationFilter filter = new AuthenticationFilter(PROTECTED_URLS);
+        final AuthenticationFilter filter = new AuthenticationFilter(protectedUrlList);
         filter.setAuthenticationManager(authenticationManager());
         //filter.setAuthenticationSuccessHandler(successHandler());
         return filter;
@@ -92,6 +105,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Bean
     AuthenticationEntryPoint unauthorizedEntryPoint() {
-        return new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED);
+        return new NasnavHttpStatusEntryPoint(HttpStatus.UNAUTHORIZED);
     }
 }

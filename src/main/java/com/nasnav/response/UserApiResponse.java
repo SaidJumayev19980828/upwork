@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nasnav.persistence.EntityUtils;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -11,10 +12,9 @@ import java.util.List;
 
 
 @Data
-public class UserApiResponse implements Serializable {
+@EqualsAndHashCode(callSuper = false)
+public class UserApiResponse extends BaseResponse implements Serializable {
 
-    @JsonProperty
-    private boolean success;
 
     // exclude entityId property from
     // json if it is null as per API requirements

@@ -42,7 +42,7 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	private Optional<UserDetails> getUser(BaseUserEntity userEntity) {		
 		List<GrantedAuthority> roles = getUserRoles(userEntity);
-		User user= new User(userEntity.getName(), userEntity.getEncryptedPassword(), true, true, true, true,roles);
+		User user= new User(userEntity.getEmail(), userEntity.getEncryptedPassword(), true, true, true, true,roles);
         return Optional.of(user);		
 	}
 
