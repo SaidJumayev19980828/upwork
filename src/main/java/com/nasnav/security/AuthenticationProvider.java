@@ -1,17 +1,17 @@
 package com.nasnav.security;
 
-import java.util.Optional;
-
+import com.nasnav.service.SecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.AbstractUserDetailsAuthenticationProvider;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Component;
 
-import com.nasnav.service.SecurityService;
+import java.util.Optional;
 
-//@Component
+@Component
 public class AuthenticationProvider extends AbstractUserDetailsAuthenticationProvider {
 
  @Autowired

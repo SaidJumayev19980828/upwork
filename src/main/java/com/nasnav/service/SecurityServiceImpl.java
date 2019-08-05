@@ -1,22 +1,23 @@
 package com.nasnav.service;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-
 import com.nasnav.dao.CommonUserRepository;
 import com.nasnav.dao.RoleRepository;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.Role;
 import com.nasnav.persistence.UserEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
 public class SecurityServiceImpl implements SecurityService {
 	
 	@Autowired
@@ -30,9 +31,9 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	@Override
 	public Optional<UserDetails> findUserByAuthToken(String token){
-			return userRepo.findByAuthenticationToken(token)
-							.flatMap(this::getUser)	;			
-			
+		return Optional.ofNullable(token)
+		 		.flatMap(userRepo::findByAuthenticationToken)
+		 		.flatMap(this::getUser);
 	}
 	
 	
