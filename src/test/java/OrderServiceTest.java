@@ -493,7 +493,7 @@ public class OrderServiceTest {
 	public void ordersListUnAuthTest() {
 		// invalid user-id test
 		ResponseEntity<String> response = template.exchange("/order/list?store_id=501", HttpMethod.GET,
-				new HttpEntity<>(TestCommons.getHeaders(90, "abdcefg")), String.class); //no user with id = 90
+				new HttpEntity<>(TestCommons.getHeaders(90, "invalidToken")), String.class); //no user with id = 90
 
 		Assert.assertTrue(401 == response.getStatusCode().value());
 		Assert.assertEquals(HttpStatus.UNAUTHORIZED,response.getStatusCode());

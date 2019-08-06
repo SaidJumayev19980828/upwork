@@ -51,12 +51,7 @@ public class OrdersController {
             @RequestHeader(name = "User-Token") String userToken,
             @RequestBody OrderJsonDto orderJson)
             		throws BusinessException {
-    	OrderResponse response;
-    	if(userToken == null || !userService.checkAuthToken(userId, userToken)) {
-    		response = new OrderResponse(OrderFailedStatus.UNAUTHENTICATED, HttpStatus.UNAUTHORIZED);
-    	} else {
-        	response = this.orderService.updateOrder(orderJson,userId);
-    	}        
+    	OrderResponse response = this.orderService.updateOrder(orderJson,userId);
         return new ResponseEntity<>(response, response.getCode());
     }
 
@@ -70,16 +65,13 @@ public class OrdersController {
     		@RequestHeader(name = "User-ID", required = true) Long userId,
             @RequestHeader(name = "User-Token", required = true) String userToken,
             @RequestParam(name = "order_id") Long orderId){
-    	OrderResponse response;
-System.out.println("id: " + userId + " token: " + userToken + " auth: " + userService.checkAuthToken(userId, userToken));
-		if(userToken == null || !userService.checkAuthToken(userId, userToken)) {
-    		response = new OrderResponse(OrderFailedStatus.UNAUTHENTICATED, HttpStatus.UNAUTHORIZED);
-    	} else {
-			response = this.orderService.getOrderInfo(orderId);
-        	if(response.getCode().equals(HttpStatus.OK)) {
-            	return new ResponseEntity<>(response.getEntity(), response.getCode());
-        	}
+		
+    	OrderResponse response = this.orderService.getOrderInfo(orderId);
+    	
+    	if(response.getCode().equals(HttpStatus.OK)) {
+        	return new ResponseEntity<>(response.getEntity(), response.getCode());
     	}
+    	
     	return new ResponseEntity<>(response, response.getCode());
     }
 
@@ -96,9 +88,7 @@ System.out.println("id: " + userId + " token: " + userToken + " auth: " + userSe
 										 @RequestParam(name = "store_id", required = false) Long storeId,
 										 @RequestParam(name = "status", required = false) String status) throws BusinessException {
 		List<OrderRepresentationObject> response = new ArrayList<>();
-		if(userToken == null || !userService.checkAuthToken(loggedUserId, userToken)) {
-			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-		} else if (userId != null || storeId != null) {
+		if (userId != null || storeId != null) {
 			response = this.orderService.getOrdersList(userId, storeId, status);
 		}
 		return new ResponseEntity<>(response, HttpStatus.OK);

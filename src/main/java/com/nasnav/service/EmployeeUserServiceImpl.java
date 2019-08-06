@@ -49,11 +49,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	@Override
 	public UserApiResponse createEmployeeUser(Long userId, String userToken, UserDTOs.EmployeeUserCreationObject employeeUserJson) {
-		// check if user is authenticated
-		if (!checkAuthToken(userId, userToken)){
-			throw new EntityValidationException("" + ResponseStatus.UNAUTHENTICATED,
-					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.UNAUTHENTICATED)), HttpStatus.UNAUTHORIZED);
-		}
+		
 		List<String> rolesList = Arrays.asList(employeeUserJson.role.split(","));
 		helper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.org_id, rolesList);
 		// get current logged in user
@@ -101,10 +97,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	@Override
 	public UserApiResponse updateEmployeeUser(Long userId, String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
 		EmployeeUserEntity updateUser,currentUser;
-		if (!checkAuthToken(userId, userToken)){
-			throw new EntityValidationException("" + ResponseStatus.UNAUTHENTICATED,
-					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.UNAUTHENTICATED)), HttpStatus.NOT_ACCEPTABLE);
-		}
+		
 		int userType = helper.roleCanCreateUser(userId); //check user privileges
 		if (userType == -1) { // can't update employees
 			throw new EntityValidationException(""+ResponseStatus.INSUFFICIENT_RIGHTS,

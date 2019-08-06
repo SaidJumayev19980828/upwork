@@ -108,6 +108,7 @@ public class EntityUtils {
 	 * @param responseStatuses failed response statuses
 	 * @return UserApiResponse
 	 */
+	//TODO : with spring security , this will be deprecated
 	public static UserApiResponse createFailedLoginResponse(List<ResponseStatus> responseStatuses) {
 		return new ApiResponseBuilder().setSuccess(false).setResponseStatuses(responseStatuses).build();
 	}
