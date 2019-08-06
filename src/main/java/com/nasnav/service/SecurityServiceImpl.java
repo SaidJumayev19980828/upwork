@@ -78,13 +78,17 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Override
 	public UserApiResponse login(UserLoginObject loginData) throws BusinessException {
+		
+		if(invalidLoginData(loginData)) {
+			throwInvalidCredentialsException();
+		}
+		
+		
 		BaseUserEntity userEntity = userRepo.getByEmailAndOrganizationId(loginData.email, loginData.org_id);
 		
 		
 		if(userEntity == null) {
-			UserApiResponse failedLoginResponse = EntityUtils
-					.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_CREDENTIALS));
-			throw new EntityValidationException("INVALID_CREDENTIALS ", failedLoginResponse, HttpStatus.UNAUTHORIZED);
+			throwInvalidCredentialsException();
 		}
 		
 		
@@ -98,9 +102,7 @@ public class SecurityServiceImpl implements SecurityService {
 		
 		boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncryptedPassword());		
 		if(!passwordMatched) {
-			UserApiResponse failedLoginResponse = EntityUtils
-					.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_CREDENTIALS));
-			throw new EntityValidationException("INVALID_CREDENTIALS ", failedLoginResponse, HttpStatus.UNAUTHORIZED);
+			throwInvalidCredentialsException();
 		}		
 		
 		if (isAccountLocked(userEntity)) { // NOSONAR
@@ -113,16 +115,28 @@ public class SecurityServiceImpl implements SecurityService {
 		userEntity = updatePostLogin(userEntity);
 		return createSuccessLoginResponse(userEntity);				
 	}
+
+
+
+
+
+	private boolean invalidLoginData(UserLoginObject loginData) {
+		return loginData == null || EntityUtils.isBlankOrNull(loginData.email) || EntityUtils.isBlankOrNull(loginData.org_id);
+	}
+
+
+
+
+
+	private void throwInvalidCredentialsException() {
+		UserApiResponse failedLoginResponse = EntityUtils
+				.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_CREDENTIALS));
+		throw new EntityValidationException("INVALID_CREDENTIALS ", failedLoginResponse, HttpStatus.UNAUTHORIZED);
+	}
 	
 	
 	
 	
-	/**
-	 * Check if passed user entity's account needs activation.
-	 *
-	 * @param userEntity User entity to be checked.
-	 * @return true if current user entity's account needs activation.
-	 */
 	private boolean isUserNeedActivation(BaseUserEntity userEntity) {
 		String encPassword = userEntity.getEncryptedPassword();
 		return EntityUtils.isBlankOrNull(encPassword) || EntityConstants.INITIAL_PASSWORD.equals(encPassword);
@@ -131,12 +145,7 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	
 	
-	/**
-	 * Check if passed user entity's account is locked.
-	 *
-	 * @param userEntity User entity to be checked.
-	 * @return true if current user entity's account is locked.
-	 */
+	
 	private boolean isAccountLocked(BaseUserEntity userEntity) {
 		// TODO : change implementation later
 		return false;
