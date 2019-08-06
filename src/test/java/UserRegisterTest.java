@@ -374,6 +374,23 @@ public class UserRegisterTest {
 	public void testUserShouldLogin() {
 		//try to get new password to use it for login
 		String newPassword = "New_Password"; 
+		
+		resetUserPassword(newPassword);
+
+		// login using the new password
+		HttpEntity<Object> userJson = getHttpEntity(
+				"{\"password\":\"" + newPassword + "\", \"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + " }");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
+				UserApiResponse.class);
+
+		Assert.assertTrue(response.getBody().isSuccess());
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+
+
+
+
+	private void resetUserPassword(String newPassword) {
 		// send token to user
 		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId(), UserApiResponse.class);
 
@@ -382,19 +399,9 @@ public class UserRegisterTest {
 		// use token to change password
 		String token = persistentUser.getResetPasswordToken();
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\t\n" + "\t\"token\":\"" + token + "\",\n" + "\t\"password\":\" "+ newPassword +"\"\n" + "}");
+				String.format("{\t\n\t\"token\":\"%s\",\n" + "\t\"password\":\"%s\"\n" + "}",token ,newPassword) );
 
 		template.postForEntity("/user/recover", userJson, UserApiResponse.class);
-
-		// login using the new password
-		userJson = getHttpEntity(
-				"{\"password\":\"" + newPassword + "\", \"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + " }");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
-				UserApiResponse.class);
-
-		Assert.assertEquals(200, response.getStatusCode().value());
-		Assert.assertTrue(response.getBody().isSuccess());
-		
 	}
 
 	@Test
@@ -416,21 +423,11 @@ public class UserRegisterTest {
 	@Test
 	public void testInvalidOrgIdLogin() {
 		//try to get new password to use it for login
-		String newPassword = "New_Password"; 
-		// send token to user
-		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId(), UserApiResponse.class);
-
-		// refresh the user entity
-		persistentUser = (UserEntity) userService.getUserById((long)persistentUser.getId());
-		// use token to change password
-		String token = persistentUser.getResetPasswordToken();
-		HttpEntity<Object> userJson = getHttpEntity(
-				"{\t\n" + "\t\"token\":\"" + token + "\",\n" + "\t\"password\":\" "+ newPassword +"\"\n" + "}");
-
-		template.postForEntity("/user/recover", userJson, UserApiResponse.class);
+		String newPassword = "New_Password"; 		
+		resetUserPassword(newPassword);
 
 		// login using the new password
-		userJson = getHttpEntity(
+		HttpEntity<Object> userJson = getHttpEntity(
 				"{\"password\":\"" + newPassword + "\", \"email\":\"" + persistentUser.getEmail() + "\", \"org_id\":null }");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
