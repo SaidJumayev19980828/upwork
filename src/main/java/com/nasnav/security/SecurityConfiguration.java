@@ -34,6 +34,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     //and it takes the PROTECTED_URLS list to work on
     //which means,any url is permitted by default, this should be changed, but 
     //currently PUBLIC_URLS can't intersected with PROTECTED_URLS.
+    //i.e if a url matches a pattern in both protected URL's and PUBLIC_URL
+    //it will be authenticated.
     private static final List<String> PROTECTED_URLS = 
     		Arrays.asList("/order/**"
     					, "/stock/**"

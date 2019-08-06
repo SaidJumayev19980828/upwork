@@ -209,7 +209,7 @@ public class EmployeeUserServiceHelper {
 		LocalDateTime currentSignInDate = employeeUserEntity.getCurrentSignInDate();
 		employeeUserEntity.setLastSignInDate(currentSignInDate);
 		employeeUserEntity.setCurrentSignInDate(LocalDateTime.now());
-		employeeUserEntity.setAuthenticationToken(generateAuthenticationToken(EntityConstants.TOKEN_LENGTH));
+		employeeUserEntity.setAuthenticationToken(generateAuthenticationToken());
 		return employeeUserRepository.saveAndFlush(employeeUserEntity);
 	}
 
@@ -220,11 +220,11 @@ public class EmployeeUserServiceHelper {
 	 * @param tokenLength length of generated AuthenticationToken
 	 * @return unique generated AuthenticationToken.
 	 */
-	private String generateAuthenticationToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+	private String generateAuthenticationToken() {
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = employeeUserRepository.existsByAuthenticationToken(generatedToken);
 		if (existsByToken) {
-			return reGenerateAuthenticationToken(tokenLength);
+			return reGenerateAuthenticationToken();
 		}
 		return generatedToken;
 	}
@@ -236,11 +236,11 @@ public class EmployeeUserServiceHelper {
 	 * @param tokenLength length of generated AuthenticationToken
 	 * @return unique generated AuthenticationToken.
 	 */
-	private String reGenerateAuthenticationToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+	private String reGenerateAuthenticationToken() {
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = employeeUserRepository.existsByAuthenticationToken(generatedToken);
 		if (existsByToken) {
-			return reGenerateAuthenticationToken(tokenLength);
+			return reGenerateAuthenticationToken();
 		}
 		return generatedToken;
 	}

@@ -239,7 +239,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	 * @return unique generated ResetPasswordToken.
 	 */
 	private String generateResetPasswordToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = employeeUserRepository.existsByResetPasswordToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateResetPasswordToken(tokenLength);
@@ -255,7 +255,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	 * @return unique generated ResetPasswordToken.
 	 */
 	private String reGenerateResetPasswordToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = employeeUserRepository.existsByResetPasswordToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateResetPasswordToken(tokenLength);

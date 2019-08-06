@@ -94,12 +94,8 @@ public class EntityUtils {
 	 * @param length length of token to be generated.
 	 * @return new token string.
 	 */
-	public static String generateToken(int length) {
-		StringBuilder builder = new StringBuilder(10);
-		for (int i = 0; i < length; i++) {
-			builder.append(ALPHABET.charAt(getRandom().nextInt(ALPHABET.length())));
-		}
-		return builder.toString();
+	public static String generateUUIDToken() {
+		return UUID.randomUUID().toString();
 	}
 
 	/**

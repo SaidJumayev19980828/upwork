@@ -144,7 +144,7 @@ public class UserServiceImpl implements UserService {
 	 * @return user entity after generating ResetPasswordToken and updating entity.
 	 */
 	private UserEntity generateResetPasswordToken(UserEntity userEntity) {
-		String generatedToken = generateResetPasswordToken(EntityConstants.TOKEN_LENGTH);
+		String generatedToken = generateResetPasswordToken();
 		userEntity.setResetPasswordToken(generatedToken);
 		userEntity.setResetPasswordSentAt(LocalDateTime.now());
 		return userRepository.saveAndFlush(userEntity);
@@ -185,11 +185,11 @@ public class UserServiceImpl implements UserService {
 	 * @param tokenLength length of generated ResetPasswordToken
 	 * @return unique generated ResetPasswordToken.
 	 */
-	private String generateResetPasswordToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+	private String generateResetPasswordToken() {
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
 		if (existsByToken) {
-			return reGenerateResetPasswordToken(tokenLength);
+			return reGenerateResetPasswordToken();
 		}
 		return generatedToken;
 	}
@@ -201,11 +201,11 @@ public class UserServiceImpl implements UserService {
 	 * @param tokenLength length of generated ResetPasswordToken
 	 * @return unique generated ResetPasswordToken.
 	 */
-	private String reGenerateResetPasswordToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+	private String reGenerateResetPasswordToken() {
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
 		if (existsByToken) {
-			return reGenerateResetPasswordToken(tokenLength);
+			return reGenerateResetPasswordToken();
 		}
 		return generatedToken;
 	}
@@ -309,7 +309,7 @@ public class UserServiceImpl implements UserService {
 	 * @return unique generated AuthenticationToken.
 	 */
 	private String generateAuthenticationToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = userRepository.existsByAuthenticationToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateAuthenticationToken(tokenLength);
@@ -325,7 +325,7 @@ public class UserServiceImpl implements UserService {
 	 * @return unique generated AuthenticationToken.
 	 */
 	private String reGenerateAuthenticationToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = userRepository.existsByAuthenticationToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateAuthenticationToken(tokenLength);
