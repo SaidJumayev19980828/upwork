@@ -255,51 +255,7 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
-	@Override
-	public UserApiResponse login(UserDTOs.UserLoginObject loginData) {
-		UserEntity userEntity = this.userRepository.getByEmailAndOrganizationId(loginData.email, loginData.org_id);
-
-		if (userEntity != null) {
-			// check if account needs activation
-			boolean accountNeedActivation = isUserNeedActivation(userEntity);
-			if (accountNeedActivation) {
-				UserApiResponse failedLoginResponse = EntityUtils
-						.createFailedLoginResponse(Collections.singletonList(ResponseStatus.NEED_ACTIVATION));
-				throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, HttpStatus.LOCKED);
-			}
-			// ensure that password matched
-			boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncryptedPassword());
-
-			if (passwordMatched) {
-				// check if account is locked
-				if (isAccountLocked(userEntity)) { // NOSONAR
-					UserApiResponse failedLoginResponse = EntityUtils
-							.createFailedLoginResponse(Collections.singletonList(ResponseStatus.ACCOUNT_SUSPENDED));
-					throw new EntityValidationException("ACCOUNT_SUSPENDED ", failedLoginResponse, HttpStatus.LOCKED);
-				}
-				// generate new AuthenticationToken and perform post login updates
-				userEntity = updatePostLogin(userEntity);
-				return createSuccessLoginResponse(userEntity);
-			}
-		}
-		UserApiResponse failedLoginResponse = EntityUtils
-				.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_CREDENTIALS));
-		throw new EntityValidationException("INVALID_CREDENTIALS ", failedLoginResponse, HttpStatus.UNAUTHORIZED);
-	}
-
-	/**
-	 * Generate new AuthenticationToken and perform post login updates.
-	 *
-	 * @param userEntity to be udpated
-	 * @return userEntity
-	 */
-	private UserEntity updatePostLogin(UserEntity userEntity) {
-		LocalDateTime currentSignInDate = userEntity.getCurrentSignInDate();
-		userEntity.setLastSignInDate(currentSignInDate);
-		userEntity.setCurrentSignInDate(LocalDateTime.now());
-		userEntity.setAuthenticationToken(generateAuthenticationToken(EntityConstants.TOKEN_LENGTH));
-		return userRepository.saveAndFlush(userEntity);
-	}
+	
 
 	/**
 	 * generate new AuthenticationToken and ensure that this AuthenticationToken is
@@ -331,40 +287,6 @@ public class UserServiceImpl implements UserService {
 			return reGenerateAuthenticationToken(tokenLength);
 		}
 		return generatedToken;
-	}
-
-	/**
-	 * Check if passed user entity's account is locked.
-	 *
-	 * @param userEntity User entity to be checked.
-	 * @return true if current user entity's account is locked.
-	 */
-	private boolean isAccountLocked(UserEntity userEntity) {
-		// TODO : change implementation later
-		return false;
-	}
-
-	/**
-	 * Check if passed user entity's account needs activation.
-	 *
-	 * @param userEntity User entity to be checked.
-	 * @return true if current user entity's account needs activation.
-	 */
-	private boolean isUserNeedActivation(UserEntity userEntity) {
-		String encPassword = userEntity.getEncryptedPassword();
-		return EntityUtils.isBlankOrNull(encPassword) || EntityConstants.INITIAL_PASSWORD.equals(encPassword);
-	}
-
-	/**
-	 * Create success login Api response
-	 *
-	 * @param userEntity success user entity
-	 * @return UserApiResponse
-	 */
-	private UserApiResponse createSuccessLoginResponse(UserEntity userEntity) {
-		return new ApiResponseBuilder().setSuccess(true).setEntityId(userEntity.getId())
-				.setToken(userEntity.getAuthenticationToken()).setRoles(getUserRoles())
-				.setOrganizationId(userEntity.getOrganizationId()).build();
 	}
 
 	/**

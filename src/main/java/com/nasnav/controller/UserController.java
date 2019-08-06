@@ -1,8 +1,10 @@
 package com.nasnav.controller;
 
 import com.nasnav.dto.UserDTOs;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.EmployeeUserService;
+import com.nasnav.service.SecurityService;
 import com.nasnav.service.UserService;
 import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,9 @@ public class UserController {
 
     private UserService userService;
     private EmployeeUserService employeeUserService;
+    
+    @Autowired
+    private SecurityService securityService;
 
     @Autowired
     public UserController(UserService userService, EmployeeUserService employeeUserService) {
@@ -89,13 +94,8 @@ public class UserController {
     @PostMapping(value = "login",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public UserApiResponse login(@RequestBody UserDTOs.UserLoginObject login) {
-    	if (login.employee) {
-        return this.employeeUserService.login(login);
-    	}
-		// try to login using users table if employee_users does not contain current
-		// login.
-		return this.userService.login(login);
+    public UserApiResponse login(@RequestBody UserDTOs.UserLoginObject login) throws BusinessException {
+    	return securityService.login(login);
     }
 
     @ApiOperation(value = "Update an employee user", nickname = "employeeUserUpdate", code = 200)

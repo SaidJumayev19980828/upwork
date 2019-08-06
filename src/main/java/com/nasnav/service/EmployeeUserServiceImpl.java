@@ -34,14 +34,12 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	private EmployeeUserRepository employeeUserRepository;
 	private MailService mailService;
-	private PasswordEncoder passwordEncoder;
-
+	
 	@Autowired
 	public EmployeeUserServiceImpl(EmployeeUserServiceHelper helper, EmployeeUserRepository employeeUserRepository, MailService mailService, PasswordEncoder passwordEncoder) {
 		this.helper = helper;
 		this.employeeUserRepository = employeeUserRepository;
 		this.mailService = mailService;
-		this.passwordEncoder = passwordEncoder;
 	}
 	
 	@Autowired
@@ -118,43 +116,12 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 			throw new EntityValidationException("Not in the same Store " + ResponseStatus.INSUFFICIENT_RIGHTS,
 					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
 		}
-		// parse Json to EmployeeUserEntity
-		EmployeeUserEntity employeeUserEntity = helper.updateEmployeeUser(userType, updateUser, employeeUserJson);
+		helper.updateEmployeeUser(userType, updateUser, employeeUserJson);
 		return UserApiResponse.createMessagesApiResponse(true,
 				Arrays.asList(ResponseStatus.ACTIVATED));
 	}
 
-	@Override
-	public UserApiResponse login(UserDTOs.UserLoginObject body) {
-		EmployeeUserEntity employeeUserEntity = this.employeeUserRepository.getByEmailAndOrganizationId(body.email, body.org_id);
-		if (employeeUserEntity != null) {
-			// check if account needs activation
-			boolean accountNeedActivation = helper.isEmployeeUserNeedActivation(employeeUserEntity);
-			if (accountNeedActivation) {
-				UserApiResponse failedLoginResponse = EntityUtils
-						.createFailedLoginResponse(Collections.singletonList(ResponseStatus.NEED_ACTIVATION));
-				throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, HttpStatus.LOCKED);
-			}
-			// ensure that password matched
-			boolean passwordMatched = passwordEncoder.matches(body.password, employeeUserEntity.getEncryptedPassword());
-			if (passwordMatched) {
-				// check if account is locked
-				if (helper.isAccountLocked(employeeUserEntity)) { // TODO: so far there is no lockdown, so always
-																	// false
-					// //NOSONAR
-					UserApiResponse failedLoginResponse = EntityUtils
-							.createFailedLoginResponse(Collections.singletonList(ResponseStatus.ACCOUNT_SUSPENDED));
-					throw new EntityValidationException("ACCOUNT_SUSPENDED ", failedLoginResponse, HttpStatus.LOCKED);
-				}
-				// generate new AuthenticationToken and perform post login updates
-				helper.updatePostLogin(employeeUserEntity);
-				return helper.createSuccessLoginResponse(employeeUserEntity);
-			}
-		}
-		UserApiResponse failedLoginResponse = EntityUtils
-				.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_CREDENTIALS));
-		throw new EntityValidationException("INVALID_CREDENTIALS ", failedLoginResponse, HttpStatus.UNAUTHORIZED);
-	}
+	
 
 	@Override
 	public void deleteUser(Long userId) {

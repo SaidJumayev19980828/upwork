@@ -47,13 +47,7 @@ public interface CommonUserServiceInterface {
      */
     UserApiResponse recoverUser(UserDTOs.PasswordResetObject  body);
 
-    /**
-     * login user to system
-     *
-     * @param body json object containing email and password
-     * @return UserApiResponse object holding the status
-     */
-    UserApiResponse login(UserDTOs.UserLoginObject body);
+   
 
     /**
      * login user to system
