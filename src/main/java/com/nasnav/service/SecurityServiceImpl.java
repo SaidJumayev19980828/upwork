@@ -46,9 +46,10 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	@Override
 	public Optional<UserDetails> findUserByAuthToken(String token){
-		return Optional.ofNullable(token)
-		 		.flatMap(userRepo::findByAuthenticationToken)
-		 		.flatMap(this::getUser);
+		Optional<UserDetails> user = Optional.ofNullable(token)
+								 		.flatMap(userRepo::findByAuthenticationToken)
+								 		.flatMap(this::getUser);
+		return user;
 	}
 	
 	
@@ -117,12 +118,6 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	
 	
-	/**
-	 * Check if passed user entity's account needs activation.
-	 *
-	 * @param userEntity User entity to be checked.
-	 * @return true if current user entity's account needs activation.
-	 */
 	private boolean isUserNeedActivation(BaseUserEntity userEntity) {
 		String encPassword = userEntity.getEncryptedPassword();
 		return EntityUtils.isBlankOrNull(encPassword) || EntityConstants.INITIAL_PASSWORD.equals(encPassword);
@@ -131,12 +126,6 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	
 	
-	/**
-	 * Check if passed user entity's account is locked.
-	 *
-	 * @param userEntity User entity to be checked.
-	 * @return true if current user entity's account is locked.
-	 */
 	private boolean isAccountLocked(BaseUserEntity userEntity) {
 		// TODO : change implementation later
 		return false;

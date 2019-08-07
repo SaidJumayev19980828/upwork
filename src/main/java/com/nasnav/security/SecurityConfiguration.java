@@ -104,8 +104,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         	.authenticationProvider(provider)
         	.addFilterBefore(authenticationFilter(), AnonymousAuthenticationFilter.class)
         	.authorizeRequests()
-        		.anyRequest().authenticated()
         		.requestMatchers(publicUrlList).permitAll()
+//        		.anyRequest().authenticated()        	//adding this causes unauthenticated responses to have status 403, it overrided the 	
         .and()
             .csrf().disable()
             .formLogin().disable()
@@ -158,7 +158,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     
     private void configureUrlAllowedRoles(HttpSecurity http, String url, Set<Roles> roles) {
     	try {
-			http.authorizeRequests().antMatchers(url).hasAnyRole(toArray(roles));
+			http.authorizeRequests().antMatchers(url).hasAnyAuthority(toArray(roles));
 		} catch (Exception e) {
 			logger.error(e,e);
 			throw new IllegalStateException("Security configuration failed! ", e);
