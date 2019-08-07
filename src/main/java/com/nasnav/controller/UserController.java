@@ -116,7 +116,10 @@ public class UserController {
     @ResponseStatus(HttpStatus.OK)
     public UserApiResponse updateEmployeeUser(@RequestHeader (value = "User-ID", required = true) Integer userId,
                                               @RequestHeader (value = "User-Token", required = true) String userToken,
-                                              @RequestBody UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
-        return this.employeeUserService.updateEmployeeUser(userId, userToken, employeeUserJson);
+                                              @RequestBody UserDTOs.EmployeeUserUpdatingObject json) {
+        if (json.employee) {
+            return this.employeeUserService.updateEmployeeUser(userId, userToken, json);
+        }
+        return this.userService.updateUser(userId, userToken, json);
     }
 }

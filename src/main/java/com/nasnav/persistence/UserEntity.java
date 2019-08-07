@@ -60,6 +60,24 @@ public class UserEntity extends DefaultBusinessEntity<Long> {
     @Column(name="reset_password_sent_at")
     private LocalDateTime resetPasswordSentAt;
 
+    @Column(name = "gender")
+    private String gender;
+
+    @Column(name = "avatar")
+    private String avatar;
+
+    @Column(name = "birth_date")
+    private String birthDate;
+
+    @Column(name = "post_code")
+    private String postCode;
+
+    @Column(name = "flat_number")
+    private Integer flatNumber;
+
+    @Column(name = "image")
+    private String image;
+
     @Column(name = "created_at")
     public LocalDateTime createdAt;
 
@@ -75,7 +93,7 @@ public class UserEntity extends DefaultBusinessEntity<Long> {
         user.setName(userJson.name);
         user.setEmail(userJson.email);
         user.setEncPassword(EntityConstants.INITIAL_PASSWORD);
-        user.setOrganizationId(userJson.org_id);
+        user.setOrganizationId(userJson.getOrgId());
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         return user;

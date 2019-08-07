@@ -3,6 +3,7 @@ package com.nasnav.service.helpers;
 
 import com.nasnav.dao.MallRepository;
 import com.nasnav.dto.ShopJsonDTO;
+import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.ShopsEntity;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
@@ -38,16 +39,11 @@ public class ShopServiceHelper extends BeanUtils{
             shopsEntity.setMallsEntity(mallRepository.findById((shopJson.getMallId())).get());
         }
         if (shopJson.getName() != null) {
-            shopsEntity.setPname(encodeUrl(shopJson.getName()));
+            shopsEntity.setPname(EntityUtils.encodeUrl(shopJson.getName()));
         }
         if (shopJson.getStreet() != null) {
-            shopsEntity.setPStreet(encodeUrl(shopJson.getStreet()));
+            shopsEntity.setPStreet(EntityUtils.encodeUrl(shopJson.getStreet()));
         }
         return shopsEntity;
-    }
-
-    private String encodeUrl(String url){
-        String result = url.replaceAll("[^a-zA-Z0-9]+", "-").replaceAll("^-|-$","");
-        return result.toLowerCase();
     }
 }

@@ -100,8 +100,8 @@ public class EmployeeUserEntity extends DefaultBusinessEntity<Integer> {
         employeeUser.setName(employeeUserJson.name);
         employeeUser.setEmail(employeeUserJson.email);
         employeeUser.setEncryptedPassword(EntityConstants.INITIAL_PASSWORD);
-        employeeUser.setOrganizationId(employeeUserJson.org_id);
-        employeeUser.setShopId(employeeUserJson.store_id);
+        employeeUser.setOrganizationId(employeeUserJson.getOrgId());
+        employeeUser.setShopId(employeeUserJson.getStoreId());
         employeeUser.setCreatedAt(LocalDateTime.now());
         employeeUser.setUpdatedAt(LocalDateTime.now());
         

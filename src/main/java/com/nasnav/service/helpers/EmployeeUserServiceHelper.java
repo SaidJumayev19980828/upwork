@@ -1,13 +1,13 @@
 package com.nasnav.service.helpers;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import com.nasnav.AppConfig;
+import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.dto.UserDTOs;
+import com.nasnav.service.MailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import com.nasnav.constatnts.EntityConstants;
@@ -34,17 +34,22 @@ public class EmployeeUserServiceHelper {
 	private RoleRepository roleRepository;
 	private RoleEmployeeUserRepository roleEmployeeUserRepository;
 	private RoleService roleService;
+	private MailService mailService;
 	private List<String> nonStoreRolesList = Arrays.asList("NASNAV_ADMIN", "ORGANIZATION_ADMIN", "ORGANIZATION_MANAGER", "ORGANIZATION_EMPLOYEE");
 	private List<String> nonOrgRolesList = Arrays.asList("NASNAV_ADMIN", "STORE_ADMIN", "STORE_MANAGER", "STORE_EMPLOYEE");
 
 	@Autowired
 	public EmployeeUserServiceHelper(EmployeeUserRepository userRepository, RoleRepository roleRepository,
-			RoleEmployeeUserRepository roleEmployeeUserRepository, RoleService roleService) {
+			RoleEmployeeUserRepository roleEmployeeUserRepository, RoleService roleService, MailService mailService) {
 		this.employeeUserRepository = userRepository;
 		this.roleRepository = roleRepository;
 		this.roleEmployeeUserRepository = roleEmployeeUserRepository;
 		this.roleService = roleService;
+		this.mailService = mailService;
 	}
+
+	@Autowired
+	AppConfig appConfig;
 
 	public void createRoles(List<String> rolesList, Integer employeeUserId, Long org_id) {
 		List<Role> existingRoles = roleRepository.findAll();
@@ -142,61 +147,71 @@ public class EmployeeUserServiceHelper {
 		return !Collections.disjoint(roles, nonStoreRolesList);
 	}
 
-	public EmployeeUserEntity updateEmployeeUser(Integer userType, EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
-		List<ResponseStatus> responseStatusList = new ArrayList<>();
-		List<String> rolesList = new ArrayList<>();
-		if (EntityUtils.isNotBlankOrNull(employeeUserJson.email)) {
-			if (EntityUtils.validateEmail(employeeUserJson.email)) {
-				employeeUserEntity.setEmail(employeeUserJson.email);
+	public UserApiResponse updateEmployeeUser(Integer userType, EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+		List<ResponseStatus> failResponseStatusList = new ArrayList<>();
+		List<ResponseStatus> successResponseStatusList = new ArrayList<>();
+		List<String> rolesList;
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.getName())) {
+			if (EntityUtils.validateName(employeeUserJson.getName())) {
+				employeeUserEntity.setName(employeeUserJson.getName());
 			} else {
-				responseStatusList.add(ResponseStatus.INVALID_EMAIL);
+				failResponseStatusList.add(ResponseStatus.INVALID_NAME);
 			}
 		}
-		if (EntityUtils.isNotBlankOrNull(employeeUserJson.name)) {
-			if (EntityUtils.validateName(employeeUserJson.name)) {
-				employeeUserEntity.setName(employeeUserJson.name);
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.getOrgId()) && userType == 1) {
+			if (employeeUserJson.getOrgId() >= 0) {
+				employeeUserEntity.setOrganizationId(employeeUserJson.getOrgId());
 			} else {
-			responseStatusList.add(ResponseStatus.INVALID_NAME);
+				failResponseStatusList.add(ResponseStatus.INVALID_ORGANIZATION);
 			}
 		}
-		if (EntityUtils.isNotBlankOrNull(employeeUserJson.org_id)) {
-			if (employeeUserJson.org_id >= 0) {
-				employeeUserEntity.setOrganizationId(employeeUserJson.org_id);
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.getStoreId()) && (userType == 1 || userType == 2)) {
+			if (employeeUserJson.getStoreId() >= 0) {
+				employeeUserEntity.setShopId(employeeUserJson.getStoreId());
 			} else {
-				responseStatusList.add(ResponseStatus.INVALID_ORGANIZATION);
-			}
-
-		}
-		if (EntityUtils.isNotBlankOrNull(employeeUserJson.store_id)) {
-			if (employeeUserJson.store_id >= 0) {
-				employeeUserEntity.setShopId(employeeUserJson.store_id);
-			} else {
-				responseStatusList.add(ResponseStatus.INVALID_STORE);
+				failResponseStatusList.add(ResponseStatus.INVALID_STORE);
 			}
 		}
-		if (EntityUtils.isNotBlankOrNull(employeeUserJson.role)){
-			rolesList = Arrays.asList(employeeUserJson.role.split(","));
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.getRole())){
+			rolesList = Arrays.asList(employeeUserJson.getRole().split(","));
 			// check if can update employees roles
 			if (userType != -1) { // can update employees roles
 				if (userType == 2) { // can update employees roles within the same organization
 					if (checkOrganizationRolesRights(rolesList)) { // check roles list to update
-						responseStatusList.add(ResponseStatus.INSUFFICIENT_RIGHTS);
+						failResponseStatusList.add(ResponseStatus.INSUFFICIENT_RIGHTS);
 					}
 				} else if (userType == 3) { // can update employees roles within the same store
 					if (checkStoreRolesRights(rolesList)) { // check roles list to update
-						responseStatusList.add(ResponseStatus.INSUFFICIENT_RIGHTS);
+						failResponseStatusList.add(ResponseStatus.INSUFFICIENT_RIGHTS);
 					}
 				}
-				if (!responseStatusList.contains(ResponseStatus.INSUFFICIENT_RIGHTS)) {
-					createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.org_id);
+				if (!failResponseStatusList.contains(ResponseStatus.INSUFFICIENT_RIGHTS)) {
+					createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.getOrgId());
 				}
 			}
 		}
-		if (!responseStatusList.isEmpty()) {
-			throw new EntityValidationException("Invalid User Entity: " + responseStatusList,
-					UserApiResponse.createStatusApiResponse(responseStatusList), HttpStatus.NOT_ACCEPTABLE);
+		if (EntityUtils.isNotBlankOrNull(employeeUserJson.getEmail())) {
+			if (EntityUtils.validateEmail(employeeUserJson.getEmail())) {
+				employeeUserEntity.setEmail(employeeUserJson.getEmail());
+				if ((employeeUserJson.getUpdatedUserId() == null) || employeeUserJson.getUpdatedUserId().intValue() == employeeUserEntity.getId()) {
+					employeeUserEntity = generateResetPasswordToken(employeeUserEntity);
+					sendRecoveryMail(employeeUserEntity);
+					successResponseStatusList.add(ResponseStatus.NEED_ACTIVATION);
+					successResponseStatusList.add(ResponseStatus.ACTIVATION_SENT);
+				}
+			} else {
+				failResponseStatusList.add(ResponseStatus.INVALID_EMAIL);
+			}
 		}
-		return employeeUserRepository.save(employeeUserEntity);
+		if (!failResponseStatusList.isEmpty()) {
+			throw new EntityValidationException("Invalid User Entity: " + failResponseStatusList,
+					UserApiResponse.createStatusApiResponse(failResponseStatusList), HttpStatus.NOT_ACCEPTABLE);
+		}
+		employeeUserRepository.save(employeeUserEntity);
+		if (successResponseStatusList.isEmpty()) {
+			successResponseStatusList.add(ResponseStatus.ACTIVATED);
+		}
+		return  UserApiResponse.createMessagesApiResponse(true, successResponseStatusList);
 	}
 
 	/**
@@ -303,5 +318,79 @@ public class EmployeeUserServiceHelper {
 	public void validateBusinessRules(String name, String email, Long orgId, List<String> rolesList) {
 		EntityUtils.validateNameAndEmail(name, email, orgId);
 		isValidRolesList(rolesList);
+	}
+
+	/**
+	 * Generate ResetPasswordToken and assign it to passed user entity
+	 *
+	 * @param employeeUserEntity
+	 * @return user entity after generating ResetPasswordToken and updating entity.
+	 */
+	public EmployeeUserEntity generateResetPasswordToken(EmployeeUserEntity employeeUserEntity) {
+		String generatedToken = generateResetPasswordToken(EntityConstants.TOKEN_LENGTH);
+		//employeeUserEntity.setEncryptedPassword("");
+		employeeUserEntity.setResetPasswordToken(generatedToken);
+		employeeUserEntity.setResetPasswordSentAt(LocalDateTime.now());
+		return employeeUserRepository.saveAndFlush(employeeUserEntity);
+	}
+
+	/**
+	 * generate new ResetPasswordToken and ensure that this ResetPasswordToken is
+	 * never used before.
+	 *
+	 * @param tokenLength length of generated ResetPasswordToken
+	 * @return unique generated ResetPasswordToken.
+	 */
+	private String generateResetPasswordToken(int tokenLength) {
+		String generatedToken = EntityUtils.generateToken(tokenLength);
+		boolean existsByToken = employeeUserRepository.existsByResetPasswordToken(generatedToken);
+		if (existsByToken) {
+			return reGenerateResetPasswordToken(tokenLength);
+		}
+		return generatedToken;
+	}
+
+	/**
+	 * regenerate ResetPasswordToken and if token already exists, make recursive
+	 * call until generating new ResetPasswordToken.
+	 *
+	 * @param tokenLength length of generated ResetPasswordToken
+	 * @return unique generated ResetPasswordToken.
+	 */
+	private String reGenerateResetPasswordToken(int tokenLength) {
+		String generatedToken = EntityUtils.generateToken(tokenLength);
+		boolean existsByToken = employeeUserRepository.existsByResetPasswordToken(generatedToken);
+		if (existsByToken) {
+			return reGenerateResetPasswordToken(tokenLength);
+		}
+		return generatedToken;
+	}
+
+	/**
+	 * Send An Email to user.
+	 *
+	 * @param employeeUserEntity user entity
+	 * @return UserApiResponse representing the status of sending email.
+	 */
+	public UserApiResponse sendRecoveryMail(EmployeeUserEntity employeeUserEntity) {
+		UserApiResponse userApiResponse = new UserApiResponse();
+		try {
+			// create parameter map to replace parameter by actual UserEntity data.
+			Map<String, String> parametersMap = new HashMap<>();
+			parametersMap.put(EmailConstants.USERNAME_PARAMETER, employeeUserEntity.getName());
+			parametersMap.put(EmailConstants.CHANGE_PASSWORD_URL_PARAMETER,
+					appConfig.mailRecoveryUrl.concat(employeeUserEntity.getResetPasswordToken()));
+			// send Recovery mail to user
+			this.mailService.send(employeeUserEntity.getEmail(), EmailConstants.CHANGE_PASSWORD_EMAIL_SUBJECT,
+					EmailConstants.CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap);
+			// set success to true after sending mail.
+			userApiResponse.setSuccess(true);
+		} catch (Exception e) {
+			userApiResponse.setSuccess(false);
+			userApiResponse.setMessages(Collections.singletonList(e.getMessage()));
+			throw new EntityValidationException("Could not send Email ", userApiResponse,
+					HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return userApiResponse;
 	}
 }

@@ -319,12 +319,10 @@ public class EmployeeUserCreationTest {
 	@Test
 	public void updateSelfEmployeeUserAuthTestSuccess() {
 		// update self data test success
-		String body = "{\"name\":\"Ahmad\",\"email\":\"" + "ahmad.user@nasnav.com" + "\" }";
+		String body = "{\"employee\":true,\"name\":\"Ahmad\",\"email\":\"" + "ahmad.user@nasnav.com" + "\" }";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
-		Long id = response.getBody().getEntityId();
 
-System.out.println(response.getBody());
 		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
@@ -332,7 +330,7 @@ System.out.println(response.getBody());
 	@Test
 	public void updateOtherEmployeeUserAuthTestSuccess() {
 		// update user with id 158 success
-		String body = "{\"updated_user_id\":\"158\",\"name\":\"hussien\",\"email\":\"" + "hussien.Test@nasnav.com" + "\", \"org_id\": 802" + ", \"role\": \"ORGANIZATION_MANAGER\"}";
+		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"name\":\"hussien\",\"email\":\"" + "hussien.Test@nasnav.com" + "\", \"org_id\": 802" + ", \"role\": \"ORGANIZATION_MANAGER\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 		Long id = response.getBody().getEntityId();
@@ -370,7 +368,7 @@ System.out.println(response.getBody());
 	//NASNAV_ADMIN changing roles to NASNAV_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
 	@Test
 	public void updateToNasnavAdminByNasnavAdminTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"NASNAV_ADMIN\"}";
+		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"role\":\"NASNAV_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
@@ -380,7 +378,7 @@ System.out.println(response.getBody());
 
 	@Test
 	public void updateToOrganizationAdminByNasnavAdminTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_ADMIN\"}";
+		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
@@ -390,7 +388,7 @@ System.out.println(response.getBody());
 
 	@Test
 	public void updateToOrganizationEmployeeByNasnavAdminTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_EMPLOYEE\"}";
+		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_EMPLOYEE\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
@@ -400,7 +398,7 @@ System.out.println(response.getBody());
 
 	@Test
 	public void updateToStoreEmployeeByNasnavAdminTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"STORE_EMPLOYEE\"}";
+		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"role\":\"STORE_EMPLOYEE\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
@@ -422,7 +420,7 @@ System.out.println(response.getBody());
 
 	@Test
 	public void updateToOrganizationAdminByOrganizationAdminTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_ADMIN\"}";
+		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm", "69");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
@@ -432,7 +430,7 @@ System.out.println(response.getBody());
 
 	@Test
 	public void updateToOrganizationEmployeeByOrganizationAdminTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_EMPLOYEE\"}";
+		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_EMPLOYEE\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm", "69");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
@@ -454,7 +452,7 @@ System.out.println(response.getBody());
 	//ORGANIZATION_EMPLOYEE changing roles to NASNAV_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
 	@Test
 	public void updateToNasnavAdminByOrganizationEmployeeTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"NASNAV_ADMIN\"}";
+		String body = "{\"employee\":true,\"employee\":true,\"updated_user_id\":\"158\",\"role\":\"NASNAV_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123", "70");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
@@ -464,7 +462,7 @@ System.out.println(response.getBody());
 
 	@Test
 	public void updateToOrganizationAdminByOrganizationEmployeeTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_ADMIN\"}";
+		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123", "70");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
@@ -474,7 +472,7 @@ System.out.println(response.getBody());
 
 	@Test
 	public void updateToOrganizationEmployeeByOrganizationEmployeeTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_EMPLOYEE\"}";
+		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_EMPLOYEE\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123", "70");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
@@ -484,7 +482,7 @@ System.out.println(response.getBody());
 
 	@Test
 	public void updateToStoreEmployeeByOrganizationEmployeeTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"STORE_EMPLOYEE\"}";
+		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"role\":\"STORE_EMPLOYEE\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123", "70");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
@@ -497,7 +495,7 @@ System.out.println(response.getBody());
 	//STORE_EMPLOYEE changing roles to NASNAV_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
 	@Test
 	public void updateToNasnavAdminByStoreEmployeeTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"NASNAV_ADMIN\"}";
+		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"role\":\"NASNAV_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "456", "71");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
@@ -507,7 +505,7 @@ System.out.println(response.getBody());
 
 	@Test
 	public void updateToOrganizationAdminByStoreEmployeeTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_ADMIN\"}";
+		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "456", "71");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
@@ -517,7 +515,7 @@ System.out.println(response.getBody());
 
 	@Test
 	public void updateToOrganizationEmployeeByStoreEmployeeTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_EMPLOYEE\"}";
+		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"role\":\"ORGANIZATION_EMPLOYEE\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "456", "71");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
@@ -527,7 +525,7 @@ System.out.println(response.getBody());
 
 	@Test
 	public void updateToStoreEmployeeByStoreEmployeeTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"STORE_EMPLOYEE\"}";
+		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"role\":\"STORE_EMPLOYEE\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "456", "71");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
