@@ -49,6 +49,12 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+            <version>${spring.boot.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20180813</version>
@@ -146,6 +152,20 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
         </dependency>
+        
+        <dependency>
+		    <groupId>com.github.stephenc.jcip</groupId>
+		    <artifactId>jcip-annotations</artifactId>
+		    <version>1.0-1</version>
+		    <scope>test</scope>
+		 </dependency>
+		 
+	    <dependency>
+	        <groupId>org.jdbi</groupId>
+	        <artifactId>jdbi3-core</artifactId>
+	        <version>3.1.0</version>
+	        <scope>test</scope>
+	    </dependency>
 
     </dependencies>
 
@@ -179,6 +199,14 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.version}</version>
+                <configuration>
+			      <properties>
+			        <property>
+			          <name>listener</name>
+			          <value>com.nasnav.test.listners.TestEnvironmentInitializer</value>
+			        </property>
+			      </properties>
+			    </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
