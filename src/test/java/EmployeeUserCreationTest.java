@@ -169,12 +169,12 @@ public class EmployeeUserCreationTest {
 
 		//this user have the role CUSTOMER in the test data, it can't create other users
         HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123", "70");
-		ResponseEntity response = template.postForEntity("/user/create", employeeUserJson, String.class);
+		ResponseEntity<BaseResponse> response = template.postForEntity("/user/create", employeeUserJson, BaseResponse.class);
 
 
 		
 		Assert.assertEquals(HttpStatus.FORBIDDEN.value(), response.getStatusCode().value());
-//		Assert.assertFalse(response.getBody().isSuccess());
+		Assert.assertFalse(response.getBody().isSuccess());
 	}
 	
 	

@@ -2,13 +2,11 @@ package com.nasnav.security;
 
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.print.DocFlavor.URL;
 
 import org.jboss.logging.Logger;
 import org.springframework.context.annotation.Bean;
@@ -22,6 +20,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
@@ -132,6 +131,13 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     AuthenticationEntryPoint unauthorizedEntryPoint() {
         return new NasnavHttpStatusEntryPoint(HttpStatus.UNAUTHORIZED);
     }
+    
+    
+    @Bean
+    AccessDeniedHandler accessDeniedEntryPoint() {
+        return new NasnavAccessDeniedEntryPoint();
+    }
+    
     
     
     
