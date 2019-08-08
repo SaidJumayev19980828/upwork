@@ -1,11 +1,13 @@
-import com.nasnav.NavBox;
-import com.nasnav.controller.NavboxController;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.ShopsEntity;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNull;
+
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Date;
+
+import javax.sql.DataSource;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -21,24 +23,30 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
-import javax.sql.DataSource;
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Date;
+import com.nasnav.NavBox;
+import com.nasnav.controller.NavboxController;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.persistence.BrandsEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ShopsEntity;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNull;
+import net.jcip.annotations.NotThreadSafe;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
+@NotThreadSafe
 public class NavBoxTest {
 
     private MockMvc mockMvc;
@@ -193,11 +201,11 @@ public class NavBoxTest {
         assertEquals("there are total 2 attributes",2 , json.length());
 
 
-        //// testing extra attributes with organization filter = 801 ////
-        response = template.getForEntity("/navbox/attributes?org_id=801", String.class);
+        //// testing extra attributes with organization filter = 99001 ////
+        response = template.getForEntity("/navbox/attributes?org_id=99001", String.class);
         System.out.println(response.getBody());
         json = (JSONArray) JSONParser.parseJSON(response.getBody());
-        assertEquals("there are total 1 attributes with organization = 801",1 , json.length());
+        assertEquals("there are total 1 attributes with organization = 99001",1 , json.length());
 
 
         //// testing extra attributes with false organization filter ////

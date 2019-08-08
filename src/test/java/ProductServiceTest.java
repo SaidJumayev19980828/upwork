@@ -1,6 +1,14 @@
-import com.nasnav.NavBox;
-import com.nasnav.dao.*;
-import com.nasnav.persistence.*;
+import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.stream.IntStream;
+
+import javax.sql.DataSource;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -19,20 +27,28 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static junit.framework.TestCase.assertEquals;
-import static org.junit.Assert.assertTrue;
+import com.nasnav.NavBox;
+import com.nasnav.dao.BundleRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.StocksEntity;
 
-import javax.sql.DataSource;
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.stream.IntStream;
+import net.jcip.annotations.NotThreadSafe;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
+@NotThreadSafe
 public class ProductServiceTest {
 
 	public static final int BUNDLE_ITEM_MIN_QUANTITY = 1;
@@ -371,15 +387,15 @@ public class ProductServiceTest {
 
 	private void performTestProductResponseByFilters() {
 		//// testing brand_id filter ////
-		ResponseEntity<String> response = template.getForEntity("/navbox/products?org_id=801", String.class);
+		ResponseEntity<String> response = template.getForEntity("/navbox/products?org_id=99001", String.class);
 		System.out.println(response.getBody());
 		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		long total = json.getLong("total");
-		assertEquals("there are total 16 products with with org_id = 801 and no brand_id filter"
+		assertEquals("there are total 16 products with with org_id = 99001 and no brand_id filter"
 				,16 , total);
 
 
-		response = template.getForEntity("/navbox/products?org_id=801&brand_id=101", String.class);
+		response = template.getForEntity("/navbox/products?org_id=99001&brand_id=101", String.class);
 		System.out.println(response.getBody());
 		json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		total = json.getLong("total");
@@ -387,7 +403,7 @@ public class ProductServiceTest {
 				,10 , total);
 
 
-		response = template.getForEntity("/navbox/products?org_id=801&brand_id=102", String.class);
+		response = template.getForEntity("/navbox/products?org_id=99001&brand_id=102", String.class);
 		System.out.println(response.getBody());
 		json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		total = json.getLong("total");
@@ -396,7 +412,7 @@ public class ProductServiceTest {
 		//// finish test
 
 		//// test fields existance in both "product" and "products" apis
-		response = template.getForEntity("/navbox/products?org_id=801", String.class);
+		response = template.getForEntity("/navbox/products?org_id=99001", String.class);
 
 		assertJsonFieldExists(response);
 

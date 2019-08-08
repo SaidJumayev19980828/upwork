@@ -38,17 +38,27 @@ import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.enumerations.OrderStatus;
+import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.UserService;
+
+import net.jcip.annotations.NotThreadSafe;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
+@NotThreadSafe
 public class OrderServiceTest {
 
-//    private static String _authToken = "TestAuthToken";
-//    private Long _testUserId = null;
+
+	private static final long DUMMY_ORG_ID = 99001L;
 	private static UserEntity persistentUser;
 	private static OrganizationEntity organization;
 
@@ -92,7 +102,6 @@ public class OrderServiceTest {
 	@Autowired
 	private DataSource datasource;
 
-	@PostConstruct
 	@Before
 	public void setupLoginUser() {
 		performInsertSqlDataScript();
@@ -105,7 +114,7 @@ public class OrderServiceTest {
 			persistentUser.setUpdatedAt(LocalDateTime.now());
 			persistentUser.setAuthenticationToken("123");
 			persistentUser.setOrganizationId(801L);
-			persistentUser.setEncPassword("---");
+			persistentUser.setEncryptedPassword("---");
 			userRepository.save(persistentUser);
 		}
 	}
@@ -134,9 +143,10 @@ public class OrderServiceTest {
 	@Test
 	public void unregisteredUser() {
 		StocksEntity stock = createStock();
-		ResponseEntity<OrderResponse> response = template.postForEntity("/order/update",
+		
+		ResponseEntity response = template.postForEntity("/order/update",
 				TestCommons.getHttpEntity("{ \"status\" : \"NEW\", \"basket\": [ { \"stock_id\":" + stock.getId() + ", \"quantity\": " +  stock.getQuantity() + "} ] }", 1, "XX"),
-				OrderResponse.class);
+				Object.class);
 		Assert.assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatusCode().value());
 		stockRepository.delete(stock);
 	}

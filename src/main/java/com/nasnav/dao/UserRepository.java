@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.Role;
 import com.nasnav.persistence.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -68,4 +69,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	 */
 	@Query("select users from  UserEntity users where users.email = :userEmail and users.organizationId = :userOrgId")
 	UserEntity existsByEmailAndOrgId(@Param("userEmail") String userEmail, @Param("userOrgId") Long userOrgId);
+	
+	
+	
+	Optional<UserEntity> findByAuthenticationToken(String authToken);
 }

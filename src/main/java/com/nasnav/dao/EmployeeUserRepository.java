@@ -1,12 +1,13 @@
 package com.nasnav.dao;
 
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.UserEntity;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.nasnav.persistence.EmployeeUserEntity;
 
-public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity, Integer> {
+
+public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity, Long> {
 
     /**
      * Check if the passed authenticationToken already exist before or not
@@ -48,11 +49,13 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	 */
 	EmployeeUserEntity getByAuthenticationToken(String authToken);
 
-	EmployeeUserEntity getById(Integer id);
+	Optional<EmployeeUserEntity> findByAuthenticationToken(String authToken);
 
-	boolean existsByIdAndAuthenticationToken(Integer userId, String authenticationToken);
+	EmployeeUserEntity getById(Long id);
 
-	EmployeeUserEntity getByIdAndAuthenticationToken(Integer userId, String authToken);
+	boolean existsByIdAndAuthenticationToken(Long userId, String authenticationToken);
+
+	EmployeeUserEntity getByIdAndAuthenticationToken(Long userId, String authToken);
 }
 
 

@@ -65,7 +65,7 @@ public class ShopService {
         return  ((ShopRepresentationObject)shopsEntityOptional.get().getRepresentation());
     }
 
-    public ShopResponse createShop(Integer userId, ShopJsonDTO shopJson){
+    public ShopResponse createShop(Long userId, ShopJsonDTO shopJson){
         List<String> userRoles = employeeUserServicehelper.getEmployeeUserRoles(userId);
         Long employeeUserOrgId = employeeUserRepository.getById(userId).getOrganizationId();
         if (!userRoles.contains("ORGANIZATION_MANAGER") || !employeeUserOrgId.equals(shopJson.getOrgId())){
@@ -81,10 +81,10 @@ public class ShopService {
         return new ShopResponse(shopsEntity.getId(), HttpStatus.OK);
     }
 
-    public ShopResponse updateShop(Integer userId, ShopJsonDTO shopJson){
+    public ShopResponse updateShop(Long userId, ShopJsonDTO shopJson){
         List<String> userRoles = employeeUserServicehelper.getEmployeeUserRoles(userId);
         Long employeeUserOrgId = employeeUserRepository.getById(userId).getOrganizationId();
-        Integer employeeUserShopId = employeeUserRepository.getById(userId).getId();
+        Long employeeUserShopId = employeeUserRepository.getById(userId).getId();
         if (!userRoles.contains("ORGANIZATION_MANAGER") && !userRoles.contains("STORE_MANAGER")){
             return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.UNAUTHORIZED);
         }

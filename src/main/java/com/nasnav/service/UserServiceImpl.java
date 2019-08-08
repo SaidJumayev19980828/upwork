@@ -8,12 +8,12 @@ import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.EntityValidationException;
-import com.nasnav.persistence.DefaultBusinessEntity;
+import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.UserEntity;
-import com.nasnav.response.UserApiResponse;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
+import com.nasnav.response.UserApiResponse;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -31,12 +31,16 @@ public class UserServiceImpl implements UserService {
 	private UserRepository userRepository;
 	private MailService mailService;
 	private PasswordEncoder passwordEncoder;
+	@Autowired
+	private SecurityService securityService;
 
 	@Autowired
-	public UserServiceImpl(UserRepository userRepository, MailService mailService, PasswordEncoder passwordEncoder) {
+	public UserServiceImpl(UserRepository userRepository, MailService mailService, PasswordEncoder passwordEncoder,
+						   SecurityService securityService) {
 		this.userRepository = userRepository;
 		this.mailService = mailService;
 		this.passwordEncoder = passwordEncoder;
+		this.securityService = securityService;
 	}
 
 	@Autowired
@@ -73,8 +77,8 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserApiResponse updateUser(Integer userId, String userToken, UserDTOs.EmployeeUserUpdatingObject userJson) {
-		if (!checkAuthToken(userId, userToken)){
+	public UserApiResponse updateUser(Long userId, String userToken, UserDTOs.EmployeeUserUpdatingObject userJson) {
+		if (!checkAuthToken((long)userId, userToken)){
 			throw new EntityValidationException("" + ResponseStatus.UNAUTHENTICATED,
 					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.UNAUTHENTICATED)), HttpStatus.NOT_ACCEPTABLE);
 		}
@@ -140,7 +144,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public DefaultBusinessEntity<?> update(DefaultBusinessEntity<?> userEntity) {
+	public BaseUserEntity update(BaseUserEntity userEntity) {
 		return userRepository.saveAndFlush((UserEntity) userEntity);
 	}
 
@@ -182,7 +186,7 @@ public class UserServiceImpl implements UserService {
 	 * @return user entity after generating ResetPasswordToken and updating entity.
 	 */
 	private UserEntity generateResetPasswordToken(UserEntity userEntity) {
-		String generatedToken = generateResetPasswordToken(EntityConstants.TOKEN_LENGTH);
+		String generatedToken = generateResetPasswordToken();
 		userEntity.setResetPasswordToken(generatedToken);
 		userEntity.setResetPasswordSentAt(LocalDateTime.now());
 		return userRepository.saveAndFlush(userEntity);
@@ -223,11 +227,11 @@ public class UserServiceImpl implements UserService {
 	 * @param tokenLength length of generated ResetPasswordToken
 	 * @return unique generated ResetPasswordToken.
 	 */
-	private String generateResetPasswordToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+	private String generateResetPasswordToken() {
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
 		if (existsByToken) {
-			return reGenerateResetPasswordToken(tokenLength);
+			return reGenerateResetPasswordToken();
 		}
 		return generatedToken;
 	}
@@ -239,11 +243,11 @@ public class UserServiceImpl implements UserService {
 	 * @param tokenLength length of generated ResetPasswordToken
 	 * @return unique generated ResetPasswordToken.
 	 */
-	private String reGenerateResetPasswordToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+	private String reGenerateResetPasswordToken() {
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
 		if (existsByToken) {
-			return reGenerateResetPasswordToken(tokenLength);
+			return reGenerateResetPasswordToken();
 		}
 		return generatedToken;
 	}
@@ -258,7 +262,7 @@ public class UserServiceImpl implements UserService {
 			checkResetPasswordTokenExpiry(userEntity);
 			userEntity.setResetPasswordToken(null);
 			userEntity.setResetPasswordSentAt(null);
-			userEntity.setEncPassword(passwordEncoder.encode(data.password));
+			userEntity.setEncryptedPassword(passwordEncoder.encode(data.password));
 			userRepository.saveAndFlush(userEntity);
 		} else {
 			throw new EntityValidationException("INVALID_TOKEN  ",
@@ -293,7 +297,7 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
-	@Override
+	/*@Override
 	public UserApiResponse login(UserDTOs.UserLoginObject loginData) {
 		UserEntity userEntity = this.userRepository.getByEmailAndOrganizationId(loginData.email, loginData.getOrgId());
 
@@ -306,7 +310,7 @@ public class UserServiceImpl implements UserService {
 				throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, HttpStatus.LOCKED);
 			}
 			// ensure that password matched
-			boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncPassword());
+			boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncryptedPassword());
 
 			if (passwordMatched) {
 				// check if account is locked
@@ -323,7 +327,7 @@ public class UserServiceImpl implements UserService {
 		UserApiResponse failedLoginResponse = EntityUtils
 				.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_CREDENTIALS));
 		throw new EntityValidationException("INVALID_CREDENTIALS ", failedLoginResponse, HttpStatus.UNAUTHORIZED);
-	}
+	}*/
 
 	/**
 	 * Generate new AuthenticationToken and perform post login updates.
@@ -347,7 +351,7 @@ public class UserServiceImpl implements UserService {
 	 * @return unique generated AuthenticationToken.
 	 */
 	private String generateAuthenticationToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = userRepository.existsByAuthenticationToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateAuthenticationToken(tokenLength);
@@ -363,46 +367,12 @@ public class UserServiceImpl implements UserService {
 	 * @return unique generated AuthenticationToken.
 	 */
 	private String reGenerateAuthenticationToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = userRepository.existsByAuthenticationToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateAuthenticationToken(tokenLength);
 		}
 		return generatedToken;
-	}
-
-	/**
-	 * Check if passed user entity's account is locked.
-	 *
-	 * @param userEntity User entity to be checked.
-	 * @return true if current user entity's account is locked.
-	 */
-	private boolean isAccountLocked(UserEntity userEntity) {
-		// TODO : change implementation later
-		return false;
-	}
-
-	/**
-	 * Check if passed user entity's account needs activation.
-	 *
-	 * @param userEntity User entity to be checked.
-	 * @return true if current user entity's account needs activation.
-	 */
-	private boolean isUserNeedActivation(UserEntity userEntity) {
-		String encPassword = userEntity.getEncPassword();
-		return EntityUtils.isBlankOrNull(encPassword) || EntityConstants.INITIAL_PASSWORD.equals(encPassword);
-	}
-
-	/**
-	 * Create success login Api response
-	 *
-	 * @param userEntity success user entity
-	 * @return UserApiResponse
-	 */
-	private UserApiResponse createSuccessLoginResponse(UserEntity userEntity) {
-		return new ApiResponseBuilder().setSuccess(true).setEntityId(userEntity.getId())
-				.setToken(userEntity.getAuthenticationToken()).setRoles(getUserRoles())
-				.setOrganizationId(userEntity.getOrganizationId()).build();
 	}
 
 	/**
@@ -415,7 +385,8 @@ public class UserServiceImpl implements UserService {
 		return Collections.singletonList(Roles.CUSTOMER.name());
 	}
 
-	public boolean checkAuthToken(Integer userId, String authToken) {
+	@Override
+	public boolean checkAuthToken(Long userId, String authToken) {
 		return userRepository.existsByIdAndAuthenticationToken(userId, authToken);
 	}
 

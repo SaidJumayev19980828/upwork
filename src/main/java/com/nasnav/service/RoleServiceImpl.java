@@ -20,7 +20,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public List<Role> getRolesOfEmployeeUser(Integer employeeUserId) {
+    public List<Role> getRolesOfEmployeeUser(Long employeeUserId) {
         if (EntityUtils.isBlankOrNull(employeeUserId)) {
             return Collections.emptyList();
         }

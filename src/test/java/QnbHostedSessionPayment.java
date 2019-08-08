@@ -1,10 +1,7 @@
-import com.nasnav.NavBox;
-import com.nasnav.dao.*;
-import com.nasnav.enumerations.TransactionCurrency;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.payments.qnb.Account;
-import com.nasnav.payments.qnb.Session;
-import com.nasnav.persistence.*;
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.List;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,13 +15,32 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 
-import java.math.BigDecimal;
-import java.util.*;
+import com.nasnav.NavBox;
+import com.nasnav.dao.BasketRepository;
+import com.nasnav.dao.OrderRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.PaymentsRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.enumerations.TransactionCurrency;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.payments.qnb.Account;
+import com.nasnav.payments.qnb.Session;
+import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.StocksEntity;
+
+import net.jcip.annotations.NotThreadSafe;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
+@NotThreadSafe
 public class QnbHostedSessionPayment {
     Account testAccount = new Account();
 

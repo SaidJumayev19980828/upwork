@@ -372,10 +372,10 @@ public class OrderServiceImpl implements OrderService {
 				statusId = (OrderStatus.findEnum(status)).getValue();
 			}
 		}
-		List<String> employeeUserRoles = employeeUserServiceHelper.getEmployeeUserRoles(loggedUserId.intValue());
+		List<String> employeeUserRoles = employeeUserServiceHelper.getEmployeeUserRoles(loggedUserId);
 		UserEntity user = userRepository.getByIdAndAuthenticationToken(loggedUserId, userToken);
 		if (user == null){ // EmployeeUser
-			EmployeeUserEntity employeeUser = employeeUserRepository.getByIdAndAuthenticationToken(loggedUserId.intValue(), userToken);
+			EmployeeUserEntity employeeUser = employeeUserRepository.getByIdAndAuthenticationToken(loggedUserId, userToken);
 			if (employeeUserRoles.contains("STORE_ADMIN") || employeeUserRoles.contains("STORE_MANAGER") || employeeUserRoles.contains("STORE_EMPLOYEE")){
 				storeId = employeeUser.getShopId();
 			} else if (employeeUserRoles.contains("ORGANIZATION_ADMIN") || employeeUserRoles.contains("ORGANIZATION_MANAGER") || employeeUserRoles.contains("ORGANIZATION_EMPLOYEE")) {

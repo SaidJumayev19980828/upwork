@@ -1,16 +1,11 @@
-import com.nasnav.AppConfig;
-import com.nasnav.NavBox;
-import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.controller.UserController;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.UserRepository;
-import com.nasnav.exceptions.EntityValidationException;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.UserEntity;
-import com.nasnav.response.UserApiResponse;
-import com.nasnav.response.ResponseStatus;
-import com.nasnav.service.UserService;
-import org.junit.*;
+import java.time.LocalDateTime;
+import java.util.Date;
+
+import javax.annotation.PreDestroy;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,20 +13,40 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.time.LocalDateTime;
-import java.util.Date;
+import com.nasnav.AppConfig;
+import com.nasnav.NavBox;
+import com.nasnav.constatnts.EntityConstants;
+import com.nasnav.controller.UserController;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.UserRepository;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.UserEntity;
+import com.nasnav.response.ResponseStatus;
+import com.nasnav.response.UserApiResponse;
+import com.nasnav.service.UserService;
+
+import net.jcip.annotations.NotThreadSafe;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
+@NotThreadSafe
+@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/UserRegisterTest.sql"})
+@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 public class UserRegisterTest {
 
 	private MockMvc mockMvc;
@@ -56,54 +71,74 @@ public class UserRegisterTest {
 	@Autowired
 	private OrganizationRepository organizationRepository;
 
+	
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@Before
 	public void setup() {
 		config.mailDryRun = true;
 		mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
-		cleanup();
 	}
 
-	@After
-	public void cleanup() {
-		UserEntity user = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", (long)15);
-		if (user != null) {
-			userRepository.delete(user);
-		}
-	}
 
-	@PostConstruct
+	
+	
+	@Before
 	public void setupLoginUser() {
 		if (organization == null) {
-			organization = createOrganization();
+			organization = organizationRepository.findOneById(99001L);
 		}
 
 		persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", organization.getId());
 		if (persistentUser == null) {
-			persistentUser = new UserEntity();
-			persistentUser.setName("John Smith");
-			persistentUser.setEmail("unavailable@nasnav.com");
-			persistentUser.setCreatedAt(LocalDateTime.now());
-			persistentUser.setUpdatedAt(LocalDateTime.now());
-
-			//create a new organization and save its id to the user entity
-			persistentUser.setOrganizationId(organization.getId());
-		}
-		persistentUser.setEncPassword("---");
-		userRepository.save(persistentUser);
+			persistentUser = createUser();
+			persistentUser = userRepository.save(persistentUser);
+		}		
+		
 	}
 
+
+
+
+	private UserEntity createUser() {
+		UserEntity persistentUser = new UserEntity();
+		persistentUser.setName("John Smith");
+		persistentUser.setEmail("unavailable@nasnav.com");
+		persistentUser.setCreatedAt(LocalDateTime.now());
+		persistentUser.setUpdatedAt(LocalDateTime.now());
+		persistentUser.setEncryptedPassword("---");
+		persistentUser.setOrganizationId(organization.getId());
+		
+		return persistentUser;
+	}
+	
+	
+
 	private OrganizationEntity createOrganization() {
-		//create new organization
 		OrganizationEntity org = new OrganizationEntity();
+		org.setId(getNewDummyOrgId());
 		org.setName("Test Organization");
 		org.setCreatedAt(new Date());
 		org.setUpdatedAt(new Date());
-		org.setDescription("Test Organization Description");
+		org.setDescription("Test Organization Description");		
 
 		OrganizationEntity organization = organizationRepository.saveAndFlush(org);
 		return organization;
 	}
+	
+	
+	/**
+	 * Dummy organizations that we can use in tests have id's between 99000 and 99999
+	 * */
+	private Long getNewDummyOrgId() {
+		String sql = "SELECT MAX(ID) + 1 FROM PUBLIC.ORGANIZATIONS WHERE ID BETWEEN 99000 AND 99999";
+		Long newId = jdbcTemplate.queryForObject(sql, Long.class);
+		return newId != null? newId : 99000L;
+	}
+
+
+
 
 	@PreDestroy
 	public void removeLoginUser() {
@@ -223,20 +258,7 @@ public class UserRegisterTest {
 		Assert.assertEquals(406, response.getStatusCode().value());
 	}
 
-	/*
-	 * @Test public void testSendResetPasswordTokenEmail() { HttpEntity<Object>
-	 * userJson = getHttpEntity( "{\"name\":\"" + persistentUser.getName() + "\"," +
-	 * "\"email\":\"" + persistentUser.getEmail() + "\"}");
-	 * ResponseEntity<UserApiResponse> response = template.postForEntity(
-	 * "/user/register", userJson, UserApiResponse.class);
-	 * 
-	 * long userId = response.getBody().getEntityId(); response =
-	 * getResponseFromGet("/user/recover?email=" + persistentUser.getEmail(),
-	 * UserApiResponse.class); //Delete this user
-	 * Assert.assertTrue(response.getBody().isSuccess());
-	 * Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
-	 * }
-	 */
+	
 
 	@Test
 	public void testSendResetPasswordTokenForInvalidMail() {
@@ -275,7 +297,7 @@ public class UserRegisterTest {
 		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId()
 				+ "&employee=false", UserApiResponse.class);
 		// refresh the entity
-		persistentUser = userRepository.findById(persistentUser.getId()).get();
+		persistentUser = userRepository.findById((long)persistentUser.getId()).get();
 		String token = persistentUser.getResetPasswordToken();
 		Assert.assertNotEquals("ABCX", token);
 
@@ -320,7 +342,7 @@ public class UserRegisterTest {
 		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId(), UserApiResponse.class);
 
 		// refresh user
-		persistentUser = (UserEntity) userService.getUserById(persistentUser.getId());
+		persistentUser = (UserEntity) userService.getUserById((long)persistentUser.getId());
 		HttpEntity<Object> userJson = getHttpEntity(
 				"{\"token\":\"" + persistentUser.getResetPasswordToken() + "\"," + "\"password\":\"123\"}");
 
@@ -353,12 +375,31 @@ public class UserRegisterTest {
 
 	@Test
 	public void testUserShouldLogin() {
+		//try to get new password to use it for login
+		String newPassword = "New_Password"; 
+		
+		resetUserPassword(newPassword);
+
+		// login using the new password
+		HttpEntity<Object> userJson = getHttpEntity(
+				"{\"password\":\"" + newPassword + "\", \"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + " }");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
+				UserApiResponse.class);
+
+		Assert.assertTrue(response.getBody().isSuccess());
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+
+
+
+
+	private void resetUserPassword(String newPassword) {
 		// send token to user
 		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&employee=false&org_id=" + organization.getId()
 				, UserApiResponse.class);
 
 		// refresh the user entity
-		persistentUser = (UserEntity) userService.getUserById(persistentUser.getId());
+		persistentUser = (UserEntity) userService.getUserById((long)persistentUser.getId());
 		// use token to change password
 		String token = persistentUser.getResetPasswordToken();
 		HttpEntity<Object> userJson = getHttpEntity(
@@ -390,6 +431,26 @@ public class UserRegisterTest {
 		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_CREDENTIALS));
 		Assert.assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatusCode().value());
 	}
+	
+	
+	
+	@Test
+	public void testInvalidOrgIdLogin() {
+		//try to get new password to use it for login
+		String newPassword = "New_Password"; 		
+		resetUserPassword(newPassword);
+
+		// login using the new password
+		HttpEntity<Object> userJson = getHttpEntity(
+				"{\"password\":\"" + newPassword + "\", \"email\":\"" + persistentUser.getEmail() + "\", \"org_id\":null }");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
+				UserApiResponse.class);
+
+		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_CREDENTIALS));
+		Assert.assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatusCode().value());
+	}
+	
+	
 
 	@Test
 	public void testInvalidJsonForLogin() {

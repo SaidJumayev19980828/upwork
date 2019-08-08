@@ -11,6 +11,6 @@ public interface RoleService {
      * @param integer Id of employee user entity.
      * @return list or roles
      */
-    List<Role> getRolesOfEmployeeUser(Integer integer);
+    List<Role> getRolesOfEmployeeUser(Long integer);
 
 }

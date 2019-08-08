@@ -51,7 +51,7 @@ public class EmployeeUserServiceHelper {
 	@Autowired
 	AppConfig appConfig;
 
-	public void createRoles(List<String> rolesList, Integer employeeUserId, Long org_id) {
+	public void createRoles(List<String> rolesList, Long employeeUserId, Long org_id) {
 		List<Role> existingRoles = roleRepository.findAll();
 		List<String> existingRolesListNames = existingRoles.stream().map( role -> role.getName()).collect(Collectors.toList());
 		Integer roleId;
@@ -70,7 +70,7 @@ public class EmployeeUserServiceHelper {
 		}
 	}
 
-	private void createRoleEmployeeUser(Integer employeeUserId, Integer roleId) {
+	private void createRoleEmployeeUser(Long employeeUserId, Integer roleId) {
 		RoleEmployeeUser roleEmployeeUser = new RoleEmployeeUser();
 		roleEmployeeUser.setRoleId(roleId);
 		roleEmployeeUser.setEmployeeUserId(employeeUserId);
@@ -111,7 +111,7 @@ public class EmployeeUserServiceHelper {
 
 	// check if the current list of roles has a role authorized to create users or
 	// not
-	public Integer roleCanCreateUser(Integer id) {
+	public Integer roleCanCreateUser(Long id) {
 		// get list of roles belong to current user
 		List<Role> rolesList = roleRepository.getRolesOfEmployeeUser(id);
 		List<Roles> rolesListNames = rolesList.stream().map( role -> Roles.valueOf(role.getName())).collect(Collectors.toList());
@@ -221,10 +221,10 @@ public class EmployeeUserServiceHelper {
 	 * @return employeeUserEntity
 	 */
 	public EmployeeUserEntity updatePostLogin(EmployeeUserEntity employeeUserEntity) {
-		LocalDateTime currentSignInDate = employeeUserEntity.getCurrentSignInAt();
-		employeeUserEntity.setLastSignInAt(currentSignInDate);
-		employeeUserEntity.setCurrentSignInAt(LocalDateTime.now());
-		employeeUserEntity.setAuthenticationToken(generateAuthenticationToken(EntityConstants.TOKEN_LENGTH));
+		LocalDateTime currentSignInDate = employeeUserEntity.getCurrentSignInDate();
+		employeeUserEntity.setLastSignInDate(currentSignInDate);
+		employeeUserEntity.setCurrentSignInDate(LocalDateTime.now());
+		employeeUserEntity.setAuthenticationToken(generateAuthenticationToken());
 		return employeeUserRepository.saveAndFlush(employeeUserEntity);
 	}
 
@@ -235,11 +235,11 @@ public class EmployeeUserServiceHelper {
 	 * @param tokenLength length of generated AuthenticationToken
 	 * @return unique generated AuthenticationToken.
 	 */
-	private String generateAuthenticationToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+	private String generateAuthenticationToken() {
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = employeeUserRepository.existsByAuthenticationToken(generatedToken);
 		if (existsByToken) {
-			return reGenerateAuthenticationToken(tokenLength);
+			return reGenerateAuthenticationToken();
 		}
 		return generatedToken;
 	}
@@ -251,11 +251,11 @@ public class EmployeeUserServiceHelper {
 	 * @param tokenLength length of generated AuthenticationToken
 	 * @return unique generated AuthenticationToken.
 	 */
-	private String reGenerateAuthenticationToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+	private String reGenerateAuthenticationToken() {
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = employeeUserRepository.existsByAuthenticationToken(generatedToken);
 		if (existsByToken) {
-			return reGenerateAuthenticationToken(tokenLength);
+			return reGenerateAuthenticationToken();
 		}
 		return generatedToken;
 	}
@@ -304,7 +304,7 @@ public class EmployeeUserServiceHelper {
 	 *
 	 * @return Role list
 	 */
-	public List<String> getEmployeeUserRoles(Integer integer) {
+	public List<String> getEmployeeUserRoles(Long integer) {
 		List<String> employeeUserRoles = new ArrayList<>();
 		List<Role> rolesOfEmployeeUser = this.roleService.getRolesOfEmployeeUser(integer);
 		if (EntityUtils.isNotBlankOrNull(rolesOfEmployeeUser)) {
@@ -327,7 +327,7 @@ public class EmployeeUserServiceHelper {
 	 * @return user entity after generating ResetPasswordToken and updating entity.
 	 */
 	public EmployeeUserEntity generateResetPasswordToken(EmployeeUserEntity employeeUserEntity) {
-		String generatedToken = generateResetPasswordToken(EntityConstants.TOKEN_LENGTH);
+		String generatedToken = generateResetPasswordToken();
 		//employeeUserEntity.setEncryptedPassword("");
 		employeeUserEntity.setResetPasswordToken(generatedToken);
 		employeeUserEntity.setResetPasswordSentAt(LocalDateTime.now());
@@ -338,14 +338,13 @@ public class EmployeeUserServiceHelper {
 	 * generate new ResetPasswordToken and ensure that this ResetPasswordToken is
 	 * never used before.
 	 *
-	 * @param tokenLength length of generated ResetPasswordToken
 	 * @return unique generated ResetPasswordToken.
 	 */
-	private String generateResetPasswordToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+	private String generateResetPasswordToken() {
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = employeeUserRepository.existsByResetPasswordToken(generatedToken);
 		if (existsByToken) {
-			return reGenerateResetPasswordToken(tokenLength);
+			return reGenerateResetPasswordToken();
 		}
 		return generatedToken;
 	}
@@ -354,14 +353,13 @@ public class EmployeeUserServiceHelper {
 	 * regenerate ResetPasswordToken and if token already exists, make recursive
 	 * call until generating new ResetPasswordToken.
 	 *
-	 * @param tokenLength length of generated ResetPasswordToken
 	 * @return unique generated ResetPasswordToken.
 	 */
-	private String reGenerateResetPasswordToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateToken(tokenLength);
+	private String reGenerateResetPasswordToken() {
+		String generatedToken = EntityUtils.generateUUIDToken();
 		boolean existsByToken = employeeUserRepository.existsByResetPasswordToken(generatedToken);
 		if (existsByToken) {
-			return reGenerateResetPasswordToken(tokenLength);
+			return reGenerateResetPasswordToken();
 		}
 		return generatedToken;
 	}

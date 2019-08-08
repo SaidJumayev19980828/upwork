@@ -6,12 +6,13 @@ import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserDTOs.PasswordResetObject;
 import com.nasnav.exceptions.EntityValidationException;
+import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.DefaultBusinessEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.EntityUtils;
+import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
-import com.nasnav.response.ResponseStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,8 +21,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
 
 @Service
@@ -40,12 +39,8 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 	@Override
-	public UserApiResponse createEmployeeUser(Integer userId, String userToken, UserDTOs.EmployeeUserCreationObject employeeUserJson) {
-		// check if user is authenticated
-		if (!checkAuthToken(userId, userToken)){
-			throw new EntityValidationException("" + ResponseStatus.UNAUTHENTICATED,
-					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.UNAUTHENTICATED)), HttpStatus.UNAUTHORIZED);
-		}
+	public UserApiResponse createEmployeeUser(Long userId, String userToken, UserDTOs.EmployeeUserCreationObject employeeUserJson) {
+		
 		List<String> rolesList = Arrays.asList(employeeUserJson.role.split(","));
 		helper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.getOrgId(), rolesList);
 		// get current logged in user
@@ -79,7 +74,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 				helper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.getOrgId());
 				employeeUserEntity = helper.generateResetPasswordToken(employeeUserEntity);
 				helper.sendRecoveryMail(employeeUserEntity);
-				return UserApiResponse.createStatusApiResponse(Integer.toUnsignedLong(employeeUserEntity.getId()),
+				return UserApiResponse.createStatusApiResponse(employeeUserEntity.getId(),
 						Arrays.asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
 			}
 			throw new EntityValidationException("Insufficient Rights ",
@@ -91,12 +86,9 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 	@Override
-	public UserApiResponse updateEmployeeUser(Integer userId, String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+	public UserApiResponse updateEmployeeUser(Long userId, String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
 		EmployeeUserEntity updateUser,currentUser;
-		if (!checkAuthToken(userId, userToken)){
-			throw new EntityValidationException("" + ResponseStatus.UNAUTHENTICATED,
-					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.UNAUTHENTICATED)), HttpStatus.NOT_ACCEPTABLE);
-		}
+		
 		int userType = helper.roleCanCreateUser(userId); //check user privileges
 		if (userType == -1) { // can't update employees
 			throw new EntityValidationException(""+ResponseStatus.INSUFFICIENT_RIGHTS,
@@ -106,7 +98,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		if (EntityUtils.isBlankOrNull(employeeUserJson.getUpdatedUserId())) {// check if same user doing the update
 			updateUser = employeeUserRepository.getById(userId);
 		} else {
-			updateUser = employeeUserRepository.getById(employeeUserJson.getUpdatedUserId().intValue());
+			updateUser = employeeUserRepository.getById(employeeUserJson.getUpdatedUserId());
 		}
 		if ((userType == 2) && (!updateUser.getOrganizationId().equals(currentUser.getOrganizationId()))) {
 			// can update employees within the same organization and they are not in the same organization
@@ -120,7 +112,6 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		return helper.updateEmployeeUser(userType, updateUser, employeeUserJson);
 	}
 
-	@Override
 	public UserApiResponse login(UserDTOs.UserLoginObject body) {
 		EmployeeUserEntity employeeUserEntity = this.employeeUserRepository.getByEmailAndOrganizationId(body.email, body.getOrgId());
 		if (employeeUserEntity != null) {
@@ -154,22 +145,22 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	@Override
 	public void deleteUser(Long userId) {
-		employeeUserRepository.deleteById(userId.intValue());
+		employeeUserRepository.deleteById(userId);
 	}
 
 	@Override
-	public DefaultBusinessEntity<?> findUserById(Long userId) {
+	public BaseUserEntity findUserById(Long userId) {
 
-		return employeeUserRepository.findById(userId.intValue()).orElse(null);
+		return employeeUserRepository.findById(userId).orElse(null);
 	}
 
 	@Override
-	public DefaultBusinessEntity<?> getUserById(Long userId) {
-		return employeeUserRepository.findById(userId.intValue()).orElse(null);
+	public BaseUserEntity getUserById(Long userId) {
+		return employeeUserRepository.findById(userId).orElse(null);
 	}
 
 	@Override
-	public DefaultBusinessEntity<?> update(DefaultBusinessEntity<?> employeeUserEntity) {
+	public BaseUserEntity update(BaseUserEntity employeeUserEntity) {
 		return employeeUserRepository.saveAndFlush((EmployeeUserEntity) employeeUserEntity);
 	}
 
@@ -220,7 +211,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 	@Override
-	public boolean checkAuthToken(Integer userId, String authToken) {
+	public boolean checkAuthToken(Long userId, String authToken) {
 		return employeeUserRepository.existsByIdAndAuthenticationToken(userId, authToken);
 	}
 

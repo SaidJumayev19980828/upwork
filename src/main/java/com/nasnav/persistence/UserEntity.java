@@ -2,9 +2,13 @@ package com.nasnav.persistence;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.nasnav.constatnts.EntityConstants;
@@ -16,32 +20,12 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "users")
 @EqualsAndHashCode(callSuper=false)
-public class UserEntity extends DefaultBusinessEntity<Long> {
-
-    @Column(name="email")
-    private String email;
-
-    @Column(name="user_name")
-    private String name;
-    
-    @Column(name = "organization_id")
-    private Long organizationId;
-
-    @Column(name="encrypted_password")
-    private String encPassword;
-
-    @Column(name="sign_in_count")
-    private int signInCount;
-
-    @Column(name="last_sign_in_at")
-    private LocalDateTime lastSignInDate;
-
-    @Column(name="current_sign_in_at")
-    private LocalDateTime currentSignInDate;
-
-    @Column(name="authentication_token")
-    private String authenticationToken;
-
+@NoArgsConstructor
+public class UserEntity extends BaseUserEntity{
+	
+	@Column(name = "user_name")
+	private String name;
+	
     @Column(name="address")
     private String address;
 
@@ -83,16 +67,12 @@ public class UserEntity extends DefaultBusinessEntity<Long> {
 
     @Column(name = "updated_at")
     public LocalDateTime updatedAt;
-
-    public UserEntity() {
-        super();
-    }
     
     public static UserEntity registerUser(UserDTOs.UserRegistrationObject userJson) {
     	UserEntity user = new UserEntity();
         user.setName(userJson.name);
         user.setEmail(userJson.email);
-        user.setEncPassword(EntityConstants.INITIAL_PASSWORD);
+        user.setEncryptedPassword(EntityConstants.INITIAL_PASSWORD);
         user.setOrganizationId(userJson.getOrgId());
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
