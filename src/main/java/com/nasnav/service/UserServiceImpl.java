@@ -32,15 +32,10 @@ public class UserServiceImpl implements UserService {
 	private MailService mailService;
 	private PasswordEncoder passwordEncoder;
 	@Autowired
-	private SecurityService securityService;
-
-	@Autowired
-	public UserServiceImpl(UserRepository userRepository, MailService mailService, PasswordEncoder passwordEncoder,
-						   SecurityService securityService) {
+	public UserServiceImpl(UserRepository userRepository, MailService mailService, PasswordEncoder passwordEncoder) {
 		this.userRepository = userRepository;
 		this.mailService = mailService;
 		this.passwordEncoder = passwordEncoder;
-		this.securityService = securityService;
 	}
 
 	@Autowired
@@ -224,7 +219,6 @@ public class UserServiceImpl implements UserService {
 	 * generate new ResetPasswordToken and ensure that this ResetPasswordToken is
 	 * never used before.
 	 *
-	 * @param tokenLength length of generated ResetPasswordToken
 	 * @return unique generated ResetPasswordToken.
 	 */
 	private String generateResetPasswordToken() {
@@ -240,7 +234,6 @@ public class UserServiceImpl implements UserService {
 	 * regenerate ResetPasswordToken and if token already exists, make recursive
 	 * call until generating new ResetPasswordToken.
 	 *
-	 * @param tokenLength length of generated ResetPasswordToken
 	 * @return unique generated ResetPasswordToken.
 	 */
 	private String reGenerateResetPasswordToken() {

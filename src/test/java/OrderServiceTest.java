@@ -57,10 +57,7 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 public class OrderServiceTest {
 
-
-	private static final long DUMMY_ORG_ID = 99001L;
 	private static UserEntity persistentUser;
-	private static OrganizationEntity organization;
 
 	private MockMvc mockMvc;
 
@@ -96,23 +93,25 @@ public class OrderServiceTest {
 	@Value("classpath:sql/Orders_Test_Data_Insert.sql")
 	private Resource ordersDataInsert;
 
-	@Value("classpath:sql/Orders_Test_Data_Delete.sql")
-	private Resource ordersDataDelete;
+
+	@Value("classpath:sql/database_cleanup.sql")
+	private Resource databaseCleanup;
 
 	@Autowired
 	private DataSource datasource;
 
 	@Before
-	public void setupLoginUser() {
+	public void setup() {
+		performDeleteSqlDataScript();
 		performInsertSqlDataScript();
-		persistentUser = userRepository.getByEmailAndOrganizationId("user1@nasnav.com", 801L);
+		persistentUser = userRepository.getByEmailAndOrganizationId("user1@nasnav.com", 99001L);
 		if (persistentUser == null) {
 			persistentUser = new UserEntity();
 			persistentUser.setName("user1");
 			persistentUser.setEmail("user1@nasnav.com");
 			persistentUser.setCreatedAt(LocalDateTime.now());
 			persistentUser.setUpdatedAt(LocalDateTime.now());
-			persistentUser.setAuthenticationToken("123");
+			persistentUser.setAuthenticationToken("7657595");
 			persistentUser.setOrganizationId(801L);
 			persistentUser.setEncryptedPassword("---");
 			userRepository.save(persistentUser);
@@ -120,7 +119,7 @@ public class OrderServiceTest {
 	}
 
 	@After
-	public  void removeLoginUser() {
+	public  void cleanup() {
 		performDeleteSqlDataScript();
 	}
 
@@ -134,7 +133,7 @@ public class OrderServiceTest {
 
 	public void performDeleteSqlDataScript() {
 		try (Connection con = datasource.getConnection()) {
-			ScriptUtils.executeSqlScript(con, ordersDataDelete);
+			ScriptUtils.executeSqlScript(con, databaseCleanup);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -415,6 +414,7 @@ public class OrderServiceTest {
 		HttpHeaders header = TestCommons.getHeaders(68, "101112");
 		// no filters
 		ResponseEntity<String> response = template.exchange("/order/list", HttpMethod.GET, new HttpEntity<>(header), String.class);
+
 		JSONArray body = new JSONArray(response.getBody());
 		long count = body.length();
 
@@ -422,12 +422,12 @@ public class OrderServiceTest {
 		Assert.assertEquals("all orders ",16,count);
 
 		// by org_id
-		response = template.exchange("/order/list?org_id=801", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		response = template.exchange("/order/list?org_id=99001", HttpMethod.GET, new HttpEntity<>(header), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
 		Assert.assertTrue(200 == response.getStatusCode().value());
-		Assert.assertEquals("7 orders with org_id = 801",7,count);
+		Assert.assertEquals("7 orders with org_id = 99001",7,count);
 
 		// by store_id
 		response = template.exchange("/order/list?store_id=501", HttpMethod.GET, new HttpEntity<>(header), String.class);
@@ -454,25 +454,25 @@ public class OrderServiceTest {
 		Assert.assertEquals("8 orders with status = NEW",8,count);
 
 		// by org_id and status
-		response = template.exchange("/order/list?org_id=801&status=NEW", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		response = template.exchange("/order/list?org_id=99001&status=NEW", HttpMethod.GET, new HttpEntity<>(header), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
 		Assert.assertTrue(200 == response.getStatusCode().value());
-		Assert.assertEquals("3 orders with org_id = 801 and status = NEW",3,count);
+		Assert.assertEquals("3 orders with org_id = 99001 and status = NEW",3,count);
 
 		// by org_id and store_id
-		response = template.exchange("/order/list?org_id=801&store_id=503", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		response = template.exchange("/order/list?org_id=99001&store_id=503", HttpMethod.GET, new HttpEntity<>(header), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
 		// by org_id and user_id
-		response = template.exchange("/order/list?org_id=802&user_id=90", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		response = template.exchange("/order/list?org_id=99002&user_id=90", HttpMethod.GET, new HttpEntity<>(header), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
 		Assert.assertTrue(200 == response.getStatusCode().value());
-		Assert.assertEquals("2 order with org_id = 801 and user_id = 90",2,count);
+		Assert.assertEquals("2 order with org_id = 99002 and user_id = 90",2,count);
 
 		// by store_id and status
 		response = template.exchange("/order/list?store_id=501&status=NEW", HttpMethod.GET, new HttpEntity<>(header), String.class);
@@ -509,7 +509,7 @@ public class OrderServiceTest {
 		long count = body.length();
 
 		Assert.assertTrue(200 == response.getStatusCode().value());
-		Assert.assertEquals("user#70 is Organization employee in org#803 so he can view all orderes within org#803", 7, count);
+		Assert.assertEquals("user#70 is Organization employee in org#99003 so he can view all orderes within org#803", 7, count);
 
 		header = TestCommons.getHeaders(69, "131415");
 		response = template.exchange("/order/list", HttpMethod.GET, new HttpEntity<>(header), String.class);
@@ -517,7 +517,7 @@ public class OrderServiceTest {
 		count = body.length();
 
 		Assert.assertTrue(200 == response.getStatusCode().value());
-		Assert.assertEquals("user#69 is Organization admin in org#802 so he can view all orderes within org#802", 6, count);
+		Assert.assertEquals("user#69 is Organization admin in org#99002 so he can view all orderes within org#99002", 6, count);
 
 		header = TestCommons.getHeaders(71, "192021");
 		response = template.exchange("/order/list", HttpMethod.GET, new HttpEntity<>(header), String.class);
@@ -548,16 +548,17 @@ public class OrderServiceTest {
 	@Test
 	public void ordersListInvalidfiltersTest() {
 		// by store_id only
-		ResponseEntity<String> response = template.exchange("/order/list?store_id=550", HttpMethod.GET,
-				new HttpEntity<>(TestCommons.getHeaders(68, "101112")), String.class);
+		ResponseEntity<String> response = template.exchange("/order/list?store_id=503", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders(88, "123")), String.class);
 		JSONArray body = new JSONArray(response.getBody());
 		long count = body.length();
 
 		Assert.assertTrue(200 == response.getStatusCode().value());
-		Assert.assertEquals("No orders with store_id = 550 ", 0, count);
+		Assert.assertEquals("No orders with store_id = 503 ", 0, count);
 
 		// by user_id
-		response = template.exchange("/order/list?user_id=99", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders(68, "101112")), String.class);
+		response = template.exchange("/order/list?user_id=90", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders(88, "abdcefg")), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
@@ -573,8 +574,8 @@ public class OrderServiceTest {
 		Assert.assertEquals("no orders with org_id = 880",0,count);
 
 		// by status
-		response = template.exchange("/order/list?status=invalid_status", HttpMethod.GET,
-				new HttpEntity<>(TestCommons.getHeaders(68, "101112")), String.class);
+		response = template.exchange("/order/list?user_id=88&status=invalid_status", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders(88, "abdcefg")), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
