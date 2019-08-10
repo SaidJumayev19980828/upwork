@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.springframework.context.annotation.Bean;
@@ -36,18 +37,17 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     private static  RequestMatcher protectedUrlList ;
     private static  RequestMatcher publicUrlList ;
-    
 
-    private static Map<String, Set<Roles>> permissions = 
-    		Map.of(
-    				"/order/**" 	, getAllRoles(),
-    				"/stock/**" 	, getNonCustomersRoles(),
-    				"/shop/**"		, Set.of(Roles.ORGANIZATION_MANAGER, Roles.STORE_MANAGER),
-    				"/user/list"	, getAllRoles(),
-    				"/user/create"	, Set.of(Roles.NASNAV_ADMIN, Roles.ORGANIZATION_ADMIN, Roles.STORE_ADMIN),
-    				"/user/update"	, getAllRoles()
-    		);
-    
+
+    private static Map<String, Set<Roles>> permissions = Stream.of(new Object[][] {
+				    { "/order/**" 	, getAllRoles() },
+				    { "/stock/**" 	, getNonCustomersRoles() },
+				    { "/shop/**"		, new HashSet<Roles>(Arrays.asList(Roles.ORGANIZATION_MANAGER, Roles.STORE_MANAGER)) },
+				    { "/user/list"	, getAllRoles() },
+				    { "/user/create"	, new HashSet<Roles>(Arrays.asList(Roles.NASNAV_ADMIN, Roles.ORGANIZATION_ADMIN, Roles.STORE_ADMIN)) },
+				    { "/user/update"	, getAllRoles() },
+    }).collect(Collectors.toMap(data -> (String) data[0], data -> (Set<Roles>) data[1]));
+
     //TODO: currently the AuthenticationFilter calls the authentication process
     //and it takes the PROTECTED_URLS list to work on
     //which means,any url is permitted by default, this should be changed, but 
@@ -61,6 +61,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , "/user/recover"
                         , "/user/login"
                         , "/user/register"
+		                , "/shop/update"
+		                , "/order/list"
                         , "/payment/**");
 
     AuthenticationProvider provider;
@@ -71,8 +73,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         
         List<RequestMatcher> protectedrequestMatcherList = PROTECTED_URLS.stream().map(AntPathRequestMatcher::new).collect(Collectors.toList());
         protectedUrlList = new OrRequestMatcher( protectedrequestMatcherList );
-        
-        
+
+
         List<RequestMatcher> publicRequestMatcherList = PUBLIC_URLS.stream().map(AntPathRequestMatcher::new).collect(Collectors.toList());
         publicUrlList = new OrRequestMatcher( publicRequestMatcherList );
     }
@@ -82,40 +84,30 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         auth.authenticationProvider(provider);
     }
 
-
-
     @Override
     public void configure(final WebSecurity webSecurity) {
         PUBLIC_URLS.stream().forEach(webSecurity.ignoring()::antMatchers);
     }
 
-
-
-
     @Override
     public void configure(HttpSecurity http) throws Exception {
     	permissions.forEach((url, roles) -> configureUrlAllowedRoles(http, url, roles));
-    	   
+
         http
         .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)                
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         .and()
         	.authenticationProvider(provider)
         	.addFilterBefore(authenticationFilter(), AnonymousAuthenticationFilter.class)
         	.authorizeRequests()
         		.requestMatchers(publicUrlList).permitAll()
-//        		.anyRequest().authenticated()        	//adding this causes unauthenticated responses to have status 403, it overrided the 	
+//        		.anyRequest().authenticated()        	//adding this causes unauthenticated responses to have status 403, it overrided the
         .and()
             .csrf().disable()
             .formLogin().disable()
             .httpBasic().disable()
             .logout().disable();
-        
-     
-        
     }
-
-
 
     @Bean
     AuthenticationFilter authenticationFilter() throws Exception {
@@ -125,43 +117,32 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         return filter;
     }
 
-
-
     @Bean
     AuthenticationEntryPoint unauthorizedEntryPoint() {
         return new NasnavHttpStatusEntryPoint(HttpStatus.UNAUTHORIZED);
     }
-    
-    
+
     @Bean
     AccessDeniedHandler accessDeniedEntryPoint() {
         return new NasnavAccessDeniedEntryPoint();
     }
-    
-    
-    
-    
 
     private static Set<Roles> getAllRoles(){
     	return new HashSet<>(Arrays.asList(Roles.values()));
     }
-    
-    
-    
+
     private static Set<Roles> getNonCustomersRoles(){
     	Set<Roles> roles = getAllRoles();
     	roles.remove(Roles.CUSTOMER);
     	return roles;
     }
-    
-    
-    
+
     private String[] toArray(Set<Roles> set) {
     	return set.stream().map(Roles::getValue).toArray(String[]::new);
     }
-    
-    
-    
+
+
+
     private void configureUrlAllowedRoles(HttpSecurity http, String url, Set<Roles> roles) {
     	try {
 			http.authorizeRequests().antMatchers(url).hasAnyAuthority(toArray(roles));
