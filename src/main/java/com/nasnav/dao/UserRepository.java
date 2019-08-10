@@ -58,6 +58,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	boolean existsByIdAndAuthenticationToken(long id, String authenticationToken);
 
+	UserEntity getByIdAndAuthenticationToken(Long userId, String authToken);
+
 	/**
 	 * check if the created user has the same email and org_id
 	 *

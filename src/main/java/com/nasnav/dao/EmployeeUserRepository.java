@@ -54,8 +54,8 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	EmployeeUserEntity getById(Long id);
 
 	boolean existsByIdAndAuthenticationToken(Long userId, String authenticationToken);
-	
-	
+
+	EmployeeUserEntity getByIdAndAuthenticationToken(Long userId, String authToken);
 }
 
 

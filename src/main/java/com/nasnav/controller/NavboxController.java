@@ -136,27 +136,19 @@ public class NavboxController {
 
 		ProductsResponse productsResponse = null;
 		if (organizationId != null) {
-
 			productsResponse = productService.getProductsResponseByOrganizationId(organizationId, categoryId, brandId,
 					start, count, sort, order);
-
 		} else if (shopId != null) {
-
 			productsResponse = productService.getProductsResponseByShopId(shopId, categoryId, brandId, start, count,
 					sort, order);
 		} else {
 			throw new BusinessException("Shop Id or Organization Id shall be provided", null, HttpStatus.BAD_REQUEST);
 		}
-
 		if (productsResponse == null) {
 			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 		}
-
 		return new ResponseEntity<>(productsResponse, HttpStatus.OK);
 	}
-
-
-
 
 	@ApiOperation(value = "Get information about a specific product", nickname = "productInfo")
 	@ApiResponses(value = {
@@ -170,7 +162,6 @@ public class NavboxController {
 		ProductDetailsDTO response = productService.getProduct(productId, shopId);
 		return response == null ? new ResponseEntity<>(HttpStatus.NO_CONTENT) : new ResponseEntity<>(response, HttpStatus.OK);
 	}
-
 
 	@ApiOperation(value = "Get information about a specific Organization's extra attributes", nickname = "organizationInfo")
 	@ApiResponses(value = {

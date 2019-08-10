@@ -22,16 +22,16 @@ INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organizatio
 INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (502, 'shop_2', 101, now(), now(), 99001);
 
 --inserting Employee Users
-INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id, encrypted_password)
-	VALUES (68, now(), now(), 'testuser1@nasnav.com', 99001, 'abcdefg',  501, '#123');
-INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id, encrypted_password)
-	VALUES (69, now(), now(), 'testuser2@nasnav.com', 99001, 'hijkllm',  501, '#123');
-INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id, encrypted_password)
-	VALUES (70, now(), now(), 'testuser4@nasnav.com', 99001, '123',  501, '#123');
-INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id, encrypted_password)
-	VALUES (71, now(), now(), 'testuser5@nasnav.com', 99001, '456',  501, '#123');
-INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id, encrypted_password)
-	VALUES (158, now(), now(), 'testuser3@nasnav.com', 99001, 'nopqrst',  501, '#123');
+INSERT INTO public.employee_users(id, name, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+	VALUES (68, 'Ahmad', now(), now(), 'testuser1@nasnav.com', 99001, 'abcdefg',  501);
+INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+	VALUES (69, now(), now(), 'testuser2@nasnav.com', 99001, 'hijkllm',  501);
+INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+	VALUES (70, now(), now(), 'testuser4@nasnav.com', 99001, '123',  501);
+INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+	VALUES (71, now(), now(), 'testuser5@nasnav.com', 99001, '456',  501);
+INSERT INTO public.employee_users(id, name, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+	VALUES (158, 'John Smith', now(), now(), 'testuser3@nasnav.com', 99001, 'nopqrst',  501);
 
 --inserting Roles
 insert into roles(id, name, created_at, updated_at, organization_id) values(1, 'NASNAV_ADMIN', now(), now(), 99001);

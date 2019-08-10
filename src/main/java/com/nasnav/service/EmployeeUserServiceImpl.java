@@ -1,18 +1,5 @@
 package com.nasnav.service;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
-import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.EmployeeUserRepository;
@@ -26,6 +13,15 @@ import com.nasnav.persistence.EntityUtils;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 @Service
 public class EmployeeUserServiceImpl implements EmployeeUserService {
@@ -33,31 +29,28 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	private EmployeeUserServiceHelper helper;
 
 	private EmployeeUserRepository employeeUserRepository;
-	private MailService mailService;
-	
+	private PasswordEncoder passwordEncoder;
+
 	@Autowired
-	public EmployeeUserServiceImpl(EmployeeUserServiceHelper helper, EmployeeUserRepository employeeUserRepository, MailService mailService, PasswordEncoder passwordEncoder) {
+	public EmployeeUserServiceImpl(EmployeeUserServiceHelper helper, EmployeeUserRepository employeeUserRepository, PasswordEncoder passwordEncoder) {
 		this.helper = helper;
 		this.employeeUserRepository = employeeUserRepository;
-		this.mailService = mailService;
+		this.passwordEncoder = passwordEncoder;
 	}
-	
-	@Autowired
-	AppConfig appConfig;
 
 	@Override
 	public UserApiResponse createEmployeeUser(Long userId, String userToken, UserDTOs.EmployeeUserCreationObject employeeUserJson) {
 		
 		List<String> rolesList = Arrays.asList(employeeUserJson.role.split(","));
-		helper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.org_id, rolesList);
+		helper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.getOrgId(), rolesList);
 		// get current logged in user
 		EmployeeUserEntity currentUser = employeeUserRepository.getById(userId);
 		// check if email and organization id already exists
-		if (employeeUserRepository.getByEmailAndOrganizationId(employeeUserJson.email, employeeUserJson.org_id) == null) {
+		if (employeeUserRepository.getByEmailAndOrganizationId(employeeUserJson.email, employeeUserJson.getOrgId()) == null) {
 			int userType = helper.roleCanCreateUser(currentUser.getId());
 			if (userType != -1) { // can add employees
 				if (userType == 2) { // can add employees within the same organization
-					if (!currentUser.getOrganizationId().equals(employeeUserJson.org_id)) { //not the same organization
+					if (!currentUser.getOrganizationId().equals(employeeUserJson.getOrgId())) { //not the same organization
 						throw new EntityValidationException("Error Occurred during user creation:: " + ResponseStatus.INSUFFICIENT_RIGHTS,
 								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
 					}
@@ -66,7 +59,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
 					}
 				} else if (userType == 3) {
-					if (!currentUser.getShopId().equals(employeeUserJson.store_id)){ //not the same Store
+					if (!currentUser.getShopId().equals(employeeUserJson.getStoreId())){ //not the same Store
 						throw new EntityValidationException("Error Occurred during user creation:: " + ResponseStatus.INSUFFICIENT_RIGHTS,
 								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
 					}
@@ -78,9 +71,9 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 				// parse Json to EmployeeUserEntity
 				EmployeeUserEntity employeeUserEntity = helper.createEmployeeUser(employeeUserJson);
 				// create Role and RoleEmployeeUser entities from the roles array
-				helper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.org_id);
-				employeeUserEntity = generateResetPasswordToken(employeeUserEntity);
-				sendRecoveryMail(employeeUserEntity);
+				helper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.getOrgId());
+				employeeUserEntity = helper.generateResetPasswordToken(employeeUserEntity);
+				helper.sendRecoveryMail(employeeUserEntity);
 				return UserApiResponse.createStatusApiResponse(employeeUserEntity.getId(),
 						Arrays.asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
 			}
@@ -102,10 +95,10 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
 		}
 		currentUser = employeeUserRepository.getById(userId);
-		if (EntityUtils.isBlankOrNull(employeeUserJson.updated_user_id)) {// check if same user doing the update
+		if (EntityUtils.isBlankOrNull(employeeUserJson.getUpdatedUserId())) {// check if same user doing the update
 			updateUser = employeeUserRepository.getById(userId);
 		} else {
-			updateUser = employeeUserRepository.getById(employeeUserJson.updated_user_id.longValue());
+			updateUser = employeeUserRepository.getById(employeeUserJson.getUpdatedUserId());
 		}
 		if ((userType == 2) && (!updateUser.getOrganizationId().equals(currentUser.getOrganizationId()))) {
 			// can update employees within the same organization and they are not in the same organization
@@ -116,12 +109,39 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 			throw new EntityValidationException("Not in the same Store " + ResponseStatus.INSUFFICIENT_RIGHTS,
 					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
 		}
-		helper.updateEmployeeUser(userType, updateUser, employeeUserJson);
-		return UserApiResponse.createMessagesApiResponse(true,
-				Arrays.asList(ResponseStatus.ACTIVATED));
+		return helper.updateEmployeeUser(userType, updateUser, employeeUserJson);
 	}
 
-	
+	public UserApiResponse login(UserDTOs.UserLoginObject body) {
+		EmployeeUserEntity employeeUserEntity = this.employeeUserRepository.getByEmailAndOrganizationId(body.email, body.getOrgId());
+		if (employeeUserEntity != null) {
+			// check if account needs activation
+			boolean accountNeedActivation = helper.isEmployeeUserNeedActivation(employeeUserEntity);
+			if (accountNeedActivation) {
+				UserApiResponse failedLoginResponse = EntityUtils
+						.createFailedLoginResponse(Collections.singletonList(ResponseStatus.NEED_ACTIVATION));
+				throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, HttpStatus.LOCKED);
+			}
+			// ensure that password matched
+			boolean passwordMatched = passwordEncoder.matches(body.password, employeeUserEntity.getEncryptedPassword());
+			if (passwordMatched) {
+				// check if account is locked
+				if (helper.isAccountLocked(employeeUserEntity)) { // TODO: so far there is no lockdown, so always
+																	// false
+					// //NOSONAR
+					UserApiResponse failedLoginResponse = EntityUtils
+							.createFailedLoginResponse(Collections.singletonList(ResponseStatus.ACCOUNT_SUSPENDED));
+					throw new EntityValidationException("ACCOUNT_SUSPENDED ", failedLoginResponse, HttpStatus.LOCKED);
+				}
+				// generate new AuthenticationToken and perform post login updates
+				helper.updatePostLogin(employeeUserEntity);
+				return helper.createSuccessLoginResponse(employeeUserEntity);
+			}
+		}
+		UserApiResponse failedLoginResponse = EntityUtils
+				.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_CREDENTIALS));
+		throw new EntityValidationException("INVALID_CREDENTIALS ", failedLoginResponse, HttpStatus.UNAUTHORIZED);
+	}
 
 	@Override
 	public void deleteUser(Long userId) {
@@ -147,14 +167,47 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	@Override
 	public UserApiResponse sendEmailRecovery(String email, Long orgId) {
 		EmployeeUserEntity employeeUserEntity = getEmployeeUserByEmail(email, orgId);
-		employeeUserEntity = generateResetPasswordToken(employeeUserEntity);
-		return sendRecoveryMail(employeeUserEntity);
+		employeeUserEntity = helper.generateResetPasswordToken(employeeUserEntity);
+		return helper.sendRecoveryMail(employeeUserEntity);
 	}
 
 	@Override
-	public UserApiResponse recoverUser(PasswordResetObject body) {
-		// TODO Auto-generated method stub
-		return null;
+	public UserApiResponse recoverUser(PasswordResetObject data) {
+		validateNewPassword(data.password);
+		EmployeeUserEntity employeeUserEntity = employeeUserRepository.getByResetPasswordToken(data.token);
+		if (EntityUtils.isNotBlankOrNull(employeeUserEntity)) {
+			// if resetPasswordToken is not active, throw exception for invalid
+			// resetPasswordToken
+			checkResetPasswordTokenExpiry(employeeUserEntity);
+			employeeUserEntity.setResetPasswordToken(null);
+			employeeUserEntity.setResetPasswordSentAt(null);
+			employeeUserEntity.setEncryptedPassword(passwordEncoder.encode(data.password));
+			employeeUserRepository.saveAndFlush(employeeUserEntity);
+		} else {
+			throw new EntityValidationException("INVALID_TOKEN  ",
+					UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.INVALID_TOKEN)),
+					HttpStatus.NOT_ACCEPTABLE);
+		}
+		return UserApiResponse.createStatusApiResponse((long)employeeUserEntity.getId(), null);
+	}
+
+	private void validateNewPassword(String newPassword) {
+		if (EntityUtils.isBlankOrNull(newPassword) || newPassword.length() > EntityConstants.PASSWORD_MAX_LENGTH
+				|| newPassword.length() < EntityConstants.PASSWORD_MIN_LENGTH) {
+			throw new EntityValidationException("INVALID_PASSWORD  ",
+					UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.INVALID_PASSWORD)),
+					HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+	private void checkResetPasswordTokenExpiry(EmployeeUserEntity employeeUserEntity) {
+		LocalDateTime resetPasswordSentAt = employeeUserEntity.getResetPasswordSentAt();
+		LocalDateTime tokenExpiryDate = resetPasswordSentAt.plusHours(EntityConstants.TOKEN_VALIDITY);
+		if (LocalDateTime.now().isAfter(tokenExpiryDate)) {
+			throw new EntityValidationException("EXPIRED_TOKEN  ",
+					UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.EXPIRED_TOKEN)),
+					HttpStatus.NOT_ACCEPTABLE);
+		}
 	}
 
 	@Override
@@ -184,78 +237,4 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		}
 		return employeeUserEntity;
 	}
-	
-	/**
-	 * Generate ResetPasswordToken and assign it to passed user entity
-	 *
-	 * @param employeeUserEntity
-	 * @return user entity after generating ResetPasswordToken and updating entity.
-	 */
-	private EmployeeUserEntity generateResetPasswordToken(EmployeeUserEntity employeeUserEntity) {
-		String generatedToken = generateResetPasswordToken(EntityConstants.TOKEN_LENGTH);
-		employeeUserEntity.setResetPasswordToken(generatedToken);
-		employeeUserEntity.setResetPasswordSentAt(LocalDateTime.now());
-		return employeeUserRepository.saveAndFlush(employeeUserEntity);
-	}
-	
-	/**
-	 * generate new ResetPasswordToken and ensure that this ResetPasswordToken is
-	 * never used before.
-	 *
-	 * @param tokenLength length of generated ResetPasswordToken
-	 * @return unique generated ResetPasswordToken.
-	 */
-	private String generateResetPasswordToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateUUIDToken();
-		boolean existsByToken = employeeUserRepository.existsByResetPasswordToken(generatedToken);
-		if (existsByToken) {
-			return reGenerateResetPasswordToken(tokenLength);
-		}
-		return generatedToken;
-	}
-	
-	/**
-	 * regenerate ResetPasswordToken and if token already exists, make recursive
-	 * call until generating new ResetPasswordToken.
-	 *
-	 * @param tokenLength length of generated ResetPasswordToken
-	 * @return unique generated ResetPasswordToken.
-	 */
-	private String reGenerateResetPasswordToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateUUIDToken();
-		boolean existsByToken = employeeUserRepository.existsByResetPasswordToken(generatedToken);
-		if (existsByToken) {
-			return reGenerateResetPasswordToken(tokenLength);
-		}
-		return generatedToken;
-	}
-	
-	/**
-	 * Send An Email to user.
-	 *
-	 * @param employeeUserEntity user entity
-	 * @return UserApiResponse representing the status of sending email.
-	 */
-	private UserApiResponse sendRecoveryMail(EmployeeUserEntity employeeUserEntity) {
-		UserApiResponse userApiResponse = new UserApiResponse();
-		try {
-			// create parameter map to replace parameter by actual UserEntity data.
-			Map<String, String> parametersMap = new HashMap<>();
-			parametersMap.put(EmailConstants.USERNAME_PARAMETER, employeeUserEntity.getName());
-			parametersMap.put(EmailConstants.CHANGE_PASSWORD_URL_PARAMETER,
-					appConfig.mailRecoveryUrl.concat(employeeUserEntity.getResetPasswordToken()));
-			// send Recovery mail to user
-			this.mailService.send(employeeUserEntity.getEmail(), EmailConstants.CHANGE_PASSWORD_EMAIL_SUBJECT,
-					EmailConstants.CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap);
-			// set success to true after sending mail.
-			userApiResponse.setSuccess(true);
-		} catch (Exception e) {
-			userApiResponse.setSuccess(false);
-			userApiResponse.setMessages(Collections.singletonList(e.getMessage()));
-			throw new EntityValidationException("Could not send Email ", userApiResponse,
-					HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		return userApiResponse;
-	}
-
 }

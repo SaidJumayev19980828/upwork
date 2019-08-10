@@ -8,7 +8,6 @@ import com.nasnav.response.ResponseStatus;
 
 import java.util.*;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 
 /**
@@ -133,4 +132,8 @@ public class EntityUtils {
 		}
 	}
 
+	public static String encodeUrl(String url){
+		String result = url.replaceAll("[^a-zA-Z0-9]+", "-").replaceAll("^-|-$","");
+		return result.toLowerCase();
+	}
 }

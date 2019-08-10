@@ -26,8 +26,20 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
     List<OrdersEntity> findByUserIdAndStatus(Long userId, Integer status);
 
     List<OrdersEntity> findByshopsEntityId(Long shopId);
-    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndStatus(Long shopId, Integer status);
-
     List<OrdersEntity> getOrdersEntityByShopsEntityIdAndUserId(Long shopId, Long userId);
+    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndStatus(Long shopId, Integer status);
+    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndOrganizationEntityId(Long shopId, Long orgId);
+    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndUserIdAndOrganizationEntityId(Long storeId, Long userId, Long orgId);
     List<OrdersEntity> getOrdersEntityByShopsEntityIdAndStatusAndUserId(Long shopId, Integer status, Long userId);
+    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndStatusAndOrganizationEntityId(Long shopId, Integer status, Long orgId);
+    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndStatusAndUserIdAndOrganizationEntityId(Long shopId, Integer status, Long userId, Long orgId);
+
+    List<OrdersEntity> findByOrganizationEntityId(Long orgId);
+    List<OrdersEntity> findByOrganizationEntityIdAndUserId(Long orgId, Long userId);
+    List<OrdersEntity> findByOrganizationEntityIdAndStatus(Long orgId, Integer status);
+    List<OrdersEntity> findByOrganizationEntityIdAndStatusAndUserId(Long orgId, Integer status, Long userId);
+
+
+
+    List<OrdersEntity> findByStatus(Integer status);
 }
