@@ -22,10 +22,11 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper=false)
 @NoArgsConstructor
 public class UserEntity extends BaseUserEntity{
-	
-	@Column(name = "user_name")
-	private String name;
-	
+
+    @Column(name="user_name")
+    private String name;
+
+
     @Column(name="address")
     private String address;
 
@@ -34,16 +35,16 @@ public class UserEntity extends BaseUserEntity{
 
     @Column(name="city")
     private String addressCity;
-    
-    
-    
+
+
+
     
     public static UserEntity registerUser(UserDTOs.UserRegistrationObject userJson) {
     	UserEntity user = new UserEntity();
         user.setName(userJson.name);
         user.setEmail(userJson.email);
         user.setEncryptedPassword(EntityConstants.INITIAL_PASSWORD);
-        user.setOrganizationId(userJson.org_id);
+        user.setOrganizationId(userJson.getOrgId());
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         return user;

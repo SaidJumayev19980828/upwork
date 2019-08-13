@@ -46,7 +46,7 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	@Column(name = "name", length = 40)
 	private String name;
 
-	@Column(name = "user_id")
+	@Column(name = "user_id", nullable = false)
 	private Long userId;
 
 	@Column(name = "payment_type")
@@ -108,7 +108,9 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 		OrderRepresentationObject orderRepresentationObject = new OrderRepresentationObject();
 		orderRepresentationObject.setId(getId());
 		orderRepresentationObject.setUserId(getUserId());
-		orderRepresentationObject.setShopId(shopsEntity.getId());
+		if (shopsEntity != null) {
+			orderRepresentationObject.setShopId(shopsEntity.getId());
+		}
 		return orderRepresentationObject;
 	}
 

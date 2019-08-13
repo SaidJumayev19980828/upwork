@@ -84,7 +84,7 @@ public class SecurityServiceImpl implements SecurityService {
 		}
 		
 		
-		BaseUserEntity userEntity = userRepo.getByEmailAndOrganizationId(loginData.email, loginData.org_id);
+		BaseUserEntity userEntity = userRepo.getByEmailAndOrganizationId(loginData.email, loginData.orgId);
 		
 		
 		if(userEntity == null) {
@@ -121,7 +121,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	private boolean invalidLoginData(UserLoginObject loginData) {
-		return loginData == null || EntityUtils.isBlankOrNull(loginData.email) || EntityUtils.isBlankOrNull(loginData.org_id);
+		return loginData == null || EntityUtils.isBlankOrNull(loginData.email) || EntityUtils.isBlankOrNull(loginData.orgId);
 	}
 
 

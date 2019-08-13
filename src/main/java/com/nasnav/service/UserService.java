@@ -15,4 +15,5 @@ public interface UserService extends CommonUserServiceInterface{
      */
     UserApiResponse registerUser(UserDTOs.UserRegistrationObject userJson);
 
+    public UserApiResponse updateUser(Long userId, String userToken, UserDTOs.EmployeeUserUpdatingObject userJson);
 }

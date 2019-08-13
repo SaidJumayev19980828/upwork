@@ -160,6 +160,40 @@ public class EmployeeUserCreationTest {
 		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
+	
+	
+	
+	@Test
+	public void createEmployeeUserNoPrivelageTest() {
+		String body = "{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 99001, \"store_id\": 100, \"role\": \"NASNAV_ADMIN\"}";
+
+		//this user have the role CUSTOMER in the test data, it can't create other users
+        HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123", "70");
+		ResponseEntity<BaseResponse> response = template.postForEntity("/user/create", employeeUserJson, BaseResponse.class);
+
+
+		
+		Assert.assertEquals(HttpStatus.FORBIDDEN.value(), response.getStatusCode().value());
+		Assert.assertFalse(response.getBody().isSuccess());
+	}
+	
+	
+	
+	@Test
+	public void createEmployeeUserByNonExistingUserTest() {
+		String body = "{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 99001, \"store_id\": 100, \"role\": \"NASNAV_ADMIN\"}";
+
+		//this user have the role CUSTOMER in the test data, it can't create other users
+        HttpEntity<Object> employeeUserJson = getHttpEntity(body, "InvalidToken", "70");
+		ResponseEntity<BaseResponse> response = template.postForEntity("/user/create", employeeUserJson, BaseResponse.class);
+
+
+		
+		Assert.assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatusCode().value());
+		Assert.assertFalse(response.getBody().isSuccess());
+	}
+	
+	
 
 	@Test
 	public void createEmployeeUserInvalidNameTest() {

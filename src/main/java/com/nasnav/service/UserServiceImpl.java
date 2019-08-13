@@ -1,19 +1,6 @@
 package com.nasnav.service;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
+import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
@@ -27,6 +14,16 @@ import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -34,7 +31,6 @@ public class UserServiceImpl implements UserService {
 	private UserRepository userRepository;
 	private MailService mailService;
 	private PasswordEncoder passwordEncoder;
-
 	@Autowired
 	public UserServiceImpl(UserRepository userRepository, MailService mailService, PasswordEncoder passwordEncoder) {
 		this.userRepository = userRepository;
@@ -50,7 +46,7 @@ public class UserServiceImpl implements UserService {
 		// validate user entity against business rules.
 		this.validateBusinessRules(userJson);
 		// check if a user with the same email and org_Id already exists
-		if (userRepository.existsByEmailAndOrgId(userJson.email, userJson.org_id) == null) {
+		if (userRepository.existsByEmailAndOrgId(userJson.email, userJson.getOrgId()) == null) {
 			// create and save a user from the json object
 			UserEntity userEntity = createUserEntity(userJson);
 			// send activation email
@@ -75,13 +71,54 @@ public class UserServiceImpl implements UserService {
 		return userEntity;
 	}
 
+	@Override
+	public UserApiResponse updateUser(Long userId, String userToken, UserDTOs.EmployeeUserUpdatingObject userJson) {
+		if (!checkAuthToken((long)userId, userToken)){
+			throw new EntityValidationException("" + ResponseStatus.UNAUTHENTICATED,
+					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.UNAUTHENTICATED)), HttpStatus.NOT_ACCEPTABLE);
+		}
+		UserEntity userEntity = userRepository.getByIdAndAuthenticationToken((long)userId, userToken);
+		List<ResponseStatus> failResponseStatusList = new ArrayList<>();
+		List<ResponseStatus> successResponseStatusList = new ArrayList<>();
+		if (EntityUtils.isNotBlankOrNull(userJson.getName()))
+			if (EntityUtils.validateName(userJson.getName())) {
+				userEntity.setName(userJson.getName());
+			} else {
+				failResponseStatusList.add(ResponseStatus.INVALID_NAME);
+			}
+		if (EntityUtils.isNotBlankOrNull(userJson.email)){
+			if (EntityUtils.validateEmail(userJson.email)) {
+				userEntity.setEmail(userJson.email);
+				userEntity = generateResetPasswordToken(userEntity);
+				sendRecoveryMail(userEntity);
+				successResponseStatusList.add(ResponseStatus.NEED_ACTIVATION);
+				successResponseStatusList.add(ResponseStatus.ACTIVATION_SENT);
+			} else {
+				failResponseStatusList.add(ResponseStatus.INVALID_EMAIL);
+			}
+		}
+		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "store_id", "role"};
+		String [] allIgnoredProperties = new HashSet<String>(
+				  Arrays.asList(ObjectArrays.concat(getNullProperties(userJson), defaultIgnoredProperties, String.class))).toArray(new String[0]);
+		if (failResponseStatusList.isEmpty()) {
+			BeanUtils.copyProperties(userJson, userEntity, allIgnoredProperties);
+			userRepository.saveAndFlush(userEntity);
+			if (successResponseStatusList.isEmpty()) {
+				successResponseStatusList.add(ResponseStatus.ACTIVATED);
+			}
+			return UserApiResponse.createMessagesApiResponse(true, successResponseStatusList);
+		}
+		return 	UserApiResponse.createMessagesApiResponse(false, failResponseStatusList);
+	}
+
+
 	/**
 	 * validateBusinessRules passed user entity against business rules
 	 *
 	 * @param userJson User entity to be validated
 	 */
 	private void validateBusinessRules(UserDTOs.UserRegistrationObject userJson) {
-		EntityUtils.validateNameAndEmail(userJson.name, userJson.email, userJson.org_id);
+		EntityUtils.validateNameAndEmail(userJson.name, userJson.email, userJson.getOrgId());
 	}
 
 	@Override
@@ -182,7 +219,6 @@ public class UserServiceImpl implements UserService {
 	 * generate new ResetPasswordToken and ensure that this ResetPasswordToken is
 	 * never used before.
 	 *
-	 * @param tokenLength length of generated ResetPasswordToken
 	 * @return unique generated ResetPasswordToken.
 	 */
 	private String generateResetPasswordToken() {
@@ -198,7 +234,6 @@ public class UserServiceImpl implements UserService {
 	 * regenerate ResetPasswordToken and if token already exists, make recursive
 	 * call until generating new ResetPasswordToken.
 	 *
-	 * @param tokenLength length of generated ResetPasswordToken
 	 * @return unique generated ResetPasswordToken.
 	 */
 	private String reGenerateResetPasswordToken() {
@@ -255,7 +290,51 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
-	
+	/*@Override
+	public UserApiResponse login(UserDTOs.UserLoginObject loginData) {
+		UserEntity userEntity = this.userRepository.getByEmailAndOrganizationId(loginData.email, loginData.getOrgId());
+
+		if (userEntity != null) {
+			// check if account needs activation
+			boolean accountNeedActivation = isUserNeedActivation(userEntity);
+			if (accountNeedActivation) {
+				UserApiResponse failedLoginResponse = EntityUtils
+						.createFailedLoginResponse(Collections.singletonList(ResponseStatus.NEED_ACTIVATION));
+				throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, HttpStatus.LOCKED);
+			}
+			// ensure that password matched
+			boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncryptedPassword());
+
+			if (passwordMatched) {
+				// check if account is locked
+				if (isAccountLocked(userEntity)) { // NOSONAR
+					UserApiResponse failedLoginResponse = EntityUtils
+							.createFailedLoginResponse(Collections.singletonList(ResponseStatus.ACCOUNT_SUSPENDED));
+					throw new EntityValidationException("ACCOUNT_SUSPENDED ", failedLoginResponse, HttpStatus.LOCKED);
+				}
+				// generate new AuthenticationToken and perform post login updates
+				userEntity = updatePostLogin(userEntity);
+				return createSuccessLoginResponse(userEntity);
+			}
+		}
+		UserApiResponse failedLoginResponse = EntityUtils
+				.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_CREDENTIALS));
+		throw new EntityValidationException("INVALID_CREDENTIALS ", failedLoginResponse, HttpStatus.UNAUTHORIZED);
+	}*/
+
+	/**
+	 * Generate new AuthenticationToken and perform post login updates.
+	 *
+	 * @param userEntity to be udpated
+	 * @return userEntity
+	 */
+	private UserEntity updatePostLogin(UserEntity userEntity) {
+		LocalDateTime currentSignInDate = userEntity.getCurrentSignInDate();
+		userEntity.setLastSignInDate(currentSignInDate);
+		userEntity.setCurrentSignInDate(LocalDateTime.now());
+		userEntity.setAuthenticationToken(generateAuthenticationToken(EntityConstants.TOKEN_LENGTH));
+		return userRepository.saveAndFlush(userEntity);
+	}
 
 	/**
 	 * generate new AuthenticationToken and ensure that this AuthenticationToken is
@@ -304,4 +383,15 @@ public class UserServiceImpl implements UserService {
 		return userRepository.existsByIdAndAuthenticationToken(userId, authToken);
 	}
 
+	private String[] getNullProperties(UserDTOs.EmployeeUserUpdatingObject userJson) {
+		final BeanWrapper src = new BeanWrapperImpl(userJson);
+		List<String> nullProperties = new ArrayList<>();
+		java.beans.PropertyDescriptor[] pds = src.getPropertyDescriptors();
+		for(java.beans.PropertyDescriptor pd : pds) {
+			Object srcValue = src.getPropertyValue(pd.getName());
+			if (srcValue == null) nullProperties.add(pd.getName());
+		}
+		String[] result = new String[nullProperties.size()];
+		return nullProperties.toArray(result);
+	}
 }

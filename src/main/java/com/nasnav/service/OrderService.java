@@ -23,5 +23,5 @@ public interface OrderService {
 
 	public OrderValue getOrderValue(OrdersEntity orderEntity);
 
-	public List<OrderRepresentationObject> getOrdersList(Long userId, Long storeId, String status);
+	public List<OrderRepresentationObject> getOrdersList(Long loggedUserId, String userToken, Long userId, Long storeId, Long orgId, String status);
 }
