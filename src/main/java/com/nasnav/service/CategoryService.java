@@ -7,6 +7,7 @@ import com.nasnav.dao.SocialRepository;
 import com.nasnav.dto.CategoryRepresentationObject;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.persistence.BrandsEntity;
+import com.nasnav.persistence.CategoriesEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,9 +19,14 @@ public class CategoryService {
 
     private final BrandsRepository brandsRepository;
 
+    private final CategoryRepository categoryRepository;
+
     @Autowired
-    public CategoryService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository, SocialRepository socialRepository, OrganizationThemeRepository organizationThemeRepository) {
+    public CategoryService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository,
+                           SocialRepository socialRepository, OrganizationThemeRepository organizationThemeRepository,
+                           CategoryRepository categoryRepository) {
         this.brandsRepository = brandsRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     public CategoryRepresentationObject getOrganizationCategories(Long organizationId) {
@@ -37,4 +43,17 @@ public class CategoryService {
         return null;
     }
 
+    public List<CategoryRepresentationObject> getCategories(Long organizationId, Long categoryId){
+        List<CategoriesEntity> categoriesEntityList;
+        if (organizationId == null && categoryId == null){
+            //categoriesEntityList = categoryRepository.findby
+        } else if (organizationId == null){
+
+        } else if (categoryId == null) {
+
+        } else {
+
+        }
+        return  null;
+    }
 }
