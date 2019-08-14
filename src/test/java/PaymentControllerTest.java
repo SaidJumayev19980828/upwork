@@ -6,6 +6,7 @@ import java.net.PasswordAuthentication;
 import java.util.Date;
 import java.util.LinkedList;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -68,6 +69,15 @@ public class PaymentControllerTest {
 	@Autowired
 	private ProductRepository productRepository;
 
+	private ProductEntity product;
+
+	private StocksEntity stockEntity;
+
+	private BasketsEntity basket;
+
+	private OrdersEntity orderEntity;
+
+	private
 	final static LinkedList<WebWindow> windows = new LinkedList<WebWindow>();
 
 	@Before
@@ -78,6 +88,14 @@ public class PaymentControllerTest {
 				return new PasswordAuthentication("merchant.testqnbaatest001", "password".toCharArray());
 			}
 		});
+	}
+
+	@After
+	public void cleanup(){
+		basketRepository.delete(basket);
+		stockRepository.delete(stockEntity);
+		productRepository.delete(product);
+		orderRepository.delete(orderEntity);
 	}
 
 	@Test
@@ -150,7 +168,7 @@ System.out.println(page.asXml());
 
 	private Long createOrder() {
 		//create product
-		ProductEntity product = new ProductEntity();
+		product = new ProductEntity();
 		product.setName("product one");
 		product.setCreationDate(new Date());
 		product.setUpdateDate(new Date());
@@ -161,7 +179,7 @@ System.out.println(page.asXml());
 		stock.setCreationDate(new Date());
 		stock.setUpdateDate(new Date());
 		stock.setProductEntity(productEntity);
-		StocksEntity stockEntity = stockRepository.save(stock);
+		stockEntity = stockRepository.save(stock);
 
 		// create order
 		OrdersEntity order = new OrdersEntity();
@@ -169,8 +187,8 @@ System.out.println(page.asXml());
 		order.setUpdateDate(new Date());
 		order.setAmount(new BigDecimal(50));
 		order.setEmail("test@nasnav.com");
-		OrdersEntity orderEntity = orderRepository.save(order);
-		BasketsEntity basket = new BasketsEntity();
+		orderEntity = orderRepository.save(order);
+		basket = new BasketsEntity();
 		basket.setCurrency(1);
 		basket.setPrice(new BigDecimal(100));
 		basket.setQuantity(new BigDecimal(5));

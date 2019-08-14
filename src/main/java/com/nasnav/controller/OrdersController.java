@@ -2,6 +2,7 @@ package com.nasnav.controller;
 
 import com.nasnav.service.EmployeeUserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.configurationprocessor.json.JSONArray;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -87,7 +88,7 @@ public class OrdersController {
 			//@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
 	})
 	@GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public ResponseEntity<?> updateOrder(@RequestHeader(name = "User-ID", required = true) Long loggedUserId,
+	public ResponseEntity<?> getOrdersList(@RequestHeader(name = "User-ID", required = true) Long loggedUserId,
 										 @RequestHeader(name = "User-Token", required = true) String userToken,
 										 @RequestParam(name = "user_id", required = false) Long userId,  //search parameter
 										 @RequestParam(name = "store_id", required = false) Long storeId,

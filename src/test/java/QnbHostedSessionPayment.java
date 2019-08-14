@@ -2,6 +2,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -71,6 +72,16 @@ public class QnbHostedSessionPayment {
     @Autowired
     private OrganizationRepository organizationRepository;
 
+    private ShopsEntity shop;
+
+    private OrganizationEntity org;
+
+    @After
+    public void cleanup(){
+        shopsRepository.delete(shop);
+        organizationRepository.delete(org);
+    }
+
     @Test
     public void rawSessionCreationTest() throws BusinessException {
         session.setMerchantAccount(testAccount);
@@ -131,7 +142,7 @@ public class QnbHostedSessionPayment {
     private Long createOrder() {
 
         //create organization
-        OrganizationEntity org = new OrganizationEntity();
+        org = new OrganizationEntity();
         org.setName("organization");
         org.setDescription("org descr");
         org.setCreatedAt(new Date());
@@ -145,7 +156,7 @@ public class QnbHostedSessionPayment {
         ProductEntity productEntity = productRepository.save(product);
 
         //create shop
-        ShopsEntity shop = new ShopsEntity();
+        shop = new ShopsEntity();
         shop.setCreatedAt(new Date());
         shop.setUpdatedAt(new Date());
         ShopsEntity shopEntity = shopsRepository.save(shop);

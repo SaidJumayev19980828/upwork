@@ -112,7 +112,7 @@ public class OrderServiceTest {
 			persistentUser.setCreatedAt(LocalDateTime.now());
 			persistentUser.setUpdatedAt(LocalDateTime.now());
 			persistentUser.setAuthenticationToken("7657595");
-			persistentUser.setOrganizationId(801L);
+			persistentUser.setOrganizationId(99001L);
 			persistentUser.setEncryptedPassword("---");
 			userRepository.save(persistentUser);
 		}
@@ -147,7 +147,10 @@ public class OrderServiceTest {
 				TestCommons.getHttpEntity("{ \"status\" : \"NEW\", \"basket\": [ { \"stock_id\":" + stock.getId() + ", \"quantity\": " +  stock.getQuantity() + "} ] }", 1, "XX"),
 				Object.class);
 		Assert.assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatusCode().value());
+
+		Long shopId = stock.getShopsEntity().getId();
 		stockRepository.delete(stock);
+		shopsRepository.deleteById(shopId);
 	}
 
 	// This needs fixing as it doesn't correctly use baskets
@@ -214,7 +217,9 @@ public class OrderServiceTest {
 		}
 
 		// delete the order after assertion
+		Long shopId = (orderRepository.findById(orderId).get()).getShopsEntity().getId();
 		orderRepository.deleteById(orderId);
+		shopsRepository.deleteById(shopId);
 	}
 
 	@Test
@@ -306,7 +311,7 @@ public class OrderServiceTest {
 
 		BigDecimal amount = new BigDecimal(500.25);
 		ShopsEntity shopsEntity = new ShopsEntity();
-		shopsEntity.setName("any");
+		shopsEntity.setName("any name");
 		shopsEntity.setCreatedAt(new Date());
 		shopsEntity.setUpdatedAt(new Date());
 		shopsEntity = shopsRepository.save(shopsEntity);
@@ -377,7 +382,9 @@ public class OrderServiceTest {
 			productRepository.delete(basket.getStocksEntity().getProductEntity());
 		}
 
+		Long shopId = (orderRepository.findById(orderId).get()).getShopsEntity().getId();
 		orderRepository.deleteById(orderId);
+		shopsRepository.deleteById(shopId);
 	}
 
 	private StocksEntity createStock() {
@@ -390,7 +397,7 @@ public class OrderServiceTest {
 
 		BigDecimal amount = new BigDecimal(500.25);
 		ShopsEntity shopsEntity = new ShopsEntity();
-		shopsEntity.setName("any");
+		shopsEntity.setName("any shop name");
 		shopsEntity.setCreatedAt(new Date());
 		shopsEntity.setUpdatedAt(new Date());
 		shopsEntity = shopsRepository.save(shopsEntity);
@@ -508,7 +515,7 @@ public class OrderServiceTest {
 		long count = body.length();
 
 		Assert.assertTrue(200 == response.getStatusCode().value());
-		Assert.assertEquals("user#70 is Organization employee in org#99003 so he can view all orderes within org#803", 7, count);
+		Assert.assertEquals("user#70 is Organization employee in org#99003 so he can view all orderes within org#99003", 7, count);
 
 		header = TestCommons.getHeaders(69, "131415");
 		response = template.exchange("/order/list", HttpMethod.GET, new HttpEntity<>(header), String.class);
@@ -564,20 +571,12 @@ public class OrderServiceTest {
 		Assert.assertEquals("no orders with user_id = 99",0,count);
 
 		// by org_id
-		response = template.exchange("/order/list?org_id=880", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders(68, "101112")), String.class);
+		response = template.exchange("/order/list?org_id=999999", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders(68, "101112")), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
 		Assert.assertTrue(200 == response.getStatusCode().value());
-		Assert.assertEquals("no orders with user_id = 99",0,count);
-
-		// by org_id
-		response = template.exchange("/order/list?org_id=880", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders(68, "101112")), String.class);
-		body = new JSONArray(response.getBody());
-		count = body.length();
-
-		Assert.assertTrue(200 == response.getStatusCode().value());
-		Assert.assertEquals("no orders with org_id = 880",0,count);
+		Assert.assertEquals("no orders with org_id = 999999",0,count);
 
 		// by status
 		response = template.exchange("/order/list?status=invalid_status", HttpMethod.GET,
