@@ -25,6 +25,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
@@ -117,6 +119,8 @@ public class ProductServiceTest {
 	private final Integer QUANTITY = 100;
 
 	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Delete.sql"})
 	public void getProductWithVariantsWithoutStock() {
 
 		ProductEntity productEntity = new ProductEntity();
@@ -125,16 +129,21 @@ public class ProductServiceTest {
 		productEntity.setCategoryId(CATEGORY_ID);
 		productEntity.setCreationDate(new Date());
 		productEntity.setUpdateDate(new Date());
+		productEntity.setOrganizationId(99001L);
 		productEntity = productRepository.save(productEntity);
+		
+		OrganizationEntity org = organizationRepository.findOneById(99001L);
 
 		ProductFeaturesEntity productFeaturesEntity_1 = new ProductFeaturesEntity();
 		productFeaturesEntity_1.setName(PRODUCT_FEATURE_1_NAME);
 		productFeaturesEntity_1.setPname(PRODUCT_FEATURE_1_P_NAME);
+		productFeaturesEntity_1.setOrganization(org);
 		productFeaturesEntity_1 = productFeaturesRepository.save(productFeaturesEntity_1);
 
 		ProductFeaturesEntity productFeaturesEntity_2 = new ProductFeaturesEntity();
 		productFeaturesEntity_2.setName(PRODUCT_FEATURE_2_NAME);
 		productFeaturesEntity_2.setPname(PRODUCT_FEATURE_2_P_NAME);
+		productFeaturesEntity_2.setOrganization(org);
 		productFeaturesEntity_2 = productFeaturesRepository.save(productFeaturesEntity_2);
 
 		PRODUCT_VARIANT_FEATURE_SEPC = PRODUCT_VARIANT_FEATURE_SEPC
@@ -177,6 +186,8 @@ public class ProductServiceTest {
 	}
 
 	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Delete.sql"})
 	public void getProductWithVariantsWitStock() {
 
 		ProductEntity productEntity = new ProductEntity();
@@ -185,16 +196,21 @@ public class ProductServiceTest {
 		productEntity.setCategoryId(CATEGORY_ID);
 		productEntity.setCreationDate(new Date());
 		productEntity.setUpdateDate(new Date());
+		productEntity.setOrganizationId(99001L);
 		productEntity = productRepository.save(productEntity);
 
+		OrganizationEntity org = organizationRepository.findOneById(99001L);
+		
 		ProductFeaturesEntity productFeaturesEntity_1 = new ProductFeaturesEntity();
 		productFeaturesEntity_1.setName(PRODUCT_FEATURE_1_NAME);
 		productFeaturesEntity_1.setPname(PRODUCT_FEATURE_1_P_NAME);
+		productFeaturesEntity_1.setOrganization(org);
 		productFeaturesEntity_1 = productFeaturesRepository.save(productFeaturesEntity_1);
 
 		ProductFeaturesEntity productFeaturesEntity_2 = new ProductFeaturesEntity();
 		productFeaturesEntity_2.setName(PRODUCT_FEATURE_2_NAME);
 		productFeaturesEntity_2.setPname(PRODUCT_FEATURE_2_P_NAME);
+		productFeaturesEntity_2.setOrganization(org);
 		productFeaturesEntity_2 = productFeaturesRepository.save(productFeaturesEntity_2);
 
 		PRODUCT_VARIANT_FEATURE_SEPC = PRODUCT_VARIANT_FEATURE_SEPC
