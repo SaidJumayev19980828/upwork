@@ -11,7 +11,8 @@ import lombok.EqualsAndHashCode;
         "id",
         "name",
         "p_name",
-        "logo_url"
+        "logo_url",
+        "parent_id"
 })
 
 @Data
@@ -26,5 +27,8 @@ public class CategoryRepresentationObject extends BaseRepresentationObject{
     private String pname;
     @JsonProperty("logo_url")
     private String logoUrl;
+    @JsonProperty("parent_id")
+    private Integer parentId;
+
 
 }

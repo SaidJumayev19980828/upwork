@@ -1,9 +1,6 @@
 package com.nasnav.service;
 
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.OrganizationThemeRepository;
-import com.nasnav.dao.SocialRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.CategoryRepresentationObject;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.persistence.BrandsEntity;
@@ -13,20 +10,26 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CategoryService {
 
     private final BrandsRepository brandsRepository;
 
+    @Autowired
     private final CategoryRepository categoryRepository;
+
+    @Autowired
+    private final ProductRepository productRepository;
 
     @Autowired
     public CategoryService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository,
                            SocialRepository socialRepository, OrganizationThemeRepository organizationThemeRepository,
-                           CategoryRepository categoryRepository) {
+                           CategoryRepository categoryRepository, ProductRepository productRepository) {
         this.brandsRepository = brandsRepository;
         this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
     }
 
     public CategoryRepresentationObject getOrganizationCategories(Long organizationId) {
@@ -44,16 +47,29 @@ public class CategoryService {
     }
 
     public List<CategoryRepresentationObject> getCategories(Long organizationId, Long categoryId){
-        List<CategoriesEntity> categoriesEntityList;
+        List<CategoriesEntity> categoriesEntityList = null;
+        CategoriesEntity categoriesEntity = null;
+        List<CategoryRepresentationObject> categoriesList;
         if (organizationId == null && categoryId == null){
-            //categoriesEntityList = categoryRepository.findby
-        } else if (organizationId == null){
-
-        } else if (categoryId == null) {
-
-        } else {
-
+            categoriesEntityList = categoryRepository.findAll();
         }
-        return  null;
+        else if (categoryId == null) {
+            List<Long> categoriesIdList = productRepository.getOrganizationCategoriesId(organizationId);
+            categoriesEntityList = categoriesIdList.stream().map(id ->  categoryRepository.findById(id).get())
+                    .collect(Collectors.toList());
+        }
+        else if (organizationId == null){
+            Long parentId = categoryRepository.findById(categoryId).get().getId();
+            categoriesEntityList = categoryRepository.findByParentId(parentId.intValue());
+        }
+        else {
+            //what to do if org_id and category_id exists ??
+        }
+        categoriesList = categoriesEntityList.stream().map(category -> (CategoryRepresentationObject) category.getRepresentation())
+                .collect(Collectors.toList());
+        if (categoriesEntity != null) {
+            categoriesList.add((CategoryRepresentationObject)categoriesEntity.getRepresentation());
+        }
+        return  categoriesList;
     }
 }

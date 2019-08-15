@@ -1,7 +1,9 @@
 package com.nasnav.dao;
 
 import com.nasnav.persistence.ProductEntity;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -82,10 +84,11 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     List<ProductEntity> findByIdInAndCategoryIdAndBrandIdOrderByPnameAsc(List<Long> ids, Long categoryId, Long brandId);
     List<ProductEntity> findByIdInAndCategoryIdAndBrandIdOrderByPnameDesc(List<Long> ids, Long categoryId,
                                                                           Long brandId);
-
 //    List<ProductEntity> findByIdInAndCategoryIdOrderByPriceeAsc(List<Long> ids,Long categoryId);
 //    List<ProductEntity> findByIdInAndCategoryIdOrderByPriceDesc(List<Long> ids,Long categoryId);
 
+    @Query("SELECT distinct products.categoryId FROM ProductEntity products where products.organizationId = :organizationId")
+    List<Long> getOrganizationCategoriesId(@Param("organizationId") Long organizationId);
 }
 
 

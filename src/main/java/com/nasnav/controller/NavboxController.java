@@ -1,6 +1,7 @@
 package com.nasnav.controller;
 
 import com.nasnav.dto.*;
+import com.nasnav.service.*;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,10 +15,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.service.BrandService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.ShopService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -42,6 +39,9 @@ public class NavboxController {
 
 	@Autowired
 	private ProductService productService;
+
+	@Autowired
+	private CategoryService categoryService;
 
 	@ApiOperation(value = "Get information about brand by its ID", nickname = "brandInfo")
 	@ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
@@ -168,15 +168,16 @@ public class NavboxController {
 		return response.size() == 0 ? new ResponseEntity<>(HttpStatus.NO_CONTENT) : new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
-	@ApiOperation(value = "Get information about a specific Organization's extra attributes", nickname = "organizationInfo")
+	@ApiOperation(value = "Get information about categories", nickname = "categories")
 	@ApiResponses(value = {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
 	})
-	@GetMapping(value="/attributes",produces=MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value="/categories",produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getCategories(@RequestParam(name = "org_id", required = false) Long organizationId,
 										   @RequestParam(name = "category_id", required = false) Long categoryId) throws BusinessException {
-		List<CategoryRepresentationObject> response;
-		return response.size() == 0 ? new ResponseEntity<>(HttpStatus.NO_CONTENT) : new ResponseEntity<>(response, HttpStatus.OK);
+		List<CategoryRepresentationObject> response = categoryService.getCategories(organizationId, categoryId);
+		//return response.size() == 0 ? new ResponseEntity<>(response, HttpStatus.NO_CONTENT) : new ResponseEntity<>(response, HttpStatus.OK);
+		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 }
