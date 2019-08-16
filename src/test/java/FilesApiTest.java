@@ -1,3 +1,5 @@
+import static org.hamcrest.core.StringContains.containsString;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -5,12 +7,16 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.stream.Stream;
 
 import org.junit.Before;
@@ -21,10 +27,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
@@ -34,8 +41,10 @@ import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.TestPropertySourceUtils;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import com.nasnav.NavBox;
 import com.nasnav.commons.utils.StringUtils;
@@ -110,21 +119,7 @@ public class FilesApiTest {
 		
 		String sanitizedFileName = StringUtils.getFileNameSanitized(fileName);		
 		String expectedUrl = orgId + "/" + sanitizedFileName;
-		Path expectedPath = Paths.get(""+orgId).resolve(sanitizedFileName);
-		
-		Path saveDir = basePath.resolve(orgId.toString());		
-		
-		performFileUpload(fileName, orgId)
-             .andExpect(status().is(200))
-             .andExpect(content().string(expectedUrl));
-		 
-		 assertTrue("Ogranization directory was created", Files.exists(saveDir));
-		 
-		 try(Stream<Path> files = Files.list(saveDir)){
-			 assertNotEquals("new Files exists in the expected location", 0L, files.count() );
-		 }
-		 
-		 assertFileSavedToDb(fileName, orgId, expectedUrl, expectedPath);		 
+		uploadValidTestImg(fileName, orgId, sanitizedFileName, expectedUrl);		 
 	}
 	
 	
@@ -301,6 +296,125 @@ public class FilesApiTest {
                  .file(file)
                  .param("org_id",  orgIdStr));
 		return result;
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void downloadFileTest() throws IOException, Exception {
+		//first upload a file 
+		
+		String fileName = TEST_PHOTO;
+		Long orgId = 99001L;
+		Path origFile = Paths.get(TEST_IMG_DIR).resolve(fileName).toAbsolutePath();	
+		
+		
+		String sanitizedFileName = StringUtils.getFileNameSanitized(fileName);		
+		String expectedUrl = orgId + "/" + sanitizedFileName;
+		
+		uploadValidTestImg(fileName, orgId, sanitizedFileName, expectedUrl);
+		
+		 //--------------------------------------------
+		 //Now try to download the file
+		 
+		 MvcResult result = mockMvc.perform( 
+				 						MockMvcRequestBuilders.get("/files/"+ expectedUrl)
+				 								.contentType(MediaType.ALL_VALUE)				 
+				 				)
+ 								.andExpect(status().is(200))
+ 								.andExpect(header().exists(HttpHeaders.CONTENT_DISPOSITION))
+ 								.andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString(fileName)))
+ 								.andReturn();
+	     
+		 Path downloadedFile = Files.createTempFile( StringUtils.stripFilenameExtension(fileName), ".png");
+		 InputStream in = new ByteArrayInputStream(result.getResponse().getContentAsByteArray());
+		 Files.copy(in, downloadedFile, StandardCopyOption.REPLACE_EXISTING );
+		 System.out.println("Downloaded File >>>> " + downloadedFile);
+		 
+	     assertEquals(Files.size(origFile), Files.size(downloadedFile));
+         assertEquals("image/png", result.getResponse().getContentType());
+	}
+
+
+
+
+
+	
+	@Test
+	public void downloadFileUrlNotExists() throws Exception {		
+		 mockMvc.perform( 
+ 						MockMvcRequestBuilders.get("/files/NON_EXISTING")
+ 								.contentType(MediaType.ALL_VALUE)				 
+ 				)
+				.andExpect(status().is(406))
+				.andExpect(header().doesNotExist(HttpHeaders.CONTENT_DISPOSITION));	 
+	}
+	
+	
+	
+	@Test
+	public void downloadFileUrlInvalid() throws Exception {		
+		 mockMvc.perform( 
+ 						MockMvcRequestBuilders.get("/files")
+ 								.contentType(MediaType.ALL_VALUE)				 
+ 				)
+				.andExpect(status().is(406))
+				.andExpect(header().doesNotExist(HttpHeaders.CONTENT_DISPOSITION));	 
+	}
+	
+	
+	
+	
+	@Test
+	public void downloadFileDeletedOnSystem() throws Exception {		
+		//first upload a file 
+		
+		String fileName = TEST_PHOTO;
+		Long orgId = 99001L;		
+		
+		String sanitizedFileName = StringUtils.getFileNameSanitized(fileName);		
+		String expectedUrl = orgId + "/" + sanitizedFileName;
+		
+		uploadValidTestImg(fileName, orgId, sanitizedFileName, expectedUrl);
+		
+		//----------------------------------------------
+		
+		Path uploadedFile = basePath.resolve(""+orgId).resolve(sanitizedFileName);
+		Files.delete(uploadedFile);
+		
+		 //--------------------------------------------
+		 //Now try to download the deleted file
+		 
+		mockMvc.perform( 
+					MockMvcRequestBuilders.get("/files/"+ expectedUrl)
+							.contentType(MediaType.ALL_VALUE)				 
+			)
+		.andExpect(status().is(406))
+		.andExpect(header().doesNotExist(HttpHeaders.CONTENT_DISPOSITION));	 
+	}
+
+
+
+
+	private void uploadValidTestImg(String fileName, Long orgId, String sanitizedFileName, String expectedUrl)
+			throws Exception, IOException {
+		Path expectedPath = Paths.get(""+orgId).resolve(sanitizedFileName);
+		
+		Path saveDir = basePath.resolve(orgId.toString());		
+		
+		performFileUpload(fileName, orgId)
+             .andExpect(status().is(200))
+             .andExpect(content().string(expectedUrl));
+		 
+		 assertTrue("Ogranization directory was created", Files.exists(saveDir));
+		 
+		 try(Stream<Path> files = Files.list(saveDir)){
+			 assertNotEquals("new Files exists in the expected location", 0L, files.count() );
+		 }
+		 
+		 assertFileSavedToDb(fileName, orgId, expectedUrl, expectedPath);
 	}
 
 }

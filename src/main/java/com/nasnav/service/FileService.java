@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -10,10 +11,10 @@ import java.util.UUID;
 import javax.annotation.PostConstruct;
 
 import org.apache.tika.Tika;
-import org.apache.tika.exception.TikaException;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +26,7 @@ import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.FileEntity;
 import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.service.model.FileUrlResource;
 
 @Service
 public class FileService {
@@ -212,5 +214,45 @@ public class FileService {
 				throw new BusinessException("Failed to create directory at location : " + saveDir, "FAILED TO CREATE DIRECTORY", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		}
+	}
+
+
+
+
+	public FileUrlResource getFileAsResource(String url) throws BusinessException {
+				
+		String modUrl = reformUrl(url);
+		FileEntity fileInfo = filesRepo.findByUrl(modUrl);
+		
+		if(fileInfo == null) {
+			throw new BusinessException("No file exists with url: " + url, "INVALID PARAM:url", HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		Path location = basePath.resolve(fileInfo.getLocation());
+		
+		if(!Files.exists(location)){
+			throw new BusinessException("No file exists with url: " + url, "INVALID PARAM:url", HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		FileUrlResource resource = null;
+		try {
+			resource =  new FileUrlResource(location.toUri(), fileInfo.getMimetype(), fileInfo.getOriginalFileName());
+		} catch (MalformedURLException e) {
+			logger.error(e,e);
+			throw new BusinessException("Failed to download file with url: " + url, "INTERNAL_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+			
+		return resource;
+	}
+
+
+
+
+	private String reformUrl(String url) throws BusinessException {
+		return Optional.ofNullable(url)
+							.filter(u -> u.length()> 2)
+							.filter(u -> u.startsWith("/"))
+							.map(u -> u.substring(1))
+						.orElseThrow(() -> new BusinessException("Invalid URL : " + url, "INVALID PARAM:url", HttpStatus.NOT_ACCEPTABLE));
 	}
 }
