@@ -2,7 +2,8 @@ package com.nasnav.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.nasnav.persistence.EntityUtils;
+import com.nasnav.commons.utils.StringUtils;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -93,7 +94,7 @@ public class UserApiResponse extends BaseResponse implements Serializable {
      */
     private UserApiResponse(boolean success, List<ResponseStatus> responseStatuses) {
         this.success = success;
-        if(EntityUtils.isNotBlankOrNull(responseStatuses)){
+        if(StringUtils.isNotBlankOrNull(responseStatuses)){
             List<String> messagesList= new ArrayList<>();
             responseStatuses.forEach(responseStatus->{
                 messagesList.add(responseStatus.name());

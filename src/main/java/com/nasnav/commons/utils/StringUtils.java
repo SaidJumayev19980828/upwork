@@ -1,4 +1,4 @@
-package com.nasnav.persistence;
+package com.nasnav.commons.utils;
 
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.exceptions.EntityValidationException;
@@ -10,27 +10,10 @@ import java.util.*;
 
 import org.springframework.http.HttpStatus;
 
-/**
- * Hold all common methods related to entity classes
- */
-public class EntityUtils {
-	private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+public class StringUtils extends org.springframework.util.StringUtils{
 	private static Random random;
 
-	private static Random getRandom() {
-		if (random == null) {
-			random = new Random();
-		}
-		return random;
-	}
-
-	/**
-	 * match the given input param against the passed pattern
-	 *
-	 * @param input to be matched to regex
-	 * @param regex to be used to match input
-	 * @return true if input match the given regex.
-	 */
 	public static boolean patternMatcher(String input, String regex) {
 		if (input == null) {
 			return false;
@@ -48,32 +31,20 @@ public class EntityUtils {
 		return patternMatcher(name, EntityConstants.Name_PATTERN);
 	}
 
-	/**
-	 * validate the email param against EMAIL_PATTERN
-	 *
-	 * @param email to be matched against EMAIL_PATTERN
-	 * @return true if email match EMAIL_PATTERN
-	 */
+	
+	
 	public static boolean validateEmail(String email) {
 		return patternMatcher(email, EntityConstants.EMAIL_PATTERN);
 	}
 
-	/**
-	 * check if passed object is not null and not empty.
-	 *
-	 * @param object object to be checked.
-	 * @return true if object is not null and not empty.
-	 */
+	
+	
 	public static boolean isNotBlankOrNull(Object object) {
 		return !isBlankOrNull(object);
 	}
 
-	/**
-	 * check if passed object is null or empty.
-	 *
-	 * @param object object to be checked.
-	 * @return true if object is empty or null.
-	 */
+	
+	
 	public static boolean isBlankOrNull(Object object) {
 		if (object == null) {
 			return true;
@@ -87,43 +58,28 @@ public class EntityUtils {
 		return false;
 	}
 
-	/**
-	 * Generate new token whose length equal the passed length.
-	 *
-	 * @param length length of token to be generated.
-	 * @return new token string.
-	 */
+	
+	
 	public static String generateUUIDToken() {
 		return UUID.randomUUID().toString();
 	}
 
-	/**
-	 * Create failed login api response
-	 *
-	 * @param responseStatuses failed response statuses
-	 * @return UserApiResponse
-	 */
-	//TODO : with spring security , this will be deprecated
-	public static UserApiResponse createFailedLoginResponse(List<ResponseStatus> responseStatuses) {
-		return new ApiResponseBuilder().setSuccess(false).setResponseStatuses(responseStatuses).build();
-	}
+	
+	
+	
 
-	/**
-	 * called pre save user to validateBusinessRules fields of user entity
-	 *
-	 * @param name
-	 * @param email
-	 * @param orgId
-	 */
+	
+	
+	
 	public static void validateNameAndEmail(String name, String email, Long orgId) {
 		List<ResponseStatus> responseStatusList = new ArrayList<>();
-		if (!EntityUtils.validateName(name)) {
+		if (!StringUtils.validateName(name)) {
 			responseStatusList.add(ResponseStatus.INVALID_NAME);
 		}
-		if (!EntityUtils.validateEmail(email)) {
+		if (!StringUtils.validateEmail(email)) {
 			responseStatusList.add(ResponseStatus.INVALID_EMAIL);
 		}
-		if (EntityUtils.isBlankOrNull(orgId) || orgId <= 0){
+		if (StringUtils.isBlankOrNull(orgId) || orgId <= 0){
 			responseStatusList.add(ResponseStatus.INVALID_ORGANIZATION);
 		}
 		if (!responseStatusList.isEmpty()) {
@@ -131,9 +87,20 @@ public class EntityUtils {
 					UserApiResponse.createStatusApiResponse(responseStatusList), HttpStatus.NOT_ACCEPTABLE);
 		}
 	}
+	
+	
 
 	public static String encodeUrl(String url){
 		String result = url.replaceAll("[^a-zA-Z0-9]+", "-").replaceAll("^-|-$","");
 		return result.toLowerCase();
+	}
+	
+	
+	
+	
+	public static String getFileNameSanitized(String name) {
+		return name.replaceAll("[^a-zA-Z0-9\\.]+", "-")
+						.replaceAll("^-|-$","")
+						.toLowerCase();
 	}
 }

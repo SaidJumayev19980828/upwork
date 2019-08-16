@@ -1,20 +1,10 @@
 package com.nasnav.service;
 
-import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.dao.CommonUserRepository;
-import com.nasnav.dao.RoleRepository;
-import com.nasnav.dto.UserDTOs.UserLoginObject;
-import com.nasnav.enumerations.Roles;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.EntityValidationException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.EntityUtils;
-import com.nasnav.persistence.Role;
-import com.nasnav.persistence.UserEntity;
-import com.nasnav.response.ApiResponseBuilder;
-import com.nasnav.response.ResponseStatus;
-import com.nasnav.response.UserApiResponse;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,13 +15,18 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.nasnav.commons.utils.StringUtils;
+import com.nasnav.constatnts.EntityConstants;
+import com.nasnav.dao.CommonUserRepository;
+import com.nasnav.dto.UserDTOs.UserLoginObject;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.EntityValidationException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.EntityUtils;
+import com.nasnav.response.ApiResponseBuilder;
+import com.nasnav.response.ResponseStatus;
+import com.nasnav.response.UserApiResponse;
 
 @Service
 public class SecurityServiceImpl implements SecurityService {
@@ -121,7 +116,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	private boolean invalidLoginData(UserLoginObject loginData) {
-		return loginData == null || EntityUtils.isBlankOrNull(loginData.email) || EntityUtils.isBlankOrNull(loginData.orgId);
+		return loginData == null || StringUtils.isBlankOrNull(loginData.email) || StringUtils.isBlankOrNull(loginData.orgId);
 	}
 
 
@@ -139,7 +134,7 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	private boolean isUserNeedActivation(BaseUserEntity userEntity) {
 		String encPassword = userEntity.getEncryptedPassword();
-		return EntityUtils.isBlankOrNull(encPassword) || EntityConstants.INITIAL_PASSWORD.equals(encPassword);
+		return StringUtils.isBlankOrNull(encPassword) || EntityConstants.INITIAL_PASSWORD.equals(encPassword);
 	}
 	
 	
@@ -168,7 +163,7 @@ public class SecurityServiceImpl implements SecurityService {
 	private String generateAuthenticationToken() {
 		//it is nearly impossible for type 4 UUID to be repeated by chance.
 		//also each users table have unique index on auth tokens.
-		return EntityUtils.generateUUIDToken();		
+		return StringUtils.generateUUIDToken();		
 	}
 	
 	

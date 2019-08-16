@@ -4,12 +4,14 @@ import java.nio.file.Path;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.nasnav.persistence.FilesEntity;
+import com.nasnav.persistence.FileEntity;
 
-public interface FilesRepository extends JpaRepository<FilesEntity, Long> {
+public interface FilesRepository extends JpaRepository<FileEntity, Long> {
 
 	boolean existsByUrl(String url);
 
-	boolean existByLocation(String uniqueLocation);
+	boolean existsByLocation(String uniqueLocation);
 
+	FileEntity findByUrl(String expectedUrl);
+	
 }

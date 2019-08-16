@@ -19,11 +19,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.google.common.net.MediaType;
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.EntityUtils;
-import com.nasnav.persistence.FilesEntity;
+import com.nasnav.persistence.FileEntity;
 import com.nasnav.persistence.OrganizationEntity;
 
 @Service
@@ -61,11 +61,14 @@ public class FileService {
 	
 	public String saveFile(MultipartFile file, Long orgId) throws BusinessException {
 		
-		if(orgId != null && !orgRepo.existsById(orgId.intValue())) {
+		if(orgId != null && !orgRepo.existsById(orgId)) {
 			throw new BusinessException("No Organization exists with id: " + orgId, "INVALID PARAM:org_id", HttpStatus.NOT_ACCEPTABLE);									
-		}		
+		}
+		if(StringUtils.isBlankOrNull(file.getOriginalFilename()) ) {
+			throw new BusinessException("No file name provided!", "INVALID PARAM:file", HttpStatus.NOT_ACCEPTABLE);
+		}
 		
-		String origName = file.getOriginalFilename();		
+		String origName = file.getOriginalFilename();	
 		String uniqeFileName = getUniqueName(origName, orgId );
 		String url = getUrl(uniqeFileName, orgId);
 		Path location = getRelativeLocation(uniqeFileName, orgId); 		
@@ -87,8 +90,8 @@ public class FileService {
 		OrganizationEntity org = orgRepo.findOneById(orgId);
 		String mimeType = getMimeType(basePath.resolve(location));
 		
-		FilesEntity fileEntity = new FilesEntity();
-		fileEntity.setLocation(location.toString());
+		FileEntity fileEntity = new FileEntity();
+		fileEntity.setLocation( location.toString().replace("\\", "/") );
 		fileEntity.setOriginalFileName(origName);
 		fileEntity.setUrl(url);
 		fileEntity.setMimetype(mimeType);
@@ -105,8 +108,8 @@ public class FileService {
 		
 		Tika tika = new Tika();
 		try {
-			mimeType = tika.parseToString(file);
-		} catch (IOException | TikaException e) {
+			mimeType = tika.detect(file);
+		} catch (IOException e) {
 			logger.error(e,e);
 			throw new BusinessException("Failed to parse MIME type for the file: "+ file, "INTERNAL ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -130,15 +133,19 @@ public class FileService {
 
 	private String getUniqueName(String origName, Long orgId) {		
 		return	Optional.of(origName)					
-							.map(EntityUtils::encodeUrl)
+							.map(this::sanitize) 
 							.filter(name -> notUniqueFileName(name, orgId))					
 							.map(this::getUniqueRandomName)					
 						.or( () -> Optional.of(origName))
-							.map(EntityUtils::encodeUrl)
+							.map(this::sanitize) 
 							.get();
 	}
 
 
+	
+	private String sanitize(String name) {	
+		return StringUtils.getFileNameSanitized(name);
+	}
 
 
 	private boolean notUniqueFileName(String origName, Long orgId) {
@@ -146,7 +153,7 @@ public class FileService {
 		Path location = getRelativeLocation(origName, orgId);		
 		
 		return  filesRepo.existsByUrl(url) 
-					|| filesRepo.existByLocation(location.toString())
+					|| filesRepo.existsByLocation(location.toString())
 					|| Files.exists(location) ;
 	}
 

@@ -1,6 +1,8 @@
 import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,6 +38,11 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.nasnav.NavBox;
+import com.nasnav.commons.utils.StringUtils;
+import com.nasnav.dao.FilesRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.persistence.FileEntity;
+import com.nasnav.persistence.OrganizationEntity;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -50,6 +57,8 @@ import net.jcip.annotations.NotThreadSafe;
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Files_API_Test_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/Files_API_Test_Delete.sql"})
 public class FilesApiTest {
+	private static final String TEST_PHOTO = "nasnav--Test_Photo.png";
+
 	private static final String TEST_IMG_DIR = "src/test/resources/test_imgs_to_upload";
 
 	@Value("${files.basepath}")
@@ -57,6 +66,13 @@ public class FilesApiTest {
 
 	private Path basePath;
 	
+	
+	
+	@Autowired
+	private FilesRepository filesRepo;
+	
+	@Autowired
+	private OrganizationRepository orgRepo;
 	
 	@Autowired
 	private  MockMvc mockMvc;
@@ -89,13 +105,18 @@ public class FilesApiTest {
 	@Test
 	public void fileUploadTest() throws Exception {
 		
-		String fileName = "myPhoto.png";
+		String fileName = TEST_PHOTO;
 		Long orgId = 99001L;
+		
+		String sanitizedFileName = StringUtils.getFileNameSanitized(fileName);		
+		String expectedUrl = orgId + "/" + sanitizedFileName;
+		Path expectedPath = Paths.get(""+orgId).resolve(sanitizedFileName);
+		
 		Path saveDir = basePath.resolve(orgId.toString());		
 		
 		performFileUpload(fileName, orgId)
              .andExpect(status().is(200))
-             .andExpect(content().string(fileName));
+             .andExpect(content().string(expectedUrl));
 		 
 		 assertTrue("Ogranization directory was created", Files.exists(saveDir));
 		 
@@ -103,6 +124,47 @@ public class FilesApiTest {
 			 assertNotEquals("new Files exists in the expected location", 0L, files.count() );
 		 }
 		 
+		 assertFileSavedToDb(fileName, orgId, expectedUrl, expectedPath);		 
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void fileUploadOrgNotExistTest() throws Exception {
+		
+		String fileName = TEST_PHOTO;
+		Long orgId = 99123L;
+		
+		
+		Path saveDir = basePath.resolve(orgId.toString());		
+		
+		performFileUpload(fileName, orgId)
+		.andExpect(status().is(406));
+		 
+		assertFalse("Save directory was NOT created", Files.exists(saveDir));
+		 
+		assertEquals("Nothing saved to DB", 0L, filesRepo.count());		 
+	}
+
+
+
+
+
+
+
+
+
+	private void assertFileSavedToDb(String fileName, Long orgId, String expectedUrl, Path expectedPath) {
+		FileEntity file = filesRepo.findByUrl(expectedUrl);	
+		OrganizationEntity org = orgRepo.findOneById(orgId);
+		 
+		 assertNotNull("File meta-data was saved to database", file);
+		 assertEquals(expectedPath.toString().replace("\\", "/"), file.getLocation());
+		 assertEquals("image/png", file.getMimetype());
+		 assertEquals(org, file.getOrganization());
+		 assertEquals(fileName, file.getOriginalFileName());
 	}
 	
 	
@@ -110,25 +172,36 @@ public class FilesApiTest {
 	@Test
 	public void fileUploadSameNameTest() throws Exception {
 		
-		String fileName = "myPhoto.png";
+		String fileName = TEST_PHOTO;
 		Long orgId = 99001L;
+		
+		String sanitizedFileName = StringUtils.getFileNameSanitized(fileName);		
+		String expectedUrl = orgId + "/" + sanitizedFileName;
+		
 		Path saveDir = basePath.resolve(orgId.toString());		
 		
 		performFileUpload(fileName, orgId)
              .andExpect(status().is(200))
-             .andExpect(content().string(fileName));
+             .andExpect(content().string(expectedUrl));
 		
 		//second upload, expect the file name to be modified
-		String fileNameNoExt = com.google.common.io.Files.getNameWithoutExtension(fileName);
-		performFileUpload(fileName, orgId)
-        .andExpect(status().is(200))
-        .andExpect(content().string(startsWith(fileNameNoExt)));
+		String fileUrlNoExt = orgId + "/" + StringUtils.stripFilenameExtension(sanitizedFileName);
+		String secondFileUrl = performFileUpload(fileName, orgId)
+							        .andExpect(status().is(200))
+							        .andExpect(content().string(startsWith(fileUrlNoExt)))
+							        .andReturn()
+							        .getResponse()
+							        .getContentAsString();
+		
+		assertNotEquals("each File should have unique url",expectedUrl, secondFileUrl);
 		 
 		 assertTrue("Ogranization directory was created", Files.exists(saveDir));
 		 
 		 try(Stream<Path> files = Files.list(saveDir)){
 			 assertEquals("2 Files exists in the expected location", 2L, files.count() );
 		 }
+		 
+		 assertEquals("Both files saved to DB", 2L, filesRepo.count());
 		 
 	}
 	
@@ -139,18 +212,77 @@ public class FilesApiTest {
 	@Test
 	public void fileUploadNullOrgTest() throws Exception {
 		
-		String fileName = "myPhoto.png";
+		String fileName = TEST_PHOTO;
 		Long orgId = null;
+		
+		String sanitizedFileName = StringUtils.getFileNameSanitized(fileName);		
+		String expectedUrl =  sanitizedFileName;
+		Path expectedPath = Paths.get(sanitizedFileName);
+		
 		Path saveDir = basePath;		
 		
 		performFileUpload(fileName, orgId)
              .andExpect(status().is(200))
-             .andExpect(content().string(fileName));
+             .andExpect(content().string(expectedUrl));
 		 
 		 assertTrue("Save directory was created", Files.exists(saveDir));
 		 
-		 Path expectedPath = saveDir.resolve(fileName);		 
-		 assertTrue("saved file exists in the expected location", Files.exists(expectedPath) );		 
+		 Path expectedAbsPath = basePath.resolve(sanitizedFileName);		 
+		 assertTrue("saved file exists in the expected location", Files.exists(expectedAbsPath) );	
+		 
+		 assertFileSavedToDb(fileName, orgId, expectedUrl, expectedPath);
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void fileUploadNoName() throws Exception {		
+		Long orgId = 99001L;		
+		
+		Path saveDir = basePath.resolve(orgId.toString());	
+		
+		String orgIdStr = orgId == null ? null : orgId.toString();
+		 MockMultipartFile file = new MockMultipartFile("file", "", "image/png", new byte[0]);		 
+		    mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
+                 .file(file)
+                 .param("org_id",  orgIdStr))
+             .andExpect(status().is(406));
+		 
+		assertFalse("Save directory was NOT created", Files.exists(saveDir));
+		 
+		assertEquals("Nothing saved to DB", 0L, filesRepo.count());
+	}
+	
+	
+	
+	
+	@Test
+	public void fileUploadNoData() throws Exception {	
+		String fileName = TEST_PHOTO;
+		Long orgId = 99001L;		
+				
+		String sanitizedFileName = StringUtils.getFileNameSanitized(fileName);		
+		String expectedUrl = orgId + "/" + sanitizedFileName;
+		Path expectedPath = Paths.get(""+orgId).resolve(sanitizedFileName);
+		Path saveDir = basePath.resolve(orgId.toString());	
+		
+		String orgIdStr = orgId == null ? null : orgId.toString();
+		MockMultipartFile file = new MockMultipartFile("file", fileName, "image/png", new byte[0]);		 
+		    mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
+                 .file(file)
+                 .param("org_id",  orgIdStr))
+		    .andExpect(status().is(200))
+            .andExpect(content().string(expectedUrl));
+		 
+		 assertTrue("Ogranization directory was created", Files.exists(saveDir));
+		 
+		 try(Stream<Path> files = Files.list(saveDir)){
+			 assertNotEquals("File with size 0 KB  exists in the expected location", 0L, files.count() );
+		 }
+		 
+		 assertFileSavedToDb(fileName, orgId, expectedUrl, expectedPath);
 	}
 
 
@@ -170,21 +302,6 @@ public class FilesApiTest {
                  .param("org_id",  orgIdStr));
 		return result;
 	}
-	
-	/**
-	 * TODO:
-	 * * - test database save
-	 * - test null org [DONE]
-	 * - test org with existing dir
-	 * - test non-existing org
-	 * - test non-existing file, file with no name
-	 * - test upload image multiple times (name rename)[DONE]
-	 * - 
-	 * */
-	
-	
-	
-	
 
 }
 
