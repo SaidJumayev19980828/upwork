@@ -16,7 +16,7 @@ import java.io.IOException;
 
 public class AuthenticationFilter extends AbstractAuthenticationProcessingFilter {
 
-    private static final String TOKEN_HEADER = "User-Token";
+    public static final String TOKEN_HEADER = "User-Token";
 
     AuthenticationFilter(final RequestMatcher requiresAuth) {
         super(requiresAuth);

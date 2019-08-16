@@ -1,5 +1,4 @@
 import static org.hamcrest.core.StringContains.containsString;
-import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -44,7 +43,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import com.nasnav.NavBox;
 import com.nasnav.commons.utils.StringUtils;
@@ -52,6 +50,7 @@ import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.persistence.FileEntity;
 import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.security.AuthenticationFilter;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -242,6 +241,7 @@ public class FilesApiTest {
 		 MockMultipartFile file = new MockMultipartFile("file", "", "image/png", new byte[0]);		 
 		    mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
                  .file(file)
+                 .header(AuthenticationFilter.TOKEN_HEADER, "101112")
                  .param("org_id",  orgIdStr))
              .andExpect(status().is(406));
 		 
@@ -265,9 +265,11 @@ public class FilesApiTest {
 		
 		String orgIdStr = orgId == null ? null : orgId.toString();
 		MockMultipartFile file = new MockMultipartFile("file", fileName, "image/png", new byte[0]);		 
-		    mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
-                 .file(file)
-                 .param("org_id",  orgIdStr))
+		    mockMvc.perform(
+		    		MockMvcRequestBuilders.multipart("/files")
+		                 .file(file)
+		                 .header(AuthenticationFilter.TOKEN_HEADER, "101112")
+		                 .param("org_id",  orgIdStr))
 		    .andExpect(status().is(200))
             .andExpect(content().string(expectedUrl));
 		 
@@ -293,8 +295,9 @@ public class FilesApiTest {
 		 MockMultipartFile file = new MockMultipartFile("file", fileName, "image/png", imgData);
 		 ResultActions result = 
 		    mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
-                 .file(file)
-                 .param("org_id",  orgIdStr));
+								                 .file(file)
+								                 .header(AuthenticationFilter.TOKEN_HEADER, "101112")
+								                 .param("org_id",  orgIdStr));
 		return result;
 	}
 	
@@ -321,6 +324,7 @@ public class FilesApiTest {
 		 
 		 MvcResult result = mockMvc.perform( 
 				 						MockMvcRequestBuilders.get("/files/"+ expectedUrl)
+				 								.header(AuthenticationFilter.TOKEN_HEADER, "101112")
 				 								.contentType(MediaType.ALL_VALUE)				 
 				 				)
  								.andExpect(status().is(200))
@@ -346,6 +350,7 @@ public class FilesApiTest {
 	public void downloadFileUrlNotExists() throws Exception {		
 		 mockMvc.perform( 
  						MockMvcRequestBuilders.get("/files/NON_EXISTING")
+ 								.header(AuthenticationFilter.TOKEN_HEADER, "101112")
  								.contentType(MediaType.ALL_VALUE)				 
  				)
 				.andExpect(status().is(406))
@@ -358,9 +363,23 @@ public class FilesApiTest {
 	public void downloadFileUrlInvalid() throws Exception {		
 		 mockMvc.perform( 
  						MockMvcRequestBuilders.get("/files")
+ 								.header(AuthenticationFilter.TOKEN_HEADER, "101112")
  								.contentType(MediaType.ALL_VALUE)				 
  				)
 				.andExpect(status().is(406))
+				.andExpect(header().doesNotExist(HttpHeaders.CONTENT_DISPOSITION));	 
+	}
+	
+	
+	
+	
+	@Test
+	public void downloadFileNoAuthN() throws Exception {		
+		 mockMvc.perform( 
+ 						MockMvcRequestBuilders.get("/files")
+ 								.contentType(MediaType.ALL_VALUE)				 
+ 				)
+				.andExpect(status().is(401))
 				.andExpect(header().doesNotExist(HttpHeaders.CONTENT_DISPOSITION));	 
 	}
 	
@@ -389,6 +408,7 @@ public class FilesApiTest {
 		 
 		mockMvc.perform( 
 					MockMvcRequestBuilders.get("/files/"+ expectedUrl)
+							.header(AuthenticationFilter.TOKEN_HEADER, "101112")
 							.contentType(MediaType.ALL_VALUE)				 
 			)
 		.andExpect(status().is(406))
