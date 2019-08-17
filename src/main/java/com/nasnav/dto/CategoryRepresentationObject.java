@@ -29,6 +29,6 @@ public class CategoryRepresentationObject extends BaseRepresentationObject{
     private String logoUrl;
     @JsonProperty("parent_id")
     private Integer parentId;
-
-
+    @JsonProperty("operation")
+    private String operation;
 }

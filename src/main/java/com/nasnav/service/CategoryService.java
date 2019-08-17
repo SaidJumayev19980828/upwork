@@ -5,10 +5,15 @@ import com.nasnav.dto.CategoryRepresentationObject;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.CategoriesEntity;
+import com.nasnav.persistence.EntityUtils;
+import com.nasnav.response.ApiResponseBuilder;
+import com.nasnav.response.ResponseStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -71,5 +76,23 @@ public class CategoryService {
             categoriesList.add((CategoryRepresentationObject)categoriesEntity.getRepresentation());
         }
         return  categoriesList;
+    }
+
+    public ApiResponseBuilder createCategory(CategoryRepresentationObject categoryJson) {
+        CategoriesEntity categoriesEntity = new CategoriesEntity();
+        if (categoryJson.getName() == null || !EntityUtils.validateName(categoryJson.getName())) {
+            //return new ApiResponseBuilder().setSuccess(false).setResponseStatuses(Collections.singletonList(ResponseStatus.INVALID_NAME)).build();
+        }
+        categoriesEntity.setName(categoryJson.getName());
+        categoriesEntity.setLogo(categoryJson.getLogoUrl());
+        categoriesEntity.setParentId(categoryJson.getParentId());
+        categoryRepository.save(categoriesEntity);
+        return new ApiResponseBuilder().setSuccess(true).setEntityId(categoriesEntity.getId()).build();
+    }
+
+    public ApiResponseBuilder updateCategory(CategoryRepresentationObject categoryJson) {
+        if (categoryRepository.findById(categoryJson.getId()) != null){
+            return new ApiResponseBuilder().setSuccess(false).setEntityId(categoryJson.getId()).setMessage("").build();
+        }
     }
 }
