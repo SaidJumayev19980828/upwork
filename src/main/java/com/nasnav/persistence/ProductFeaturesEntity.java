@@ -25,4 +25,6 @@ public class ProductFeaturesEntity {
 	private String pname;
 	@Column(name="description")
 	private String description;
+	@Column(name="organization_id")
+	private Long organizationId;
 }

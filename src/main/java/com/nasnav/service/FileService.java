@@ -134,11 +134,14 @@ public class FileService {
 
 
 	private String getUniqueName(String origName, Long orgId) {		
-		return	Optional.of(origName)					
+		Optional<String> opt = Optional.of(origName)
 							.map(this::sanitize) 
 							.filter(name -> notUniqueFileName(name, orgId))					
-							.map(this::getUniqueRandomName)					
-						.or( () -> Optional.of(origName))
+							.map(this::getUniqueRandomName);
+		if (opt.isPresent()) {
+			return opt.get();
+		}
+		return Optional.of(origName)
 							.map(this::sanitize) 
 							.get();
 	}

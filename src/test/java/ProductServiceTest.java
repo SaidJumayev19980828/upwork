@@ -119,6 +119,13 @@ public class ProductServiceTest {
 	@Test
 	public void getProductWithVariantsWithoutStock() {
 
+		OrganizationEntity organizationEntity = new OrganizationEntity();
+		organizationEntity.setCreatedAt(new Date());
+		organizationEntity.setName("Fortune cosmitics");
+		organizationEntity.setUpdatedAt(new Date());
+		organizationEntity = organizationRepository.save(organizationEntity);
+
+
 		ProductEntity productEntity = new ProductEntity();
 		productEntity.setName(PRODUCT_NAME);
 		productEntity.setPname(PRODUCT_P_NAME);
@@ -130,11 +137,13 @@ public class ProductServiceTest {
 		ProductFeaturesEntity productFeaturesEntity_1 = new ProductFeaturesEntity();
 		productFeaturesEntity_1.setName(PRODUCT_FEATURE_1_NAME);
 		productFeaturesEntity_1.setPname(PRODUCT_FEATURE_1_P_NAME);
+		productFeaturesEntity_1.setOrganizationId(organizationEntity.getId());
 		productFeaturesEntity_1 = productFeaturesRepository.save(productFeaturesEntity_1);
 
 		ProductFeaturesEntity productFeaturesEntity_2 = new ProductFeaturesEntity();
 		productFeaturesEntity_2.setName(PRODUCT_FEATURE_2_NAME);
 		productFeaturesEntity_2.setPname(PRODUCT_FEATURE_2_P_NAME);
+		productFeaturesEntity_2.setOrganizationId(organizationEntity.getId());
 		productFeaturesEntity_2 = productFeaturesRepository.save(productFeaturesEntity_2);
 
 		PRODUCT_VARIANT_FEATURE_SEPC = PRODUCT_VARIANT_FEATURE_SEPC
@@ -179,6 +188,12 @@ public class ProductServiceTest {
 	@Test
 	public void getProductWithVariantsWitStock() {
 
+		OrganizationEntity organizationEntity = new OrganizationEntity();
+		organizationEntity.setCreatedAt(new Date());
+		organizationEntity.setName("Fortune cosmitics");
+		organizationEntity.setUpdatedAt(new Date());
+		organizationEntity = organizationRepository.save(organizationEntity);
+
 		ProductEntity productEntity = new ProductEntity();
 		productEntity.setName(PRODUCT_NAME);
 		productEntity.setPname(PRODUCT_P_NAME);
@@ -190,11 +205,13 @@ public class ProductServiceTest {
 		ProductFeaturesEntity productFeaturesEntity_1 = new ProductFeaturesEntity();
 		productFeaturesEntity_1.setName(PRODUCT_FEATURE_1_NAME);
 		productFeaturesEntity_1.setPname(PRODUCT_FEATURE_1_P_NAME);
+		productFeaturesEntity_1.setOrganizationId(organizationEntity.getId());
 		productFeaturesEntity_1 = productFeaturesRepository.save(productFeaturesEntity_1);
 
 		ProductFeaturesEntity productFeaturesEntity_2 = new ProductFeaturesEntity();
 		productFeaturesEntity_2.setName(PRODUCT_FEATURE_2_NAME);
 		productFeaturesEntity_2.setPname(PRODUCT_FEATURE_2_P_NAME);
+		productFeaturesEntity_2.setOrganizationId(organizationEntity.getId());
 		productFeaturesEntity_2 = productFeaturesRepository.save(productFeaturesEntity_2);
 
 		PRODUCT_VARIANT_FEATURE_SEPC = PRODUCT_VARIANT_FEATURE_SEPC
@@ -207,12 +224,6 @@ public class ProductServiceTest {
 		productVariantsEntity.setPname(PRODUCT_VARIANT_P_NAME);
 		productVariantsEntity.setProductEntity(productEntity);
 		productVariantsEntity = productVariantsRepository.save(productVariantsEntity);
-
-		OrganizationEntity organizationEntity = new OrganizationEntity();
-		organizationEntity.setCreatedAt(new Date());
-		organizationEntity.setName("Fortune cosmitics");
-		organizationEntity.setUpdatedAt(new Date());
-		organizationEntity = organizationRepository.save(organizationEntity);
 
 		ShopsEntity shopsEntity = new ShopsEntity();
 		shopsEntity.setName("Fortune");
@@ -261,12 +272,13 @@ public class ProductServiceTest {
 
 		stockRepository.delete(stocksEntity);
 		shopsRepository.delete(shopsEntity);
-		organizationRepository.delete(organizationEntity);
 
 		productVariantsRepository.delete(productVariantsEntity);
 		productFeaturesRepository.delete(productFeaturesEntity_1);
 		productFeaturesRepository.delete(productFeaturesEntity_2);
 		productRepository.delete(productEntity);
+
+		organizationRepository.delete(organizationEntity);
 
 	}
 
