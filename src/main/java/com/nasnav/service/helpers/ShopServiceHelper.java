@@ -1,9 +1,9 @@
 package com.nasnav.service.helpers;
 
 
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.MallRepository;
 import com.nasnav.dto.ShopJsonDTO;
-import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.ShopsEntity;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
@@ -39,10 +39,10 @@ public class ShopServiceHelper extends BeanUtils{
             shopsEntity.setMallsEntity(mallRepository.findById((shopJson.getMallId())).get());
         }
         if (shopJson.getName() != null) {
-            shopsEntity.setPname(EntityUtils.encodeUrl(shopJson.getName()));
+            shopsEntity.setPname(StringUtils.encodeUrl(shopJson.getName()));
         }
         if (shopJson.getStreet() != null) {
-            shopsEntity.setPStreet(EntityUtils.encodeUrl(shopJson.getStreet()));
+            shopsEntity.setPStreet(StringUtils.encodeUrl(shopJson.getStreet()));
         }
         return shopsEntity;
     }

@@ -121,6 +121,12 @@
             <version>${spring.boot.version}</version>
             <scope>test</scope>
         </dependency>
+		<dependency>
+		    <groupId>org.apache.tika</groupId>
+		    <artifactId>tika-core</artifactId>
+		    <version>1.22</version>
+		</dependency>
+        
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
@@ -142,6 +148,12 @@
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
             <version>${spring.boot.version}</version>
         </dependency>
+        
+        <dependency>
+		    <groupId>com.google.guava</groupId>
+		    <artifactId>guava</artifactId>
+		    <version>24.1.1-jre</version>
+		</dependency>
 
         <dependency>
             <groupId>net.sourceforge.htmlunit</groupId>
@@ -166,6 +178,8 @@
 	        <version>3.1.0</version>
 	        <scope>test</scope>
 	    </dependency>
+	    
+	    
 
     </dependencies>
 
