@@ -46,7 +46,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 				    { "/user/list"		, getAllRoles() },
 				    { "/user/create"	, new HashSet<Roles>(Arrays.asList(Roles.NASNAV_ADMIN, Roles.ORGANIZATION_ADMIN, Roles.STORE_ADMIN)) },
 				    { "/user/update"	, getAllRoles() },
-                    { "/admin/category"	, new HashSet<Roles>(Arrays.asList(Roles.NASNAV_ADMIN)) },
+                    { "/admin/**"	    , new HashSet<Roles>(Arrays.asList(Roles.NASNAV_ADMIN)) },
 				    { "/files/**"		, getAllRoles() },
     }).collect(Collectors.toMap(data -> (String) data[0], data -> (Set<Roles>) data[1]));
 

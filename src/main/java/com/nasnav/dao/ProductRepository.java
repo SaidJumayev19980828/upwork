@@ -89,6 +89,9 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
     @Query("SELECT distinct products.categoryId FROM ProductEntity products where products.organizationId = :organizationId")
     List<Long> getOrganizationCategoriesId(@Param("organizationId") Long organizationId);
+
+    @Query("SELECT products.id FROM ProductEntity products where products.categoryId = :categoryId")
+    List<Long> getProductsByCategoryId(@Param("categoryId") Long categoryId);
 }
 
 

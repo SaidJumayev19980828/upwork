@@ -2,15 +2,19 @@ package com.nasnav.controller;
 
 
 import com.nasnav.dto.CategoryRepresentationObject;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ApiResponseBuilder;
+import com.nasnav.response.CategoryResponse;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.CategoryService;
+import com.nasnav.service.SecurityService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -32,16 +36,35 @@ public class AdminController {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @PostMapping(value = "create",
+    @PostMapping(value = "category",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public ApiResponseBuilder createEmployeeUser(@RequestHeader (value = "User-ID", required = true) Long userId,
-                                                 @RequestHeader (value = "User-Token", required = true) String userToken,
-                                                 @RequestBody CategoryRepresentationObject categoryJson) {
-        if (categoryJson.getId() != null && categoryJson.getOperation() == "update"){
+    public CategoryResponse createCategory(@RequestHeader (value = "User-ID", required = true) Long userId,
+                                             @RequestHeader (value = "User-Token", required = true) String userToken,
+                                             @RequestBody CategoryRepresentationObject categoryJson) throws BusinessException {
+        if (categoryJson.getId() != null && categoryJson.getOperation().equals("update")){
             return categoryService.updateCategory(categoryJson);
         }
-        return categoryService.createCategory(categoryJson);//this.employeeUserService.createEmployeeUser(userId, userToken, employeeUserJson);
+        return categoryService.createCategory(categoryJson);
+    }
+
+
+    @ApiOperation(value = "delete a Category", nickname = "categoryDeletion", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @DeleteMapping(value = "category",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public CategoryResponse deleteCategory(@RequestHeader (value = "User-ID", required = true) Long userId,
+                                           @RequestHeader (value = "User-Token", required = true) String userToken,
+                                           @RequestBody CategoryRepresentationObject categoryJson) throws BusinessException {
+        if (categoryJson.getId() == null ){
+            return new CategoryResponse("MISSING_PRARM: Category_id", "");
+        }
+        return categoryService.deleteCategory(categoryJson);
     }
 }

@@ -4,8 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.CategoryRepresentationObject;
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Table(name = "categories")
 @Entity
@@ -23,6 +26,13 @@ public class CategoriesEntity {
     private String logo;
     @Column(name = "parent_id")
     private Integer parentId;
+    @Column(name = "created_at")
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+    @Column(name = "updated_at")
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+
 //    @OneToOne(mappedBy = "categoriesEntity")
 //    @JsonIgnore
 //    private ProductEntity productEntity;
@@ -33,7 +43,7 @@ public class CategoriesEntity {
         categoryRepresentationObject.setId(getId());
         categoryRepresentationObject.setName(getName());
         categoryRepresentationObject.setPname(getPname());
-        categoryRepresentationObject.setLogoUrl(getLogo());
+        categoryRepresentationObject.setLogo(getLogo());
         if (getParentId() != null) {
             categoryRepresentationObject.setParentId(getParentId());
         }

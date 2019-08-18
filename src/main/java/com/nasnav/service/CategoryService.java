@@ -1,19 +1,26 @@
 package com.nasnav.service;
 
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.CategoryRepresentationObject;
 import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.CategoriesEntity;
 import com.nasnav.persistence.EntityUtils;
 import com.nasnav.response.ApiResponseBuilder;
+import com.nasnav.response.CategoryResponse;
 import com.nasnav.response.ResponseStatus;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -52,7 +59,7 @@ public class CategoryService {
     }
 
     public List<CategoryRepresentationObject> getCategories(Long organizationId, Long categoryId){
-        List<CategoriesEntity> categoriesEntityList = null;
+        List<CategoriesEntity> categoriesEntityList = new ArrayList<>();
         CategoriesEntity categoriesEntity = null;
         List<CategoryRepresentationObject> categoriesList;
         if (organizationId == null && categoryId == null){
@@ -64,8 +71,10 @@ public class CategoryService {
                     .collect(Collectors.toList());
         }
         else if (organizationId == null){
-            Long parentId = categoryRepository.findById(categoryId).get().getId();
-            categoriesEntityList = categoryRepository.findByParentId(parentId.intValue());
+            if (categoryRepository.findById(categoryId).isPresent()) {
+                categoriesEntity = categoryRepository.findById(categoryId).get();
+                categoriesEntityList = categoryRepository.findByParentId(categoriesEntity.getId().intValue());
+            }
         }
         else {
             //what to do if org_id and category_id exists ??
@@ -75,24 +84,81 @@ public class CategoryService {
         if (categoriesEntity != null) {
             categoriesList.add((CategoryRepresentationObject)categoriesEntity.getRepresentation());
         }
-        return  categoriesList;
+        return categoriesList;
     }
 
-    public ApiResponseBuilder createCategory(CategoryRepresentationObject categoryJson) {
+    public CategoryResponse createCategory(CategoryRepresentationObject categoryJson) throws BusinessException {
         CategoriesEntity categoriesEntity = new CategoriesEntity();
-        if (categoryJson.getName() == null || !EntityUtils.validateName(categoryJson.getName())) {
-            //return new ApiResponseBuilder().setSuccess(false).setResponseStatuses(Collections.singletonList(ResponseStatus.INVALID_NAME)).build();
+        if (categoryJson.getName() == null) {
+            return new CategoryResponse("MISSING_PARAM: name", "No category name is provided");
+        } else if (!StringUtils.validateName(categoryJson.getName())) {
+            return new CategoryResponse(ResponseStatus.INVALID_PARAMETERS+": name", "Provided name is not valid");
         }
         categoriesEntity.setName(categoryJson.getName());
-        categoriesEntity.setLogo(categoryJson.getLogoUrl());
-        categoriesEntity.setParentId(categoryJson.getParentId());
+        categoriesEntity.setLogo(categoryJson.getLogo());
+        if (categoryJson.getParentId() != null) {
+            if (categoryRepository.findById((long)categoryJson.getParentId()) != null) {
+                categoriesEntity.setParentId(categoryJson.getParentId());
+            } else {
+                return new CategoryResponse(ResponseStatus.INVALID_PARAMETERS+": parent_id", "Provided parent category doesn't exit");
+            }
+        }
+        categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
+        categoriesEntity.setCreatedAt(LocalDateTime.now());
+        categoriesEntity.setUpdatedAt(LocalDateTime.now());
         categoryRepository.save(categoriesEntity);
-        return new ApiResponseBuilder().setSuccess(true).setEntityId(categoriesEntity.getId()).build();
+        return new CategoryResponse(categoriesEntity.getId());
     }
 
-    public ApiResponseBuilder updateCategory(CategoryRepresentationObject categoryJson) {
-        if (categoryRepository.findById(categoryJson.getId()) != null){
-            return new ApiResponseBuilder().setSuccess(false).setEntityId(categoryJson.getId()).setMessage("").build();
+    public CategoryResponse updateCategory(CategoryRepresentationObject categoryJson) throws BusinessException {
+        if (categoryJson.getId() == null) {
+            return new CategoryResponse("MISSING_PARAM: name", "No category ID is provided");
         }
+        CategoriesEntity categoriesEntity = categoryRepository.findById(categoryJson.getId()).get();
+        if (categoriesEntity == null){
+            return new CategoryResponse("EntityNotFound: category", "No category entity found with provided ID");
+        }
+        if (categoryJson.getName() != null) {
+            if (StringUtils.validateName(categoryJson.getName())) {
+            categoriesEntity.setName(categoryJson.getName());
+            categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
+            } else {
+                return new CategoryResponse(ResponseStatus.INVALID_PARAMETERS+": name", "Provided name is not valid");
+            }
+        }
+        if (categoryJson.getLogo() != null)
+            categoriesEntity.setLogo(categoryJson.getLogo());
+        if (categoryJson.getParentId() != null) {
+            if (categoryRepository.findById(categoryJson.getParentId().longValue()).isPresent()) {
+                categoriesEntity.setParentId(categoryJson.getParentId());
+            } else {
+                return new CategoryResponse(ResponseStatus.INVALID_PARAMETERS+": parent_id", "Provided parent category doesn't exit");
+            }
+        }
+        categoriesEntity.setUpdatedAt(LocalDateTime.now());
+        categoryRepository.save(categoriesEntity);
+        return new CategoryResponse(categoriesEntity.getId());
+    }
+
+    public CategoryResponse deleteCategory(CategoryRepresentationObject categoryJson) throws BusinessException {
+        CategoriesEntity categoriesEntity = categoryRepository.findById(categoryJson.getId()).get();
+        if (categoriesEntity == null){
+            return new CategoryResponse("EntityNotFound: category", "No category entity found with provided ID");
+        }
+        List<Long> productsIds = productRepository.getProductsByCategoryId(categoryJson.getId());
+        if (productsIds.size() > 0){
+            return new CategoryResponse("NOT_EMPTY: products", "There are still products "+productsIds.toString()+" assigned to this category");
+        }
+        /*List<Long> brandsIds = brandsRepository.getBrandsByCategoryId(categoryJson.getId());
+        if (brandsIds.size() > 0){
+            return new CategoryResponse("NOT_EMPTY: brands", "There are still brands "+brandsIds.toString()+" assigned to this category");
+        }*/
+        List<CategoriesEntity> childrenCategories = categoryRepository.findByParentId(categoryJson.getId().intValue());
+        if (childrenCategories.size() > 0){
+            List<Long> childrenCategoriesIds = childrenCategories.stream().map(category -> category.getId()).collect(Collectors.toList());
+            return new CategoryResponse("NOT_EMPTY: Category children ", "There are still children " +childrenCategoriesIds+" assigned to this category");
+        }
+        categoryRepository.delete(categoriesEntity);
+        return new CategoryResponse(categoriesEntity.getId());
     }
 }
