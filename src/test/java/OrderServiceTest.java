@@ -150,6 +150,7 @@ public class OrderServiceTest {
 
 		Long shopId = stock.getShopsEntity().getId();
 		stockRepository.delete(stock);
+		productRepository.deleteById(stock.getProductEntity().getId());
 		shopsRepository.deleteById(shopId);
 	}
 

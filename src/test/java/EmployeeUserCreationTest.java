@@ -254,9 +254,6 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_STORE));
 	}
 
-
-
-
 	@Test
 	public void createEmployeeUserEmailExistsTest() {
 		// create employee user with an email

@@ -41,17 +41,16 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	@Override
 	public UserApiResponse createEmployeeUser(Long userId, String userToken, UserDTOs.EmployeeUserCreationObject employeeUserJson) {
-		
 		List<String> rolesList = Arrays.asList(employeeUserJson.role.split(","));
-		helper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.getOrgId(), rolesList);
+		helper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.orgId, rolesList);
 		// get current logged in user
 		EmployeeUserEntity currentUser = employeeUserRepository.getById(userId);
 		// check if email and organization id already exists
-		if (employeeUserRepository.getByEmailAndOrganizationId(employeeUserJson.email, employeeUserJson.getOrgId()) == null) {
+		if (employeeUserRepository.getByEmailAndOrganizationId(employeeUserJson.email, employeeUserJson.orgId) == null) {
 			int userType = helper.roleCanCreateUser(currentUser.getId());
 			if (userType != -1) { // can add employees
 				if (userType == 2) { // can add employees within the same organization
-					if (!currentUser.getOrganizationId().equals(employeeUserJson.getOrgId())) { //not the same organization
+					if (!currentUser.getOrganizationId().equals(employeeUserJson.orgId)) { //not the same organization
 						throw new EntityValidationException("Error Occurred during user creation:: " + ResponseStatus.INSUFFICIENT_RIGHTS,
 								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
 					}
@@ -60,7 +59,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
 					}
 				} else if (userType == 3) {
-					if (!currentUser.getShopId().equals(employeeUserJson.getStoreId())){ //not the same Store
+					if (!currentUser.getShopId().equals(employeeUserJson.storeId)){ //not the same Store
 						throw new EntityValidationException("Error Occurred during user creation:: " + ResponseStatus.INSUFFICIENT_RIGHTS,
 								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
 					}
@@ -72,7 +71,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 				// parse Json to EmployeeUserEntity
 				EmployeeUserEntity employeeUserEntity = helper.createEmployeeUser(employeeUserJson);
 				// create Role and RoleEmployeeUser entities from the roles array
-				helper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.getOrgId());
+				helper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.orgId);
 				employeeUserEntity = helper.generateResetPasswordToken(employeeUserEntity);
 				helper.sendRecoveryMail(employeeUserEntity);
 				return UserApiResponse.createStatusApiResponse(employeeUserEntity.getId(),
