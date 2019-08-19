@@ -11,6 +11,6 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 
     List<BrandsEntity> findByOrganizationEntity_Id(Long organizationEntity_Id);
 
-    /*@Query("SELECT brands.id FROM BrandsEntity brands where brands.categoryId = :categoryId")
-    List<Long> getBrandsByCategoryId(@Param("categoryId") Long categoryId);*/
+    @Query("SELECT brand.id FROM BrandsEntity brand where brand.categoryId = :categoryId")
+    List<Long> getBrandsByCategoryId(@Param("categoryId") Integer categoryId);
 }
