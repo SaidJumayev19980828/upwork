@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.EmployeeUserRepository;
@@ -95,7 +96,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
 		}
 		currentUser = employeeUserRepository.getById(userId);
-		if (EntityUtils.isBlankOrNull(employeeUserJson.getUpdatedUserId())) {// check if same user doing the update
+		if (StringUtils.isBlankOrNull(employeeUserJson.getUpdatedUserId())) {// check if same user doing the update
 			updateUser = employeeUserRepository.getById(userId);
 		} else {
 			updateUser = employeeUserRepository.getById(employeeUserJson.getUpdatedUserId());
@@ -175,7 +176,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	public UserApiResponse recoverUser(PasswordResetObject data) {
 		validateNewPassword(data.password);
 		EmployeeUserEntity employeeUserEntity = employeeUserRepository.getByResetPasswordToken(data.token);
-		if (EntityUtils.isNotBlankOrNull(employeeUserEntity)) {
+		if (StringUtils.isNotBlankOrNull(employeeUserEntity)) {
 			// if resetPasswordToken is not active, throw exception for invalid
 			// resetPasswordToken
 			checkResetPasswordTokenExpiry(employeeUserEntity);
@@ -192,7 +193,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 	private void validateNewPassword(String newPassword) {
-		if (EntityUtils.isBlankOrNull(newPassword) || newPassword.length() > EntityConstants.PASSWORD_MAX_LENGTH
+		if (StringUtils.isBlankOrNull(newPassword) || newPassword.length() > EntityConstants.PASSWORD_MAX_LENGTH
 				|| newPassword.length() < EntityConstants.PASSWORD_MIN_LENGTH) {
 			throw new EntityValidationException("INVALID_PASSWORD  ",
 					UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.INVALID_PASSWORD)),
@@ -223,14 +224,14 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	 */
 	private EmployeeUserEntity getEmployeeUserByEmail(String email, Long orgId) {
 		// first ensure that email is valid
-		if (!EntityUtils.validateEmail(email)) {
+		if (!StringUtils.validateEmail(email)) {
 			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
 					Collections.singletonList(ResponseStatus.INVALID_EMAIL));
 			throw new EntityValidationException("INVALID_EMAIL :" + email, userApiResponse, HttpStatus.NOT_ACCEPTABLE);
 		}
 		// load user entity by email
 		EmployeeUserEntity employeeUserEntity = this.employeeUserRepository.getByEmailAndOrganizationId(email, orgId);
-		if (EntityUtils.isBlankOrNull(employeeUserEntity)) {
+		if (StringUtils.isBlankOrNull(employeeUserEntity)) {
 			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
 					Collections.singletonList(ResponseStatus.EMAIL_NOT_EXIST));
 			throw new EntityValidationException("EMAIL_NOT_EXIST", userApiResponse, HttpStatus.NOT_ACCEPTABLE);

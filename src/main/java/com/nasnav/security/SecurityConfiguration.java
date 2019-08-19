@@ -40,12 +40,13 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
 
     private static Map<String, Set<Roles>> permissions = Stream.of(new Object[][] {
-				    { "/order/**" 	, getAllRoles() },
-				    { "/stock/**" 	, getNonCustomersRoles() },
+				    { "/order/**" 		, getAllRoles() },
+				    { "/stock/**" 		, getNonCustomersRoles() },
 				    { "/shop/**"		, new HashSet<Roles>(Arrays.asList(Roles.ORGANIZATION_MANAGER, Roles.STORE_MANAGER)) },
-				    { "/user/list"	, getAllRoles() },
+				    { "/user/list"		, getAllRoles() },
 				    { "/user/create"	, new HashSet<Roles>(Arrays.asList(Roles.NASNAV_ADMIN, Roles.ORGANIZATION_ADMIN, Roles.STORE_ADMIN)) },
 				    { "/user/update"	, getAllRoles() },
+				    { "/files/**"		, getAllRoles() },
     }).collect(Collectors.toMap(data -> (String) data[0], data -> (Set<Roles>) data[1]));
 
     //TODO: currently the AuthenticationFilter calls the authentication process

@@ -25,7 +25,6 @@ import lombok.EqualsAndHashCode;
 @Table(name = "organizations")
 @Data
 @EqualsAndHashCode(callSuper = false)
-//@NamedQuery(name = "User.findByTheUsersName", query = "from User u where u.username = ?1")
 public class OrganizationEntity extends AbstractPersistable<Long> implements BaseEntity {
 
     public enum Type { Brand, Mall, Store, Pharmacies, Unknown }
@@ -45,21 +44,6 @@ public class OrganizationEntity extends AbstractPersistable<Long> implements Bas
     @Column(name = "updated_at")
     private Date updatedAt = new Date();
 
-//    @OneToOne(mappedBy = "organizationEntity")
-//    @JsonIgnore
-//    private OrganizationThemeEntity organizationThemeEntity;
-
-//    @OneToOne(mappedBy = "organizationEntity")
-//    @JsonIgnore
-//    private SocialEntity socialEntity;
-    
-//    @OneToMany(mappedBy="organizationEntity")
-//    @JsonIgnore
-//    private Set<OrdersEntity> ordersEntity;
-
-//    @OneToMany(mappedBy="organizationEntity")
-//    @JsonIgnore
-//    private Set<StocksEntity> stocksEntities;
 
 
     public OrganizationEntity() {
@@ -67,6 +51,9 @@ public class OrganizationEntity extends AbstractPersistable<Long> implements Bas
     }
 
     public Type getType() {
+    	if(this.type == null)
+    		return Type.Unknown;
+    	
         switch (this.type) {
             case "BrandRepresentationObject":
                 return Type.Brand;

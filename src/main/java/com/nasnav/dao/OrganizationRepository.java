@@ -6,7 +6,7 @@ import com.nasnav.persistence.OrganizationEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.CrudRepository;
 
-public interface OrganizationRepository extends JpaRepository<OrganizationEntity, Integer> {
+public interface OrganizationRepository extends JpaRepository<OrganizationEntity, Long> {
 
     List<OrganizationEntity> findByName(String name);
 

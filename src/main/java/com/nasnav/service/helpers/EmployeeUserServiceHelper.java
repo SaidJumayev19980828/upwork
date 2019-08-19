@@ -1,19 +1,26 @@
 package com.nasnav.service.helpers;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.nasnav.AppConfig;
-import com.nasnav.constatnts.EmailConstants;
-import com.nasnav.dto.UserDTOs;
-import com.nasnav.service.MailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+import com.nasnav.AppConfig;
+import com.nasnav.commons.utils.StringUtils;
+import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.RoleEmployeeUserRepository;
 import com.nasnav.dao.RoleRepository;
+import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserDTOs.EmployeeUserCreationObject;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.EntityValidationException;
@@ -24,8 +31,8 @@ import com.nasnav.persistence.RoleEmployeeUser;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.service.MailService;
 import com.nasnav.service.RoleService;
-import org.springframework.stereotype.Service;
 
 @Service
 public class EmployeeUserServiceHelper {
@@ -151,28 +158,28 @@ public class EmployeeUserServiceHelper {
 		List<ResponseStatus> failResponseStatusList = new ArrayList<>();
 		List<ResponseStatus> successResponseStatusList = new ArrayList<>();
 		List<String> rolesList;
-		if (EntityUtils.isNotBlankOrNull(employeeUserJson.getName())) {
-			if (EntityUtils.validateName(employeeUserJson.getName())) {
+		if (StringUtils.isNotBlankOrNull(employeeUserJson.getName())) {
+			if (StringUtils.validateName(employeeUserJson.getName())) {
 				employeeUserEntity.setName(employeeUserJson.getName());
 			} else {
 				failResponseStatusList.add(ResponseStatus.INVALID_NAME);
 			}
 		}
-		if (EntityUtils.isNotBlankOrNull(employeeUserJson.getOrgId()) && userType == 1) {
+		if (StringUtils.isNotBlankOrNull(employeeUserJson.getOrgId()) && userType == 1) {
 			if (employeeUserJson.getOrgId() >= 0) {
 				employeeUserEntity.setOrganizationId(employeeUserJson.getOrgId());
 			} else {
 				failResponseStatusList.add(ResponseStatus.INVALID_ORGANIZATION);
 			}
 		}
-		if (EntityUtils.isNotBlankOrNull(employeeUserJson.getStoreId()) && (userType == 1 || userType == 2)) {
+		if (StringUtils.isNotBlankOrNull(employeeUserJson.getStoreId()) && (userType == 1 || userType == 2)) {
 			if (employeeUserJson.getStoreId() >= 0) {
 				employeeUserEntity.setShopId(employeeUserJson.getStoreId());
 			} else {
 				failResponseStatusList.add(ResponseStatus.INVALID_STORE);
 			}
 		}
-		if (EntityUtils.isNotBlankOrNull(employeeUserJson.getRole())){
+		if (StringUtils.isNotBlankOrNull(employeeUserJson.getRole())){
 			rolesList = Arrays.asList(employeeUserJson.getRole().split(","));
 			// check if can update employees roles
 			if (userType != -1) { // can update employees roles
@@ -190,8 +197,8 @@ public class EmployeeUserServiceHelper {
 				}
 			}
 		}
-		if (EntityUtils.isNotBlankOrNull(employeeUserJson.getEmail())) {
-			if (EntityUtils.validateEmail(employeeUserJson.getEmail())) {
+		if (StringUtils.isNotBlankOrNull(employeeUserJson.getEmail())) {
+			if (StringUtils.validateEmail(employeeUserJson.getEmail())) {
 				employeeUserEntity.setEmail(employeeUserJson.getEmail());
 				if ((employeeUserJson.getUpdatedUserId() == null) || employeeUserJson.getUpdatedUserId().intValue() == employeeUserEntity.getId()) {
 					employeeUserEntity = generateResetPasswordToken(employeeUserEntity);
@@ -236,7 +243,7 @@ public class EmployeeUserServiceHelper {
 	 * @return unique generated AuthenticationToken.
 	 */
 	private String generateAuthenticationToken() {
-		String generatedToken = EntityUtils.generateUUIDToken();
+		String generatedToken = StringUtils.generateUUIDToken();
 		boolean existsByToken = employeeUserRepository.existsByAuthenticationToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateAuthenticationToken();
@@ -252,7 +259,7 @@ public class EmployeeUserServiceHelper {
 	 * @return unique generated AuthenticationToken.
 	 */
 	private String reGenerateAuthenticationToken() {
-		String generatedToken = EntityUtils.generateUUIDToken();
+		String generatedToken = StringUtils.generateUUIDToken();
 		boolean existsByToken = employeeUserRepository.existsByAuthenticationToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateAuthenticationToken();
@@ -279,7 +286,7 @@ public class EmployeeUserServiceHelper {
 	 */
 	public boolean isEmployeeUserNeedActivation(EmployeeUserEntity employeeUserEntity) {
 		String encryptedPassword = employeeUserEntity.getEncryptedPassword();
-		return EntityUtils.isBlankOrNull(encryptedPassword)
+		return StringUtils.isBlankOrNull(encryptedPassword)
 				|| EntityConstants.INITIAL_PASSWORD.equals(encryptedPassword);
 	}
 
@@ -307,7 +314,7 @@ public class EmployeeUserServiceHelper {
 	public List<String> getEmployeeUserRoles(Long integer) {
 		List<String> employeeUserRoles = new ArrayList<>();
 		List<Role> rolesOfEmployeeUser = this.roleService.getRolesOfEmployeeUser(integer);
-		if (EntityUtils.isNotBlankOrNull(rolesOfEmployeeUser)) {
+		if (StringUtils.isNotBlankOrNull(rolesOfEmployeeUser)) {
 			rolesOfEmployeeUser.forEach(role -> {
 				employeeUserRoles.add(role.getName());
 			});
@@ -316,7 +323,7 @@ public class EmployeeUserServiceHelper {
 	}
 
 	public void validateBusinessRules(String name, String email, Long orgId, List<String> rolesList) {
-		EntityUtils.validateNameAndEmail(name, email, orgId);
+		StringUtils.validateNameAndEmail(name, email, orgId);
 		isValidRolesList(rolesList);
 	}
 
@@ -341,7 +348,7 @@ public class EmployeeUserServiceHelper {
 	 * @return unique generated ResetPasswordToken.
 	 */
 	private String generateResetPasswordToken() {
-		String generatedToken = EntityUtils.generateUUIDToken();
+		String generatedToken = StringUtils.generateUUIDToken();
 		boolean existsByToken = employeeUserRepository.existsByResetPasswordToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateResetPasswordToken();
@@ -356,7 +363,7 @@ public class EmployeeUserServiceHelper {
 	 * @return unique generated ResetPasswordToken.
 	 */
 	private String reGenerateResetPasswordToken() {
-		String generatedToken = EntityUtils.generateUUIDToken();
+		String generatedToken = StringUtils.generateUUIDToken();
 		boolean existsByToken = employeeUserRepository.existsByResetPasswordToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateResetPasswordToken();

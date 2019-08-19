@@ -1,7 +1,26 @@
 package com.nasnav.service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.UserRepository;
@@ -11,19 +30,8 @@ import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.UserEntity;
-import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.BeanWrapper;
-import org.springframework.beans.BeanWrapperImpl;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.*;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -80,14 +88,14 @@ public class UserServiceImpl implements UserService {
 		UserEntity userEntity = userRepository.getByIdAndAuthenticationToken((long)userId, userToken);
 		List<ResponseStatus> failResponseStatusList = new ArrayList<>();
 		List<ResponseStatus> successResponseStatusList = new ArrayList<>();
-		if (EntityUtils.isNotBlankOrNull(userJson.getName()))
-			if (EntityUtils.validateName(userJson.getName())) {
+		if (StringUtils.isNotBlankOrNull(userJson.getName()))
+			if (StringUtils.validateName(userJson.getName())) {
 				userEntity.setName(userJson.getName());
 			} else {
 				failResponseStatusList.add(ResponseStatus.INVALID_NAME);
 			}
-		if (EntityUtils.isNotBlankOrNull(userJson.email)){
-			if (EntityUtils.validateEmail(userJson.email)) {
+		if (StringUtils.isNotBlankOrNull(userJson.email)){
+			if (StringUtils.validateEmail(userJson.email)) {
 				userEntity.setEmail(userJson.email);
 				userEntity = generateResetPasswordToken(userEntity);
 				sendRecoveryMail(userEntity);
@@ -118,7 +126,7 @@ public class UserServiceImpl implements UserService {
 	 * @param userJson User entity to be validated
 	 */
 	private void validateBusinessRules(UserDTOs.UserRegistrationObject userJson) {
-		EntityUtils.validateNameAndEmail(userJson.name, userJson.email, userJson.getOrgId());
+		StringUtils.validateNameAndEmail(userJson.name, userJson.email, userJson.getOrgId());
 	}
 
 	@Override
@@ -159,14 +167,14 @@ public class UserServiceImpl implements UserService {
 	 */
 	private UserEntity getUserEntityByEmailAndOrgId(String email, Long orgId) {
 		// first ensure that email is valid
-		if (!EntityUtils.validateEmail(email)) {
+		if (!StringUtils.validateEmail(email)) {
 			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
 					Collections.singletonList(ResponseStatus.INVALID_EMAIL));
 			throw new EntityValidationException("INVALID_EMAIL :" + email, userApiResponse, HttpStatus.NOT_ACCEPTABLE);
 		}
 		// load user entity by email
 		UserEntity userEntity = this.userRepository.getByEmailAndOrganizationId(email, orgId);
-		if (EntityUtils.isBlankOrNull(userEntity)) {
+		if (StringUtils.isBlankOrNull(userEntity)) {
 			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
 					Collections.singletonList(ResponseStatus.EMAIL_NOT_EXIST));
 			throw new EntityValidationException("EMAIL_NOT_EXIST", userApiResponse, HttpStatus.NOT_ACCEPTABLE);
@@ -222,7 +230,7 @@ public class UserServiceImpl implements UserService {
 	 * @return unique generated ResetPasswordToken.
 	 */
 	private String generateResetPasswordToken() {
-		String generatedToken = EntityUtils.generateUUIDToken();
+		String generatedToken = StringUtils.generateUUIDToken();
 		boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateResetPasswordToken();
@@ -237,7 +245,7 @@ public class UserServiceImpl implements UserService {
 	 * @return unique generated ResetPasswordToken.
 	 */
 	private String reGenerateResetPasswordToken() {
-		String generatedToken = EntityUtils.generateUUIDToken();
+		String generatedToken = StringUtils.generateUUIDToken();
 		boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateResetPasswordToken();
@@ -249,7 +257,7 @@ public class UserServiceImpl implements UserService {
 	public UserApiResponse recoverUser(UserDTOs.PasswordResetObject data) {
 		validateNewPassword(data.password);
 		UserEntity userEntity = userRepository.getByResetPasswordToken(data.token);
-		if (EntityUtils.isNotBlankOrNull(userEntity)) {
+		if (StringUtils.isNotBlankOrNull(userEntity)) {
 			// if resetPasswordToken is not active, throw exception for invalid
 			// resetPasswordToken
 			checkResetPasswordTokenExpiry(userEntity);
@@ -267,7 +275,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	private void validateNewPassword(String newPassword) {
-		if (EntityUtils.isBlankOrNull(newPassword) || newPassword.length() > EntityConstants.PASSWORD_MAX_LENGTH
+		if (StringUtils.isBlankOrNull(newPassword) || newPassword.length() > EntityConstants.PASSWORD_MAX_LENGTH
 				|| newPassword.length() < EntityConstants.PASSWORD_MIN_LENGTH) {
 			throw new EntityValidationException("INVALID_PASSWORD  ",
 					UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.INVALID_PASSWORD)),
@@ -344,7 +352,7 @@ public class UserServiceImpl implements UserService {
 	 * @return unique generated AuthenticationToken.
 	 */
 	private String generateAuthenticationToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateUUIDToken();
+		String generatedToken = StringUtils.generateUUIDToken();
 		boolean existsByToken = userRepository.existsByAuthenticationToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateAuthenticationToken(tokenLength);
@@ -360,7 +368,7 @@ public class UserServiceImpl implements UserService {
 	 * @return unique generated AuthenticationToken.
 	 */
 	private String reGenerateAuthenticationToken(int tokenLength) {
-		String generatedToken = EntityUtils.generateUUIDToken();
+		String generatedToken = StringUtils.generateUUIDToken();
 		boolean existsByToken = userRepository.existsByAuthenticationToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateAuthenticationToken(tokenLength);

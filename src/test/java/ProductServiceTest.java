@@ -127,6 +127,13 @@ public class ProductServiceTest {
 		organizationEntity.setUpdatedAt(new Date());
 		organizationEntity = organizationRepository.save(organizationEntity);
 
+		OrganizationEntity organizationEntity = new OrganizationEntity();
+		organizationEntity.setCreatedAt(new Date());
+		organizationEntity.setName("Fortune cosmitics");
+		organizationEntity.setUpdatedAt(new Date());
+		organizationEntity = organizationRepository.save(organizationEntity);
+
+
 		ProductEntity productEntity = new ProductEntity();
 		productEntity.setName(PRODUCT_NAME);
 		productEntity.setPname(PRODUCT_P_NAME);
