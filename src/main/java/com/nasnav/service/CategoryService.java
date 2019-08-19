@@ -133,20 +133,20 @@ public class CategoryService {
         return new CategoryResponse(categoriesEntity.getId());
     }
 
-    public CategoryResponse deleteCategory(CategoryDTO.CategoryDeletionObject categoryJson) {
-        if (!categoryRepository.findById(categoryJson.getId()).isPresent()){
+    public CategoryResponse deleteCategory(Long categoryId) {
+        if (!categoryRepository.findById(categoryId).isPresent()){
             return new CategoryResponse("EntityNotFound: category", "No category entity found with provided ID");
         }
-        CategoriesEntity categoriesEntity = categoryRepository.findById(categoryJson.getId()).get();
-        List<Long> productsIds = productRepository.getProductsByCategoryId(categoryJson.getId());
+        CategoriesEntity categoriesEntity = categoryRepository.findById(categoryId).get();
+        List<Long> productsIds = productRepository.getProductsByCategoryId(categoryId);
         if (productsIds.size() > 0){
             return new CategoryResponse("NOT_EMPTY: products", "There are still products "+productsIds.toString()+" assigned to this category");
         }
-        List<Long> brandsIds = brandsRepository.getBrandsByCategoryId(categoryJson.getId().intValue());
+        List<Long> brandsIds = brandsRepository.getBrandsByCategoryId(categoryId.intValue());
         if (brandsIds.size() > 0){
             return new CategoryResponse("NOT_EMPTY: brands", "There are still brands "+brandsIds.toString()+" assigned to this category");
         }
-        List<CategoriesEntity> childrenCategories = categoryRepository.findByParentId(categoryJson.getId().intValue());
+        List<CategoriesEntity> childrenCategories = categoryRepository.findByParentId(categoryId.intValue());
         if (childrenCategories.size() > 0){
             List<Long> childrenCategoriesIds = childrenCategories.stream().map(category -> category.getId()).collect(Collectors.toList());
             return new CategoryResponse("NOT_EMPTY: Category children ", "There are still children " +childrenCategoriesIds+" assigned to this category");

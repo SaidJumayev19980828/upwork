@@ -55,12 +55,12 @@ public class AdminController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public CategoryResponse deleteCategory(@RequestHeader (value = "User-ID", required = true) Long userId,
-                                           @RequestHeader (value = "User-Token", required = true) String userToken,
-                                           @RequestBody CategoryDTO.CategoryDeletionObject categoryJson) {
-        if (categoryJson.getId() == null ){
+    public CategoryResponse deleteCategory(@RequestHeader (value = "User-ID") Long userId,
+                                           @RequestHeader (value = "User-Token") String userToken,
+                                           @RequestParam (value = "category_id") Long categoryId ) {
+        if (categoryId == null ){
             return new CategoryResponse("MISSING_PRARM: Category_id", "");
         }
-        return categoryService.deleteCategory(categoryJson);
+        return categoryService.deleteCategory(categoryId);
     }
 }

@@ -1,6 +1,7 @@
 package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.CategoryRepresentationObject;
 import lombok.Data;
