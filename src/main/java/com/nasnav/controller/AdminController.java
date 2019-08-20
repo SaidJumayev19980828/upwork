@@ -10,6 +10,7 @@ import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -31,11 +32,8 @@ public class AdminController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @PostMapping(value = "category",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ResponseStatus(HttpStatus.OK)
-    public CategoryResponse createCategory(@RequestHeader (value = "User-ID", required = true) Long userId,
+    @PostMapping(value = "category", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity createCategory(@RequestHeader (value = "User-ID", required = true) Long userId,
                                              @RequestHeader (value = "User-Token", required = true) String userToken,
                                              @RequestBody CategoryDTO.CategoryModificationObject categoryJson) {
         if (categoryJson.getOperation().equals("update")){
@@ -49,17 +47,14 @@ public class AdminController {
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
-            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+            @io.swagger.annotations.ApiResponse(code = 409, message = "Category is used by other entities"),
     })
-    @DeleteMapping(value = "category",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ResponseStatus(HttpStatus.OK)
-    public CategoryResponse deleteCategory(@RequestHeader (value = "User-ID") Long userId,
+    @DeleteMapping(value = "category", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity deleteCategory(@RequestHeader (value = "User-ID") Long userId,
                                            @RequestHeader (value = "User-Token") String userToken,
                                            @RequestParam (value = "category_id") Long categoryId ) {
         if (categoryId == null ){
-            return new CategoryResponse("MISSING_PRARM: Category_id", "");
+            return new ResponseEntity<>(new CategoryResponse("MISSING_PRARM: Category_id", ""),HttpStatus.NOT_ACCEPTABLE);
         }
         return categoryService.deleteCategory(categoryId);
     }

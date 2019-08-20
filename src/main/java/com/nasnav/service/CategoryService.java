@@ -9,6 +9,8 @@ import com.nasnav.persistence.CategoriesEntity;
 import com.nasnav.response.CategoryResponse;
 import com.nasnav.response.ResponseStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -80,11 +82,12 @@ public class CategoryService {
         return categoriesList;
     }
 
-    public CategoryResponse createCategory(CategoryDTO.CategoryModificationObject categoryJson) {
+    public ResponseEntity createCategory(CategoryDTO.CategoryModificationObject categoryJson) {
         if (categoryJson.getName() == null) {
-            return new CategoryResponse("MISSING_PARAM: name", "No category name is provided");
+            return new ResponseEntity(new CategoryResponse("MISSING_PARAM: name", "No category name is provided"), HttpStatus.NOT_ACCEPTABLE);
         } else if (!StringUtils.validateName(categoryJson.getName())) {
-            return new CategoryResponse(ResponseStatus.INVALID_PARAMETERS+": name", "Provided name is not valid");
+            return new ResponseEntity(new CategoryResponse(ResponseStatus.INVALID_PARAMETERS+": name",
+                    "Provided name is not valid"), HttpStatus.NOT_ACCEPTABLE);
         }
         CategoriesEntity categoriesEntity = new CategoriesEntity();
         categoriesEntity.setName(categoryJson.getName());
@@ -93,22 +96,24 @@ public class CategoryService {
             if (categoryRepository.findById(categoryJson.getParentId().longValue()).isPresent()) {
                 categoriesEntity.setParentId(categoryJson.getParentId());
             } else {
-                return new CategoryResponse(ResponseStatus.INVALID_PARAMETERS+": parent_id", "Provided parent category doesn't exit");
+                return new ResponseEntity(new CategoryResponse(ResponseStatus.INVALID_PARAMETERS+": parent_id",
+                        "Provided parent category doesn't exit"), HttpStatus.NOT_ACCEPTABLE);
             }
         }
         categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
         categoriesEntity.setCreatedAt(LocalDateTime.now());
         categoriesEntity.setUpdatedAt(LocalDateTime.now());
         categoryRepository.save(categoriesEntity);
-        return new CategoryResponse(categoriesEntity.getId());
+        return new ResponseEntity(new CategoryResponse(categoriesEntity.getId()), HttpStatus.OK);
     }
 
-    public CategoryResponse updateCategory(CategoryDTO.CategoryModificationObject categoryJson) {
+    public ResponseEntity updateCategory(CategoryDTO.CategoryModificationObject categoryJson) {
         if (categoryJson.getId() == null) {
-            return new CategoryResponse("MISSING_PARAM: name", "No category ID is provided");
+            return new ResponseEntity(new CategoryResponse("MISSING_PARAM: ID", "No category ID is provided"), HttpStatus.NOT_ACCEPTABLE);
         }
         if (!categoryRepository.findById(categoryJson.getId()).isPresent()){
-            return new CategoryResponse("EntityNotFound: category", "No category entity found with provided ID");
+            return new ResponseEntity(new CategoryResponse("EntityNotFound: category", "No category entity found with provided ID"),
+                    HttpStatus.NOT_ACCEPTABLE);
         }
         CategoriesEntity categoriesEntity = categoryRepository.findById(categoryJson.getId()).get();
         if (categoryJson.getName() != null) {
@@ -116,7 +121,8 @@ public class CategoryService {
             categoriesEntity.setName(categoryJson.getName());
             categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
             } else {
-                return new CategoryResponse(ResponseStatus.INVALID_PARAMETERS+": name", "Provided name is not valid");
+                return new ResponseEntity(new CategoryResponse(ResponseStatus.INVALID_PARAMETERS+": name", "Provided name is not valid"),
+                        HttpStatus.NOT_ACCEPTABLE);
             }
         }
         if (categoryJson.getLogo() != null)
@@ -125,33 +131,38 @@ public class CategoryService {
             if (categoryRepository.findById(categoryJson.getParentId().longValue()).isPresent()) {
                 categoriesEntity.setParentId(categoryJson.getParentId());
             } else {
-                return new CategoryResponse(ResponseStatus.INVALID_PARAMETERS+": parent_id", "Provided parent category doesn't exit");
+                return new ResponseEntity(new CategoryResponse(ResponseStatus.INVALID_PARAMETERS+": parent_id",
+                        "Provided parent category doesn't exit"), HttpStatus.NOT_ACCEPTABLE);
             }
         }
         categoriesEntity.setUpdatedAt(LocalDateTime.now());
         categoryRepository.save(categoriesEntity);
-        return new CategoryResponse(categoriesEntity.getId());
+        return new ResponseEntity(new CategoryResponse(categoriesEntity.getId()), HttpStatus.OK);
     }
 
-    public CategoryResponse deleteCategory(Long categoryId) {
+    public ResponseEntity deleteCategory(Long categoryId) {
         if (!categoryRepository.findById(categoryId).isPresent()){
-            return new CategoryResponse("EntityNotFound: category", "No category entity found with provided ID");
+            return new ResponseEntity(new CategoryResponse("EntityNotFound: category",
+                    "No category entity found with provided ID"), HttpStatus.NOT_ACCEPTABLE);
         }
         CategoriesEntity categoriesEntity = categoryRepository.findById(categoryId).get();
         List<Long> productsIds = productRepository.getProductsByCategoryId(categoryId);
         if (productsIds.size() > 0){
-            return new CategoryResponse("NOT_EMPTY: products", "There are still products "+productsIds.toString()+" assigned to this category");
+            return new ResponseEntity(new CategoryResponse("NOT_EMPTY: products",
+                    "There are still products "+productsIds.toString()+" assigned to this category"), HttpStatus.CONFLICT);
         }
         List<Long> brandsIds = brandsRepository.getBrandsByCategoryId(categoryId.intValue());
         if (brandsIds.size() > 0){
-            return new CategoryResponse("NOT_EMPTY: brands", "There are still brands "+brandsIds.toString()+" assigned to this category");
+            return new ResponseEntity(new CategoryResponse("NOT_EMPTY: brands",
+                    "There are still brands "+brandsIds.toString()+" assigned to this category"), HttpStatus.CONFLICT);
         }
         List<CategoriesEntity> childrenCategories = categoryRepository.findByParentId(categoryId.intValue());
         if (childrenCategories.size() > 0){
             List<Long> childrenCategoriesIds = childrenCategories.stream().map(category -> category.getId()).collect(Collectors.toList());
-            return new CategoryResponse("NOT_EMPTY: Category children ", "There are still children " +childrenCategoriesIds+" assigned to this category");
+            return new ResponseEntity(new CategoryResponse("NOT_EMPTY: Category children ",
+                    "There are still children " +childrenCategoriesIds+" assigned to this category"), HttpStatus.CONFLICT);
         }
         categoryRepository.delete(categoriesEntity);
-        return new CategoryResponse(categoriesEntity.getId());
+        return new ResponseEntity(new CategoryResponse(categoriesEntity.getId()),HttpStatus.OK);
     }
 }

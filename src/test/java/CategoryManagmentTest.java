@@ -1,6 +1,8 @@
 import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
 import com.nasnav.controller.AdminController;
+import com.nasnav.dao.CategoryRepository;
+import com.nasnav.response.CategoryResponse;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.After;
@@ -46,6 +48,8 @@ public class CategoryManagmentTest {
     private AppConfig config;
     @Autowired
     private TestRestTemplate template;
+    @Autowired
+    private CategoryRepository categoryRepository;
     @Value("classpath:sql/Category_Test_Data_Insert.sql")
     private Resource categoryDataInsert;
     @Value("classpath:sql/database_cleanup.sql")
@@ -114,13 +118,121 @@ public class CategoryManagmentTest {
     }
 
     //createCategory
-    //@Test
+    @Test
     public void createCategorySuccessTest(){
-        String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\"و \"operation\": \"create\",\"parent_id\": 123}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"101112");
-        ResponseEntity<String> response = template.postForEntity("/admin/category", json, String.class);
-        JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(Objects.requireNonNull(response.getBody()));
+        String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 202}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        categoryRepository.deleteById(response.getBody().getCategoryId());
+        Assert.assertTrue(200 == response.getStatusCode().value());
+    }
 
+    @Test
+    public void createCategoryMissingNameTest(){
+        String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\", \"operation\": \"create\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
+        Assert.assertTrue(response.getBody().getStatus().equals("MISSING_PARAM: name"));
+    }
+
+    @Test
+    public void createCategoryInvalidNameTest(){
+        String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes\", \"operation\": \"create\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        Assert.assertTrue(406 == response.getStatusCode().value());
+        Assert.assertTrue(response.getBody().getStatus().equals("INVALID_PARAMETERS: name"));
+    }
+
+    @Test
+    public void createCategoryNonExistingParentTest(){
+        String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 200}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        Assert.assertTrue(406 == response.getStatusCode().value());
+        Assert.assertTrue(response.getBody().getStatus().equals("INVALID_PARAMETERS: parent_id"));
+    }
+
+    @Test
+    public void updateCategorySuccessTest(){
+        String body = "{\"id\":201,\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        Assert.assertTrue(200 == response.getStatusCode().value());
+    }
+
+    @Test
+    public void updateCategoryNoIdTest(){
+        String body = "{\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        Assert.assertTrue(406 == response.getStatusCode().value());
+        Assert.assertTrue(response.getBody().getStatus().equals("MISSING_PARAM: ID"));
+    }
+
+    @Test
+    public void updateCategoryNoEntityTest(){
+        String body = "{\"id\":2000009,\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        Assert.assertTrue(406 == response.getStatusCode().value());
+        Assert.assertTrue(response.getBody().getStatus().equals("EntityNotFound: category"));
+    }
+
+    @Test
+    public void updateCategoryInvalidNameTest(){
+        String body = "{\"id\":202,\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes\", \"operation\": \"update\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        Assert.assertTrue(406 == response.getStatusCode().value());
+        Assert.assertTrue(response.getBody().getStatus().equals("INVALID_PARAMETERS: name"));
+    }
+
+    @Test
+    public void updateCategoryNonExistingParentTest(){
+        String body = "{\"id\":202,\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 200}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        Assert.assertTrue(406 == response.getStatusCode().value());
+        Assert.assertTrue(response.getBody().getStatus().equals("INVALID_PARAMETERS: parent_id"));
+    }
+
+    @Test
+    public void deleteCategorySuccessTest(){
+        //create a category
+        String body = "{\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 202}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        Assert.assertTrue(200 == response.getStatusCode().value());
+        //delete created category
+        HttpHeaders header = TestCommons.getHeaders(68,"abcdefg");
+        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id="+response.getBody().getCategoryId(),
+                HttpMethod.DELETE, new HttpEntity<>(header), String.class);
+        Assert.assertTrue(200 == deleteResponse.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteCategoryMissingIdTest(){
+        HttpHeaders header = TestCommons.getHeaders(68,"abcdefg");
+        ResponseEntity<String> deleteResponse = template.exchange("/admin/category",
+                HttpMethod.DELETE, new HttpEntity<>(header), String.class);
+        Assert.assertTrue(400 == deleteResponse.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteCategoryMissingCategoryTest(){
+        HttpHeaders header = TestCommons.getHeaders(68,"abcdefg");
+        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=206",
+                HttpMethod.DELETE, new HttpEntity<>(header), String.class);
+        Assert.assertTrue(406 == deleteResponse.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteCategoryUsedCategoryTest(){
+        HttpHeaders header = TestCommons.getHeaders(68,"abcdefg");
+        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=204",
+                HttpMethod.DELETE, new HttpEntity<>(header), String.class);
+        Assert.assertTrue(409 == deleteResponse.getStatusCode().value());
     }
 }
