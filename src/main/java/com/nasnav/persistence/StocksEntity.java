@@ -6,6 +6,7 @@ import java.util.Date;
 import javax.persistence.*;
 
 import com.nasnav.enumerations.TransactionCurrency;
+import lombok.ToString;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -17,6 +18,7 @@ import lombok.EqualsAndHashCode;
 @Table(name="stocks")
 @Entity
 @Data
+
 @EqualsAndHashCode(callSuper=false)
 public class StocksEntity extends AbstractPersistable<Long> implements BaseEntity{
 
@@ -61,7 +63,9 @@ public class StocksEntity extends AbstractPersistable<Long> implements BaseEntit
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "shop_id", nullable = false)
-	//@JsonIgnore
+	@JsonIgnore
+	@EqualsAndHashCode.Exclude
+	@ToString.Exclude
 	private ShopsEntity shopsEntity;
 
 	@ManyToOne(fetch = FetchType.LAZY)

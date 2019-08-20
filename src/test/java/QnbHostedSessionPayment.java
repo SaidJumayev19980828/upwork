@@ -2,8 +2,11 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
+import com.nasnav.dao.*;
+import com.nasnav.persistence.*;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,23 +20,10 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 
 import com.nasnav.NavBox;
-import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.OrderRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.PaymentsRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.qnb.Account;
 import com.nasnav.payments.qnb.Session;
-import com.nasnav.persistence.BasketsEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.StocksEntity;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -72,22 +62,20 @@ public class QnbHostedSessionPayment {
     @Autowired
     private OrganizationRepository organizationRepository;
 
+    @Autowired
+    private UserRepository userRepository;
     private ShopsEntity shop;
-
     private OrganizationEntity org;
+    private UserEntity user;
+    private Long orderId;
 
+
+    @Before
+    public void setup(){
+        orderId = createOrder();
+    }
     @After
     public void cleanup(){
-        shopsRepository.delete(shop);
-        organizationRepository.delete(org);
-    }
-
-    @Test
-    public void rawSessionCreationTest() throws BusinessException {
-        session.setMerchantAccount(testAccount);
-        Long orderId = createOrder();
-        Assert.assertNotNull(session.initialize(orderRepository.findById(orderId).get()));
-
         //delete baskets
         List<BasketsEntity> baskets = basketRepository.findByOrdersEntity_Id(orderId);
         for(BasketsEntity basket : baskets){
@@ -96,14 +84,23 @@ public class QnbHostedSessionPayment {
             productRepository.delete(basket.getStocksEntity().getProductEntity());
         }
         //delete payment
-        paymentsRepository.deleteById(paymentsRepository.findByUid(session.getOrderRef()).get().getId());
+        if (paymentsRepository.findByUid(session.getOrderRef()).isPresent())
+            paymentsRepository.deleteById(paymentsRepository.findByUid(session.getOrderRef()).get().getId());
         //delete created order
         orderRepository.deleteById(orderId);
+        shopsRepository.delete(shop);
+        organizationRepository.delete(org);
+        userRepository.delete(user);
+    }
+
+    @Test
+    public void rawSessionCreationTest() throws BusinessException {
+        session.setMerchantAccount(testAccount);
+        Assert.assertNotNull(session.initialize(orderRepository.findById(orderId).get()));
     }
 
     @Test
     public void initSessionViaApiTest() {
-        Long orderId = createOrder();
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("order_id", orderId.toString());
 
@@ -125,18 +122,6 @@ public class QnbHostedSessionPayment {
         } catch(Exception e) {
             e.printStackTrace();
         }
-
-        //delete baskets
-        List<BasketsEntity> baskets = basketRepository.findByOrdersEntity_Id(orderId);
-        for(BasketsEntity basket : baskets){
-            basketRepository.delete(basket);
-            stockRepository.delete(basket.getStocksEntity());
-            productRepository.delete(basket.getStocksEntity().getProductEntity());
-        }
-        //delete payment
-        paymentsRepository.deleteById(paymentsRepository.findByUid(session.getOrderRef()).get().getId());
-        //delete created order
-        orderRepository.deleteById(orderId);
     }
 
     private Long createOrder() {
@@ -171,7 +156,12 @@ public class QnbHostedSessionPayment {
         stock.setCurrency(TransactionCurrency.EGP);
         stock.setShopsEntity(shopEntity);
         StocksEntity stockEntity = stockRepository.save(stock);
-
+        //create user
+        user = new UserEntity();
+        user.setName("John smith");
+        user.setEmail("bi@Oooooo.com");
+        user.setEncryptedPassword("");
+        userRepository.save(user);
         // create order
         OrdersEntity order = new OrdersEntity();
 //        order.setCreationDate(new Date());
@@ -180,6 +170,7 @@ public class QnbHostedSessionPayment {
         order.setShopsEntity(shopEntity);
         order.setEmail("test@nasnav.com");
         order.setOrganizationEntity(org);
+        order.setUserId(user.getId());
         OrdersEntity orderEntity = orderRepository.save(order);
 
         BasketsEntity basket = new BasketsEntity();
