@@ -1,25 +1,25 @@
 package com.nasnav.service;
 
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.OrganizationThemeRepository;
 import com.nasnav.dao.SocialRepository;
 import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dto.OrganizationRepresentationObject;
-import com.nasnav.dto.OrganizationThemesRepresentationObject;
-import com.nasnav.dto.Organization_BrandRepresentationObject;
-import com.nasnav.dto.SocialRepresentationObject;
-import com.nasnav.dto.ExtraAttributesRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.OrganizationThemeEntity;
 import com.nasnav.persistence.SocialEntity;
 import com.nasnav.persistence.ExtraAttributesEntity;
+import com.nasnav.response.OrganizationResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,7 +47,7 @@ public class OrganizationService {
         this.extraAttributesRepository = extraAttributesRepository;
     }
 
-   public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
+    public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
 
         OrganizationEntity organizationEntity = organizationRepository.findOneByNameContainingIgnoreCase(organizationName);
 
@@ -126,4 +126,29 @@ public class OrganizationService {
         return response;
     }
 
+    public OrganizationResponse createOrganization(OrganizationDTO json){
+        if (json.name == null) {
+            return new OrganizationResponse("MISSING_PARAM: name","Required Organization name is empty");
+        } else if (!StringUtils.validateName(json.name)) {
+            return new OrganizationResponse("INVALID_PARAM: name", "Required Organization name is invalid");
+        }
+        if (json.pname == null) {
+            return new OrganizationResponse("MISSING_PARAM: p_name", "Required Organization p_name is empty");
+        } else if (!json.pname.equals(StringUtils.encodeUrl(json.pname))) {
+            return new OrganizationResponse("INVALID_PARAM: p_name", "Required Organization p_name is invalid");
+        }
+        OrganizationEntity organizationEntity = organizationRepository.findByPname(json.pname);
+        if (organizationEntity != null) {
+            return new OrganizationResponse("INVALID_PARAM: p_name",
+                    "Provided p_name is already used by another organization (id: " + organizationEntity.getId() +
+                                ", name: " + organizationEntity.getName() + ")");
+        }
+        OrganizationEntity newOrg = new OrganizationEntity();
+        newOrg.setName(json.name);
+        newOrg.setPname(json.pname);
+        newOrg.setCreatedAt(new Date());
+        newOrg.setCreatedAt(new Date());
+        organizationRepository.save(newOrg);
+        return new OrganizationResponse(newOrg.getId());
+    }
 }
