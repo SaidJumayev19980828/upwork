@@ -42,4 +42,8 @@ public class OrganizationResponse {
         this.description = description;
         this.httpStatus = HttpStatus.NOT_ACCEPTABLE;
     }
+    public OrganizationResponse(){
+        this.success = true;
+        this.httpStatus = HttpStatus.OK;
+    }
 }

@@ -47,7 +47,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 				    { "/user/create"	, new HashSet<Roles>(Arrays.asList(Roles.NASNAV_ADMIN, Roles.ORGANIZATION_ADMIN, Roles.STORE_ADMIN)) },
 				    { "/user/update"	, getAllRoles() },
 				    { "/files/**"		, getAllRoles() },
-                    { "admin/organization", new HashSet<Roles>(Arrays.asList(Roles.NASNAV_ADMIN))}
+                    { "admin/organization", new HashSet<Roles>(Arrays.asList(Roles.NASNAV_ADMIN))},
+                    { "organization/info", new HashSet<Roles>(Arrays.asList(Roles.ORGANIZATION_ADMIN))},
     }).collect(Collectors.toMap(data -> (String) data[0], data -> (Set<Roles>) data[1]));
 
     //TODO: currently the AuthenticationFilter calls the authentication process

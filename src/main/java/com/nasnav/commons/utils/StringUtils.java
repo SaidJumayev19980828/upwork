@@ -6,6 +6,9 @@ import com.nasnav.response.UserApiResponse;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.*;
 
 import org.springframework.http.HttpStatus;
@@ -95,7 +98,9 @@ public class StringUtils extends org.springframework.util.StringUtils{
 		return result.toLowerCase();
 	}
 	
-	
+	public static boolean validateUrl(String url, String regex){
+		return url.matches(regex);
+	}
 	
 	
 	public static String getFileNameSanitized(String name) {

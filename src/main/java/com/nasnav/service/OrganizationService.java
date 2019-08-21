@@ -14,9 +14,9 @@ import com.nasnav.persistence.OrganizationThemeEntity;
 import com.nasnav.persistence.SocialEntity;
 import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.response.OrganizationResponse;
+import com.nasnav.service.helpers.OrganizationServiceHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -37,14 +37,18 @@ public class OrganizationService {
 
     private final ExtraAttributesRepository extraAttributesRepository;
 
+    private OrganizationServiceHelper helper;
+
     @Autowired
     public OrganizationService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository, SocialRepository socialRepository,
-                               OrganizationThemeRepository organizationThemeRepository,ExtraAttributesRepository extraAttributesRepository) {
+                               OrganizationThemeRepository organizationThemeRepository,ExtraAttributesRepository extraAttributesRepository,
+                               OrganizationServiceHelper helper) {
         this.organizationRepository = organizationRepository;
         this.socialRepository = socialRepository;
         this.organizationThemeRepository = organizationThemeRepository;
         this.brandsRepository = brandsRepository;
         this.extraAttributesRepository = extraAttributesRepository;
+        this.helper = helper;
     }
 
     public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
@@ -126,7 +130,7 @@ public class OrganizationService {
         return response;
     }
 
-    public OrganizationResponse createOrganization(OrganizationDTO json){
+    public OrganizationResponse createOrganization(OrganizationDTO.OrganizationCreationDTO json){
         if (json.name == null) {
             return new OrganizationResponse("MISSING_PARAM: name","Required Organization name is empty");
         } else if (!StringUtils.validateName(json.name)) {
@@ -150,5 +154,35 @@ public class OrganizationService {
         newOrg.setCreatedAt(new Date());
         organizationRepository.save(newOrg);
         return new OrganizationResponse(newOrg.getId());
+    }
+
+    public OrganizationResponse updateOrganizationData(OrganizationDTO.OrganizationModificationDTO json) {
+        if (!organizationRepository.existsById(json.organizationId)) {
+            return new OrganizationResponse("INVALID_PARAM: org_id", "Provided org_id is not matching any organization");
+        }
+        OrganizationEntity organization = organizationRepository.findById(json.organizationId).get();
+        if (json.description != null) {
+            organization.setDescription(json.description);
+        }
+        //logo
+        if (json.logo != null) {
+            if (json.logoEncoding == null) {
+
+            }
+            else if (json.logoEncoding.equals("form-data")) {
+
+            } else if (json.logoEncoding.equals("base64")){
+
+            } else {
+
+            }
+        }
+        String [] result = helper.addSocialLinks(json, organization);
+        if (result[0].equals("1"))
+            return new OrganizationResponse(result[1], result[2]);
+
+        organization.setUpdatedAt(new Date());
+        organizationRepository.save(organization);
+        return new OrganizationResponse();
     }
 }
