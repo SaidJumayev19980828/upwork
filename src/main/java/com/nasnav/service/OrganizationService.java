@@ -1,11 +1,7 @@
 package com.nasnav.service;
 
 import com.nasnav.commons.utils.StringUtils;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.OrganizationThemeRepository;
-import com.nasnav.dao.SocialRepository;
-import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BrandsEntity;
@@ -18,6 +14,7 @@ import com.nasnav.service.helpers.OrganizationServiceHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
 import java.util.List;
@@ -37,18 +34,24 @@ public class OrganizationService {
 
     private final ExtraAttributesRepository extraAttributesRepository;
 
-    private OrganizationServiceHelper helper;
+    private final OrganizationServiceHelper helper;
+
+    private final FileService fileService;
+
+    private final EmployeeUserRepository employeeUserRepository;
 
     @Autowired
     public OrganizationService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository, SocialRepository socialRepository,
                                OrganizationThemeRepository organizationThemeRepository,ExtraAttributesRepository extraAttributesRepository,
-                               OrganizationServiceHelper helper) {
+                               OrganizationServiceHelper helper, FileService fileService, EmployeeUserRepository employeeUserRepository) {
         this.organizationRepository = organizationRepository;
         this.socialRepository = socialRepository;
         this.organizationThemeRepository = organizationThemeRepository;
         this.brandsRepository = brandsRepository;
         this.extraAttributesRepository = extraAttributesRepository;
         this.helper = helper;
+        this.fileService = fileService;
+        this.employeeUserRepository = employeeUserRepository;
     }
 
     public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
@@ -156,25 +159,33 @@ public class OrganizationService {
         return new OrganizationResponse(newOrg.getId());
     }
 
-    public OrganizationResponse updateOrganizationData(OrganizationDTO.OrganizationModificationDTO json) {
+    public OrganizationResponse updateOrganizationData(String userToken,
+                                   OrganizationDTO.OrganizationModificationDTO json, MultipartFile file) throws BusinessException {
         if (!organizationRepository.existsById(json.organizationId)) {
             return new OrganizationResponse("INVALID_PARAM: org_id", "Provided org_id is not matching any organization");
+        }
+        if (!employeeUserRepository.findByAuthenticationToken(userToken).get().getOrganizationId().equals(json.organizationId)){
+            return new OrganizationResponse("INSUFFICIENT_RIGHTS", "EmployeeUser is not admin of organization");
         }
         OrganizationEntity organization = organizationRepository.findById(json.organizationId).get();
         if (json.description != null) {
             organization.setDescription(json.description);
         }
         //logo
-        if (json.logo != null) {
+        if (json.logo != null || file != null) {
             if (json.logoEncoding == null) {
-
+                return new OrganizationResponse("Missing_PARAM: logo_encoding", "Provided logo_encoding is Missing");
             }
             else if (json.logoEncoding.equals("form-data")) {
-
+                String mimeType = file.getContentType();
+                if(!mimeType.startsWith("image"))
+                    return new OrganizationResponse("MISSIG PARAM:image",
+                            "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!");
+                organization.setLogo(fileService.saveFile(file, json.organizationId));
             } else if (json.logoEncoding.equals("base64")){
-
+                organization.setLogo(json.logo);
             } else {
-
+                return new OrganizationResponse("INVALID_PARAM: logo_encoding", "Provided logo_encoding is Invalid");
             }
         }
         String [] result = helper.addSocialLinks(json, organization);

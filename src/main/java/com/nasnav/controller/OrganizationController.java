@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dto.OrganizationDTO;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.service.OrganizationService;
@@ -33,12 +34,14 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @PostMapping(value = "info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
     public ResponseEntity updateOrganizationData(@RequestHeader(value = "User-ID") Long userId,
                                          @RequestHeader (value = "User-Token") String userToken,
-                                         @RequestPart("logo") @Valid MultipartFile file,
-                                         @RequestBody OrganizationDTO.OrganizationModificationDTO json) {
-        OrganizationResponse response = organizationService.updateOrganizationData(json);
+                                         @RequestPart String jsonString,
+                                         @RequestPart(value = "logo", required = false) @Valid MultipartFile file) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        OrganizationDTO.OrganizationModificationDTO json = mapper.readValue(jsonString, OrganizationDTO.OrganizationModificationDTO.class);
+        OrganizationResponse response = organizationService.updateOrganizationData(userToken, json, file);
         return new ResponseEntity(response, response.getHttpStatus());
     }
 }

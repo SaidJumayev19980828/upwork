@@ -31,14 +31,14 @@ public class OrganizationServiceHelper  {
             if (StringUtils.validateUrl(json.socialTwitter, "((https?://)?(www\\.)?twitter\\.com/)?(@|#!/)?([A-Za-z0-9_]{1,15})(/([-a-z]{1,20}))?")) {
                 socialEntity.setTwitter(json.socialTwitter);
             } else {
-                return new String[]{"1", "INVALID_PARAM: social_twitter", "Provided twitter link is not valid"};
+                return new String[]{"1", "INVALID_PARAM: social_twitter", "the URL is malformed"};
             }
         }
         if (json.socialFacebook != null) {
             if (StringUtils.validateUrl(json.socialFacebook, "http(s)?:\\/\\/(www\\.)?(facebook|fb)\\.com\\/[A-z0-9_\\-\\.]+\\/?")) {
                 socialEntity.setFacebook(json.socialFacebook);
             } else {
-                return new String[]{"1", "INVALID_PARAM: social_facebook", "Provided facebook link is not valid"};
+                return new String[]{"1", "INVALID_PARAM: social_facebook", "the URL is malformed"};
             }
         }
         if (json.socialInstagram != null) {
@@ -46,7 +46,7 @@ public class OrganizationServiceHelper  {
                     "https?:\\/\\/(www\\.)?instagram\\.com\\/([A-Za-z0-9_](?:(?:[A-Za-z0-9_]|(?:\\.(?!\\.))){0,28}(?:[A-Za-z0-9_]))?)")) {
                 socialEntity.setInstagram(json.socialInstagram);
             } else {
-                return new String[]{"1", "INVALID_PARAM: social_instagram", "Provided instagram link is not valid"};
+                return new String[]{"1", "INVALID_PARAM: social_instagram", "the URL is malformed"};
             }
         }
         socialEntity.setUpdatedAt(new Date());
