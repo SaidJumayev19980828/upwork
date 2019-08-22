@@ -21,6 +21,9 @@ public class OrganizationServiceHelper  {
     }
 
     public String[] addSocialLinks(OrganizationDTO.OrganizationModificationDTO json, OrganizationEntity organization){
+        if (json.socialInstagram == null && json.socialTwitter == null && json.socialFacebook == null)
+            return new String[]{"0","",""};
+
         SocialEntity socialEntity = socialRepository.findOneByOrganizationEntity_Id(json.organizationId);
         if (socialEntity == null){
             socialEntity = new SocialEntity();

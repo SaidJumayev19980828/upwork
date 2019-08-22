@@ -3,11 +3,10 @@ package com.nasnav.response;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.nasnav.dao.Organization;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-
+@Getter
 public class OrganizationResponse {
 
     @JsonProperty(value = "success")

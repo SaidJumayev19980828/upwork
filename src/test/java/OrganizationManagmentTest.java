@@ -1,0 +1,204 @@
+import com.nasnav.NavBox;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.response.OrganizationResponse;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
+@PropertySource("classpath:database.properties")
+public class OrganizationManagmentTest {
+    @Value("classpath:sql/Organization_Test_Data_Insert.sql")
+    private Resource organizationsDataInsert;
+    @Value("classpath:sql/database_cleanup.sql")
+    private Resource databaseCleanup;
+    @Value("classpath:test_imgs_to_upload/nasnav--Test_Photo.png")
+    private Resource file;
+    @Autowired
+    private DataSource datasource;
+    @Autowired
+    private TestRestTemplate template;
+    @Autowired
+    private OrganizationRepository organizationRepository;
+
+    @Before
+    public void setup(){
+        performSqlScript(databaseCleanup);
+        performSqlScript(organizationsDataInsert);
+    }
+
+    @After
+    public void cleanup(){
+        performSqlScript(databaseCleanup);
+    }
+
+    void performSqlScript(Resource resource) {
+        try (Connection con = datasource.getConnection()) {
+            ScriptUtils.executeSqlScript(con, resource);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void updateOrganizationDataSuccessTest() {
+        String body = "{\"org_id\":99001, \"description\":\"this company is old and unique\"," +
+                       "\"logo_encoding\": \"form-data\", \"social_twitter\": \"https://www.twitter.com/fortunestores\"," +
+                       "\"social_facebook\": \"https://www.facebook.com/fortune.stores11/\"," +
+                       "\"social_instagram\": \"https://instagram.com/fortunestores\"}";
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("jsonString", body);
+        map.add("logo", file);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 69, "hijkllm",
+                MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
+        Assert.assertEquals(200, response.getStatusCode().value());
+    }
+
+    //trying to update organization with nasnav_admin user
+    @Test
+    public void updateOrganizationUnauthorizedUserTest() {
+        String body = "{\"org_id\":99001, \"description\":\"this company is old and unique\"}";
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("jsonString", body);
+        map.add("logo", file);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 68, "abcdefg", MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
+        Assert.assertEquals(403, response.getStatusCode().value());
+    }
+
+    @Test
+    public void updateOrganizationInvalidIdTest() {
+        String body = "{\"org_id\":99005,\"description\":\"this company is old and unique\"}";
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("jsonString", body);
+        map.add("logo", file);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 69, "hijkllm", MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void updateOrganizationMissingIdTest() {
+        String body = "{\"description\":\"this company is old and unique\"}";
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("jsonString", body);
+        map.add("logo", file);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 69, "hijkllm", MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void updateOrganizationInvalidSocialLinksTest() {
+        // invalid twitter link
+        String body = "{\"org_id\":99005, \"social_twitter\": \"htps://www.twitte.com/fortunestores\"}";
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("jsonString", body);
+        map.add("logo", file);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 69, "hijkllm", MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+
+        // invalid facebook link
+        body = "{\"org_id\":99005, \"social_facebook\": \"htts://www.faceboo.com/fortune.stores11/\"}";
+        map = new LinkedMultiValueMap<String, Object>();
+        map.add("jsonString", body);
+        map.add("logo", file);
+        json = TestCommons.getHttpEntity(map, 69, "hijkllm", MediaType.MULTIPART_FORM_DATA);
+        response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+
+        // invalid instagram link
+        body = "{\"org_id\":99005, \"social_instagram\": \"htps://instgram.com/fortunestores\"}";
+        map = new LinkedMultiValueMap<String, Object>();
+        map.add("jsonString", body);
+        map.add("logo", file);
+        json = TestCommons.getHttpEntity(map, 69, "hijkllm", MediaType.MULTIPART_FORM_DATA);
+        response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void updateOrganizationInvalidLogoTest() {
+        String body = "{\"org_id\":99001, \"description\":\"this company is old and unique\"," +
+                "\"logo_encoding\": \"form-data\"}";
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("jsonString", body);
+        map.add("logo", organizationsDataInsert);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 69, "hijkllm",
+                MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void createOrganizationSuccesstest() {
+        String body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad-pant\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body, 68, "abcdefg");
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
+                OrganizationResponse.class);
+        organizationRepository.deleteById(response.getBody().getOrganizationId());
+        Assert.assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void createOrganizationMissingValuestest() {
+        String body = "{\"p_name\":\"solad-pant\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body, 68, "abcdefg");
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
+                OrganizationResponse.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+
+        body = "{\"name\":\"Solad Pant\"}";
+        json = TestCommons.getHttpEntity(body, 68, "abcdefg");
+        response = template.postForEntity("/admin/organization", json, OrganizationResponse.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void createOrganizationInvalidValuestest() {
+        String body = "{\"name\":\"23Solad Pant\", \"p_name\":\"solad-pant\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body, 68, "abcdefg");
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
+                OrganizationResponse.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+
+        body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad_pant\"}";
+        json = TestCommons.getHttpEntity(body, 68, "abcdefg");
+        response = template.postForEntity("/admin/organization", json, OrganizationResponse.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    //trying to create organization with organization_admin user
+    @Test
+    public void createOrganizationUnauthorizedUserTest() {
+        String body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad-pant\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body, 69, "hijkllm");
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
+                OrganizationResponse.class);
+        Assert.assertEquals(403, response.getStatusCode().value());
+    }
+}

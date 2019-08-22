@@ -161,6 +161,9 @@ public class OrganizationService {
 
     public OrganizationResponse updateOrganizationData(String userToken,
                                    OrganizationDTO.OrganizationModificationDTO json, MultipartFile file) throws BusinessException {
+        if (json.organizationId == null) {
+            return new OrganizationResponse("MISSING_PARAM: org_id", "Provided org_id is missing");
+        }
         if (!organizationRepository.existsById(json.organizationId)) {
             return new OrganizationResponse("INVALID_PARAM: org_id", "Provided org_id is not matching any organization");
         }
@@ -179,7 +182,7 @@ public class OrganizationService {
             else if (json.logoEncoding.equals("form-data")) {
                 String mimeType = file.getContentType();
                 if(!mimeType.startsWith("image"))
-                    return new OrganizationResponse("MISSIG PARAM:image",
+                    return new OrganizationResponse("INVALID PARAM:image",
                             "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!");
                 organization.setLogo(fileService.saveFile(file, json.organizationId));
             } else if (json.logoEncoding.equals("base64")){
