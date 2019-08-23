@@ -5,6 +5,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import lombok.Data;
@@ -25,6 +26,7 @@ public class ProductFeaturesEntity {
 	private String pname;
 	@Column(name="description")
 	private String description;
-	@Column(name="organization_id")
-	private Long organizationId;
+	
+	@ManyToOne
+	private OrganizationEntity organization;
 }

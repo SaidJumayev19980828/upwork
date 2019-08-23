@@ -25,6 +25,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
@@ -97,9 +99,6 @@ public class ProductServiceTest {
 	@Autowired
 	private OrganizationRepository organizationRepository;
 
-	private OrganizationEntity organizationEntity;
-
-	private ShopsEntity shopsEntity;
 
 	private final String PRODUCT_NAME = "LIPSTICK";
 	private final String PRODUCT_P_NAME = "LIPSTICK PRODUCT";
@@ -120,12 +119,9 @@ public class ProductServiceTest {
 	private final Integer QUANTITY = 100;
 
 	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Delete.sql"})
 	public void getProductWithVariantsWithoutStock() {
-		organizationEntity = new OrganizationEntity();
-		organizationEntity.setCreatedAt(new Date());
-		organizationEntity.setName("Fortune cosmitics");
-		organizationEntity.setUpdatedAt(new Date());
-		organizationEntity = organizationRepository.save(organizationEntity);
 
 		ProductEntity productEntity = new ProductEntity();
 		productEntity.setName(PRODUCT_NAME);
@@ -133,18 +129,21 @@ public class ProductServiceTest {
 		productEntity.setCategoryId(CATEGORY_ID);
 		productEntity.setCreationDate(new Date());
 		productEntity.setUpdateDate(new Date());
+		productEntity.setOrganizationId(99001L);
 		productEntity = productRepository.save(productEntity);
+		
+		OrganizationEntity org = organizationRepository.findOneById(99001L);
 
 		ProductFeaturesEntity productFeaturesEntity_1 = new ProductFeaturesEntity();
 		productFeaturesEntity_1.setName(PRODUCT_FEATURE_1_NAME);
 		productFeaturesEntity_1.setPname(PRODUCT_FEATURE_1_P_NAME);
-		productFeaturesEntity_1.setOrganizationId(organizationEntity.getId());
+		productFeaturesEntity_1.setOrganization(org);
 		productFeaturesEntity_1 = productFeaturesRepository.save(productFeaturesEntity_1);
 
 		ProductFeaturesEntity productFeaturesEntity_2 = new ProductFeaturesEntity();
 		productFeaturesEntity_2.setName(PRODUCT_FEATURE_2_NAME);
 		productFeaturesEntity_2.setPname(PRODUCT_FEATURE_2_P_NAME);
-		productFeaturesEntity_2.setOrganizationId(organizationEntity.getId());
+		productFeaturesEntity_2.setOrganization(org);
 		productFeaturesEntity_2 = productFeaturesRepository.save(productFeaturesEntity_2);
 
 		PRODUCT_VARIANT_FEATURE_SEPC = PRODUCT_VARIANT_FEATURE_SEPC
@@ -183,24 +182,13 @@ public class ProductServiceTest {
 		productFeaturesRepository.delete(productFeaturesEntity_1);
 		productFeaturesRepository.delete(productFeaturesEntity_2);
 		productRepository.delete(productEntity);
-		organizationRepository.delete(organizationEntity);
+
 	}
 
 	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Delete.sql"})
 	public void getProductWithVariantsWitStock() {
-
-		organizationEntity = new OrganizationEntity();
-		organizationEntity.setCreatedAt(new Date());
-		organizationEntity.setName("Fortune cosmitics_3");
-		organizationEntity.setUpdatedAt(new Date());
-		organizationEntity = organizationRepository.save(organizationEntity);
-
-		shopsEntity = new ShopsEntity();
-		shopsEntity.setName("Fortune");
-		shopsEntity.setCreatedAt(new Date());
-		shopsEntity.setUpdatedAt(new Date());
-		shopsEntity.setOrganizationEntity(organizationEntity);
-		shopsEntity = shopsRepository.save(shopsEntity);
 
 		ProductEntity productEntity = new ProductEntity();
 		productEntity.setName(PRODUCT_NAME);
@@ -208,18 +196,21 @@ public class ProductServiceTest {
 		productEntity.setCategoryId(CATEGORY_ID);
 		productEntity.setCreationDate(new Date());
 		productEntity.setUpdateDate(new Date());
+		productEntity.setOrganizationId(99001L);
 		productEntity = productRepository.save(productEntity);
 
+		OrganizationEntity org = organizationRepository.findOneById(99001L);
+		
 		ProductFeaturesEntity productFeaturesEntity_1 = new ProductFeaturesEntity();
 		productFeaturesEntity_1.setName(PRODUCT_FEATURE_1_NAME);
 		productFeaturesEntity_1.setPname(PRODUCT_FEATURE_1_P_NAME);
-		productFeaturesEntity_1.setOrganizationId(organizationEntity.getId());
+		productFeaturesEntity_1.setOrganization(org);
 		productFeaturesEntity_1 = productFeaturesRepository.save(productFeaturesEntity_1);
 
 		ProductFeaturesEntity productFeaturesEntity_2 = new ProductFeaturesEntity();
 		productFeaturesEntity_2.setName(PRODUCT_FEATURE_2_NAME);
 		productFeaturesEntity_2.setPname(PRODUCT_FEATURE_2_P_NAME);
-		productFeaturesEntity_2.setOrganizationId(organizationEntity.getId());
+		productFeaturesEntity_2.setOrganization(org);
 		productFeaturesEntity_2 = productFeaturesRepository.save(productFeaturesEntity_2);
 
 		PRODUCT_VARIANT_FEATURE_SEPC = PRODUCT_VARIANT_FEATURE_SEPC
@@ -232,6 +223,19 @@ public class ProductServiceTest {
 		productVariantsEntity.setPname(PRODUCT_VARIANT_P_NAME);
 		productVariantsEntity.setProductEntity(productEntity);
 		productVariantsEntity = productVariantsRepository.save(productVariantsEntity);
+
+		OrganizationEntity organizationEntity = new OrganizationEntity();
+		organizationEntity.setCreatedAt(new Date());
+		organizationEntity.setName("Fortune cosmitics");
+		organizationEntity.setUpdatedAt(new Date());
+		organizationEntity = organizationRepository.save(organizationEntity);
+
+		ShopsEntity shopsEntity = new ShopsEntity();
+		shopsEntity.setName("Fortune");
+		shopsEntity.setCreatedAt(new Date());
+		shopsEntity.setUpdatedAt(new Date());
+		shopsEntity.setOrganizationEntity(organizationEntity);
+		shopsEntity = shopsRepository.save(shopsEntity);
 
 		StocksEntity stocksEntity = new StocksEntity();
 		stocksEntity.setDiscount(new BigDecimal(0));
@@ -272,14 +276,14 @@ public class ProductServiceTest {
 		assertTrue(response.getBody().toString().contains("\"discount\":" + 0 ));
 
 		stockRepository.delete(stocksEntity);
+		shopsRepository.delete(shopsEntity);
+		organizationRepository.delete(organizationEntity);
 
 		productVariantsRepository.delete(productVariantsEntity);
 		productFeaturesRepository.delete(productFeaturesEntity_1);
 		productFeaturesRepository.delete(productFeaturesEntity_2);
 		productRepository.delete(productEntity);
 
-		shopsRepository.delete(shopsEntity);
-		organizationRepository.delete(organizationEntity);
 	}
 
 	@Test
