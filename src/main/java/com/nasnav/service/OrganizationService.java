@@ -175,7 +175,14 @@ public class OrganizationService {
             organization.setDescription(json.description);
         }
         //logo
+        OrganizationThemeEntity orgTheme = null;
         if (json.logo != null || file != null) {
+            orgTheme = organizationThemeRepository.findOneByOrganizationEntity_Id(json.organizationId);
+            if (orgTheme == null) {
+                orgTheme = new OrganizationThemeEntity();
+                orgTheme.setCreatedAt(new Date());
+                orgTheme.setOrganizationEntity(organization);
+            }
             if (json.logoEncoding == null) {
                 return new OrganizationResponse("Missing_PARAM: logo_encoding", "Provided logo_encoding is Missing");
             }
@@ -184,9 +191,11 @@ public class OrganizationService {
                 if(!mimeType.startsWith("image"))
                     return new OrganizationResponse("INVALID PARAM:image",
                             "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!");
-                organization.setLogo(fileService.saveFile(file, json.organizationId));
+                orgTheme.setLogo(fileService.saveFile(file, json.organizationId));
+                orgTheme.setUpdatedAt(new Date());
             } else if (json.logoEncoding.equals("base64")){
-                organization.setLogo(json.logo);
+                orgTheme.setLogo(json.logo);
+                orgTheme.setUpdatedAt(new Date());
             } else {
                 return new OrganizationResponse("INVALID_PARAM: logo_encoding", "Provided logo_encoding is Invalid");
             }
@@ -194,7 +203,9 @@ public class OrganizationService {
         String [] result = helper.addSocialLinks(json, organization);
         if (result[0].equals("1"))
             return new OrganizationResponse(result[1], result[2]);
-
+        if (!orgTheme.getLogo().equals(null)) {
+            organizationThemeRepository.save(orgTheme);
+        }
         organization.setUpdatedAt(new Date());
         organizationRepository.save(organization);
         return new OrganizationResponse();
