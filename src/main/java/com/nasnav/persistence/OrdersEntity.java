@@ -17,6 +17,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.nasnav.dto.OrderRepresentationObject;
+import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
 import org.hibernate.annotations.Type;
 import org.springframework.data.jpa.domain.AbstractPersistable;
@@ -113,6 +114,7 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 		if (shopsEntity != null) {
 			orderRepresentationObject.setShopId(shopsEntity.getId());
 		}
+		orderRepresentationObject.setStatus(OrderStatus.findEnum(getStatus()).name());
 		return orderRepresentationObject;
 	}
 
