@@ -100,7 +100,7 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	@JoinColumn(name = "organization_id", nullable = false)
 	private OrganizationEntity organizationEntity;
 
-    @OneToOne(mappedBy = "ordersEntity")
+    @OneToOne(mappedBy = "ordersEntity", fetch = FetchType.LAZY)
     private BasketsEntity basketsEntity;
 
 	@Override

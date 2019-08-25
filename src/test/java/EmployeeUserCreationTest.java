@@ -46,7 +46,7 @@ import net.jcip.annotations.NotThreadSafe;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-@NotThreadSafe 
+@NotThreadSafe
 @PropertySource("classpath:database.properties")
 public class EmployeeUserCreationTest {
 
@@ -254,9 +254,6 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_STORE));
 	}
 
-
-
-
 	@Test
 	public void createEmployeeUserEmailExistsTest() {
 		// create employee user with an email
@@ -298,7 +295,7 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> employeeUserLoginJson = getHttpEntity(loginBody, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
 		Long id = response.getBody().getEntityId();
-		
+
 		// try to login with this user email before activation
 		ResponseEntity<UserApiResponse> loginResponse = template.postForEntity(
 				"/user/login", employeeUserLoginJson, UserApiResponse.class);
@@ -481,10 +478,10 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm", "69");
 		ResponseEntity<BaseResponse> response = template.postForEntity("/user/update", employeeUserJson, BaseResponse.class);
 
-		
+
 		Assert.assertEquals(200, response.getStatusCode().value());
 		Assert.assertTrue(response.getBody().isSuccess());
-		
+
 	}
 
 	@Test

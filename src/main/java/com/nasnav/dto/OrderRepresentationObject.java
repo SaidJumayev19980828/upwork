@@ -14,7 +14,8 @@ import lombok.EqualsAndHashCode;
         "user_id",
         "store_id",
         "order_id",
-        "price"
+        "price",
+        "status"
 })
 @Data
 @EqualsAndHashCode(callSuper=true)
@@ -29,9 +30,9 @@ public class OrderRepresentationObject extends BaseRepresentationObject{
     @JsonProperty("store_id")
     private long shopId;
 
-    /*@JsonProperty("status")
+    @JsonProperty("status")
     private long status;
 
 	@JsonProperty("price")
-    private BigDecimal price;*/
+    private BigDecimal price;
 }

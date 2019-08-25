@@ -1,9 +1,10 @@
-----------------------------deleting previous data----------------------------
-delete from public.shops where id between 501 and 506;
+delete from public.stocks where organization_id between 99000 and 99999;
+delete from public.shops where organization_id between 99000 and 99999;
 delete from public.malls where id = 901;
-delete from public.role_employee_users; --where id between 20 and 21;
-delete from public.users where id in(88,89,90);
-delete from public.employee_users where id in(68, 69,70 ,71, 158);
-delete from public.roles; --where id between 1 and 3;
-delete from public.brands where id between 101 and 103;
-delete from public.organizations where id between 801 and 803;
+delete from public.role_employee_users WHERE employee_user_id IN (SELECT id FROM public.employee_users where organization_id between 99000 and 99999); 
+delete from public.users where organization_id between 99000 and 99999;
+delete from public.employee_users where organization_id between 99000 and 99999;
+delete from public.roles;
+delete from public.products where organization_id between 99000 and 99999;
+delete from public.brands where organization_id between 99000 and 99999;
+delete from public.organizations where id between 99000 and 99999;

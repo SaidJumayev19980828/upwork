@@ -85,7 +85,6 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
 //    List<ProductEntity> findByIdInAndCategoryIdOrderByPriceeAsc(List<Long> ids,Long categoryId);
 //    List<ProductEntity> findByIdInAndCategoryIdOrderByPriceDesc(List<Long> ids,Long categoryId);
-
 }
 
 
