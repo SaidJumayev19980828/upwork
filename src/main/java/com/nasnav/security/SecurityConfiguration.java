@@ -12,7 +12,6 @@ import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,9 +19,9 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.header.HeaderWriter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -39,15 +38,19 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     private static  RequestMatcher publicUrlList ;
 
 
-    private static Map<String, Set<Roles>> permissions = Stream.of(new Object[][] {
+    @SuppressWarnings("unchecked")
+	private static Map<String, Set<Roles>> permissions = Stream.of(new Object[][] {
 				    { "/order/**" 		, getAllRoles() },
 				    { "/stock/**" 		, getNonCustomersRoles() },
-				    { "/shop/**"		, new HashSet<Roles>(Arrays.asList(Roles.ORGANIZATION_MANAGER, Roles.STORE_MANAGER)) },
+				    { "/shop/**"		, setOf(Roles.ORGANIZATION_MANAGER, Roles.STORE_MANAGER) },
 				    { "/user/list"		, getAllRoles() },
-				    { "/user/create"	, new HashSet<Roles>(Arrays.asList(Roles.NASNAV_ADMIN, Roles.ORGANIZATION_ADMIN, Roles.STORE_ADMIN)) },
+				    { "/user/create"	, setOf(Roles.NASNAV_ADMIN, Roles.ORGANIZATION_ADMIN, Roles.STORE_ADMIN) },
 				    { "/user/update"	, getAllRoles() },
-				    { "/files/**"		, getAllRoles() },
+				    { "/product/**"		, setOf(Roles.ORGANIZATION_ADMIN)},
+					{ "/files/**"		, getAllRoles() }
     }).collect(Collectors.toMap(data -> (String) data[0], data -> (Set<Roles>) data[1]));
+
+	
 
     //TODO: currently the AuthenticationFilter calls the authentication process
     //and it takes the PROTECTED_URLS list to work on
@@ -61,9 +64,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             Arrays.asList("/navbox/**"
                         , "/user/recover"
                         , "/user/login"
-                        , "/user/register"
-		                , "/shop/update"
-		                , "/order/list"
+                        , "/user/register"		                
                         , "/payment/**");
 
     AuthenticationProvider provider;
@@ -104,6 +105,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         		.requestMatchers(publicUrlList).permitAll()
 //        		.anyRequest().authenticated()        	//adding this causes unauthenticated responses to have status 403, it overrided the
         .and()
+        	.exceptionHandling()        
+        	.accessDeniedHandler(new NasnavAccessDeniedHandler()) //return a custom response 403 with a body containing {success=false} , don't know why we need it ..
+        .and()
+        	.headers()
+        	.addHeaderWriter(contentTypeHeaderWriter()) //add content-type='application/json' to security responses
+        .and()
             .csrf().disable()
             .formLogin().disable()
             .httpBasic().disable()
@@ -114,19 +121,23 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     AuthenticationFilter authenticationFilter() throws Exception {
         final AuthenticationFilter filter = new AuthenticationFilter(protectedUrlList);
         filter.setAuthenticationManager(authenticationManager());
-        //filter.setAuthenticationSuccessHandler(successHandler());
+
+
+        //set the handler returns custom response for AuthN failure 
+        filter.setAuthenticationFailureHandler(customAuthenticationHandler());
         return filter;
     }
 
     @Bean
-    AuthenticationEntryPoint unauthorizedEntryPoint() {
-        return new NasnavHttpStatusEntryPoint(HttpStatus.UNAUTHORIZED);
+    public AuthenticationFailureHandler customAuthenticationHandler() {
+        return new AuthenticationHandler();
     }
 
-    @Bean
-    AccessDeniedHandler accessDeniedEntryPoint() {
-        return new NasnavAccessDeniedEntryPoint();
+   	
+    public HeaderWriter contentTypeHeaderWriter() {
+    	return new ContentTypeHeaderWriter();
     }
+
 
     private static Set<Roles> getAllRoles(){
     	return new HashSet<>(Arrays.asList(Roles.values()));
@@ -152,4 +163,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			throw new IllegalStateException("Security configuration failed! ", e);
 		}
     }
+    
+    
+    
+    private static HashSet<Roles> setOf(Roles... roles) {
+		return new HashSet<Roles>(Arrays.asList(roles));
+	}
 }

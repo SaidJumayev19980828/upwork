@@ -1,14 +1,30 @@
 package com.nasnav.persistence;
 
-import com.nasnav.dto.BaseRepresentationObject;
-import com.nasnav.dto.ProductRepresentationObject;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import java.time.LocalDateTime;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.DiscriminatorColumn;
+import javax.persistence.DiscriminatorType;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import javax.persistence.Table;
+
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.DiscriminatorFormula;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
-import javax.persistence.*;
-import java.util.Date;
+import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.dto.ProductRepresentationObject;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Entity
 @Table(name = "products")
@@ -41,9 +57,12 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
     private String itemId;
 
     @Column(name = "created_at")
-    private Date creationDate;
+    @CreationTimestamp
+    private LocalDateTime creationDate;
+    
     @Column(name = "updated_at")
-    private Date updateDate;
+    @UpdateTimestamp
+    private LocalDateTime updateDate;
 
     @Column(name="organization_id")
     private Long organizationId;

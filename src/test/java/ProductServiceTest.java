@@ -127,8 +127,6 @@ public class ProductServiceTest {
 		productEntity.setName(PRODUCT_NAME);
 		productEntity.setPname(PRODUCT_P_NAME);
 		productEntity.setCategoryId(CATEGORY_ID);
-		productEntity.setCreationDate(new Date());
-		productEntity.setUpdateDate(new Date());
 		productEntity.setOrganizationId(99001L);
 		productEntity = productRepository.save(productEntity);
 		
@@ -193,9 +191,7 @@ public class ProductServiceTest {
 		ProductEntity productEntity = new ProductEntity();
 		productEntity.setName(PRODUCT_NAME);
 		productEntity.setPname(PRODUCT_P_NAME);
-		productEntity.setCategoryId(CATEGORY_ID);
-		productEntity.setCreationDate(new Date());
-		productEntity.setUpdateDate(new Date());
+		productEntity.setCategoryId(CATEGORY_ID);		
 		productEntity.setOrganizationId(99001L);
 		productEntity = productRepository.save(productEntity);
 

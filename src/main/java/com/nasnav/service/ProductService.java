@@ -1,20 +1,64 @@
 package com.nasnav.service;
 
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.*;
+import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
+
+import org.apache.commons.beanutils.BeanUtils;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JacksonJsonParser;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.commons.utils.StringUtils;
+import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.BundleRepository;
+import com.nasnav.dao.CategoriesRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ProductImagesRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductImgDTO;
+import com.nasnav.dto.ProductRepresentationObject;
+import com.nasnav.dto.ProductSortOptions;
+import com.nasnav.dto.ProductUpdateDTO;
+import com.nasnav.dto.ProductsResponse;
+import com.nasnav.dto.StockDTO;
+import com.nasnav.dto.VariantDTO;
+import com.nasnav.dto.VariantFeatureDTO;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.BrandsEntity;
+import com.nasnav.persistence.EntityUtils;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.ProductImagesEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.StocksEntity;
+import com.nasnav.response.ProductUpdateResponse;
+import com.sun.istack.logging.Logger;
 
 @Service
 public class ProductService {
 
+	private Logger logger = Logger.getLogger(ProductService.class);
 
 	//	@Value("${products.default.start}")
 	private Integer defaultStart = 0;
@@ -38,6 +82,16 @@ public class ProductService {
 	private final ProductFeaturesRepository productFeaturesRepository;
 
 	private final StockServiceImpl stockService;
+	
+	@Autowired
+	private EmployeeUserRepository empRepo;
+	
+	@Autowired
+	private CategoriesRepository categoriesRepo;
+	
+	
+	@Autowired
+	private BrandsRepository brandRepo;
 
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
@@ -256,16 +310,6 @@ public class ProductService {
 	}
 
 
-
-
-	private JSONObject createStockJSONObject(Long shopId, StocksEntity stock) {
-		JSONObject stockObject = new JSONObject();
-		stockObject.put("shop_id", shopId);
-		stockObject.put("quantity", stock.getQuantity());
-		stockObject.put("price", stock.getPrice());
-		stockObject.put("discount", stock.getDiscount());
-		return stockObject;
-	}
 
 
 	private List<StocksEntity> getProductStockForShop(Long productId, Long shopId) {
@@ -662,6 +706,225 @@ public class ProductService {
 		}
 
 		return productsResponse;
+	}
+	
+	
+	
+	
+	public ProductUpdateResponse updateProduct(String productJson) throws BusinessException {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		
+		ObjectMapper mapper = createObjectMapper();
+		JsonNode rootNode;
+		try {
+			rootNode = mapper.readTree(productJson);
+		} catch (IOException e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new BusinessException("Failed to deserialize JSON string ["+ productJson + "]", "INTERNAL SERVER ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		validateProductDto(rootNode, user);
+		
+		ProductEntity entity = prepareProdcutEntity(rootNode, user);
+		ProductEntity saved = productRepository.save(entity);
+		
+		return new ProductUpdateResponse(true, saved.getId());		
+	}
+
+
+
+
+	private ProductEntity prepareProdcutEntity(JsonNode productJsonNode, BaseUserEntity user)
+			throws BusinessException {
+		
+		Long id = productJsonNode.path("product_id").asLong();
+		JsonNode operationNode = productJsonNode.path("operation");	
+		Operation operation = Operation.valueOf(operationNode.asText().toUpperCase());
+		
+		ProductEntity entity;
+		
+		if(Operation.CREATE.equals(operation))
+			entity = new ProductEntity();	
+		else {
+			entity = productRepository.findById(id)
+							.orElseThrow(()-> new BusinessException("No prodcut exists with  ID: "+ id, "INVALID_PARAM:id" , HttpStatus.NOT_ACCEPTABLE));
+		}			
+		
+		updateProductEntityFromJson(entity, productJsonNode, user);
+		
+		return entity;
+	}
+
+
+
+
+	private void updateProductEntityFromJson(ProductEntity entity, JsonNode productJsonNode, BaseUserEntity user)
+			throws BusinessException {
+		ProductUpdateDTO productDto = new ProductUpdateDTO();
+		try {
+			 
+			BeanUtils.copyProperties(productDto, entity);
+			
+			//readerForUpdating makes the reader update the properties that ONLY exists in JSON string
+			ObjectMapper mapper = createObjectMapper();
+			productDto = mapper.readerForUpdating(productDto).readValue(productJsonNode.toString());
+			
+			productDto.setOrganizationId(user.getOrganizationId());
+			
+			if(StringUtils.isBlankOrNull(productDto.getPname())) {
+				productDto.setPname(StringUtils.encodeUrl( productDto.getName() ));
+			}	
+			
+			BeanUtils.copyProperties(entity, productDto);
+		} catch (Exception e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new BusinessException(e.getMessage(), "INTERNAL SERVER ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	
+	
+
+	private void validateProductDto(JsonNode productJsonNode, BaseUserEntity user) throws BusinessException {
+		JsonNode operationNode = productJsonNode.path("operation");	
+		
+		if(operationNode.isMissingNode()) {
+			throw new BusinessException("No Operation provided! parameter operation should have values in[\"create\",\"update\"]!", "INVALID_PARAM:operation" , HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		String operationStr = operationNode.asText().toUpperCase();
+		Operation operation = Operation.valueOf(operationStr);
+		
+		if(operation.equals(Operation.UPDATE)) {
+			validateProductDtoToUpdate(productJsonNode, user);
+		}else {
+			validateProductDtoToCreate(productJsonNode, user);				
+		}
+			
+	}
+
+
+
+
+	private ObjectMapper createObjectMapper() {
+		ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		return mapper;
+	}
+
+
+
+
+	private void validateProductDtoToCreate(JsonNode productJson, BaseUserEntity user ) throws BusinessException {
+			
+		checkCreateProuctReqParams(productJson);
+		
+		JsonNode categoryId = productJson.path("category_id");
+		JsonNode brandId = productJson.path("brand_id");
+		validateCategoryId(categoryId);
+		validateBrandId(user, brandId);
+	}
+
+
+
+
+	private void validateProductDtoToUpdate(JsonNode productJson, BaseUserEntity user)
+			throws BusinessException {
+		JsonNode id = productJson.path("product_id");
+		JsonNode categoryId = productJson.path("category_id");
+		JsonNode brandId = productJson.path("brand_id");
+		
+		if(id.isMissingNode())
+			throw new BusinessException("No product id provided!", "INVALID_PARAM:product_id" , HttpStatus.NOT_ACCEPTABLE);
+		
+		if(!id.isNull() && !productRepository.existsById(id.asLong()))
+			throw new BusinessException("No prodcut exists with ID: "+ id + " !", "INVALID_PARAM:product_id" , HttpStatus.NOT_ACCEPTABLE);
+		
+		if(!categoryId.isMissingNode() )
+			validateCategoryId(categoryId);	
+		
+		if(!brandId.isMissingNode() )
+			validateBrandId(user, brandId);
+	}
+
+
+
+
+	private void checkCreateProuctReqParams(JsonNode productJson)
+			throws BusinessException {
+		JsonNode name = productJson.path("name");
+		JsonNode categoryId = productJson.path("category_id");
+		JsonNode brandId = productJson.path("brand_id");
+		
+		if(name.isMissingNode())
+			throw new BusinessException("Product name Must be provided! ", "MISSING_PARAM:name" , HttpStatus.NOT_ACCEPTABLE);
+			
+		if( name.isNull() )
+			throw new BusinessException("Product name cannot be Null ", "MISSING_PARAM:name" , HttpStatus.NOT_ACCEPTABLE);
+			
+		if(categoryId.isMissingNode())
+			throw new BusinessException("category_id Must be provided! ", "MISSING_PARAM:category_id" , HttpStatus.NOT_ACCEPTABLE);
+		
+		if(categoryId.isNull() )
+			throw new BusinessException("category_id cannot be Null!" , "MISSING_PARAM:category_id" , HttpStatus.NOT_ACCEPTABLE);			
+		
+		if(brandId.isMissingNode())
+			throw new BusinessException("Brand Id Must be provided!" , "MISSING_PARAM:brand_Id" , HttpStatus.NOT_ACCEPTABLE);
+	}
+
+
+
+
+	private void validateCategoryId(JsonNode categoryId) throws BusinessException {
+		if(categoryId.isMissingNode())
+			return ;
+		
+		if(categoryId.isNull())
+			throw new BusinessException("category_id cannot be Null!" , "MISSING_PARAM:category_id" , HttpStatus.NOT_ACCEPTABLE);
+		
+		long id = categoryId.asLong();
+		if(!categoriesRepo.existsById(id) )
+			throw new BusinessException("No Category exists with ID: " + id + " !" , "INVALID_PARAM:category_id" , HttpStatus.NOT_ACCEPTABLE);
+	}
+
+
+
+
+	private void validateBrandId(BaseUserEntity user, JsonNode brandId) throws BusinessException {
+		if(brandId.isMissingNode() || brandId.isNull()) //brand_id is optional and can be null
+			return;
+		
+		long id = brandId.asLong();
+		if(!brandRepo.existsById(id) )
+			throw new BusinessException("No Brand exists with ID: " + id + " !" , "INVALID_PARAM:brand_id" , HttpStatus.NOT_ACCEPTABLE);
+		
+		BrandsEntity brand = brandRepo.findById(id)
+								.orElseThrow(() -> new BusinessException("No Brand exists with ID: " + id + " !", "INVALID_PARAM:brand_Id" , HttpStatus.NOT_ACCEPTABLE));
+		
+		Long brandOrgId = brand.getOrganizationEntity().getId(); 
+		if( !brandOrgId.equals( user.getOrganizationId() )) {
+			String msg = String.format("Brand with id [%d] doesnot belong to organization with id [%d]", id, user.getOrganizationId());
+			throw new BusinessException(msg , "INVALID_PARAM:brand_Id" , HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+
+
+
+	public ProductUpdateResponse deleteProduct(Long productId) throws BusinessException {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		Long userOrgId = user.getOrganizationId();
+		
+		productRepository.findById(productId)
+					.filter(p -> p.getOrganizationId().equals(userOrgId) )
+					.orElseThrow(() -> new BusinessException(
+												"Product of ID["+productId+"] cannot be deleted by a user from oraganization of id ["+ userOrgId + "]" 
+												, "INSUFFICIENT_RIGHTS"
+												, HttpStatus.FORBIDDEN));
+		
+		productRepository.deleteById(productId);
+		return new ProductUpdateResponse(true, productId);
 	}
 
 }

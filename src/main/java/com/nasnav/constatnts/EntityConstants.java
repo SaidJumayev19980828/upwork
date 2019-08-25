@@ -1,5 +1,8 @@
 package com.nasnav.constatnts;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import lombok.Getter;
 
 /**
@@ -19,6 +22,22 @@ public final class EntityConstants {
 
     /*Number of hours that token stay valid during*/
     public static final int TOKEN_VALIDITY = 2;
+    
+    
+    public enum Operation{
+    	UPDATE("update"),
+    	CREATE("create");
+    	
+    	
+    	@Getter
+    	@JsonValue
+        private final String value;
+    	
+    	@JsonCreator
+    	Operation(String value) {
+            this.value = value;
+        }
+    }
 
 
     public enum ConfigurationKey {

@@ -7,44 +7,36 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.response.BaseResponse;
 
-public class NasnavHttpStatusEntryPoint implements AuthenticationEntryPoint {
-	
-	private HttpStatus status;
-	
-	
-	public NasnavHttpStatusEntryPoint(HttpStatus status) {
-		this.status = status;
-	}
-	
-	
-	
+
+
+public class AuthenticationHandler implements AuthenticationFailureHandler {
 
 	@Override
-	public void commence(HttpServletRequest request, HttpServletResponse response,
-			AuthenticationException authException) throws IOException, ServletException {
+	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException ex)
+			throws IOException, ServletException {
+		response.setStatus(HttpStatus.UNAUTHORIZED.value());
+		
 		String jsonInString = createResponseBody();
 
-		response.setStatus(status.value());
-		response.setContentType(MediaType.APPLICATION_JSON_VALUE);		
 		response.getWriter().write(jsonInString);
+
 	}
 	
 	
-	
-
 	private String createResponseBody() throws JsonProcessingException {
 		BaseResponse body = new BaseResponse(false);
 		ObjectMapper mapper = new ObjectMapper();		
 		String jsonInString = mapper.writeValueAsString(body);
 		return jsonInString;
 	}
+
 
 }

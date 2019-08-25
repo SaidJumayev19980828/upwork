@@ -136,8 +136,6 @@ public class QnbHostedSessionPayment {
         //create product
         ProductEntity product = new ProductEntity();
         product.setName("product one");
-        product.setCreationDate(new Date());
-        product.setUpdateDate(new Date());
         ProductEntity productEntity = productRepository.save(product);
 
         //create shop
