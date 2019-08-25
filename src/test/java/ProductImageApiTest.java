@@ -385,11 +385,14 @@ public class ProductImageApiTest {
 
 
 	private void assertOptionalFieldSaved(String fieldName, JSONObject imgMetaData, Supplier getter) {
+		if(fieldName == null)
+			assertNull(getter.get());
+		else
 		Optional.ofNullable(fieldName)
 				.filter(imgMetaData.keySet()::contains)
 				.map(field -> imgMetaData.get(field))
-				.ifPresentOrElse(val -> assertEquals(val, getter.get())
-						, () -> assertNull(getter.get()));
+				.ifPresent(val -> assertEquals(val, getter.get()) );
+						
 	}
 
 
