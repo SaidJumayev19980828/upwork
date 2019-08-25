@@ -555,4 +555,13 @@ public class OrderServiceTest {
 		Assert.assertTrue(200 == response.getStatusCode().value());
 		Assert.assertEquals("get all orders if status parameter is invalid",16,count);
 	}
+
+	@Test
+	public void testOrdersConsistency(){
+		List<OrdersEntity> ordersList = orderRepository.findAll();
+
+		for(OrdersEntity order : ordersList) {
+			Assert.assertTrue(order.getUserId() != null);
+		}
+	}
 }
