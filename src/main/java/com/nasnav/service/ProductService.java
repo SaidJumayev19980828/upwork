@@ -1124,7 +1124,7 @@ public class ProductService {
 		
 		Long productId = imgMetaData.getProductId();		
 		Optional<ProductEntity> product = productRepository.findById(productId);
-		if( product.isEmpty() )
+		if( !product.isPresent() )
 			throw new BusinessException(
 					String.format("Product Id :[%d] doesnot exists!", productId)
 					, "INVALID PARAM:product_id"
@@ -1144,7 +1144,7 @@ public class ProductService {
 		Long variantId = imgMetaData.getVariantId();		
 		if(variantId != null ) {
 			Optional<ProductVariantsEntity> variant = productVariantsRepository.findById(variantId);
-			if(variantId != null && variant.isEmpty())
+			if(variantId != null && !variant.isPresent())
 				throw new BusinessException(
 						String.format("Product variant with id [%d] doesnot exists!", variantId)
 						, "INVALID PARAM:variant_id"
