@@ -2,7 +2,7 @@ package com.nasnav.controller;
 
 
 import com.nasnav.dto.CategoryDTO;
-import com.nasnav.response.CategoryResponse;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.CategoryService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -35,7 +35,7 @@ public class AdminController {
     @PostMapping(value = "category", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity createCategory(@RequestHeader (value = "User-ID", required = true) Long userId,
                                              @RequestHeader (value = "User-Token", required = true) String userToken,
-                                             @RequestBody CategoryDTO.CategoryModificationObject categoryJson) {
+                                             @RequestBody CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
         if (categoryJson.getOperation().equals("update")){
             return categoryService.updateCategory(categoryJson);
         }
@@ -52,9 +52,9 @@ public class AdminController {
     @DeleteMapping(value = "category", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity deleteCategory(@RequestHeader (value = "User-ID") Long userId,
                                            @RequestHeader (value = "User-Token") String userToken,
-                                           @RequestParam (value = "category_id") Long categoryId ) {
+                                           @RequestParam (value = "category_id") Long categoryId ) throws BusinessException {
         if (categoryId == null ){
-            return new ResponseEntity<>(new CategoryResponse("MISSING_PRARM: Category_id", ""),HttpStatus.NOT_ACCEPTABLE);
+            throw new BusinessException("MISSING_PRARM: Category_id", "",HttpStatus.NOT_ACCEPTABLE);
         }
         return categoryService.deleteCategory(categoryId);
     }

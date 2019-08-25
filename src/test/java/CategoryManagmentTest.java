@@ -131,34 +131,31 @@ public class CategoryManagmentTest {
     public void createCategoryMissingNameTest(){
         String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\", \"operation\": \"create\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
-        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
-        Assert.assertTrue(response.getBody().getStatus().equals("MISSING_PARAM: name"));
     }
 
     @Test
     public void createCategoryInvalidNameTest(){
         String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes\", \"operation\": \"create\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
-        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
-        Assert.assertTrue(response.getBody().getStatus().equals("INVALID_PARAMETERS: name"));
     }
 
     @Test
     public void createCategoryNonExistingParentTest(){
         String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 200}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
-        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
-        Assert.assertTrue(response.getBody().getStatus().equals("INVALID_PARAMETERS: parent_id"));
     }
 
     @Test
     public void updateCategorySuccessTest(){
         String body = "{\"id\":201,\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
-        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(200 == response.getStatusCode().value());
     }
 
@@ -166,36 +163,32 @@ public class CategoryManagmentTest {
     public void updateCategoryNoIdTest(){
         String body = "{\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
-        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
-        Assert.assertTrue(response.getBody().getStatus().equals("MISSING_PARAM: ID"));
     }
 
     @Test
     public void updateCategoryNoEntityTest(){
         String body = "{\"id\":2000009,\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
-        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
-        Assert.assertTrue(response.getBody().getStatus().equals("EntityNotFound: category"));
     }
 
     @Test
     public void updateCategoryInvalidNameTest(){
         String body = "{\"id\":202,\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes\", \"operation\": \"update\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
-        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
-        Assert.assertTrue(response.getBody().getStatus().equals("INVALID_PARAMETERS: name"));
     }
 
     @Test
     public void updateCategoryNonExistingParentTest(){
         String body = "{\"id\":202,\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 200}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
-        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
-        Assert.assertTrue(response.getBody().getStatus().equals("INVALID_PARAMETERS: parent_id"));
     }
 
     @Test
