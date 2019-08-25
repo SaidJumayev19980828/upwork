@@ -12,17 +12,18 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Objects;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.BrandsRepository;
@@ -35,6 +36,7 @@ import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductImageUpdateDTO;
 import com.nasnav.dto.ProductImgDTO;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductSortOptions;
@@ -46,12 +48,13 @@ import com.nasnav.dto.VariantFeatureDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductImagesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
+import com.nasnav.response.ProductImageDeleteResponse;
+import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.sun.istack.logging.Logger;
 
@@ -82,6 +85,10 @@ public class ProductService {
 	private final ProductFeaturesRepository productFeaturesRepository;
 
 	private final StockServiceImpl stockService;
+	
+	@Autowired
+	private  FileService fileService;
+	
 	
 	@Autowired
 	private EmployeeUserRepository empRepo;
@@ -925,6 +932,298 @@ public class ProductService {
 		
 		productRepository.deleteById(productId);
 		return new ProductUpdateResponse(true, productId);
+	}
+
+
+
+	public ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		validateProductImg(file, imgMetaData);
+		
+		ProductImageUpdateResponse response = saveProductImg(file, imgMetaData);
+		return response;
+	}
+
+
+
+	/**
+	 * assert all required parameters are validated before calling this, so we don't validate twice and
+	 * validation should be centralized !
+	 * if something fails here due to invalid data , then the validation should be fixed!
+	 * */
+	private ProductImageUpdateResponse saveProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		Operation opr = imgMetaData.getOperation();
+		
+		if(opr.equals(Operation.CREATE))
+			return saveNewProductImg(file, imgMetaData);
+		else
+			return saveUpdatedProductImg(file, imgMetaData);
+	}
+
+
+
+
+	private ProductImageUpdateResponse saveUpdatedProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());		
+		
+		
+		Long imgId = imgMetaData.getImageId();		
+		ProductImagesEntity entity = productImagesRepository.findById(imgId).get();
+		
+		
+		
+		String url = null;
+		String oldUrl = null;
+		if(file != null && !file.isEmpty()) {
+			 url = fileService.saveFile(file, user.getOrganizationId());
+			 oldUrl = entity.getUri();
+		}		
+		
+		
+		//to update a value , it should be already present in the JSON		
+		if(imgMetaData.isUpdated("priority"))
+			entity.setPriority( imgMetaData.getPriority() );
+		
+		if(imgMetaData.isUpdated("type"))
+			entity.setType( imgMetaData.getType() );
+		
+		if(imgMetaData.isUpdated("productId")) {
+			Long productId = imgMetaData.getProductId();
+			Optional<ProductEntity> productEntity = productRepository.findById( productId );
+			entity.setProductEntity(productEntity.get());
+		}
+		
+		if(url != null)
+			entity.setUri(url);
+		
+		if(imgMetaData.isUpdated("variantId")) {
+			Optional.ofNullable( imgMetaData.getVariantId() )
+					.flatMap(productVariantsRepository::findById)
+					.ifPresent(entity::setProductVariantsEntity);
+		}		
+		
+		entity = productImagesRepository.save(entity);
+		
+		if(url != null && oldUrl != null) {
+			fileService.deleteFileByUrl(oldUrl);
+		}
+		
+		return new ProductImageUpdateResponse(entity.getId(), url);
+	}
+
+
+
+
+	private ProductImageUpdateResponse saveNewProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData)
+			throws BusinessException {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		
+		String url = fileService.saveFile(file, user.getOrganizationId());
+		
+		Long imgId = saveProductImgToDB(imgMetaData, url);
+		
+		return new ProductImageUpdateResponse(imgId, url);
+	}
+
+
+
+
+	private Long saveProductImgToDB(ProductImageUpdateDTO imgMetaData, String uri) throws BusinessException {
+		Long productId = imgMetaData.getProductId();
+		Optional<ProductEntity> productEntity = productRepository.findById( productId );
+		
+		
+		ProductImagesEntity entity = new ProductImagesEntity();
+		entity.setPriority(imgMetaData.getPriority());
+		entity.setProductEntity(productEntity.get());		
+		entity.setType(imgMetaData.getType());
+		entity.setUri(uri);
+		Optional.ofNullable( imgMetaData.getVariantId() )
+				.flatMap(productVariantsRepository::findById)
+				.ifPresent(entity::setProductVariantsEntity);
+		
+		entity = productImagesRepository.save(entity);
+		
+		return entity.getId();
+	}
+
+
+
+
+	private void validateProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		if(imgMetaData == null)
+			throw new BusinessException("No Metadata provided for product image!", "INVALID PARAM", HttpStatus.NOT_ACCEPTABLE);
+		
+		if(!imgMetaData.isRequiredPropertyProvided("operation"))
+			throw new BusinessException("No operation provided!", "INVALID PARAM:operation", HttpStatus.NOT_ACCEPTABLE);
+					
+		
+		if(imgMetaData.getOperation().equals( Operation.CREATE )) {
+			validateNewProductImg(file, imgMetaData);
+		}else {
+			validateUpdatedProductImg(file, imgMetaData);
+		}
+			
+	}
+
+
+
+
+	private void validateUpdatedProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		if(!imgMetaData.areRequiredForUpdatePropertiesProvided()) {
+			throw new BusinessException(
+					String.format("Missing required parameters! required parameters for updating existing image are: %s", imgMetaData.getRequiredPropertiesForDataUpdate())
+					, "MISSING PARAM"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		validateProductOfImg(imgMetaData);		
+		
+		validateImgId(imgMetaData);
+		
+		if(file != null)
+			validateProductImgFile(file);	
+		
+	}
+
+
+
+
+	private void validateImgId(ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		//based on previous validations assert imageId is provided 
+		Long imgId = imgMetaData.getImageId();
+		
+		if( !productImagesRepository.existsById(imgId))
+			throw new BusinessException(
+					String.format("No product image exists with id: %d !", imgId)
+					, "INVALID PARAM:image_id"
+					, HttpStatus.NOT_ACCEPTABLE);
+	}
+
+
+
+
+	private void validateNewProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		if(!imgMetaData.areRequiredForCreatePropertiesProvided()) {
+			throw new BusinessException(
+					String.format("Missing required parameters! required parameters for adding new image are: %s", imgMetaData.getRequiredPropertiesForDataCreate())
+					, "MISSING PARAM"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		validateProductOfImg(imgMetaData);
+		
+		validateProductImgFile(file);		
+	}
+
+
+
+
+	private void validateProductOfImg(ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		
+		Long productId = imgMetaData.getProductId();		
+		Optional<ProductEntity> product = productRepository.findById(productId);
+		if( product.isEmpty() )
+			throw new BusinessException(
+					String.format("Product Id :[%d] doesnot exists!", productId)
+					, "INVALID PARAM:product_id"
+					, HttpStatus.NOT_ACCEPTABLE);		
+		
+		
+		validateUserCanModifyProduct(product);		
+		
+		validateProductVariant(imgMetaData, productId);
+			
+	}
+
+
+
+
+	private void validateProductVariant(ProductImageUpdateDTO imgMetaData, Long productId) throws BusinessException {
+		Long variantId = imgMetaData.getVariantId();		
+		if(variantId != null ) {
+			Optional<ProductVariantsEntity> variant = productVariantsRepository.findById(variantId);
+			if(variantId != null && variant.isEmpty())
+				throw new BusinessException(
+						String.format("Product variant with id [%d] doesnot exists!", variantId)
+						, "INVALID PARAM:variant_id"
+						, HttpStatus.NOT_ACCEPTABLE);
+			
+			
+			if(variantNotForProduct(variant, productId))
+				throw new BusinessException(
+						String.format("Product variant with id [%d] doesnot belong to product with id [%d]!", variantId, productId)
+						, "INVALID PARAM:variant_id"
+						, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+
+
+	/**
+	 * product must follow the organization of the user 
+	 * */
+	private void validateUserCanModifyProduct(Optional<ProductEntity> product) throws BusinessException {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		Long userOrg = user.getOrganizationId();
+		Long productOrg = product.get().getOrganizationId();
+		
+		if(!Objects.equal(userOrg, productOrg))
+			throw new BusinessException(
+					String.format("User with email [%s] have no rights to modify products from organization of id[%d]!", user.getEmail(), productOrg)
+					, "INSUFFICIENT RIGHTS"
+					, HttpStatus.FORBIDDEN);
+	}
+
+
+
+	
+
+	private Boolean variantNotForProduct(Optional<ProductVariantsEntity> variant, Long productId) {
+		Boolean variantNotForProduct = variant.get().getProductEntity() == null 
+											|| !variant.get().getProductEntity().getId().equals(productId);
+		return variantNotForProduct;
+	}
+
+
+
+	
+
+	private void validateProductImgFile(MultipartFile file) throws BusinessException {
+		if(file == null || file.isEmpty() || file.getContentType() == null)
+			throw new BusinessException(
+					"No image file provided!"
+					, "MISSIG PARAM:image"
+					, HttpStatus.NOT_ACCEPTABLE);
+		
+		String mimeType = file.getContentType();
+		if(!mimeType.startsWith("image"))
+			throw new BusinessException(
+					String.format("Invalid file type[%]! only MIME 'image' types are accepted!", mimeType)
+					, "MISSIG PARAM:image"
+					, HttpStatus.NOT_ACCEPTABLE);
+	}
+
+
+
+	
+
+	public ProductImageDeleteResponse deleteImage(Long imgId) throws BusinessException {
+		ProductImagesEntity img = 
+				productImagesRepository.findById(imgId)
+				 				.orElseThrow(()-> new BusinessException("No Image exists with id ["+ imgId+"] !", "INVALID PARAM:image_id", HttpStatus.NOT_ACCEPTABLE));
+		
+		Long productId = Optional.ofNullable(img.getProductEntity())
+				.map(prod -> prod.getId())
+				.orElse(null);
+		
+		productImagesRepository.deleteById(imgId);
+		
+		fileService.deleteFileByUrl(img.getUri());
+		
+		return new ProductImageDeleteResponse(productId);
 	}
 
 }

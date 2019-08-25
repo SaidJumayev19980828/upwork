@@ -1,16 +1,24 @@
 package com.nasnav.controller;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
-import com.nasnav.dto.ProductUpdateDTO;
+import com.nasnav.dto.ProductImageUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.response.ProductImageDeleteResponse;
+import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.service.ProductService;
 
@@ -60,6 +68,44 @@ public class ProductsController {
             @RequestParam("product_id") Long productId)
             		throws BusinessException {
 		return productService.deleteProduct(productId);
+    }
+	
+	
+	
+	
+	
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Product image created or updated"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+	@ResponseStatus(HttpStatus.OK)
+	@PostMapping(value = "image",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ProductImageUpdateResponse updateProductImage(
+            @RequestPart("image") @Valid MultipartFile file,
+            @RequestPart("properties") @Valid ProductImageUpdateDTO imgMetaData)
+            		throws BusinessException {
+
+		return  productService.updateProductImage(file, imgMetaData);
+    }
+	
+	
+	@ApiOperation(value = "delete image for product", nickname = "product image delete", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Product image deleted"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+	@ResponseStatus(HttpStatus.OK)
+	@DeleteMapping(value = "image",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ProductImageDeleteResponse deleteProductImage(@RequestParam("image_id") @Valid Long imageId)
+            		throws BusinessException {
+		return  productService.deleteImage(imageId);
     }
 	
 }

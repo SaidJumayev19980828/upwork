@@ -26,8 +26,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -38,7 +36,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.context.support.TestPropertySourceUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
@@ -435,31 +432,6 @@ public class FilesApiTest {
 		 }
 		 
 		 assertFileSavedToDb(fileName, orgId, expectedUrl, expectedPath);
-	}
-
-}
-
-
-//overrides the property "files.basepath" to use temp dir
-class BaseDirInitialzer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
-
-	@Override
-	public void initialize(ConfigurableApplicationContext applicationContext) {
-			setBasePathAsTempDir(applicationContext);
-	}
-	
-	
-	public static void setBasePathAsTempDir(ConfigurableApplicationContext applicationContext) {
-		Path tempDirPath;
-		try {
-			tempDirPath = Files.createTempDirectory("_nasnav_test_");
-		} catch (IOException e) {			
-			e.printStackTrace();
-			tempDirPath = Paths.get("src/test/resources/test_files_base_dir");
-		}	
-		
-		TestPropertySourceUtils.addInlinedPropertiesToEnvironment(applicationContext,
-		        "files.basepath=" + tempDirPath.toString().replace("\\", "/") );
 	}
 
 }

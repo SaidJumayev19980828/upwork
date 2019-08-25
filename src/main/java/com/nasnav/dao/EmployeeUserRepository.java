@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 
 
@@ -37,6 +38,7 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	boolean existsByIdAndAuthenticationToken(Long userId, String authenticationToken);
 
 	EmployeeUserEntity getByIdAndAuthenticationToken(Long userId, String authToken);
+	
 }
 
 

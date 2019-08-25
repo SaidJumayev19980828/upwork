@@ -128,6 +128,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         return filter;
     }
 
+    
     @Bean
     public AuthenticationFailureHandler customAuthenticationHandler() {
         return new AuthenticationHandler();
