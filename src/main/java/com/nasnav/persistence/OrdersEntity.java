@@ -90,24 +90,26 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 //	private Long shopId;
 	//TODO decide between relational or not
 	//@JsonIgnore
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne()
 	@JoinColumn(name = "shop_id", nullable = false)
 	private ShopsEntity shopsEntity;
 
 	//TODO decide if deprecated or not
 	@JsonIgnore
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne()
 	@JoinColumn(name = "organization_id", nullable = false)
 	private OrganizationEntity organizationEntity;
 
-    @OneToOne(mappedBy = "ordersEntity", fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "ordersEntity")
     private BasketsEntity basketsEntity;
 
 	@Override
 	public BaseRepresentationObject getRepresentation() {
 		OrderRepresentationObject orderRepresentationObject = new OrderRepresentationObject();
 		orderRepresentationObject.setId(getId());
-		orderRepresentationObject.setUserId(getUserId());
+		if (getUserId() != null){
+			orderRepresentationObject.setUserId(getUserId());
+		}
 		if (shopsEntity != null) {
 			orderRepresentationObject.setShopId(shopsEntity.getId());
 		}
