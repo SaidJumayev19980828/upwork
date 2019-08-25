@@ -86,7 +86,7 @@ public class ShopsUpdateTest {
     @Test
     public void testCreateShopDifferentRoles(){
         // create shop using Org_Mananger role (test success)
-        String body = "{\"org_id\":801,\"shop_name\":\"Test_shop\"}";
+        String body = "{\"org_id\":99001,\"shop_name\":\"Test_shop\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,70,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
@@ -133,7 +133,7 @@ public class ShopsUpdateTest {
 
     @Test
     public void testCreateShopDifferentData(){
-        String body = "{\"org_id\":801,\n" +
+        String body = "{\"org_id\":99001,\n" +
                 "  \"address_country\": \"Egypt\",\n" +
                 "  \"address_floor\": \"Second\",\n" +
                 "  \"address_lat\": 30.0595581,\n" +
@@ -158,7 +158,7 @@ public class ShopsUpdateTest {
     @Test
     public void testUpdateShopDifferentData(){
         //create a shop first
-        String body = "{\"org_id\":801,\n" +
+        String body = "{\"org_id\":99001,\n" +
                 "  \"address_country\": \"Egypt\",\n" +
                 "  \"address_floor\": \"Second\",\n" +
                 "  \"address_lat\": 30.0595581,\n" +
@@ -174,16 +174,13 @@ public class ShopsUpdateTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,70,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
-        //shopsRepository.deleteById(jsonResponse.getLong("store_id"));
-
-//        Assert.assertEquals("", true, jsonResponse.getBoolean("success"));
-//        Assert.assertEquals(200, response.getStatusCode().value());
+        
 
         //get created shop entity
         ShopsEntity oldShop = shopsRepository.findById(jsonResponse.getLong("store_id")).get();
         //update shop data and check if other data remain the same
-        body = "{\"org_id\":801,\n" +
-                "\"id\":"+oldShop.getId()+",\n" +
+        body = "{\"org_id\":99001,\n" +
+                "\"id\":" + oldShop.getId() +",\n" +
                 "  \"brand_id\": 102,\n" +
                 "  \"shop_name\": \"Different Shop\"\n" + "}";
         json = TestCommons.getHttpEntity(body,70,"161718");
@@ -195,6 +192,7 @@ public class ShopsUpdateTest {
         Assert.assertEquals(oldShop.getFloor(), newShop.getFloor());
         Assert.assertEquals(oldShop.getBanner(), newShop.getBanner());
         Assert.assertEquals(oldShop.getLogo(), newShop.getLogo());
+        
         //check if changes applied
         Assert.assertEquals(new Long(102), newShop.getBrandId());
         Assert.assertEquals("Different Shop", newShop.getName());

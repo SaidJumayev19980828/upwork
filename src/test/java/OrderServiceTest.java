@@ -27,6 +27,7 @@ import org.springframework.http.*;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.NavBox;
 import com.nasnav.controller.OrdersController;
@@ -112,7 +113,7 @@ public class OrderServiceTest {
 			persistentUser.setCreatedAt(LocalDateTime.now());
 			persistentUser.setUpdatedAt(LocalDateTime.now());
 			persistentUser.setAuthenticationToken("7657595");
-			persistentUser.setOrganizationId(801L);
+			persistentUser.setOrganizationId(99001L);
 			persistentUser.setEncryptedPassword("---");
 			userRepository.save(persistentUser);
 		}
@@ -241,22 +242,19 @@ public class OrderServiceTest {
 		Assert.assertEquals(INVALID_ORDER, response.getBody().getStatus());
 		Assert.assertFalse(response.getBody().isSuccess());
 	}
+	
+	
 
 	@Test
 	public void createnewOrder() {
 		Integer quantity = 5;
 		BigDecimal itemPrice = new BigDecimal(500).setScale(2);
 
+		// testing different combinations of price/quantity
 		// scope == 1: both price and quantity available in the table
-		for (int scope = 1; scope < 3; scope++) {
-			ShopsEntity shopsEntity = new ShopsEntity();
-			shopsEntity.setName("any");
-			shopsEntity.setCreatedAt(new Date());
-			shopsEntity.setUpdatedAt(new Date());
-			shopsEntity = shopsRepository.save(shopsEntity);
+		for (int scope = 1; scope < 3; scope++) {			
 
-			StocksEntity stocksEntity = new StocksEntity();
-			stocksEntity.setCreationDate(new Date());
+			StocksEntity stocksEntity = stockRepository.findById(601L).get();
 			if (scope < 3) {
 				stocksEntity.setPrice(itemPrice);
 			} else {
@@ -267,8 +265,6 @@ public class OrderServiceTest {
 			} else {
 				stocksEntity.setQuantity(0);
 			}
-			stocksEntity.setUpdateDate(new Date());
-			stocksEntity.setShopsEntity(shopsEntity);
 			stocksEntity = stockRepository.save(stocksEntity);
 
 			ResponseEntity<OrderResponse> response = template.postForEntity("/order/update",
@@ -279,12 +275,10 @@ public class OrderServiceTest {
 					OrderResponse.class);
 
 			basketRepository.deleteByOrdersEntity_Id(response.getBody().getOrderId());
-			stockRepository.delete(stocksEntity);
 
 			if (response.getBody().getOrderId() != null) {
 				orderRepository.deleteById(response.getBody().getOrderId());
 			}
-			shopsRepository.delete(shopsEntity);
 
 			if (scope != 2) {
 				Assert.assertEquals(HttpStatus.CREATED.value(), response.getStatusCode().value());
@@ -299,37 +293,36 @@ public class OrderServiceTest {
 
 			}
 		}
+		
 	}
+	
+	
+	
 
 	@Test
 	public void updateCurrentOrder() {
+		Long stockId = 601L;
+		StocksEntity stocksEntity = stockRepository.findById(stockId).get();
+		ShopsEntity shopsEntity = stocksEntity.getShopsEntity();
 
-		BigDecimal amount = new BigDecimal(500.25);
-		ShopsEntity shopsEntity = new ShopsEntity();
-		shopsEntity.setName("any");
-		shopsEntity.setCreatedAt(new Date());
-		shopsEntity.setUpdatedAt(new Date());
-		shopsEntity = shopsRepository.save(shopsEntity);
+		
+		//modify stock data for the test
 		Integer quantity = 5;
-		BigDecimal itemPrice = new BigDecimal(500).setScale(2);
-		Long stockId = null;
-		StocksEntity stocksEntity = new StocksEntity();
-		stocksEntity.setCreationDate(new Date());
+		BigDecimal itemPrice = new BigDecimal(500).setScale(2);		
 		stocksEntity.setPrice(itemPrice);
 		stocksEntity.setQuantity(quantity);
-		stocksEntity.setUpdateDate(new Date());
-		stocksEntity.setShopsEntity(shopsEntity);
 		stocksEntity = stockRepository.save(stocksEntity);
 
-		stockId = stocksEntity.getId();
-
-		OrdersEntity ordersEntity = new OrdersEntity();
-//		ordersEntity.setCreationDate(new Date());
-
+		//create order
+		BigDecimal amount = new BigDecimal(500.25);
+		OrganizationEntity organizationEntity = stocksEntity.getOrganizationEntity();
+		OrdersEntity ordersEntity = new OrdersEntity();		
 		ordersEntity.setAmount(amount);
 		ordersEntity.setShopsEntity(shopsEntity);
 		ordersEntity.setStatus(OrderStatus.NEW.getValue());
+		ordersEntity.setCreationDate(new Date());
 		ordersEntity.setUpdateDate(new Date());
+		ordersEntity.setOrganizationEntity(organizationEntity);
 		ordersEntity = orderRepository.save(ordersEntity);
 
 		// try updating with a non-existing order number
@@ -338,10 +331,6 @@ public class OrderServiceTest {
 						+ stockId + ", \"quantity\": " + quantity + "}] }",
 				persistentUser.getId(), persistentUser.getAuthenticationToken()), OrderResponse.class);
 
-		basketRepository.deleteByOrdersEntity_Id(response.getBody().getOrderId());
-		stockRepository.delete(stocksEntity);
-		orderRepository.delete(ordersEntity);
-		shopsRepository.delete(shopsEntity);
 
 		Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
 		Assert.assertNull(response.getBody().getStatus());
@@ -352,7 +341,7 @@ public class OrderServiceTest {
 	@Test
 	public void updateOrderNonExistingStatusTest() {
 		StocksEntity stock = createStock();
-		// create a new order, then take it's oder id and try to make an update using it
+		// create a new order, then take it's order id and try to make an update using it
 		ResponseEntity<OrderResponse> response = null;
 		response = template.postForEntity("/order/update",
 				TestCommons.getHttpEntity("{ \"status\" : \"NEW\", \"basket\": [ { \"stock_id\":" + stock.getId() + ", \"quantity\": " +  stock.getQuantity() + "} ] }",
@@ -379,35 +368,20 @@ public class OrderServiceTest {
 
 		orderRepository.deleteById(orderId);
 	}
+	
+	
+	
 
-	private StocksEntity createStock() {
-		//create product
-		ProductEntity product = new ProductEntity();
-		product.setName("product one");
-		product.setCreationDate(new Date());
-		product.setUpdateDate(new Date());
-		ProductEntity productEntity = productRepository.save(product);
-
-		BigDecimal amount = new BigDecimal(500.25);
-		ShopsEntity shopsEntity = new ShopsEntity();
-		shopsEntity.setName("any");
-		shopsEntity.setCreatedAt(new Date());
-		shopsEntity.setUpdatedAt(new Date());
-		shopsEntity = shopsRepository.save(shopsEntity);
-		Integer quantity = 5;
-		BigDecimal itemPrice = new BigDecimal(500).setScale(2);
-		Long stockId = null;
-		//create stock
-		StocksEntity stock = new StocksEntity();
+	private StocksEntity createStock() {		
+		StocksEntity stock = stockRepository.findById(601L).get();
 		stock.setPrice(new BigDecimal(100));
-		stock.setCreationDate(new Date());
-		stock.setUpdateDate(new Date());
-		stock.setProductEntity(productEntity);
 		stock.setQuantity(100);
-		stock.setShopsEntity(shopsEntity);
 		StocksEntity stockEntity = stockRepository.save(stock);
 		return stockEntity;
 	}
+	
+	
+	
 
 	@Test // Nasnav_Admin diffterent filters test
 	public void ordersListNasnavAdminDifferentFiltersTest() {
@@ -509,7 +483,7 @@ public class OrderServiceTest {
 		long count = body.length();
 
 		Assert.assertTrue(200 == response.getStatusCode().value());
-		Assert.assertEquals("user#70 is Organization employee in org#99003 so he can view all orderes within org#803", 7, count);
+		Assert.assertEquals("user#70 is Organization employee in org#99003 so he can view all orderes within org#99003", 7, count);
 
 		header = TestCommons.getHeaders(69, "131415");
 		response = template.exchange("/order/list", HttpMethod.GET, new HttpEntity<>(header), String.class);
@@ -548,17 +522,16 @@ public class OrderServiceTest {
 	@Test
 	public void ordersListInvalidfiltersTest() {
 		// by store_id only
-		ResponseEntity<String> response = template.exchange("/order/list?store_id=503", HttpMethod.GET,
-				new HttpEntity<>(TestCommons.getHeaders(88, "123")), String.class);
+		ResponseEntity<String> response = template.exchange("/order/list?store_id=550", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders(68, "101112")), String.class);
 		JSONArray body = new JSONArray(response.getBody());
 		long count = body.length();
 
 		Assert.assertTrue(200 == response.getStatusCode().value());
-		Assert.assertEquals("No orders with store_id = 503 ", 0, count);
+		Assert.assertEquals("No orders with store_id = 550 ", 0, count);
 
 		// by user_id
-		response = template.exchange("/order/list?user_id=90", HttpMethod.GET,
-				new HttpEntity<>(TestCommons.getHeaders(88, "abdcefg")), String.class);
+		response = template.exchange("/order/list?user_id=99", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders(68, "101112")), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
@@ -566,16 +539,16 @@ public class OrderServiceTest {
 		Assert.assertEquals("no orders with user_id = 99",0,count);
 
 		// by org_id
-		response = template.exchange("/order/list?org_id=880", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders(68, "101112")), String.class);
+		response = template.exchange("/order/list?org_id=999999", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders(68, "101112")), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
 		Assert.assertTrue(200 == response.getStatusCode().value());
-		Assert.assertEquals("no orders with org_id = 880",0,count);
+		Assert.assertEquals("no orders with org_id = 999999",0,count);
 
 		// by status
-		response = template.exchange("/order/list?user_id=88&status=invalid_status", HttpMethod.GET,
-				new HttpEntity<>(TestCommons.getHeaders(88, "abdcefg")), String.class);
+		response = template.exchange("/order/list?status=invalid_status", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders(68, "101112")), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 

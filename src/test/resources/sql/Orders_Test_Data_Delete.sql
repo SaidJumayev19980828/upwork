@@ -1,4 +1,6 @@
 ----------------------------deleting previous data----------------------------
+DELETE FROM public.baskets WHERE stock_id IN (SELECT Id from public.stocks where organization_id between 99000 and 99999);
+delete from public.stocks where organization_id between 99000 and 99999;
 delete from public.orders where id between 32 and 48;
 delete from public.shops where id between 501 and 506;
 delete from public.role_employee_users; --where id between 20 and 21;

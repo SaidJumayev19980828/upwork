@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 
 import javax.persistence.*;
 
+import lombok.ToString;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -30,6 +31,8 @@ public class BasketsEntity extends AbstractPersistable<Long> implements BaseEnti
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "order_id", referencedColumnName = "id")
     @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private OrdersEntity ordersEntity;
 
     @OneToOne(cascade = CascadeType.MERGE)

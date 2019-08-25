@@ -69,3 +69,11 @@ insert into orders(id,user_id,created_at, updated_at, organization_id,status,sho
 insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(46, 90, now(), now(), 99002, 1, 502);
 insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(47, 89, now(), now(), 99001, 1, 502);
 insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(48, 89, now(), now(), 99002, 0, 502);
+
+
+
+--inserting products
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
+
+-- inserting stocks
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(601, 502, 0, now(), now(), 99001, 0.0, 1001);
