@@ -1,3 +1,4 @@
+import org.apache.http.entity.ContentType;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -40,5 +41,11 @@ public class TestCommons {
         headers.add("User-ID", Long.toString(userId));
         headers.add("User-Token", authToken);
         return headers;
+    }
+
+    public static HttpEntity<Object> getHttpEntity(MultiValueMap json, long userId, String authToken, MediaType type) {
+        HttpHeaders headers = authHeaders(userId, authToken);
+        headers.setContentType(type);
+        return new HttpEntity<>(json, headers);
     }
 }

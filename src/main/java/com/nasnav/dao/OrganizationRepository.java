@@ -15,6 +15,8 @@ public interface OrganizationRepository extends JpaRepository<OrganizationEntity
     OrganizationEntity findOneByNameContainingIgnoreCase(String name);
 
     OrganizationEntity findOneById(Long id);
+
+    OrganizationEntity findByPname(String pname);
 }
 
 
