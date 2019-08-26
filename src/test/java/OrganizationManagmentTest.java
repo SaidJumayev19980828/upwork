@@ -155,7 +155,7 @@ public class OrganizationManagmentTest {
     }
 
     @Test
-    public void createOrganizationSuccesstest() {
+    public void createOrganizationSuccessTest() {
         String body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad-pant\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, 68, "abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
@@ -165,7 +165,7 @@ public class OrganizationManagmentTest {
     }
 
     @Test
-    public void createOrganizationMissingValuestest() {
+    public void createOrganizationMissingValuesTest() {
         String body = "{\"p_name\":\"solad-pant\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, 68, "abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
@@ -179,7 +179,7 @@ public class OrganizationManagmentTest {
     }
 
     @Test
-    public void createOrganizationInvalidValuestest() {
+    public void createOrganizationInvalidValuesTest() {
         String body = "{\"name\":\"23Solad Pant\", \"p_name\":\"solad-pant\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, 68, "abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,

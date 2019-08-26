@@ -10,37 +10,32 @@ import org.springframework.http.HttpStatus;
 public class OrganizationResponse {
 
     @JsonProperty(value = "success")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
     private boolean success;
 
     @JsonProperty(value = "organization_id")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     private Long organizationId;
 
-    @JsonProperty(value = "status")
+    @JsonProperty(value = "brand_id")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    private String status;
-
-    @JsonProperty(value = "description")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    private String description;
+    private Long brandId;
 
     @JsonIgnore
     @Getter
     private HttpStatus httpStatus;
 
 
-    public OrganizationResponse(Long organizationId){
+    public OrganizationResponse(Long id, int type){
         this.success = true;
-        this.organizationId = organizationId;
         this.httpStatus = HttpStatus.OK;
+        if (type == 0)
+            this.organizationId = id;
+        else if (type == 1)
+            this.brandId = id;
     }
 
-    public OrganizationResponse(String status, String description){
-        this.success = false;
-        this.status = status;
-        this.description = description;
-        this.httpStatus = HttpStatus.NOT_ACCEPTABLE;
-    }
+
     public OrganizationResponse(){
         this.success = true;
         this.httpStatus = HttpStatus.OK;

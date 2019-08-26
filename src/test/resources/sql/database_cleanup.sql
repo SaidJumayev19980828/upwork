@@ -13,6 +13,7 @@ DELETE FROM public.roles WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.social_links WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.Files WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.organization_themes WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.categories WHERE id between 200 AND 205;
 DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;
 
