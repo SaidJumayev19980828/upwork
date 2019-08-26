@@ -3,23 +3,27 @@ package com.nasnav.service;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.OrganizationThemeRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.SocialRepository;
 import com.nasnav.dao.ExtraAttributesRepository;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.dto.OrganizationThemesRepresentationObject;
 import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.ProductFeatureDTO;
 import com.nasnav.dto.SocialRepresentationObject;
 import com.nasnav.dto.ExtraAttributesRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.OrganizationThemeEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.SocialEntity;
 import com.nasnav.persistence.ExtraAttributesEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,6 +40,9 @@ public class OrganizationService {
     private final BrandsRepository brandsRepository;
 
     private final ExtraAttributesRepository extraAttributesRepository;
+    
+    @Autowired
+	private ProductFeaturesRepository featureRepo;
 
     @Autowired
     public OrganizationService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository, SocialRepository socialRepository,
@@ -125,5 +132,15 @@ public class OrganizationService {
                 .collect(Collectors.toList());
         return response;
     }
+    
+    
+    
+
+	public List<ProductFeatureDTO> getProductFeatures(Long orgId) {
+		List<ProductFeaturesEntity> entities = featureRepo.findByOrganizationId(orgId);
+		return entities.stream()
+					.map(ProductFeatureDTO::new)
+					.collect(Collectors.toList());
+	}
 
 }
