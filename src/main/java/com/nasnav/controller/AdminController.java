@@ -27,14 +27,6 @@ public class AdminController {
 	@Autowired
 	private OrganizationService organizationService;
 
-	public AdminController(CategoryService categoryService) {
-        this.categoryService = categoryService;
-    }
-
-    public AdminController(OrganizationService organizationService) {
-        this.organizationService = organizationService;
-    }
-
     @ApiOperation(value = "Create an Organization", nickname = "OrganizationCreation", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -44,7 +36,7 @@ public class AdminController {
     @PostMapping(value = "organization", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity createOrganization(@RequestHeader (value = "User-ID") Long userId,
                                              @RequestHeader (value = "User-Token") String userToken,
-                                             @RequestBody OrganizationDTO.OrganizationCreationDTO json) {
+                                             @RequestBody OrganizationDTO.OrganizationCreationDTO json)  throws BusinessException {
 	    OrganizationResponse response = organizationService.createOrganization(json);
 	    return new ResponseEntity(response, response.getHttpStatus());
     }
