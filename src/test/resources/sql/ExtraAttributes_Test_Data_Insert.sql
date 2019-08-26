@@ -1,9 +1,3 @@
-----------------------------deleting previous data----------------------------
-delete from public.extra_attributes where id between 701 and 702;
-delete from public.organizations where id between 99001 and 99002;
-
-----------------------------inserting dummy data----------------------------
-
 --inserting organizations
 INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001, 'organization_1', now(), now());
 INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());
