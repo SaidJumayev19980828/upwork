@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper=true)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class ProductDetailsDTO extends ProductRepresentationObject {
 	private String description;

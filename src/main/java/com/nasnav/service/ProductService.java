@@ -1,16 +1,49 @@
 package com.nasnav.service;
 
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.persistence.EntityManager;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JacksonJsonParser;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import com.nasnav.dao.BundleRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ProductImagesRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductImgDTO;
+import com.nasnav.dto.ProductRepresentationObject;
+import com.nasnav.dto.ProductSortOptions;
+import com.nasnav.dto.ProductsResponse;
+import com.nasnav.dto.StockDTO;
+import com.nasnav.dto.VariantDTO;
+import com.nasnav.dto.VariantFeatureDTO;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.BundleEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.ProductImagesEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.StocksEntity;
+import com.nasnav.request.BundleSearchParam;
+import com.nasnav.response.BundleResponse;
 
 @Service
 public class ProductService {
@@ -38,6 +71,9 @@ public class ProductService {
 	private final ProductFeaturesRepository productFeaturesRepository;
 
 	private final StockServiceImpl stockService;
+	
+	@Autowired
+	private EntityManager em;
 
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
@@ -662,6 +698,39 @@ public class ProductService {
 		}
 
 		return productsResponse;
+	}
+
+
+
+
+	public BundleResponse getBundles(BundleSearchParam params) {
+		//validate params 
+		if(params.getBundleId() == null && params.getOrgId() == null)
+		throw new BusinessException("Missing request parameters either bundle_Id or org_id must be provided!"
+									, "MISSING PARAM:bundle_id,org_id"
+									, HttpStatus.NOT_ACCEPTABLE);
+		
+		
+		CriteriaBuilder builder = em.getCriteriaBuilder();		 
+		CriteriaQuery<BundleEntity> criteria = builder.createQuery(BundleEntity.class);		 
+		Root<BundleEntity> root = criteria.from(BundleEntity.class);
+		 
+		
+		if(params.getBundleId() != null)
+			criteria.where(builder.equal(root, y))
+		
+		criteria.where(
+		    builder.equal(root.get("owner"), "Vlad")
+		);
+		 
+		List<BundleEntity> topics = entityManager
+		.createQuery(criteria)
+		.getResultList();
+		 
+		assertEquals(2, topics.size());
+		
+		
+		return new BundleResponse(0L, Arrays.asList());
 	}
 
 }

@@ -1,22 +1,22 @@
-package com.nasnav.dto;
+package com.nasnav.response;
 
-import java.math.BigDecimal;
+import java.util.List;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.dto.BundleDTO;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
+@AllArgsConstructor
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @EqualsAndHashCode(callSuper=true)
-public class ProductRepresentationObject extends ProductBaseInfo{
-    
-    private BigDecimal price;
-    private Boolean available;
-    private Long categoryId;
-    private Long brandId;
-    private String barcode;
-    
+public class BundleResponse extends BaseResponse {
+	
+	private Long total;
+	private List<BundleDTO> bundles;
+	
 }
