@@ -11,8 +11,8 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.util.Date;
 
-@Table
-@Entity(name = "brands")
+@Entity
+@Table(name = "brands")
 @Data
 public class BrandsEntity implements BaseEntity{
 
