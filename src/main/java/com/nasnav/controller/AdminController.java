@@ -1,13 +1,13 @@
 package com.nasnav.controller;
 
 import com.nasnav.dto.OrganizationDTO;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.service.OrganizationService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +34,7 @@ public class AdminController {
     @PostMapping(value = "organization", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity createOrganization(@RequestHeader (value = "User-ID") Long userId,
                                          @RequestHeader (value = "User-Token") String userToken,
-                                         @RequestBody OrganizationDTO.OrganizationCreationDTO json) {
+                                         @RequestBody OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
         OrganizationResponse response = organizationService.createOrganization(json);
         return new ResponseEntity(response, response.getHttpStatus());
     }
