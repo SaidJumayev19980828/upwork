@@ -38,7 +38,7 @@ public class ProductUpdateDTO  extends ProductEntity{
     
     @Override
     @JsonIgnore
-    public BaseRepresentationObject getRepresentation() {
+    public ProductRepresentationObject getRepresentation() {
     	return super.getRepresentation();
     }
     

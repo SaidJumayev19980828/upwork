@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,13 +13,15 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-import org.apache.commons.beanutils.BeanUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Order;
+import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
-import org.json.JSONObject;
+import org.apache.commons.beanutils.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.http.HttpStatus;
@@ -31,6 +34,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
+import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.BrandsRepository;
@@ -42,6 +46,8 @@ import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
+import com.nasnav.dto.BundleDTO;
+import com.nasnav.dto.ProductBaseInfo;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductImageUpdateDTO;
 import com.nasnav.dto.ProductImgDTO;
@@ -62,9 +68,9 @@ import com.nasnav.persistence.ProductImagesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.request.BundleSearchParam;
+import com.nasnav.response.BundleResponse;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
-import com.nasnav.response.BundleResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.sun.istack.logging.Logger;
 
@@ -1238,34 +1244,129 @@ public class ProductService {
 		
 		return new ProductImageDeleteResponse(productId);
 	}
+	
+	
+	
 
 	public BundleResponse getBundles(BundleSearchParam params) throws BusinessException {
 		//validate params 
-		if(params.getBundleId() == null && params.getOrgId() == null)
-		throw new BusinessException("Missing request parameters either bundle_Id or org_id must be provided!"
+		if(params.getBundle_id() == null && params.getOrg_id() == null)
+		throw new BusinessException("Missing request parameters! Either bundle_Id or org_id must be provided!"
 									, "MISSING PARAM:bundle_id,org_id"
 									, HttpStatus.NOT_ACCEPTABLE);
 		
 		
 		CriteriaBuilder builder = em.getCriteriaBuilder();		 
-		CriteriaQuery<BundleEntity> criteria = builder.createQuery(BundleEntity.class);		 
-		Root<BundleEntity> root = criteria.from(BundleEntity.class);
+		CriteriaQuery<BundleEntity> query = builder.createQuery(BundleEntity.class);		 
+		Root<BundleEntity> root = query.from(BundleEntity.class);
 		 
+		Predicate[] predicatesArr = getBundleQueryPredicates(params, builder, root);
+		Order orderBy = getBundleQueryOrderBy(params, builder, root);
 		
-//		if(params.getBundleId() != null)
-//			criteria.where(builder.equal(root, y))
+		query.where(predicatesArr);
+		query.orderBy(orderBy);
+	
+		List<BundleDTO> bundleDTOList = em.createQuery(query)
+											 .setMaxResults(params.getCount())
+											 .setFirstResult(params.getStart())
+											 .getResultList()
+											 .stream()
+											 .map(this::toBundleDTO)
+											 .collect(Collectors.toList());
 		
-		criteria.where(
-		    builder.equal(root.get("owner"), "Vlad")
-		);
+		Long count = getQueryCount(builder, predicatesArr);
+		
+		return new BundleResponse( count,  bundleDTOList);
+	}
+
+
+
+
+	private Long getQueryCount(CriteriaBuilder builder, Predicate[] predicatesArr) {
+		CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
+		countQuery.select(  builder.count( countQuery.from(BundleEntity.class) ) )
+				  .where(predicatesArr);
+		Long count = em.createQuery(countQuery).getSingleResult();
+		return count;
+	}
+
+
+
+
+	private Predicate[] getBundleQueryPredicates(BundleSearchParam params, CriteriaBuilder builder,
+			Root<BundleEntity> root) {
+		List<Predicate> predicates = new ArrayList<>();
+		
+		if(params.getBundle_id() != null)
+			predicates.add( builder.equal(root.get("id"), params.getBundle_id()) );
+		else
+			predicates.add( builder.equal(root.get("organizationId"), params.getOrg_id()) );
+		
+		if(params.getCategory_id() != null)
+			predicates.add( builder.equal(root.get("categoryId"), params.getCategory_id() ));
+		
+		
+		Predicate[] predicatesArr = predicates.stream().toArray( Predicate[]::new) ;
+		return predicatesArr;
+	}
+
+
+
+
+	private Order getBundleQueryOrderBy(BundleSearchParam params, CriteriaBuilder builder, Root<BundleEntity> root) {
+//		CriteriaBuilder builder = em.getCriteriaBuilder();	
+		Path orderByAttr = root.get(params.getSort().getValue());
+		Order orderBy = builder.asc(orderByAttr);
+		if(params.getOrder().equals(SortOrder.DESC))
+			orderBy = builder.desc(orderByAttr);
+		
+		return orderBy;
+	}
+	
+	
+	
+	
+	
+	private BundleDTO toBundleDTO(BundleEntity entity) {
+		BundleDTO dto = new BundleDTO();
+		
+		dto.setId(entity.getId());
+		dto.setImageUrl(entity.getCoverImage());
+		dto.setName(entity.getName());
+		dto.setPname(entity.getPname());
+		
+		Optional.ofNullable(entity.getBundleVirtualStockItem())
+				.map(StocksEntity::getPrice)
+				.ifPresent(dto::setPrice);
+		
+		List<Long> productIdList = bundleRepository.GetBundleItemsProductIds(entity.getId());
+		List<ProductBaseInfo> productlist = productRepository.findByIdInOrderByNameAsc(productIdList)
+															.stream()
+															.map(ProductEntity::getRepresentation)
+															.map(this::toProductBaseInfo)
+															.collect(Collectors.toList());
+		
+		dto.setProducts( productlist );
+		
+		return dto;
+	}
+	
+	
+	
+	private ProductBaseInfo toProductBaseInfo(ProductRepresentationObject source) {
+		ProductBaseInfo baseInfo = new ProductBaseInfo();
+		try {
+			BeanUtils.copyProperties(baseInfo, source);
+		} catch (IllegalAccessException | InvocationTargetException e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new RuntimeException(
+						 String.format( "Failed to copy data from class of type [%s] to a class of type [%s]"
+								 	, source.getClass().getName() 
+								 	, baseInfo.getClass().getName() )
+							);
+		}
 		 
-		List<BundleEntity> topics = em.createQuery(criteria)
-										.getResultList();
-		 
-		
-		
-		
-		return new BundleResponse(0L, Arrays.asList());
+		 return baseInfo;
 	}
 
 }

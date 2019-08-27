@@ -25,6 +25,6 @@ public class BundleEntity extends ProductEntity{
     private Set<StocksEntity> items;
     
     
-    @OneToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.EAGER, mappedBy = "productEntity")
     private StocksEntity bundleVirtualStockItem;
 }

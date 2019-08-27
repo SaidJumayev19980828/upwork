@@ -43,18 +43,18 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @SuppressWarnings("unchecked")
 	private static Map<String, Set<Roles>> permissions = Stream.of(new Object[][] {
-				    { "/order/**" 		, getAllRoles() },
-				    { "/stock/**" 		, getNonCustomersRoles() },
-				    { "/shop/**"		, setOf(Roles.ORGANIZATION_MANAGER, Roles.STORE_MANAGER) },
-				    { "/user/list"		, getAllRoles() },
-				    { "/user/create"	, setOf(Roles.NASNAV_ADMIN, Roles.ORGANIZATION_ADMIN, Roles.STORE_ADMIN) },
-				    { "/user/update"	, getAllRoles() },
-				    { "/product/**"		, setOf(Roles.ORGANIZATION_ADMIN)},
-				    { "/admin/**"	    , new HashSet<Roles>(Arrays.asList(Roles.NASNAV_ADMIN)) },
-				    { "/files/**"		, getAllRoles() },
-                    { "/admin/organization", new HashSet<Roles>(Arrays.asList(Roles.NASNAV_ADMIN))},
-                    { "/organization/info", new HashSet<Roles>(Arrays.asList(Roles.ORGANIZATION_ADMIN))},
-                    { "/organization/brand", new HashSet<Roles>(Arrays.asList(Roles.ORGANIZATION_ADMIN))},
+				    { "/order/**" 			, getAllRoles() },
+				    { "/stock/**" 			, getNonCustomersRoles() },
+				    { "/shop/**"			, setOf(Roles.ORGANIZATION_MANAGER, Roles.STORE_MANAGER) },
+				    { "/user/list"			, getAllRoles() },
+				    { "/user/create"		, setOf(Roles.NASNAV_ADMIN, Roles.ORGANIZATION_ADMIN, Roles.STORE_ADMIN) },
+				    { "/user/update"		, getAllRoles() },
+//				    { "/product/**"			, setOf(Roles.ORGANIZATION_ADMIN)},
+				    { "/admin/**"	   	 	, new HashSet<Roles>(Arrays.asList(Roles.NASNAV_ADMIN)) },
+				    { "/files/**"			, getAllRoles() },
+                    { "/admin/organization"	, new HashSet<Roles>(Arrays.asList(Roles.NASNAV_ADMIN))},
+                    { "/organization/info"	, new HashSet<Roles>(Arrays.asList(Roles.ORGANIZATION_ADMIN))},
+                    { "/organization/brand"	, new HashSet<Roles>(Arrays.asList(Roles.ORGANIZATION_ADMIN))},
     }).collect(Collectors.toMap(data -> (String) data[0], data -> (Set<Roles>) data[1]));
 
     //TODO: currently the AuthenticationFilter calls the authentication process
@@ -72,7 +72,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , "/user/register"
 		                , "/shop/update"
 		                , "/order/list"
-                        , "/payment/**");
+                        , "/payment/**"
+                        , "/product/bundles");
 
     AuthenticationProvider provider;
 

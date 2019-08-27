@@ -108,7 +108,7 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
 //    private OrganizationEntity organizationEntity;
 
     @Override
-    public BaseRepresentationObject getRepresentation() {
+    public ProductRepresentationObject getRepresentation() {
         ProductRepresentationObject productRepresentationObject = new ProductRepresentationObject();
         productRepresentationObject.setId(getId());
         productRepresentationObject.setImageUrl(getCoverImage());
