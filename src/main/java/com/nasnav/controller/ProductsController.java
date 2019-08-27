@@ -52,7 +52,7 @@ public class ProductsController {
     public ProductUpdateResponse updateProduct(           
             @RequestBody String productJson)
             		throws BusinessException {
-		return productService.updateProduct(productJson);
+		return productService.updateProduct(productJson, false);
     }
 	
 	
@@ -130,5 +130,24 @@ public class ProductsController {
     public BundleResponse getBundles( BundleSearchParam params)
             		throws BusinessException {
 		return productService.getBundles(params);
+    }
+	
+	
+	
+	
+	@ApiOperation(value = "Create or update a bundle", nickname = "bundle update", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Bundle created or updated"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "info",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ProductUpdateResponse updateBundle(           
+            @RequestBody String productJson)
+            		throws BusinessException {
+		return productService.updateProduct(productJson, true);
     }
 }

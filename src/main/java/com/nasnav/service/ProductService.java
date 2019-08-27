@@ -65,6 +65,7 @@ import com.nasnav.persistence.BundleEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductImagesEntity;
+import com.nasnav.persistence.ProductTypes;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.request.BundleSearchParam;
@@ -737,7 +738,7 @@ public class ProductService {
 	
 	
 	
-	public ProductUpdateResponse updateProduct(String productJson) throws BusinessException {
+	public ProductUpdateResponse updateProduct(String productJson, Boolean isBundle) throws BusinessException {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
 		
@@ -752,7 +753,7 @@ public class ProductService {
 		
 		validateProductDto(rootNode, user);
 		
-		ProductEntity entity = prepareProdcutEntity(rootNode, user);
+		ProductEntity entity = prepareProdcutEntity(rootNode, user,isBundle);
 		ProductEntity saved = productRepository.save(entity);
 		
 		return new ProductUpdateResponse(true, saved.getId());		
@@ -761,7 +762,7 @@ public class ProductService {
 
 
 
-	private ProductEntity prepareProdcutEntity(JsonNode productJsonNode, BaseUserEntity user)
+	private ProductEntity prepareProdcutEntity(JsonNode productJsonNode, BaseUserEntity user, Boolean isBundle)
 			throws BusinessException {
 		
 		Long id = productJsonNode.path("product_id").asLong();
@@ -770,8 +771,11 @@ public class ProductService {
 		
 		ProductEntity entity;
 		
-		if(Operation.CREATE.equals(operation))
-			entity = new ProductEntity();	
+		if(Operation.CREATE.equals(operation)) {
+			entity = new ProductEntity();
+			if(isBundle)
+				entity.setProductType(ProductTypes.BUNDLE);
+		}			
 		else {
 			entity = productRepository.findById(id)
 							.orElseThrow(()-> new BusinessException("No prodcut exists with  ID: "+ id, "INVALID_PARAM:id" , HttpStatus.NOT_ACCEPTABLE));
@@ -793,6 +797,7 @@ public class ProductService {
 			BeanUtils.copyProperties(productDto, entity);
 			
 			//readerForUpdating makes the reader update the properties that ONLY exists in JSON string
+			//That's why we are parsing the JSON instead of spring (-_-)
 			ObjectMapper mapper = createObjectMapper();
 			productDto = mapper.readerForUpdating(productDto).readValue(productJsonNode.toString());
 			
