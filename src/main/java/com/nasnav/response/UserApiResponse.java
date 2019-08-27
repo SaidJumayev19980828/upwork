@@ -33,7 +33,6 @@ public class UserApiResponse extends BaseResponse implements Serializable {
     @JsonProperty(value = "messages")
     private List<String> messages;
 
-
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonProperty(value = "token")
     private String token;
@@ -50,10 +49,21 @@ public class UserApiResponse extends BaseResponse implements Serializable {
     @JsonProperty(value = "store_id")
     private Long storeId;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonProperty(value = "user_name")
+    private String name;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonProperty(value = "email")
+    private String email;
+
     public UserApiResponse(boolean success, Long entityId, List<ResponseStatus> responseStatuses,
-                           String token, List<String> roles, Long organizationId, Long storeId) {
+                           String token, List<String> roles, Long organizationId, Long storeId,
+                           String name, String email) {
         this.success = success;
         this.entityId = entityId;
+        this.name = name;
+        this.email = email;
         this.responseStatuses = responseStatuses;
         this.token = token;
         this.roles = roles;

@@ -180,6 +180,8 @@ public class SecurityServiceImpl implements SecurityService {
 		return new ApiResponseBuilder()
 				.setSuccess(true)
 				.setEntityId( userEntity.getId() )
+				.setName(userEntity.getName())
+				.setEmail(userEntity.getEmail())
 				.setToken( userEntity.getAuthenticationToken() )
 				.setRoles( userRepo.getUserRoles(userEntity) )
 				.setOrganizationId( organizationId != null ? organizationId : 0L)
