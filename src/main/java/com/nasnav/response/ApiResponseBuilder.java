@@ -33,6 +33,11 @@ public class ApiResponseBuilder implements Serializable {
         return this;
     }
 
+    public ApiResponseBuilder setMessage(String message) {
+        this.message = message;
+        return this;
+    }
+
     public ApiResponseBuilder setEntityId(Long entityId) {
         this.entityId = entityId;
         return this;

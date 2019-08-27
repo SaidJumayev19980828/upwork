@@ -58,7 +58,7 @@ public class NavBoxTest {
     @Value("classpath:sql/ExtraAttributes_Test_Data_Insert.sql")
     private Resource extraAttributesDataInsert;
 
-    @Value("classpath:sql/ExtraAttributes_Test_Data_Delete.sql")
+    @Value("classpath:sql/database_cleanup.sql")
     private Resource extraAttributesDataDelete;
 
     @Autowired

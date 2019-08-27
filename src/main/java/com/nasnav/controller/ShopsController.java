@@ -35,9 +35,7 @@ public class ShopsController {
                                       @RequestHeader(name = "User-Token") String userToken,
                                       @RequestBody ShopJsonDTO shopJson) throws BusinessException {
         ShopResponse response;
-        if (!employeeUserService.checkAuthToken(loggedUserId, userToken)){
-            response = new ShopResponse(Collections.singletonList(ResponseStatus.UNAUTHENTICATED), HttpStatus.UNAUTHORIZED);
-        } else if (shopJson.getId() == null){
+        if (shopJson.getId() == null){
             response = shopService.createShop(loggedUserId, shopJson);
         } else {
             response = shopService.updateShop(loggedUserId, shopJson);
