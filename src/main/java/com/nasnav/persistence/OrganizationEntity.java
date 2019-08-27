@@ -44,8 +44,6 @@ public class OrganizationEntity extends AbstractPersistable<Long> implements Bas
     @Column(name = "updated_at")
     private Date updatedAt = new Date();
 
-
-
     public OrganizationEntity() {
         id = null;
     }

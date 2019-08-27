@@ -39,8 +39,6 @@ import java.sql.SQLException;
 @PropertySource("classpath:database.properties")
 public class ShopsUpdateTest {
 
-    private MockMvc mockMvc;
-
     @Autowired
     private TestRestTemplate template;
 
@@ -65,7 +63,7 @@ public class ShopsUpdateTest {
     @Before
     public void setup() {
         config.mailDryRun = true;
-        mockMvc = MockMvcBuilders.standaloneSetup(shopsController).build();
+        MockMvcBuilders.standaloneSetup(shopsController).build();
         PerformSqlScript(userDataInsert);
     }
 
@@ -101,7 +99,7 @@ public class ShopsUpdateTest {
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
         Assert.assertEquals("", false, jsonResponse.getBoolean("success"));
-        Assert.assertEquals(401, response.getStatusCode().value());
+        Assert.assertEquals(403, response.getStatusCode().value());
 
         // create shop using Nasnav_Admin role (test fail)
         json = TestCommons.getHttpEntity(body,68,"101112");
@@ -109,7 +107,7 @@ public class ShopsUpdateTest {
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
         Assert.assertEquals("", false, jsonResponse.getBoolean("success"));
-        Assert.assertEquals(401, response.getStatusCode().value());
+        Assert.assertEquals(403, response.getStatusCode().value());
 
         // create shop using Org_Admin role (test fail)
         json = TestCommons.getHttpEntity(body,69,"131415");
@@ -117,7 +115,7 @@ public class ShopsUpdateTest {
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
         Assert.assertEquals("", false, jsonResponse.getBoolean("success"));
-        Assert.assertEquals(401, response.getStatusCode().value());
+        Assert.assertEquals(403, response.getStatusCode().value());
     }
 
     @Test
@@ -128,7 +126,7 @@ public class ShopsUpdateTest {
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
         Assert.assertEquals("", false, jsonResponse.getBoolean("success"));
-        Assert.assertEquals(401, response.getStatusCode().value());
+        Assert.assertEquals(403, response.getStatusCode().value());
     }
 
     @Test

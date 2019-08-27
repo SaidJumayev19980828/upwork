@@ -28,12 +28,12 @@ public class ProductImagesEntity extends AbstractPersistable<Long> implements Ba
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private Long id;
 	
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne
     @JoinColumn(name = "product_id", referencedColumnName = "id")
     @JsonIgnore
     private ProductEntity productEntity;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne
     @JoinColumn(name = "variant_id", referencedColumnName = "id")
     @JsonIgnore
     private ProductVariantsEntity productVariantsEntity;

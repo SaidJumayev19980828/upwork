@@ -1,0 +1,231 @@
+import com.nasnav.AppConfig;
+import com.nasnav.NavBox;
+import com.nasnav.controller.AdminController;
+import com.nasnav.dao.CategoryRepository;
+import com.nasnav.response.CategoryResponse;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.skyscreamer.jsonassert.JSONParser;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Objects;
+
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
+@PropertySource("classpath:database.properties")
+public class CategoryManagmentTest {
+    private MockMvc mockMvc;
+    @Mock
+    private AdminController adminController;
+    @Autowired
+    private AppConfig config;
+    @Autowired
+    private TestRestTemplate template;
+    @Autowired
+    private CategoryRepository categoryRepository;
+    @Value("classpath:sql/Category_Test_Data_Insert.sql")
+    private Resource categoryDataInsert;
+    @Value("classpath:sql/database_cleanup.sql")
+    private Resource databaseCleanup;
+    @Autowired
+    private DataSource datasource;
+
+    @Before
+    public void setup() {
+        config.mailDryRun = true;
+        mockMvc = MockMvcBuilders.standaloneSetup(adminController).build();
+        cleanup();
+        try (Connection con = datasource.getConnection()) {
+            ScriptUtils.executeSqlScript(con, categoryDataInsert);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @After
+    public void cleanup() {
+        try (Connection con = datasource.getConnection()) {
+            ScriptUtils.executeSqlScript(con, databaseCleanup);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void getCategoryListDifferentFiltersTest(){
+        // with no filters
+        ResponseEntity<String> response =  template.getForEntity("/navbox/categories", String.class);
+        JSONArray json = new JSONArray(response.getBody());
+        assertEquals("there are 4 Categories in total",4 , json.length());
+
+        // with organization_id = 99001
+        response =  template.getForEntity("/navbox/categories?org_id=99001", String.class);
+        json = new JSONArray(response.getBody());
+        assertEquals("there are 3 Categories used by org 99001",3 , json.length());
+
+        // with organization_id = 99002
+        response =  template.getForEntity("/navbox/categories?org_id=99002", String.class);
+        json = new JSONArray(response.getBody());
+        assertEquals("there are 2 Categories used by org 99002",2 , json.length());
+
+        // with category_id = 201
+        response =  template.getForEntity("/navbox/categories?category_id=201", String.class);
+        json = new JSONArray(response.getBody());
+        assertEquals("category 201 has 2 children .. 3 total Categories",3 , json.length());
+
+        // with category_id = 202
+        response =  template.getForEntity("/navbox/categories?category_id=202", String.class);
+        json = new JSONArray(response.getBody());
+        assertEquals("category 202 has 1 children .. 2 total Categories",2 , json.length());
+
+        // with category_id = 203
+        response =  template.getForEntity("/navbox/categories?category_id=203", String.class);
+        json = new JSONArray(response.getBody());
+        assertEquals("category 203 has no children .. 1 total Category",1 , json.length());
+        //checking returned json properties
+        assertTrue(response.getBody().contains("\"id\":203"));
+        assertTrue(response.getBody().contains("\"name\":\"category_3\""));
+        assertTrue(response.getBody().contains("\"logo_url\":\"logo_3\""));
+        assertTrue(response.getBody().contains("\"parent_id\":201"));
+        assertTrue(response.getBody().contains("\"p_name\":\"category-3\""));
+    }
+
+    //createCategory
+    @Test
+    public void createCategorySuccessTest(){
+        String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 202}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        categoryRepository.deleteById(response.getBody().getCategoryId());
+        Assert.assertTrue(200 == response.getStatusCode().value());
+    }
+
+    @Test
+    public void createCategoryMissingNameTest(){
+        String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\", \"operation\": \"create\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
+        Assert.assertTrue(406 == response.getStatusCode().value());
+    }
+
+    @Test
+    public void createCategoryInvalidNameTest(){
+        String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes\", \"operation\": \"create\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
+        Assert.assertTrue(406 == response.getStatusCode().value());
+    }
+
+    @Test
+    public void createCategoryNonExistingParentTest(){
+        String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 200}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
+        Assert.assertTrue(406 == response.getStatusCode().value());
+    }
+
+    @Test
+    public void updateCategorySuccessTest(){
+        String body = "{\"id\":201,\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
+        Assert.assertTrue(200 == response.getStatusCode().value());
+    }
+
+    @Test
+    public void updateCategoryNoIdTest(){
+        String body = "{\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
+        Assert.assertTrue(406 == response.getStatusCode().value());
+    }
+
+    @Test
+    public void updateCategoryNoEntityTest(){
+        String body = "{\"id\":2000009,\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
+        Assert.assertTrue(406 == response.getStatusCode().value());
+    }
+
+    @Test
+    public void updateCategoryInvalidNameTest(){
+        String body = "{\"id\":202,\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes\", \"operation\": \"update\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
+        Assert.assertTrue(406 == response.getStatusCode().value());
+    }
+
+    @Test
+    public void updateCategoryNonExistingParentTest(){
+        String body = "{\"id\":202,\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 200}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
+        Assert.assertTrue(406 == response.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteCategorySuccessTest(){
+        //create a category
+        String body = "{\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 202}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,68,"abcdefg");
+        ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
+        Assert.assertTrue(200 == response.getStatusCode().value());
+        //delete created category
+        HttpHeaders header = TestCommons.getHeaders(68,"abcdefg");
+        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id="+response.getBody().getCategoryId(),
+                HttpMethod.DELETE, new HttpEntity<>(header), String.class);
+        Assert.assertTrue(200 == deleteResponse.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteCategoryMissingIdTest(){
+        HttpHeaders header = TestCommons.getHeaders(68,"abcdefg");
+        ResponseEntity<String> deleteResponse = template.exchange("/admin/category",
+                HttpMethod.DELETE, new HttpEntity<>(header), String.class);
+        Assert.assertTrue(400 == deleteResponse.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteCategoryMissingCategoryTest(){
+        HttpHeaders header = TestCommons.getHeaders(68,"abcdefg");
+        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=206",
+                HttpMethod.DELETE, new HttpEntity<>(header), String.class);
+        Assert.assertTrue(406 == deleteResponse.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteCategoryUsedCategoryTest(){
+        HttpHeaders header = TestCommons.getHeaders(68,"abcdefg");
+        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=204",
+                HttpMethod.DELETE, new HttpEntity<>(header), String.class);
+        Assert.assertTrue(409 == deleteResponse.getStatusCode().value());
+    }
+}

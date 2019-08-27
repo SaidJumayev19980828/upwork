@@ -21,6 +21,7 @@ public class BusinessException extends Exception {
     private HttpStatus httpStatus;
 
     public BusinessException(String errorMessage, String errorCode, HttpStatus httpStatus) {
+    	super(errorMessage);
         this.errorMessage = errorMessage;
         this.errorCode = errorCode;
         this.httpStatus = httpStatus;

@@ -22,7 +22,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper=true)
 public class Organization_BrandRepresentationObject extends BaseRepresentationObject {
 
-    @JsonProperty("id")
+    @JsonProperty("brand_id")
     private Long id;
     @JsonProperty("name")
     private String name;
@@ -32,7 +32,7 @@ public class Organization_BrandRepresentationObject extends BaseRepresentationOb
     private String displayName;
     @JsonProperty("category_id")
     private Integer categoryId;
-    @JsonProperty("logo_url")
+    @JsonProperty("logo")
     private String logoUrl;
     @JsonProperty("banner")
     private String bannerImage;

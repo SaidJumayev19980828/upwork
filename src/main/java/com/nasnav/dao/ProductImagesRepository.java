@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.repository.CrudRepository;
 
@@ -11,4 +12,6 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 	List<ProductImagesEntity> findByProductEntity_Id(Long productId);
 	
 	List<ProductImagesEntity> findByProductVariantsEntity_Id(Long productVariantId);
+	
+	Optional<ProductImagesEntity> findByUri(String uri);
 }

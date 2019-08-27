@@ -12,6 +12,6 @@ public interface FilesRepository extends JpaRepository<FileEntity, Long> {
 
 	boolean existsByLocation(String uniqueLocation);
 
-	FileEntity findByUrl(String expectedUrl);
+	FileEntity findByUrl(String url);
 	
 }

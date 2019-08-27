@@ -69,7 +69,7 @@ public class ShopService {
         List<String> userRoles = employeeUserServicehelper.getEmployeeUserRoles(userId);
         Long employeeUserOrgId = employeeUserRepository.getById(userId).getOrganizationId();
         if (!userRoles.contains("ORGANIZATION_MANAGER") || !employeeUserOrgId.equals(shopJson.getOrgId())){
-            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.UNAUTHORIZED);
+            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.FORBIDDEN);
         }
         ShopsEntity shopsEntity = new ShopsEntity();
         BeanUtils.copyProperties(shopJson, shopsEntity);
@@ -86,13 +86,13 @@ public class ShopService {
         Long employeeUserOrgId = employeeUserRepository.getById(userId).getOrganizationId();
         Long employeeUserShopId = employeeUserRepository.getById(userId).getId();
         if (!userRoles.contains("ORGANIZATION_MANAGER") && !userRoles.contains("STORE_MANAGER")){
-            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.UNAUTHORIZED);
+            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.FORBIDDEN);
         }
         if (userRoles.contains("ORGANIZATION_MANAGER") && !employeeUserOrgId.equals(shopJson.getOrgId())){
-            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.UNAUTHORIZED);
+            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.FORBIDDEN);
         }
         if (userRoles.contains("STORE_MANAGER") && !employeeUserShopId.equals(shopJson.getId())){
-            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.UNAUTHORIZED);
+            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.FORBIDDEN);
         }
         ShopsEntity shopsEntity = shopsRepository.findById(shopJson.getId()).get();
         if ( shopsEntity == null) {
