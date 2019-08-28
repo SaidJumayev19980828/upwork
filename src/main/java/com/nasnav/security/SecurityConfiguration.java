@@ -40,32 +40,29 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     private static  RequestMatcher publicUrlList ;
 
     
-    //TODO: currently the AuthenticationFilter calls the authentication process
-    //and it takes the "permissions" url patterns to work on.
-    //which means,**ANY URL IS PERMITTED BY DEFAULT**, this should be changed, but 
-    //currently PUBLIC_URLS can't intersected with PROTECTED_URLS.
-    //i.e if a url matches a pattern in both protected URL's and PUBLIC_URL
-    //it will be authenticated.
+    //- Any url is authenticated by default.
+    //- to permit a url to all users without AuthN, add it to PUBLIC_URLS.
+    //- to set certain roles who can access the url, add it in "permissions"
+    //- note that the request url is matched against the patterns IN ORDER, so  
+    //	universal patterns like "/**" must always be the last one.
+    //- to created a pattern use one of the overloads of "patternOf" method, each adds
+    //	more fine grained control of the permission (by HttpMethod, by roles) 
 	private  List<AuthPattern> permissions = Arrays.asList(
-					    patternOf( "/order/**"	 								, getAllRoles() ),
+						
+					    patternOf( "/order/**"),
 						patternOf( "/stock/**"	 								, getNonCustomersRoles() ),
 						patternOf( "/shop/**"									, setOf(Roles.ORGANIZATION_MANAGER, Roles.STORE_MANAGER) ),
-						patternOf( "/user/list"									, getAllRoles() ),
+						patternOf( "/user/list"),
 						patternOf( "/user/create"								, setOf(Roles.NASNAV_ADMIN, Roles.ORGANIZATION_ADMIN, Roles.STORE_ADMIN) ),
 						patternOf( "/user/update"								, getAllRoles() ),
-						patternOf( "/product/bundles"		,HttpMethod.POST	, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/product/bundles"		,HttpMethod.DELETE	, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/product/info"			,HttpMethod.POST	, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/product/info"			,HttpMethod.DELETE	, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/product/image"			,HttpMethod.POST	, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/product/image"			,HttpMethod.DELETE	, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/product/variant"		,HttpMethod.POST	, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/product/variant"		,HttpMethod.DELETE	, setOf(Roles.ORGANIZATION_ADMIN)),
+						patternOf( "/product/**"			,HttpMethod.POST	, setOf(Roles.ORGANIZATION_ADMIN)),
+						patternOf( "/product/**"			,HttpMethod.DELETE	, setOf(Roles.ORGANIZATION_ADMIN)),
 						patternOf( "/admin/**"	   	 							, setOf(Roles.NASNAV_ADMIN) ),
-						patternOf( "/files/**"									, getAllRoles() ),
+						patternOf( "/files/**"),
 						patternOf( "/admin/organization"						, setOf(Roles.NASNAV_ADMIN)),
 						patternOf( "/organization/info"							, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/organization/brand"						, setOf(Roles.ORGANIZATION_ADMIN))
+						patternOf( "/organization/brand"						, setOf(Roles.ORGANIZATION_ADMIN)),
+						patternOf( "/**")
 						);
 
    
@@ -79,10 +76,11 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 		                , patternOf("/shop/update")
 		                , patternOf("/order/list")
                         , patternOf("/payment/**")
-                        , patternOf("/product/bundles"	, HttpMethod.GET)
-                        , patternOf("/product/info"		, HttpMethod.GET)
-                        , patternOf("/product/image"	, HttpMethod.GET)
-                        , patternOf("/product/variant"	, HttpMethod.GET)
+                        , patternOf("/product/bundles"		, HttpMethod.GET)
+                        , patternOf("/product/info"			, HttpMethod.GET)
+                        , patternOf("/product/image"		, HttpMethod.GET)
+                        , patternOf("/product/variant"		, HttpMethod.GET)
+                        , patternOf("/organization/brands"	, HttpMethod.GET)
                  );
 
     AuthenticationProvider provider;
@@ -104,25 +102,31 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         auth.authenticationProvider(provider);
     }
 
+    
     @Override
     public void configure(final WebSecurity webSecurity) {
-        PUBLIC_URLS.stream().forEach( pattern -> webSecurity.ignoring().antMatchers(pattern.getHttpMethod(), pattern.getUrlPattern()));
+    	//we need to ignore the public url's from the whole security
+    	//instead of just permitting it for all users using http.antMatchers(url).permitAll().
+    	//Because we authenticate using a custom authentication filter, which apparently is
+    	//applied in all cases of authentication.
+    	//So we need to bypass the request of the public url from the whole security filter chain.
+    	 
+    	webSecurity.ignoring().requestMatchers(publicUrlList);
     }
+    
+    
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
-    	permissions.forEach(pattern -> configureUrlAllowedRoles(http, pattern));
 
+        permissions.forEach(pattern -> configureUrlAllowedRoles(http, pattern));
+        
         http
         .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         .and()
         	.authenticationProvider(provider)
         	.addFilterBefore(authenticationFilter(), AnonymousAuthenticationFilter.class)
-        	.authorizeRequests()
-        		.requestMatchers(publicUrlList).permitAll()
-//        		.anyRequest().authenticated()        	//adding this causes unauthenticated responses to have status 403, it overrided the
-        .and()
         	.exceptionHandling()
         	.accessDeniedHandler(new NasnavAccessDeniedHandler()) //return a custom response 403 with a body containing {success=false} , don't know why we need it ..
         .and()
@@ -133,12 +137,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             .formLogin().disable()
             .httpBasic().disable()
             .logout().disable();
+        
     }
     
     
     
 
-    @Bean
     AuthenticationFilter authenticationFilter() throws Exception {
         final AuthenticationFilter filter = new AuthenticationFilter(protectedUrlList);
         filter.setAuthenticationManager(authenticationManager());

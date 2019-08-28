@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static com.nasnav.security.AuthenticationFilter.TOKEN_HEADER;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -47,7 +48,7 @@ import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.persistence.FileEntity;
 import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.security.AuthenticationFilter;
+
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -238,7 +239,7 @@ public class FilesApiTest {
 		 MockMultipartFile file = new MockMultipartFile("file", "", "image/png", new byte[0]);		 
 		    mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
                  .file(file)
-                 .header(AuthenticationFilter.TOKEN_HEADER, "101112")
+                 .header(TOKEN_HEADER, "101112")
                  .param("org_id",  orgIdStr))
              .andExpect(status().is(406));
 		 
@@ -265,7 +266,7 @@ public class FilesApiTest {
 		    mockMvc.perform(
 		    		MockMvcRequestBuilders.multipart("/files")
 		                 .file(file)
-		                 .header(AuthenticationFilter.TOKEN_HEADER, "101112")
+		                 .header(TOKEN_HEADER, "101112")
 		                 .param("org_id",  orgIdStr))
 		    .andExpect(status().is(200))
             .andExpect(content().string(expectedUrl));
@@ -293,7 +294,7 @@ public class FilesApiTest {
 		 ResultActions result = 
 		    mockMvc.perform(MockMvcRequestBuilders.multipart("/files")
 								                 .file(file)
-								                 .header(AuthenticationFilter.TOKEN_HEADER, "101112")
+								                 .header(TOKEN_HEADER, "101112")
 								                 .param("org_id",  orgIdStr));
 		return result;
 	}
@@ -321,7 +322,7 @@ public class FilesApiTest {
 		 
 		 MvcResult result = mockMvc.perform( 
 				 						MockMvcRequestBuilders.get("/files/"+ expectedUrl)
-				 								.header(AuthenticationFilter.TOKEN_HEADER, "101112")
+				 								.header(TOKEN_HEADER, "101112")
 				 								.contentType(MediaType.ALL_VALUE)				 
 				 				)
  								.andExpect(status().is(200))
@@ -347,7 +348,7 @@ public class FilesApiTest {
 	public void downloadFileUrlNotExists() throws Exception {		
 		 mockMvc.perform( 
  						MockMvcRequestBuilders.get("/files/NON_EXISTING")
- 								.header(AuthenticationFilter.TOKEN_HEADER, "101112")
+ 								.header(TOKEN_HEADER, "101112")
  								.contentType(MediaType.ALL_VALUE)				 
  				)
 				.andExpect(status().is(406))
@@ -360,7 +361,7 @@ public class FilesApiTest {
 	public void downloadFileUrlInvalid() throws Exception {		
 		 mockMvc.perform( 
  						MockMvcRequestBuilders.get("/files")
- 								.header(AuthenticationFilter.TOKEN_HEADER, "101112")
+ 								.header(TOKEN_HEADER, "101112")
  								.contentType(MediaType.ALL_VALUE)				 
  				)
 				.andExpect(status().is(406))
@@ -405,7 +406,7 @@ public class FilesApiTest {
 		 
 		mockMvc.perform( 
 					MockMvcRequestBuilders.get("/files/"+ expectedUrl)
-							.header(AuthenticationFilter.TOKEN_HEADER, "101112")
+							.header(TOKEN_HEADER, "101112")
 							.contentType(MediaType.ALL_VALUE)				 
 			)
 		.andExpect(status().is(406))
