@@ -959,6 +959,32 @@ public class ProductService {
 		productRepository.deleteById(productId);
 		return new ProductUpdateResponse(true, productId);
 	}
+	
+	
+	
+	public ProductUpdateResponse deleteBundle(Long productId) throws BusinessException {
+		validateBundleToDelete(productId);
+		
+		return deleteProduct(productId);
+	}
+
+
+
+	private void validateBundleToDelete(Long productId) throws BusinessException {
+		if(!bundleRepository.existsById(productId) 
+					&& productRepository.existsById(productId)) {
+			
+			throw new BusinessException(
+					String.format("Can only delete bundles using this API, product with id[%d] is not a bundle!", productId)
+					, "INVALID PARAM:product_id"
+					, HttpStatus.NOT_ACCEPTABLE);
+			
+		}
+			
+		//check if the bundle is in order	
+		
+	}
+
 
 
 

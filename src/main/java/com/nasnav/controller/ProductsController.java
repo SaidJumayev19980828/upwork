@@ -142,12 +142,31 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
-    @PostMapping(value = "bundles",
+    @PostMapping(value = "bundle",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ProductUpdateResponse updateBundle(           
             @RequestBody String productJson)
             		throws BusinessException {
 		return productService.updateProduct(productJson, true);
+    }
+	
+	
+	
+	
+	@ApiOperation(value = "deletes a bundle", nickname = "bundle delete", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Bundle Deleted"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @DeleteMapping(value = "bundle",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ProductUpdateResponse deleteBundle(           
+            @RequestParam("product_id") Long productId)
+            		throws BusinessException {
+		return productService.deleteBundle(productId);
     }
 }
