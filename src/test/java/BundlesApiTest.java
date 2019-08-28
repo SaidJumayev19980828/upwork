@@ -159,10 +159,8 @@ public class BundlesApiTest {
 
 
 
-	private ResponseEntity<String> performHttpGet(String url) {		
-		BaseUserEntity user = empUserRepo.getById(69L);
-		HttpEntity request =  TestCommons.getHttpEntity( "" , user.getId(), user.getAuthenticationToken());
-		ResponseEntity<String> response = template.exchange(url, HttpMethod.GET, request, String.class);
+	private ResponseEntity<String> performHttpGet(String url) {				
+		ResponseEntity<String> response = template.getForEntity(url, String.class);
 		return response;
 	}
 	
@@ -213,8 +211,41 @@ public class BundlesApiTest {
 	
 	
 	@Test
+	public void createBundleNoAuthNTest() throws JsonProcessingException{
+		
+		JSONObject bundle = createNewDummyProduct();
+		
+		HttpEntity request =  TestCommons.getHttpEntity(bundle.toString() , 0L, "non-existing-token");
+		
+		ResponseEntity<ProductUpdateResponse> response = 
+				template.exchange("/product/bundles"
+						, HttpMethod.POST
+						, request
+						, ProductUpdateResponse.class);		
+		
+		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	public void createBundleUnAuthZTest() throws JsonProcessingException{
+		BaseUserEntity user = empUserRepo.getById(68L); //this user is not an organization admin
+		
+		JSONObject bundle = createNewDummyProduct();
+		
+		ResponseEntity<ProductUpdateResponse> response = postProductData(user, bundle);		
+		
+		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
 	public void createBundleTest() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L);
+		BaseUserEntity user = empUserRepo.getById(69L); 
 		
 		JSONObject bundle = createNewDummyProduct();
 		
@@ -227,8 +258,6 @@ public class BundlesApiTest {
 		
 		validateCreatedBundleData(bundle, saved, id, user.getOrganizationId());
 	}
-	
-	
 	
 	
 
