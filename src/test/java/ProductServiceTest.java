@@ -57,32 +57,16 @@ public class ProductServiceTest {
 	public static final int BUNDLE_ITEM_NUM = 2;
 	public static final int TEST_BUNDLE_ID = 200004;
 	public static final int TEST_BUNDLE_SHOP_ID = 100001;
-	public static final int TEST_BUNDLE_ORG_ID = 500001;
+	public static final int TEST_BUNDLE_ORG_ID = 99001;
 	public static final int TEST_BUNDLE_PRODUCTS_NUM = 4;
 	public static final int TEST_BUNDLE_NUM = 2;
-	@Value("classpath:sql/bundle_test_data_delete.sql")
-	private Resource bundleDataDelete;
 
-	@Value("classpath:sql/bundle_test_data_insert.sql")
-	private Resource bundleDataInsert;
-
-	@Value("classpath:sql/Products_Test_Data_Insert.sql")
-	private Resource productsDataInsert;
-
-	@Value("classpath:sql/Products_Test_Data_Delete.sql")
-	private Resource productsDataDelete;
-
-	@Autowired
-	private DataSource datasource;
 
 	@Autowired
 	private TestRestTemplate template;
 
 	@Autowired
 	private ProductRepository productRepository;
-
-	@Autowired
-	private BundleRepository bundleRepo;
 
 	@Autowired
 	private ProductVariantsRepository productVariantsRepository;
@@ -186,7 +170,7 @@ public class ProductServiceTest {
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
 	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Delete.sql"})
-	public void getProductWithVariantsWitStock() {
+	public void getProductWithVariantsWithStock() {
 
 		ProductEntity productEntity = new ProductEntity();
 		productEntity.setName(PRODUCT_NAME);
@@ -220,11 +204,7 @@ public class ProductServiceTest {
 		productVariantsEntity.setProductEntity(productEntity);
 		productVariantsEntity = productVariantsRepository.save(productVariantsEntity);
 
-		OrganizationEntity organizationEntity = new OrganizationEntity();
-		organizationEntity.setCreatedAt(new Date());
-		organizationEntity.setName("Fortune cosmitics");
-		organizationEntity.setUpdatedAt(new Date());
-		organizationEntity = organizationRepository.save(organizationEntity);
+		OrganizationEntity organizationEntity = organizationRepository.findOneById(99001L);
 
 		ShopsEntity shopsEntity = new ShopsEntity();
 		shopsEntity.setName("Fortune");
@@ -241,6 +221,7 @@ public class ProductServiceTest {
 		stocksEntity.setQuantity(QUANTITY);
 		stocksEntity.setCreationDate(new Date());
 		stocksEntity.setUpdateDate(new Date());
+		stocksEntity.setOrganizationEntity(organizationEntity);
 		stocksEntity.setShopsEntity(shopsEntity);
 		stocksEntity = stockRepository.save(stocksEntity);
 
@@ -273,7 +254,6 @@ public class ProductServiceTest {
 
 		stockRepository.delete(stocksEntity);
 		shopsRepository.delete(shopsEntity);
-		organizationRepository.delete(organizationEntity);
 
 		productVariantsRepository.delete(productVariantsEntity);
 		productFeaturesRepository.delete(productFeaturesEntity_1);
@@ -281,15 +261,13 @@ public class ProductServiceTest {
 		productRepository.delete(productEntity);
 
 	}
+	
 
+	
 	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Delete.sql"})
 	public void getSingleProductBundle(){
-		prepareBundleTestData();
-		performBundleResponseTest();
-		RemoveBundleTestData();
-	}
-
-	private void performBundleResponseTest() {
 		ResponseEntity<String> response =
 				template.getForEntity(
 					"/navbox/product?product_id=" + TEST_BUNDLE_ID + "&shop_id=" + TEST_BUNDLE_SHOP_ID,
@@ -306,32 +284,12 @@ public class ProductServiceTest {
 								.getInt("quantity"));
 	}
 
-	private void prepareBundleTestData() {
-		try (Connection con = datasource.getConnection()) {
-			ScriptUtils.executeSqlScript(con, this.bundleDataInsert);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void RemoveBundleTestData() {
-		try (Connection con = datasource.getConnection()) {
-			ScriptUtils.executeSqlScript(con, this.bundleDataDelete);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
 
 
 	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Delete.sql"})
 	public void getAllProductsIncludingBundle(){
-		prepareBundleTestData();
-		performAllProductsWithBundleTest();
-		RemoveBundleTestData();
-	}
-
-	private void performAllProductsWithBundleTest() {
 		ResponseEntity<String> response = template.getForEntity(
 				"/navbox/products?org_id=" + TEST_BUNDLE_ORG_ID + "&shop_id=" + TEST_BUNDLE_SHOP_ID,
 				String.class);
@@ -341,8 +299,11 @@ public class ProductServiceTest {
 
 		assertEquals(TEST_BUNDLE_PRODUCTS_NUM, products.length());
 		assertEquals(TEST_BUNDLE_NUM, getBundleItemsNum(products));
-	}
 
+	}
+	
+	
+	
 
 	/**in the test bundle test data , bundle names starts with "#Bundle"*/
 	private int getBundleItemsNum(JSONArray products) {
@@ -353,15 +314,13 @@ public class ProductServiceTest {
 	}
 
 
+	
+	
 
 	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Delete.sql"})
 	public void testProductResponseTotal(){
-		prepareBundleTestData();
-		performTestProductResponseTotal();
-		RemoveBundleTestData();
-	}
-
-	private void performTestProductResponseTotal() {
 		ResponseEntity<String> response = template.getForEntity(
 				"/navbox/products?org_id=" + TEST_BUNDLE_ORG_ID + "&shop_id=" + TEST_BUNDLE_SHOP_ID,
 				String.class);
@@ -373,30 +332,22 @@ public class ProductServiceTest {
 		assertEquals("only the total of actual products should be counted, bundles and services are not counted"
 						,51L , total);
 	}
+	
+	
+	
 
 	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Delete.sql"})
 	public void testProductResponse(){
-		prepareProductsTestData();
 		performTestProductResponseByFilters();
 		productBarcodeTest();
-		RemoveProductsTestData();
 	}
 
-	private void prepareProductsTestData() {
-		try (Connection con = datasource.getConnection()) {
-			ScriptUtils.executeSqlScript(con, this.productsDataInsert);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-	private void RemoveProductsTestData() {
-		try (Connection con = datasource.getConnection()) {
-			ScriptUtils.executeSqlScript(con, this.productsDataDelete);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
+	
+	
+	
+	
 	private void performTestProductResponseByFilters() {
 		//// testing brand_id filter ////
 		ResponseEntity<String> response = template.getForEntity("/navbox/products?org_id=99001", String.class);
@@ -434,6 +385,9 @@ public class ProductServiceTest {
 		assertTrue(response.getBody().toString().contains("category_id"));
 		//// finish test
 	}
+	
+	
+	
 
 	private void assertJsonFieldExists(ResponseEntity<String> response) {
 		System.out.println("response JSON >>>  "+ response.getBody().toString());
@@ -442,6 +396,9 @@ public class ProductServiceTest {
 		assertTrue(response.getBody().toString().contains("p_name"));
 		assertTrue(response.getBody().toString().contains("image_url"));
 	}
+	
+	
+	
 
 	public void productBarcodeTest() {
 		// product 1001 doesn't have barcode

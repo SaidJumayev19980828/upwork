@@ -1,7 +1,10 @@
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
+import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +12,8 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
@@ -16,15 +21,22 @@ import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.commons.enums.SortOrder;
+import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.BundleRepository;
+import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dto.BundleDTO;
 import com.nasnav.dto.ProductSortOptions;
+import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BundleEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductTypes;
 import com.nasnav.response.BundleResponse;
+import com.nasnav.response.ProductUpdateResponse;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -33,6 +45,8 @@ import net.jcip.annotations.NotThreadSafe;
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
 @NotThreadSafe
+@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Bundle_Test_Data_Insert.sql"})
+@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/Bundle_Test_Data_Delete.sql"})
 public class BundlesApiTest {
 	
 	@Autowired
@@ -43,21 +57,22 @@ public class BundlesApiTest {
 	private BundleRepository bundleRepo;
 	
 	
+	@Autowired
+	private EmployeeUserRepository empUserRepo;
 	
 	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Bundle_Test_Data_Insert.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/Bundle_Test_Data_Delete.sql"})
+	@Test	
 	public void getBundlesTest() throws JsonParseException, JsonMappingException, IOException{
 		Long orgId = 99001L;
 		int expectedCount = 2;
-		ResponseEntity<String> response = template.getForEntity(
-														"/product/bundles?"
-																	+ "org_id=" + orgId
-																	+ "&count=" + expectedCount
-																	+ "&sort=" + ProductSortOptions.NAME.getValue()
-																	+ "&order=" + SortOrder.DESC.getValue()
-														, String.class); 		
+		
+		String url = "/product/bundles?"
+							+ "org_id=" + orgId
+							+ "&count=" + expectedCount
+							+ "&sort=" + ProductSortOptions.NAME.getValue()
+							+ "&order=" + SortOrder.DESC.getValue();
+		ResponseEntity<String> response = performHttpGet(url); 
+		
 		
 		assertEquals( HttpStatus.OK,response.getStatusCode());
 		
@@ -89,16 +104,17 @@ public class BundlesApiTest {
 	
 	
 	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Bundle_Test_Data_Insert.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/Bundle_Test_Data_Delete.sql"})
 	public void getSingleBundleTest() throws JsonParseException, JsonMappingException, IOException{
 		Long bundleId = 200004L;
-		ResponseEntity<String> response = template.getForEntity(
-														"/product/bundles?"
-																	+ "bundle_id=" + bundleId
-																	+ "&sort=" + ProductSortOptions.NAME.getValue()
-																	+ "&order=" + SortOrder.DESC.getValue()
-														, String.class); 		
+		
+		
+		String url = "/product/bundles?"
+								+ "bundle_id=" + bundleId
+								+ "&sort=" + ProductSortOptions.NAME.getValue()
+								+ "&order=" + SortOrder.DESC.getValue();
+		ResponseEntity<String> response = performHttpGet(url); 
+		
+		
 		
 		assertEquals( HttpStatus.OK,response.getStatusCode());
 		
@@ -128,35 +144,44 @@ public class BundlesApiTest {
 	
 	
 	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Bundle_Test_Data_Insert.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/Bundle_Test_Data_Delete.sql"})
+	@Test	
 	public void getBundleMissingParamsTest() throws JsonParseException, JsonMappingException, IOException{
-		ResponseEntity<String> response = template.getForEntity(
-														"/product/bundles"
-														, String.class); 		
+		
+		String url = "/product/bundles";		
+		ResponseEntity<String> response = performHttpGet(url); 
+			
 		
 		assertEquals( HttpStatus.NOT_ACCEPTABLE,response.getStatusCode());
 		System.out.println("response >>>" + response);
+	}
+
+
+
+
+
+	private ResponseEntity<String> performHttpGet(String url) {		
+		BaseUserEntity user = empUserRepo.getById(69L);
+		HttpEntity request =  TestCommons.getHttpEntity( "" , user.getId(), user.getAuthenticationToken());
+		ResponseEntity<String> response = template.exchange(url, HttpMethod.GET, request, String.class);
+		return response;
 	}
 	
 	
 	
 	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Bundle_Test_Data_Insert.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/Bundle_Test_Data_Delete.sql"})
+	@Test	
 	public void getBundlesByCategoryTest() throws JsonParseException, JsonMappingException, IOException{
 		Long orgId = 99001L;
 		Long categoryId = 201L;
-		int expectedCount = 2;		
-		ResponseEntity<String> response = template.getForEntity(
-														"/product/bundles?"
-																	+ "org_id=" + orgId
-																	+ "&category_id=" + categoryId
-																	+ "&count=" + expectedCount
-																	+ "&sort=" + ProductSortOptions.NAME.getValue()
-														, String.class); 		
+		int expectedCount = 2;	
+		
+		String url = "/product/bundles?"
+							+ "org_id=" + orgId
+							+ "&category_id=" + categoryId
+							+ "&count=" + expectedCount
+							+ "&sort=" + ProductSortOptions.NAME.getValue();
+		ResponseEntity<String> response = performHttpGet(url); 
+		
 		
 		assertEquals( HttpStatus.OK,response.getStatusCode());
 		
@@ -181,5 +206,82 @@ public class BundlesApiTest {
 		assertEquals("we order bundles ASC by name, so , we expect this to be the first"
 							, expectedFirstBundle.getName() 
 							, firstBundle.getName());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void createBundleTest() throws JsonProcessingException{
+		BaseUserEntity user = empUserRepo.getById(69L);
+		
+		JSONObject bundle = createNewDummyProduct();
+		
+		ResponseEntity<ProductUpdateResponse> response = postProductData(user, bundle);		
+		
+		validateCreatedProductResponse(response);
+		
+		Long id = response.getBody().getProductId();
+		BundleEntity saved  = bundleRepo.findById(id).get();	
+		
+		validateCreatedBundleData(bundle, saved, id, user.getOrganizationId());
+	}
+	
+	
+	
+	
+
+	private void validateCreatedProductResponse(ResponseEntity<ProductUpdateResponse> response) {
+		assertEquals(HttpStatus.OK, response.getStatusCode());	
+		ProductUpdateResponse body = response.getBody();
+		assertTrue( body.isSuccess());
+		assertNotEquals(body.getProductId() , Long.valueOf(0L));
+		assertTrue(bundleRepo.existsById(body.getProductId()));
+	}
+	
+	
+	
+	private ResponseEntity<ProductUpdateResponse> postProductData(BaseUserEntity user, JSONObject productJson)
+			throws JsonProcessingException {
+		
+		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getId(), user.getAuthenticationToken());
+		
+		ResponseEntity<ProductUpdateResponse> response = 
+				template.exchange("/product/bundles"
+						, HttpMethod.POST
+						, request
+						, ProductUpdateResponse.class);
+		return response;
+	}
+	
+	
+	
+	
+	private void validateCreatedBundleData(JSONObject product, ProductEntity saved, Long id, Long userOrgId) {
+		assertEquals(id , saved.getId());
+		assertEquals(product.get("name"), saved.getName());
+		assertEquals(product.get("p_name"), saved.getPname());
+		assertEquals(product.get("description"), saved.getDescription());
+		assertEquals(product.get("barcode"), saved.getBarcode());
+		assertEquals(product.get("brand_id"), saved.getBrandId());
+		assertEquals(product.get("category_id"), saved.getCategoryId());
+		assertEquals(userOrgId, saved.getOrganizationId()); //the new product takes the organization of the user 
+		assertEquals(ProductTypes.BUNDLE, saved.getProductType().intValue());
+	}
+	
+	
+
+	private JSONObject createNewDummyProduct() {
+		JSONObject product = new JSONObject();
+		product.put("operation", Operation.CREATE.getValue());
+		product.put("product_id", JSONObject.NULL);
+		product.put("name", "Test Bundle");
+		product.put("p_name", "test_bundle");
+		product.put("description", "Testing creating/updating bundle");
+		product.put("barcode", "BAR12345CODE");
+		product.put("brand_id", 101L);
+		product.put("category_id", 201L);		
+		return product;
 	}
 }

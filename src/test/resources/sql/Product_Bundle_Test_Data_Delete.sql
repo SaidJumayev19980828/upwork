@@ -1,4 +1,4 @@
-----------------------------deleting previous data----------------------------
+delete from public.product_bundles WHERE bundle_stock_id IN (SELECT id from public.stocks where organization_id BETWEEN 99000 AND 99999);
 delete from public.role_employee_users where employee_user_id IN (SELECT id FROM public.employee_users where organization_id between 99000 and 99999);
 delete from public.users where organization_id between 99000 and 99999;
 delete from public.employee_users where organization_id between 99000 and 99999;

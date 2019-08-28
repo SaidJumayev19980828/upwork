@@ -81,7 +81,7 @@ public class StocksEntity extends AbstractPersistable<Long> implements BaseEntit
 //    @JsonIgnore
 //    private ProductVariants productVariants;
 
-	@OneToOne
+	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name="variant_id")
 	@JsonIgnore
 	private ProductVariantsEntity productVariantsEntity;
