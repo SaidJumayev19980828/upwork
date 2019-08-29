@@ -51,6 +51,7 @@ import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.BundleDTO;
+import com.nasnav.dto.BundleElementUpdateDTO;
 import com.nasnav.dto.ProductBaseInfo;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductImageUpdateDTO;
@@ -1465,6 +1466,36 @@ public class ProductService {
 		}
 		 
 		 return baseInfo;
+	}
+
+
+
+
+	public void updateBundleElement(BundleElementUpdateDTO element) throws BusinessException {
+		validateBundleElementUpdateReq(element);
+		
+	}
+
+
+
+
+	private void validateBundleElementUpdateReq(BundleElementUpdateDTO element) throws BusinessException {
+		if(!element.areRequiredForCreatePropertiesProvided()) {
+			throw new BusinessException(
+					"Required parameters missing!"
+					, "MISSING PARAM"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		Operation opr = element.getOperation();
+		if(!opr.equals(Operation.ADD) 
+				||opr.equals(Operation.DELETE)) {
+			throw new BusinessException(
+					String.format("Invalid Operation  [%s]", opr.getValue())
+					, "INVALID PARAM:operation"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
 	}
 
 }

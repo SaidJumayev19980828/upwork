@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.nasnav.dto.BundleElementUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.BundleSearchParam;
@@ -168,5 +169,25 @@ public class ProductsController {
             @RequestParam("product_id") Long productId)
             		throws BusinessException {
 		return productService.deleteBundle(productId);
+    }
+	
+	
+	
+	
+	@ApiOperation(value = "Add or delete a bundle item", nickname = "bundle item update", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Bundle item added or deleted"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "bundle/element",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	@ResponseStatus(HttpStatus.OK)
+    public void updateBundleElement(           
+            @RequestBody BundleElementUpdateDTO element)
+            		throws BusinessException {
+		productService.updateBundleElement(element);
     }
 }

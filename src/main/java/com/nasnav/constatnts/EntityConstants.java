@@ -26,7 +26,9 @@ public final class EntityConstants {
     
     public enum Operation{
     	UPDATE("update"),
-    	CREATE("create");
+    	CREATE("create"),
+    	ADD("add"),
+    	DELETE("delete");
     	
     	
     	@Getter
