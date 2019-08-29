@@ -65,7 +65,7 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
-    @DeleteMapping(value = "info",
+    @DeleteMapping(
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ProductUpdateResponse deleteProduct(           

@@ -16,4 +16,6 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 	List<StocksEntity> findByShopsEntity_Id(Long id);
 
 	List<StocksEntity> findByProductEntity_IdIn(List<Long> productIds);
+
+	void deleteByProductEntity_Id(Long productId);
 }

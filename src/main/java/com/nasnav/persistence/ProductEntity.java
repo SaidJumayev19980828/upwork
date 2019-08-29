@@ -1,8 +1,8 @@
 package com.nasnav.persistence;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
@@ -13,6 +13,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -20,7 +21,6 @@ import org.hibernate.annotations.DiscriminatorFormula;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
-import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.ProductRepresentationObject;
 
 import lombok.Data;
@@ -78,12 +78,14 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
 
     @Column(name="product_type")
     private Integer productType = ProductTypes.DEFAULT;
+    
 
     //TODO : we only need this until the Column PRODUCTS.PRODUCT_TYPE is set as non-null
     public Integer getProductType(){
         return productType == null ? ProductTypes.DEFAULT : productType;
     }
-
+    
+    
 //    @OneToMany(mappedBy="productEntity")
 //    @JsonIgnore
 //    private Set<StocksEntity> stocksEntities;

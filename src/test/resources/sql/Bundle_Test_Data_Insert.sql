@@ -10,7 +10,7 @@ INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (201, 'ca
 INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (202, 'category_2', now(), now());
 
 --inserting brands
-INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (101, 202, 'brand_1', now(), now(), 99002);
+INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (101, 202, 'brand_1', now(), now(), 99001);
 INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (102, 201, 'brand_2', now(), now(), 99001);
 
 
@@ -25,7 +25,7 @@ insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organi
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200004, '#Bundle 4' , now() , now() ,1 , 99001, 201);
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200005, '#Bundle 3' , now() , now() ,1 , 99001, 201);
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200006, '#Bundle 2' , now() , now() ,1 , 99001, 201);
-insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200007, '#Bundle 1' , now() , now() ,1 , 99002, 202);
+insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200007, '#Bundle 1' , now() , now() ,1 , 99001, 202);
 
 
 -- dummy variants for product 1 only
@@ -77,7 +77,7 @@ insert into public.product_bundles(product_id, bundle_stock_id) values(200007 , 
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
 VALUES (68, now(), now(), 'testuser1@nasnav.com', 99001, '101112',  502);
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
-VALUES (69, now(), now(), 'testuser2@nasnav.com', 99002, '131415',  501);
+VALUES (69, now(), now(), 'testuser2@nasnav.com', 99001, '131415',  501);
 
 
 --inserting customers

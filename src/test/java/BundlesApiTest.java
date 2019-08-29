@@ -1,9 +1,11 @@
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+
 
 import org.json.JSONObject;
 import org.junit.Test;
@@ -21,6 +23,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -33,6 +36,7 @@ import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.BundleDTO;
 import com.nasnav.dto.ProductSortOptions;
 import com.nasnav.persistence.BaseUserEntity;
@@ -76,6 +80,10 @@ public class BundlesApiTest {
 	
 	@Autowired
 	private BasketRepository basketRepo;
+	
+	
+	@Autowired 
+	private StockRepository stockRepo;
 	
 	@Test	
 	public void getBundlesTest() throws JsonParseException, JsonMappingException, IOException{
@@ -233,11 +241,11 @@ public class BundlesApiTest {
 		
 		HttpEntity request =  TestCommons.getHttpEntity(bundle.toString() , 0L, "non-existing-token");
 		
-		ResponseEntity<ProductUpdateResponse> response = 
+		ResponseEntity<String> response = 
 				template.exchange("/product/bundles"
 						, HttpMethod.POST
 						, request
-						, ProductUpdateResponse.class);		
+						, String.class);		
 		
 		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
 	}
@@ -335,12 +343,13 @@ public class BundlesApiTest {
 	
 	
 	
-	@Test
+	@Test		
 	public void bundleDeleteTest() {
-		Long bundleId = 200007L;
+		Long bundleId = 200004L;
+		Long stockId =  getBundleVirtualStock(bundleId);
 		
-		assertTrue("assert bundle already exists", bundleRepo.existsById(bundleId));
-		
+		assertNotNull("assert bundle already exists", bundleRepo.existsById(bundleId));
+		assertNotNull("assert bundle has a virtual stock", stockId);
 
 		BaseUserEntity user = empUserRepo.getById(69L); 
 		ResponseEntity<ProductUpdateResponse> response = deleteBundle(bundleId, user);
@@ -348,6 +357,15 @@ public class BundlesApiTest {
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(bundleId, response.getBody().getProductId());		
 		assertFalse("assert bundle doesn't exists", bundleRepo.existsById(bundleId));
+		assertFalse("assert bundle virtual stock doesn't exists", stockRepo.existsById(stockId));
+	}
+	
+	
+	//couldn't use @Transactional on the test method, because it miss up with committing the scripts that @Sql runs
+	//can't use @Transactional on methods used internally because spring uses proxies to manage the transactions.
+	//and proxies work when the method is called from extrnal class only.
+	public Long getBundleVirtualStock(Long bundleId) {
+		return jdbc.queryForObject("select id from stocks where product_id="+bundleId, Long.class);
 	}
 
 

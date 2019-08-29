@@ -2,6 +2,7 @@ package com.nasnav.persistence;
 
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -25,6 +26,6 @@ public class BundleEntity extends ProductEntity{
     private Set<StocksEntity> items;
     
     
-    @OneToOne(fetch = FetchType.EAGER, mappedBy = "productEntity")
+    @OneToOne(fetch = FetchType.EAGER, mappedBy = "productEntity", cascade = CascadeType.REMOVE)
     private StocksEntity bundleVirtualStockItem;
 }

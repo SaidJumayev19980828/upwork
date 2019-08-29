@@ -24,10 +24,12 @@ import javax.persistence.criteria.Root;
 import org.apache.commons.beanutils.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JacksonJsonParser;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -124,6 +126,9 @@ public class ProductService {
 	
 	@Autowired
 	private BasketRepository basketRepo;
+	
+	@Autowired
+	private ProductServiceTransactions transactions;
 
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
@@ -948,11 +953,31 @@ public class ProductService {
 
 
 
-
 	public ProductUpdateResponse deleteProduct(Long productId) throws BusinessException {
 		validateProductToDelete(productId);
 		
-		productRepository.deleteById(productId);
+		List<ProductImagesEntity> imgs = productImagesRepository.findByProductEntity_Id(productId) ;
+		try {
+			transactions.deleteProduct(productId);				
+		}catch(DataIntegrityViolationException e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new BusinessException(
+					String.format("Failed to delete product with id[%d]! Product is still used in the system (stocks, orders, bundles, ...)!", productId)
+					, "INVAILID PARAM:product_id"
+					, HttpStatus.FORBIDDEN);
+		}catch(Throwable e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new BusinessException(
+					String.format("Failed to delete product with id[%d]!", productId)
+					, "INVAILID PARAM:product_id"
+					, HttpStatus.INTERNAL_SERVER_ERROR);
+		} 
+		
+		
+		for(ProductImagesEntity img : imgs) {
+			fileService.deleteFileByUrl(img.getUri());
+		};
+		
 		return new ProductUpdateResponse(true, productId);
 	}
 
@@ -1287,14 +1312,35 @@ public class ProductService {
 				 				.orElseThrow(()-> new BusinessException("No Image exists with id ["+ imgId+"] !", "INVALID PARAM:image_id", HttpStatus.NOT_ACCEPTABLE));
 		
 		Long productId = Optional.ofNullable(img.getProductEntity())
-				.map(prod -> prod.getId())
-				.orElse(null);
+								.map(prod -> prod.getId())
+								.orElse(null);					
+		
+		validateImgToDelete(img);		
 		
 		productImagesRepository.deleteById(imgId);
 		
 		fileService.deleteFileByUrl(img.getUri());
 		
 		return new ProductImageDeleteResponse(productId);
+	}
+
+
+
+
+	private void validateImgToDelete(ProductImagesEntity img) throws BusinessException {
+		Long orgId = Optional.ofNullable(img.getProductEntity())
+								.map(prod -> prod.getOrganizationId())
+								.orElse(null);
+		
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		
+		if(!user.getOrganizationId().equals(orgId)) {
+			throw new BusinessException(
+					String.format("User from organization of id[%d] have no rights to delete product image of id[%d]",orgId, img.getId())
+					, "UNAUTHRORIZED"
+					, HttpStatus.FORBIDDEN);
+		}
 	}
 	
 	
