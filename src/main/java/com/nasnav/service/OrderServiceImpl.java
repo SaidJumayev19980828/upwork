@@ -7,10 +7,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 import com.nasnav.dao.*;
-import com.nasnav.dto.OrderRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.persistence.*;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import org.slf4j.Logger;
@@ -20,8 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dto.BasketItem;
-import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
@@ -34,24 +31,20 @@ import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
 public class OrderServiceImpl implements OrderService {
 
 	private final OrdersRepository ordersRepository;
-
 	private final BasketRepository basketRepository;
-
 	private final StockRepository stockRepository;
-
 	private final StockServiceImpl stockService;
-
 	private final EmployeeUserRepository employeeUserRepository;
-
 	private final EmployeeUserServiceHelper employeeUserServiceHelper;
 	private final UserRepository userRepository;
-
 	private final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class.getName());
+	private final ProductRepository productRepository;
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
 							StockRepository stockRepository ,StockServiceImpl stockService, UserRepository userRepository,
-	                        EmployeeUserServiceHelper employeeUserServiceHelper, EmployeeUserRepository employeeUserRepository) {
+	                        EmployeeUserServiceHelper employeeUserServiceHelper, EmployeeUserRepository employeeUserRepository,
+							ProductRepository productRepository) {
 		this.ordersRepository = ordersRepository;
 		this.stockRepository = stockRepository;
 		this.basketRepository = basketRepository;
@@ -59,6 +52,7 @@ public class OrderServiceImpl implements OrderService {
 		this.userRepository = userRepository;
 		this.employeeUserServiceHelper = employeeUserServiceHelper;
 		this.employeeUserRepository = employeeUserRepository;
+		this.productRepository = productRepository;
 	}
 
 	public OrderValue getOrderValue(OrdersEntity order) {
@@ -169,7 +163,7 @@ public class OrderServiceImpl implements OrderService {
 	/**
 	 * @return if stock Id is invalid or available quantity is less than required
 	 * */
-	private boolean isInvalidStock(BasketItem basketItem, Optional<StocksEntity> optionalStocksEntity) {
+	private boolean isInvalidStock(BasketItemDTO basketItem, Optional<StocksEntity> optionalStocksEntity) {
 		Integer q = stockService.getStockQuantity(optionalStocksEntity.get());
 		return optionalStocksEntity == null || !optionalStocksEntity.isPresent()
 				|| basketItem.getQuantity() > q
@@ -262,7 +256,7 @@ public class OrderServiceImpl implements OrderService {
 	private void addItemsToBasket(OrderJsonDto orderJsonDto, OrdersEntity orderEntity,
 								  List<StocksEntity> stocksEntites) {
 
-		for (BasketItem basketItem : orderJsonDto.getBasket()) {
+		for (BasketItemDTO basketItem : orderJsonDto.getBasket()) {
 			StocksEntity stocksEntity = stocksEntites.stream().filter(stock -> stock.getId().equals(basketItem.getStockId()))
 					.findFirst().get();
 			BasketsEntity basketsEntity = new BasketsEntity();
@@ -354,18 +348,69 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	public OrderResponse getOrderInfo(Long orderId) {
-		Optional<OrdersEntity> entity = ordersRepository.findById(orderId);
-		if (entity.isPresent()) {
-			return new OrderResponse(entity.get());
+		if (ordersRepository.existsById(orderId)) {
+			return new OrderResponse(getDetailedOrderInfo(orderId, true));
 		}
 		return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
 	}
 
+	private DetailedOrderRepObject getDetailedOrderInfo(Long orderId, boolean getItems) {
+		OrdersEntity entity = ordersRepository.findById(orderId).get();
+		List<BasketItem> itemsList = getBasketItems(orderId);
+		DetailedOrderRepObject obj = new DetailedOrderRepObject();
+		obj.setUserId(entity.getUserId());
+		obj.setShopId(entity.getShopsEntity().getId());
+		if (!getItems)
+			obj.setOrderId(orderId);
+		obj.setCreatedAt(entity.getCreationDate());
+		obj.setDeliveryDate(entity.getDeliveryDate());
+		if (itemsList.size() > 0)
+			obj.setCurrency(itemsList.get(0).getCurrency());
+		obj.setSubtotal(calculateOrderAmount(itemsList));
+		obj.setShipping(new BigDecimal(0));
+		obj.setTotal(obj.getShipping().add(obj.getSubtotal()));
+		obj.setStatus(OrderStatus.findEnum(entity.getStatus()).name());
+		//TODO set shipping address, shipping price
+        obj.setShippingAddress(entity.getAddress());
+		if (getItems)
+			obj.setItems(itemsList);
+		return obj;
+	}
+
+	private List<BasketItem> getBasketItems(Long orderId) {
+		List<BasketsEntity> itemsEntityList = basketRepository.findByOrdersEntity_Id(orderId);
+		List<BasketItem> basketItems = new ArrayList<>();
+		ProductEntity product;
+		StocksEntity stock;
+		for(BasketsEntity entityItem: itemsEntityList){
+			stock = entityItem.getStocksEntity();
+			product = productRepository.findById(stock.getProductEntity().getId()).get();
+			BasketItem item = new BasketItem();
+			item.setProductId(product.getId());
+			item.setName(product.getName());
+			item.setPname(product.getPname());
+			item.setStockId(stock.getId());
+			item.setQuantity(entityItem.getQuantity().intValue());
+			//TODO set item unit //
+			item.setTotalPrice(entityItem.getPrice());
+			item.setThumb(product.getCoverImage());
+			item.setCurrency(TransactionCurrency.getTransactionCurrency(entityItem.getCurrency()).name());
+			basketItems.add(item);
+		}
+		return basketItems;
+	}
+
+	private BigDecimal calculateOrderAmount(List<BasketItem> items) {
+		BigDecimal total = new BigDecimal(0);
+		for(BasketItem item: items)
+			total = total.add(item.getTotalPrice());
+		return total;
+	}
 	@Override
-	public List<OrderRepresentationObject> getOrdersList(Long loggedUserId, String userToken, Long userId, Long storeId,
+	public List<DetailedOrderRepObject> getOrdersList(Long loggedUserId, String userToken, Long userId, Long storeId,
 														 Long orgId, String status){
 		List<OrdersEntity> ordersEntityList;
-		List<OrderRepresentationObject> ordersRep;
+		List<DetailedOrderRepObject> ordersRep = new ArrayList<>();
 		Integer statusId = -1;
 		if (status != null){
 			if ((OrderStatus.findEnum(status)) != null) {
@@ -433,8 +478,11 @@ public class OrderServiceImpl implements OrderService {
 				ordersEntityList = ordersRepository.findByUserId(loggedUserId);
 			}
 		}
-		ordersRep = ordersEntityList.stream().map(order -> (OrderRepresentationObject) order.getRepresentation())
-				.collect(Collectors.toList());
+		for(OrdersEntity orders: ordersEntityList) {
+			ordersRep.add(getDetailedOrderInfo(orders.getId(), false));
+			//ordersEntityList.stream().map(order -> (OrderRepresentationObject) order.getRepresentation())
+			//.collect(Collectors.toList());
+		}
 		return ordersRep;
 	}
 }

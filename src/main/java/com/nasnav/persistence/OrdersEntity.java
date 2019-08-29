@@ -4,18 +4,9 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 
+import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.enumerations.PaymentStatus;
 import org.hibernate.annotations.Type;
@@ -100,8 +91,9 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	@JoinColumn(name = "organization_id", nullable = false)
 	private OrganizationEntity organizationEntity;
 
-    @OneToOne(mappedBy = "ordersEntity", fetch = FetchType.LAZY)
-    private BasketsEntity basketsEntity;
+    //@OneToOne(mappedBy = "OrdersEntity", fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "ordersEntity")
+    private Set<BasketsEntity> basketsEntity;
 
 	@Override
 	public BaseRepresentationObject getRepresentation() {

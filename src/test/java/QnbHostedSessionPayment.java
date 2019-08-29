@@ -1,5 +1,7 @@
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 
 import com.nasnav.dao.*;
@@ -15,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -32,6 +35,7 @@ import net.jcip.annotations.NotThreadSafe;
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
 @NotThreadSafe
+@Transactional
 public class QnbHostedSessionPayment {
     Account testAccount = new Account();
 
@@ -136,12 +140,14 @@ public class QnbHostedSessionPayment {
         //create product
         ProductEntity product = new ProductEntity();
         product.setName("product one");
+        product.setOrganizationId(org.getId());
         ProductEntity productEntity = productRepository.save(product);
 
         //create shop
         shop = new ShopsEntity();
         shop.setCreatedAt(new Date());
         shop.setUpdatedAt(new Date());
+        shop.setOrganizationEntity(org);
         ShopsEntity shopEntity = shopsRepository.save(shop);
 
         //create stock
@@ -159,6 +165,7 @@ public class QnbHostedSessionPayment {
         user.setName("John smith");
         user.setEmail("bi@Oooooo.com");
         user.setEncryptedPassword("");
+        user.setOrganizationId(org.getId());
         userRepository.save(user);
         // create order
         OrdersEntity order = new OrdersEntity();
@@ -177,7 +184,9 @@ public class QnbHostedSessionPayment {
         basket.setStocksEntity(stockEntity);
         basket.setPrice(stockEntity.getPrice());
         basket = basketRepository.save(basket);
-        orderEntity.setBasketsEntity(basket);
+        HashSet<BasketsEntity> baskets = new HashSet<BasketsEntity>();
+        baskets.add(basket);
+        orderEntity.setBasketsEntity(baskets);
         orderEntity = orderRepository.save(order);
         return orderEntity.getId();
     }

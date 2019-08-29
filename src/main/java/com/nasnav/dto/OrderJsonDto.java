@@ -23,7 +23,7 @@ public class OrderJsonDto{
 
 	@ApiModelProperty(value = "User's basket items", required = true)
 	@JsonProperty("basket")
-	private List<BasketItem> basket;
+	private List<BasketItemDTO> basket;
 
 	@ApiModelProperty(value = "Delivery address", example = "Somewhere behind a grocery store")
 	@JsonProperty("delivery_address")
