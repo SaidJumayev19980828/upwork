@@ -52,6 +52,8 @@ insert into public.stocks(id, shop_id , product_id , variant_id , quantity , pri
 values (400006, 100001, 200003,null, 2000 , 3000, now() , now(), 99001);
 insert into public.stocks(id, shop_id , product_id , variant_id , quantity , price, created_at, updated_at, organization_id)
 values (400007, 100001, 200004,null, 2000 , 10000, now() , now(), 99001);
+insert into public.stocks(id, shop_id , product_id , variant_id , quantity , price, created_at, updated_at, organization_id)
+values (400008, 100001, 200007,null, 2000 , 10000, now() , now(), 99001);
 
 
 
@@ -70,11 +72,18 @@ insert into public.product_bundles(product_id, bundle_stock_id) values(200007 , 
 
 
 
+
 --insering users
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
 VALUES (68, now(), now(), 'testuser1@nasnav.com', 99001, '101112',  502);
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
 VALUES (69, now(), now(), 'testuser2@nasnav.com', 99002, '131415',  501);
+
+
+--inserting customers
+INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id)
+    VALUES (88, 'user1@nasnav.com',now(), now(), 'user1','123', 99001);
+
 
 
 --inserting Roles
@@ -88,6 +97,19 @@ insert into roles(id, name, created_at, updated_at, organization_id) values(3, '
 --inserting Roles EmployeeUsers relations
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (20, 68, 1, now(), now());
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (21, 69, 2, now(), now());
+
+
+
+--inserting shops
+INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (501, 'shop_1', null, now(), now(), 99001);
+
+
+--inserting orders
+insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(33, 88, now(), now(), 99001, 0, 501);
+
+-- insert order items
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(33, 400008, 1, 10, 0);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(33, 400004, 1, 10, 0);
 
 
 commit;

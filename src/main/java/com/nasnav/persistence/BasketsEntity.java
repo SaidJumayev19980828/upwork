@@ -35,7 +35,7 @@ public class BasketsEntity extends AbstractPersistable<Long> implements BaseEnti
     @ToString.Exclude
     private OrdersEntity ordersEntity;
 
-    @OneToOne(cascade = CascadeType.MERGE)
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "stock_id", referencedColumnName = "id")
     @JsonIgnore
     private StocksEntity stocksEntity;

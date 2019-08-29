@@ -37,10 +37,12 @@ import com.google.common.base.Objects;
 import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.CategoriesRepository;
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.OrderRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
@@ -119,6 +121,9 @@ public class ProductService {
 
 	@Autowired
 	private EntityManager em;
+	
+	@Autowired
+	private BasketRepository basketRepo;
 
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
@@ -945,6 +950,16 @@ public class ProductService {
 
 
 	public ProductUpdateResponse deleteProduct(Long productId) throws BusinessException {
+		validateProductToDelete(productId);
+		
+		productRepository.deleteById(productId);
+		return new ProductUpdateResponse(true, productId);
+	}
+
+
+
+
+	private void validateProductToDelete(Long productId) throws BusinessException {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
 		Long userOrgId = user.getOrganizationId();
@@ -955,9 +970,15 @@ public class ProductService {
 												"Product of ID["+productId+"] cannot be deleted by a user from oraganization of id ["+ userOrgId + "]" 
 												, "INSUFFICIENT_RIGHTS"
 												, HttpStatus.FORBIDDEN));
+
 		
-		productRepository.deleteById(productId);
-		return new ProductUpdateResponse(true, productId);
+		Boolean exitsInOrders = basketRepo.countByProductId(productId) > 0;
+		if(exitsInOrders) {
+			throw new BusinessException(
+					String.format("Can't delete product with id[%d] ! The Product already exits in some orders!", productId)
+					, "INVALID PARAM:product_id"
+					, HttpStatus.FORBIDDEN);
+		}
 	}
 	
 	
@@ -980,8 +1001,6 @@ public class ProductService {
 					, HttpStatus.NOT_ACCEPTABLE);
 			
 		}
-			
-		//check if the bundle is in order	
 		
 	}
 

@@ -1,4 +1,5 @@
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -16,6 +17,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -27,12 +29,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ProductRepository;
 import com.nasnav.dto.BundleDTO;
 import com.nasnav.dto.ProductSortOptions;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BundleEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductTypes;
 import com.nasnav.response.BundleResponse;
@@ -60,6 +65,17 @@ public class BundlesApiTest {
 	@Autowired
 	private EmployeeUserRepository empUserRepo;
 	
+	
+	@Autowired
+	private ProductRepository productRepo;
+	
+	
+	@Autowired
+	private JdbcTemplate jdbc;
+	
+	
+	@Autowired
+	private BasketRepository basketRepo;
 	
 	@Test	
 	public void getBundlesTest() throws JsonParseException, JsonMappingException, IOException{
@@ -277,7 +293,7 @@ public class BundlesApiTest {
 		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getId(), user.getAuthenticationToken());
 		
 		ResponseEntity<ProductUpdateResponse> response = 
-				template.exchange("/product/bundles"
+				template.exchange("/product/bundle"
 						, HttpMethod.POST
 						, request
 						, ProductUpdateResponse.class);
@@ -313,4 +329,135 @@ public class BundlesApiTest {
 		product.put("category_id", 201L);		
 		return product;
 	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void bundleDeleteTest() {
+		Long bundleId = 200007L;
+		
+		assertTrue("assert bundle already exists", bundleRepo.existsById(bundleId));
+		
+
+		BaseUserEntity user = empUserRepo.getById(69L); 
+		ResponseEntity<ProductUpdateResponse> response = deleteBundle(bundleId, user);
+		
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(bundleId, response.getBody().getProductId());		
+		assertFalse("assert bundle doesn't exists", bundleRepo.existsById(bundleId));
+	}
+
+
+
+
+
+	private ResponseEntity<ProductUpdateResponse> deleteBundle(Long bundleId, BaseUserEntity user) {
+		HttpEntity request =  TestCommons.getHttpEntity("" , user.getId(), user.getAuthenticationToken());
+		ResponseEntity<ProductUpdateResponse> response = 
+				template.exchange("/product/bundle?product_id=" + bundleId
+						, HttpMethod.DELETE
+						, request
+						, ProductUpdateResponse.class);
+		return response;
+	}
+	
+	
+	
+	private ResponseEntity<String> deleteBundleStrReponse(Long bundleId, BaseUserEntity user) {
+		HttpEntity request =  TestCommons.getHttpEntity("" , user.getId(), user.getAuthenticationToken());
+		ResponseEntity<String> response = 
+				template.exchange("/product/bundle?product_id=" + bundleId
+						, HttpMethod.DELETE
+						, request
+						, String.class);
+		return response;
+	}
+	
+	
+	
+	
+	@Test
+	public void bundleDeleteInvalildAuthNTest() {
+		Long bundleId = 200007L;
+		
+		assertTrue("assert bundle already exists", bundleRepo.existsById(bundleId));
+		
+
+		BaseUserEntity user = new EmployeeUserEntity();
+		user.setId(0L);
+		user.setAuthenticationToken("INVALID TOKIN");
+		ResponseEntity<String> response = deleteBundleStrReponse(bundleId, user);
+		
+		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());			
+		assertTrue("assert bundle still exists after failed DELETE operation", bundleRepo.existsById(bundleId));
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void bundleDeleteInvalidAuthZTest() {
+		Long bundleId = 200007L;
+		
+		assertTrue("assert bundle already exists", bundleRepo.existsById(bundleId));
+		
+
+		BaseUserEntity user = empUserRepo.getById(68L); //doesn't have delete rights
+		ResponseEntity<String> response = deleteBundleStrReponse(bundleId, user);
+		
+		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+		assertTrue("assert bundle still exists after failed DELETE operation", bundleRepo.existsById(bundleId));
+	}
+	
+	
+	
+	
+	@Test
+	public void bundleDeleteIdOfNormalProductTest() {
+		Long bundleId = 200001L;
+		
+		assertTrue("assert id is for a normal product", productRepo.existsById(bundleId));
+		assertFalse("assert id is NOT for a bundle", bundleRepo.existsById(bundleId));
+		
+
+		BaseUserEntity user = empUserRepo.getById(69L); 
+		ResponseEntity<String> response = deleteBundleStrReponse(bundleId, user);
+		
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());				
+		assertTrue("assert product wasn't deleted", productRepo.existsById(bundleId));
+	}
+	
+	
+	
+	
+	@Test
+	public void bundleDeleteExistsInOrdersTest() {
+		Long bundleId = 200007L;
+		
+		assertTrue("assert bundle already exists", bundleRepo.existsById(bundleId));
+		String sql = "select count(*) from public.baskets  b\n" + 
+						"left join public.stocks s\n" + 
+						"on b.stock_id = s.id\n" + 
+						"left join public.products p\n" + 
+						"on s.product_id = p.id\n" + 
+						"where p.id = " + bundleId;			
+		Long count = jdbc.queryForObject(sql, Long.class);
+		
+		assertNotEquals("assert bundle exists in some orders", 0L, count.longValue());
+		assertEquals("assert product count JPQL query works"
+				,  count
+				,  basketRepo.countByProductId(bundleId));
+		
+
+		BaseUserEntity user = empUserRepo.getById(69L); 
+		ResponseEntity<String> response = deleteBundleStrReponse(bundleId, user);
+		
+		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());		
+		assertTrue("assert bundle still exists after failed DELETE operation", bundleRepo.existsById(bundleId));
+	}
+	
 }
