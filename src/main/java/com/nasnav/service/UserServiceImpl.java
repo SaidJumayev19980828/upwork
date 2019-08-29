@@ -10,11 +10,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.exceptions.BusinessException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +35,8 @@ import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
+
+import javax.persistence.OneToMany;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -389,6 +394,15 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public boolean checkAuthToken(Long userId, String authToken) {
 		return userRepository.existsByIdAndAuthenticationToken(userId, authToken);
+	}
+
+	@Override
+	public UserRepresentationObject getUserData(String userToken) throws BusinessException {
+		if (userRepository.findByAuthenticationToken(userToken) == null) {
+			throw new BusinessException("ENTITY NOT FOUND: user", "No user found with the provided authentication token", HttpStatus.NOT_ACCEPTABLE);
+		}
+		UserEntity userEntity = userRepository.findByAuthenticationToken(userToken).get();
+		return userEntity.getRepresentation(userEntity);
 	}
 
 	private String[] getNullProperties(UserDTOs.EmployeeUserUpdatingObject userJson) {

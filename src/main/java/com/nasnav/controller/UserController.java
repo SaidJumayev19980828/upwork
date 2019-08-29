@@ -10,6 +10,7 @@ import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -121,5 +122,18 @@ public class UserController {
             return this.employeeUserService.updateEmployeeUser(userId, userToken, json);
         }
         return this.userService.updateUser(userId, userToken, json);
+    }
+
+    @ApiOperation(value = "Get user info", nickname = "userInfo")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+            @io.swagger.annotations.ApiResponse(code = 404, message = "User not found"),
+    })
+    @GetMapping(value = "profile",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity sendEmailRecovery(@RequestHeader (value = "User-ID", required = true) Long userId,
+                                             @RequestHeader (value = "User-Token", required = true) String userToken,
+                                             @RequestParam(value = "user_token", required = true) String token) throws BusinessException{
+        return new ResponseEntity(userService.getUserData(token), HttpStatus.OK);
     }
 }
