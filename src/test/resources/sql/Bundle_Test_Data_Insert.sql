@@ -54,21 +54,30 @@ insert into public.stocks(id, shop_id , product_id , variant_id , quantity , pri
 values (400007, 100001, 200004,null, 2000 , 10000, now() , now(), 99001);
 insert into public.stocks(id, shop_id , product_id , variant_id , quantity , price, created_at, updated_at, organization_id)
 values (400008, 100001, 200007,null, 2000 , 10000, now() , now(), 99001);
+insert into public.stocks(id, shop_id , product_id , variant_id , quantity , price, created_at, updated_at, organization_id)
+values (400009, 100001, 200005,null, 2000 , 10.10, now() , now(), 99001);
 
 
 
 -- set child bundle items
-insert into public.product_bundles(product_id, bundle_stock_id) values(200003 , 400005);
+insert into public.product_bundles(product_id, item_product_id, item_variant_id) 
+values(200003 , 200002, null);
 
 -- set main bundle , which contains product#1 2 variants and the child bundle
-insert into public.product_bundles(product_id, bundle_stock_id) values(200004 , 400001);
-insert into public.product_bundles(product_id, bundle_stock_id) values(200004 , 400002);
-insert into public.product_bundles(product_id, bundle_stock_id) values(200004 , 400003);
+insert into public.product_bundles(product_id, item_product_id, item_variant_id) 
+values(200004 , 200001,300001);
+insert into public.product_bundles(product_id, item_product_id, item_variant_id) 
+values(200004 , 200001,300002);
+insert into public.product_bundles(product_id, item_product_id, item_variant_id) 
+values(200004 , 200001,300003);
 
 -- other bundles
-insert into public.product_bundles(product_id, bundle_stock_id) values(200005 , 400004);
-insert into public.product_bundles(product_id, bundle_stock_id) values(200006 , 400006);
-insert into public.product_bundles(product_id, bundle_stock_id) values(200007 , 400006);
+insert into public.product_bundles(product_id, item_product_id, item_variant_id) 
+values(200005 , 200001,300004);
+insert into public.product_bundles(product_id, item_product_id, item_variant_id) 
+values(200006 , 200003,null);
+insert into public.product_bundles(product_id, item_product_id, item_variant_id) 
+values(200007 , 200003,null);
 
 
 

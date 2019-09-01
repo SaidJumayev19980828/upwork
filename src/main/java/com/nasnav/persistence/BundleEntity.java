@@ -22,8 +22,15 @@ public class BundleEntity extends ProductEntity{
     @ManyToMany
     @JoinTable(name = "product_bundles"
             ,joinColumns = {@JoinColumn(name="product_id")}
-            ,inverseJoinColumns = {@JoinColumn(name="bundle_stock_id")})
-    private Set<StocksEntity> items;
+            ,inverseJoinColumns = {@JoinColumn(name="item_product_id")})
+    private Set<ProductEntity> productItems;
+    
+    
+    @ManyToMany
+    @JoinTable(name = "product_bundles"
+            ,joinColumns = {@JoinColumn(name="product_id")}
+            ,inverseJoinColumns = {@JoinColumn(name="item_variant_id")})
+    private Set<ProductVariantsEntity> variantItems;
     
     
     @OneToOne(fetch = FetchType.EAGER, mappedBy = "productEntity", cascade = CascadeType.REMOVE)

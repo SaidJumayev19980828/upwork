@@ -80,7 +80,7 @@ public class PaymentControllerTest {
 
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Payment_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Payment_Test_Data_Delete.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
 	public void testCompletePaymentRedirection() throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 
 		Long orderId = createOrder();

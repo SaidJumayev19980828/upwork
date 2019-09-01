@@ -148,7 +148,7 @@ public class ProductService {
 
 
 
-	public ProductDetailsDTO getProduct(Long productId, Long shopId){
+	public ProductDetailsDTO getProduct(Long productId, Long shopId) throws BusinessException{
 
 		Optional<ProductEntity> optionalProduct = productRepository.findById(productId);
 		if (!optionalProduct.isPresent()) {
@@ -175,7 +175,7 @@ public class ProductService {
 		return productDTO;
 	}
 
-	private List<VariantDTO> createDummyVariantWithProductStocks(Long productId, Long shopId) {
+	private List<VariantDTO> createDummyVariantWithProductStocks(Long productId, Long shopId) throws BusinessException {
 		List<VariantDTO> variantsDTOList = new ArrayList<>();
 
 		List<StockDTO> productStocks = getStockList(productId, shopId, null);
@@ -202,24 +202,25 @@ public class ProductService {
 
 
 
-    private List<VariantDTO> getVariantsList(List<ProductVariantsEntity> productVariants, Long productId, Long shopId) {
+    private List<VariantDTO> getVariantsList(List<ProductVariantsEntity> productVariants, Long productId, Long shopId) throws BusinessException{
 
 		List<VariantDTO> variantDTOList = new ArrayList<>();
 
-		productVariants.forEach(variant -> {
-
+		for(ProductVariantsEntity variant: productVariants) {			
 			VariantDTO variantObj = new VariantDTO();
 			variantObj.setId(variant.getId());
 			variantObj.setBarcode( variant.getBarcode() );
-			variantObj.setStocks( getStockList(productId, shopId, variant.getId()));
+			variantObj.setStocks( getStockList(productId, shopId, variant.getId()) );
 			variantObj.setVariantFeatures( getVariantFeaturesValues(variant) );
 			variantObj.setImages( getProductVariantImages(variant.getId()) );
 
 			variantDTOList.add(variantObj);
-		});
+		}		
 
 		return variantDTOList;
 	}
+    
+    
 
 	private Map<String,String> getVariantFeaturesValues(ProductVariantsEntity variant) {
 		if(variant == null || !hasFeatures(variant))
@@ -322,7 +323,7 @@ public class ProductService {
 
 
 
-	private List<StockDTO> getStockList(Long productId, Long shopId, Long variantId) {
+	private List<StockDTO> getStockList(Long productId, Long shopId, Long variantId) throws BusinessException {
 		List<StockDTO> stocksArray = null;
 
 		if (shopId == null) {
@@ -350,7 +351,7 @@ public class ProductService {
 
 
 
-	private List<StocksEntity> getProductStockForShop(Long productId, Long shopId) {
+	private List<StocksEntity> getProductStockForShop(Long productId, Long shopId) throws BusinessException {
 
 		return stockService.getProductStockForShop(productId, shopId);
 

@@ -1,4 +1,4 @@
-delete from public.product_bundles WHERE bundle_stock_id IN (SELECT id from public.stocks where organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.product_bundles WHERE product_id IN (SELECT id FROM products WHERE organization_id BETWEEN 99000 AND 99999);
 delete from public.role_employee_users where employee_user_id IN (SELECT id FROM public.employee_users where organization_id between 99000 and 99999);
 delete from public.users where organization_id between 99000 and 99999;
 delete from public.employee_users where organization_id between 99000 and 99999;
@@ -49,12 +49,16 @@ values (400005, 100001, 200004,null, 2000 , 10000, now() , now(), 99001);
 
 
 -- set child bundle items
-insert into public.product_bundles(product_id, bundle_stock_id) values(200003 , 400003);
+insert into public.product_bundles(product_id, item_product_id, item_variant_id) 
+values(200003 , 200002,null);
 
 -- set main bundle , which contains product#1 two variants and the child bundle
-insert into public.product_bundles(product_id, bundle_stock_id) values(200004 , 400001);
-insert into public.product_bundles(product_id, bundle_stock_id) values(200004 , 400002);
-insert into public.product_bundles(product_id, bundle_stock_id) values(200004 , 400004);
+insert into public.product_bundles(product_id, item_product_id, item_variant_id) 
+values(200004 , 200001,300001);
+insert into public.product_bundles(product_id, item_product_id, item_variant_id) 
+values(200004 , 200001,300002);
+insert into public.product_bundles(product_id, item_product_id, item_variant_id) 
+values(200004 , 200003,null);
 
 
 commit;

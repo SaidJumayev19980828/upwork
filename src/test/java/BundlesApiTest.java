@@ -11,10 +11,12 @@ import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -23,7 +25,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -55,7 +56,7 @@ import net.jcip.annotations.NotThreadSafe;
 @PropertySource("classpath:database.properties")
 @NotThreadSafe
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Bundle_Test_Data_Insert.sql"})
-@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/Bundle_Test_Data_Delete.sql"})
+@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class BundlesApiTest {
 	
 	@Autowired
@@ -84,6 +85,10 @@ public class BundlesApiTest {
 	
 	@Autowired 
 	private StockRepository stockRepo;
+	
+	
+	@Value("classpath:/json/bundle_api_test/bundle_api_test_single_bundle_respose.json")
+	private Resource singleBundleResponse;
 	
 	@Test	
 	public void getBundlesTest() throws JsonParseException, JsonMappingException, IOException{
@@ -129,7 +134,7 @@ public class BundlesApiTest {
 	
 	@Test
 	public void getSingleBundleTest() throws JsonParseException, JsonMappingException, IOException{
-		Long bundleId = 200004L;
+		Long bundleId = 200005L;
 		
 		
 		String url = "/product/bundles?"
@@ -148,11 +153,10 @@ public class BundlesApiTest {
 		ObjectMapper mapper = new ObjectMapper();
 		BundleResponse bundleRes = mapper.readValue(body, BundleResponse.class);
 		
+		BundleResponse expectedResponse = mapper.readValue(singleBundleResponse.getInputStream(), BundleResponse.class);
+		
 		assertEquals(1, bundleRes.getBundles().size());
-		
-		
-		
-		
+		assertEquals(expectedResponse, bundleRes);		
 		assertEquals("expected number of all bundles that applies to the query"
 						, Long.valueOf(1)
 						, bundleRes.getTotal() );
@@ -364,6 +368,7 @@ public class BundlesApiTest {
 	//couldn't use @Transactional on the test method, because it miss up with committing the scripts that @Sql runs
 	//can't use @Transactional on methods used internally because spring uses proxies to manage the transactions.
 	//and proxies work when the method is called from extrnal class only.
+	//That's why i used a native query.
 	public Long getBundleVirtualStock(Long bundleId) {
 		return jdbc.queryForObject("select id from stocks where product_id="+bundleId, Long.class);
 	}

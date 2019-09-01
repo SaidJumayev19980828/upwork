@@ -60,7 +60,8 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(606, 502, 6, now(), now(), 99002, 600.0, 1009);
 
 -- set child bundle items
-insert into public.product_bundles(product_id, bundle_stock_id) values(1009 , 603);
+insert into public.product_bundles(product_id, item_product_id, item_variant_id) 
+values(1009 , 1003,null);
 
 
 -- insert image for products  which should be deleted in tests

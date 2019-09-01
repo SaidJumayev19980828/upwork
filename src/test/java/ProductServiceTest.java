@@ -104,7 +104,7 @@ public class ProductServiceTest {
 
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Delete.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
 	public void getProductWithVariantsWithoutStock() {
 
 		ProductEntity productEntity = new ProductEntity();
@@ -169,7 +169,7 @@ public class ProductServiceTest {
 
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Delete.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
 	public void getProductWithVariantsWithStock() {
 
 		ProductEntity productEntity = new ProductEntity();
@@ -266,7 +266,7 @@ public class ProductServiceTest {
 	
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Delete.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
 	public void getSingleProductBundle(){
 		ResponseEntity<String> response =
 				template.getForEntity(
@@ -288,7 +288,7 @@ public class ProductServiceTest {
 
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Delete.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
 	public void getAllProductsIncludingBundle(){
 		ResponseEntity<String> response = template.getForEntity(
 				"/navbox/products?org_id=" + TEST_BUNDLE_ORG_ID + "&shop_id=" + TEST_BUNDLE_SHOP_ID,
@@ -319,7 +319,7 @@ public class ProductServiceTest {
 
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Delete.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
 	public void testProductResponseTotal(){
 		ResponseEntity<String> response = template.getForEntity(
 				"/navbox/products?org_id=" + TEST_BUNDLE_ORG_ID + "&shop_id=" + TEST_BUNDLE_SHOP_ID,
@@ -338,7 +338,7 @@ public class ProductServiceTest {
 
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Delete.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
 	public void testProductResponse(){
 		performTestProductResponseByFilters();
 		productBarcodeTest();

@@ -3,10 +3,12 @@ package com.nasnav.service;
 import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.StockRepository;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductTypes;
 import com.nasnav.persistence.StocksEntity;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,17 +28,23 @@ public class StockServiceImpl implements StockService {
 
 
 
-    public List<StocksEntity> getProductStockForShop(Long productId, Long shopId) {
+    public List<StocksEntity> getProductStockForShop(Long productId, Long shopId) throws BusinessException {
         Optional<ProductEntity> prodOpt = productRepo.findById(productId);
-        //TODO : i think we should throw business exception here
+        
         if(prodOpt == null || !prodOpt.isPresent())
-            return null;
+            throw new BusinessException(
+            		String.format("No product exists with id [%d]!",productId)
+            		, "INVALID PARAM:product_id"
+            		, HttpStatus.NOT_ACCEPTABLE);
 
         List<StocksEntity> stocks  = stockRepo.findByProductEntity_IdAndShopsEntity_Id(productId, shopId);;
 
         //TODO : i think we should throw business exception here
         if(stocks == null || stocks.isEmpty())
-            return null;
+        	throw new BusinessException(
+            		String.format("Product with id [%d] has no stocks!",productId)
+            		, "INVALID PARAM:product_id"
+            		, HttpStatus.NOT_ACCEPTABLE);
 
         stocks.stream().forEach(this::updateStockQuantity);
 
@@ -66,7 +74,7 @@ public class StockServiceImpl implements StockService {
         Integer productType = product.getProductType();
 
         if(productType == ProductTypes.BUNDLE){
-            return bundleRepo.getStockQuantity(product.getId());
+            return bundleRepo.getStockQuantity(product.getId(), stock.getShopsEntity().getId());
         }else{
             return stock.getQuantity();
         }

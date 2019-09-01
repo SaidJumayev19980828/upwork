@@ -54,7 +54,7 @@ public class ShopsUpdateTest {
     @Value("classpath:sql/Shop_Test_Data_Insert.sql")
     private Resource userDataInsert;
 
-    @Value("classpath:sql/Shop_Test_Data_Delete.sql")
+    @Value("classpath:/sql/database_cleanup.sql")
     private Resource userDataDelete;
 
     @Autowired
