@@ -5,11 +5,10 @@ import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
-import javax.persistence.OneToOne;
+import javax.persistence.OneToMany;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,6 +32,6 @@ public class BundleEntity extends ProductEntity{
     private Set<ProductVariantsEntity> variantItems;
     
     
-    @OneToOne(fetch = FetchType.EAGER, mappedBy = "productEntity", cascade = CascadeType.REMOVE)
-    private StocksEntity bundleVirtualStockItem;
+    @OneToMany( mappedBy = "productEntity", cascade = CascadeType.REMOVE)
+    private Set<StocksEntity> bundleVirtualStockItem;
 }

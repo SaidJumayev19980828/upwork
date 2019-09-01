@@ -2,10 +2,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-
+import java.util.Set;
 
 import org.json.JSONObject;
 import org.junit.Test;
@@ -47,6 +48,7 @@ import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductTypes;
 import com.nasnav.response.BundleResponse;
 import com.nasnav.response.ProductUpdateResponse;
+import com.nasnav.test.helpers.TestHelper;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -89,6 +91,10 @@ public class BundlesApiTest {
 	
 	@Value("classpath:/json/bundle_api_test/bundle_api_test_single_bundle_respose.json")
 	private Resource singleBundleResponse;
+	
+	
+	@Autowired
+	private TestHelper helper;
 	
 	@Test	
 	public void getBundlesTest() throws JsonParseException, JsonMappingException, IOException{
@@ -481,6 +487,42 @@ public class BundlesApiTest {
 		
 		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());		
 		assertTrue("assert bundle still exists after failed DELETE operation", bundleRepo.existsById(bundleId));
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void addBundleProductElementTest() {
+		Long bundleId = 200008L;
+		Long productId = 200001L;
+		
+		
+		Set<ProductEntity> productsBefore = helper.getBundleProductItems(bundleId);
+		assertEquals("The bundle should have no elements before",0 , productsBefore.size());
+		
+		JSONObject reqJson = new JSONObject();
+		reqJson.put("operation", Operation.ADD.getValue());
+		reqJson.put("bundle_id", bundleId);
+		reqJson.put("product_id", productId);
+		
+		BaseUserEntity user = empUserRepo.getById(69L); 
+		
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		ResponseEntity<String> response = 
+				template.exchange("/product/bundle/element"
+						, HttpMethod.POST
+						, request
+						, String.class);
+		
+		Set<ProductEntity> productsAfter = helper.getBundleProductItems(bundleId);
+		ProductEntity product = productRepo.findById(productId).get();
+		
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertNotEquals(0, productsAfter.size());
+		assertEquals(1, productsAfter.size());
+		assertEquals(product, productsAfter.stream().findFirst().get());
 	}
 	
 }

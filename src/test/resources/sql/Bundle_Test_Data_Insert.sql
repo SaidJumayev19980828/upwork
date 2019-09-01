@@ -26,6 +26,7 @@ insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organi
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200005, '#Bundle 3' , now() , now() ,1 , 99001, 201);
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200006, '#Bundle 2' , now() , now() ,1 , 99001, 201);
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200007, '#Bundle 1' , now() , now() ,1 , 99001, 202);
+insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200008, 'Empty Bundle' , now() , now() ,1 , 99001, 202);
 
 
 -- dummy variants for product 1 only
@@ -56,6 +57,8 @@ insert into public.stocks(id, shop_id , product_id , variant_id , quantity , pri
 values (400008, 100001, 200007,null, 2000 , 10000, now() , now(), 99001);
 insert into public.stocks(id, shop_id , product_id , variant_id , quantity , price, created_at, updated_at, organization_id)
 values (400009, 100001, 200005,null, 2000 , 10.10, now() , now(), 99001);
+insert into public.stocks(id, shop_id , product_id , variant_id , quantity , price, created_at, updated_at, organization_id)
+values (400010, 100001, 200008,null, 101 , 100.10, now() , now(), 99001);
 
 
 

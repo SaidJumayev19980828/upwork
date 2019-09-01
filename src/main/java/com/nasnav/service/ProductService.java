@@ -4,12 +4,13 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -29,7 +30,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -44,7 +44,6 @@ import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.CategoriesRepository;
 import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.OrderRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
@@ -1474,19 +1473,97 @@ public class ProductService {
 
 	public void updateBundleElement(BundleElementUpdateDTO element) throws BusinessException {
 		validateBundleElementUpdateReq(element);
+				
+		if(element.getOperation().equals( Operation.DELETE)) {
+			deleteBundleElement(element);
+		}else if(element.getOperation().equals( Operation.ADD)){
+			addBundleElement(element);
+		}
+		
 		
 	}
 
 
 
 
+	private void deleteBundleElement(BundleElementUpdateDTO element) {
+		BundleEntity bundle = bundleRepository.getOne(element.getBundleId());
+		
+		Long variantId = element.getVariantId();
+		Long productId = element.getProductId();
+		
+		if(variantId != null && productId != null) {
+			
+			ProductVariantsEntity variant = productVariantsRepository.findByIdAndProductEntity_Id(variantId, productId);
+			
+			Set<ProductVariantsEntity> variants = bundle.getVariantItems();
+			if(variants == null)
+				return;
+						
+			variants.remove(variant);
+			
+		}else if(variantId == null && productId != null) {
+			ProductEntity product = productRepository.findById(productId).get();
+			
+			Set<ProductEntity> products = bundle.getProductItems();
+			if(products == null)
+				return;
+			products.remove(product);			
+		}		
+		
+		bundleRepository.save(bundle);		
+	}
+
+
+
+
+	private void addBundleElement(BundleElementUpdateDTO element) {
+		BundleEntity bundle = bundleRepository.getOne(element.getBundleId());
+		
+		Long variantId = element.getVariantId();
+		Long productId = element.getProductId();
+		
+		if(variantId != null && productId != null) {
+			
+			ProductVariantsEntity variant = productVariantsRepository.findByIdAndProductEntity_Id(variantId, productId);
+			
+			Set<ProductVariantsEntity> variants = bundle.getVariantItems();
+			if(variants == null)
+				variants = new HashSet<>();
+			variants.add(variant);
+			
+		}else if(variantId == null && productId != null) {
+			ProductEntity product = productRepository.findById(productId).get();
+			
+			Set<ProductEntity> products = bundle.getProductItems();
+			if(products == null)
+				products = new HashSet<>();
+			products.add(product);			
+		}		
+		
+		bundleRepository.save(bundle);
+	}
+
+
+
+
 	private void validateBundleElementUpdateReq(BundleElementUpdateDTO element) throws BusinessException {
-		if(!element.areRequiredForCreatePropertiesProvided()) {
+		String missingParam = null;
+		if(element.getOperation() == null) {
+			missingParam = "operation";					
+		}else if(element.getBundleId() == null) {
+			missingParam = "bundle_id";
+		}else if(element.getProductId() == null) {
+			missingParam = "product_id";
+		}
+		
+		if(missingParam != null) {
 			throw new BusinessException(
 					"Required parameters missing!"
-					, "MISSING PARAM"
+					, "MISSING PARAM:" + missingParam
 					, HttpStatus.NOT_ACCEPTABLE);
 		}
+		
 		
 		Operation opr = element.getOperation();
 		if(!opr.equals(Operation.ADD) 
@@ -1494,6 +1571,31 @@ public class ProductService {
 			throw new BusinessException(
 					String.format("Invalid Operation  [%s]", opr.getValue())
 					, "INVALID PARAM:operation"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		
+		if(!bundleRepository.existsById(element.getBundleId())) {
+			throw new BusinessException(
+					String.format("No bundle exists with id[%d]", element.getBundleId())
+					, "INVALID PARAM:bundle_id"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		
+		if(!productRepository.existsById(element.getProductId())) {
+			throw new BusinessException(
+					String.format("No product exists with id[%d]", element.getProductId())
+					, "INVALID PARAM:product_id"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		
+		if(element.getVariantId() != null 
+				&& !productVariantsRepository.existsById( element.getVariantId() )) {
+			throw new BusinessException(
+					String.format("No product variant exists with id[%d]", element.getVariantId())
+					, "INVALID PARAM:variant_id"
 					, HttpStatus.NOT_ACCEPTABLE);
 		}
 		
