@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,8 +23,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.OrganizationDTO;
 import com.nasnav.dto.ProductFeatureDTO;
+import com.nasnav.dto.ProductFeatureUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.OrganizationResponse;
+import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.service.OrganizationService;
 
 import io.swagger.annotations.Api;
@@ -99,6 +102,10 @@ public class OrganizationController {
         }
         return new ResponseEntity(response, response.getHttpStatus());
     }
+    
+    
+    
+    
 
     @ApiOperation(value = "get product features for organization", nickname = "GetOrgProductFeatures", code = 200)
     @ApiResponses(value = {
@@ -109,5 +116,21 @@ public class OrganizationController {
     @GetMapping(value = "products_features", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public List<ProductFeatureDTO> updateOrganizationData(@RequestParam("organization_id") Long orgId) throws Exception {
     	return orgService.getProductFeatures(orgId);
+    }
+    
+    
+    
+    
+    @ApiOperation(value = "add/update product features for organization", nickname = "PostOrgProductFeatures", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "products_feature"
+    			, produces = MediaType.APPLICATION_JSON_UTF8_VALUE
+    			, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ProductFeatureUpdateResponse updateProductFeature(@RequestBody ProductFeatureUpdateDTO featureDto) throws Exception {
+    	return orgService.updateProductFeature(featureDto);
     }
 }

@@ -4,14 +4,14 @@ package com.nasnav.security;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -21,7 +21,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.header.HeaderWriter;
@@ -40,39 +39,51 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     private static  RequestMatcher protectedUrlList ;
     private static  RequestMatcher publicUrlList ;
 
+    
+    //- Any url is authenticated by default.
+    //- to permit a url to all users without AuthN, add it to PUBLIC_URLS.
+    //- to set certain roles who can access the url, add it in "permissions"
+    //- note that the request url is matched against the patterns IN ORDER, so  
+    //	universal patterns like "/**" must always be the last one.
+    //- to created a pattern use one of the overloads of "patternOf" method, each adds
+    //	more fine grained control of the permission (by HttpMethod, by roles) 
+	private  List<AuthPattern> permissions = Arrays.asList(
+						
+					    patternOf( "/order/**"),
+						patternOf( "/stock/**"	 										, getNonCustomersRoles() ),
+						patternOf( "/shop/**"											, setOf(Roles.ORGANIZATION_MANAGER, Roles.STORE_MANAGER) ),
+						patternOf( "/user/list"),
+						patternOf( "/user/create"										, setOf(Roles.NASNAV_ADMIN, Roles.ORGANIZATION_ADMIN, Roles.STORE_ADMIN) ),
+						patternOf( "/user/update"										, getAllRoles() ),
+						patternOf( "/product/**"					,HttpMethod.POST	, setOf(Roles.ORGANIZATION_ADMIN)),
+						patternOf( "/product/**"					,HttpMethod.DELETE	, setOf(Roles.ORGANIZATION_ADMIN)),
+						patternOf( "/admin/**"	   	 									, setOf(Roles.NASNAV_ADMIN) ),
+						patternOf( "/files/**"),
+						patternOf( "/admin/organization"								, setOf(Roles.NASNAV_ADMIN)),
+						patternOf( "/organization/info"									, setOf(Roles.ORGANIZATION_ADMIN)),
+						patternOf( "/organization/brand"								, setOf(Roles.ORGANIZATION_ADMIN)),
+						patternOf( "/organization/products_feature"	,HttpMethod.POST	, setOf(Roles.ORGANIZATION_ADMIN)),
+						patternOf( "/**")
+						);
 
-    @SuppressWarnings("unchecked")
-	private static Map<String, Set<Roles>> permissions = Stream.of(new Object[][] {
-				    { "/order/**" 		, getAllRoles() },
-				    { "/stock/**" 		, getNonCustomersRoles() },
-				    { "/shop/**"		, setOf(Roles.ORGANIZATION_MANAGER, Roles.STORE_MANAGER) },
-				    { "/user/list"		, getAllRoles() },
-				    { "/user/create"	, setOf(Roles.NASNAV_ADMIN, Roles.ORGANIZATION_ADMIN, Roles.STORE_ADMIN) },
-				    { "/user/update"	, getAllRoles() },
-				    { "/product/**"		, setOf(Roles.ORGANIZATION_ADMIN)},
-				    { "/admin/**"	    , new HashSet<Roles>(Arrays.asList(Roles.NASNAV_ADMIN)) },
-				    { "/files/**"		, getAllRoles() },
-                    { "/admin/organization", new HashSet<Roles>(Arrays.asList(Roles.NASNAV_ADMIN))},
-                    { "/organization/info", new HashSet<Roles>(Arrays.asList(Roles.ORGANIZATION_ADMIN))},
-                    { "/organization/brand", new HashSet<Roles>(Arrays.asList(Roles.ORGANIZATION_ADMIN))},
-    }).collect(Collectors.toMap(data -> (String) data[0], data -> (Set<Roles>) data[1]));
-
-    //TODO: currently the AuthenticationFilter calls the authentication process
-    //and it takes the PROTECTED_URLS list to work on
-    //which means,any url is permitted by default, this should be changed, but 
-    //currently PUBLIC_URLS can't intersected with PROTECTED_URLS.
-    //i.e if a url matches a pattern in both protected URL's and PUBLIC_URL
-    //it will be authenticated.
-    private static final Set<String> PROTECTED_URLS = permissions.keySet();
-
-    private static final List<String> PUBLIC_URLS =
-            Arrays.asList("/navbox/**"
-                        , "/user/recover"
-                        , "/user/login"
-                        , "/user/register"
-		                , "/shop/update"
-		                , "/order/list"
-                        , "/payment/**");
+   
+   
+    private List<AuthPattern> PUBLIC_URLS =
+            Arrays.asList(
+            			patternOf("/navbox/**")
+                        , patternOf("/user/recover")
+                        , patternOf("/user/login")
+                        , patternOf("/user/register")
+		                , patternOf("/shop/update")
+		                , patternOf("/order/list")
+                        , patternOf("/payment/**")
+                        , patternOf("/product/bundles"					, HttpMethod.GET)
+                        , patternOf("/product/info"						, HttpMethod.GET)
+                        , patternOf("/product/image"					, HttpMethod.GET)
+                        , patternOf("/product/variant"					, HttpMethod.GET)
+                        , patternOf("/organization/brands"				, HttpMethod.GET)
+                        , patternOf("/organization/products_features"	, HttpMethod.GET)
+                 );
 
     AuthenticationProvider provider;
 
@@ -80,11 +91,11 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         super();
         this.provider = authenticationProvider;        
         
-        List<RequestMatcher> protectedrequestMatcherList = PROTECTED_URLS.stream().map(AntPathRequestMatcher::new).collect(Collectors.toList());
+        List<RequestMatcher> protectedrequestMatcherList = permissions.stream().map(this::toAntPathRequestMatcher).collect(Collectors.toList());
         protectedUrlList = new OrRequestMatcher( protectedrequestMatcherList );
 
 
-        List<RequestMatcher> publicRequestMatcherList = PUBLIC_URLS.stream().map(AntPathRequestMatcher::new).collect(Collectors.toList());
+        List<RequestMatcher> publicRequestMatcherList = PUBLIC_URLS.stream().map(this::toAntPathRequestMatcher).collect(Collectors.toList());
         publicUrlList = new OrRequestMatcher( publicRequestMatcherList );
     }
 
@@ -93,25 +104,31 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         auth.authenticationProvider(provider);
     }
 
+    
     @Override
     public void configure(final WebSecurity webSecurity) {
-        PUBLIC_URLS.stream().forEach(webSecurity.ignoring()::antMatchers);
+    	//we need to ignore the public url's from the whole security
+    	//instead of just permitting it for all users using http.antMatchers(url).permitAll().
+    	//Because we authenticate using a custom authentication filter, which apparently is
+    	//applied in all cases of authentication.
+    	//So we need to bypass the request of the public url from the whole security filter chain.
+    	 
+    	webSecurity.ignoring().requestMatchers(publicUrlList);
     }
+    
+    
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
-    	permissions.forEach((url, roles) -> configureUrlAllowedRoles(http, url, roles));
 
+        permissions.forEach(pattern -> configureUrlAllowedRoles(http, pattern));
+        
         http
         .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         .and()
         	.authenticationProvider(provider)
         	.addFilterBefore(authenticationFilter(), AnonymousAuthenticationFilter.class)
-        	.authorizeRequests()
-        		.requestMatchers(publicUrlList).permitAll()
-//        		.anyRequest().authenticated()        	//adding this causes unauthenticated responses to have status 403, it overrided the
-        .and()
         	.exceptionHandling()
         	.accessDeniedHandler(new NasnavAccessDeniedHandler()) //return a custom response 403 with a body containing {success=false} , don't know why we need it ..
         .and()
@@ -122,9 +139,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             .formLogin().disable()
             .httpBasic().disable()
             .logout().disable();
+        
     }
+    
+    
+    
 
-    @Bean
     AuthenticationFilter authenticationFilter() throws Exception {
         final AuthenticationFilter filter = new AuthenticationFilter(protectedUrlList);
         filter.setAuthenticationManager(authenticationManager());
@@ -133,22 +153,23 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         filter.setAuthenticationFailureHandler(customAuthenticationHandler());
         return filter;
     }
+    
+    
 
 	@Bean
 	public AuthenticationFailureHandler customAuthenticationHandler() {
 		return new AuthenticationHandler();
 	}
+	
+	
 
     @Bean
     AuthenticationEntryPoint unauthorizedEntryPoint() {
         return new NasnavHttpStatusEntryPoint(HttpStatus.UNAUTHORIZED);
     }
 
-//    @Bean
-//    AccessDeniedHandler accessDeniedEntryPoint() {
-//        return new NasnavAccessDeniedEntryPoint();
-//    }
 
+    
 	public HeaderWriter contentTypeHeaderWriter() {
 		return new ContentTypeHeaderWriter();
 	}
@@ -169,9 +190,11 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
 
 
-    private void configureUrlAllowedRoles(HttpSecurity http, String url, Set<Roles> roles) {
+    private void configureUrlAllowedRoles(HttpSecurity http, AuthPattern pattern) {
     	try {
-			http.authorizeRequests().antMatchers(url).hasAnyAuthority(toArray(roles));
+			http.authorizeRequests()
+					.antMatchers(pattern.getHttpMethod(), pattern.getUrlPattern())	
+					.hasAnyAuthority( toArray(pattern.getRoles()) );
 		} catch (Exception e) {
 			logger.error(e,e);
 			throw new IllegalStateException("Security configuration failed! ", e);
@@ -183,4 +206,41 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     private static HashSet<Roles> setOf(Roles... roles) {
 		return new HashSet<Roles>(Arrays.asList(roles));
 	}
+    
+    
+    
+    private static AuthPattern patternOf(String urlPattern , Set<Roles> roles) {
+    	return patternOf(urlPattern, null, roles);
+    }
+    
+    
+    
+    
+    private static AuthPattern patternOf(String urlPattern , HttpMethod method) {
+    	return patternOf(urlPattern, method , getAllRoles());
+    }
+    
+    
+    
+    
+
+    private static AuthPattern patternOf(String urlPattern ) {
+    	return patternOf(urlPattern, null , getAllRoles());
+    }
+    
+    
+    private static AuthPattern patternOf(String urlPattern , HttpMethod method  , Set<Roles> roles) {
+    	return new AuthPattern(urlPattern, method, roles);
+    };
+    
+    
+    
+    
+    
+    private AntPathRequestMatcher toAntPathRequestMatcher(AuthPattern pattern) {
+    	String method = Optional.ofNullable(pattern.getHttpMethod())
+    							.map(HttpMethod::toString)
+    							.orElse(null);
+    	return new AntPathRequestMatcher( pattern.getUrlPattern(), method);
+    }
 }
