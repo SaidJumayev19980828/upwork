@@ -511,8 +511,7 @@ public class OrganizationService {
 									, HttpStatus.NOT_ACCEPTABLE);
 		}
 		
-		if(featureDto.isUpdated("name") &&
-				StringUtils.isBlankOrNull(featureDto.getName())) {
+		if(StringUtils.isBlankOrNull(featureDto.getName())) {
 			throw new BusinessException(
 					 "Invalid parameters [name], the feature name can't be null nor Empty!" 
 					, "INVALID PARAM:name"
