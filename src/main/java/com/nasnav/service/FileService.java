@@ -258,4 +258,28 @@ public class FileService {
 							.map(u -> u.substring(1))
 						.orElseThrow(() -> new BusinessException("Invalid URL : " + url, "INVALID PARAM:url", HttpStatus.NOT_ACCEPTABLE));
 	}
+
+
+
+
+	public void deleteFileByUrl(String url) throws BusinessException{	
+		FileEntity file = filesRepo.findByUrl(url);
+		
+		if(file == null) 	//if file doesn't exist in database, then job's done!
+			return;
+		
+		Path path = basePath.resolve(file.getLocation());
+		
+		try {			
+			filesRepo.delete(file);
+			
+			Files.deleteIfExists(path);
+		} catch (IOException e) {
+			logger.error(e,e);
+			throw new BusinessException(
+					String.format("Failed to delete file with url[%s] at location [%s]", url, path.toString())
+					, "FAILURE"
+					, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 }

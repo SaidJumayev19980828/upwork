@@ -17,6 +17,7 @@ public class ApiResponseBuilder implements Serializable {
     private List<String> roles;
     private Long organizationId;
     private Long storeId;
+    private String message;
 
     public ApiResponseBuilder() {
     }
@@ -28,6 +29,11 @@ public class ApiResponseBuilder implements Serializable {
 
     public ApiResponseBuilder setSuccess(boolean success) {
         this.success = success;
+        return this;
+    }
+
+    public ApiResponseBuilder setMessage(String message) {
+        this.message = message;
         return this;
     }
 

@@ -7,13 +7,13 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
 
-import com.nasnav.persistence.*;
 import org.json.JSONArray;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,26 +23,25 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.NavBox;
 import com.nasnav.controller.OrdersController;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
@@ -60,8 +59,6 @@ public class OrderServiceTest {
 
 	private static UserEntity persistentUser;
 
-	private MockMvc mockMvc;
-
 	@Autowired
 	private TestRestTemplate template;
 
@@ -77,13 +74,7 @@ public class OrderServiceTest {
 	private BasketRepository basketRepository;
 
 	@Autowired
-	private OrganizationRepository organizationRepository;
-
-	@Autowired
 	private ProductRepository productRepository;
-
-	@Autowired
-	private ShopsRepository shopsRepository;
 
 	@Autowired
 	UserService userService;

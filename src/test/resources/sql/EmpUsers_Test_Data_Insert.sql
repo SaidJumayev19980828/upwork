@@ -1,14 +1,3 @@
-----------------------------deleting previous data----------------------------
-delete from public.role_employee_users; --where id between 20 and 21;
-delete from public.employee_users where id in(68, 69,70 ,71, 158);
-DELETE FROM PUBLIC.ORDERS WHERE organization_id BETWEEN 99000 AND 99999;
-delete from public.roles; --where id between 1 and 3;
-delete from public.shops where id between 501 and 502;
-delete from public.brands where id between 101 and 102;
-delete from public.organizations where id between 99001 and 99002;
-
-
---///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 --inserting organizations
 INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001, 'organization_1', now(), now());
 INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());

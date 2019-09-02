@@ -1,4 +1,8 @@
 ----------------------------deleting previous data----------------------------
+delete from public.role_employee_users where employee_user_id IN (SELECT id FROM public.employee_users where organization_id between 99000 and 99999);
+delete from public.users where organization_id between 99000 and 99999;
+delete from public.employee_users where organization_id between 99000 and 99999;
+DELETE FROM public.roles WHERE organization_id BETWEEN 99000 AND 99999;
 delete from public.stocks where id between 601 and 604;
 delete from public.products where id between 1001 and 1008;
 delete from public.categories where id between 201 and 202;
@@ -24,6 +28,27 @@ INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (202, 'ca
 --inserting shops
 INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (501, 'shop_1', 102, now(), now(), 99002);
 INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (502, 'shop_2', 101, now(), now(), 99001);
+
+--insering users
+INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+VALUES (68, now(), now(), 'testuser1@nasnav.com', 99001, '101112',  502);
+INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+VALUES (69, now(), now(), 'testuser2@nasnav.com', 99002, '131415',  501);
+
+
+--inserting Roles
+insert into roles(id, name, created_at, updated_at, organization_id) values(1, 'NASNAV_ADMIN', now(), now(), 99001);
+insert into roles(id, name, created_at, updated_at, organization_id) values(2, 'ORGANIZATION_ADMIN', now(), now(), 99001);
+insert into roles(id, name, created_at, updated_at, organization_id) values(4, 'ORGANIZATION_EMPLOYEE', now(), now(), 99001);
+insert into roles(id, name, created_at, updated_at, organization_id) values(5, 'STORE_EMPLOYEE', now(), now(), 99001);
+insert into roles(id, name, created_at, updated_at, organization_id) values(3, 'CUSTOMER', now(), now(), 99001);
+
+
+--inserting Roles EmployeeUsers relations
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (20, 68, 1, now(), now());
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (21, 69, 2, now(), now());
+
+
 
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
