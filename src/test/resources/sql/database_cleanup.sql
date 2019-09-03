@@ -6,6 +6,7 @@ DELETE FROM public.baskets WHERE stock_id IN (SELECT Id from public.stocks where
 DELETE FROM public.orders WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.stocks WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.product_bundles WHERE product_id IN (SELECT id FROM products WHERE organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.product_variants WHERE product_id IN (SELECT id FROM products WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.products WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;

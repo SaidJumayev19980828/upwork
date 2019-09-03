@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import java.io.IOException;
 import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -12,6 +13,7 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.collections.keyvalue.AbstractMapEntry;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,7 +41,6 @@ import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.ProductDetailsDTO;
-import com.nasnav.dto.ProductFeatureUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateDTO;
 import com.nasnav.dto.ProductImgDTO;
 import com.nasnav.dto.ProductRepresentationObject;
@@ -1382,11 +1383,11 @@ public class ProductService {
 		}
 		
 		if(variant.isUpdated("barcode")) {
-			entity.setDescription( variant.getBarcode() );
+			entity.setBarcode( variant.getBarcode() );
 		}
 		
 		if(variant.isUpdated("features")) {
-			entity.setDescription( variant.getFeatures() );
+			entity.setFeatureSpec( variant.getFeatures() );
 		}
 		
 		entity = productVariantsRepository.save(entity);
@@ -1403,10 +1404,38 @@ public class ProductService {
 		if(variant.isUpdated("pname") && !StringUtils.isBlankOrNull( variant.getPname()) ) {
 			entity.setPname(variant.getPname() );
 		}else if(opr.equals( Operation.CREATE )){
-			String defaultPname = StringUtils.encodeUrl(variant.getName());
+			JSONObject json = new JSONObject(variant.getFeatures());
+			
+			StringBuilder pname = new StringBuilder();						
+			for(String key: json.keySet()) {
+				String featureName = getProductFeatureName(key);
+				String value = json.get(key).toString();
+				
+				if(pname.length() != 0)
+					pname.append("-");
+				
+				String toAppend = featureName + "-"+value;
+				pname.append(StringUtils.encodeUrl(toAppend));
+			}
+				
+			
+			String defaultPname = StringUtils.encodeUrl(pname.toString());
 			entity.setPname(defaultPname);
 		}
 		
+	}
+	
+	
+	
+	
+	private String getProductFeatureName(String idAsStr) {
+		return Optional.ofNullable(idAsStr)
+						.map(Integer::valueOf)
+						.map(productFeaturesRepository::findById)
+						.filter(Optional::isPresent)
+						.map(Optional::get)
+						.map(ProductFeaturesEntity::getName)
+						.orElse("");
 	}
 	
 	

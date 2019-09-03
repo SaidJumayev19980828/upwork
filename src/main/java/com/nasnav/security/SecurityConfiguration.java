@@ -83,6 +83,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/product/variant"					, HttpMethod.GET)
                         , patternOf("/organization/brands"				, HttpMethod.GET)
                         , patternOf("/organization/products_features"	, HttpMethod.GET)
+                        , patternOf("/swagger**/**")		//for development only
+                        , patternOf("/webjars/**")		//for development only
+                        , patternOf("/v2/**")		//for development only
+                        , patternOf("/csrf/**")		//for development only
                  );
 
     AuthenticationProvider provider;
