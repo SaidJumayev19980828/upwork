@@ -60,7 +60,7 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD) //creates a new context with new temp dir for each test method
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Files_API_Test_Insert.sql"})
-@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/Files_API_Test_Delete.sql"})
+@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class FilesApiTest {
 	private static final String TEST_PHOTO = "nasnav--Test_Photo.png";
 
