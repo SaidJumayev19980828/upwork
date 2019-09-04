@@ -1291,6 +1291,7 @@ public class ProductService {
 		
 		validateUserCanUpdateVariant(variant, userOrgId);
 		
+		validateFeatures(variant, userOrgId);
 	}
 
 
@@ -1327,18 +1328,24 @@ public class ProductService {
 
 
 
-	private void validateVariantForCreate(VariantUpdateDTO variant, Long orgId) throws BusinessException {
+	private void validateVariantForCreate(VariantUpdateDTO variant, Long userOrgId) throws BusinessException {
 		if(!variant.areRequiredForCreatePropertiesProvided()) {
 			throw new BusinessException(
 					"Missing required parameters !" 
 					, "MISSING PARAM"
 					, HttpStatus.NOT_ACCEPTABLE);
-		}		
+		}	
 		
+		validateFeatures(variant, userOrgId);
 		
-		
+	}
+
+
+
+
+	private void validateFeatures(VariantUpdateDTO variant, Long userOrgId) throws BusinessException {
 		String features = variant.getFeatures();		
-		if(StringUtils.isBlankOrNull( features )) {
+		if(variant.isUpdated("features") && StringUtils.isBlankOrNull( features )) {
 			throw new BusinessException(
 					 "Invalid parameters [features], the product variant features can't be null nor Empty!" 
 					, "INVALID PARAM:features"
@@ -1352,6 +1359,33 @@ public class ProductService {
 					, HttpStatus.NOT_ACCEPTABLE);
 		}
 		
+		if(hasInvalidFeatureKeys(features ,userOrgId)) {
+			throw new BusinessException(
+					 String.format("Invalid parameter [features], a feature key doesnot exists or doesn't belong to organization with id[%d]" ,userOrgId ) 
+					, "INVALID PARAM:features"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+
+
+
+	private boolean hasInvalidFeatureKeys(String features, Long userOrgId) {
+		JSONObject featuresJson = new JSONObject(features);
+		return featuresJson.keySet()
+							.stream()
+							.map(Integer::valueOf)
+							.map(productFeaturesRepository::findById)
+							.anyMatch(opt -> isInvalidFeatureKey(userOrgId, opt));
+	}
+
+
+
+
+	private boolean isInvalidFeatureKey(Long userOrgId, Optional<ProductFeaturesEntity> opt) {
+		return !opt.isPresent() 
+				|| opt.get().getOrganization() == null 
+				|| !Objects.equal(opt.get().getOrganization().getId(), userOrgId);
 	}
 
 

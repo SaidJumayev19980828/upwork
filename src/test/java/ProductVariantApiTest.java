@@ -212,6 +212,7 @@ public class ProductVariantApiTest {
 		json.put("product_id", TEST_PRODUCT_ID);
 		json.put("variant_id", TEST_VARIANT_ID);
 		json.put("name", "updated");
+		json.put("features", "{\"234\": 30, \"235\": \"WHITE\"}");
 		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getId(), user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
@@ -227,14 +228,81 @@ public class ProductVariantApiTest {
 		ProductVariantsEntity saved = variantRepo.findById(id).get();
 		
 		assertEquals(json.getString("name"), saved.getName());
+		assertEquals(json.get("features"), saved.getFeatureSpec());
 		assertEquals(before.getBarcode(), saved.getBarcode());
 		assertEquals(before.getProductEntity().getId(), saved.getProductEntity().getId() );
 		assertEquals(before.getDescription(), saved.getDescription());
-		assertEquals(before.getFeatureSpec(), saved.getFeatureSpec());
+		
 	}
 	
 
 
+	
+	
+	@Test
+	public void productVariantUpdateAdminOfOtherOrgTest() {
+		BaseUserEntity user = empRepo.getById(70L); //admin from another organization
+		
+		JSONObject json = createProductVariantRequest();
+		json.put("operation", Operation.UPDATE.getValue());
+		json.put("variant_id", TEST_VARIANT_ID);
+		
+		HttpEntity request = TestCommons.getHttpEntity(json.toString(), user.getId(), user.getAuthenticationToken());
+		
+		ResponseEntity<String> response = template.exchange("/product/variant"
+															, HttpMethod.POST
+															, request
+															, String.class
+															);
+		
+		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	public void productVariantCreateFeaturesFromOtherOrgTest() {
+		BaseUserEntity user = empRepo.getById(69L); 
+		
+		JSONObject json = createProductVariantRequest();
+		json.put("features", "{\"236\": 37, \"235\": \"BLack\"}");
+		
+		HttpEntity request = TestCommons.getHttpEntity(json.toString(), user.getId(), user.getAuthenticationToken());
+		
+		ResponseEntity<String> response = template.exchange("/product/variant"
+															, HttpMethod.POST
+															, request
+															, String.class
+															);
+		
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void productVariantCreateFeaturesNotExistsTest() {
+		BaseUserEntity user = empRepo.getById(69L); 
+		
+		JSONObject json = createProductVariantRequest();
+		json.put("features", "{\"888888\": 37, \"235\": \"BLack\"}");
+		
+		HttpEntity request = TestCommons.getHttpEntity(json.toString(), user.getId(), user.getAuthenticationToken());
+		
+		ResponseEntity<String> response = template.exchange("/product/variant"
+															, HttpMethod.POST
+															, request
+															, String.class
+															);
+		
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+	}
+	
+	
+	
 
 	private JSONObject createProductVariantRequest() {
 		JSONObject json = new JSONObject();
