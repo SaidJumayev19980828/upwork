@@ -38,6 +38,9 @@ import net.jcip.annotations.NotThreadSafe;
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class ProductVariantApiTest {
 	
+	private static final Long TEST_VARIANT_ID = 80001L;
+
+
 	private Long TEST_PRODUCT_ID = 1002L;
 
 
@@ -195,6 +198,40 @@ public class ProductVariantApiTest {
 		assertEquals("shoe-size-37-shoe-color-black", saved.getPname());
 	}
 
+	
+	
+	
+	@Test
+	public void productVariantUpdateTest() {
+		BaseUserEntity user = empRepo.getById(69L);
+		
+		ProductVariantsEntity before = variantRepo.findById(TEST_VARIANT_ID).get();
+		
+		JSONObject json = new JSONObject();
+		json.put("operation", Operation.UPDATE.getValue());
+		json.put("product_id", TEST_PRODUCT_ID);
+		json.put("variant_id", TEST_VARIANT_ID);
+		json.put("name", "updated");
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getId(), user.getAuthenticationToken());
+		
+		ResponseEntity<String> response = template.exchange("/product/variant"
+															, HttpMethod.POST
+															, request
+															, String.class
+															);
+		
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		JSONObject body = new JSONObject(response.getBody());
+		Long id = body.getLong("variant_id");
+		
+		ProductVariantsEntity saved = variantRepo.findById(id).get();
+		
+		assertEquals(json.getString("name"), saved.getName());
+		assertEquals(before.getBarcode(), saved.getBarcode());
+		assertEquals(before.getProductEntity().getId(), saved.getProductEntity().getId() );
+		assertEquals(before.getDescription(), saved.getDescription());
+		assertEquals(before.getFeatureSpec(), saved.getFeatureSpec());
+	}
 	
 
 

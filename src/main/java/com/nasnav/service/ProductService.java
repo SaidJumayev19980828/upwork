@@ -1404,25 +1404,33 @@ public class ProductService {
 		if(variant.isUpdated("pname") && !StringUtils.isBlankOrNull( variant.getPname()) ) {
 			entity.setPname(variant.getPname() );
 		}else if(opr.equals( Operation.CREATE )){
-			JSONObject json = new JSONObject(variant.getFeatures());
-			
-			StringBuilder pname = new StringBuilder();						
-			for(String key: json.keySet()) {
-				String featureName = getProductFeatureName(key);
-				String value = json.get(key).toString();
-				
-				if(pname.length() != 0)
-					pname.append("-");
-				
-				String toAppend = featureName + "-"+value;
-				pname.append(StringUtils.encodeUrl(toAppend));
-			}
-				
-			
-			String defaultPname = StringUtils.encodeUrl(pname.toString());
+			String defaultPname = createPnameFromVariantFeatures(variant);
 			entity.setPname(defaultPname);
 		}
 		
+	}
+
+
+
+
+	private String createPnameFromVariantFeatures(VariantUpdateDTO variant) {
+		JSONObject json = new JSONObject(variant.getFeatures());
+		
+		StringBuilder pname = new StringBuilder();						
+		for(String key: json.keySet()) {
+			String featureName = getProductFeatureName(key);
+			String value = json.get(key).toString();
+			
+			if(pname.length() != 0)
+				pname.append("-");
+			
+			String toAppend = featureName + "-"+value;
+			pname.append(StringUtils.encodeUrl(toAppend));
+		}
+			
+		
+		String defaultPname = StringUtils.encodeUrl(pname.toString());
+		return defaultPname;
 	}
 	
 	
