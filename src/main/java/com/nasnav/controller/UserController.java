@@ -129,11 +129,11 @@ public class UserController {
             @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 404, message = "User not found"),
     })
-    @GetMapping(value = "profile",
+    @GetMapping(value = "info",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity sendEmailRecovery(@RequestHeader (value = "User-ID", required = true) Long userId,
+    public ResponseEntity sendEmailRecovery(@RequestHeader (value = "User-ID", required = true) Long loggedUserId,
                                              @RequestHeader (value = "User-Token", required = true) String userToken,
-                                             @RequestParam(value = "user_token", required = true) String token) throws BusinessException{
-        return new ResponseEntity(userService.getUserData(token), HttpStatus.OK);
+                                             @RequestParam(value = "user_id", required = true) Long id /*search parameter*/) throws BusinessException{
+        return new ResponseEntity(userService.getUserData(loggedUserId, id), HttpStatus.OK);
     }
 }

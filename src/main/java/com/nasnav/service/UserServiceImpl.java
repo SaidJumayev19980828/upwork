@@ -10,14 +10,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -44,11 +45,14 @@ public class UserServiceImpl implements UserService {
 	private UserRepository userRepository;
 	private MailService mailService;
 	private PasswordEncoder passwordEncoder;
+	private EmployeeUserServiceHelper employeeUserServiceHelper;
 	@Autowired
-	public UserServiceImpl(UserRepository userRepository, MailService mailService, PasswordEncoder passwordEncoder) {
+	public UserServiceImpl(UserRepository userRepository, MailService mailService, PasswordEncoder passwordEncoder,
+						   EmployeeUserServiceHelper employeeUserServiceHelper) {
 		this.userRepository = userRepository;
 		this.mailService = mailService;
 		this.passwordEncoder = passwordEncoder;
+		this.employeeUserServiceHelper = employeeUserServiceHelper;
 	}
 
 	@Autowired
@@ -397,11 +401,15 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserRepresentationObject getUserData(String userToken) throws BusinessException {
-		if (userRepository.findByAuthenticationToken(userToken) == null) {
-			throw new BusinessException("ENTITY NOT FOUND: user", "No user found with the provided authentication token", HttpStatus.NOT_ACCEPTABLE);
+	public UserRepresentationObject getUserData(Long loggedUserId, Long id) throws BusinessException {
+		List<String> userRoles = employeeUserServiceHelper.getEmployeeUserRoles(loggedUserId);
+		if (!userRoles.contains("NASNAV_ADMIN") && loggedUserId != id) {
+			throw new BusinessException("UNAUTHORIZED", "Logged user doesn't have the right to view other users data", HttpStatus.UNAUTHORIZED);
 		}
-		UserEntity userEntity = userRepository.findByAuthenticationToken(userToken).get();
+		if (!userRepository.findById(id).isPresent()) {
+			throw new BusinessException("ENTITY NOT FOUND: user", "No user found with the provided ID", HttpStatus.NOT_ACCEPTABLE);
+		}
+		UserEntity userEntity = userRepository.findById(id).get();
 		return userEntity.getRepresentation(userEntity);
 	}
 
