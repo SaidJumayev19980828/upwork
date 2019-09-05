@@ -360,7 +360,7 @@ public class OrderServiceImpl implements OrderService {
 		DetailedOrderRepObject obj = new DetailedOrderRepObject();
 		obj.setUserId(entity.getUserId());
 		obj.setShopId(entity.getShopsEntity().getId());
-		if (!getItems)
+		//if (!getItems)
 			obj.setOrderId(orderId);
 		obj.setCreatedAt(entity.getCreationDate());
 		obj.setDeliveryDate(entity.getDeliveryDate());
