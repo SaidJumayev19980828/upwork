@@ -48,6 +48,8 @@ public class ProductVariantsEntity {
     @ManyToOne(cascade = CascadeType.DETACH)
     @JoinColumn(name = "product_id", referencedColumnName = "id")
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private ProductEntity productEntity;
     
     

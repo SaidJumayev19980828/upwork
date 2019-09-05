@@ -17,7 +17,7 @@ import lombok.EqualsAndHashCode;
 @Entity
 @DiscriminatorValue("1")
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper=true)
 public class BundleEntity extends ProductEntity{
     @ManyToMany
     @JoinTable(name = "product_bundles"

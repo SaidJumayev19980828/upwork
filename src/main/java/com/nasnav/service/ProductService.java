@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -1031,10 +1032,28 @@ public class ProductService {
 	
 	
 	
-	public ProductUpdateResponse deleteBundle(Long productId) throws BusinessException {
-		validateBundleToDelete(productId);
+	public ProductUpdateResponse deleteBundle(Long bundleId) throws BusinessException {
+		validateBundleToDelete(bundleId);
 		
-		return deleteProduct(productId);
+		List<StocksEntity> bundleStocks = stockRepository.findByProductIdIn(Arrays.asList(bundleId));
+		try {
+			bundleStocks.forEach(stockRepository::delete);
+		}catch(DataIntegrityViolationException e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new BusinessException(
+					String.format("Failed to bundle with id[%d]! bundle is still used in the system (stocks, orders, bundles, ...)!", bundleId)
+					, "INVAILID PARAM:product_id"
+					, HttpStatus.FORBIDDEN);
+		}catch(Throwable e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new BusinessException(
+					String.format("Failed to delete bundle with id[%d]!", bundleId)
+					, "INVAILID PARAM:product_id"
+					, HttpStatus.INTERNAL_SERVER_ERROR);
+		} 
+		
+		
+		return deleteProduct(bundleId);
 	}
 
 
