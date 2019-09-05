@@ -18,7 +18,6 @@ import lombok.EqualsAndHashCode;
 @Table(name="stocks")
 @Entity
 @Data
-
 @EqualsAndHashCode(callSuper=false)
 public class StocksEntity extends AbstractPersistable<Long> implements BaseEntity{
 
@@ -43,19 +42,11 @@ public class StocksEntity extends AbstractPersistable<Long> implements BaseEntit
 	@Column(name = "currency")
 	private int currency;
 
-	public TransactionCurrency getCurrency() {
-		return TransactionCurrency.getTransactionCurrency(this.currency);
-	}
-	public void setCurrency(TransactionCurrency currency) {
-		this.currency = currency.getValue();
-	}
-
+	
 
 	private BigDecimal discount;
 
-	@Column(name = "sub_product_id")
-	private Long subProductId;
-
+	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "organization_id", nullable = false)
 	@JsonIgnore
@@ -68,23 +59,22 @@ public class StocksEntity extends AbstractPersistable<Long> implements BaseEntit
 	@ToString.Exclude
 	private ShopsEntity shopsEntity;
 
+	
+
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "product_id", nullable = false)
-	@JsonIgnore
-	private ProductEntity productEntity;
-
-//    @OneToOne(mappedBy = "ordersEntity")
-//    @JsonIgnore
-//    private BasketsEntity basketsEntity;
-
-//    @OneToOne(mappedBy = "productEntity")
-//    @JsonIgnore
-//    private ProductVariants productVariants;
-
-	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name="variant_id")
 	@JsonIgnore
 	private ProductVariantsEntity productVariantsEntity;
+	
+	
+	public TransactionCurrency getCurrency() {
+		return TransactionCurrency.getTransactionCurrency(this.currency);
+	}
+	public void setCurrency(TransactionCurrency currency) {
+		this.currency = currency.getValue();
+	}
+
+	
 	
 	@Override
 	public BaseRepresentationObject getRepresentation() {

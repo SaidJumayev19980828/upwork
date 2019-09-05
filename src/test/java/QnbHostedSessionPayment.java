@@ -68,6 +68,10 @@ public class QnbHostedSessionPayment {
     private OrganizationEntity org;
     private UserEntity user;
     private Long orderId;
+    
+    
+    @Autowired
+    private ProductVariantsRepository productVariantRepository;
 
 
     @Before
@@ -81,7 +85,8 @@ public class QnbHostedSessionPayment {
         for(BasketsEntity basket : baskets){
             basketRepository.delete(basket);
             stockRepository.delete(basket.getStocksEntity());
-            productRepository.delete(basket.getStocksEntity().getProductEntity());
+            productVariantRepository.delete(basket.getStocksEntity().getProductVariantsEntity());
+            productRepository.delete(basket.getStocksEntity().getProductVariantsEntity().getProductEntity());
         }
         //delete payment
         if (paymentsRepository.findByUid(session.getOrderRef()).isPresent())
@@ -128,16 +133,26 @@ public class QnbHostedSessionPayment {
 
         //create organization
         org = new OrganizationEntity();
+        org.setId(99010L);
         org.setName("organization");
         org.setDescription("org descr");
         org.setCreatedAt(new Date());
         org.setUpdatedAt(new Date());
         org = organizationRepository.save(org);
+        
         //create product
         ProductEntity product = new ProductEntity();
         product.setName("product one");
+        product.setOrganizationId(org.getId());
         ProductEntity productEntity = productRepository.save(product);
-
+        
+        //create base variant
+        ProductVariantsEntity variant = new ProductVariantsEntity();
+        variant.setFeatureSpec("{}");
+        variant.setProductEntity(productEntity);
+        variant.setName("variant name");
+        variant = productVariantRepository.save(variant);
+        
         //create shop
         shop = new ShopsEntity();
         shop.setCreatedAt(new Date());
@@ -149,7 +164,7 @@ public class QnbHostedSessionPayment {
         stock.setPrice(new BigDecimal(100));
         stock.setCreationDate(new Date());
         stock.setUpdateDate(new Date());
-        stock.setProductEntity(productEntity);
+        stock.setProductVariantsEntity(variant);
         stock.setQuantity(5);
         stock.setCurrency(TransactionCurrency.EGP);
         stock.setShopsEntity(shopEntity);

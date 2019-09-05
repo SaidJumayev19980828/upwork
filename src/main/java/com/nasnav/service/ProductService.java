@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -191,7 +192,7 @@ public class ProductService {
 
 	private List<ProductRepresentationObject> getBundleItems(ProductEntity product) {
 
-		List<Long> bundleProductsIdList = bundleRepository.GetBundleItemsProductIds(product.getId());
+		List<Long> bundleProductsIdList = bundleRepository.getBundleItemsProductIds(product.getId());
 		List<ProductEntity> bundleProducts = this.getProductsByIds(bundleProductsIdList , "asc", "name");
 		ProductsResponse response = this.getProductsResponse(bundleProducts,"asc" , "name" , 0, Integer.MAX_VALUE );
 		List<ProductRepresentationObject> productRepList = response == null? new ArrayList<>() : response.getProducts();
@@ -321,7 +322,7 @@ public class ProductService {
 	}
 
 
-
+	//TODO : argument productId may be obsolete
 	private List<StockDTO> getStockList(Long productId, Long shopId, Long variantId) throws BusinessException {
 		List<StockDTO> stocksArray = null;
 
@@ -331,8 +332,7 @@ public class ProductService {
 
 		List<StocksEntity> stocks;
 		if (variantId != null) {
-			stocks = stockRepository.findByProductEntity_IdAndShopsEntity_IdAndProductVariantsEntity_Id(productId,
-					shopId, variantId);
+			stocks = stockRepository.findByShopsEntity_IdAndProductVariantsEntity_Id(shopId, variantId);
 		} else {
 			stocks = getProductStockForShop(productId, shopId);
 		}
@@ -382,8 +382,14 @@ public class ProductService {
 
 		if (stocks != null && !stocks.isEmpty()) {
 
-			List<Long> productsIds = stocks.stream().filter(stock -> stock.getProductEntity() != null)
-					.map(stock -> stock.getProductEntity().getId()).collect(Collectors.toList());
+			List<Long> productsIds = stocks.stream()
+											.filter(stock -> stock.getProductVariantsEntity() != null)
+											.map(stock -> stock.getProductVariantsEntity() )
+											.filter(var -> var != null)
+											.map(var -> var.getProductEntity())
+											.filter(prod -> prod != null)
+											.map(prod -> prod.getId())
+											.collect(Collectors.toList());
 
 			if (categoryId == null && brandId == null) {
 				products = getProductsByIds(productsIds, order, sort);
@@ -682,17 +688,21 @@ public class ProductService {
 		if (products != null) {
 			productsResponse = new ProductsResponse();
 
-			List<StocksEntity> stocks = stockRepository.findByProductEntity_IdIn(
-					products.stream().map(product -> product.getId()).collect(Collectors.toList()));
+			List<Long> productIdList = products.stream()
+												.map(product -> product.getId())
+												.collect(Collectors.toList() );
+			List<StocksEntity> stocks = stockRepository.findByProductIdIn(productIdList);
 
 			List<ProductRepresentationObject> productsRep = products.stream()
-					.map(product -> (ProductRepresentationObject) product.getRepresentation())
-					.collect(Collectors.toList());
+																	.map(ProductEntity::getRepresentation)
+																	.map(ProductRepresentationObject.class::cast)
+																	.collect(Collectors.toList());
 			productsRep.forEach(pRep -> {
 
-				Optional<StocksEntity> optionalStock = stocks.stream().filter(stock -> stock != null
-						&& stock.getProductEntity() != null && stock.getProductEntity().getId().equals(pRep.getId()))
-						.findFirst();
+				Optional<StocksEntity> optionalStock = stocks.stream()															
+															.filter(stock -> stock != null)
+															.filter(stock -> Objects.equal( getStockProductId(stock),  pRep.getId()))
+															.findFirst();
 
 				if (optionalStock != null && optionalStock.isPresent()) {
 					pRep.setAvailable(true);
@@ -712,8 +722,7 @@ public class ProductService {
 						public int compare(ProductRepresentationObject p1, ProductRepresentationObject p2) {
 							if (p1.getPrice() == null)
 								return -1;
-							if (p2.getPrice() == null)
-								return 1;
+							if (p2.getPrice() == null)								return 1;
 							return Double.compare(p1.getPrice().doubleValue(), p2.getPrice().doubleValue());
 						}
 					});
@@ -747,6 +756,19 @@ public class ProductService {
 
 		return productsResponse;
 	}
+	
+	
+	
+	
+	
+	private Long getStockProductId(StocksEntity stock) {
+		return Optional.ofNullable(stock)
+				.map(StocksEntity::getProductVariantsEntity)
+				.map(ProductVariantsEntity::getProductEntity)
+				.map(ProductEntity::getId)
+				.orElse(0L);
+	}
+	
 	
 	
 	
@@ -1434,13 +1456,24 @@ public class ProductService {
 		dto.setName(entity.getName());
 		dto.setPname(entity.getPname());
 		
-		Optional.ofNullable(entity.getBundleVirtualStockItem())
-				.map(StocksEntity::getPrice)
-				.ifPresent(dto::setPrice);
+		List<StocksEntity> bundleStock = 	entity.getProductVariants()
+													.stream()
+													.flatMap( var -> var.getStocks().stream())
+													.collect(Collectors.toList());
+				
+		if(bundleStock.size() != 1) {
+			throw new IllegalStateException(
+					String.format("Bundle with id[%d] doesn't have a single price!", entity.getId()));
+		}
 		
-		List<Long> productIdList = bundleRepository.GetBundleItemsProductIds(entity.getId());
+		bundleStock.stream()
+					.findFirst()		
+					.map(StocksEntity::getPrice)
+					.ifPresent(dto::setPrice);
+		
+		List<Long> productIdList = bundleRepository.getBundleItemsProductIds(entity.getId());
 		List<ProductBaseInfo> productlist = productRepository.findByIdInOrderByNameAsc(productIdList)
-															.stream()
+																.stream()
 															.map(ProductEntity::getRepresentation)
 															.map(this::toProductBaseInfo)
 															.collect(Collectors.toList());
@@ -1489,28 +1522,9 @@ public class ProductService {
 	private void deleteBundleElement(BundleElementUpdateDTO element) {
 		BundleEntity bundle = bundleRepository.getOne(element.getBundleId());
 		
-		Long variantId = element.getVariantId();
-		Long productId = element.getProductId();
+		StocksEntity item = stockRepository.getOne(element.getStockId());
 		
-		if(variantId != null && productId != null) {
-			
-			ProductVariantsEntity variant = productVariantsRepository.findByIdAndProductEntity_Id(variantId, productId);
-			
-			Set<ProductVariantsEntity> variants = bundle.getVariantItems();
-			if(variants == null)
-				return;
-						
-			variants.remove(variant);
-			
-		}else if(variantId == null && productId != null) {
-			ProductEntity product = productRepository.findById(productId).get();
-			
-			Set<ProductEntity> products = bundle.getProductItems();
-			if(products == null)
-				return;
-			products.remove(product);			
-		}		
-		
+		bundle.getItems().remove(item);
 		bundleRepository.save(bundle);		
 	}
 
@@ -1520,27 +1534,9 @@ public class ProductService {
 	private void addBundleElement(BundleElementUpdateDTO element) {
 		BundleEntity bundle = bundleRepository.getOne(element.getBundleId());
 		
-		Long variantId = element.getVariantId();
-		Long productId = element.getProductId();
+		StocksEntity item = stockRepository.getOne(element.getStockId());
 		
-		if(variantId != null && productId != null) {
-			
-			ProductVariantsEntity variant = productVariantsRepository.findByIdAndProductEntity_Id(variantId, productId);
-			
-			Set<ProductVariantsEntity> variants = bundle.getVariantItems();
-			if(variants == null)
-				variants = new HashSet<>();
-			variants.add(variant);
-			
-		}else if(variantId == null && productId != null) {
-			ProductEntity product = productRepository.findById(productId).get();
-			
-			Set<ProductEntity> products = bundle.getProductItems();
-			if(products == null)
-				products = new HashSet<>();
-			products.add(product);			
-		}		
-		
+		bundle.getItems().add(item);
 		bundleRepository.save(bundle);
 	}
 
@@ -1553,8 +1549,8 @@ public class ProductService {
 			missingParam = "operation";					
 		}else if(element.getBundleId() == null) {
 			missingParam = "bundle_id";
-		}else if(element.getProductId() == null) {
-			missingParam = "product_id";
+		}else if(element.getStockId() == null) {
+			missingParam = "stock_id";
 		}
 		
 		if(missingParam != null) {
@@ -1583,19 +1579,10 @@ public class ProductService {
 		}
 		
 		
-		if(!productRepository.existsById(element.getProductId())) {
+		if(opr.equals(Operation.ADD) && !stockRepository.existsById(element.getStockId())) {
 			throw new BusinessException(
-					String.format("No product exists with id[%d]", element.getProductId())
-					, "INVALID PARAM:product_id"
-					, HttpStatus.NOT_ACCEPTABLE);
-		}
-		
-		
-		if(element.getVariantId() != null 
-				&& !productVariantsRepository.existsById( element.getVariantId() )) {
-			throw new BusinessException(
-					String.format("No product variant exists with id[%d]", element.getVariantId())
-					, "INVALID PARAM:variant_id"
+					String.format("No stock item exists with id[%d]", element.getStockId())
+					, "INVALID PARAM:stock_id"
 					, HttpStatus.NOT_ACCEPTABLE);
 		}
 		

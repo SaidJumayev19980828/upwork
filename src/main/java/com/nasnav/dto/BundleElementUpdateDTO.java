@@ -16,8 +16,5 @@ public class BundleElementUpdateDTO {
 	
 	private Long bundleId;
 	private Operation operation;
-	private Long productId;
-	private Long variantId;
-	
-	
+	private Long stockId;
 }

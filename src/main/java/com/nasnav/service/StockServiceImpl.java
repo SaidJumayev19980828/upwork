@@ -6,12 +6,14 @@ import com.nasnav.dao.StockRepository;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductTypes;
+import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -37,7 +39,7 @@ public class StockServiceImpl implements StockService {
             		, "INVALID PARAM:product_id"
             		, HttpStatus.NOT_ACCEPTABLE);
 
-        List<StocksEntity> stocks  = stockRepo.findByProductEntity_IdAndShopsEntity_Id(productId, shopId);;
+        List<StocksEntity> stocks  = stockRepo.findByProductIdAndShopsId(productId, shopId);;
 
         //TODO : i think we should throw business exception here
         if(stocks == null || stocks.isEmpty())
@@ -66,15 +68,20 @@ public class StockServiceImpl implements StockService {
      * Set all stocks of the bundle to the calculated quantity.
      * */
     public Integer getStockQuantity(StocksEntity stock){
-        ProductEntity product = stock.getProductEntity();
+        ProductEntity product = Optional.ofNullable(stock.getProductVariantsEntity())
+        								.map(ProductVariantsEntity::getProductEntity)
+        								.orElse(null);
         if(product == null){
             return stock.getQuantity();
         }
 
         Integer productType = product.getProductType();
 
-        if(productType == ProductTypes.BUNDLE){
-            return bundleRepo.getStockQuantity(product.getId(), stock.getShopsEntity().getId());
+        if( productType.equals(ProductTypes.BUNDLE) ){
+        	if(stock.getQuantity().equals(0))
+        		return 0;
+        	else 
+        		return bundleRepo.getStockQuantity(product.getId());
         }else{
             return stock.getQuantity();
         }
@@ -87,9 +94,20 @@ public class StockServiceImpl implements StockService {
      * Bundles and services stock items are excluded.
      * */
     public Long getStockItemsQuantitySum(List<StocksEntity> stocks) {
-        return stocks.stream()
-                .filter(s -> s.getProductEntity().getProductType() == ProductTypes.STOCK_ITEM)
+        return stocks.stream()        		
+                .filter(this::isPhysicalProduct)
                 .mapToLong(stock -> stock.getQuantity())
                 .sum();
+    }
+    
+    
+    
+    
+    public Boolean isPhysicalProduct(StocksEntity stock) {
+    	return Optional.ofNullable(stock)
+		    			.map(StocksEntity::getProductVariantsEntity)
+		    			.map(ProductVariantsEntity::getProductEntity)
+		    			.filter(product -> Objects.equals( product.getProductType(), ProductTypes.STOCK_ITEM) )
+		    			.isPresent();
     }
 }

@@ -1,6 +1,7 @@
 package com.nasnav.persistence;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -13,7 +14,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
-import javax.persistence.OneToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -21,10 +22,12 @@ import org.hibernate.annotations.DiscriminatorFormula;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.ProductRepresentationObject;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Entity
 @Table(name = "products")
@@ -86,28 +89,14 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
     }
     
     
-//    @OneToMany(mappedBy="productEntity")
-//    @JsonIgnore
-//    private Set<StocksEntity> stocksEntities;
 
-//    @OneToOne(mappedBy = "productEntity")
-//    @JsonIgnore
-//    private ProductVariants productVariants;
+    @OneToMany(mappedBy = "productEntity", cascade = CascadeType.ALL)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<ProductVariantsEntity> productVariants;
 
-//    @JsonIgnore
-//    @OneToOne(cascade = CascadeType.ALL)
-//    @JoinColumn(name = "category_id", referencedColumnName = "id")
-//    private CategoriesEntity categoriesEntity;
 
-//    @JsonIgnore
-//    @OneToOne(cascade = CascadeType.ALL)
-//    @JoinColumn(name = "brand_id", referencedColumnName = "id")
-//    private BrandsEntity brandsEntity;
-    
-//    @ManyToMany(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "organization_id", nullable = false)
-//    @JsonIgnore
-//    private OrganizationEntity organizationEntity;
 
     @Override
     public ProductRepresentationObject getRepresentation() {

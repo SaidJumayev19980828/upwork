@@ -47,21 +47,36 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1007, 'product_7',101, 202, 99002, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1008, 'product_8',102, 202, 99002, now(), now());
 
+
+
+-- variants for each product
+insert into public.product_variants(id, "name" , product_id ) values(310001, 'var' 	, 1001);
+insert into public.product_variants(id, "name" , product_id ) values(310002, 'var' 	, 1002);
+insert into public.product_variants(id, "name" , product_id ) values(310003, 'var' 	, 1003);
+insert into public.product_variants(id, "name" , product_id ) values(310004, 'var' 	, 1004);
+insert into public.product_variants(id, "name" , product_id ) values(310005, 'var' 	, 1005);
+insert into public.product_variants(id, "name" , product_id ) values(310006, 'var' 	, 1006);
+insert into public.product_variants(id, "name" , product_id ) values(310007, 'var' 	, 1007);
+insert into public.product_variants(id, "name" , product_id ) values(310008, 'var' 	, 1008);
+
+
 --inserting stocks
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(601, 502, 6, now(), now(), 99002, 600.0, 1001);
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(602, 501, 8, now(), now(), 99001, 1200.0, 1002);
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(603, 501, 4, now(), now(), 99002, 200.0, 1003);
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(604, 502, 6, now(), now(), 99001, 700.0, 1004);
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(605, 502, 6, now(), now(), 99001, 700.0, 1006);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(601, 502, 6, now(), now(), 99002, 600.0, 310001);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(602, 501, 8, now(), now(), 99001, 1200.0, 310002);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(603, 501, 4, now(), now(), 99002, 200.0, 310003);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(604, 502, 6, now(), now(), 99001, 700.0, 310004);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(605, 502, 6, now(), now(), 99001, 700.0, 310005);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(606, 502, 6, now(), now(), 99001, 700.0, 310006);
 
 
 --insert bundle 
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, product_type) VALUES (1009, 'bundle',102, 202, 99002, now(), now(),1);
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(606, 502, 6, now(), now(), 99002, 600.0, 1009);
+insert into public.product_variants(id, "name" , product_id ) values(310009, 'var' 	, 1009);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(607, 502, 6, now(), now(), 99002, 600.0, 310009);
 
 -- set child bundle items
-insert into public.product_bundles(product_id, item_product_id, item_variant_id) 
-values(1009 , 1003,null);
+insert into public.product_bundles(product_id, bundle_stock_id)
+values(1009 , 603);
 
 
 -- insert image for products  which should be deleted in tests

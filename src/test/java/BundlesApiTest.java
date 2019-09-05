@@ -2,7 +2,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -46,6 +45,7 @@ import com.nasnav.persistence.BundleEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductTypes;
+import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.BundleResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.test.helpers.TestHelper;
@@ -376,7 +376,7 @@ public class BundlesApiTest {
 	//and proxies work when the method is called from extrnal class only.
 	//That's why i used a native query.
 	public Long getBundleVirtualStock(Long bundleId) {
-		return jdbc.queryForObject("select id from stocks where product_id="+bundleId, Long.class);
+		return jdbc.queryForObject("select id from stocks where variant_id= (select id from product_variants where product_id="+bundleId+")", Long.class);
 	}
 
 
@@ -471,8 +471,10 @@ public class BundlesApiTest {
 		String sql = "select count(*) from public.baskets  b\n" + 
 						"left join public.stocks s\n" + 
 						"on b.stock_id = s.id\n" + 
-						"left join public.products p\n" + 
-						"on s.product_id = p.id\n" + 
+						"left join public.product_variants v \n" +
+						"on s.variant_id = v.id\n" + 
+						"left join public.products p \n" +
+						"on v.product_id = p.id\n" + 
 						"where p.id = " + bundleId;			
 		Long count = jdbc.queryForObject(sql, Long.class);
 		
@@ -494,18 +496,18 @@ public class BundlesApiTest {
 	
 	
 	@Test
-	public void addBundleProductElementTest() {
+	public void addBundleElementTest() {
 		Long bundleId = 200008L;
-		Long productId = 200001L;
+		Long stockId = 400001L;
 		
 		
-		Set<ProductEntity> productsBefore = helper.getBundleProductItems(bundleId);
-		assertEquals("The bundle should have no elements before",0 , productsBefore.size());
+		Set<StocksEntity> itemsBefore = helper.getBundleItems(bundleId);
+		assertEquals("The bundle should have no elements before",0 , itemsBefore.size());
 		
 		JSONObject reqJson = new JSONObject();
 		reqJson.put("operation", Operation.ADD.getValue());
 		reqJson.put("bundle_id", bundleId);
-		reqJson.put("product_id", productId);
+		reqJson.put("stock_id", stockId);
 		
 		BaseUserEntity user = empUserRepo.getById(69L); 
 		
@@ -516,13 +518,12 @@ public class BundlesApiTest {
 						, request
 						, String.class);
 		
-		Set<ProductEntity> productsAfter = helper.getBundleProductItems(bundleId);
-		ProductEntity product = productRepo.findById(productId).get();
+		Set<StocksEntity> itemsAfter = helper.getBundleItems(bundleId);
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertNotEquals(0, productsAfter.size());
-		assertEquals(1, productsAfter.size());
-		assertEquals(product, productsAfter.stream().findFirst().get());
+		assertNotEquals(0, itemsAfter.size());
+		assertEquals(1, itemsAfter.size());
+		assertEquals(stockId , itemsAfter.stream().findFirst().get().getId());
 	}
 	
 }

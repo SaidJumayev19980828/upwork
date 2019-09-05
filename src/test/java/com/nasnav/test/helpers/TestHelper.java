@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.dao.BundleRepository;
 import com.nasnav.persistence.BundleEntity;
-import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.StocksEntity;
 
 @Component 
 public class TestHelper {
@@ -17,10 +17,10 @@ public class TestHelper {
 	
 	
 	@Transactional(readOnly = true)
-	public Set<ProductEntity> getBundleProductItems(Long bundleId){
-		BundleEntity bundleBefore = bundleRepo.findById(bundleId).get();
-		bundleBefore.getProductItems().size(); // just to fetch the elements inside the transaction
-		return bundleBefore.getProductItems();
+	public Set<StocksEntity> getBundleItems(Long bundleId){
+		BundleEntity bundle = bundleRepo.findById(bundleId).get();
+		bundle.getItems().size(); // just to force fetching the elements inside this transaction
+		return bundle.getItems();
 	} 
 
 }

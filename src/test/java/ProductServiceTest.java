@@ -216,7 +216,6 @@ public class ProductServiceTest {
 		StocksEntity stocksEntity = new StocksEntity();
 		stocksEntity.setDiscount(new BigDecimal(0));
 		stocksEntity.setPrice(new BigDecimal(PRODUCT_PRICE));
-		stocksEntity.setProductEntity(productEntity);
 		stocksEntity.setProductVariantsEntity(productVariantsEntity);
 		stocksEntity.setQuantity(QUANTITY);
 		stocksEntity.setCreationDate(new Date());
