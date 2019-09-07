@@ -143,7 +143,10 @@ public abstract class BaseJsonDTO {
 	}
 	
 	
-	
+	/**
+	 * @return if properties that required for creating new data are:
+	 * - were all updated at least once
+	 * */
 	@JsonIgnore
 	public Boolean areRequiredForDataCreatePropertiesPresent() {
 		return areRequiredPropertiesPresent(Required.FOR_CREATE)
@@ -151,7 +154,10 @@ public abstract class BaseJsonDTO {
 	}
 	
 	
-	
+	/**
+	 * @return if properties that required for updating existing data are:
+	 * - were all updated at least once
+	 * */
 	@JsonIgnore
 	public Boolean areRequiredForDataUpdatePropertiesPresent() {
 		return areRequiredPropertiesPresent(Required.FOR_UPDATE)
@@ -159,7 +165,10 @@ public abstract class BaseJsonDTO {
 	}
 
 
-	
+	/**
+	 * @return if properties that required for updating existing data are:
+	 * - were all updated at least once
+	 * */
 	@JsonIgnore
 	public Boolean areRequiredAlwaysPropertiesPresent() {
 		return areRequiredPropertiesPresent(Required.ALWAYS);
@@ -192,7 +201,11 @@ public abstract class BaseJsonDTO {
 	
 	
 	
-	
+	/**
+	 * @return if properties that required for updating existing data are:
+	 * - were all updated at least once
+	 * - all have non-null values 
+	 * */
 	@JsonIgnore
 	public Boolean areRequiredForUpdatePropertiesProvided() {
 		return areRequiredForDataUpdatePropertiesPresent() 
@@ -202,7 +215,11 @@ public abstract class BaseJsonDTO {
 	
 	
 	
-
+	/**
+	 * @return if properties that required for creating new data are:
+	 * - were all updated at least once
+	 * - all have non-null values 
+	 * */
 	@JsonIgnore
 	public Boolean areRequiredForCreatePropertiesProvided() {
 		return areRequiredForDataCreatePropertiesPresent() 
@@ -211,7 +228,11 @@ public abstract class BaseJsonDTO {
 	}
 	
 	
-	
+	/**
+	 * @return if properties that are always required for updating or creating data are:
+	 * - were all updated at least once
+	 * - all have non-null values 
+	 * */
 	@JsonIgnore
 	public Boolean isRequiredPropertyProvided(String propName) {
 		PropertyDescriptor prop = getPropertyDescriptor(propName);

@@ -1,24 +1,39 @@
 package com.nasnav.service;
 
 import com.nasnav.commons.utils.StringUtils;
+import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.OrganizationThemeRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.SocialRepository;
+import com.nasnav.dao.ExtraAttributesRepository;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.OrganizationThemeEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.SocialEntity;
 import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.response.OrganizationResponse;
+import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.service.helpers.OrganizationServiceHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.SpringSecurityCoreVersion;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -26,13 +41,29 @@ import java.util.stream.Collectors;
 public class OrganizationService {
 
     private final OrganizationRepository organizationRepository;
+
     private final SocialRepository socialRepository;
+
     private final OrganizationThemeRepository organizationThemeRepository;
+
     private final BrandsRepository brandsRepository;
+
     private final ExtraAttributesRepository extraAttributesRepository;
+    
     private final OrganizationServiceHelper helper;
     private final FileService fileService;
     private final EmployeeUserRepository employeeUserRepository;
+
+    @Autowired
+	private ProductFeaturesRepository featureRepo;
+    
+    
+    @Autowired
+    private EmployeeUserRepository empRepo;
+    
+    
+    @Autowired 
+    private OrganizationRepository orgRepo;
 
     @Autowired
     public OrganizationService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository, SocialRepository socialRepository,
@@ -48,7 +79,7 @@ public class OrganizationService {
         this.employeeUserRepository = employeeUserRepository;
     }
 
-    public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
+   public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
 
         OrganizationEntity organizationEntity = organizationRepository.findOneByNameContainingIgnoreCase(organizationName);
 
@@ -126,7 +157,7 @@ public class OrganizationService {
                 .collect(Collectors.toList());
         return response;
     }
-
+    
     public OrganizationResponse createOrganization(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
         if (json.name == null) {
             throw new BusinessException("MISSING_PARAM: name","Required Organization name is empty", HttpStatus.NOT_ACCEPTABLE);
@@ -295,4 +326,197 @@ public class OrganizationService {
         brandsRepository.save(brand);
         return new OrganizationResponse(brand.getId(), 1);
     }
+    
+    
+    
+    
+    
+
+	public List<ProductFeatureDTO> getProductFeatures(Long orgId) {
+		List<ProductFeaturesEntity> entities = featureRepo.findByOrganizationId(orgId);
+		return entities.stream()
+					.map(ProductFeatureDTO::new)
+					.collect(Collectors.toList());
+	}
+	
+	
+	
+	
+
+	public ProductFeatureUpdateResponse updateProductFeature(ProductFeatureUpdateDTO featureDto) throws BusinessException {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		Long orgId = user.getOrganizationId();
+		
+		
+		validateProductFeature(featureDto, orgId);
+		
+		ProductFeaturesEntity entity = saveFeatureToDb(featureDto, orgId);		
+		
+		return new ProductFeatureUpdateResponse(entity.getId());
+	}
+	
+	
+	
+	
+
+	private ProductFeaturesEntity saveFeatureToDb(ProductFeatureUpdateDTO featureDto, Long orgId) {
+		ProductFeaturesEntity entity = new ProductFeaturesEntity();
+		entity.setOrganization( orgRepo.findById(orgId).get() );
+		
+		Operation opr = featureDto.getOperation();
+		
+		if( opr.equals( Operation.UPDATE)) {			
+			entity = featureRepo.findById( featureDto.getFeatureId()).get();
+		}
+		
+		
+		if(featureDto.isUpdated("name")){
+			entity.setName( featureDto.getName()); 
+		}
+		
+		setPnameOrGenerateDefault(featureDto, entity, opr);
+		
+		if(featureDto.isUpdated("description")) {
+			entity.setDescription( featureDto.getDescription() );
+		}
+		
+		entity = featureRepo.save(entity);
+		
+		return entity;
+	}
+	
+	
+
+	private void setPnameOrGenerateDefault(ProductFeatureUpdateDTO featureDto, ProductFeaturesEntity entity,
+			Operation opr) {
+		
+		if(featureDto.isUpdated("pname") && !StringUtils.isBlankOrNull( featureDto.getPname()) ) {
+			entity.setPname(featureDto.getPname() );
+		}else if(opr.equals( Operation.CREATE )){
+			String defaultPname = StringUtils.encodeUrl(featureDto.getName());
+			entity.setPname(defaultPname);
+		}
+		
+	}
+	
+	
+	
+	
+
+	private void validateProductFeature(ProductFeatureUpdateDTO featureDto, Long orgId) throws BusinessException {
+		if(!featureDto.areRequiredAlwaysPropertiesPresent()) {
+			throw new BusinessException(
+					"Missing required parameters !" 
+					, "MISSING PARAM"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		Operation opr = featureDto.getOperation();
+		
+		validateOperation(opr);
+		
+		if(opr.equals(Operation.CREATE)) {
+			validateProductFeatureForCreate(featureDto, orgId);
+		}else if(opr.equals(Operation.UPDATE)) {
+			validateProductFeatureForUpdate(featureDto, orgId);
+		}
+	}
+	
+	
+	
+	
+
+	private void validateOperation(Operation opr) throws BusinessException {
+		if(opr == null) {
+			throw new BusinessException(
+					"Missing required parameters [operation]!" 
+					, "MISSING PARAM:operation"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		if(!opr.equals(Operation.CREATE) &&
+				!opr.equals(Operation.UPDATE)) {
+			throw new BusinessException(
+					String.format("Invalid parameters [operation], unsupported operation [%s]!", opr.getValue()) 
+					, "INVALID PARAM:operation"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+	
+	
+	
+	
+
+	private void validateProductFeatureForUpdate(ProductFeatureUpdateDTO featureDto, Long userOrgId) throws BusinessException {
+		if(!featureDto.areRequiredForUpdatePropertiesProvided()) {
+			throw new BusinessException(
+					"Missing required parameters !" 
+					, "MISSING PARAM"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		Integer id = featureDto.getFeatureId();
+		Optional<ProductFeaturesEntity> featureOptional= featureRepo.findById( id );
+		
+		if( !featureOptional.isPresent()) {
+			throw new BusinessException(
+					String.format("Invalid parameters [feature_id], no feature exists with id [%d]!", id) 
+					, "INVALID PARAM:feature_id"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}	
+		
+		Long featureOrgId = featureOptional.map(ProductFeaturesEntity::getOrganization)
+										   .map(OrganizationEntity::getId)
+										   .orElseThrow(
+												   () -> new BusinessException(
+															String.format("Feature of id[%d], Doesn't follow any organization!", id) 
+															, "INTERNAL SERVER ERROR"
+															, HttpStatus.INTERNAL_SERVER_ERROR)
+												   );
+		   
+		
+		if(!Objects.equals(featureOrgId, userOrgId)) {
+			throw new BusinessException(
+					String.format("Feature of id[%d], can't be changed a user from organization with id[%d]!", featureDto.getFeatureId() , userOrgId) 
+					, "INVALID PARAM:feature_id"
+					, HttpStatus.FORBIDDEN);
+		}
+		
+		if(featureDto.isUpdated("name") &&
+				StringUtils.isBlankOrNull(featureDto.getName())) {
+			throw new BusinessException(
+					 "Invalid parameters [name], the feature name can't be null nor Empty!" 
+					, "INVALID PARAM:name"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}		
+	}
+	
+	
+	
+
+	private void validateProductFeatureForCreate(ProductFeatureUpdateDTO featureDto, Long orgId) throws BusinessException {
+		if(!featureDto.areRequiredForCreatePropertiesProvided()) {
+			throw new BusinessException(
+					"Missing required parameters !" 
+					, "MISSING PARAM"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		
+		if(!organizationRepository.existsById( orgId )) {
+			throw new BusinessException(
+					String.format("Invalid parameters [organization_id], no organization exists with id [%d]!", orgId) 
+									, "INVALID PARAM:organization_id"
+									, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		if(StringUtils.isBlankOrNull(featureDto.getName())) {
+			throw new BusinessException(
+					 "Invalid parameters [name], the feature name can't be null nor Empty!" 
+					, "INVALID PARAM:name"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
 }

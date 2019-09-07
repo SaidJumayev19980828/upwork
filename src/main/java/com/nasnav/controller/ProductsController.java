@@ -16,10 +16,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.dto.ProductImageUpdateDTO;
+import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.ProductUpdateResponse;
+import com.nasnav.response.VariantUpdateResponse;
 import com.nasnav.service.ProductService;
 
 import io.swagger.annotations.Api;
@@ -107,5 +109,25 @@ public class ProductsController {
             		throws BusinessException {
 		return  productService.deleteImage(imageId);
     }
+	
+	
+	
+	
+	@ApiOperation(value = "delete image for product", nickname = "product image delete", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Product image deleted"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+	@ResponseStatus(HttpStatus.OK)
+	@PostMapping(value = "variant",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE
+            ,consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public VariantUpdateResponse updateProductVariant(@RequestBody VariantUpdateDTO variant)
+            		throws BusinessException {
+		return  productService.updateVariant(variant);
+    }
+	
 	
 }

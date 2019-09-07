@@ -44,7 +44,7 @@ import net.jcip.annotations.NotThreadSafe;
 @PropertySource("classpath:database.properties")
 @NotThreadSafe
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_API_Test_Data_Insert.sql"})
-@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/Products_API_Test_Data_Delete.sql"})
+@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class ProductApiTest {
 	
 	@Autowired
