@@ -1,5 +1,7 @@
 package com.nasnav.persistence;
 
+import com.nasnav.dto.Address;
+import com.nasnav.dto.UserRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -36,7 +38,8 @@ public class UserEntity extends BaseUserEntity{
     @Column(name="city")
     private String addressCity;
 
-
+    @Column(name="image")
+    private String image;
 
     
     public static UserEntity registerUser(UserDTOs.UserRegistrationObject userJson) {
@@ -50,4 +53,19 @@ public class UserEntity extends BaseUserEntity{
         return user;
     }
 
+    public static UserRepresentationObject getRepresentation(UserEntity userEntity) {
+        UserRepresentationObject obj = new UserRepresentationObject();
+        obj.id = userEntity.getId();
+        obj.name = userEntity.getName();
+        obj.email = userEntity.getEmail();
+        obj.phoneNumber = userEntity.getPhoneNumber();
+        obj.image = userEntity.getImage();
+        //TODO set mobile, image after including in in DB
+        Address address = new Address();
+        address.setCountry(userEntity.getAddressCountry());
+        address.setCity(userEntity.getAddressCity());
+        address.setStreet(userEntity.getAddress());
+        obj.address = address;
+        return obj;
+    }
 }

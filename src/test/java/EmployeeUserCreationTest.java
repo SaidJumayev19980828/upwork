@@ -3,6 +3,7 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
+import com.nasnav.dto.UserRepresentationObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -16,11 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
@@ -579,4 +576,39 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(401, response.getStatusCode().value());
 	}
 	//finish STORE_EMPLOYEE role test
+
+	@Test
+	public void getUserOwnData() {
+		HttpEntity<Object> header = getHttpEntity(null, "123", "88");
+		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?user_id=88", HttpMethod.GET,
+				                                        header, UserRepresentationObject.class);
+		System.out.println(response.toString());
+		Assert.assertEquals(response.getStatusCodeValue(), 200);
+	}
+
+	@Test
+	public void getUserDataDifferentUsers() {
+		// logged user is NASNAV_ADMIN so he can view all other users data
+		HttpEntity<Object> header = getHttpEntity(null, "abcdefg", "68");
+		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?user_id=88", HttpMethod.GET,
+				header, UserRepresentationObject.class);
+		System.out.println(response.toString());
+		Assert.assertEquals(response.getStatusCodeValue(), 200);
+
+		// logged user is ORGANIZATION_ADMIN so he can't view any other users data
+		header = getHttpEntity(null, "hijkllm", "69");
+		response = template.exchange("/user/info?user_id=88", HttpMethod.GET,
+				header, UserRepresentationObject.class);
+		System.out.println(response.toString());
+		Assert.assertEquals(response.getStatusCodeValue(), 401);
+	}
+
+	@Test
+	public void getNonExistUserData() {
+		HttpEntity<Object> header = getHttpEntity(null, "abcdefg", "68");
+		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?user_id=80008", HttpMethod.GET,
+				header, UserRepresentationObject.class);
+		System.out.println(response.toString());
+		Assert.assertEquals(response.getStatusCodeValue(), 406);
+	}
 }

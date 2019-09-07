@@ -340,7 +340,7 @@ public class ProductService {
 
 
 	public ProductsResponse getProductsResponseByShopId(Long shopId, Long categoryId, Long brandId, Integer start,
-	                                                    Integer count, String sort, String order) {
+	                                                    Integer count, String sort, String order, String searchName) {
 
 		if (start == null)
 			start = defaultStart;
@@ -370,13 +370,17 @@ public class ProductService {
 			} else {
 				products = getProductsByIdsAndCategoryIdAndBrandId(productsIds, categoryId, brandId, order, sort);
 			}
+
+			if (searchName != null) {
+				products = products.stream().filter(product -> product.getName().contains(searchName)).collect(Collectors.toList());
+			}
 		}
 		return getProductsResponse(products, order, sort, start, count);
 
 	}
 
 	public ProductsResponse getProductsResponseByOrganizationId(Long organizationId, Long categoryId, Long brandId,
-	                                                            Integer start, Integer count, String sort, String order) {
+	                                                            Integer start, Integer count, String sort, String order, String searchName) {
 		if (start == null)
 			start = defaultStart;
 		if (count == null)
@@ -397,6 +401,10 @@ public class ProductService {
 			products = getProductsForOrganizationIdAndBrandId(organizationId, brandId, order, sort);
 		} else {
 			products = getProductsForOrganizationIdAndCategoryIdAndBrandId(organizationId, categoryId, brandId, order, sort);
+		}
+
+		if (searchName != null) {
+			products = products.stream().filter(product -> product.getName().contains(searchName)).collect(Collectors.toList());
 		}
 
 		return getProductsResponse(products, order, sort, start, count);

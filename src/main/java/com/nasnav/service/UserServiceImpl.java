@@ -10,6 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -33,17 +37,22 @@ import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 
+import javax.persistence.OneToMany;
+
 @Service
 public class UserServiceImpl implements UserService {
 
 	private UserRepository userRepository;
 	private MailService mailService;
 	private PasswordEncoder passwordEncoder;
+	private EmployeeUserServiceHelper employeeUserServiceHelper;
 	@Autowired
-	public UserServiceImpl(UserRepository userRepository, MailService mailService, PasswordEncoder passwordEncoder) {
+	public UserServiceImpl(UserRepository userRepository, MailService mailService, PasswordEncoder passwordEncoder,
+						   EmployeeUserServiceHelper employeeUserServiceHelper) {
 		this.userRepository = userRepository;
 		this.mailService = mailService;
 		this.passwordEncoder = passwordEncoder;
+		this.employeeUserServiceHelper = employeeUserServiceHelper;
 	}
 
 	@Autowired
@@ -389,6 +398,19 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public boolean checkAuthToken(Long userId, String authToken) {
 		return userRepository.existsByIdAndAuthenticationToken(userId, authToken);
+	}
+
+	@Override
+	public UserRepresentationObject getUserData(Long loggedUserId, Long id) throws BusinessException {
+		List<String> userRoles = employeeUserServiceHelper.getEmployeeUserRoles(loggedUserId);
+		if (!userRoles.contains("NASNAV_ADMIN") && loggedUserId != id) {
+			throw new BusinessException("UNAUTHORIZED", "Logged user doesn't have the right to view other users data", HttpStatus.UNAUTHORIZED);
+		}
+		if (!userRepository.findById(id).isPresent()) {
+			throw new BusinessException("ENTITY NOT FOUND: user", "No user found with the provided ID", HttpStatus.NOT_ACCEPTABLE);
+		}
+		UserEntity userEntity = userRepository.findById(id).get();
+		return userEntity.getRepresentation(userEntity);
 	}
 
 	private String[] getNullProperties(UserDTOs.EmployeeUserUpdatingObject userJson) {
