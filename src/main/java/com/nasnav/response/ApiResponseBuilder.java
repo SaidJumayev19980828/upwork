@@ -17,14 +17,15 @@ public class ApiResponseBuilder implements Serializable {
     private List<String> roles;
     private Long organizationId;
     private Long storeId;
-    private String message;
+    private String name;
+    private String email;
 
     public ApiResponseBuilder() {
     }
 
     public UserApiResponse build() {
         return new UserApiResponse(success, entityId, responseStatuses,
-                token, roles, organizationId, storeId);
+                token, roles, organizationId, storeId, name, email);
     }
 
     public ApiResponseBuilder setSuccess(boolean success) {
@@ -64,6 +65,16 @@ public class ApiResponseBuilder implements Serializable {
 
     public ApiResponseBuilder setStoreId(Long storeId) {
         this.storeId = storeId;
+        return this;
+    }
+
+    public ApiResponseBuilder setName(String name) {
+        this.name = name;
+        return this;
+    }
+
+    public ApiResponseBuilder setEmail(String email) {
+        this.email = email;
         return this;
     }
 }
