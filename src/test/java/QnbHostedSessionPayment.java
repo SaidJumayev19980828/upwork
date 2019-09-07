@@ -35,7 +35,6 @@ import net.jcip.annotations.NotThreadSafe;
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
 @NotThreadSafe
-@Transactional
 public class QnbHostedSessionPayment {
     Account testAccount = new Account();
 
@@ -78,6 +77,7 @@ public class QnbHostedSessionPayment {
     public void setup(){
         orderId = createOrder();
     }
+
     @After
     public void cleanup(){
         //delete baskets
@@ -93,8 +93,8 @@ public class QnbHostedSessionPayment {
         //delete created order
         orderRepository.deleteById(orderId);
         shopsRepository.delete(shop);
-        organizationRepository.delete(org);
         userRepository.delete(user);
+        organizationRepository.delete(org);
     }
 
     @Test
@@ -136,6 +136,7 @@ public class QnbHostedSessionPayment {
         org.setDescription("org descr");
         org.setCreatedAt(new Date());
         org.setUpdatedAt(new Date());
+        org.setId(99001L);
         org = organizationRepository.save(org);
         //create product
         ProductEntity product = new ProductEntity();
