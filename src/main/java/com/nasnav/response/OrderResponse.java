@@ -3,6 +3,7 @@ package com.nasnav.response;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.dto.OrderRepresentationObject;
@@ -53,6 +54,10 @@ public class OrderResponse  extends BaseResponse implements Serializable {
     @JsonIgnore
     private List<OrderRepresentationObject> orders;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonIgnore
+    private DetailedOrderRepObject detailedOrder;
+
     public OrderResponse() {
     }
     
@@ -81,6 +86,11 @@ public class OrderResponse  extends BaseResponse implements Serializable {
         code = HttpStatus.OK;
     }
 
+    public OrderResponse(DetailedOrderRepObject detailedOrder) {
+        this.success = true;
+        this.detailedOrder = detailedOrder;
+        code = HttpStatus.OK;
+    }
 
 
 }

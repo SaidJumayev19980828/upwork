@@ -1,8 +1,8 @@
 package com.nasnav.controller;
 
+import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.service.EmployeeUserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.configurationprocessor.json.JSONArray;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.OrderJsonDto;
-import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.OrderService;
@@ -66,16 +64,14 @@ public class OrdersController {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
 	})
-    @GetMapping(value = "/info")
+    @GetMapping(value = "/info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
     public ResponseEntity<?> getOrderInfo(
     		@RequestHeader(name = "User-ID", required = true) Long userId,
             @RequestHeader(name = "User-Token", required = true) String userToken,
-            @RequestParam(name = "order_id") Long orderId){
-		
+            @RequestParam(name = "order_id") Long orderId) {
     	OrderResponse response = this.orderService.getOrderInfo(orderId);
-    	
     	if(response.getCode().equals(HttpStatus.OK)) {
-        	return new ResponseEntity<>(response.getEntity(), response.getCode());
+        	return new ResponseEntity<>(response.getDetailedOrder(), response.getCode());
     	}
     	
     	return new ResponseEntity<>(response, response.getCode());
@@ -94,7 +90,7 @@ public class OrdersController {
 										 @RequestParam(name = "store_id", required = false) Long storeId,
 										 @RequestParam(name = "org_id", required = false) Long orgId,
 										 @RequestParam(name = "status", required = false) String status) throws BusinessException {
-		List<OrderRepresentationObject> response;
+		List<DetailedOrderRepObject> response;
 		if(userToken == null ||
 				(!userService.checkAuthToken(loggedUserId, userToken) && !employeeUserService.checkAuthToken(loggedUserId, userToken))) {
 			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
