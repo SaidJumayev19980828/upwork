@@ -10,10 +10,7 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.json.JSONArray;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,11 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -233,8 +226,7 @@ public class OrderServiceTest {
 		Assert.assertEquals(INVALID_ORDER, response.getBody().getStatus());
 		Assert.assertFalse(response.getBody().isSuccess());
 	}
-	
-	
+
 
 	@Test
 	public void createnewOrder() {
@@ -286,9 +278,7 @@ public class OrderServiceTest {
 		}
 		
 	}
-	
-	
-	
+
 
 	@Test
 	public void updateCurrentOrder() {
@@ -545,5 +535,14 @@ public class OrderServiceTest {
 
 		Assert.assertTrue(200 == response.getStatusCode().value());
 		Assert.assertEquals("get all orders if status parameter is invalid",16,count);
+	}
+
+	@Test
+	public void testOrdersConsistency(){
+		List<OrdersEntity> ordersList = orderRepository.findAll();
+
+		for(OrdersEntity order : ordersList) {
+			Assert.assertTrue(order.getUserId() != null);
+		}
 	}
 }

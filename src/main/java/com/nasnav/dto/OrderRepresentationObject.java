@@ -31,7 +31,7 @@ public class OrderRepresentationObject extends BaseRepresentationObject{
     private long shopId;
 
     @JsonProperty("status")
-    private long status;
+    private String status;
 
 	@JsonProperty("price")
     private BigDecimal price;
