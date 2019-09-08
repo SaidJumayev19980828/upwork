@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
 
 
 /**
@@ -18,17 +19,21 @@ import com.nasnav.dao.ProductRepository;
 public class ProductServiceTransactions {
 	
 	@Autowired
-	private ProductRepository productRepository;
+	private ProductRepository productRepo;
 
 	
 	@Autowired
-	private  ProductImagesRepository productImagesRepository;
+	private  ProductImagesRepository imgRepo;
+	
+	
+	@Autowired
+	private ProductVariantsRepository variantRepo;
+
 	
 	
 	public void deleteProduct(Long productId) {
-		//TODO still need to implement business logic of removing empty stocks, and 
-		//variants with empty stocks
-		productImagesRepository.deleteByProductEntity_Id(productId);
-		productRepository.deleteById(productId);
+		variantRepo.deleteByProductEntity_Id(productId);
+		imgRepo.deleteByProductEntity_Id(productId);
+		productRepo.deleteById(productId);
 	}
 }

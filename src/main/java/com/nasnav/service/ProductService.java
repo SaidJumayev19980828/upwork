@@ -7,14 +7,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -107,7 +104,7 @@ public class ProductService {
 
 	private final ProductFeaturesRepository productFeaturesRepository;
 
-	private final StockServiceImpl stockService;
+	private final StockService stockService;
 	
 	@Autowired
 	private  FileService fileService;
@@ -136,7 +133,7 @@ public class ProductService {
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
 	                      ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
 	                      ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
-	                      StockServiceImpl stockService) {
+	                      StockService stockService) {
 		this.productRepository = productRepository;
 		this.stockRepository = stockRepository;
 		this.productImagesRepository = productImagesRepository;
@@ -164,7 +161,10 @@ public class ProductService {
 		if (productVariants != null && !productVariants.isEmpty()) {
 			variantsDTOList = getVariantsList(productVariants, productId, shopId);
 		} else {
-			variantsDTOList = createDummyVariantWithProductStocks(productId, shopId);
+			throw new BusinessException(
+							String.format("Product with id[%d] doesn't have any variants! A product must have at least one variant.", productId)
+							, "INVALID DATA"
+							, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
 		ProductDetailsDTO productDTO = new ProductDetailsDTO(product);
@@ -176,20 +176,8 @@ public class ProductService {
 		return productDTO;
 	}
 
-	private List<VariantDTO> createDummyVariantWithProductStocks(Long productId, Long shopId) throws BusinessException {
-		List<VariantDTO> variantsDTOList = new ArrayList<>();
-
-		List<StockDTO> productStocks = getStockList(productId, shopId, null);
-		if (productStocks != null) {
-			VariantDTO variantObj = new VariantDTO();
-			variantObj.setId(0L);
-			variantObj.setStocks(productStocks);
-			variantsDTOList.add(variantObj);
-		}
-
-		return variantsDTOList;
-	}
-
+	
+	
 
 	private List<ProductRepresentationObject> getBundleItems(ProductEntity product) {
 
@@ -211,7 +199,7 @@ public class ProductService {
 			VariantDTO variantObj = new VariantDTO();
 			variantObj.setId(variant.getId());
 			variantObj.setBarcode( variant.getBarcode() );
-			variantObj.setStocks( getStockList(productId, shopId, variant.getId()) );
+			variantObj.setStocks( getStockList(variant, shopId) );
 			variantObj.setVariantFeatures( getVariantFeaturesValues(variant) );
 			variantObj.setImages( getProductVariantImages(variant.getId()) );
 
@@ -322,21 +310,17 @@ public class ProductService {
 		return variantImagesArray;
 	}
 
+	
+	
 
-	//TODO : argument productId may be obsolete
-	private List<StockDTO> getStockList(Long productId, Long shopId, Long variantId) throws BusinessException {
+	private List<StockDTO> getStockList(ProductVariantsEntity variant,Long shopId) throws BusinessException {
 		List<StockDTO> stocksArray = null;
 
 		if (shopId == null) {
 			return stocksArray;
 		}
 
-		List<StocksEntity> stocks;
-		if (variantId != null) {
-			stocks = stockRepository.findByShopsEntity_IdAndProductVariantsEntity_Id(shopId, variantId);
-		} else {
-			stocks = getProductStockForShop(productId, shopId);
-		}
+		List<StocksEntity> stocks = stockService.getVariantStockForShop(variant, shopId);
 
 		if (stocks != null && !stocks.isEmpty()) {
 			stocksArray = stocks.stream()
@@ -347,19 +331,6 @@ public class ProductService {
 
 		return stocksArray;
 	}
-
-
-
-
-	private List<StocksEntity> getProductStockForShop(Long productId, Long shopId) throws BusinessException {
-
-		return stockService.getProductStockForShop(productId, shopId);
-
-	}
-
-
-
-
 
 
 
@@ -692,7 +663,11 @@ public class ProductService {
 			List<Long> productIdList = products.stream()
 												.map(product -> product.getId())
 												.collect(Collectors.toList() );
-			List<StocksEntity> stocks = stockRepository.findByProductIdIn(productIdList);
+			
+			List<StocksEntity> stocks = new ArrayList<>();
+			if(!productIdList.isEmpty()) {
+				stocks.addAll( stockRepository.findByProductIdIn(productIdList) );
+			}				
 
 			List<ProductRepresentationObject> productsRep = products.stream()
 																	.map(ProductEntity::getRepresentation)

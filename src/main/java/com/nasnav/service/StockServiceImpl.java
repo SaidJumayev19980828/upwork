@@ -1,5 +1,15 @@
 package com.nasnav.service;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import javax.transaction.Transactional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
 import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.StockRepository;
@@ -8,13 +18,6 @@ import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductTypes;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 @Service
 public class StockServiceImpl implements StockService {
@@ -41,7 +44,6 @@ public class StockServiceImpl implements StockService {
 
         List<StocksEntity> stocks  = stockRepo.findByProductIdAndShopsId(productId, shopId);;
 
-        //TODO : i think we should throw business exception here
         if(stocks == null || stocks.isEmpty())
         	throw new BusinessException(
             		String.format("Product with id [%d] has no stocks!",productId)
@@ -67,6 +69,7 @@ public class StockServiceImpl implements StockService {
      * if the bundle stock quantity is set to zero , then the bundle is not active anymore.
      * Set all stocks of the bundle to the calculated quantity.
      * */
+    @Transactional
     public Integer getStockQuantity(StocksEntity stock){
         ProductEntity product = Optional.ofNullable(stock.getProductVariantsEntity())
         								.map(ProductVariantsEntity::getProductEntity)
@@ -110,4 +113,23 @@ public class StockServiceImpl implements StockService {
 		    			.filter(product -> Objects.equals( product.getProductType(), ProductTypes.STOCK_ITEM) )
 		    			.isPresent();
     }
+
+
+    
+
+	@Override
+	public List<StocksEntity> getVariantStockForShop(ProductVariantsEntity variant, Long shopId) throws BusinessException {
+
+        List<StocksEntity> stocks  = stockRepo.findByShopsEntity_IdAndProductVariantsEntity_Id(shopId, variant.getId());
+
+        if(stocks == null || stocks.isEmpty())
+        	throw new BusinessException(
+            		String.format("Product Variant with id [%d] has no stocks!", variant.getId())
+            		, "INVALID PARAM:product_id"
+            		, HttpStatus.NOT_ACCEPTABLE);
+
+        stocks.stream().forEach(this::updateStockQuantity);
+
+        return stocks;
+	}
 }

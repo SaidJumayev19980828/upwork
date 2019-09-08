@@ -90,7 +90,7 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
     
     
 
-    @OneToMany(mappedBy = "productEntity", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "productEntity")
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

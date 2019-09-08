@@ -39,7 +39,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private final StockRepository stockRepository;
 
-	private final StockServiceImpl stockService;
+	private final StockService stockService;
 
 	private final EmployeeUserRepository employeeUserRepository;
 
@@ -50,7 +50,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
-							StockRepository stockRepository ,StockServiceImpl stockService, UserRepository userRepository,
+							StockRepository stockRepository ,StockService stockService, UserRepository userRepository,
 	                        EmployeeUserServiceHelper employeeUserServiceHelper, EmployeeUserRepository employeeUserRepository) {
 		this.ordersRepository = ordersRepository;
 		this.stockRepository = stockRepository;

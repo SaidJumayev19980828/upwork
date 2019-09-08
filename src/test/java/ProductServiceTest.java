@@ -43,6 +43,7 @@ import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
+import com.nasnav.test.helpers.TestHelper;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -82,6 +83,9 @@ public class ProductServiceTest {
 
 	@Autowired
 	private OrganizationRepository organizationRepository;
+	
+	@Autowired
+	private TestHelper helper;
 
 
 	private final String PRODUCT_NAME = "LIPSTICK";
@@ -196,6 +200,7 @@ public class ProductServiceTest {
 		PRODUCT_VARIANT_FEATURE_SEPC = PRODUCT_VARIANT_FEATURE_SEPC
 				.replace("FEATURE_ID_1", productFeaturesEntity_1.getId() + "")
 				.replace("FEATURE_ID_2", productFeaturesEntity_2.getId() + "");
+		
 		ProductVariantsEntity productVariantsEntity = new ProductVariantsEntity();
 		productVariantsEntity.setBarcode(PRODUCT_VARIANT_BARCODE);
 		productVariantsEntity.setName(PRODUCT_VARIANT_NAME);
@@ -251,17 +256,20 @@ public class ProductServiceTest {
 		assertTrue(response.getBody().toString().contains("\"price\":" + PRODUCT_PRICE ));
 		assertTrue(response.getBody().toString().contains("\"discount\":" + 0 ));
 
+		
 		stockRepository.delete(stocksEntity);
 		shopsRepository.delete(shopsEntity);
-
 		productVariantsRepository.delete(productVariantsEntity);
+		
 		productFeaturesRepository.delete(productFeaturesEntity_1);
 		productFeaturesRepository.delete(productFeaturesEntity_2);
 		productRepository.delete(productEntity);
-
 	}
 	
+	
 
+
+	
 	
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Insert.sql"})

@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
 
 import java.util.List;
@@ -21,4 +22,8 @@ public interface StockService {
      * Bundles and services stock items are excluded.
      * */
     Long getStockItemsQuantitySum(List<StocksEntity> stocks);
+
+    
+    
+	List<StocksEntity> getVariantStockForShop(ProductVariantsEntity variant, Long shopId) throws BusinessException;
 }
