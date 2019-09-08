@@ -169,14 +169,17 @@ public class QnbHostedSessionPayment {
         stock.setCurrency(TransactionCurrency.EGP);
         stock.setShopsEntity(shopEntity);
         StocksEntity stockEntity = stockRepository.save(stock);
+        
         //create user
         user = new UserEntity();
         user.setName("John smith");
         user.setEmail("bi@Oooooo.com");
         user.setEncryptedPassword("");
         userRepository.save(user);
+        
         // create order
         OrdersEntity order = new OrdersEntity();
+        
 //        order.setCreationDate(new Date());
         order.setUpdateDate(new Date());
         order.setAmount(new BigDecimal(500));

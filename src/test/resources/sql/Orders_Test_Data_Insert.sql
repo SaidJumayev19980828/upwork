@@ -75,5 +75,9 @@ insert into orders(id,user_id,created_at, updated_at, organization_id,status,sho
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
 
+-- variants for each product
+insert into public.product_variants(id, "name" , product_id ) values(310001, 'var' 	, 1001);
+
+
 -- inserting stocks
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(601, 502, 0, now(), now(), 99001, 0.0, 1001);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(601, 502, 0, now(), now(), 99001, 0.0, 310001);

@@ -109,6 +109,9 @@ public class OrderServiceTest {
 			userRepository.save(persistentUser);
 		}
 	}
+	
+	
+	
 
 	@After
 	public  void cleanup() {
@@ -131,6 +134,9 @@ public class OrderServiceTest {
 		}
 	}
 
+	
+	
+	
 	@Test
 	public void unregisteredUser() {
 		StocksEntity stock = createStock();
@@ -142,6 +148,9 @@ public class OrderServiceTest {
 		stockRepository.delete(stock);
 	}
 
+	
+	
+	
 	// This needs fixing as it doesn't correctly use baskets
 	// @Test
 	public void createNewBasket() {
@@ -155,6 +164,10 @@ public class OrderServiceTest {
 		orderRepository.deleteById(response.getBody().getOrderId());
 	}
 
+	
+	
+	
+	
 	@Test
 	public void addOrderNewStatusEmptyBasket() {
 		ResponseEntity<OrderResponse> response = template.postForEntity("/order/update",
@@ -165,6 +178,9 @@ public class OrderServiceTest {
 		Assert.assertFalse(response.getBody().isSuccess());
 	}
 
+	
+	
+	
 	// This needs fixing as it doesn't correctly use baskets
 	@Test
 	public void updateOrderSuccessTest() {
@@ -208,6 +224,9 @@ public class OrderServiceTest {
 		orderRepository.deleteById(orderId);
 	}
 
+	
+	
+	
 	@Test
 	public void updateOrderNonExistingOrderIdTest() {
 		// try updating with a non-existing order number
@@ -218,6 +237,9 @@ public class OrderServiceTest {
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 		Assert.assertFalse(response.getBody().isSuccess());
 	}
+	
+	
+	
 
 	@Test
 	public void createOrderWithoutProvidingValidStockIdTest() {
@@ -232,6 +254,7 @@ public class OrderServiceTest {
 		Assert.assertEquals(INVALID_ORDER, response.getBody().getStatus());
 		Assert.assertFalse(response.getBody().isSuccess());
 	}
+	
 	
 	
 
@@ -327,6 +350,9 @@ public class OrderServiceTest {
 		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertNotNull(response.getBody().getOrderId());
 	}
+	
+	
+	
 
 	@Test
 	public void updateOrderNonExistingStatusTest() {
@@ -463,6 +489,10 @@ public class OrderServiceTest {
 		Assert.assertTrue(200 == response.getStatusCode().value());
 		Assert.assertEquals("1 order with user_id = 88 and store_id = 501 and status = NEW",1,count);
 	}
+	
+	
+	
+	
 
 	@Test // Organization roles diffterent filters test
 	public void ordersListOrganizationDifferentFiltersTest() {
@@ -490,6 +520,9 @@ public class OrderServiceTest {
 		Assert.assertTrue(200 == response.getStatusCode().value());
 		Assert.assertEquals("user#71 is store employee in store#802 so he can view all orderes within store#802", 1, count);
 	}
+	
+	
+	
 
 	@Test
 	public void ordersListUnAuthTest() {
@@ -507,6 +540,8 @@ public class OrderServiceTest {
 		Assert.assertTrue(401 == response.getStatusCode().value());
 		Assert.assertEquals(HttpStatus.UNAUTHORIZED,response.getStatusCode());
 	}
+	
+	
 
 	@Test
 	public void ordersListInvalidfiltersTest() {
