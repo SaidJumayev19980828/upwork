@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.json.JSONObject;
 import org.junit.Test;
@@ -61,6 +62,15 @@ import net.jcip.annotations.NotThreadSafe;
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class BundlesApiTest {
 	
+	private static final long VALID_ORG_AMDIN = 69L;
+
+
+	private static final long OTHER_ORG_ADMIN = 70L;
+
+
+	private static final long NOT_ORG_ADMIN = 68L;
+
+
 	@Autowired
 	private TestRestTemplate template;
 	
@@ -509,7 +519,7 @@ public class BundlesApiTest {
 		reqJson.put("bundle_id", bundleId);
 		reqJson.put("stock_id", stockId);
 		
-		BaseUserEntity user = empUserRepo.getById(69L); 
+		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN); 
 		
 		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
 		ResponseEntity<String> response = 
@@ -526,4 +536,328 @@ public class BundlesApiTest {
 		assertEquals(stockId , itemsAfter.stream().findFirst().get().getId());
 	}
 	
+	
+	
+	
+	
+	@Test
+	public void addBundleElementNoAuthNTest() {
+		Long bundleId = 200008L;
+		Long stockId = 400001L;
+		
+		
+		
+		JSONObject reqJson = new JSONObject();
+		reqJson.put("operation", Operation.ADD.getValue());
+		reqJson.put("bundle_id", bundleId);
+		reqJson.put("stock_id", stockId);
+		
+		
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , 0L, "NOT EXISTING");
+		ResponseEntity<String> response = 
+				template.exchange("/product/bundle/element"
+						, HttpMethod.POST
+						, request
+						, String.class);
+		
+		
+		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void addBundleElementNoAuthZTest() {
+		Long bundleId = 200008L;
+		Long stockId = 400001L;
+		
+		
+		
+		JSONObject reqJson = new JSONObject();
+		reqJson.put("operation", Operation.ADD.getValue());
+		reqJson.put("bundle_id", bundleId);
+		reqJson.put("stock_id", stockId);
+		
+		BaseUserEntity user = empUserRepo.getById(NOT_ORG_ADMIN);
+		
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		ResponseEntity<String> response = 
+				template.exchange("/product/bundle/element"
+						, HttpMethod.POST
+						, request
+						, String.class);
+		
+		
+		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	public void addBundleElementAdminOfOtherOrgTest() {
+		Long bundleId = 200008L;
+		Long stockId = 400001L;
+		
+		
+		
+		JSONObject reqJson = new JSONObject();
+		reqJson.put("operation", Operation.ADD.getValue());
+		reqJson.put("bundle_id", bundleId);
+		reqJson.put("stock_id", stockId);
+		
+		BaseUserEntity user = empUserRepo.getById(OTHER_ORG_ADMIN); 
+		
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		ResponseEntity<String> response = 
+				template.exchange("/product/bundle/element"
+						, HttpMethod.POST
+						, request
+						, String.class);
+		
+		
+		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void addBundleElementMissingOprTest() {
+		Long bundleId = 200008L;
+		Long stockId = 400001L;
+		
+		
+		
+		JSONObject reqJson = new JSONObject();		
+		reqJson.put("bundle_id", bundleId);
+		reqJson.put("stock_id", stockId);
+		
+		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN); 
+		
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		ResponseEntity<String> response = 
+				template.exchange("/product/bundle/element"
+						, HttpMethod.POST
+						, request
+						, String.class);
+		
+		
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	public void addBundleElementMissingBundleIdTest() {
+		Long stockId = 400001L;
+		
+		
+		JSONObject reqJson = new JSONObject();
+		reqJson.put("operation", Operation.ADD.getValue());
+		reqJson.put("stock_id", stockId);
+		
+		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN); 
+		
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		ResponseEntity<String> response = 
+				template.exchange("/product/bundle/element"
+						, HttpMethod.POST
+						, request
+						, String.class);
+		
+		
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void addBundleElementMissingStockIdTest() {
+		Long bundleId = 200008L;
+		
+		JSONObject reqJson = new JSONObject();
+		reqJson.put("operation", Operation.ADD.getValue());
+		reqJson.put("bundle_id", bundleId);
+		
+		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN); 
+		
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		ResponseEntity<String> response = 
+				template.exchange("/product/bundle/element"
+						, HttpMethod.POST
+						, request
+						, String.class);
+		
+		
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	public void addBundleElementNonExistingBundleTest() {
+		Long bundleId = 2223366L;
+		Long stockId = 400001L;
+		
+		
+		
+		JSONObject reqJson = new JSONObject();
+		reqJson.put("operation", Operation.ADD.getValue());
+		reqJson.put("bundle_id", bundleId);
+		reqJson.put("stock_id", stockId);
+		
+		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN);
+		
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		ResponseEntity<String> response = 
+				template.exchange("/product/bundle/element"
+						, HttpMethod.POST
+						, request
+						, String.class);
+		
+		
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void addBundleElementNonExistingStockTest() {
+		Long bundleId = 200008L;
+		Long stockId = 8888795473L;
+		
+		
+		
+		JSONObject reqJson = new JSONObject();
+		reqJson.put("operation", Operation.ADD.getValue());
+		reqJson.put("bundle_id", bundleId);
+		reqJson.put("stock_id", stockId);
+		
+		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN);
+		
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		ResponseEntity<String> response = 
+				template.exchange("/product/bundle/element"
+						, HttpMethod.POST
+						, request
+						, String.class);
+		
+		
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void addBundleElementNotBundleTest() {
+		Long bundleId = 200001L;
+		Long stockId = 400001L;		
+		
+		
+		assertTrue(productRepo.existsById(bundleId));	
+		
+		
+		JSONObject reqJson = new JSONObject();
+		reqJson.put("operation", Operation.ADD.getValue());
+		reqJson.put("bundle_id", bundleId);
+		reqJson.put("stock_id", stockId);
+		
+		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN);
+		
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		ResponseEntity<String> response = 
+				template.exchange("/product/bundle/element"
+						, HttpMethod.POST
+						, request
+						, String.class);
+		
+		
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void addBundleElementInvalidOprTest() {
+		Long bundleId = 200008L;
+		Long stockId = 400001L;		
+		
+		
+		assertTrue(productRepo.existsById(bundleId));	
+		
+		
+		JSONObject reqJson = new JSONObject();
+		reqJson.put("operation", Operation.UPDATE.getValue());
+		reqJson.put("bundle_id", bundleId);
+		reqJson.put("stock_id", stockId);
+		
+		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN);
+		
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		ResponseEntity<String> response = 
+				template.exchange("/product/bundle/element"
+						, HttpMethod.POST
+						, request
+						, String.class);
+		
+		
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void deleteBundleElementTest() {
+		Long bundleId = 200004L;
+		Long stockId = 400001L;
+		
+		
+		Set<StocksEntity> itemsBefore = helper.getBundleItems(bundleId);
+		Set<Long> itemsBeforeIdSet = itemsBefore.stream()
+												.map(StocksEntity::getId)
+												.collect(Collectors.toSet());
+		
+		assertNotEquals("The bundle should have elements before",0 , itemsBefore.size());
+		assertTrue( itemsBeforeIdSet.contains(stockId) );
+		
+		JSONObject reqJson = new JSONObject();
+		reqJson.put("operation", Operation.DELETE.getValue());
+		reqJson.put("bundle_id", bundleId);
+		reqJson.put("stock_id", stockId);
+		
+		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN); 
+		
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		ResponseEntity<String> response = 
+				template.exchange("/product/bundle/element"
+						, HttpMethod.POST
+						, request
+						, String.class);
+		
+		Set<StocksEntity> itemsAfter = helper.getBundleItems(bundleId);
+		Set<Long> itemsAfterIdSet = itemsAfter.stream()
+											.map(StocksEntity::getId)
+											.collect(Collectors.toSet());
+		
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertTrue( itemsAfter.size() < itemsBefore.size() );		
+		assertFalse( itemsAfterIdSet.contains(stockId) );
+	}
 }

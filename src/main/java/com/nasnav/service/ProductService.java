@@ -7,9 +7,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -65,6 +67,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.BundleEntity;
+import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductImagesEntity;
@@ -1556,8 +1559,8 @@ public class ProductService {
 		
 		
 		Operation opr = element.getOperation();
-		if(!opr.equals(Operation.ADD) 
-				||opr.equals(Operation.DELETE)) {
+		if( !( opr.equals(Operation.ADD) 
+				||opr.equals(Operation.DELETE) ) ) {
 			throw new BusinessException(
 					String.format("Invalid Operation  [%s]", opr.getValue())
 					, "INVALID PARAM:operation"
@@ -1580,6 +1583,33 @@ public class ProductService {
 					, HttpStatus.NOT_ACCEPTABLE);
 		}
 		
+		BundleEntity bundle = bundleRepository.findById(element.getBundleId()).get();
+		StocksEntity item = stockRepository.findById( element.getStockId() ).get();
+		
+		validateUserOrganization(bundle, item);
+	}
+
+
+
+
+	private void validateUserOrganization(BundleEntity bundle, StocksEntity item) throws BusinessException {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		
+		Long userOrgId = user.getOrganizationId();
+		Long bundleOrgId = bundle.getOrganizationId();
+		Long itemOrgId = item.getOrganizationEntity().getId();
+		
+		boolean areEqual = EntityUtils.areEqual(userOrgId, bundleOrgId, itemOrgId);
+		
+		if(!areEqual) {
+			throw new BusinessException(
+					String.format("User who belongs to organization of id[%d] is not allowed "
+							+ "to add stock item from organiztion of id[%d] to "
+							+ "a bundle from organiztion of id[%d]", userOrgId, itemOrgId, bundleOrgId)
+					, "INVALID PARAM:bundle_id/stock_id"
+					, HttpStatus.FORBIDDEN);
+		}
 	}
 
 }

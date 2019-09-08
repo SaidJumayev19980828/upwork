@@ -1,8 +1,11 @@
 package com.nasnav.persistence;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.beanutils.PropertyUtils;
 
@@ -33,6 +36,14 @@ public class EntityUtils {
 			            throw new RuntimeException(msg);
 			        }
 	    });
+	}
+	
+	
+	
+	public static boolean areEqual(Object... elements){
+		List elementList =  Arrays.asList(elements);
+		Set elementSet = new HashSet<>(elementList);
+		return  elementSet.size() == 1;
 	}
 	
 }

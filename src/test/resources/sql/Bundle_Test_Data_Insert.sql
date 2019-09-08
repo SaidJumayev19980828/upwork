@@ -29,6 +29,7 @@ insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organi
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200008, 'Empty Bundle' , now() , now() ,1 , 99001, 202);
 
 
+
 -- variants for each product
 insert into public.product_variants(id, "name" , product_id ) values(310001, 'var' 	, 200001);
 insert into public.product_variants(id, "name" , product_id ) values(310002, 'var' 	, 200002);
@@ -98,6 +99,8 @@ INSERT INTO public.employee_users(id, created_at, updated_at, email, organizatio
 VALUES (68, now(), now(), 'testuser1@nasnav.com', 99001, '101112',  502);
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
 VALUES (69, now(), now(), 'testuser2@nasnav.com', 99001, '131415',  501);
+INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+VALUES (70, now(), now(), 'testuser3@nasnav.com', 99002, '8874ssd',  501);
 
 
 --inserting customers
@@ -117,6 +120,7 @@ insert into public.roles(id, name, created_at, updated_at, organization_id) valu
 --inserting Roles EmployeeUsers relations
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (20, 68, 1, now(), now());
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (21, 69, 2, now(), now());
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (22, 70, 2, now(), now());
 
 
 
