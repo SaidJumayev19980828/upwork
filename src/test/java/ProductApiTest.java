@@ -5,9 +5,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.nio.file.Files;
-
-import javax.persistence.criteria.Path;
 
 import org.json.JSONObject;
 import org.junit.Test;
@@ -38,7 +35,6 @@ import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.response.ProductUpdateResponse;
-import com.nasnav.service.ProductService;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -455,6 +451,7 @@ public class ProductApiTest {
 		JSONObject body = new JSONObject(response.getBody());
 		
 		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+		assertFalse(body.getBoolean("success"));			
 	}
 	
 	
@@ -496,6 +493,7 @@ public class ProductApiTest {
 		JSONObject body = new JSONObject(response.getBody());
 		
 		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+		assertFalse(body.getBoolean("success"));
 	}
 	
 	

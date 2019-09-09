@@ -22,6 +22,10 @@ INSERT INTO public.employee_users(id, created_at, updated_at, email, organizatio
 INSERT INTO public.employee_users(id, name, created_at, updated_at, email, organization_id, authentication_token, shop_id)
 	VALUES (158, 'John Smith', now(), now(), 'testuser3@nasnav.com', 99001, 'nopqrst',  501);
 
+--inserting Users
+INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, address, country, city, phone_number, image, organization_id)
+    VALUES (88, 'user1@nasnav.com',now(), now(), 'user1','123', '21 jump street', 'Egypt', 'Cairo', '+021092154875','/urls/images/fdsafag23.jpg',  99001);
+
 --inserting Roles
 insert into roles(id, name, created_at, updated_at, organization_id) values(1, 'NASNAV_ADMIN', now(), now(), 99001);
 insert into roles(id, name, created_at, updated_at, organization_id) values(2, 'ORGANIZATION_ADMIN', now(), now(), 99001);

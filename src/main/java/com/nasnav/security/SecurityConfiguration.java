@@ -50,18 +50,19 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 	private  List<AuthPattern> permissions = Arrays.asList(
 						
 					    patternOf( "/order/**"),
-						patternOf( "/stock/**"	 								, getNonCustomersRoles() ),
-						patternOf( "/shop/**"									, setOf(Roles.ORGANIZATION_MANAGER, Roles.STORE_MANAGER) ),
+						patternOf( "/stock/**"	 										, getNonCustomersRoles() ),
+						patternOf( "/shop/**"											, setOf(Roles.ORGANIZATION_MANAGER, Roles.STORE_MANAGER) ),
 						patternOf( "/user/list"),
-						patternOf( "/user/create"								, setOf(Roles.NASNAV_ADMIN, Roles.ORGANIZATION_ADMIN, Roles.STORE_ADMIN) ),
-						patternOf( "/user/update"								, getAllRoles() ),
-						patternOf( "/product/**"			,HttpMethod.POST	, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/product/**"			,HttpMethod.DELETE	, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/admin/**"	   	 							, setOf(Roles.NASNAV_ADMIN) ),
+						patternOf( "/user/create"										, setOf(Roles.NASNAV_ADMIN, Roles.ORGANIZATION_ADMIN, Roles.STORE_ADMIN) ),
+						patternOf( "/user/update"										, getAllRoles() ),
+						patternOf( "/product/**"					,HttpMethod.POST	, setOf(Roles.ORGANIZATION_ADMIN)),
+						patternOf( "/product/**"					,HttpMethod.DELETE	, setOf(Roles.ORGANIZATION_ADMIN)),
+						patternOf( "/admin/**"	   	 									, setOf(Roles.NASNAV_ADMIN) ),
 						patternOf( "/files/**"),
-						patternOf( "/admin/organization"						, setOf(Roles.NASNAV_ADMIN)),
-						patternOf( "/organization/info"							, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/organization/brand"						, setOf(Roles.ORGANIZATION_ADMIN)),
+						patternOf( "/admin/organization"								, setOf(Roles.NASNAV_ADMIN)),
+						patternOf( "/organization/info"									, setOf(Roles.ORGANIZATION_ADMIN)),
+						patternOf( "/organization/brand"								, setOf(Roles.ORGANIZATION_ADMIN)),
+						patternOf( "/organization/products_feature"	,HttpMethod.POST	, setOf(Roles.ORGANIZATION_ADMIN)),
 						patternOf( "/**")
 						);
 
@@ -76,11 +77,16 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 		                , patternOf("/shop/update")
 		                , patternOf("/order/list")
                         , patternOf("/payment/**")
-                        , patternOf("/product/bundles"		, HttpMethod.GET)
-                        , patternOf("/product/info"			, HttpMethod.GET)
-                        , patternOf("/product/image"		, HttpMethod.GET)
-                        , patternOf("/product/variant"		, HttpMethod.GET)
-                        , patternOf("/organization/brands"	, HttpMethod.GET)
+                        , patternOf("/product/bundles"					, HttpMethod.GET)
+                        , patternOf("/product/info"						, HttpMethod.GET)
+                        , patternOf("/product/image"					, HttpMethod.GET)
+                        , patternOf("/product/variant"					, HttpMethod.GET)
+                        , patternOf("/organization/brands"				, HttpMethod.GET)
+                        , patternOf("/organization/products_features"	, HttpMethod.GET)
+                        , patternOf("/swagger**/**")		//for development only
+                        , patternOf("/webjars/**")		//for development only
+                        , patternOf("/v2/**")		//for development only
+                        , patternOf("/csrf/**")		//for development only
                  );
 
     AuthenticationProvider provider;

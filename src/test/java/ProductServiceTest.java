@@ -2,12 +2,8 @@ import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.stream.IntStream;
-
-import javax.sql.DataSource;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -16,15 +12,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.skyscreamer.jsonassert.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -84,10 +77,6 @@ public class ProductServiceTest {
 	@Autowired
 	private OrganizationRepository organizationRepository;
 	
-	@Autowired
-	private TestHelper helper;
-
-
 	private final String PRODUCT_NAME = "LIPSTICK";
 	private final String PRODUCT_P_NAME = "LIPSTICK PRODUCT";
 	private final Long CATEGORY_ID = 1l;

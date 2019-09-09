@@ -1,6 +1,7 @@
 package com.nasnav.persistence;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -21,6 +22,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.DiscriminatorFormula;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.jpa.domain.AbstractPersistable;
+
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.ProductRepresentationObject;

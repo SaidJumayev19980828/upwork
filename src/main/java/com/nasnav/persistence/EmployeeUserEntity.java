@@ -22,7 +22,7 @@ public class EmployeeUserEntity extends BaseUserEntity {
 	
 	@Column(name = "name")
 	private String name;
-	
+
     @Column(name = "job_title")
     private String jobTitle;
 

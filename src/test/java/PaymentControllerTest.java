@@ -3,8 +3,7 @@ import java.math.BigDecimal;
 import java.net.Authenticator;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
-import java.util.Date;
-import java.util.LinkedList;
+import java.util.*;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -36,12 +35,14 @@ import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.StocksEntity;
 
 import net.jcip.annotations.NotThreadSafe;
+import org.springframework.transaction.annotation.Transactional;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
 @NotThreadSafe
+@Transactional
 public class PaymentControllerTest {
 
 	@Mock
@@ -80,7 +81,7 @@ public class PaymentControllerTest {
 
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Payment_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void testCompletePaymentRedirection() throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 
 		Long orderId = createOrder();
@@ -130,7 +131,9 @@ public class PaymentControllerTest {
 		basket.setStocksEntity(stockEntity);
 		basket.setOrdersEntity(orderEntity);
 		BasketsEntity basketEntity = basketRepository.save(basket);
-		order.setBasketsEntity(basketEntity);
+		HashSet<BasketsEntity> baskets = new HashSet<BasketsEntity>();
+		baskets.add(basket);
+		order.setBasketsEntity(baskets);
 				
 		
 		orderEntity = orderRepository.save(order);

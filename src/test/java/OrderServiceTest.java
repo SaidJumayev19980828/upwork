@@ -35,7 +35,6 @@ import com.nasnav.NavBox;
 import com.nasnav.controller.OrdersController;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.enumerations.OrderStatus;
@@ -72,9 +71,6 @@ public class OrderServiceTest {
 
 	@Autowired
 	private BasketRepository basketRepository;
-
-	@Autowired
-	private ProductRepository productRepository;
 
 	@Autowired
 	UserService userService;
@@ -578,5 +574,14 @@ public class OrderServiceTest {
 
 		Assert.assertTrue(200 == response.getStatusCode().value());
 		Assert.assertEquals("get all orders if status parameter is invalid",16,count);
+	}
+
+	@Test
+	public void testOrdersConsistency(){
+		List<OrdersEntity> ordersList = orderRepository.findAll();
+
+		for(OrdersEntity order : ordersList) {
+			Assert.assertTrue(order.getUserId() != null);
+		}
 	}
 }

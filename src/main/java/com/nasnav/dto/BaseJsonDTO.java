@@ -18,7 +18,6 @@ import org.jboss.logging.Logger;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * @param getter : getter method of the property as method reference. 
  * 
  * Checks if the setter of the property was ever called. 
  * This is useful when mapping JSON to a BaseJsonDTO subclass, if the setter was never called
@@ -31,7 +30,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * 
  * ex: 
  * public void setMyProperty(String value){
- * 		setPropertyAsPresent(MyDTO::getMyProperty);
+ * 		setPropertyAsPresent("myProperty");
  * 		this.myProperty = value;
  * }
  */
@@ -143,7 +142,10 @@ public abstract class BaseJsonDTO {
 	}
 	
 	
-	
+	/**
+	 * @return if properties that required for creating new data are:
+	 * - were all updated at least once
+	 * */
 	@JsonIgnore
 	public Boolean areRequiredForDataCreatePropertiesPresent() {
 		return areRequiredPropertiesPresent(Required.FOR_CREATE)
@@ -151,7 +153,10 @@ public abstract class BaseJsonDTO {
 	}
 	
 	
-	
+	/**
+	 * @return if properties that required for updating existing data are:
+	 * - were all updated at least once
+	 * */
 	@JsonIgnore
 	public Boolean areRequiredForDataUpdatePropertiesPresent() {
 		return areRequiredPropertiesPresent(Required.FOR_UPDATE)
@@ -159,7 +164,10 @@ public abstract class BaseJsonDTO {
 	}
 
 
-	
+	/**
+	 * @return if properties that required for updating existing data are:
+	 * - were all updated at least once
+	 * */
 	@JsonIgnore
 	public Boolean areRequiredAlwaysPropertiesPresent() {
 		return areRequiredPropertiesPresent(Required.ALWAYS);
@@ -192,7 +200,11 @@ public abstract class BaseJsonDTO {
 	
 	
 	
-	
+	/**
+	 * @return if properties that required for updating existing data are:
+	 * - were all updated at least once
+	 * - all have non-null values 
+	 * */
 	@JsonIgnore
 	public Boolean areRequiredForUpdatePropertiesProvided() {
 		return areRequiredForDataUpdatePropertiesPresent() 
@@ -202,7 +214,11 @@ public abstract class BaseJsonDTO {
 	
 	
 	
-
+	/**
+	 * @return if properties that required for creating new data are:
+	 * - were all updated at least once
+	 * - all have non-null values 
+	 * */
 	@JsonIgnore
 	public Boolean areRequiredForCreatePropertiesProvided() {
 		return areRequiredForDataCreatePropertiesPresent() 
@@ -211,7 +227,11 @@ public abstract class BaseJsonDTO {
 	}
 	
 	
-	
+	/**
+	 * @return if properties that are always required for updating or creating data are:
+	 * - were all updated at least once
+	 * - all have non-null values 
+	 * */
 	@JsonIgnore
 	public Boolean isRequiredPropertyProvided(String propName) {
 		PropertyDescriptor prop = getPropertyDescriptor(propName);

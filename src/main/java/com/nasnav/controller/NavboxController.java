@@ -114,7 +114,8 @@ public class NavboxController {
 										 @RequestParam(name = "count", required = false) Integer count,
 										 @RequestParam(name = "sort", required = false) String sort,
 										 @RequestParam(name = "order", required = false) String order,
-										 @RequestParam(name = "brand_id", required = false) Long brandId) throws BusinessException {
+										 @RequestParam(name = "brand_id", required = false) Long brandId,
+										 @RequestParam(name = "name", required = false) String name) throws BusinessException {
 
 		if (sort != null && ProductSortOptions.getProductSortOptions(sort) == null)
 			throw new BusinessException("Sort is limited to id, name, pname, price", null, HttpStatus.BAD_REQUEST);
@@ -131,16 +132,17 @@ public class NavboxController {
 		ProductsResponse productsResponse = null;
 		if (organizationId != null) {
 			productsResponse = productService.getProductsResponseByOrganizationId(organizationId, categoryId, brandId,
-					start, count, sort, order);
+					start, count, sort, order, name);
 		} else if (shopId != null) {
 			productsResponse = productService.getProductsResponseByShopId(shopId, categoryId, brandId, start, count,
-					sort, order);
+					sort, order,  name);
 		} else {
 			throw new BusinessException("Shop Id or Organization Id shall be provided", null, HttpStatus.BAD_REQUEST);
 		}
 		if (productsResponse == null) {
 			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 		}
+
 		return new ResponseEntity<>(productsResponse, HttpStatus.OK);
 	}
 

@@ -3,6 +3,7 @@ package com.nasnav.service;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -24,6 +25,10 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.collections.keyvalue.AbstractMapEntry;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -63,6 +68,7 @@ import com.nasnav.dto.ProductsResponse;
 import com.nasnav.dto.StockDTO;
 import com.nasnav.dto.VariantDTO;
 import com.nasnav.dto.VariantFeatureDTO;
+import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BrandsEntity;
@@ -79,6 +85,7 @@ import com.nasnav.response.BundleResponse;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.ProductUpdateResponse;
+import com.nasnav.response.VariantUpdateResponse;
 import com.sun.istack.logging.Logger;
 
 @Service
@@ -338,8 +345,21 @@ public class ProductService {
 
 
 
+	private List<StocksEntity> getProductStockForShop(Long productId, Long shopId) throws BusinessException {
+
+		return stockService.getProductStockForShop(productId, shopId);
+
+	}
+
+
+
+
+
+
+
+
 	public ProductsResponse getProductsResponseByShopId(Long shopId, Long categoryId, Long brandId, Integer start,
-	                                                    Integer count, String sort, String order) {
+	                                                    Integer count, String sort, String order, String searchName) {
 
 		if (start == null)
 			start = defaultStart;
@@ -375,13 +395,17 @@ public class ProductService {
 			} else {
 				products = getProductsByIdsAndCategoryIdAndBrandId(productsIds, categoryId, brandId, order, sort);
 			}
+
+			if (searchName != null) {
+				products = products.stream().filter(product -> product.getName().contains(searchName)).collect(Collectors.toList());
+			}
 		}
 		return getProductsResponse(products, order, sort, start, count);
 
 	}
 
 	public ProductsResponse getProductsResponseByOrganizationId(Long organizationId, Long categoryId, Long brandId,
-	                                                            Integer start, Integer count, String sort, String order) {
+	                                                            Integer start, Integer count, String sort, String order, String searchName) {
 		if (start == null)
 			start = defaultStart;
 		if (count == null)
@@ -402,6 +426,10 @@ public class ProductService {
 			products = getProductsForOrganizationIdAndBrandId(organizationId, brandId, order, sort);
 		} else {
 			products = getProductsForOrganizationIdAndCategoryIdAndBrandId(organizationId, categoryId, brandId, order, sort);
+		}
+
+		if (searchName != null) {
+			products = products.stream().filter(product -> product.getName().contains(searchName)).collect(Collectors.toList());
 		}
 
 		return getProductsResponse(products, order, sort, start, count);
@@ -701,7 +729,8 @@ public class ProductService {
 						public int compare(ProductRepresentationObject p1, ProductRepresentationObject p2) {
 							if (p1.getPrice() == null)
 								return -1;
-							if (p2.getPrice() == null)								return 1;
+							if (p2.getPrice() == null)
+								return 1;
 							return Double.compare(p1.getPrice().doubleValue(), p2.getPrice().doubleValue());
 						}
 					});
@@ -1249,14 +1278,14 @@ public class ProductService {
 		
 		validateUserCanModifyProduct(product);		
 		
-		validateProductVariant(imgMetaData, productId);
+		validateProductVariantForImg(imgMetaData, productId);
 			
 	}
 
 
 
 
-	private void validateProductVariant(ProductImageUpdateDTO imgMetaData, Long productId) throws BusinessException {
+	private void validateProductVariantForImg(ProductImageUpdateDTO imgMetaData, Long productId) throws BusinessException {
 		Long variantId = imgMetaData.getVariantId();		
 		if(variantId != null ) {
 			Optional<ProductVariantsEntity> variant = productVariantsRepository.findById(variantId);
@@ -1610,6 +1639,287 @@ public class ProductService {
 					, "INVALID PARAM:bundle_id/stock_id"
 					, HttpStatus.FORBIDDEN);
 		}
+	}
+
+
+	public VariantUpdateResponse updateVariant(VariantUpdateDTO variant) throws BusinessException {	
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		Long orgId = user.getOrganizationId();
+		
+		validateVariant(variant, orgId);
+		
+		ProductVariantsEntity entity = saveVariantToDb(variant);
+		return new VariantUpdateResponse(entity.getId());
+	}
+
+
+
+
+	private void validateVariant(VariantUpdateDTO variant, Long orgId) throws BusinessException {
+		if(!variant.areRequiredAlwaysPropertiesPresent()) {
+			throw new BusinessException(
+					"Missing required parameters !" 
+					, "MISSING PARAM"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		if( !productRepository.existsById( variant.getProductId() )) {
+			throw new BusinessException(
+					 String.format("Invalid parameters [product_id], no product exists with id[%d]!", variant.getProductId()) 
+					, "INVALID PARAM:features"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+
+		Operation opr = variant.getOperation();		
+		validateOperation(opr);
+		
+		if( opr.equals(Operation.CREATE) ) {
+			validateVariantForCreate(variant, orgId);
+		}else if( opr.equals(Operation.UPDATE) ) {
+			validateVariantForUpdate(variant, orgId);
+		}
+		
+		
+	}
+
+
+
+
+	private void validateVariantForUpdate(VariantUpdateDTO variant, Long userOrgId) throws BusinessException {
+		if(!variant.areRequiredForUpdatePropertiesProvided()) {
+			throw new BusinessException(
+					"Missing required parameters !" 
+					, "MISSING PARAM"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		validateUserCanUpdateVariant(variant, userOrgId);
+		
+		validateFeatures(variant, userOrgId);
+	}
+
+
+
+
+	private void validateUserCanUpdateVariant(VariantUpdateDTO variant, Long userOrgId) throws BusinessException {
+		Long id = variant.getVariantId();
+		Optional<ProductVariantsEntity> variantOptional= productVariantsRepository.findById( id );
+		
+		if( !variantOptional.isPresent()) {
+			throw new BusinessException(
+					String.format("Invalid parameters [variant_id], no product variant exists with id [%d]!", id) 
+					, "INVALID PARAM:variant_id"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}	
+		
+		Long variantOrgId = variantOptional.map(ProductVariantsEntity::getProductEntity)
+										   .map(ProductEntity::getOrganizationId)
+										   .orElseThrow(
+												   () -> new BusinessException(
+															String.format("Product variant of id[%d], Doesn't follow any organization!", id) 
+															, "INTERNAL SERVER ERROR"
+															, HttpStatus.INTERNAL_SERVER_ERROR)
+											   );		   
+		
+		if(!java.util.Objects.equals(variantOrgId, userOrgId)) {
+			throw new BusinessException(
+					String.format("Product variant of id[%d], can't be changed a user from organization with id[%d]!", id , userOrgId) 
+					, "INVALID PARAM:variant_id"
+					, HttpStatus.FORBIDDEN);
+		}
+	}
+
+
+
+
+	private void validateVariantForCreate(VariantUpdateDTO variant, Long userOrgId) throws BusinessException {
+		if(!variant.areRequiredForCreatePropertiesProvided()) {
+			throw new BusinessException(
+					"Missing required parameters !" 
+					, "MISSING PARAM"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}	
+		
+		validateFeatures(variant, userOrgId);
+		
+	}
+
+
+
+
+	private void validateFeatures(VariantUpdateDTO variant, Long userOrgId) throws BusinessException {
+		String features = variant.getFeatures();		
+		if(variant.isUpdated("features") && StringUtils.isBlankOrNull( features )) {
+			throw new BusinessException(
+					 "Invalid parameters [features], the product variant features can't be null nor Empty!" 
+					, "INVALID PARAM:features"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		if(!isJSONValid( features )) {
+			throw new BusinessException(
+					 String.format("Invalid parameters [features], the product variant features should be a valid json string! The given value was [%s]" ,features ) 
+					, "INVALID PARAM:features"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		if(hasInvalidFeatureKeys(features ,userOrgId)) {
+			throw new BusinessException(
+					 String.format("Invalid parameter [features], a feature key doesnot exists or doesn't belong to organization with id[%d]" ,userOrgId ) 
+					, "INVALID PARAM:features"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+
+
+
+	private boolean hasInvalidFeatureKeys(String features, Long userOrgId) {
+		JSONObject featuresJson = new JSONObject(features);
+		return featuresJson.keySet()
+							.stream()
+							.map(Integer::valueOf)
+							.map(productFeaturesRepository::findById)
+							.anyMatch(opt -> isInvalidFeatureKey(userOrgId, opt));
+	}
+
+
+
+
+	private boolean isInvalidFeatureKey(Long userOrgId, Optional<ProductFeaturesEntity> opt) {
+		return !opt.isPresent() 
+				|| opt.get().getOrganization() == null 
+				|| !Objects.equal(opt.get().getOrganization().getId(), userOrgId);
+	}
+
+
+
+
+	private ProductVariantsEntity saveVariantToDb(VariantUpdateDTO variant) {
+		ProductVariantsEntity entity = new ProductVariantsEntity();
+		
+		Operation opr = variant.getOperation();
+		
+		if( opr.equals( Operation.UPDATE)) {			
+			entity = productVariantsRepository.findById( variant.getVariantId()).get();
+		}	
+		
+		
+		if(variant.isUpdated("productId")){
+			ProductEntity product = productRepository.findById( variant.getProductId() ).get();
+			entity.setProductEntity(product);
+		}
+		
+		if(variant.isUpdated("name")){
+			entity.setName( variant.getName()); 
+		}
+		
+		setPnameOrGenerateDefault(variant, entity, opr);
+		
+		if(variant.isUpdated("description")) {
+			entity.setDescription( variant.getDescription() );
+		}
+		
+		if(variant.isUpdated("barcode")) {
+			entity.setBarcode( variant.getBarcode() );
+		}
+		
+		if(variant.isUpdated("features")) {
+			entity.setFeatureSpec( variant.getFeatures() );
+		}
+		
+		entity = productVariantsRepository.save(entity);
+		
+		return entity;
+	}
+	
+	
+	
+	
+	private void setPnameOrGenerateDefault(VariantUpdateDTO variant, ProductVariantsEntity entity,
+			Operation opr) {
+		
+		if(variant.isUpdated("pname") && !StringUtils.isBlankOrNull( variant.getPname()) ) {
+			entity.setPname(variant.getPname() );
+		}else if(opr.equals( Operation.CREATE )){
+			String defaultPname = createPnameFromVariantFeatures(variant);
+			entity.setPname(defaultPname);
+		}
+		
+	}
+
+
+
+
+	private String createPnameFromVariantFeatures(VariantUpdateDTO variant) {
+		JSONObject json = new JSONObject(variant.getFeatures());
+		
+		StringBuilder pname = new StringBuilder();						
+		for(String key: json.keySet()) {
+			String featureName = getProductFeatureName(key);
+			String value = json.get(key).toString();
+			
+			if(pname.length() != 0)
+				pname.append("-");
+			
+			String toAppend = featureName + "-"+value;
+			pname.append(StringUtils.encodeUrl(toAppend));
+		}
+			
+		
+		String defaultPname = StringUtils.encodeUrl(pname.toString());
+		return defaultPname;
+	}
+	
+	
+	
+	
+	private String getProductFeatureName(String idAsStr) {
+		return Optional.ofNullable(idAsStr)
+						.map(Integer::valueOf)
+						.map(productFeaturesRepository::findById)
+						.filter(Optional::isPresent)
+						.map(Optional::get)
+						.map(ProductFeaturesEntity::getName)
+						.orElse("");
+	}
+	
+	
+	
+	private void validateOperation(Operation opr) throws BusinessException {
+		if(opr == null) {
+			throw new BusinessException(
+					"Missing required parameters [operation]!" 
+					, "MISSING PARAM:operation"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		if(!opr.equals(Operation.CREATE) &&
+				!opr.equals(Operation.UPDATE)) {
+			throw new BusinessException(
+					String.format("Invalid parameters [operation], unsupported operation [%s]!", opr.getValue()) 
+					, "INVALID PARAM:operation"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+	
+	
+	
+	
+	
+	private boolean isJSONValid(String test) {
+	    try {
+	        new JSONObject(test);
+	    } catch (JSONException ex) {	        
+	        try {
+	            new JSONArray(test);
+	        } catch (JSONException ex1) {
+	            return false;
+	        }
+	    }
+	    return true;
 	}
 
 }
