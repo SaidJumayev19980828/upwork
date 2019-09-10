@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 
 import com.nasnav.persistence.StocksEntity;
 
@@ -19,7 +20,7 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 			+ " where prod.id= :productId  "
 			+ " and stock.shopsEntity.id = :shopsId"
 			)
-	List<StocksEntity> findByProductIdAndShopsId(Long productId, Long shopsId);
+	List<StocksEntity> findByProductIdAndShopsId(@Param("productId") Long productId, @Param("shopsId") Long shopsId);
 	
 	
 
@@ -31,7 +32,7 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 			+ " left join stock.productVariantsEntity var "
 			+ " left join var.productEntity prod "
 			+ " where prod.id in :productIds  " )
-	List<StocksEntity> findByProductIdIn(List<Long> productIds);
+	List<StocksEntity> findByProductIdIn(@Param("productIds") List<Long> productIds);
 
 
 	StocksEntity getOne(Long stockId);
