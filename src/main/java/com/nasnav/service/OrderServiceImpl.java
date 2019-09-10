@@ -7,9 +7,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
+import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.persistence.*;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import org.slf4j.Logger;
@@ -19,6 +21,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.dto.BasketItem;
+import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
@@ -31,18 +35,24 @@ import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
 public class OrderServiceImpl implements OrderService {
 
 	private final OrdersRepository ordersRepository;
+
 	private final BasketRepository basketRepository;
+
 	private final StockRepository stockRepository;
-	private final StockServiceImpl stockService;
+
+	private final StockService stockService;
+
 	private final EmployeeUserRepository employeeUserRepository;
+
 	private final EmployeeUserServiceHelper employeeUserServiceHelper;
 	private final UserRepository userRepository;
+
 	private final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class.getName());
 	private final ProductRepository productRepository;
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
-							StockRepository stockRepository ,StockServiceImpl stockService, UserRepository userRepository,
+							StockRepository stockRepository ,StockService stockService, UserRepository userRepository,
 	                        EmployeeUserServiceHelper employeeUserServiceHelper, EmployeeUserRepository employeeUserRepository,
 							ProductRepository productRepository) {
 		this.ordersRepository = ordersRepository;
@@ -384,7 +394,7 @@ public class OrderServiceImpl implements OrderService {
 		StocksEntity stock;
 		for(BasketsEntity entityItem: itemsEntityList){
 			stock = entityItem.getStocksEntity();
-			product = productRepository.findById(stock.getProductEntity().getId()).get();
+			product = stock.getProductVariantsEntity().getProductEntity();
 			BasketItem item = new BasketItem();
 			item.setProductId(product.getId());
 			item.setName(product.getName());
@@ -406,6 +416,9 @@ public class OrderServiceImpl implements OrderService {
 			total = total.add(item.getTotalPrice());
 		return total;
 	}
+	
+	
+	
 	@Override
 	public List<DetailedOrderRepObject> getOrdersList(Long loggedUserId, String userToken, Long userId, Long storeId,
 														 Long orgId, String status){

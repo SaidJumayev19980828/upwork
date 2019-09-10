@@ -1,5 +1,7 @@
 package com.nasnav.enumerations;
 
+import java.util.Objects;
+
 import lombok.Getter;
 
 /**
@@ -28,7 +30,7 @@ public enum OrderStatus {
 
 	public static OrderStatus findEnum(Integer statusValue) {
 		for (OrderStatus status : OrderStatus.values()) {
-			if (status.getValue() == statusValue) {
+			if ( Objects.equals(status.getValue() ,statusValue) ) {
 				return status;
 			}
 		}

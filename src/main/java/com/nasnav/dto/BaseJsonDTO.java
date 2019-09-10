@@ -18,7 +18,6 @@ import org.jboss.logging.Logger;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * @param getter : getter method of the property as method reference. 
  * 
  * Checks if the setter of the property was ever called. 
  * This is useful when mapping JSON to a BaseJsonDTO subclass, if the setter was never called
@@ -31,7 +30,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * 
  * ex: 
  * public void setMyProperty(String value){
- * 		setPropertyAsPresent(MyDTO::getMyProperty);
+ * 		setPropertyAsPresent("myProperty");
  * 		this.myProperty = value;
  * }
  */

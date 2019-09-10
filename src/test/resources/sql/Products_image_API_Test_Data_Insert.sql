@@ -1,17 +1,3 @@
-----------------------------deleting previous data----------------------------
-delete from public.role_employee_users where employee_user_id IN (SELECT id FROM public.employee_users where organization_id between 99000 and 99999);
-delete from public.users where organization_id between 99000 and 99999;
-delete from public.employee_users where organization_id between 99000 and 99999;
-DELETE FROM public.roles WHERE organization_id BETWEEN 99000 AND 99999;
-delete from public.stocks where id between 601 and 604;
-delete from public.product_images where product_id IN (SELECT id from public.products where organization_id between 99000 and 99999);
-delete FROM public.files WHERE organization_id between 99000 and 99999;
-delete from public.products where id between 1001 and 1008;
-delete from public.categories where id between 201 and 202;
-delete from public.shops where id between 501 and 502;
-delete from public.brands where id between 101 and 102;
-delete from public.organizations where id between 99001 and 99002;
-
 ----------------------------inserting dummy data----------------------------
 
 --inserting organizations
@@ -51,8 +37,6 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (22, 69, 2, now(), now());
 
 
-
-
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, barcode) VALUES (1002, 'product_2',101, 201, 99002, now(), now(),'123456789');
@@ -63,9 +47,23 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1007, 'product_7',101, 202, 99002, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1008, 'product_8',102, 202, 99002, now(), now());
 
+
+
+-- variants for each product
+insert into public.product_variants(id, "name" , product_id ) values(310001, 'var' 	, 1001);
+insert into public.product_variants(id, "name" , product_id ) values(310002, 'var' 	, 1002);
+insert into public.product_variants(id, "name" , product_id ) values(310003, 'var' 	, 1003);
+insert into public.product_variants(id, "name" , product_id ) values(310004, 'var' 	, 1004);
+insert into public.product_variants(id, "name" , product_id ) values(310005, 'var' 	, 1005);
+insert into public.product_variants(id, "name" , product_id ) values(310006, 'var' 	, 1006);
+insert into public.product_variants(id, "name" , product_id ) values(310007, 'var' 	, 1007);
+insert into public.product_variants(id, "name" , product_id ) values(310008, 'var' 	, 1008);
+
+
+
 --inserting stocks
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(601, 502, 6, now(), now(), 99002, 600.0, 1001);
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(602, 501, 8, now(), now(), 99001, 1200.0, 1002);
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(603, 501, 4, now(), now(), 99002, 200.0, 1003);
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, product_id) values(604, 502, 6, now(), now(), 99001, 700.0, 1004);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(601, 502, 6, now(), now(), 99002, 600.00, 310001);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(602, 501, 8, now(), now(), 99001, 1200.0, 310002);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(603, 501, 4, now(), now(), 99002, 200.00, 310003);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(604, 502, 6, now(), now(), 99001, 700.00, 310004);
 

@@ -2,7 +2,9 @@ package com.nasnav.persistence;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
@@ -13,6 +15,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -20,11 +23,13 @@ import org.hibernate.annotations.DiscriminatorFormula;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
-import com.nasnav.dto.BaseRepresentationObject;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.ProductRepresentationObject;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Entity
 @Table(name = "products")
@@ -78,37 +83,25 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
 
     @Column(name="product_type")
     private Integer productType = ProductTypes.DEFAULT;
+    
 
     //TODO : we only need this until the Column PRODUCTS.PRODUCT_TYPE is set as non-null
     public Integer getProductType(){
         return productType == null ? ProductTypes.DEFAULT : productType;
     }
-
-//    @OneToMany(mappedBy="productEntity")
-//    @JsonIgnore
-//    private Set<StocksEntity> stocksEntities;
-
-//    @OneToOne(mappedBy = "productEntity")
-//    @JsonIgnore
-//    private ProductVariants productVariants;
-
-//    @JsonIgnore
-//    @OneToOne(cascade = CascadeType.ALL)
-//    @JoinColumn(name = "category_id", referencedColumnName = "id")
-//    private CategoriesEntity categoriesEntity;
-
-//    @JsonIgnore
-//    @OneToOne(cascade = CascadeType.ALL)
-//    @JoinColumn(name = "brand_id", referencedColumnName = "id")
-//    private BrandsEntity brandsEntity;
     
-//    @ManyToMany(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "organization_id", nullable = false)
-//    @JsonIgnore
-//    private OrganizationEntity organizationEntity;
+    
+
+    @OneToMany(mappedBy = "productEntity")
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<ProductVariantsEntity> productVariants;
+
+
 
     @Override
-    public BaseRepresentationObject getRepresentation() {
+    public ProductRepresentationObject getRepresentation() {
         ProductRepresentationObject productRepresentationObject = new ProductRepresentationObject();
         productRepresentationObject.setId(getId());
         productRepresentationObject.setImageUrl(getCoverImage());

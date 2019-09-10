@@ -1,16 +1,28 @@
 package com.nasnav.service;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+
+import javax.persistence.EntityManager;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Order;
+import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.keyvalue.AbstractMapEntry;
@@ -19,6 +31,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JacksonJsonParser;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,8 +42,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
+import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.CategoriesRepository;
@@ -40,6 +55,9 @@ import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
+import com.nasnav.dto.BundleDTO;
+import com.nasnav.dto.BundleElementUpdateDTO;
+import com.nasnav.dto.ProductBaseInfo;
 import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductImageUpdateDTO;
 import com.nasnav.dto.ProductImgDTO;
@@ -54,11 +72,16 @@ import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BrandsEntity;
+import com.nasnav.persistence.BundleEntity;
+import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductImagesEntity;
+import com.nasnav.persistence.ProductTypes;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
+import com.nasnav.request.BundleSearchParam;
+import com.nasnav.response.BundleResponse;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.ProductUpdateResponse;
@@ -91,7 +114,7 @@ public class ProductService {
 
 	private final ProductFeaturesRepository productFeaturesRepository;
 
-	private final StockServiceImpl stockService;
+	private final StockService stockService;
 	
 	@Autowired
 	private  FileService fileService;
@@ -108,10 +131,19 @@ public class ProductService {
 	private BrandsRepository brandRepo;
 
 	@Autowired
+	private EntityManager em;
+	
+	@Autowired
+	private BasketRepository basketRepo;
+	
+	@Autowired
+	private ProductServiceTransactions transactions;
+
+	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
 	                      ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
 	                      ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
-	                      StockServiceImpl stockService) {
+	                      StockService stockService) {
 		this.productRepository = productRepository;
 		this.stockRepository = stockRepository;
 		this.productImagesRepository = productImagesRepository;
@@ -124,7 +156,7 @@ public class ProductService {
 
 
 
-	public ProductDetailsDTO getProduct(Long productId, Long shopId){
+	public ProductDetailsDTO getProduct(Long productId, Long shopId) throws BusinessException{
 
 		Optional<ProductEntity> optionalProduct = productRepository.findById(productId);
 		if (!optionalProduct.isPresent()) {
@@ -139,7 +171,10 @@ public class ProductService {
 		if (productVariants != null && !productVariants.isEmpty()) {
 			variantsDTOList = getVariantsList(productVariants, productId, shopId);
 		} else {
-			variantsDTOList = createDummyVariantWithProductStocks(productId, shopId);
+			throw new BusinessException(
+							String.format("Product with id[%d] doesn't have any variants! A product must have at least one variant.", productId)
+							, "INVALID DATA"
+							, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
 		ProductDetailsDTO productDTO = new ProductDetailsDTO(product);
@@ -151,24 +186,12 @@ public class ProductService {
 		return productDTO;
 	}
 
-	private List<VariantDTO> createDummyVariantWithProductStocks(Long productId, Long shopId) {
-		List<VariantDTO> variantsDTOList = new ArrayList<>();
-
-		List<StockDTO> productStocks = getStockList(productId, shopId, null);
-		if (productStocks != null) {
-			VariantDTO variantObj = new VariantDTO();
-			variantObj.setId(0L);
-			variantObj.setStocks(productStocks);
-			variantsDTOList.add(variantObj);
-		}
-
-		return variantsDTOList;
-	}
-
+	
+	
 
 	private List<ProductRepresentationObject> getBundleItems(ProductEntity product) {
 
-		List<Long> bundleProductsIdList = bundleRepository.GetBundleItemsProductIds(product.getId());
+		List<Long> bundleProductsIdList = bundleRepository.getBundleItemsProductIds(product.getId());
 		List<ProductEntity> bundleProducts = this.getProductsByIds(bundleProductsIdList , "asc", "name");
 		ProductsResponse response = this.getProductsResponse(bundleProducts,"asc" , "name" , 0, Integer.MAX_VALUE );
 		List<ProductRepresentationObject> productRepList = response == null? new ArrayList<>() : response.getProducts();
@@ -178,24 +201,25 @@ public class ProductService {
 
 
 
-    private List<VariantDTO> getVariantsList(List<ProductVariantsEntity> productVariants, Long productId, Long shopId) {
+    private List<VariantDTO> getVariantsList(List<ProductVariantsEntity> productVariants, Long productId, Long shopId) throws BusinessException{
 
 		List<VariantDTO> variantDTOList = new ArrayList<>();
 
-		productVariants.forEach(variant -> {
-
+		for(ProductVariantsEntity variant: productVariants) {			
 			VariantDTO variantObj = new VariantDTO();
 			variantObj.setId(variant.getId());
 			variantObj.setBarcode( variant.getBarcode() );
-			variantObj.setStocks( getStockList(productId, shopId, variant.getId()));
+			variantObj.setStocks( getStockList(variant, shopId) );
 			variantObj.setVariantFeatures( getVariantFeaturesValues(variant) );
 			variantObj.setImages( getProductVariantImages(variant.getId()) );
 
 			variantDTOList.add(variantObj);
-		});
+		}		
 
 		return variantDTOList;
 	}
+    
+    
 
 	private Map<String,String> getVariantFeaturesValues(ProductVariantsEntity variant) {
 		if(variant == null || !hasFeatures(variant))
@@ -296,22 +320,17 @@ public class ProductService {
 		return variantImagesArray;
 	}
 
+	
+	
 
-
-	private List<StockDTO> getStockList(Long productId, Long shopId, Long variantId) {
+	private List<StockDTO> getStockList(ProductVariantsEntity variant,Long shopId) throws BusinessException {
 		List<StockDTO> stocksArray = null;
 
 		if (shopId == null) {
 			return stocksArray;
 		}
 
-		List<StocksEntity> stocks;
-		if (variantId != null) {
-			stocks = stockRepository.findByProductEntity_IdAndShopsEntity_IdAndProductVariantsEntity_Id(productId,
-					shopId, variantId);
-		} else {
-			stocks = getProductStockForShop(productId, shopId);
-		}
+		List<StocksEntity> stocks = stockService.getVariantStockForShop(variant, shopId);
 
 		if (stocks != null && !stocks.isEmpty()) {
 			stocksArray = stocks.stream()
@@ -326,7 +345,7 @@ public class ProductService {
 
 
 
-	private List<StocksEntity> getProductStockForShop(Long productId, Long shopId) {
+	private List<StocksEntity> getProductStockForShop(Long productId, Long shopId) throws BusinessException {
 
 		return stockService.getProductStockForShop(productId, shopId);
 
@@ -358,8 +377,14 @@ public class ProductService {
 
 		if (stocks != null && !stocks.isEmpty()) {
 
-			List<Long> productsIds = stocks.stream().filter(stock -> stock.getProductEntity() != null)
-					.map(stock -> stock.getProductEntity().getId()).collect(Collectors.toList());
+			List<Long> productsIds = stocks.stream()
+											.filter(stock -> stock.getProductVariantsEntity() != null)
+											.map(stock -> stock.getProductVariantsEntity() )
+											.filter(var -> var != null)
+											.map(var -> var.getProductEntity())
+											.filter(prod -> prod != null)
+											.map(prod -> prod.getId())
+											.collect(Collectors.toList());
 
 			if (categoryId == null && brandId == null) {
 				products = getProductsByIds(productsIds, order, sort);
@@ -656,6 +681,8 @@ public class ProductService {
 		}
 		return products;
 	}
+	
+	
 
 	private ProductsResponse getProductsResponse(List<ProductEntity> products, String order, String sort, Integer start,
 	                                             Integer count) {
@@ -664,17 +691,25 @@ public class ProductService {
 		if (products != null) {
 			productsResponse = new ProductsResponse();
 
-			List<StocksEntity> stocks = stockRepository.findByProductEntity_IdIn(
-					products.stream().map(product -> product.getId()).collect(Collectors.toList()));
+			List<Long> productIdList = products.stream()
+												.map(product -> product.getId())
+												.collect(Collectors.toList() );
+			
+			List<StocksEntity> stocks = new ArrayList<>();
+			if(!productIdList.isEmpty()) {
+				stocks.addAll( stockRepository.findByProductIdIn(productIdList) );
+			}				
 
 			List<ProductRepresentationObject> productsRep = products.stream()
-					.map(product -> (ProductRepresentationObject) product.getRepresentation())
-					.collect(Collectors.toList());
+																	.map(ProductEntity::getRepresentation)
+																	.map(ProductRepresentationObject.class::cast)
+																	.collect(Collectors.toList());
 			productsRep.forEach(pRep -> {
 
-				Optional<StocksEntity> optionalStock = stocks.stream().filter(stock -> stock != null
-						&& stock.getProductEntity() != null && stock.getProductEntity().getId().equals(pRep.getId()))
-						.findFirst();
+				Optional<StocksEntity> optionalStock = stocks.stream()															
+															.filter(stock -> stock != null)
+															.filter(stock -> Objects.equal( getStockProductId(stock),  pRep.getId()))
+															.findFirst();
 
 				if (optionalStock != null && optionalStock.isPresent()) {
 					pRep.setAvailable(true);
@@ -733,7 +768,20 @@ public class ProductService {
 	
 	
 	
-	public ProductUpdateResponse updateProduct(String productJson) throws BusinessException {
+	
+	private Long getStockProductId(StocksEntity stock) {
+		return Optional.ofNullable(stock)
+				.map(StocksEntity::getProductVariantsEntity)
+				.map(ProductVariantsEntity::getProductEntity)
+				.map(ProductEntity::getId)
+				.orElse(0L);
+	}
+	
+	
+	
+	
+	
+	public ProductUpdateResponse updateProduct(String productJson, Boolean isBundle) throws BusinessException {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
 		
@@ -748,7 +796,7 @@ public class ProductService {
 		
 		validateProductDto(rootNode, user);
 		
-		ProductEntity entity = prepareProdcutEntity(rootNode, user);
+		ProductEntity entity = prepareProdcutEntity(rootNode, user,isBundle);
 		ProductEntity saved = productRepository.save(entity);
 		
 		return new ProductUpdateResponse(true, saved.getId());		
@@ -757,7 +805,7 @@ public class ProductService {
 
 
 
-	private ProductEntity prepareProdcutEntity(JsonNode productJsonNode, BaseUserEntity user)
+	private ProductEntity prepareProdcutEntity(JsonNode productJsonNode, BaseUserEntity user, Boolean isBundle)
 			throws BusinessException {
 		
 		Long id = productJsonNode.path("product_id").asLong();
@@ -766,8 +814,11 @@ public class ProductService {
 		
 		ProductEntity entity;
 		
-		if(Operation.CREATE.equals(operation))
-			entity = new ProductEntity();	
+		if(Operation.CREATE.equals(operation)) {
+			entity = new ProductEntity();
+			if(isBundle)
+				entity.setProductType(ProductTypes.BUNDLE);
+		}			
 		else {
 			entity = productRepository.findById(id)
 							.orElseThrow(()-> new BusinessException("No prodcut exists with  ID: "+ id, "INVALID_PARAM:id" , HttpStatus.NOT_ACCEPTABLE));
@@ -789,6 +840,7 @@ public class ProductService {
 			BeanUtils.copyProperties(productDto, entity);
 			
 			//readerForUpdating makes the reader update the properties that ONLY exists in JSON string
+			//That's why we are parsing the JSON instead of spring (-_-)
 			ObjectMapper mapper = createObjectMapper();
 			productDto = mapper.readerForUpdating(productDto).readValue(productJsonNode.toString());
 			
@@ -932,8 +984,38 @@ public class ProductService {
 
 
 
-
 	public ProductUpdateResponse deleteProduct(Long productId) throws BusinessException {
+		validateProductToDelete(productId);
+		
+		List<ProductImagesEntity> imgs = productImagesRepository.findByProductEntity_Id(productId) ;
+		try {
+			transactions.deleteProduct(productId);				
+		}catch(DataIntegrityViolationException e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new BusinessException(
+					String.format("Failed to delete product with id[%d]! Product is still used in the system (stocks, orders, bundles, ...)!", productId)
+					, "INVAILID PARAM:product_id"
+					, HttpStatus.FORBIDDEN);
+		}catch(Throwable e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new BusinessException(
+					String.format("Failed to delete product with id[%d]!", productId)
+					, "INVAILID PARAM:product_id"
+					, HttpStatus.INTERNAL_SERVER_ERROR);
+		} 
+		
+		
+		for(ProductImagesEntity img : imgs) {
+			fileService.deleteFileByUrl(img.getUri());
+		};
+		
+		return new ProductUpdateResponse(true, productId);
+	}
+
+
+
+
+	private void validateProductToDelete(Long productId) throws BusinessException {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
 		Long userOrgId = user.getOrganizationId();
@@ -944,10 +1026,58 @@ public class ProductService {
 												"Product of ID["+productId+"] cannot be deleted by a user from oraganization of id ["+ userOrgId + "]" 
 												, "INSUFFICIENT_RIGHTS"
 												, HttpStatus.FORBIDDEN));
+
 		
-		productRepository.deleteById(productId);
-		return new ProductUpdateResponse(true, productId);
+		Boolean exitsInOrders = basketRepo.countByProductId(productId) > 0;
+		if(exitsInOrders) {
+			throw new BusinessException(
+					String.format("Can't delete product with id[%d] ! The Product already exits in some orders!", productId)
+					, "INVALID PARAM:product_id"
+					, HttpStatus.FORBIDDEN);
+		}
 	}
+	
+	
+	
+	public ProductUpdateResponse deleteBundle(Long bundleId) throws BusinessException {
+		validateBundleToDelete(bundleId);
+		
+		List<StocksEntity> bundleStocks = stockRepository.findByProductIdIn(Arrays.asList(bundleId));
+		try {
+			bundleStocks.forEach(stockRepository::delete);
+		}catch(DataIntegrityViolationException e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new BusinessException(
+					String.format("Failed to bundle with id[%d]! bundle is still used in the system (stocks, orders, bundles, ...)!", bundleId)
+					, "INVAILID PARAM:product_id"
+					, HttpStatus.FORBIDDEN);
+		}catch(Throwable e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new BusinessException(
+					String.format("Failed to delete bundle with id[%d]!", bundleId)
+					, "INVAILID PARAM:product_id"
+					, HttpStatus.INTERNAL_SERVER_ERROR);
+		} 
+		
+		
+		return deleteProduct(bundleId);
+	}
+
+
+
+	private void validateBundleToDelete(Long productId) throws BusinessException {
+		if(!bundleRepository.existsById(productId) 
+					&& productRepository.existsById(productId)) {
+			
+			throw new BusinessException(
+					String.format("Can only delete bundles using this API, product with id[%d] is not a bundle!", productId)
+					, "INVALID PARAM:product_id"
+					, HttpStatus.NOT_ACCEPTABLE);
+			
+		}
+		
+	}
+
 
 
 
@@ -1231,8 +1361,10 @@ public class ProductService {
 				 				.orElseThrow(()-> new BusinessException("No Image exists with id ["+ imgId+"] !", "INVALID PARAM:image_id", HttpStatus.NOT_ACCEPTABLE));
 		
 		Long productId = Optional.ofNullable(img.getProductEntity())
-				.map(prod -> prod.getId())
-				.orElse(null);
+								.map(prod -> prod.getId())
+								.orElse(null);					
+		
+		validateImgToDelete(img);		
 		
 		productImagesRepository.deleteById(imgId);
 		
@@ -1242,6 +1374,272 @@ public class ProductService {
 	}
 
 
+
+
+	private void validateImgToDelete(ProductImagesEntity img) throws BusinessException {
+		Long orgId = Optional.ofNullable(img.getProductEntity())
+								.map(prod -> prod.getOrganizationId())
+								.orElse(null);
+		
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		
+		if(!user.getOrganizationId().equals(orgId)) {
+			throw new BusinessException(
+					String.format("User from organization of id[%d] have no rights to delete product image of id[%d]",orgId, img.getId())
+					, "UNAUTHRORIZED"
+					, HttpStatus.FORBIDDEN);
+		}
+	}
+	
+	
+	
+
+	public BundleResponse getBundles(BundleSearchParam params) throws BusinessException {
+		//validate params 
+		if(params.getBundle_id() == null && params.getOrg_id() == null)
+		throw new BusinessException("Missing request parameters! Either bundle_Id or org_id must be provided!"
+									, "MISSING PARAM:bundle_id,org_id"
+									, HttpStatus.NOT_ACCEPTABLE);
+		
+		
+		CriteriaBuilder builder = em.getCriteriaBuilder();		 
+		CriteriaQuery<BundleEntity> query = builder.createQuery(BundleEntity.class);		 
+		Root<BundleEntity> root = query.from(BundleEntity.class);
+		 
+		Predicate[] predicatesArr = getBundleQueryPredicates(params, builder, root);
+		Order orderBy = getBundleQueryOrderBy(params, builder, root);
+		
+		query.where(predicatesArr);
+		query.orderBy(orderBy);
+	
+		List<BundleDTO> bundleDTOList = em.createQuery(query)
+											 .setMaxResults(params.getCount())
+											 .setFirstResult(params.getStart())
+											 .getResultList()
+											 .stream()
+											 .map(this::toBundleDTO)
+											 .collect(Collectors.toList());
+		
+		Long count = getQueryCount(builder, predicatesArr);
+		
+		return new BundleResponse( count,  bundleDTOList);
+	}
+
+
+
+
+	private Long getQueryCount(CriteriaBuilder builder, Predicate[] predicatesArr) {
+		CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
+		countQuery.select(  builder.count( countQuery.from(BundleEntity.class) ) )
+				  .where(predicatesArr);
+		Long count = em.createQuery(countQuery).getSingleResult();
+		return count;
+	}
+
+
+
+
+	private Predicate[] getBundleQueryPredicates(BundleSearchParam params, CriteriaBuilder builder,
+			Root<BundleEntity> root) {
+		List<Predicate> predicates = new ArrayList<>();
+		
+		if(params.getBundle_id() != null)
+			predicates.add( builder.equal(root.get("id"), params.getBundle_id()) );
+		else
+			predicates.add( builder.equal(root.get("organizationId"), params.getOrg_id()) );
+		
+		if(params.getCategory_id() != null)
+			predicates.add( builder.equal(root.get("categoryId"), params.getCategory_id() ));
+		
+		
+		Predicate[] predicatesArr = predicates.stream().toArray( Predicate[]::new) ;
+		return predicatesArr;
+	}
+
+
+
+
+	private Order getBundleQueryOrderBy(BundleSearchParam params, CriteriaBuilder builder, Root<BundleEntity> root) {
+//		CriteriaBuilder builder = em.getCriteriaBuilder();	
+		Path orderByAttr = root.get(params.getSort().getValue());
+		Order orderBy = builder.asc(orderByAttr);
+		if(params.getOrder().equals(SortOrder.DESC))
+			orderBy = builder.desc(orderByAttr);
+		
+		return orderBy;
+	}
+	
+	
+	
+	
+	
+	private BundleDTO toBundleDTO(BundleEntity entity) {
+		BundleDTO dto = new BundleDTO();
+		
+		dto.setId(entity.getId());
+		dto.setImageUrl(entity.getCoverImage());
+		dto.setName(entity.getName());
+		dto.setPname(entity.getPname());
+		
+		List<StocksEntity> bundleStock = 	entity.getProductVariants()
+													.stream()
+													.flatMap( var -> var.getStocks().stream())
+													.collect(Collectors.toList());
+				
+		if(bundleStock.size() != 1) {
+			throw new IllegalStateException(
+					String.format("Bundle with id[%d] doesn't have a single price!", entity.getId()));
+		}
+		
+		bundleStock.stream()
+					.findFirst()		
+					.map(StocksEntity::getPrice)
+					.ifPresent(dto::setPrice);
+		
+		List<Long> productIdList = bundleRepository.getBundleItemsProductIds(entity.getId());
+		List<ProductBaseInfo> productlist = productRepository.findByIdInOrderByNameAsc(productIdList)
+																.stream()
+															.map(ProductEntity::getRepresentation)
+															.map(this::toProductBaseInfo)
+															.collect(Collectors.toList());
+		
+		dto.setProducts( productlist );
+		
+		return dto;
+	}
+	
+	
+	
+	private ProductBaseInfo toProductBaseInfo(ProductRepresentationObject source) {
+		ProductBaseInfo baseInfo = new ProductBaseInfo();
+		try {
+			BeanUtils.copyProperties(baseInfo, source);
+		} catch (IllegalAccessException | InvocationTargetException e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new RuntimeException(
+						 String.format( "Failed to copy data from class of type [%s] to a class of type [%s]"
+								 	, source.getClass().getName() 
+								 	, baseInfo.getClass().getName() )
+							);
+		}
+		 
+		 return baseInfo;
+	}
+
+
+
+
+	public void updateBundleElement(BundleElementUpdateDTO element) throws BusinessException {
+		validateBundleElementUpdateReq(element);
+				
+		if(element.getOperation().equals( Operation.DELETE)) {
+			deleteBundleElement(element);
+		}else if(element.getOperation().equals( Operation.ADD)){
+			addBundleElement(element);
+		}
+		
+		
+	}
+
+
+
+
+	private void deleteBundleElement(BundleElementUpdateDTO element) {
+		BundleEntity bundle = bundleRepository.getOne(element.getBundleId());
+		
+		StocksEntity item = stockRepository.getOne(element.getStockId());
+		
+		bundle.getItems().remove(item);
+		bundleRepository.save(bundle);		
+	}
+
+
+
+
+	private void addBundleElement(BundleElementUpdateDTO element) {
+		BundleEntity bundle = bundleRepository.getOne(element.getBundleId());
+		
+		StocksEntity item = stockRepository.getOne(element.getStockId());
+		
+		bundle.getItems().add(item);
+		bundleRepository.save(bundle);
+	}
+
+
+
+
+	private void validateBundleElementUpdateReq(BundleElementUpdateDTO element) throws BusinessException {
+		String missingParam = null;
+		if(element.getOperation() == null) {
+			missingParam = "operation";					
+		}else if(element.getBundleId() == null) {
+			missingParam = "bundle_id";
+		}else if(element.getStockId() == null) {
+			missingParam = "stock_id";
+		}
+		
+		if(missingParam != null) {
+			throw new BusinessException(
+					"Required parameters missing!"
+					, "MISSING PARAM:" + missingParam
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		
+		Operation opr = element.getOperation();
+		if( !( opr.equals(Operation.ADD) 
+				||opr.equals(Operation.DELETE) ) ) {
+			throw new BusinessException(
+					String.format("Invalid Operation  [%s]", opr.getValue())
+					, "INVALID PARAM:operation"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		
+		if(!bundleRepository.existsById(element.getBundleId())) {
+			throw new BusinessException(
+					String.format("No bundle exists with id[%d]", element.getBundleId())
+					, "INVALID PARAM:bundle_id"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		
+		if(opr.equals(Operation.ADD) && !stockRepository.existsById(element.getStockId())) {
+			throw new BusinessException(
+					String.format("No stock item exists with id[%d]", element.getStockId())
+					, "INVALID PARAM:stock_id"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		BundleEntity bundle = bundleRepository.findById(element.getBundleId()).get();
+		StocksEntity item = stockRepository.findById( element.getStockId() ).get();
+		
+		validateUserOrganization(bundle, item);
+	}
+
+
+
+
+	private void validateUserOrganization(BundleEntity bundle, StocksEntity item) throws BusinessException {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		
+		Long userOrgId = user.getOrganizationId();
+		Long bundleOrgId = bundle.getOrganizationId();
+		Long itemOrgId = item.getOrganizationEntity().getId();
+		
+		boolean areEqual = EntityUtils.areEqual(userOrgId, bundleOrgId, itemOrgId);
+		
+		if(!areEqual) {
+			throw new BusinessException(
+					String.format("User who belongs to organization of id[%d] is not allowed "
+							+ "to add stock item from organiztion of id[%d] to "
+							+ "a bundle from organiztion of id[%d]", userOrgId, itemOrgId, bundleOrgId)
+					, "INVALID PARAM:bundle_id/stock_id"
+					, HttpStatus.FORBIDDEN);
+		}
+	}
 
 
 	public VariantUpdateResponse updateVariant(VariantUpdateDTO variant) throws BusinessException {	

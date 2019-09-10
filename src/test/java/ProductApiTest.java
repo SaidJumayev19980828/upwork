@@ -29,8 +29,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.dto.ProductUpdateDTO;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ProductEntity;
@@ -44,7 +44,7 @@ import net.jcip.annotations.NotThreadSafe;
 @PropertySource("classpath:database.properties")
 @NotThreadSafe
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_API_Test_Data_Insert.sql"})
-@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class ProductApiTest {
 	
 	@Autowired
@@ -58,6 +58,8 @@ public class ProductApiTest {
 	private ProductRepository productRepository;
 	
 	
+	@Autowired
+	private ProductImagesRepository imgRepo;;
 	
 	@Test
 	public void createProductUserWithNoRightsTest() throws JsonProcessingException {
@@ -415,9 +417,11 @@ public class ProductApiTest {
 	public void deleteProductTest() throws JsonParseException, JsonMappingException, IOException {
 		BaseUserEntity user = empUserRepo.getById(69L);
 		
-		Long productId = 1006L; 
+		Long productId = 1008L; 
+		
 		
 		assertTrue(productRepository.existsById(productId)); //assert product exists before delete
+		assertNotEquals("product had images", 0, imgRepo.findByProductEntity_Id(productId).size());
 		
 		ResponseEntity<String> response = deleteProduct(user, productId);		
 		
@@ -427,7 +431,8 @@ public class ProductApiTest {
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertTrue(body.isSuccess());
 		assertEquals(productId, body.getProductId());
-		assertFalse(productRepository.existsById(productId));		
+		assertFalse(productRepository.existsById(productId));
+		assertEquals("product images was deleted", 0, imgRepo.findByProductEntity_Id(productId).size());
 	}
 	
 	
@@ -480,7 +485,7 @@ public class ProductApiTest {
 		HttpEntity request =  TestCommons.getHttpEntity("" , 4444, "InvalidToken");
 		
 		ResponseEntity<String> response = 
-				template.exchange("/product/info?product_id=" + productId
+				template.exchange("/product?product_id=" + productId
 						, HttpMethod.DELETE
 						, request
 						, String.class);
@@ -490,6 +495,39 @@ public class ProductApiTest {
 		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
 		assertFalse(body.getBoolean("success"));
 	}
+	
+	
+	@Test
+	public void deleteProductHasStocksTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(69L);
+		
+		Long productId = 1006L; 
+		
+		assertTrue("assert product exists before delete", productRepository.existsById(productId)); //
+		
+		ResponseEntity<String> response = deleteProduct(user, productId);		
+		
+		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+		assertTrue("assert product still exists after delete", productRepository.existsById(productId));		
+	}
+	
+	
+	
+	@Test
+	public void deleteProductInBundleTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(69L);
+		
+		Long productId = 1003L; 
+		
+		assertTrue("assert product exists before delete", productRepository.existsById(productId)); //
+		assertNotEquals("product had images", 0, imgRepo.findByProductEntity_Id(productId).size());
+		
+		ResponseEntity<String> response = deleteProduct(user, productId);		
+		
+		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+		assertTrue("assert product still exists after delete", productRepository.existsById(productId));
+		assertNotEquals("product images was NOT deleted", 0, imgRepo.findByProductEntity_Id(productId).size());
+	}
 
 
 
@@ -498,7 +536,7 @@ public class ProductApiTest {
 		HttpEntity request =  TestCommons.getHttpEntity("" , user.getId(), user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
-				template.exchange("/product/info?product_id=" + productId
+				template.exchange("/product?product_id=" + productId
 						, HttpMethod.DELETE
 						, request
 						, String.class);
