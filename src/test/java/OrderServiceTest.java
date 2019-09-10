@@ -195,7 +195,6 @@ public class OrderServiceTest {
 		for(BasketsEntity basket : baskets){
 			basketRepository.delete(basket);
 			stockRepository.delete(basket.getStocksEntity());
-			productRepository.delete(basket.getStocksEntity().getProductEntity());
 		}
 
 		// delete the order after assertion
@@ -344,7 +343,6 @@ public class OrderServiceTest {
 		for(BasketsEntity basket : baskets){
 			basketRepository.delete(basket);
 			stockRepository.delete(basket.getStocksEntity());
-			productRepository.delete(basket.getStocksEntity().getProductEntity());
 		}
 
 		orderRepository.deleteById(orderId);

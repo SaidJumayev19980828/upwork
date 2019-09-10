@@ -86,7 +86,7 @@ public class QnbHostedSessionPayment {
         orderId = createOrder();
     }
 
-    @After
+/*    @After
     public void cleanup(){
         //delete baskets
         List<BasketsEntity> baskets = basketRepository.findByOrdersEntity_Id(orderId);
@@ -104,7 +104,7 @@ public class QnbHostedSessionPayment {
         shopsRepository.delete(shop);
         userRepository.delete(user);
         organizationRepository.delete(org);
-    }
+    }*/
 
     @Test
     public void rawSessionCreationTest() throws BusinessException {
@@ -172,6 +172,7 @@ public class QnbHostedSessionPayment {
         stock.setQuantity(5);
         stock.setCurrency(TransactionCurrency.EGP);
         stock.setShopsEntity(shopEntity);
+        stock.setOrganizationEntity(org);
         StocksEntity stockEntity = stockRepository.save(stock);
         
         //create user
