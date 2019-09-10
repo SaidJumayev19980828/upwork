@@ -197,7 +197,7 @@ public class ProductsController {
 	
 	
 	
-	@ApiOperation(value = "delete image for product", nickname = "product image delete", code = 201)
+	@ApiOperation(value = "delete image for product variant", nickname = "product variant image delete", code = 201)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Product image deleted"),
             @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),

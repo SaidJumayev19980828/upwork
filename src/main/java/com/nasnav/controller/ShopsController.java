@@ -1,9 +1,11 @@
 package com.nasnav.controller;
 
 import com.nasnav.dto.ShopJsonDTO;
+import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.ShopResponse;
+import com.nasnav.response.StockUpdateResponse;
 import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.ShopService;
 import io.swagger.annotations.ApiOperation;
@@ -41,5 +43,18 @@ public class ShopsController {
             response = shopService.updateShop(loggedUserId, shopJson);
         }
         return new ResponseEntity(response, response.getHttpStatus());
+    }
+    
+    
+    
+    
+    
+    @ApiOperation(value = "update shop stock of a product variant", nickname = "updateStock")
+    @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "INSUFFICIENT RIGHTS or UNAUTHENTICATED"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
+    @PostMapping(value = "/stock", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public StockUpdateResponse updateStock(@RequestBody StockUpdateDTO stockUpdateReq) throws BusinessException {      
+        return shopService.updateStock(stockUpdateReq);
     }
 }

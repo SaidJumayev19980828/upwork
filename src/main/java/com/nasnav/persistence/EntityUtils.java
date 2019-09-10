@@ -46,4 +46,18 @@ public class EntityUtils {
 		return  elementSet.size() == 1;
 	}
 	
+	
+	
+	public static boolean anyIsNull(Object... elements){
+		List elementList =  Arrays.asList(elements);
+		return elementList.stream().anyMatch(e -> e == null);
+	}
+	
+	
+	
+	public static boolean allIsNull(Object... elements){
+		List elementList =  Arrays.asList(elements);
+		return elementList.stream().allMatch(e -> e == null);
+	}
+	
 }
