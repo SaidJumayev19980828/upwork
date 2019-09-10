@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -38,7 +39,16 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	boolean existsByIdAndAuthenticationToken(Long userId, String authenticationToken);
 
 	EmployeeUserEntity getByIdAndAuthenticationToken(Long userId, String authToken);
-	
+
+	List<EmployeeUserEntity> findByOrganizationId(Long orgId);
+	List<EmployeeUserEntity> findByShopId(Long shopId);
+	List<EmployeeUserEntity> findByOrganizationIdAndShopId(Long orgId, Long shopId);
+
+	List<EmployeeUserEntity> findByIdIn(List<Long> employeesIds);
+
+	List<EmployeeUserEntity> findByOrganizationIdAndIdIn(Long orgId, List<Long> employeesIds);
+	List<EmployeeUserEntity> findByShopIdAndIdIn(Long shopId, List<Long> employeesIds);
+	List<EmployeeUserEntity> findByOrganizationIdAndShopIdAndIdIn(Long orgId, Long shopId, List<Long> employeesIds);
 }
 
 

@@ -21,7 +21,7 @@ public class UserApiResponse extends BaseResponse implements Serializable {
     // json if it is null as per API requirements
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     // set property name to user_id as per API requirements
-    @JsonProperty(value = "user_id")
+    @JsonProperty(value = "id")
     private Long entityId;
 
     // set property name to status as per API requirements
@@ -50,7 +50,7 @@ public class UserApiResponse extends BaseResponse implements Serializable {
     private Long storeId;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @JsonProperty(value = "user_name")
+    @JsonProperty(value = "name")
     private String name;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

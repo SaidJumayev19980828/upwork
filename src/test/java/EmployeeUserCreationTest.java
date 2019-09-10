@@ -580,7 +580,7 @@ public class EmployeeUserCreationTest {
 	@Test
 	public void getUserOwnData() {
 		HttpEntity<Object> header = getHttpEntity(null, "123", "88");
-		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?user_id=88", HttpMethod.GET,
+		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info", HttpMethod.GET,
 				                                        header, UserRepresentationObject.class);
 		System.out.println(response.toString());
 		Assert.assertEquals(response.getStatusCodeValue(), 200);
@@ -590,14 +590,14 @@ public class EmployeeUserCreationTest {
 	public void getUserDataDifferentUsers() {
 		// logged user is NASNAV_ADMIN so he can view all other users data
 		HttpEntity<Object> header = getHttpEntity(null, "abcdefg", "68");
-		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?user_id=88", HttpMethod.GET,
+		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?id=88", HttpMethod.GET,
 				header, UserRepresentationObject.class);
 		System.out.println(response.toString());
 		Assert.assertEquals(response.getStatusCodeValue(), 200);
 
 		// logged user is ORGANIZATION_ADMIN so he can't view any other users data
 		header = getHttpEntity(null, "hijkllm", "69");
-		response = template.exchange("/user/info?user_id=88", HttpMethod.GET,
+		response = template.exchange("/user/info?id=88", HttpMethod.GET,
 				header, UserRepresentationObject.class);
 		System.out.println(response.toString());
 		Assert.assertEquals(response.getStatusCodeValue(), 401);
@@ -606,7 +606,7 @@ public class EmployeeUserCreationTest {
 	@Test
 	public void getNonExistUserData() {
 		HttpEntity<Object> header = getHttpEntity(null, "abcdefg", "68");
-		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?user_id=80008", HttpMethod.GET,
+		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?id=526523", HttpMethod.GET,
 				header, UserRepresentationObject.class);
 		System.out.println(response.toString());
 		Assert.assertEquals(response.getStatusCodeValue(), 406);

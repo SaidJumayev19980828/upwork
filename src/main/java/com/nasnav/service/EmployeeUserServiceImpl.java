@@ -1,16 +1,17 @@
 package com.nasnav.service;
 
+import com.google.common.base.Enums;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserDTOs.PasswordResetObject;
+import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.enumerations.Roles;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.DefaultBusinessEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.EntityUtils;
+import com.nasnav.persistence.*;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
@@ -20,9 +21,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class EmployeeUserServiceImpl implements EmployeeUserService {
@@ -31,12 +31,15 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	private EmployeeUserRepository employeeUserRepository;
 	private PasswordEncoder passwordEncoder;
+	private RoleServiceImpl roleServiceImpl;
 
 	@Autowired
-	public EmployeeUserServiceImpl(EmployeeUserServiceHelper helper, EmployeeUserRepository employeeUserRepository, PasswordEncoder passwordEncoder) {
+	public EmployeeUserServiceImpl(EmployeeUserServiceHelper helper, EmployeeUserRepository employeeUserRepository,
+								   PasswordEncoder passwordEncoder, RoleServiceImpl roleServiceImpl) {
 		this.helper = helper;
 		this.employeeUserRepository = employeeUserRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.roleServiceImpl = roleServiceImpl;
 	}
 
 	@Override
@@ -237,4 +240,82 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		}
 		return employeeUserEntity;
 	}
+
+	public List<UserRepresentationObject> getUserList(String token, Long orgId, Long storeId, String role) throws BusinessException {
+		EmployeeUserEntity user = employeeUserRepository.findByAuthenticationToken(token).get();
+		List<String> userRoles = helper.getEmployeeUserRoles(user.getId());
+		Set<String> roles = new HashSet<>();
+		List<EmployeeUserEntity> usersEntites = new ArrayList<>();
+		List<Long> employeesIds = new ArrayList<>();
+		List<UserRepresentationObject> userRepObjs = new ArrayList<>();
+		if (role != null) {
+			if (!Enums.getIfPresent(Roles.class, role).isPresent())
+				throw new BusinessException("INVALID_PARAM: role","No roles matching the provided role",HttpStatus.NOT_ACCEPTABLE);
+            if (!userRoles.contains("NASNAV_ADMIN")) {
+                for (String userRole : userRoles)
+                    if (roleServiceImpl.checkRoleOrder(userRole, role)) {
+                        roles.add(role);
+                        if (userRole.startsWith("O"))
+                            orgId = user.getOrganizationId();
+                        else if (userRole.startsWith("S")){
+                            orgId = user.getOrganizationId();
+                            storeId = user.getShopId();
+                        }
+                        break;
+                    }
+                if (roles.isEmpty())
+                    return userRepObjs;
+            }
+		} else {
+			if (!userRoles.contains("NASNAV_ADMIN")) {
+				if (userRoles.contains("ORGANIZATION_ADMIN") || userRoles.contains("ORGANIZATION_MANAGER") || userRoles.contains("ORGANIZATION_EMPLOYEE")) {
+					orgId = user.getOrganizationId();
+					if (userRoles.contains("ORGANIZATION_ADMIN")) {
+                        roles = Roles.getOrganizationAdminPrelivedge();
+					} else if (userRoles.contains("ORGANIZATION_MANAGER")) {
+                        roles = Roles.getOrganizationManagerPrelivedge();
+					} else {
+                        roles = Roles.getOrganizationEmployeePrelivedge();
+					}
+				}
+                else if (userRoles.contains("STORE_ADMIN") || userRoles.contains("STORE_MANAGER") || userRoles.contains("STORE_EMPLOYEE")) {
+                    orgId = user.getOrganizationId();
+                    storeId = user.getShopId();
+                    if (userRoles.contains("STORE_ADMIN")) {
+                        roles = Roles.getStoreAdminPrelivedge();
+                    } else if (userRoles.contains("STORE_MANAGER")) {
+                        roles = Roles.getStoreManagerPrelivedge();
+                    } else
+                        roles.add("STORE_EMPLOYEE");
+                }
+			}
+		}
+		if (roles.isEmpty()) {
+			if (storeId == null && orgId == null)
+				usersEntites = employeeUserRepository.findAll();
+			else if (storeId != null && orgId == null)
+				usersEntites = employeeUserRepository.findByShopId(storeId);
+			else if (storeId == null && orgId != null)
+				usersEntites = employeeUserRepository.findByOrganizationId(orgId);
+			else
+				usersEntites = employeeUserRepository.findByOrganizationIdAndShopId(orgId, storeId);
+		} else {
+			employeesIds = helper.getEmployeesIds(new ArrayList<>(roles));
+			if (storeId == null && orgId == null)
+				usersEntites = employeeUserRepository.findByIdIn(employeesIds);
+			else if (storeId != null && orgId == null)
+				usersEntites = employeeUserRepository.findByShopIdAndIdIn(storeId, employeesIds);
+			else if (storeId == null && orgId != null)
+				usersEntites = employeeUserRepository.findByOrganizationIdAndIdIn(orgId, employeesIds);
+			else
+				usersEntites = employeeUserRepository.findByOrganizationIdAndShopIdAndIdIn(orgId, storeId, employeesIds);
+		}
+
+		userRepObjs = usersEntites.stream().map(entity -> entity.getRepresentation()).collect(Collectors.toList());
+		for(UserRepresentationObject obj : userRepObjs)
+			obj.setRoles(new HashSet<>(helper.getEmployeeUserRoles(obj.getId())));
+
+		return userRepObjs;
+	}
+
 }
