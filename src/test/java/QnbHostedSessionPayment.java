@@ -86,25 +86,6 @@ public class QnbHostedSessionPayment {
         orderId = createOrder();
     }
 
-    @After
-    public void cleanup(){
-        //delete baskets
-        List<BasketsEntity> baskets = basketRepository.findByOrdersEntity_Id(orderId);
-        for(BasketsEntity basket : baskets){
-            basketRepository.delete(basket);
-            stockRepository.delete(basket.getStocksEntity());
-            productVariantRepository.delete(basket.getStocksEntity().getProductVariantsEntity());
-            productRepository.delete(basket.getStocksEntity().getProductVariantsEntity().getProductEntity());
-        }
-        //delete payment
-        if (paymentsRepository.findByUid(session.getOrderRef()).isPresent())
-            paymentsRepository.deleteById(paymentsRepository.findByUid(session.getOrderRef()).get().getId());
-        //delete created order
-        orderRepository.deleteById(orderId);
-        shopsRepository.delete(shop);
-        userRepository.delete(user);
-        organizationRepository.delete(org);
-    }
 
     @Test
     public void rawSessionCreationTest() throws BusinessException {
@@ -128,9 +109,6 @@ public class QnbHostedSessionPayment {
                     .jsonPath("$.order_amount").isEqualTo(500.0)
                     .jsonPath("$.order_currency").isEqualTo(TransactionCurrency.EGP.name())
                     .jsonPath("$.session_id").isEqualTo(session.getSessionId())
-//                    .jsonPath("$.basket").isNotEmpty()
-//                    .jsonPath("$.basket[0].quantity").isEqualTo(5)
-//                    .jsonPath("$.basket.size()").isEqualTo(1)
                     .returnResult().getResponseBody();
         } catch(Exception e) {
             e.printStackTrace();
@@ -170,6 +148,7 @@ public class QnbHostedSessionPayment {
         stock.setQuantity(5);
         stock.setCurrency(TransactionCurrency.EGP);
         stock.setShopsEntity(shopEntity);
+        stock.setOrganizationEntity(org);
         StocksEntity stockEntity = stockRepository.save(stock);
         
         //create user

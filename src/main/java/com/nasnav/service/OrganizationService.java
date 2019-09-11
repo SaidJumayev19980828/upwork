@@ -1,47 +1,40 @@
 package com.nasnav.service;
 
+import com.nasnav.commons.utils.StringUtils;
+import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.OrganizationThemeRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.SocialRepository;
+import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.BrandsEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.OrganizationThemeEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.SocialEntity;
+import com.nasnav.persistence.ExtraAttributesEntity;
+import com.nasnav.response.OrganizationResponse;
+import com.nasnav.response.ProductFeatureUpdateResponse;
+import com.nasnav.service.helpers.OrganizationServiceHelper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.SpringSecurityCoreVersion;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
-import com.nasnav.commons.utils.StringUtils;
-import com.nasnav.constatnts.EntityConstants.Operation;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.OrganizationThemeRepository;
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.SocialRepository;
-import com.nasnav.dto.BrandDTO;
-import com.nasnav.dto.ExtraAttributesRepresentationObject;
-import com.nasnav.dto.OrganizationDTO;
-import com.nasnav.dto.OrganizationRepresentationObject;
-import com.nasnav.dto.OrganizationThemesRepresentationObject;
-import com.nasnav.dto.Organization_BrandRepresentationObject;
-import com.nasnav.dto.ProductFeatureDTO;
-import com.nasnav.dto.ProductFeatureUpdateDTO;
-import com.nasnav.dto.SocialRepresentationObject;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.ExtraAttributesEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.OrganizationThemeEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.SocialEntity;
-import com.nasnav.response.OrganizationResponse;
-import com.nasnav.response.ProductFeatureUpdateResponse;
-import com.nasnav.service.helpers.OrganizationServiceHelper;
 
 
 @Service
