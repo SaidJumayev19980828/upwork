@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -36,4 +37,12 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 
 
 	StocksEntity getOne(Long stockId);
+
+
+
+	Long countByProductVariantsEntity_Id(Long testVariantId);
+
+
+
+	Optional<StocksEntity> findByProductVariantsEntity_IdAndShopsEntity_Id(Long variantId, Long shopId);
 }

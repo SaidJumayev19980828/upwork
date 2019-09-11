@@ -166,8 +166,6 @@ public class QnbHostedSessionPayment {
         //create stock
         StocksEntity stock = new StocksEntity();
         stock.setPrice(new BigDecimal(100));
-        stock.setCreationDate(new Date());
-        stock.setUpdateDate(new Date());
         stock.setProductVariantsEntity(variant);
         stock.setQuantity(5);
         stock.setCurrency(TransactionCurrency.EGP);

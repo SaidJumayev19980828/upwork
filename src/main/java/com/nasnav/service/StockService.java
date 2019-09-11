@@ -1,8 +1,10 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
+import com.nasnav.response.StockUpdateResponse;
 
 import java.util.List;
 
@@ -26,4 +28,7 @@ public interface StockService {
     
     
 	List<StocksEntity> getVariantStockForShop(ProductVariantsEntity variant, Long shopId) throws BusinessException;
+	
+	
+	StockUpdateResponse updateStock(StockUpdateDTO stockUpdateReq) throws BusinessException;
 }

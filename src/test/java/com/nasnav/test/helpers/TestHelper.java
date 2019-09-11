@@ -1,7 +1,11 @@
 package com.nasnav.test.helpers;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,5 +66,20 @@ public class TestHelper {
 		
 		
 	}
+	
+	
+	
+	@Transactional
+	public StocksEntity getStockFullData(Long stockId) {
+		StocksEntity stock = stockRepo.getOne(stockId);
+		
+		//call the getters inside the transaction to fetch and cache them by hibernate
+		stock.getShopsEntity();
+		stock.getProductVariantsEntity();
+		stock.getOrganizationEntity();
+		
+		return stock;
+	} 
+		
 
 }

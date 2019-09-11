@@ -15,6 +15,8 @@ INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organiza
 
 -- dummy shop
 INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100001 , 'Bundle Shop' , now() , now() , 99001);
+INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100011 , 'another Shop - same org' , now() , now() , 99001);
+INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100012 , 'another Shop - same org' , now() , now() , 99001);
 INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100002 , 'other org Shop' , now() , now() , 99002);
 
 
@@ -46,7 +48,9 @@ VALUES (69, now(), now(), 'testuser2@nasnav.com', 99001, '131415',  100001);
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
 VALUES (70, now(), now(), 'testuser3@nasnav.com', 99002, '8874ssd',  100002);
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
-VALUES (71, now(), now(), 'testuser4@nasnav.com', 99001, 'sfsd885d',  100001);
+VALUES (71, now(), now(), 'testuser4@nasnav.com', 99001, 'sfsd885d',  100011);
+INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+VALUES (72, now(), now(), 'testuser5@nasnav.com', 99001, 'esdffeded',  100012);
 
 
 
@@ -58,10 +62,14 @@ insert into public.roles(id, name, created_at, updated_at, organization_id) valu
 insert into public.roles(id, name, created_at, updated_at, organization_id) values(5, 'STORE_EMPLOYEE', now(), now(), 99001);
 insert into public.roles(id, name, created_at, updated_at, organization_id) values(3, 'CUSTOMER', now(), now(), 99001);
 insert into public.roles(id, name, created_at, updated_at, organization_id) values(6, 'ORGANIZATION_MANAGER', now(), now(), 99001);
+insert into public.roles(id, name, created_at, updated_at, organization_id) values(7, 'STORE_MANAGER', now(), now(), 99001);
 
 
 --inserting Roles EmployeeUsers relations
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (20, 68, 1, now(), now());
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (21, 69, 6, now(), now());
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (22, 70, 6, now(), now());
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (23, 71, 7, now(), now());
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (24, 72, 6, now(), now());
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (25, 72, 7, now(), now());
 

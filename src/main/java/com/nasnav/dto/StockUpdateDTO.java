@@ -17,7 +17,7 @@ public class StockUpdateDTO {
 	
 	private Long shopId;
 	private Long variantId;
-	private Integer qunatity;
+	private Integer quantity;
 	private BigDecimal price;
 	private Integer currency;
 	
