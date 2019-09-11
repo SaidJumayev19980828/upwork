@@ -251,21 +251,19 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		if (role != null) {
 			if (!Enums.getIfPresent(Roles.class, role).isPresent())
 				throw new BusinessException("INVALID_PARAM: role","No roles matching the provided role",HttpStatus.NOT_ACCEPTABLE);
-            if (!userRoles.contains("NASNAV_ADMIN")) {
-                for (String userRole : userRoles)
-                    if (roleServiceImpl.checkRoleOrder(userRole, role)) {
-                        roles.add(role);
-                        if (userRole.startsWith("O"))
-                            orgId = user.getOrganizationId();
-                        else if (userRole.startsWith("S")){
-                            orgId = user.getOrganizationId();
-                            storeId = user.getShopId();
-                        }
-                        break;
-                    }
-                if (roles.isEmpty())
-                    return userRepObjs;
-            }
+			for (String userRole : userRoles)
+				if (roleServiceImpl.checkRoleOrder(userRole, role)) {
+					roles.add(role);
+					if (userRole.startsWith("O"))
+						orgId = user.getOrganizationId();
+					else if (userRole.startsWith("S")){
+						orgId = user.getOrganizationId();
+						storeId = user.getShopId();
+					}
+					break;
+				}
+			if (roles.isEmpty())
+				return userRepObjs;
 		} else {
 			if (!userRoles.contains("NASNAV_ADMIN")) {
 				if (userRoles.contains("ORGANIZATION_ADMIN") || userRoles.contains("ORGANIZATION_MANAGER") || userRoles.contains("ORGANIZATION_EMPLOYEE")) {
