@@ -1,5 +1,9 @@
 package com.nasnav.enumerations;
 
+import java.util.stream.Stream;
+
+import com.google.common.collect.Streams;
+
 import lombok.Getter;
 
 /**
@@ -20,5 +24,14 @@ public enum Roles {
 
     Roles(String value) {
         this.value = value;
+    }
+    
+    
+    public static Roles fromString(String text) {
+    	return Stream.of(Roles.values())
+    		.filter( role -> role.value.equals(text))
+    		.findFirst()
+    		.orElseThrow(() -> new IllegalStateException("No Role Enum exists with value: " + text));
+       
     }
 }

@@ -212,8 +212,6 @@ public class ProductServiceTest {
 		stocksEntity.setPrice(new BigDecimal(PRODUCT_PRICE));
 		stocksEntity.setProductVariantsEntity(productVariantsEntity);
 		stocksEntity.setQuantity(QUANTITY);
-		stocksEntity.setCreationDate(new Date());
-		stocksEntity.setUpdateDate(new Date());
 		stocksEntity.setOrganizationEntity(organizationEntity);
 		stocksEntity.setShopsEntity(shopsEntity);
 		stocksEntity = stockRepository.save(stocksEntity);

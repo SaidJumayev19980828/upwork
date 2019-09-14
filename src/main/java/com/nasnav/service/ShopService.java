@@ -1,27 +1,45 @@
 package com.nasnav.service;
 
+import static com.nasnav.persistence.EntityUtils.anyIsNull;
+
+import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.nasnav.dao.*;
-import com.nasnav.service.helpers.ShopServiceHelper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.RoleRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.ShopJsonDTO;
+import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dto.StockUpdateDTO;
+import com.nasnav.enumerations.Roles;
+import com.nasnav.enumerations.TransactionCurrency;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.ShopResponse;
+import com.nasnav.response.StockUpdateResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
-
-import com.nasnav.exceptions.BusinessException;
-
-import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.service.helpers.ShopServiceHelper;
 
 @Service
 public class ShopService {
@@ -30,7 +48,8 @@ public class ShopService {
     private final EmployeeUserServiceHelper employeeUserServicehelper;
     private final EmployeeUserRepository employeeUserRepository;
     private final ShopServiceHelper shopServiceHelper;
-
+    
+    
     @Autowired
     public ShopService(ShopsRepository shopsRepository, EmployeeUserServiceHelper employeeUserServicehelper,
                        EmployeeUserRepository employeeUserRepository, ShopServiceHelper shopServiceHelper){
@@ -105,4 +124,10 @@ public class ShopService {
         shopsRepository.save(shopsEntity);
         return new ShopResponse(shopsEntity.getId(), HttpStatus.OK);
     }
+    
+    
+    
+    
+
+	
 }

@@ -1,19 +1,31 @@
 package com.nasnav.persistence;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDateTime;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
-import com.nasnav.enumerations.TransactionCurrency;
-import lombok.ToString;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.enumerations.TransactionCurrency;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Table(name="stocks")
 @Entity
@@ -28,13 +40,13 @@ public class StocksEntity extends AbstractPersistable<Long> implements BaseEntit
 	private Integer quantity;
 	private String location;
 
-	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "created_at", nullable = false, length = 29)
-	private Date creationDate;
+	@CreationTimestamp
+	private LocalDateTime creationDate;
 
-	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "updated_at", nullable = false, length = 29)
-	private Date updateDate;
+	@UpdateTimestamp
+	private LocalDateTime updateDate;
 
 	@Column(name = "price")
 	private BigDecimal price;
