@@ -2,7 +2,6 @@ package com.nasnav.service;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import com.nasnav.dao.*;
@@ -355,8 +354,6 @@ public class OrderServiceImpl implements OrderService {
 		OrdersEntity entity = ordersRepository.findById(orderId).get();
 		List<BasketItem> itemsList = getBasketItems(orderId);
 		DetailedOrderRepObject obj = new DetailedOrderRepObject();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("MM-dd-yyyyThh:mm:ssZ");
-        //dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 		obj.setUserId(entity.getUserId());
 		obj.setShopId(entity.getShopsEntity().getId());
 		//if (!getItems)
