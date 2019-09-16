@@ -46,6 +46,14 @@ public class DataImportApiTest {
     private Resource csvFile;
 	
 	
+	@Value("classpath:/files/product__list_upload_missing_col.csv")
+    private Resource csvFileMissingCol;
+	
+	
+	@Value("classpath:/files/product__list_upload_invalid_data.csv")
+    private Resource csvFileInvalidData;
+	
+	
 	@Autowired
 	private  MockMvc mockMvc;
 	
@@ -274,6 +282,39 @@ public class DataImportApiTest {
 	
 	
 	
+	
+	
+	@Test
+    public void uploadProductsCSVMissingCol() throws IOException, Exception {
+       
+		JSONObject importProperties = createDataImportProperties();
+        
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFileMissingCol, importProperties);
+        
+        result.andExpect(status().is(406));
+    }
+	
+	
+	
+	
+	
+	@Test
+    public void uploadProductsCSVInvalidData() throws IOException, Exception {
+       
+		JSONObject importProperties = createDataImportProperties();
+        
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFileInvalidData, importProperties);
+        
+        String responsebody = result.andExpect(status().is(406))
+						        	  .andReturn()
+						        	  .getResponse()
+						        	  .getContentAsString();
+        
+        JSONObject bodyJson = new JSONObject(responsebody);
+    }
+	
+	
+	
 
 
 	private JSONObject createDataImportProperties() {
@@ -297,7 +338,7 @@ public class DataImportApiTest {
 
 	private ResultActions uploadProductCsv(String url, String token, Resource csv, JSONObject importProperties)
 			throws IOException, Exception {
-		MockMultipartFile filePart = new MockMultipartFile("csv", csv.getFilename(), "text/csv", csvFile.getInputStream());
+		MockMultipartFile filePart = new MockMultipartFile("csv", csv.getFilename(), "text/csv", csv.getInputStream());
         
      	return uploadProductCsv(url, token, filePart, importProperties);
 	}
@@ -332,6 +373,7 @@ public class DataImportApiTest {
 		   colHeadersJson.put("description_header", "description");
 		   colHeadersJson.put("barcode_header", "barcode");
 		   colHeadersJson.put("category_header", "category");
+		   colHeadersJson.put("brand_header", "brand");
 		   colHeadersJson.put("quantity_header", "quantity");
 		   colHeadersJson.put("price_header", "price");
 		return colHeadersJson;

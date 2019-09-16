@@ -8,7 +8,7 @@ import lombok.Data;
 
 @Data	
 public class CSVRowBean {
-	private String name;
-	private BigDecimal price;
-	private Long quantity;
+	protected String name;
+	protected BigDecimal price;
+	protected Long quantity;
 }

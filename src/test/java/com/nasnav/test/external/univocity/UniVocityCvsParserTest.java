@@ -57,6 +57,33 @@ public class UniVocityCvsParserTest {
 	
 	
 	@Test
+	public void parseCvsChildBeanTest() throws IllegalStateException, FileNotFoundException {
+		String filePath = CSV_NORM_FILE;
+		ColumnMapping mapper = createAttrToColMapping();
+		
+		BeanListProcessor<CSVRowBeanChild> rowProcessor = new BeanListProcessor<CSVRowBeanChild>(CSVRowBeanChild.class);
+		rowProcessor.setColumnMapper(mapper);
+		
+		CsvParserSettings settings = new CsvParserSettings();
+		settings.setHeaderExtractionEnabled(true);
+		settings.setProcessor(rowProcessor);
+		
+		CsvParser parser = new CsvParser(settings);
+		parser.parse(new File(filePath));
+		String[] headers = parser.getContext().parsedHeaders();
+		
+		List<CSVRowBeanChild> rows = rowProcessor.getBeans();
+        
+        assertEquals(2, rows.size());
+        assertNotNull(rows.get(0).getQuantity());        
+	}
+	
+	
+	
+	
+	
+	
+	@Test
 	public void parseCvsMissingValsTest() throws IllegalStateException, FileNotFoundException {
 		String filePath = CSV_WITH_MISSING_VAL;
 		ColumnMapping mapper = createAttrToColMapping();
