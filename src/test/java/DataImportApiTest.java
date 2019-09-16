@@ -54,14 +54,10 @@ public class DataImportApiTest {
     public void uploadProductsCSVNoAuthNTest() throws IOException, Exception {
        
 		JSONObject importProperties = createDataImportProperties();
-		
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", importProperties);
-        map.add("csv", csvFile);
         
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "Not Existing", csvFile, importProperties);
 		
-        result.andExpect(status().is(200));
+        result.andExpect(status().is(401));
     }
 
 
@@ -73,10 +69,6 @@ public class DataImportApiTest {
     public void uploadProductsCSVNoAuthZTest() throws IOException, Exception {
        
 		JSONObject importProperties = createDataImportProperties();
-		
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", importProperties);
-        map.add("csv", csvFile);
         
         ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "101112", csvFile, importProperties);
         
@@ -91,11 +83,6 @@ public class DataImportApiTest {
        
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.remove("shop_id");
-		
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", importProperties);
-        map.add("csv", csvFile);
-        
         
         ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
         
@@ -112,10 +99,6 @@ public class DataImportApiTest {
        
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.remove("encoding");
-		
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", importProperties);
-        map.add("csv", csvFile);
         
         ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
         
@@ -133,9 +116,6 @@ public class DataImportApiTest {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.remove("currency");
 		
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", importProperties);
-        map.add("csv", csvFile);
         
         ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
         
@@ -152,10 +132,6 @@ public class DataImportApiTest {
        
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", 88865);
-		
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", importProperties);
-        map.add("csv", csvFile);
         
         ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
         
@@ -171,10 +147,6 @@ public class DataImportApiTest {
     public void uploadProductsCSVUserFromAnotherOrgTest() throws IOException, Exception {
        
 		JSONObject importProperties = createDataImportProperties();
-		
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", importProperties.toString());
-        map.add("csv", csvFile);
         
         ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "898dssd", csvFile, importProperties);
         
@@ -191,9 +163,6 @@ public class DataImportApiTest {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("encoding", "KOKI-8");
 		
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", importProperties);
-        map.add("csv", csvFile);
         
         ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
         
@@ -210,9 +179,6 @@ public class DataImportApiTest {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("currency", 9999);
 		
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", importProperties);
-        map.add("csv", csvFile);
         
         ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
         
@@ -229,17 +195,85 @@ public class DataImportApiTest {
        
 		JSONObject importProperties = createDataImportProperties();
 		
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", importProperties);
-        map.add("csv", null);
+		MockMultipartFile emptyFilePart = new MockMultipartFile("csv", "nothing.empty", "text/csv", new byte[0]);
         
-        ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
+        ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", emptyFilePart, importProperties);
+        
+        result.andExpect(status().is(406));
+    }
+	
+	
+	
+	
+	@Test
+    public void uploadProductsCSVMissingBarcodeHeadersTest() throws IOException, Exception {
+       
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.getJSONObject("headers").remove("barcode_header");
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
+        
+        result.andExpect(status().is(406));
+    }
+	
+	
+	
+	@Test
+    public void uploadProductsCSVMissingPriceHeadersTest() throws IOException, Exception {
+       
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.getJSONObject("headers").remove("price_header");
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
+        
+        result.andExpect(status().is(406));
+    }
+
+	
+	
+	
+	@Test
+    public void uploadProductsCSVMissingQuantityHeadersTest() throws IOException, Exception {
+       
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.getJSONObject("headers").remove("quantity_header");
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
+        
+        result.andExpect(status().is(406));
+    }
+	
+
+	
+	
+	@Test
+    public void uploadProductsCSVMissingNameHeadersTest() throws IOException, Exception {
+       
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.getJSONObject("headers").remove("name_header");
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
         
         result.andExpect(status().is(406));
     }
 
 
 
+	
+	
+	@Test
+    public void uploadProductsCSVMissingCategoryHeadersTest() throws IOException, Exception {
+       
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.getJSONObject("headers").remove("category_header");		
+        
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
+        
+        result.andExpect(status().is(406));
+    }
+	
+	
+	
 
 
 	private JSONObject createDataImportProperties() {
@@ -265,7 +299,17 @@ public class DataImportApiTest {
 			throws IOException, Exception {
 		MockMultipartFile filePart = new MockMultipartFile("csv", csv.getFilename(), "text/csv", csvFile.getInputStream());
         
-        MockPart jsonPart = new MockPart("properties", "properties",  importProperties.toString().getBytes());		
+     	return uploadProductCsv(url, token, filePart, importProperties);
+	}
+
+
+
+
+
+
+	private ResultActions uploadProductCsv(String url, String token, MockMultipartFile filePart,
+			JSONObject importProperties) throws Exception {
+		MockPart jsonPart = new MockPart("properties", "properties",  importProperties.toString().getBytes());		
 		jsonPart.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 		
 		 ResultActions result = 
