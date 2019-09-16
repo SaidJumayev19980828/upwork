@@ -1,0 +1,4 @@
+name,price,quant
+hi,88.2,"i am invalid value"
+data,199.68,49
+
