@@ -103,8 +103,8 @@ public class DataImportService {
 		
 		if( !rowParsingErrHandler.getErrors().isEmpty() ) {
 			throw new BusinessException(
-					rowParsingErrHandler.getErrorMsgAsJson() 
-					, "INVALID PARAM:csv"
+					ERR_CSV_PARSE_FAILURE 
+					, rowParsingErrHandler.getErrorMsgAsJson()
 					, HttpStatus.NOT_ACCEPTABLE); 
 		}
 		
@@ -314,14 +314,7 @@ class RowParseErrorHandler implements RowProcessorErrorHandler {
 	
 	@Override
 	public void handleError(DataProcessingException error, Object[] inputRow, ParsingContext context) {
-			StringBuilder errMsg = new StringBuilder();
-			String line1 = String.format("Error processing row[%d]: %s", context.currentLine(), Arrays.toString(inputRow));
-			String line2 = String.format("Error details: column '%s' (index %d) has value '%s'", error.getColumnName(), error.getColumnIndex(), inputRow[error.getColumnIndex()]);
-			String line3 = String.format("which caused error: %s", error.getMessage());
-			errMsg.append(line1).append("\n")
-				.append(line2).append("\n")
-				.append(line3);
-			errors.add( errMsg.toString());	
+			errors.add( error.getMessage());	
 	}
 	
 	
@@ -334,7 +327,7 @@ class RowParseErrorHandler implements RowProcessorErrorHandler {
 		main.put("msg", ERR_CSV_PARSE_FAILURE);
 		main.put("errors", errorsJson);
 		
-		return main.toString();
+		return errorsJson.toString();
 	}
 }
 
