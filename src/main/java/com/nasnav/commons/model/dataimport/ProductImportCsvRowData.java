@@ -12,6 +12,6 @@ public class ProductImportCsvRowData {
 	protected String barcode;
 	protected String category;
 	protected String brand;
-	protected Long quantity;
+	protected Integer quantity;
 	protected BigDecimal price;
 }

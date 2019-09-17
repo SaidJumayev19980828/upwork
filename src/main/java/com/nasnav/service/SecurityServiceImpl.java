@@ -8,8 +8,10 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.CommonUserRepository;
+import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dto.UserDTOs.UserLoginObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
@@ -37,6 +40,10 @@ public class SecurityServiceImpl implements SecurityService {
 		
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+	
+	
+	@Autowired
+	private EmployeeUserRepository empRepo;
 	
 	
 	@Override
@@ -187,6 +194,30 @@ public class SecurityServiceImpl implements SecurityService {
 				.setOrganizationId( organizationId != null ? organizationId : 0L)
 				.setStoreId(shopId != null ? shopId : 0L)
 				.build();
+	}
+
+
+
+
+
+	@Override
+	public EmployeeUserEntity getCurrentUser() {
+		return Optional.ofNullable( SecurityContextHolder.getContext() )
+						.map(c -> c.getAuthentication())
+						.map(Authentication::getName)
+						.map(empRepo::getOneByEmail)
+						.orElseThrow(()-> new IllegalStateException("Could not retrieve current user!"));
+	}
+
+
+	
+	
+
+	@Override
+	public Long getCurrentUserOrganization() {
+		return Optional.ofNullable( getCurrentUser() )
+						.map(EmployeeUserEntity::getOrganizationId)
+						.orElseThrow(() -> new IllegalStateException("Current User has no organization!"));
 	}	
 	
 }

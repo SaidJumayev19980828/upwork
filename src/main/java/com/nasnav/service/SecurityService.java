@@ -1,6 +1,8 @@
 package com.nasnav.service;
 
 import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
+
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.nasnav.dto.UserDTOs;
@@ -21,4 +23,9 @@ public interface SecurityService {
 	 * @throws BusinessException 
      */
     UserApiResponse login(UserDTOs.UserLoginObject body) throws BusinessException;
+    
+    
+    EmployeeUserEntity getCurrentUser();
+    
+    Long getCurrentUserOrganization();
 }

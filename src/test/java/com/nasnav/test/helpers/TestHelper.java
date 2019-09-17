@@ -2,6 +2,7 @@ package com.nasnav.test.helpers;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -80,6 +81,22 @@ public class TestHelper {
 		
 		return stock;
 	} 
+	
+	
+	
+	
+	@Transactional
+	public List<StocksEntity> getShopStocksFullData(Long shopId) {
+		List<StocksEntity> stocks = stockRepo.findByShopsEntity_Id(shopId);
+		stocks.forEach(s ->{
+			s.getShopsEntity();
+			s.getProductVariantsEntity().getProductEntity();
+			s.getOrganizationEntity();
+		});
+		
+		return stocks;
+	}
+	
 		
 
 }

@@ -5,17 +5,18 @@ insert into public.organizations(id , name , created_at, updated_at)
 values (99002, 'Evil guys' , now() , now());
 
 --inserting categories
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (201, 'category_1', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (202, 'category_2', now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (201, 'squishy things', now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (202, 'mountain equipment', now(), now());
 
 --inserting brands
-INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (101, 202, 'brand_1', now(), now(), 99001);
-INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (102, 201, 'brand_2', now(), now(), 99001);
+INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (101, 202, 'squish', now(), now(), 99001);
+INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (102, 201, 'hardy', now(), now(), 99001);
 
 
 -- dummy shop
 INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100001 , 'Funny Shop' , now() , now() , 99001);
 INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100002 , 'Wealthy Shop' , now() , now() , 99001);
+INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100003 , 'Import Shop' , now() , now() , 99001);
 
 
 
@@ -44,6 +45,8 @@ INSERT INTO public.employee_users(id, created_at, updated_at, email, organizatio
 VALUES (69, now(), now(), 'testuser2@nasnav.com', 99001, '131415',  100001);
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
 VALUES (70, now(), now(), 'testuser3@nasnav.com', 99002, '898dssd',  100002);
+INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+VALUES (71, now(), now(), 'testuser4@nasnav.com', 99001, 'ggr45r5',  100003);
 
 
 --inserting Roles
@@ -58,5 +61,6 @@ insert into public.roles(id, name, created_at, updated_at, organization_id) valu
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (20, 68, 1, now(), now());
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (21, 69, 2, now(), now());
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (22, 70, 2, now(), now());
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (23, 71, 2, now(), now());
 
 

@@ -3,6 +3,15 @@ import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -26,7 +35,18 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.nasnav.NavBox;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.CategoriesRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.enumerations.TransactionCurrency;
+import com.nasnav.persistence.CategoriesEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.StocksEntity;
 import com.nasnav.security.AuthenticationFilter;
+import com.nasnav.test.helpers.TestHelper;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -41,6 +61,9 @@ import net.jcip.annotations.NotThreadSafe;
 public class DataImportApiTest {
 	
 	private static final String URL_UPLOAD_PRODUCTLIST = "/upload/productlist";
+
+
+	private static final Long TEST_IMPORT_SHOP = 100003L;
 
 
 	@Value("classpath:/files/product__list_upload.csv")
@@ -58,6 +81,24 @@ public class DataImportApiTest {
 	@Autowired
 	private  MockMvc mockMvc;
 	
+	
+	@Autowired
+	private ProductRepository productRepo;
+	
+	@Autowired
+	private ProductVariantsRepository variantRepo;
+	
+	@Autowired
+	private StockRepository stocksRepo;
+	
+	@Autowired
+	private CategoriesRepository categoriesRepo;
+	
+	@Autowired
+	private BrandsRepository brandRepo;
+	
+	@Autowired
+	private TestHelper helper;
 	
 	@Test
     public void uploadProductsCSVNoAuthNTest() throws IOException, Exception {
@@ -317,8 +358,97 @@ public class DataImportApiTest {
         assertEquals(3, errors.length());
     }
 	
-	//TODO test dry run
 	
+	
+	
+	
+	//TODO test valid run
+	@Test
+	public void uploadProductCSVNewData() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+        
+		Long productCountBefore = productRepo.count();
+		Long variantCountBefore = variantRepo.count();
+		Long stocksCountBefore = stocksRepo.count();
+		
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFile, importProperties);
+		
+		Long productCountAfter = productRepo.count();
+		Long variantCountAfter = variantRepo.count();
+		Long stocksCountAfter = stocksRepo.count();
+		
+		List<StocksEntity> stocks = helper.getShopStocksFullData(TEST_IMPORT_SHOP);
+        List<ProductVariantsEntity> variants = stocks.stream()
+													.map(StocksEntity::getProductVariantsEntity)
+													.collect(Collectors.toList());
+
+        List<ProductEntity> products = variants.stream()
+												.map(v -> v.getProductEntity())
+												.collect(Collectors.toList());
+        
+        result.andExpect(status().is(200));
+        
+        
+        Set<Integer> quantities = new HashSet<>( Arrays.asList(101,102) );
+        Set<BigDecimal> prices = new HashSet<>( Arrays.asList(new BigDecimal("10.25"), new BigDecimal("88.6")));
+        Set<String> barcodes = new HashSet<>( Arrays.asList("1354ABN", "87847777EW") );
+        Set<String> ProductNames = new HashSet<>( Arrays.asList("Squishy shoes", "hard shoes") );
+        Set<String> PNames = new HashSet<>( Arrays.asList("s_shoe", "h_shoe") );
+        Set<String>  descriptions = new HashSet<>( Arrays.asList("squishy", "too hard") );
+        Set<Long> categories = new HashSet<>( Arrays.asList(201L,202L) );
+        Set<Long> brands = new HashSet<>( Arrays.asList(101L, 102L) );
+        
+        
+        
+        assertEquals(2, productCountAfter - productCountBefore);
+        assertEquals(2, variantCountAfter - variantCountBefore);
+        assertEquals(2, stocksCountAfter - stocksCountBefore);
+        
+        
+        
+        assertEquals(2, stocks.size());
+        assertTrue( stocks.stream()
+        				.map(StocksEntity::getCurrency)
+        				.allMatch( c -> Objects.equals(c, TransactionCurrency.EGP) ) );
+        
+        assertTrue( compareEntityFieldValues(stocks, StocksEntity::getQuantity, quantities)	);
+        assertTrue( compareEntityBigDecimalFieldValues(stocks, StocksEntity::getPrice, prices)	);
+
+        
+                
+        
+        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getBarcode, barcodes)	);
+        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getName, ProductNames) );
+        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getPname, PNames) );
+        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getDescription, descriptions) );
+        
+        
+        assertTrue( compareEntityFieldValues(products, ProductEntity::getName, ProductNames) );
+        assertTrue( compareEntityFieldValues(products, ProductEntity::getPname, PNames) );
+        assertTrue( compareEntityFieldValues(products, ProductEntity::getDescription, descriptions) );
+        assertTrue( compareEntityFieldValues(products, ProductEntity::getCategoryId, categories) );
+        assertTrue( compareEntityFieldValues(products, ProductEntity::getBrandId, brands) );
+       
+	}
+	
+	
+	
+	
+	private <T,V>  boolean  compareEntityFieldValues(List<T> entityList, Function<T,V> getter, Set<V> expectedValues) {
+		return entityList.stream()
+						.map(getter)
+						.collect(Collectors.toSet())
+						.equals(expectedValues);
+	}
+	
+	
+	private <T,V extends BigDecimal>  boolean  compareEntityBigDecimalFieldValues(List<T> entityList, Function<T, V> getter, Set<V> expectedValues) {
+		return entityList.stream()
+						.map(getter)
+						.allMatch(n -> expectedValues.stream().anyMatch( e-> e.compareTo(n) == 0));
+	}
 	
 
 

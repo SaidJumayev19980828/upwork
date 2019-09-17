@@ -1,0 +1,585 @@
+package com.nasnav.service;
+
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_BRAND_NAME_NOT_EXIST;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CATEGORY_NAME_NOT_EXIST;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CSV_PARSE_FAILURE;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_INVALID_ENCODING;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_FILE_UPLOADED;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_CSV_ROW_SAVE;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMPORT_MISSING_HEADER_NAME;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMPORT_MISSING_PARAM;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_SHOP_ID_NOT_EXIST;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_CHANGE_OTHER_ORG_SHOP;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_VARIANT_BARCODE_NOT_EXIST_FOR_ORG;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CONVERT_TO_JSON;
+import static com.nasnav.persistence.EntityUtils.anyIsNull;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import javax.validation.Valid;
+
+import org.apache.commons.beanutils.BeanMap;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.commons.model.dataimport.ProductImportCsvRowData;
+import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.CategoriesRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dto.CsvHeaderNamesDTO;
+import com.nasnav.dto.ProductListImportDTO;
+import com.nasnav.dto.ProductUpdateDTO;
+import com.nasnav.dto.StockUpdateDTO;
+import com.nasnav.dto.VariantUpdateDTO;
+import com.nasnav.enumerations.TransactionCurrency;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.response.ProductListImportResponse;
+import com.nasnav.response.ProductUpdateResponse;
+import com.nasnav.response.VariantUpdateResponse;
+import com.univocity.parsers.common.DataProcessingException;
+import com.univocity.parsers.common.ParsingContext;
+import com.univocity.parsers.common.RowProcessorErrorHandler;
+import com.univocity.parsers.common.fields.ColumnMapping;
+import com.univocity.parsers.common.processor.BeanListProcessor;
+import com.univocity.parsers.csv.CsvParser;
+import com.univocity.parsers.csv.CsvParserSettings;
+
+import lombok.Data;
+
+@Service
+public class DataImportServiceImpl implements DataImportService{
+
+	
+	@Autowired
+	private ShopsRepository shopRepo;
+	
+	
+	@Autowired
+	private EmployeeUserRepository empRepo;
+	
+	
+	
+	@Autowired
+	private CategoriesRepository categoriesRepo;
+	
+	@Autowired
+	private BrandsRepository brandRepo;
+	
+	
+	@Autowired
+	private ProductVariantsRepository variantRepo;
+	
+	@Autowired
+	private SecurityService security;
+	
+	
+	@Autowired
+	private ProductService productService;
+	
+	@Autowired
+	private StockService stockService;
+	
+	
+	@Transactional(rollbackFor = Throwable.class)
+	public ProductListImportResponse importProductListFromCSV(@Valid MultipartFile file,
+			@Valid ProductListImportDTO importMetaData) throws BusinessException {
+		
+		validateProductImportMetaData(importMetaData);
+		validateProductImportCsvFile(file);
+		
+		List<ProductImportCsvRowData> rows = parseCsvFile(file, importMetaData);
+		
+		List<ProductCsvImportDTO> importedDtos = toProductImportDto(rows, importMetaData);
+		
+		saveToDB(importedDtos, importMetaData);
+		
+		
+		if(importMetaData.isDryRun()) {
+			TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+		}
+		
+		return new ProductListImportResponse(Collections.emptyList());
+	}
+	
+	
+	
+	
+
+	private void saveToDB(List<ProductCsvImportDTO> importedDtos, ProductListImportDTO importMetaData) throws BusinessException{
+		List<String> errors = new ArrayList<>();
+		
+		for(int i=0; i < importedDtos.size(); i++) {
+			ProductCsvImportDTO dto = importedDtos.get(i);
+			try {
+				saveSingleProductCsvRowToDB(dto, importMetaData);
+			}catch(Exception e) {
+				StringBuilder msg = new StringBuilder();
+				msg.append( String.format("Error at Row[%d], with data[%s]", i, dto.toString()) );
+				msg.append( System.getProperty("line.separator") );
+				msg.append("Error Message: " + e.getMessage());
+				
+				errors.add(msg.toString());
+			}
+		}
+		
+		if(!errors.isEmpty()) {
+			JSONArray json = new JSONArray(errors);
+			throw new BusinessException(
+					ERR_PRODUCT_CSV_ROW_SAVE
+					, json.toString()
+					, HttpStatus.NOT_ACCEPTABLE); 
+		}
+		
+	}
+	
+	
+	
+	
+	private void saveSingleProductCsvRowToDB(ProductCsvImportDTO dto, ProductListImportDTO importMetaData) throws BusinessException{
+		ObjectMapper mapper = new ObjectMapper();
+		String productDtoJson = "";
+		try {
+			productDtoJson = mapper.writeValueAsString(dto.getProductDto());
+		}catch(Exception e) {
+			throw new BusinessException(
+					String.format(ERR_CONVERT_TO_JSON, dto.getProductDto().getClass().getName())
+					, "INTERNAL SERVER ERROR"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		ProductUpdateResponse productResponse = productService.updateProduct(productDtoJson.toString(), false);
+		Long productId = productResponse.getProductId();
+		
+		if( importMetaData.isUpdateProduct() ){
+			productService.updateVariant(dto.getVariantDto());
+			stockService.updateStock(dto.getStockDto());
+		}else {
+			dto.getVariantDto().setProductId(productId);
+			VariantUpdateResponse variantResponse = productService.updateVariant(dto.getVariantDto());
+			Long variantId = variantResponse.getVariantId();
+			
+			dto.getStockDto().setVariantId(variantId);
+			stockService.updateStock(dto.getStockDto());
+		}
+	}
+
+
+
+
+
+	private List<ProductCsvImportDTO> toProductImportDto(List<ProductImportCsvRowData> rows, ProductListImportDTO importMetaData) throws BusinessException{
+		List<ProductCsvImportDTO> dtoList = new ArrayList<>();
+		for(ProductImportCsvRowData row: rows) {
+			dtoList.add(toProductImportDto(row, importMetaData));
+		}
+		
+		return dtoList;
+	}
+	
+	
+	
+	
+	
+	private ProductCsvImportDTO toProductImportDto(ProductImportCsvRowData row, ProductListImportDTO importMetaData) throws BusinessException{
+		ProductCsvImportDTO dto = new ProductCsvImportDTO();
+		
+		dto.setProductDto( createProductDto(row) );
+		dto.setVariantDto( createVariantDto(row) );
+		dto.setStockDto( createStockDto(row, importMetaData) );
+		
+		if( importMetaData.isUpdateProduct() ) {
+			modifyProductImportDtoForUpdate(dto, row);
+		}
+		
+		return dto;
+	}
+
+
+
+
+
+	private void modifyProductImportDtoForUpdate(ProductCsvImportDTO dto, ProductImportCsvRowData row)
+			throws BusinessException {
+		
+		ProductUpdateDTO product = dto.getProductDto();
+		VariantUpdateDTO variant = dto.getVariantDto();
+		StockUpdateDTO stock = dto.getStockDto();
+		
+		Long orgId = security.getCurrentUserOrganization();
+		ProductVariantsEntity variantEnt = variantRepo.findByBarcodeAndProductEntity_OrganizationId(row.getBarcode(), orgId);
+		
+		
+		if(variantEnt == null) {
+			throw new BusinessException(
+					String.format(ERR_VARIANT_BARCODE_NOT_EXIST_FOR_ORG, row.getBarcode(), orgId)
+					, "INVALID DATA:brand"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		Long productId = variantEnt.getProductEntity().getId();
+		variant.setProductId(productId);
+		variant.setVariantId(variantEnt.getId());			
+		variant.setOperation( Operation.UPDATE );
+		
+		product.setOperation( Operation.UPDATE );
+		
+		stock.setVariantId(variantEnt.getId());
+	}
+
+
+
+
+
+	private StockUpdateDTO createStockDto(ProductImportCsvRowData row, ProductListImportDTO importMetaData) {
+		StockUpdateDTO stock = new StockUpdateDTO();
+		stock.setCurrency( importMetaData.getCurrency() );
+		stock.setShopId( importMetaData.getShopId() );
+		stock.setPrice( row.getPrice() );
+		stock.setQuantity( row.getQuantity() );		
+		return stock;
+	}
+
+
+
+
+
+	private VariantUpdateDTO createVariantDto(ProductImportCsvRowData row) {
+		VariantUpdateDTO variant = new VariantUpdateDTO();
+		variant.setBarcode( row.getBarcode() );		
+		variant.setFeatures("{}");
+		variant.setDescription( row.getDescription() );
+		variant.setName(row.getName() );
+		variant.setOperation( Operation.CREATE );
+		variant.setPname(row.getPname());
+		return variant;
+	}
+
+
+
+
+
+	private ProductUpdateDTO createProductDto(ProductImportCsvRowData row) throws BusinessException {
+		Long categoryId = categoriesRepo.findByName(row.getCategory());
+		if(categoryId == null) {
+			throw new BusinessException(
+					String.format(ERR_CATEGORY_NAME_NOT_EXIST, row.getCategory())
+					, "INVALID DATA:category"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		Long brandId = brandRepo.findByName(row.getBrand());
+		if(brandId == null) {
+			throw new BusinessException(
+					String.format(ERR_BRAND_NAME_NOT_EXIST, row.getBrand())
+					, "INVALID DATA:brand"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		
+		
+		ProductUpdateDTO product = new ProductUpdateDTO();
+		product.setBrandId(brandId);
+		product.setCategoryId(categoryId);
+		product.setDescription( row.getDescription() );
+		product.setName(row.getName() );
+		product.setOperation(  Operation.CREATE );
+		product.setPname(row.getPname());
+		return product;
+	}
+
+
+
+
+
+	private List<ProductImportCsvRowData> parseCsvFile(MultipartFile file, ProductListImportDTO metaData) throws BusinessException {
+		
+		List<ProductImportCsvRowData> rows = new ArrayList<>();
+		
+		ByteArrayInputStream in = readCsvFile(file);
+		
+		BeanListProcessor<ProductImportCsvRowData> rowProcessor = createRowProcessor(metaData);		
+		RowParseErrorHandler rowParsingErrHandler = new RowParseErrorHandler();
+		CsvParserSettings settings = createParsingSettings(rowProcessor, rowParsingErrHandler);
+		
+		CsvParser parser = new CsvParser(settings);
+		
+		try {
+			parser.parse(in);
+		}catch(Exception e) {
+			throw new BusinessException(
+					ERR_CSV_PARSE_FAILURE + " cause:\n" + e
+					, "INVALID PARAM:csv"
+					, HttpStatus.NOT_ACCEPTABLE); 
+		}	
+		
+		if( !rowParsingErrHandler.getErrors().isEmpty() ) {
+			throw new BusinessException(
+					ERR_CSV_PARSE_FAILURE 
+					, rowParsingErrHandler.getErrorMsgAsJson()
+					, HttpStatus.NOT_ACCEPTABLE); 
+		}
+		
+		rows = rowProcessor.getBeans();
+		
+		return rows;
+	}
+
+
+
+
+
+	private CsvParserSettings createParsingSettings(BeanListProcessor<ProductImportCsvRowData> rowProcessor,
+			RowParseErrorHandler rowParsingErrHandler) {
+		CsvParserSettings settings = new CsvParserSettings();
+		settings.setHeaderExtractionEnabled(true);
+		settings.setProcessor(rowProcessor);		
+		settings.setProcessorErrorHandler(rowParsingErrHandler);
+		return settings;
+	}
+
+
+
+
+
+	private BeanListProcessor<ProductImportCsvRowData> createRowProcessor(ProductListImportDTO metaData) {
+		ColumnMapping mapper = createAttrToColMapping(metaData);
+		
+		BeanListProcessor<ProductImportCsvRowData> rowProcessor = 
+				new BeanListProcessor<ProductImportCsvRowData>(ProductImportCsvRowData.class);
+		rowProcessor.setColumnMapper(mapper);
+		rowProcessor.setStrictHeaderValidationEnabled(true);
+		return rowProcessor;
+	}
+
+
+
+
+
+	private ByteArrayInputStream readCsvFile(MultipartFile file) throws BusinessException {
+		byte[] bytes = new byte[0];
+		try {
+			bytes = file.getBytes();
+		} catch (IOException e) {
+			throw new BusinessException(
+					"Failed To read Products CSV file! cause:\n" + e
+					, "INTERNAL SERVER ERROR"
+					, HttpStatus.INTERNAL_SERVER_ERROR); 
+		}
+		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+		return in;
+	}
+
+
+
+
+
+	private ColumnMapping createAttrToColMapping(ProductListImportDTO metaData) {
+		Map<Object,Object> beanMap = new BeanMap(metaData.getHeaders());
+		Map<String,String> attrToColumnMap = beanMap.entrySet()
+													.stream()
+													.collect(
+														Collectors.toMap(
+																e -> e.getKey().toString()
+																,e-> e.getValue().toString()
+																)
+													  );
+		
+		ColumnMapping mapping = new ColumnMapping();
+		mapping.attributesToColumnNames(attrToColumnMap);
+		
+		return mapping;
+	}
+
+
+
+
+
+	private void validateProductImportCsvFile(@Valid MultipartFile file) throws BusinessException{
+		if(file == null || file.isEmpty()) {
+			throw new BusinessException(
+					ERR_NO_FILE_UPLOADED
+					, "INVALID PARAM"
+					, HttpStatus.NOT_ACCEPTABLE); 
+		}
+		
+	}
+
+
+
+
+
+	private void validateProductImportMetaData(@Valid ProductListImportDTO metaData) throws BusinessException{
+		Long shopId = metaData.getShopId();
+		String encoding = metaData.getEncoding();
+		Integer currency = metaData.getCurrency();
+		CsvHeaderNamesDTO headerNames = metaData.getHeaders();
+		
+		if( anyIsNull(shopId, encoding, currency, headerNames)) {
+			throw new BusinessException(
+					ERR_PRODUCT_IMPORT_MISSING_PARAM
+					, "MISSING PARAM"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}		
+		
+		validateShopId(shopId);		
+		
+		validateEncodingCharset(encoding);		
+		
+		validateStockCurrency(currency);
+		
+		validateCsvHeaderNames( headerNames);
+	}
+
+
+
+
+
+	private void validateCsvHeaderNames(CsvHeaderNamesDTO headers) throws BusinessException{
+		if(anyIsNull(headers.getBarcode(), headers.getName(), headers.getCategory(), headers.getPrice(), headers.getQuantity())) {
+			throw new BusinessException(
+					ERR_PRODUCT_IMPORT_MISSING_HEADER_NAME 
+					, "MISSING PARAM:csv-header(s)"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+	}
+
+
+
+
+
+	private void validateEncodingCharset(String encoding) throws BusinessException {
+		try {
+			if( !Charset.isSupported(encoding)) {
+				throw new IllegalStateException();
+			}			
+		}catch(Exception e) {
+			throw new BusinessException(
+					String.format(ERR_INVALID_ENCODING, encoding)
+					, "MISSING PARAM:encoding"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+
+
+
+
+	private void validateShopId(Long shopId) throws BusinessException {
+		if( !shopRepo.existsById( shopId ) ) {
+			throw new BusinessException(
+					String.format(ERR_SHOP_ID_NOT_EXIST, shopId)
+					, "MISSING PARAM:shop_id"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		EmployeeUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		Long userOrgId = user.getOrganizationId();
+		
+		ShopsEntity shop = shopRepo.findById(shopId).get();
+		Long shopOrgId = shop.getOrganizationEntity().getId();
+		
+		if(!Objects.equals(shopOrgId, userOrgId)) {
+			throw new BusinessException(
+					String.format(ERR_USER_CANNOT_CHANGE_OTHER_ORG_SHOP, userOrgId, shopOrgId)
+					, "MISSING PARAM:shop_id"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+	
+	
+	
+	
+	
+	private void validateStockCurrency(Integer currency) throws BusinessException {
+		boolean invalidCurrency = Arrays.asList( TransactionCurrency.values() )
+										.stream()
+										.map(TransactionCurrency::getValue)
+										.map(Integer::valueOf)
+										.noneMatch(val -> Objects.equals(currency, val));
+		if(invalidCurrency ) {
+			throw new BusinessException(
+					String.format("Invalid Currency code [%d]!", currency)
+					, "INVALID_PARAM:currency" 
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+}
+
+
+
+
+@Data
+class RowParseErrorHandler implements RowProcessorErrorHandler {
+	private List<String> errors;
+	
+	
+	public RowParseErrorHandler() {
+		errors = new ArrayList<>();
+	}
+	
+	
+	
+	@Override
+	public void handleError(DataProcessingException error, Object[] inputRow, ParsingContext context) {
+			errors.add( error.getMessage());	
+	}
+	
+	
+	
+	
+	public String getErrorMsgAsJson() {
+		JSONArray errorsJson = new JSONArray(errors);
+		
+		JSONObject main = new JSONObject();
+		main.put("msg", ERR_CSV_PARSE_FAILURE);
+		main.put("errors", errorsJson);
+		
+		return errorsJson.toString();
+	}
+}
+
+
+
+
+
+
+@Data
+class ProductCsvImportDTO{
+	private VariantUpdateDTO variantDto;
+	private ProductUpdateDTO productDto;
+	private StockUpdateDTO stockDto;
+	
+	public ProductCsvImportDTO() {
+		variantDto = new VariantUpdateDTO();
+		productDto = new ProductUpdateDTO();
+		stockDto = new StockUpdateDTO();
+	}
+}
