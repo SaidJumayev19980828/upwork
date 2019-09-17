@@ -403,13 +403,15 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public UserRepresentationObject getUserData(Long loggedUserId, Long id) throws BusinessException {
 		List<String> userRoles = employeeUserServiceHelper.getEmployeeUserRoles(loggedUserId);
-		if (!userRoles.contains("NASNAV_ADMIN") && !loggedUserId.equals(id)) {
-			throw new BusinessException("UNAUTHORIZED", "Logged user doesn't have the right to view other users data", HttpStatus.UNAUTHORIZED);
+		if (id != null) {
+			if (!userRoles.contains("NASNAV_ADMIN"))
+				throw new BusinessException("UNAUTHORIZED", "Logged user doesn't have the right to view other users data", HttpStatus.UNAUTHORIZED);
+			loggedUserId = id;
 		}
-		if (!userRepository.findById(id).isPresent()) {
+		if (!userRepository.findById(loggedUserId).isPresent()) {
 			throw new BusinessException("ENTITY NOT FOUND: user", "No user found with the provided ID", HttpStatus.NOT_ACCEPTABLE);
 		}
-		UserEntity userEntity = userRepository.findById(id).get();
+		UserEntity userEntity = userRepository.findById(loggedUserId).get();
 		return userEntity.getRepresentation(userEntity);
 	}
 

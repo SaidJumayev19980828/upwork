@@ -9,9 +9,11 @@ import javax.persistence.Table;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dto.UserDTOs;
 
+import com.nasnav.dto.UserRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.springframework.beans.BeanUtils;
 
 @Data
 @Entity
@@ -68,4 +70,10 @@ public class EmployeeUserEntity extends BaseUserEntity {
         return employeeUser;
     }
 
+    public UserRepresentationObject getRepresentation() {
+        UserRepresentationObject obj = new UserRepresentationObject();
+        BeanUtils.copyProperties(this, obj);
+        obj.id = this.getId();
+        return obj;
+    }
 }

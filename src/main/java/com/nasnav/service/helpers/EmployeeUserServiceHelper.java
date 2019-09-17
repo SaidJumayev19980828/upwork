@@ -322,6 +322,11 @@ public class EmployeeUserServiceHelper {
 		return employeeUserRoles;
 	}
 
+	public List<Long> getEmployeesIds(List<String> roles) { //returns list of employees ids that has roles in the roles list
+		List<Long> employeesIds = roleEmployeeUserRepository.findEmployeeUsersIds(roles);
+		return employeesIds;
+	}
+
 	public void validateBusinessRules(String name, String email, Long orgId, List<String> rolesList) {
 		StringUtils.validateNameAndEmail(name, email, orgId);
 		isValidRolesList(rolesList);
