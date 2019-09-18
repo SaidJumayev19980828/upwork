@@ -13,4 +13,6 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	ProductVariantsEntity findByIdAndProductEntity_Id(Long variantId, Long productId);
 
 	void deleteByProductEntity_Id(Long productId);
+
+	ProductVariantsEntity findByBarcodeAndProductEntity_OrganizationId(String barcode, Long orgId);
 }

@@ -60,4 +60,11 @@ public class EntityUtils {
 		return elementList.stream().allMatch(e -> e == null);
 	}
 	
+	
+	
+	@SafeVarargs
+	public static <T> Set<T> setOf(T...elements){
+		return new HashSet<>( Arrays.asList(elements));
+	}
+	
 }

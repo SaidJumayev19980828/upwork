@@ -63,6 +63,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/organization/info"									, setOf(Roles.ORGANIZATION_ADMIN)),
 						patternOf( "/organization/brand"								, setOf(Roles.ORGANIZATION_ADMIN)),
 						patternOf( "/organization/products_feature"	,HttpMethod.POST	, setOf(Roles.ORGANIZATION_ADMIN)),
+						patternOf( "/upload/**"											, setOf(Roles.ORGANIZATION_ADMIN)),
 						patternOf( "/**")
 						);
 
@@ -87,6 +88,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/webjars/**")		//for development only
                         , patternOf("/v2/**")		//for development only
                         , patternOf("/csrf/**")		//for development only
+                        , patternOf("/upload/productlist/login")
+                        , patternOf("/favicon.ico")
                  );
 
     AuthenticationProvider provider;
