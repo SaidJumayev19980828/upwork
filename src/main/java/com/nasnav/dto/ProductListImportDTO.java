@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class ProductListImportDTO {
-	private boolean dryRun;	
+	private boolean dryrun;	
 	private boolean updateProduct;	
 	private boolean updateStocks;
 	

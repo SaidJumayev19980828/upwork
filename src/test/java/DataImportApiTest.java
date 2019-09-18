@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
@@ -41,7 +40,6 @@ import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.enumerations.TransactionCurrency;
-import com.nasnav.persistence.CategoriesEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
@@ -60,6 +58,12 @@ import net.jcip.annotations.NotThreadSafe;
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class DataImportApiTest {
 	
+	private static final long TEST_STOCK_UPDATED = 400001L;
+
+
+	private static final long TEST_VARIANT_UPDATED = 310001L;
+
+
 	private static final String URL_UPLOAD_PRODUCTLIST = "/upload/productlist";
 
 
@@ -77,6 +81,8 @@ public class DataImportApiTest {
 	@Value("classpath:/files/product__list_upload_invalid_data.csv")
     private Resource csvFileInvalidData;
 	
+	@Value("classpath:/files/product__list_upate.csv")
+	private Resource csvFileUpdate;
 	
 	@Autowired
 	private  MockMvc mockMvc;
@@ -362,9 +368,8 @@ public class DataImportApiTest {
 	
 	
 	
-	//TODO test valid run
 	@Test
-	public void uploadProductCSVNewData() throws IOException, Exception {
+	public void uploadProductCSVNewDataTest() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
         
@@ -375,9 +380,138 @@ public class DataImportApiTest {
 		
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFile, importProperties);
 		
+		result.andExpect(status().is(200));
+		
 		Long productCountAfter = productRepo.count();
 		Long variantCountAfter = variantRepo.count();
 		Long stocksCountAfter = stocksRepo.count();
+		
+		assertEquals(2, productCountAfter - productCountBefore);
+        assertEquals(2, variantCountAfter - variantCountBefore);
+        assertEquals(2, stocksCountAfter - stocksCountBefore);
+        
+
+        assertProductDataImported();
+       
+	}
+	
+	
+	
+	
+	@Test
+	public void uploadProductCSVNewDataDryRunTest() throws Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("dryrun", true);
+        
+		Long productCountBefore = productRepo.count();
+		Long variantCountBefore = variantRepo.count();
+		Long stocksCountBefore = stocksRepo.count();
+		
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFile, importProperties);
+		
+		result.andExpect(status().is(200));
+		
+		Long productCountAfter = productRepo.count();
+		Long variantCountAfter = variantRepo.count();
+		Long stocksCountAfter = stocksRepo.count();
+		
+		assertEquals(0, productCountAfter - productCountBefore);
+        assertEquals(0, variantCountAfter - variantCountBefore);
+        assertEquals(0, stocksCountAfter - stocksCountBefore);
+	}
+
+	
+	
+	
+	@Test
+	public void uploadProductCSVUpdateDataTest() throws Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("dryrun", true);
+        
+		Long productCountBefore = productRepo.count();
+		Long variantCountBefore = variantRepo.count();
+		Long stocksCountBefore = stocksRepo.count();
+		
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFile, importProperties);
+		
+		result.andExpect(status().is(200));
+		
+		Long productCountAfter = productRepo.count();
+		Long variantCountAfter = variantRepo.count();
+		Long stocksCountAfter = stocksRepo.count();
+		
+		assertEquals(0, productCountAfter - productCountBefore);
+        assertEquals(0, variantCountAfter - variantCountBefore);
+        assertEquals(0, stocksCountAfter - stocksCountBefore);
+	}
+
+
+
+
+
+	
+	@Test
+	public void uploadProductCSVUpdateDataEnabledTest() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("update_product", true);
+        
+		Long productCountBefore = productRepo.count();
+		Long variantCountBefore = variantRepo.count();
+		Long stocksCountBefore = stocksRepo.count();
+		
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileUpdate, importProperties);
+		
+		result.andExpect(status().is(200));
+		
+		Long productCountAfter = productRepo.count();
+		Long variantCountAfter = variantRepo.count();
+		Long stocksCountAfter = stocksRepo.count();
+		
+		assertEquals("only one new product inserted", 1, productCountAfter - productCountBefore);
+        assertEquals("only one new product inserted", 1, variantCountAfter - variantCountBefore);
+        assertEquals("only one new product inserted", 1, stocksCountAfter - stocksCountBefore);
+        
+
+        assertProductDataImported();
+        
+        ProductVariantsEntity updatedVariant = variantRepo.getOne(TEST_VARIANT_UPDATED);
+        assertEquals("12345ABC", updatedVariant.getBarcode());
+        assertEquals("Squishy shoes", updatedVariant.getName());
+        assertEquals("s_shoe", updatedVariant.getDescription());
+        
+        ProductEntity updatedProduct = updatedVariant.getProductEntity();
+        assertEquals("12345ABC", updatedProduct.getBarcode());
+        assertEquals("Squishy shoes", updatedProduct.getName());
+        assertEquals("s_shoe", updatedProduct.getDescription());
+        assertEquals(101L, updatedProduct.getBrandId().longValue());
+        
+        StocksEntity updatedStocks = stocksRepo.findByProductVariantsEntity_IdAndShopsEntity_Id(TEST_VARIANT_UPDATED, TEST_IMPORT_SHOP).get();
+        assertEquals(TEST_STOCK_UPDATED, updatedStocks.getId().longValue());
+        assertEquals(101, updatedStocks.getQuantity().intValue());
+        assertEquals( 0, updatedStocks.getPrice().compareTo(new BigDecimal("10.25")) );
+        
+	}
+	
+	
+	
+	
+	private void assertProductDataImported() {
+		Set<Integer> quantities = new HashSet<>( Arrays.asList(101,102) );
+        Set<BigDecimal> prices = new HashSet<>( Arrays.asList(new BigDecimal("10.25"), new BigDecimal("88.6")));
+        Set<String> barcodes = new HashSet<>( Arrays.asList("12345ABC", "87847777EW") );
+        Set<String> ProductNames = new HashSet<>( Arrays.asList("Squishy shoes", "hard shoes") );
+        Set<String> PNames = new HashSet<>( Arrays.asList("s_shoe", "h_shoe") );
+        Set<String>  descriptions = new HashSet<>( Arrays.asList("squishy", "too hard") );
+        Set<Long> categories = new HashSet<>( Arrays.asList(201L,202L) );
+        Set<Long> brands = new HashSet<>( Arrays.asList(101L, 102L) );
+        
+        
 		
 		List<StocksEntity> stocks = helper.getShopStocksFullData(TEST_IMPORT_SHOP);
         List<ProductVariantsEntity> variants = stocks.stream()
@@ -386,26 +520,7 @@ public class DataImportApiTest {
 
         List<ProductEntity> products = variants.stream()
 												.map(v -> v.getProductEntity())
-												.collect(Collectors.toList());
-        
-        result.andExpect(status().is(200));
-        
-        
-        Set<Integer> quantities = new HashSet<>( Arrays.asList(101,102) );
-        Set<BigDecimal> prices = new HashSet<>( Arrays.asList(new BigDecimal("10.25"), new BigDecimal("88.6")));
-        Set<String> barcodes = new HashSet<>( Arrays.asList("1354ABN", "87847777EW") );
-        Set<String> ProductNames = new HashSet<>( Arrays.asList("Squishy shoes", "hard shoes") );
-        Set<String> PNames = new HashSet<>( Arrays.asList("s_shoe", "h_shoe") );
-        Set<String>  descriptions = new HashSet<>( Arrays.asList("squishy", "too hard") );
-        Set<Long> categories = new HashSet<>( Arrays.asList(201L,202L) );
-        Set<Long> brands = new HashSet<>( Arrays.asList(101L, 102L) );
-        
-        
-        
-        assertEquals(2, productCountAfter - productCountBefore);
-        assertEquals(2, variantCountAfter - variantCountBefore);
-        assertEquals(2, stocksCountAfter - stocksCountBefore);
-        
+												.collect(Collectors.toList()); 
         
         
         assertEquals(2, stocks.size());
@@ -430,7 +545,6 @@ public class DataImportApiTest {
         assertTrue( compareEntityFieldValues(products, ProductEntity::getDescription, descriptions) );
         assertTrue( compareEntityFieldValues(products, ProductEntity::getCategoryId, categories) );
         assertTrue( compareEntityFieldValues(products, ProductEntity::getBrandId, brands) );
-       
 	}
 	
 	

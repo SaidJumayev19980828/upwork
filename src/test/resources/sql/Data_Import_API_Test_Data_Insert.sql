@@ -26,13 +26,13 @@ insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organi
 
 
 -- variants for each product
-insert into public.product_variants(id, "name" , product_id ) values(310001, 'var' 	, 200001);
-insert into public.product_variants(id, "name" , product_id ) values(310002, 'var' 	, 200002);
+insert into public.product_variants(id, "name" , product_id ,barcode) values(310001, 'var', 200001, '12345ABC');
+insert into public.product_variants(id, "name" , product_id ,barcode) values(310002, 'var', 200002, '45678EFG');
 
 
 -- stocks for variants
 insert into public.stocks(id, shop_id  , variant_id , quantity , price, created_at, updated_at, organization_id)
-values (400001, 100001, 310001, 1 , 1000 , now() , now(), 99001);
+values (400001, 100003, 310001, 1 , 1000 , now() , now(), 99001);
 insert into public.stocks(id, shop_id , variant_id , quantity , price, created_at, updated_at, organization_id)
 values (400002, 100001,310002, 20 , 122, now() , now(), 99001);
 

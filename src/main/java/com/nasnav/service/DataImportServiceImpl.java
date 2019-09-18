@@ -118,7 +118,7 @@ public class DataImportServiceImpl implements DataImportService{
 		saveToDB(importedDtos, importMetaData);
 		
 		
-		if(importMetaData.isDryRun()) {
+		if(importMetaData.isDryrun()) {
 			TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
 		}
 		
@@ -138,7 +138,7 @@ public class DataImportServiceImpl implements DataImportService{
 				saveSingleProductCsvRowToDB(dto, importMetaData);
 			}catch(Exception e) {
 				StringBuilder msg = new StringBuilder();
-				msg.append( String.format("Error at Row[%d], with data[%s]", i, dto.toString()) );
+				msg.append( String.format("Error at Row[%d], with data[%s]", i+1, dto.toString()) );
 				msg.append( System.getProperty("line.separator") );
 				msg.append("Error Message: " + e.getMessage());
 				
@@ -160,6 +160,29 @@ public class DataImportServiceImpl implements DataImportService{
 	
 	
 	private void saveSingleProductCsvRowToDB(ProductCsvImportDTO dto, ProductListImportDTO importMetaData) throws BusinessException{
+		if( isUpdateDisabledButRowUpdateData(dto, importMetaData) )
+			return;
+		
+		Long productId = saveProductDto(dto);
+		
+		if( Objects.equals(dto.getOperation(), Operation.UPDATE) ){
+			productService.updateVariant(dto.getVariantDto());
+			stockService.updateStock(dto.getStockDto());
+		}else {
+			dto.getVariantDto().setProductId(productId);
+			VariantUpdateResponse variantResponse = productService.updateVariant(dto.getVariantDto());
+			Long variantId = variantResponse.getVariantId();
+			
+			dto.getStockDto().setVariantId(variantId);
+			stockService.updateStock(dto.getStockDto());
+		}
+	}
+
+
+
+
+
+	private Long saveProductDto(ProductCsvImportDTO dto) throws BusinessException {
 		ObjectMapper mapper = new ObjectMapper();
 		String productDtoJson = "";
 		try {
@@ -173,18 +196,15 @@ public class DataImportServiceImpl implements DataImportService{
 		
 		ProductUpdateResponse productResponse = productService.updateProduct(productDtoJson.toString(), false);
 		Long productId = productResponse.getProductId();
-		
-		if( importMetaData.isUpdateProduct() ){
-			productService.updateVariant(dto.getVariantDto());
-			stockService.updateStock(dto.getStockDto());
-		}else {
-			dto.getVariantDto().setProductId(productId);
-			VariantUpdateResponse variantResponse = productService.updateVariant(dto.getVariantDto());
-			Long variantId = variantResponse.getVariantId();
-			
-			dto.getStockDto().setVariantId(variantId);
-			stockService.updateStock(dto.getStockDto());
-		}
+		return productId;
+	}
+
+
+
+
+
+	private boolean isUpdateDisabledButRowUpdateData(ProductCsvImportDTO dto, ProductListImportDTO importMetaData) {
+		return Objects.equals( dto.getOperation(), Operation.UPDATE) && !importMetaData.isUpdateProduct();
 	}
 
 
@@ -211,8 +231,11 @@ public class DataImportServiceImpl implements DataImportService{
 		dto.setVariantDto( createVariantDto(row) );
 		dto.setStockDto( createStockDto(row, importMetaData) );
 		
-		if( importMetaData.isUpdateProduct() ) {
-			modifyProductImportDtoForUpdate(dto, row);
+		Long orgId = security.getCurrentUserOrganization();
+		ProductVariantsEntity variantEnt = variantRepo.findByBarcodeAndProductEntity_OrganizationId(row.getBarcode(), orgId);
+		
+		if(variantEnt != null) {
+			modifyProductImportDtoForUpdate(dto, row, variantEnt);
 		}
 		
 		return dto;
@@ -222,23 +245,13 @@ public class DataImportServiceImpl implements DataImportService{
 
 
 
-	private void modifyProductImportDtoForUpdate(ProductCsvImportDTO dto, ProductImportCsvRowData row)
+	private void modifyProductImportDtoForUpdate(ProductCsvImportDTO dto, ProductImportCsvRowData row, ProductVariantsEntity variantEnt)
 			throws BusinessException {
+		dto.setOperation(Operation.UPDATE);
 		
 		ProductUpdateDTO product = dto.getProductDto();
 		VariantUpdateDTO variant = dto.getVariantDto();
 		StockUpdateDTO stock = dto.getStockDto();
-		
-		Long orgId = security.getCurrentUserOrganization();
-		ProductVariantsEntity variantEnt = variantRepo.findByBarcodeAndProductEntity_OrganizationId(row.getBarcode(), orgId);
-		
-		
-		if(variantEnt == null) {
-			throw new BusinessException(
-					String.format(ERR_VARIANT_BARCODE_NOT_EXIST_FOR_ORG, row.getBarcode(), orgId)
-					, "INVALID DATA:brand"
-					, HttpStatus.NOT_ACCEPTABLE);
-		}
 		
 		Long productId = variantEnt.getProductEntity().getId();
 		variant.setProductId(productId);
@@ -246,6 +259,7 @@ public class DataImportServiceImpl implements DataImportService{
 		variant.setOperation( Operation.UPDATE );
 		
 		product.setOperation( Operation.UPDATE );
+		product.setId(productId);
 		
 		stock.setVariantId(variantEnt.getId());
 	}
@@ -305,6 +319,7 @@ public class DataImportServiceImpl implements DataImportService{
 		product.setBrandId(brandId);
 		product.setCategoryId(categoryId);
 		product.setDescription( row.getDescription() );
+		product.setBarcode(row.getBarcode());
 		product.setName(row.getName() );
 		product.setOperation(  Operation.CREATE );
 		product.setPname(row.getPname());
@@ -576,10 +591,12 @@ class ProductCsvImportDTO{
 	private VariantUpdateDTO variantDto;
 	private ProductUpdateDTO productDto;
 	private StockUpdateDTO stockDto;
+	private Operation operation;
 	
 	public ProductCsvImportDTO() {
 		variantDto = new VariantUpdateDTO();
 		productDto = new ProductUpdateDTO();
 		stockDto = new StockUpdateDTO();
+		operation = Operation.CREATE;
 	}
 }
