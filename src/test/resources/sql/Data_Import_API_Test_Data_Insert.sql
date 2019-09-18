@@ -17,24 +17,30 @@ INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organiza
 INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100001 , 'Funny Shop' , now() , now() , 99001);
 INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100002 , 'Wealthy Shop' , now() , now() , 99001);
 INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100003 , 'Import Shop' , now() , now() , 99001);
+INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100004 , 'Update Shop' , now() , now() , 99001);
 
 
 
 -- dummy products
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200001, 'Bundle Product#1' , now() , now(), 0 , 99001, 201);
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200002, 'Bundle Product#2' , now() , now(), 0 , 99001, 201);
+insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id, p_name, description, brand_id, barcode) 
+VALUES(200003, 'Product to update' , now() , now(), 0 , 99001, 201, 'u_shoe', 'old desc', 101, 'TT232222');
 
 
 -- variants for each product
 insert into public.product_variants(id, "name" , product_id ,barcode) values(310001, 'var', 200001, '12345ABC');
 insert into public.product_variants(id, "name" , product_id ,barcode) values(310002, 'var', 200002, '45678EFG');
+insert into public.product_variants(id, "name" , product_id ,barcode, p_name, description) values(310003, 'Product to update', 200003, 'TT232222', 'u_shoe', 'old desc');
 
 
 -- stocks for variants
 insert into public.stocks(id, shop_id  , variant_id , quantity , price, created_at, updated_at, organization_id)
-values (400001, 100003, 310001, 1 , 1000 , now() , now(), 99001);
+values (400001, 100001, 310001, 1 , 1000 , now() , now(), 99001);
 insert into public.stocks(id, shop_id , variant_id , quantity , price, created_at, updated_at, organization_id)
 values (400002, 100001,310002, 20 , 122, now() , now(), 99001);
+insert into public.stocks(id, shop_id , variant_id , quantity , price, created_at, updated_at, organization_id, currency)
+values (400003, 100004,310003, 30, 15, now() , now(), 99001, 2);
 
 
 
@@ -47,6 +53,8 @@ INSERT INTO public.employee_users(id, created_at, updated_at, email, organizatio
 VALUES (70, now(), now(), 'testuser3@nasnav.com', 99002, '898dssd',  100002);
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
 VALUES (71, now(), now(), 'testuser4@nasnav.com', 99001, 'ggr45r5',  100003);
+INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+VALUES (72, now(), now(), 'testuser5@nasnav.com', 99001, 'edddre2',  100004);
 
 
 --inserting Roles
@@ -62,5 +70,6 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (21, 69, 2, now(), now());
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (22, 70, 2, now(), now());
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (23, 71, 2, now(), now());
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (24, 72, 2, now(), now());
 
 

@@ -111,7 +111,7 @@ public class UniVocityCvsParserTest {
 	
 	
 	
-	@Test
+	@Test(expected = DataProcessingException.class)
 	public void parseCvsMissingColsTest() throws IllegalStateException, FileNotFoundException {
 		String filePath = CSV_WITH_MISSING_COL;
 		ColumnMapping mapper = createAttrToColMapping();
@@ -125,14 +125,7 @@ public class UniVocityCvsParserTest {
 		settings.setProcessor(rowProcessor);
 		
 		CsvParser parser = new CsvParser(settings);
-		parser.parse(new File(filePath));
-		String[] headers = parser.getContext().parsedHeaders();
-		
-		List<CSVRowBean> rows = rowProcessor.getBeans();
-        
-		assertEquals(2 , headers.length);
-        assertEquals(2, rows.size());
-        assertNull("non existing Columns are ignored and set as null",rows.get(0).getQuantity());
+		parser.parse(new File(filePath));		
 	}
 	
 	

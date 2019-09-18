@@ -97,6 +97,17 @@ public class TestHelper {
 		return stocks;
 	}
 	
+	
+	@Transactional
+	public ProductVariantsEntity getVariantFullData(Long id) {
+		ProductVariantsEntity updatedVariant = variantRepo.getOne(id);
+		
+		//just call them to make hibernate cache these entities while being in the transaction
+		updatedVariant.getProductEntity();
+		updatedVariant.getStocks();
+		
+		return updatedVariant;
+	}
 		
 
 }

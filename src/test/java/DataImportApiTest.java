@@ -1,13 +1,11 @@
+import static com.nasnav.persistence.EntityUtils.setOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -46,6 +44,7 @@ import com.nasnav.persistence.StocksEntity;
 import com.nasnav.security.AuthenticationFilter;
 import com.nasnav.test.helpers.TestHelper;
 
+import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
 
 @RunWith(SpringRunner.class)
@@ -58,16 +57,18 @@ import net.jcip.annotations.NotThreadSafe;
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class DataImportApiTest {
 	
-	private static final long TEST_STOCK_UPDATED = 400001L;
+	private static final long TEST_STOCK_UPDATED = 400003L;
 
 
-	private static final long TEST_VARIANT_UPDATED = 310001L;
+	private static final long TEST_VARIANT_UPDATED = 310003L;
 
 
 	private static final String URL_UPLOAD_PRODUCTLIST = "/upload/productlist";
 
 
 	private static final Long TEST_IMPORT_SHOP = 100003L;
+	
+	private static final Long TEST_UPDATE_SHOP = 100004L;
 
 
 	@Value("classpath:/files/product__list_upload.csv")
@@ -98,13 +99,10 @@ public class DataImportApiTest {
 	private StockRepository stocksRepo;
 	
 	@Autowired
-	private CategoriesRepository categoriesRepo;
-	
-	@Autowired
-	private BrandsRepository brandRepo;
-	
-	@Autowired
 	private TestHelper helper;
+	
+	
+	
 	
 	@Test
     public void uploadProductsCSVNoAuthNTest() throws IOException, Exception {
@@ -373,26 +371,43 @@ public class DataImportApiTest {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
         
-		Long productCountBefore = productRepo.count();
-		Long variantCountBefore = variantRepo.count();
-		Long stocksCountBefore = stocksRepo.count();
-		
+		ProductDataCount before = countProductData();	
 		
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFile, importProperties);
 		
 		result.andExpect(status().is(200));
 		
-		Long productCountAfter = productRepo.count();
-		Long variantCountAfter = variantRepo.count();
-		Long stocksCountAfter = stocksRepo.count();
-		
-		assertEquals(2, productCountAfter - productCountBefore);
-        assertEquals(2, variantCountAfter - variantCountBefore);
-        assertEquals(2, stocksCountAfter - stocksCountBefore);
+		ProductDataCount after = countProductData();		
+		assertExpectedRowNumInserted(before, after, 2);
         
 
-        assertProductDataImported();
+        ExpectedSavedData expected = getExpectedAllNewData();
+        assertProductDataImported(TEST_IMPORT_SHOP, expected);
        
+	}
+
+
+
+
+
+
+	private void assertExpectedRowNumInserted(ProductDataCount before, ProductDataCount after, int expectedDiff) {
+		assertEquals(expectedDiff, after.product - before.product);
+        assertEquals(expectedDiff, after.variant - before.variant);
+        assertEquals(expectedDiff, after.stocks  - before.stocks);
+	}
+
+
+
+
+
+
+	private ProductDataCount countProductData() {
+		ProductDataCount count = new ProductDataCount();
+		count.product = productRepo.count();
+		count.variant = variantRepo.count();
+		count.stocks = stocksRepo.count();
+		return count;
 	}
 	
 	
@@ -404,116 +419,186 @@ public class DataImportApiTest {
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 		importProperties.put("dryrun", true);
         
-		Long productCountBefore = productRepo.count();
-		Long variantCountBefore = variantRepo.count();
-		Long stocksCountBefore = stocksRepo.count();
-		
+		ProductDataCount before = countProductData();		
 		
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFile, importProperties);
 		
 		result.andExpect(status().is(200));
 		
-		Long productCountAfter = productRepo.count();
-		Long variantCountAfter = variantRepo.count();
-		Long stocksCountAfter = stocksRepo.count();
-		
-		assertEquals(0, productCountAfter - productCountBefore);
-        assertEquals(0, variantCountAfter - variantCountBefore);
-        assertEquals(0, stocksCountAfter - stocksCountBefore);
+		ProductDataCount after = countProductData();		
+		assertExpectedRowNumInserted(before, after, 0);
 	}
 
 	
 	
 	
 	@Test
-	public void uploadProductCSVUpdateDataTest() throws Exception {
+	public void uploadProductCSVUpdateStockDisabledTest() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
-		importProperties.put("dryrun", true);
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", true);
+		importProperties.put("update_stock", false);
         
-		Long productCountBefore = productRepo.count();
-		Long variantCountBefore = variantRepo.count();
-		Long stocksCountBefore = stocksRepo.count();
+		ProductDataCount before = countProductData();		
 		
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFile, importProperties);
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
 		
 		result.andExpect(status().is(200));
 		
-		Long productCountAfter = productRepo.count();
-		Long variantCountAfter = variantRepo.count();
-		Long stocksCountAfter = stocksRepo.count();
+		ProductDataCount after = countProductData();		
+		assertExpectedRowNumInserted(before, after, 1);        
+
+        
+        ExpectedSavedData expected = getExpectedNewAndUpdatedDataWithoutStocks();
+        assertProductDataImported(TEST_UPDATE_SHOP, expected);
+        assertProductUpdatedDataSavedWithoutStock();     
+	}
+
+
+
+	
+	
+	
+	
+	@Test
+	public void uploadProductCSVUpdateProductsDisabledTest() throws Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", false);
+		importProperties.put("update_stocks", true);
+        
+		ProductDataCount before = countProductData();	
 		
-		assertEquals(0, productCountAfter - productCountBefore);
-        assertEquals(0, variantCountAfter - variantCountBefore);
-        assertEquals(0, stocksCountAfter - stocksCountBefore);
+		ProductVariantsEntity variantBefore = helper.getVariantFullData(TEST_VARIANT_UPDATED);
+		ProductEntity productBefore = variantBefore.getProductEntity();
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
+		
+		result.andExpect(status().is(200));
+		
+		ProductDataCount after = countProductData();		
+		assertExpectedRowNumInserted(before, after, 1);          
+
+        ProductVariantsEntity variantAfter = helper.getVariantFullData(TEST_VARIANT_UPDATED);
+        ProductEntity productAFter = variantAfter.getProductEntity();
+        
+        assertEquals(variantBefore, variantAfter);
+        assertEquals(productBefore, productAFter);
+        
+        ExpectedSavedData expected = getExpectedNewOnlyAndUpdatedStocks();
+        assertProductDataImported(TEST_UPDATE_SHOP, expected);            
+	}
+	
+	
+
+
+	private void assertProductUpdatedDataSavedWithoutStock() {
+		ProductVariantsEntity updatedVariant = helper.getVariantFullData(TEST_VARIANT_UPDATED);
+        assertTestVariantUpdated(updatedVariant);
+        
+        ProductEntity updatedProduct = updatedVariant.getProductEntity();
+        assertTestProductUpdated(updatedProduct);
+        
+        StocksEntity updatedStocks = stocksRepo.findByProductVariantsEntity_IdAndShopsEntity_Id(TEST_VARIANT_UPDATED, TEST_UPDATE_SHOP).get();
+        assertTestStockRemainedSame(updatedStocks);
 	}
 
 
 
 
 
-	
+
+	private void assertTestStockRemainedSame(StocksEntity updatedStocks) {
+		assertEquals(TEST_STOCK_UPDATED, updatedStocks.getId().longValue());
+        assertEquals(30, updatedStocks.getQuantity().intValue());
+        assertEquals( 0, updatedStocks.getPrice().compareTo(new BigDecimal("15")) );
+	}
+
+
+
+
+
+
 	@Test
 	public void uploadProductCSVUpdateDataEnabledTest() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
+		importProperties.put("update_stocks", true);
         
-		Long productCountBefore = productRepo.count();
-		Long variantCountBefore = variantRepo.count();
-		Long stocksCountBefore = stocksRepo.count();
+		ProductDataCount before = countProductData();			
 		
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileUpdate, importProperties);
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
 		
 		result.andExpect(status().is(200));
 		
-		Long productCountAfter = productRepo.count();
-		Long variantCountAfter = variantRepo.count();
-		Long stocksCountAfter = stocksRepo.count();
-		
-		assertEquals("only one new product inserted", 1, productCountAfter - productCountBefore);
-        assertEquals("only one new product inserted", 1, variantCountAfter - variantCountBefore);
-        assertEquals("only one new product inserted", 1, stocksCountAfter - stocksCountBefore);
-        
+		ProductDataCount after = countProductData();		
+		assertExpectedRowNumInserted(before, after, 1);         
 
-        assertProductDataImported();
-        
-        ProductVariantsEntity updatedVariant = variantRepo.getOne(TEST_VARIANT_UPDATED);
-        assertEquals("12345ABC", updatedVariant.getBarcode());
-        assertEquals("Squishy shoes", updatedVariant.getName());
-        assertEquals("s_shoe", updatedVariant.getDescription());
+        ExpectedSavedData expected = getExpectedNewAndUpdatedDataWithStocks();
+        assertProductDataImported(TEST_UPDATE_SHOP, expected);
+        assertProductUpdatedDataSavedWithStock();        
+	}
+
+
+
+
+
+
+	private void assertProductUpdatedDataSavedWithStock() {
+		ProductVariantsEntity updatedVariant = helper.getVariantFullData(TEST_VARIANT_UPDATED);
+        assertTestVariantUpdated(updatedVariant);
         
         ProductEntity updatedProduct = updatedVariant.getProductEntity();
-        assertEquals("12345ABC", updatedProduct.getBarcode());
-        assertEquals("Squishy shoes", updatedProduct.getName());
-        assertEquals("s_shoe", updatedProduct.getDescription());
-        assertEquals(101L, updatedProduct.getBrandId().longValue());
+        assertTestProductUpdated(updatedProduct);
         
-        StocksEntity updatedStocks = stocksRepo.findByProductVariantsEntity_IdAndShopsEntity_Id(TEST_VARIANT_UPDATED, TEST_IMPORT_SHOP).get();
-        assertEquals(TEST_STOCK_UPDATED, updatedStocks.getId().longValue());
+        StocksEntity updatedStocks = stocksRepo.findByProductVariantsEntity_IdAndShopsEntity_Id(TEST_VARIANT_UPDATED, TEST_UPDATE_SHOP).get();
+        assertTestStockUpdated(updatedStocks);
+	}
+
+
+
+
+
+
+	private void assertTestStockUpdated(StocksEntity updatedStocks) {
+		assertEquals(TEST_STOCK_UPDATED, updatedStocks.getId().longValue());
         assertEquals(101, updatedStocks.getQuantity().intValue());
         assertEquals( 0, updatedStocks.getPrice().compareTo(new BigDecimal("10.25")) );
-        
+	}
+
+
+
+
+
+
+	private void assertTestProductUpdated(ProductEntity updatedProduct) {
+		assertEquals("TT232222", updatedProduct.getBarcode());
+        assertEquals("Squishy shoes", updatedProduct.getName());
+        assertEquals("s_shoe", updatedProduct.getPname());
+        assertEquals("squishy", updatedProduct.getDescription());
+        assertEquals(101L, updatedProduct.getBrandId().longValue());
+	}
+
+
+
+
+
+
+	private void assertTestVariantUpdated(ProductVariantsEntity updatedVariant) {
+		assertEquals("TT232222", updatedVariant.getBarcode());
+        assertEquals("Squishy shoes", updatedVariant.getName());
+        assertEquals("s_shoe", updatedVariant.getPname());
+        assertEquals("squishy", updatedVariant.getDescription());
 	}
 	
 	
 	
 	
-	private void assertProductDataImported() {
-		Set<Integer> quantities = new HashSet<>( Arrays.asList(101,102) );
-        Set<BigDecimal> prices = new HashSet<>( Arrays.asList(new BigDecimal("10.25"), new BigDecimal("88.6")));
-        Set<String> barcodes = new HashSet<>( Arrays.asList("12345ABC", "87847777EW") );
-        Set<String> ProductNames = new HashSet<>( Arrays.asList("Squishy shoes", "hard shoes") );
-        Set<String> PNames = new HashSet<>( Arrays.asList("s_shoe", "h_shoe") );
-        Set<String>  descriptions = new HashSet<>( Arrays.asList("squishy", "too hard") );
-        Set<Long> categories = new HashSet<>( Arrays.asList(201L,202L) );
-        Set<Long> brands = new HashSet<>( Arrays.asList(101L, 102L) );
-        
-        
+	private void assertProductDataImported(Long shopId, ExpectedSavedData expected) {
 		
-		List<StocksEntity> stocks = helper.getShopStocksFullData(TEST_IMPORT_SHOP);
+		
+		List<StocksEntity> stocks = helper.getShopStocksFullData(shopId);
         List<ProductVariantsEntity> variants = stocks.stream()
 													.map(StocksEntity::getProductVariantsEntity)
 													.collect(Collectors.toList());
@@ -524,27 +609,111 @@ public class DataImportApiTest {
         
         
         assertEquals(2, stocks.size());
-        assertTrue( stocks.stream()
-        				.map(StocksEntity::getCurrency)
-        				.allMatch( c -> Objects.equals(c, TransactionCurrency.EGP) ) );
+        assertTrue( compareEntityFieldValues(stocks, StocksEntity::getCurrency, expected.getCurrencies())	);
         
-        assertTrue( compareEntityFieldValues(stocks, StocksEntity::getQuantity, quantities)	);
-        assertTrue( compareEntityBigDecimalFieldValues(stocks, StocksEntity::getPrice, prices)	);
+        assertTrue( compareEntityFieldValues(stocks, StocksEntity::getQuantity, expected.getQuantities())	);
+        assertTrue( compareEntityBigDecimalFieldValues(stocks, StocksEntity::getPrice, expected.getPrices())	);
 
         
                 
         
-        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getBarcode, barcodes)	);
-        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getName, ProductNames) );
-        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getPname, PNames) );
-        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getDescription, descriptions) );
+        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getBarcode, expected.getBarcodes())	);
+        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getName, expected.getProductNames()) );
+        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getPname, expected.getPNames()) );
+        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getDescription, expected.getDescriptions()) );
         
         
-        assertTrue( compareEntityFieldValues(products, ProductEntity::getName, ProductNames) );
-        assertTrue( compareEntityFieldValues(products, ProductEntity::getPname, PNames) );
-        assertTrue( compareEntityFieldValues(products, ProductEntity::getDescription, descriptions) );
-        assertTrue( compareEntityFieldValues(products, ProductEntity::getCategoryId, categories) );
-        assertTrue( compareEntityFieldValues(products, ProductEntity::getBrandId, brands) );
+        assertTrue( compareEntityFieldValues(products, ProductEntity::getName, expected.getProductNames()) );
+        assertTrue( compareEntityFieldValues(products, ProductEntity::getPname, expected.getPNames()) );
+        assertTrue( compareEntityFieldValues(products, ProductEntity::getDescription, expected.getDescriptions()) );
+        assertTrue( compareEntityFieldValues(products, ProductEntity::getCategoryId, expected.getCategories()) );
+        assertTrue( compareEntityFieldValues(products, ProductEntity::getBrandId, expected.getBrands()) );
+	}
+	
+	
+	
+	
+	private ExpectedSavedData getExpectedAllNewData() {
+		ExpectedSavedData data = new ExpectedSavedData();
+		
+		data.setQuantities( setOf(101,102) );
+		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6")));
+		data.setCurrencies(setOf(TransactionCurrency.EGP));
+		
+		data.setBarcodes( setOf("1354ABN", "87847777EW") );
+		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
+		data.setPNames(setOf("s_shoe", "h_shoe") );
+		data.setDescriptions( setOf("squishy", "too hard") );
+		data.setCategories( setOf(201L, 202L) );
+		data.setBrands(setOf(101L, 102L) );
+        
+		return data;
+	}
+
+
+
+
+
+	
+	
+	
+	
+	private ExpectedSavedData getExpectedNewAndUpdatedDataWithStocks() {
+		ExpectedSavedData data = new ExpectedSavedData();		
+
+		data.setQuantities( setOf(101,102) );
+		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6")));
+		data.setCurrencies( setOf(TransactionCurrency.EGP));
+		
+		data.setBarcodes( setOf("TT232222", "87847777EW") );
+		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
+		data.setPNames(setOf("s_shoe", "h_shoe") );
+		data.setDescriptions( setOf("squishy", "too hard") );
+		data.setCategories( setOf(201L, 202L) );
+		data.setBrands( setOf(101L, 102L) );
+		
+        
+		return data;
+	}
+	
+	
+	
+	private ExpectedSavedData getExpectedNewAndUpdatedDataWithoutStocks() {
+		ExpectedSavedData data = new ExpectedSavedData();		
+
+		data.setQuantities( setOf(30,102) );
+		data.setPrices( setOf(new BigDecimal("15"), new BigDecimal("88.6")));
+		data.setCurrencies( setOf(TransactionCurrency.EGP, TransactionCurrency.USD));
+		
+		data.setBarcodes( setOf("TT232222", "87847777EW") );
+		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
+		data.setPNames(setOf("s_shoe", "h_shoe") );
+		data.setDescriptions( setOf("squishy", "too hard") );
+		data.setCategories( setOf(201L, 202L) );
+		data.setBrands( setOf(101L, 102L) );
+		
+        
+		return data;
+	}
+	
+	
+	
+	
+	private ExpectedSavedData getExpectedNewOnlyAndUpdatedStocks() {
+		ExpectedSavedData data = new ExpectedSavedData();		
+
+		data.setQuantities( setOf(101,102) );
+		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6")));
+		data.setCurrencies( setOf(TransactionCurrency.EGP));
+		
+		data.setBarcodes( setOf("TT232222", "87847777EW") );
+		data.setProductNames( setOf("Product to update", "hard shoes") );
+		data.setPNames(setOf("u_shoe", "h_shoe") );
+		data.setDescriptions( setOf("old desc", "too hard") );
+		data.setCategories( setOf(201L, 202L) );
+		data.setBrands( setOf(101L, 102L) );
+        
+		return data;
 	}
 	
 	
@@ -628,4 +797,28 @@ public class DataImportApiTest {
 		return colHeadersJson;
 	}
 
+}
+
+
+
+@Data
+class ExpectedSavedData{
+	private Set<Integer> quantities;
+	private Set<BigDecimal> prices ;
+	private Set<String> barcodes ;
+	private Set<String> ProductNames;
+	private Set<String> PNames;
+	private Set<String>  descriptions;
+	private Set<Long> categories;
+	private Set<Long> brands;
+	private Set<TransactionCurrency> currencies;
+}
+
+
+
+
+class ProductDataCount{
+	public Long product;
+	public Long variant;
+	public Long stocks;
 }
