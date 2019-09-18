@@ -88,6 +88,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/webjars/**")		//for development only
                         , patternOf("/v2/**")		//for development only
                         , patternOf("/csrf/**")		//for development only
+                        , patternOf("/upload/productlist/login")
+                        , patternOf("/favicon.ico")
                  );
 
     AuthenticationProvider provider;
