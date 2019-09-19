@@ -14,9 +14,9 @@
     <script src="/js/upload_products.js"></script>
     <style>
         /* Style inputs */
-        input[type=text],
+        input[type=text],input[type=number],input[type=file],
         select {
-            width: 100%;
+            width: 50%;
             padding: 12px 20px;
             margin: 8px 0;
             display: inline-block;
@@ -25,20 +25,11 @@
             box-sizing: border-box;
         }
 
-        input[type=text],
-        select {
-            width: 100%;
-            padding: 12px 20px;
-            margin: 8px 0;
-            display: inline-block;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
+       
 
         /* Style the submit button */
-        input[type=submit] {
-            width: 100%;
+        input[type=button] {
+            width: 50%;
             background-color: #4CAF50;
             color: white;
             padding: 14px 20px;
@@ -49,7 +40,7 @@
         }
 
         /* Add a background color to the submit button on mouse-over */
-        input[type=submit]:hover {
+        input[type=button]:hover {
             background-color: #45a049;
         }
     </style>
@@ -59,10 +50,11 @@
 </head>
 
 <body>
+    <h1>Upload Products CSV File</h1>
     <form id="upload-form">
         <input type="hidden" name="token" th:value="${token}">
         <div>
-            <input id="dryrun" type="checkbox" name="dryrun" placeholder="Validate Only">
+            <input id="dryrun" type="checkbox" name="dryrun" placeholder="Validate Only" >
             <label for="dryrun">Validate Only</label>
             </input>
             <input id="update-product" type="checkbox" name="update_product"><label for="update-product">Update existing
@@ -71,14 +63,18 @@
                 Stocks</label></input>
 
         </div>
-        <div>
-            <input id="shop-id" type="number" name="shop_id" placeholder="Shop Id" required>
-            <label for="shop">Shop Id</label>
+        <div>            
+            <input id="shop-id" type="number" name="shop_id" placeholder="Shop Id" required>  
+            <select name="currency" aria-placeholder="Currency Column header" required form="upload-form">
+                    <option value="1" selected>EGP</option>
+                    <option value="2">USD</option>
+                </select>          
             <input type="hidden" value="UTF-8" name="encoding">
             </input>
 
         </div>
     </form>
+    <h2>CSV Columns Names</h2>
     <form id="headers-form">
         <div>
             <input type="text" name="name_header" placeholder="Name Column header" required />
@@ -89,10 +85,7 @@
             <input type="text" name="brand_header" placeholder="Brand Column header" required />
             <input type="text" name="quantity_header" placeholder="Quantity Column header" required />
             <input type="text" name="price_header" placeholder="Price Column header" required />
-            <select name="currency" aria-placeholder="Currency Column header" required form="upload-form">
-                <option value="1" selected>EGP</option>
-                <option value="2">USD</option>
-            </select>
+            
 
         </div>
     </form>
@@ -104,7 +97,7 @@
     <form>
         <input type="button" id="upload-form-btn" onclick="upload()" value="Upload"></input>
     </form>
-    <div>
+    <div id="error-container" style="border: black">
         <div id="error-desc">
 
             </div>
