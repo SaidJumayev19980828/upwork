@@ -2,8 +2,16 @@
 <html>
 
 <head>
-   <script src="js/jquery-3.4.1.min.js"></script>
-   <script src="js/upload_products.js"></script>
+    <script src="/js/jquery-3.4.1.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.serializejson.js"></script>
+    <script th:inline="javascript">
+            /*<![CDATA[*/
+    
+            var token = /*[[${token}]]*/ 'default';
+    
+            /*]]>*/
+        </script>
+    <script src="/js/upload_products.js"></script>
     <style>
         /* Style inputs */
         input[type=text],
@@ -45,13 +53,7 @@
             background-color: #45a049;
         }
     </style>
-    <script th:inline="javascript">
-        /*<![CDATA[*/
-
-        var token = /*[[${token}]]*/ 'default';
-
-        /*]]>*/
-    </script>
+   
     <meta charset="UTF-8">
     <title>NasNav</title>
 </head>
@@ -70,14 +72,14 @@
 
         </div>
         <div>
-            <input id="shop-id" type="number" name="shop_id" placeholder="Shop Id" required >
+            <input id="shop-id" type="number" name="shop_id" placeholder="Shop Id" required>
             <label for="shop">Shop Id</label>
             <input type="hidden" value="UTF-8" name="encoding">
-        </input>
+            </input>
 
         </div>
-        </form>
-        <form id="headers-form">
+    </form>
+    <form id="headers-form">
         <div>
             <input type="text" name="name_header" placeholder="Name Column header" required />
             <input type="text" name="pname_header" placeholder="PName Column header" required />
@@ -91,20 +93,28 @@
                 <option value="1" selected>EGP</option>
                 <option value="2">USD</option>
             </select>
-           
+
         </div>
-        </form>
-        <form >
+    </form>
+    <form id="file-select-form">
         <div>
-            <input type="file" name="csv" placeholder="Csv File" required id="csv"/>            
+            <input type="file" name="csv" placeholder="Csv File" required id="file" />
         </div>
-        </form>
-        <form>
-             <input type="button" id="upload-form-btn">
-        </form>
-        
+    </form>
+    <form>
+        <input type="button" id="upload-form-btn" onclick="upload()" value="Upload"></input>
+    </form>
+    <div>
+        <div id="error-desc">
 
+            </div>
+        <div id="error-msg">
 
+        </div>
+        <div id="errors">
+
+        </div>
+    </div>
     
 </body>
 

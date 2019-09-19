@@ -55,11 +55,12 @@ public class DataImportContoller {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ProductListImportResponse importProductList(
-            @RequestPart("csv") @Valid MultipartFile file,
-            @RequestPart("properties") @Valid ProductListImportDTO importMetaData)
-            		throws BusinessException {
-
-		return  importService.importProductListFromCSV(file, importMetaData);
+//            @RequestPart("csv") @Valid MultipartFile file
+//            ,
+            @RequestPart("properties") @Valid ProductListImportDTO importMetaData
+            )throws BusinessException {
+		return new ProductListImportResponse();
+//		return  importService.importProductListFromCSV(file, importMetaData);
     }
 	
 	
