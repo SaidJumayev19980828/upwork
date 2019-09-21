@@ -32,6 +32,9 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	private EmployeeUserRepository employeeUserRepository;
 	private PasswordEncoder passwordEncoder;
 	private RoleServiceImpl roleServiceImpl;
+	
+	@Autowired
+	private SecurityService securityService;
 
 	@Autowired
 	public EmployeeUserServiceImpl(EmployeeUserServiceHelper helper, EmployeeUserRepository employeeUserRepository,
@@ -47,7 +50,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		List<String> rolesList = Arrays.asList(employeeUserJson.role.split(","));
 		helper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.orgId, rolesList);
 		// get current logged in user
-		EmployeeUserEntity currentUser = employeeUserRepository.getById(userId);
+		EmployeeUserEntity currentUser = securityService.getCurrentUser();
 		// check if email and organization id already exists
 		if (employeeUserRepository.getByEmailAndOrganizationId(employeeUserJson.email, employeeUserJson.orgId) == null) {
 			int userType = helper.roleCanCreateUser(currentUser.getId());
@@ -97,7 +100,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 			throw new EntityValidationException(""+ResponseStatus.INSUFFICIENT_RIGHTS,
 					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
 		}
-		currentUser = employeeUserRepository.getById(userId);
+		currentUser = securityService.getCurrentUser();
 		if (StringUtils.isBlankOrNull(employeeUserJson.getUpdatedUserId())) {// check if same user doing the update
 			updateUser = employeeUserRepository.getById(userId);
 		} else {

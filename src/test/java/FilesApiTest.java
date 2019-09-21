@@ -321,8 +321,7 @@ public class FilesApiTest {
 		 //Now try to download the file
 		 
 		 MvcResult result = mockMvc.perform( 
-				 						MockMvcRequestBuilders.get("/files/"+ expectedUrl)
-				 								.header(TOKEN_HEADER, "101112")
+				 						MockMvcRequestBuilders.get("/files/"+ expectedUrl)				 								
 				 								.contentType(MediaType.ALL_VALUE)				 
 				 				)
  								.andExpect(status().is(200))
@@ -347,8 +346,7 @@ public class FilesApiTest {
 	@Test
 	public void downloadFileUrlNotExists() throws Exception {		
 		 mockMvc.perform( 
- 						MockMvcRequestBuilders.get("/files/NON_EXISTING")
- 								.header(TOKEN_HEADER, "101112")
+ 						MockMvcRequestBuilders.get("/files/NON_EXISTING") 								
  								.contentType(MediaType.ALL_VALUE)				 
  				)
 				.andExpect(status().is(406))
@@ -360,8 +358,7 @@ public class FilesApiTest {
 	@Test
 	public void downloadFileUrlInvalid() throws Exception {		
 		 mockMvc.perform( 
- 						MockMvcRequestBuilders.get("/files")
- 								.header(TOKEN_HEADER, "101112")
+ 						MockMvcRequestBuilders.get("/files") 								
  								.contentType(MediaType.ALL_VALUE)				 
  				)
 				.andExpect(status().is(406))
@@ -369,17 +366,6 @@ public class FilesApiTest {
 	}
 	
 	
-	
-	
-	@Test
-	public void downloadFileNoAuthN() throws Exception {		
-		 mockMvc.perform( 
- 						MockMvcRequestBuilders.get("/files")
- 								.contentType(MediaType.ALL_VALUE)				 
- 				)
-				.andExpect(status().is(401))
-				.andExpect(header().doesNotExist(HttpHeaders.CONTENT_DISPOSITION));	 
-	}
 	
 	
 	
@@ -406,7 +392,6 @@ public class FilesApiTest {
 		 
 		mockMvc.perform( 
 					MockMvcRequestBuilders.get("/files/"+ expectedUrl)
-							.header(TOKEN_HEADER, "101112")
 							.contentType(MediaType.ALL_VALUE)				 
 			)
 		.andExpect(status().is(406))

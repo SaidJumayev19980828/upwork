@@ -92,6 +92,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/favicon.ico")
                         , patternOf("/static/**")
                         , patternOf("/js/**")
+                        , patternOf("/files/**"							, HttpMethod.GET)
                  );
 
     AuthenticationProvider provider;
