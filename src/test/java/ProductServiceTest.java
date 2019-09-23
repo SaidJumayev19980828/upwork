@@ -2,6 +2,7 @@ import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.stream.IntStream;
 
@@ -33,6 +34,7 @@ import com.nasnav.dao.StockRepository;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.ProductTypes;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
@@ -47,6 +49,7 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 public class ProductServiceTest {
 
+	private static final String PRODUCT_DESC = "Some description";
 	public static final int BUNDLE_ITEM_MIN_QUANTITY = 1;
 	public static final int BUNDLE_ITEM_NUM = 2;
 	public static final int TEST_BUNDLE_ID = 200004;
@@ -80,6 +83,7 @@ public class ProductServiceTest {
 	private final String PRODUCT_NAME = "LIPSTICK";
 	private final String PRODUCT_P_NAME = "LIPSTICK PRODUCT";
 	private final Long CATEGORY_ID = 1l;
+	private final String PRODUCT_PRODUCT_BARCODE = "BBE3343222DDF";
 	private final String PRODUCT_VARIANT_BARCODE = "11124988483838";
 	private final String PRODUCT_VARIANT_NAME = "color";
 	private final String PRODUCT_VARIANT_P_NAME = "lipstick color";
@@ -121,9 +125,7 @@ public class ProductServiceTest {
 		productFeaturesEntity_2.setOrganization(org);
 		productFeaturesEntity_2 = productFeaturesRepository.save(productFeaturesEntity_2);
 
-		PRODUCT_VARIANT_FEATURE_SEPC = PRODUCT_VARIANT_FEATURE_SEPC
-				.replace("FEATURE_ID_1", productFeaturesEntity_1.getId() + "")
-				.replace("FEATURE_ID_2", productFeaturesEntity_2.getId() + "");
+		createDummySpecValues(productFeaturesEntity_1, productFeaturesEntity_2);
 		ProductVariantsEntity productVariantsEntity = new ProductVariantsEntity();
 		productVariantsEntity.setBarcode(PRODUCT_VARIANT_BARCODE);
 		productVariantsEntity.setName(PRODUCT_VARIANT_NAME);
@@ -159,37 +161,124 @@ public class ProductServiceTest {
 		productRepository.delete(productEntity);
 
 	}
+	
+	
+	
 
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
 	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
 	public void getProductWithVariantsWithStock() {
 
+		ProductTestData testData = createProductTestData();
+
+		//-----------------------------------------
+		ResponseEntity<String> response = template.getForEntity(
+				String.format("/navbox/product?product_id=%d&shop_id=%d",testData.productEntity.getId(), testData.shopsEntity.getId()),
+				String.class);
+		//-----------------------------------------
+		System.out.println( "product with stocks >>> " +response.getBody());
+		
+		assertValidResponse(testData, response);
+		
+		//-----------------------------------------
+		cleanInsertedData(testData);
+	}
+
+
+
+
+	private void assertValidResponse(ProductTestData testData, ResponseEntity<String> response) {
+		JSONObject productDetails = new JSONObject(response.getBody());
+		JSONObject variant = productDetails.getJSONArray("variants").getJSONObject(0);
+		JSONArray stocks = variant.getJSONArray("stocks");
+		JSONArray expectedStocks = createExpectedStocks( testData.shopsEntity);
+
+		assertProductDetailsRetrieved(response, productDetails);	
+		assertVariantDetailRetrieved(variant);
+		assertTrue( stocks.similar(expectedStocks));
+	}
+
+
+
+
+	private ProductTestData createProductTestData() {
+		ProductTestData testData = new ProductTestData();
+		
+		OrganizationEntity org = organizationRepository.findOneById(99001L);		
+		
+		testData.productEntity = createDummyProduct();		
+		testData.productFeaturesEntity_1 = createDummyFeature1(org);
+		testData.productFeaturesEntity_2 = createDummyFeature2(org);
+		PRODUCT_VARIANT_FEATURE_SEPC = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);		
+		testData.productVariantsEntity = createDummyVariant(testData.productEntity);
+		testData.shopsEntity = createDummyShop(org);
+		testData.stocksEntity = createDummyStock(testData.productVariantsEntity, org, testData.shopsEntity);
+		return testData;
+	}
+	
+	
+	
+
+	private void assertFeatureArrayRetrieved(JSONObject body) {
+		JSONArray features = body.getJSONArray("variant_features");		
+		JSONArray expectedFeatures = createExpectedFeaturesJson();		
+		assertTrue( features.similar(expectedFeatures));
+	}
+	
+	
+	
+
+	private ProductEntity createDummyProduct() {
 		ProductEntity productEntity = new ProductEntity();
 		productEntity.setName(PRODUCT_NAME);
 		productEntity.setPname(PRODUCT_P_NAME);
 		productEntity.setCategoryId(CATEGORY_ID);		
 		productEntity.setOrganizationId(99001L);
+		productEntity.setDescription(PRODUCT_DESC);
+		productEntity.setBarcode(PRODUCT_PRODUCT_BARCODE);
 		productEntity = productRepository.save(productEntity);
+		return productEntity;
+	}
+	
+	
+	
 
-		OrganizationEntity org = organizationRepository.findOneById(99001L);
-		
+	private ProductFeaturesEntity createDummyFeature1(OrganizationEntity org) {
 		ProductFeaturesEntity productFeaturesEntity_1 = new ProductFeaturesEntity();
 		productFeaturesEntity_1.setName(PRODUCT_FEATURE_1_NAME);
 		productFeaturesEntity_1.setPname(PRODUCT_FEATURE_1_P_NAME);
 		productFeaturesEntity_1.setOrganization(org);
 		productFeaturesEntity_1 = productFeaturesRepository.save(productFeaturesEntity_1);
+		return productFeaturesEntity_1;
+	}
+	
+	
+	
 
+	private ProductFeaturesEntity createDummyFeature2(OrganizationEntity org) {
 		ProductFeaturesEntity productFeaturesEntity_2 = new ProductFeaturesEntity();
 		productFeaturesEntity_2.setName(PRODUCT_FEATURE_2_NAME);
 		productFeaturesEntity_2.setPname(PRODUCT_FEATURE_2_P_NAME);
 		productFeaturesEntity_2.setOrganization(org);
 		productFeaturesEntity_2 = productFeaturesRepository.save(productFeaturesEntity_2);
+		return productFeaturesEntity_2;
+	}
+	
+	
+	
 
-		PRODUCT_VARIANT_FEATURE_SEPC = PRODUCT_VARIANT_FEATURE_SEPC
+	private String createDummySpecValues(ProductFeaturesEntity productFeaturesEntity_1,
+			ProductFeaturesEntity productFeaturesEntity_2) {
+		return PRODUCT_VARIANT_FEATURE_SEPC
 				.replace("FEATURE_ID_1", productFeaturesEntity_1.getId() + "")
 				.replace("FEATURE_ID_2", productFeaturesEntity_2.getId() + "");
-		
+	}
+	
+	
+	
+
+	private ProductVariantsEntity createDummyVariant(ProductEntity productEntity) {
 		ProductVariantsEntity productVariantsEntity = new ProductVariantsEntity();
 		productVariantsEntity.setBarcode(PRODUCT_VARIANT_BARCODE);
 		productVariantsEntity.setName(PRODUCT_VARIANT_NAME);
@@ -197,16 +286,27 @@ public class ProductServiceTest {
 		productVariantsEntity.setPname(PRODUCT_VARIANT_P_NAME);
 		productVariantsEntity.setProductEntity(productEntity);
 		productVariantsEntity = productVariantsRepository.save(productVariantsEntity);
+		return productVariantsEntity;
+	}
+	
+	
+	
 
-		OrganizationEntity organizationEntity = organizationRepository.findOneById(99001L);
-
+	private ShopsEntity createDummyShop(OrganizationEntity organizationEntity) {
 		ShopsEntity shopsEntity = new ShopsEntity();
 		shopsEntity.setName("Fortune");
 		shopsEntity.setCreatedAt(new Date());
 		shopsEntity.setUpdatedAt(new Date());
 		shopsEntity.setOrganizationEntity(organizationEntity);
 		shopsEntity = shopsRepository.save(shopsEntity);
+		return shopsEntity;
+	}
+	
+	
+	
 
+	private StocksEntity createDummyStock(ProductVariantsEntity productVariantsEntity,
+			OrganizationEntity organizationEntity, ShopsEntity shopsEntity) {
 		StocksEntity stocksEntity = new StocksEntity();
 		stocksEntity.setDiscount(new BigDecimal(0));
 		stocksEntity.setPrice(new BigDecimal(PRODUCT_PRICE));
@@ -215,42 +315,81 @@ public class ProductServiceTest {
 		stocksEntity.setOrganizationEntity(organizationEntity);
 		stocksEntity.setShopsEntity(shopsEntity);
 		stocksEntity = stockRepository.save(stocksEntity);
+		return stocksEntity;
+	}
+	
+	
+	
 
-		ResponseEntity<String> response = template.getForEntity(
-				"/navbox/product?product_id=" + productEntity.getId() + "&shop_id=" + shopsEntity.getId(),
-				String.class);
+	private void cleanInsertedData(ProductTestData testData) {
+		stockRepository.delete( testData.stocksEntity );
+		shopsRepository.delete( testData.shopsEntity );
+		productVariantsRepository.delete( testData.productVariantsEntity );
+		
+		productFeaturesRepository.delete( testData.productFeaturesEntity_1 );
+		productFeaturesRepository.delete( testData.productFeaturesEntity_2 );
+		productRepository.delete( testData.productEntity );
+	}
+	
+	
+	
 
-		System.out.println( "product with stocks >>> " +response.getBody());
+	private void assertVariantDetailRetrieved(JSONObject variant) {
+		assertEquals(PRODUCT_FEATURE_1_VALUE, variant.getString(PRODUCT_FEATURE_1_NAME));
+		assertEquals(PRODUCT_FEATURE_2_VALUE, variant.getString(PRODUCT_FEATURE_2_NAME));
+		assertEquals(PRODUCT_VARIANT_BARCODE, variant.getString("barcode"));
+	}
+	
+	
+	
 
+	private void assertProductDetailsRetrieved(ResponseEntity<String> response, JSONObject product) {
 		Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
-		assertTrue(response.getBody().toString().contains("\"name\":\"" + PRODUCT_NAME + "\""));
-		assertTrue(response.getBody().toString().contains("\"p_name\":\"" + PRODUCT_P_NAME + "\""));
-		assertTrue(response.getBody().toString().contains("\"category_id\":" + CATEGORY_ID ));
-		assertTrue(response.getBody().toString().contains("\"barcode\":\"" + PRODUCT_VARIANT_BARCODE + "\""));
-		assertTrue(response.getBody().toString().contains("\"variant_features\""));
-		assertTrue(response.getBody().toString().contains("\"variants\":"));
-		assertTrue(response.getBody().toString().contains("\"name\":\"" + PRODUCT_FEATURE_1_NAME + "\""));
-		assertTrue(response.getBody().toString().contains("\"label\":\"" + PRODUCT_FEATURE_1_P_NAME + "\""));
-		assertTrue(response.getBody().toString().contains("\"name\":\"" + PRODUCT_FEATURE_2_NAME + "\""));
-		assertTrue(response.getBody().toString().contains("\"label\":\"" + PRODUCT_FEATURE_2_P_NAME + "\""));
-		assertTrue(
-				response.getBody().toString().contains("\"" + PRODUCT_FEATURE_1_NAME + "\":\"" + PRODUCT_FEATURE_1_VALUE + "\""));
-		assertTrue(
-				response.getBody().toString().contains("\"" + PRODUCT_FEATURE_2_NAME + "\":\"" + PRODUCT_FEATURE_2_VALUE + "\""));
-		assertTrue(response.getBody().toString().contains("\"barcode\":\"" + PRODUCT_VARIANT_BARCODE + "\""));
-		assertTrue(response.getBody().toString().contains("\"shop_id\":" + shopsEntity.getId() ));
-		assertTrue(response.getBody().toString().contains("\"quantity\":" + QUANTITY ));
-		assertTrue(response.getBody().toString().contains("\"price\":" + PRODUCT_PRICE ));
-		assertTrue(response.getBody().toString().contains("\"discount\":" + 0 ));
+		
+		assertEquals(PRODUCT_NAME, product.getString("name"));
+		assertEquals(PRODUCT_P_NAME, product.getString("p_name"));
+		assertEquals(CATEGORY_ID.longValue(), product.getLong("category_id"));
+		assertEquals(PRODUCT_PRODUCT_BARCODE, product.getString("barcode"));		
+		assertEquals(PRODUCT_DESC, product.getString("description"));
+		assertEquals(ProductTypes.DEFAULT, product.getInt("product_type"));
+		assertTrue(product.has("variant_features"));
+		assertTrue(product.has("variants"));
+		assertFeatureArrayRetrieved(product);
+	}
+	
+	
+	
 
+	private JSONArray createExpectedStocks(ShopsEntity shopsEntity) {
+		JSONArray expectedStocks = new JSONArray();
 		
-		stockRepository.delete(stocksEntity);
-		shopsRepository.delete(shopsEntity);
-		productVariantsRepository.delete(productVariantsEntity);
+		//please note the Types of expected, so it matches the types of retrieved json fields
+		//ex: if discount is integer here and double in the response JSONObject, it won't match
+		JSONObject expectedStock1 = new JSONObject();
+		expectedStock1.put("shop_id", shopsEntity.getId().intValue());
+		expectedStock1.put("quantity", QUANTITY);
+		expectedStock1.put("price", PRODUCT_PRICE);
+		expectedStock1.put("discount", 0.0);
 		
-		productFeaturesRepository.delete(productFeaturesEntity_1);
-		productFeaturesRepository.delete(productFeaturesEntity_2);
-		productRepository.delete(productEntity);
+		expectedStocks.put(expectedStock1);
+		return expectedStocks;
+	}
+	
+	
+	
+	
+
+	private JSONArray createExpectedFeaturesJson() {
+		JSONObject expectedFeature1 = new JSONObject();
+		expectedFeature1.put("name", PRODUCT_FEATURE_1_NAME);
+		expectedFeature1.put("label", PRODUCT_FEATURE_1_P_NAME);
+		
+		JSONObject expectedFeature2 = new JSONObject();
+		expectedFeature2.put("name", PRODUCT_FEATURE_2_NAME);
+		expectedFeature2.put("label", PRODUCT_FEATURE_2_P_NAME);
+		
+		JSONArray expectedFeatures = new JSONArray( Arrays.asList(expectedFeature1, expectedFeature2) );
+		return expectedFeatures;
 	}
 	
 	
@@ -405,4 +544,15 @@ public class ProductServiceTest {
 		System.out.println(response.getBody());
 		Assert.assertTrue(response.getBody().contains("barcode\":\"123456789"));
 	}
+}
+
+
+
+class ProductTestData{
+	ProductEntity productEntity;		
+	ProductFeaturesEntity productFeaturesEntity_1;
+	ProductFeaturesEntity productFeaturesEntity_2;
+	ProductVariantsEntity productVariantsEntity;
+	ShopsEntity shopsEntity ;
+	StocksEntity stocksEntity;
 }
