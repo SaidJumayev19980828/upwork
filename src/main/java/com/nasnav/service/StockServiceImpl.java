@@ -3,6 +3,7 @@ package com.nasnav.service;
 import static com.nasnav.persistence.EntityUtils.anyIsNull;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -152,8 +153,13 @@ public class StockServiceImpl implements StockService {
 
 	@Override
 	public List<StocksEntity> getVariantStockForShop(ProductVariantsEntity variant, Long shopId) throws BusinessException {
-
-        List<StocksEntity> stocks  = stockRepo.findByShopsEntity_IdAndProductVariantsEntity_Id(shopId, variant.getId());
+		List<StocksEntity> stocks  = new ArrayList<>();
+		if(shopId != null) {
+			stocks  = stockRepo.findByShopsEntity_IdAndProductVariantsEntity_Id(shopId, variant.getId());
+		}else {
+			stocks  = stockRepo.findByProductVariantsEntity_Id(variant.getId());
+		}
+        
 
         if(stocks == null || stocks.isEmpty())
         	throw new BusinessException(

@@ -45,4 +45,8 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 
 
 	Optional<StocksEntity> findByProductVariantsEntity_IdAndShopsEntity_Id(Long variantId, Long shopId);
+
+
+
+	List<StocksEntity> findByProductVariantsEntity_Id(Long id);
 }

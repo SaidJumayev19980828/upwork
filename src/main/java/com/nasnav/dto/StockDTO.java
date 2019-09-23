@@ -29,4 +29,9 @@ public class StockDTO extends BaseRepresentationObject {
         this.price = entity.getPrice();
         this.discount = entity.getDiscount();
     }
+
+
+	public StockDTO(StocksEntity stock) {
+		this(stock, stock.getShopsEntity().getId());
+	}
 }

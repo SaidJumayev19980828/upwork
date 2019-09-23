@@ -26,7 +26,10 @@ public interface StockService {
     Long getStockItemsQuantitySum(List<StocksEntity> stocks);
 
     
-    
+    /**
+     * @return a list of stocks for the product variant that belongs to the given shop.
+     * if no shop is provided, return stocks of all shops
+     * */
 	List<StocksEntity> getVariantStockForShop(ProductVariantsEntity variant, Long shopId) throws BusinessException;
 	
 	

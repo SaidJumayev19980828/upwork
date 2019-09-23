@@ -220,6 +220,7 @@ public class ProductService {
 	}
     
     
+    
 
 	private Map<String,String> getVariantFeaturesValues(ProductVariantsEntity variant) {
 		if(variant == null || !hasFeatures(variant))
@@ -231,9 +232,12 @@ public class ProductService {
 				.stream()
 				.map(this::getVariantFeatureMapEntry)
 				.filter(entry -> entry != null)
-				.collect(Collectors.toMap(Map.Entry::getKey , Map.Entry::getValue))
-				;
+				.collect(Collectors.toMap(Map.Entry::getKey , Map.Entry::getValue));
 	}
+	
+	
+	
+	
 
 	private Map.Entry<String,String> getVariantFeatureMapEntry(Map.Entry<String,Object> entry) {
 		if(entry == null || entry.getKey() == null)
@@ -249,6 +253,9 @@ public class ProductService {
 				, entry.getValue().toString());
 
 	}
+	
+	
+	
 
 
 	private List<VariantFeatureDTO> getVariantFeatures(List<ProductVariantsEntity> productVariants) {
@@ -324,36 +331,15 @@ public class ProductService {
 	
 
 	private List<StockDTO> getStockList(ProductVariantsEntity variant,Long shopId) throws BusinessException {
-		List<StockDTO> stocksArray = null;
-
-		if (shopId == null) {
-			return stocksArray;
-		}
 
 		List<StocksEntity> stocks = stockService.getVariantStockForShop(variant, shopId);
-
-		if (stocks != null && !stocks.isEmpty()) {
-			stocksArray = stocks.stream()
+		
+		return	stocks.stream()
 					.filter(stock -> stock != null)
-					.map(stock -> new StockDTO(stock,shopId))
+					.map(StockDTO::new)
 					.collect(Collectors.toList());
-		}
-
-		return stocksArray;
 	}
-
-
-
-
-	private List<StocksEntity> getProductStockForShop(Long productId, Long shopId) throws BusinessException {
-
-		return stockService.getProductStockForShop(productId, shopId);
-
-	}
-
-
-
-
+	
 
 
 
