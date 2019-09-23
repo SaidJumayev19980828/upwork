@@ -178,10 +178,17 @@ public class ProductService {
 		}
 
 		ProductDetailsDTO productDTO = new ProductDetailsDTO(product);
+		List<ProductImgDTO> imgs = getProductImages(productId);
+		String coverImgUrl = Optional.ofNullable(imgs)
+									 .filter(allImgs -> !allImgs.isEmpty())
+									 .map(allImgs -> allImgs.get(0))
+									 .map(highestPrioityImg -> highestPrioityImg.getUrl())
+									 .orElse(null);
 		productDTO.setVariants(variantsDTOList);
 		productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
 		productDTO.setBundleItems( getBundleItems(product));
-		productDTO.setImages( getProductImages(productId) );
+		productDTO.setImages( imgs );
+		productDTO.setImageUrl( coverImgUrl);
 
 		return productDTO;
 	}
@@ -301,7 +308,7 @@ public class ProductService {
 
 	private List<ProductImgDTO> getProductImages(Long productId) {
 
-		List<ProductImagesEntity> productImages = productImagesRepository.findByProductEntity_Id(productId);
+		List<ProductImagesEntity> productImages = productImagesRepository.findByProductEntity_IdOrderByPriority(productId);
 
 		if (productImages != null && !productImages.isEmpty()) {
 			return productImages.stream()

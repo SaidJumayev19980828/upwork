@@ -16,4 +16,6 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 	Optional<ProductImagesEntity> findByUri(String uri);
 
 	void deleteByProductEntity_Id(Long productId);
+
+	List<ProductImagesEntity> findByProductEntity_IdOrderByPriority(Long productId);
 }

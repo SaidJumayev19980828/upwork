@@ -654,4 +654,9 @@ class ProductTestData{
 		shopEntities = new ArrayList<>();
 		stocksEntities = new ArrayList<>();
 	}
+	
+	
+	//TODO case: GET /navbox/product : provide a shop that the product has no stocks in
+	//TODO case: GET /navbox/product : provide non-existing shop
+	//TODO case: GET /navbox/product : get product with images , check the returned "imgs" array and "image_url" in response
 }
