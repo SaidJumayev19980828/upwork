@@ -51,6 +51,7 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 public class ProductServiceTest {
 
+	private static final String PRODUCT_IMG_URL = "my_cool_img.jpg";
 	private static final String PRODUCT_DESC = "Some description";
 	public static final int BUNDLE_ITEM_MIN_QUANTITY = 1;
 	public static final int BUNDLE_ITEM_NUM = 2;
@@ -196,17 +197,17 @@ public class ProductServiceTest {
 	private void assertValidResponseWithSingleStockReturned(ProductTestData testData, ResponseEntity<String> response, Long shopId) {
 		JSONObject productDetails = new JSONObject(response.getBody());
 		JSONObject variant = productDetails.getJSONArray("variants").getJSONObject(0);
-		List<ShopsEntity> expectedShops = testData.shopEntities
+		List<StocksEntity> expectedStocks = testData.stocksEntities
 										.stream()
-										.filter(shop -> Objects.equals(shop.getId(), shopId))
+										.filter(stock -> Objects.equals(stock.getShopsEntity().getId(), shopId))
 										.collect(Collectors.toList());
-		JSONArray expectedStocks = createExpectedStocks(expectedShops);
+		JSONArray expectedStocksJSON = createExpectedStocks(expectedStocks);
 		JSONArray stocks = variant.getJSONArray("stocks");
 		
 
 		assertProductDetailsRetrieved(response, productDetails);	
 		assertVariantDetailRetrieved(variant);
-		assertTrue( stocks.similar(expectedStocks));
+		assertTrue( stocks.similar(expectedStocksJSON));
 	}
 	
 	
@@ -217,7 +218,7 @@ public class ProductServiceTest {
 	private void assertValidResponse(ProductTestData testData, ResponseEntity<String> response) {
 		JSONObject productDetails = new JSONObject(response.getBody());
 		JSONObject variant = productDetails.getJSONArray("variants").getJSONObject(0);
-		JSONArray expectedStocks = createExpectedStocks( testData.shopEntities);
+		JSONArray expectedStocks = createExpectedStocks( testData.stocksEntities);
 		JSONArray stocks = variant.getJSONArray("stocks");
 		
 
@@ -301,6 +302,7 @@ public class ProductServiceTest {
 		productEntity.setOrganizationId(99001L);
 		productEntity.setDescription(PRODUCT_DESC);
 		productEntity.setBarcode(PRODUCT_PRODUCT_BARCODE);
+		productEntity.setCoverImage(PRODUCT_IMG_URL);
 		productEntity = productRepository.save(productEntity);
 		return productEntity;
 	}
@@ -435,6 +437,7 @@ public class ProductServiceTest {
 		assertEquals(PRODUCT_PRODUCT_BARCODE, product.getString("barcode"));		
 		assertEquals(PRODUCT_DESC, product.getString("description"));
 		assertEquals(ProductTypes.DEFAULT, product.getInt("product_type"));
+		assertEquals(PRODUCT_IMG_URL, product.getString("image_url"));
 		assertTrue(product.has("variant_features"));
 		assertTrue(product.has("variants"));
 		assertFeatureArrayRetrieved(product);
@@ -442,28 +445,27 @@ public class ProductServiceTest {
 	
 	
 	
-
-	private JSONArray createExpectedStocks(List<ShopsEntity> shopEntities) {
-		JSONArray expectedStocks = new JSONArray();
+	private JSONArray createExpectedStocks(List<StocksEntity> expectedStocks) {
+		JSONArray expectedStocksJson = new JSONArray();
 		
-		shopEntities.stream()
+		expectedStocks.stream()
 					.map(this::createStockJSONObj)
-					.forEach(expectedStocks::put);
+					.forEach(expectedStocksJson::put);
 		
-		return expectedStocks;
+		return expectedStocksJson;
 	}
 	
 	
 	
-	
-	private JSONObject createStockJSONObj(ShopsEntity shop) {
+	private JSONObject createStockJSONObj(StocksEntity stock) {
 		//please note the Types of expected, so it matches the types of retrieved json fields
 		//ex: if discount is integer here and double in the response JSONObject, it won't match
 		JSONObject stockJson = new JSONObject();
-		stockJson.put("shop_id", shop.getId().intValue());
-		stockJson.put("quantity", QUANTITY);
-		stockJson.put("price", PRODUCT_PRICE);
-		stockJson.put("discount", 0.0);
+		stockJson.put("id", stock.getId().intValue());
+		stockJson.put("shop_id", stock.getShopsEntity().getId().intValue());
+		stockJson.put("quantity", stock.getQuantity());
+		stockJson.put("price", stock.getPrice().doubleValue());
+		stockJson.put("discount", stock.getDiscount().doubleValue());
 		
 		return stockJson;
 	}

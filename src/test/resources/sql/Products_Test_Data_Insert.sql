@@ -38,14 +38,14 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at
 
 
 --inserting products
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, barcode) VALUES (1002, 'product_2',101, 201, 99002, now(), now(),'123456789');
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1003, 'product_3',101, 202, 99001, now(), now());
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1004, 'product_4',102, 201, 99001, now(), now());
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1005, 'product_5',102, 202, 99001, now(), now());
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1006, 'product_6',102, 201, 99002, now(), now());
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1007, 'product_7',101, 202, 99002, now(), now());
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1008, 'product_8',102, 202, 99002, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, cover_image) VALUES (1001, 'product_1',101, 201, 99001, now(), now(), 'my_cool_img.jpg');
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, barcode, cover_image) VALUES (1002, 'product_2',101, 201, 99002, now(), now(),'123456789', 'my_cool_img.jpg');
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, cover_image) VALUES (1003, 'product_3',101, 202, 99001, now(), now(), 'my_cool_img.jpg');
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, cover_image) VALUES (1004, 'product_4',102, 201, 99001, now(), now(), 'my_cool_img.jpg');
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, cover_image) VALUES (1005, 'product_5',102, 202, 99001, now(), now(), 'my_cool_img.jpg');
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, cover_image) VALUES (1006, 'product_6',102, 201, 99002, now(), now(), 'my_cool_img.jpg');
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, cover_image) VALUES (1007, 'product_7',101, 202, 99002, now(), now(), 'my_cool_img.jpg');
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, cover_image) VALUES (1008, 'product_8',102, 202, 99002, now(), now(), 'my_cool_img.jpg');
 
 
 

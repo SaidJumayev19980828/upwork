@@ -17,6 +17,7 @@ import org.springframework.beans.BeanUtils;
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class StockDTO extends BaseRepresentationObject {
+	private Long id;
 	private Long shopId;
     private Integer quantity;
     private BigDecimal price;
@@ -24,6 +25,7 @@ public class StockDTO extends BaseRepresentationObject {
 
 
     public StockDTO(StocksEntity entity, Long shopId){
+    	this.id = entity.getId();
         this.shopId = shopId;
         this.quantity = entity.getQuantity();
         this.price = entity.getPrice();

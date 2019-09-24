@@ -178,17 +178,10 @@ public class ProductService {
 		}
 
 		ProductDetailsDTO productDTO = new ProductDetailsDTO(product);
-		List<ProductImgDTO> imgs = getProductImages(productId);
-		String coverImgUrl = Optional.ofNullable(imgs)
-									 .filter(allImgs -> !allImgs.isEmpty())
-									 .map(allImgs -> allImgs.get(0))
-									 .map(highestPrioityImg -> highestPrioityImg.getUrl())
-									 .orElse(null);
 		productDTO.setVariants(variantsDTOList);
 		productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
 		productDTO.setBundleItems( getBundleItems(product));
-		productDTO.setImages( imgs );
-		productDTO.setImageUrl( coverImgUrl);
+		productDTO.setImages( getProductImages(productId) );
 
 		return productDTO;
 	}
@@ -695,23 +688,9 @@ public class ProductService {
 
 			List<ProductRepresentationObject> productsRep = products.stream()
 																	.map(ProductEntity::getRepresentation)
-																	.map(ProductRepresentationObject.class::cast)
 																	.collect(Collectors.toList());
-			productsRep.forEach(pRep -> {
-
-				Optional<StocksEntity> optionalStock = stocks.stream()															
-															.filter(stock -> stock != null)
-															.filter(stock -> Objects.equal( getStockProductId(stock),  pRep.getId()))
-															.findFirst();
-
-				if (optionalStock != null && optionalStock.isPresent()) {
-					pRep.setAvailable(true);
-					pRep.setPrice(optionalStock.get().getPrice());
-				} else {
-					pRep.setAvailable(false);
-				}
-
-			});
+			
+			productsRep.forEach(pRep -> setProductAvailabilityAndPrice(stocks, pRep));
 
 			if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE) {
 
@@ -756,6 +735,23 @@ public class ProductService {
 		}
 
 		return productsResponse;
+	}
+
+
+
+
+	private void setProductAvailabilityAndPrice(List<StocksEntity> stocks, ProductRepresentationObject productRep) {
+		Optional<StocksEntity> optionalStock = stocks.stream()															
+													.filter(stock -> stock != null)
+													.filter(stock -> Objects.equal( getStockProductId(stock),  productRep.getId()))
+													.findFirst();
+
+		if (optionalStock != null && optionalStock.isPresent()) {
+			productRep.setAvailable(true);
+			productRep.setPrice(optionalStock.get().getPrice());
+		} else {
+			productRep.setAvailable(false);
+		}
 	}
 	
 	
