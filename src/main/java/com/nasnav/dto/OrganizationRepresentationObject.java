@@ -34,6 +34,10 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     @JsonProperty("name")
     private String name;
 
+    @ApiModelProperty(value = "URL-friendly Name of the organization")
+    @JsonProperty("p_name")
+    private String pname;
+
     @ApiModelProperty(value = "Description")
     @JsonProperty("description")
     private String description;

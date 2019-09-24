@@ -80,6 +80,7 @@ public class OrganizationEntity extends AbstractPersistable<Long> implements Bas
         organizationRepresentationObject.setId(getId());
         organizationRepresentationObject.setDescription(getDescription());
         organizationRepresentationObject.setName(getName());
+        organizationRepresentationObject.setPname(getPname());
         organizationRepresentationObject.setType(getType()!=null?getType().name():null);
         return organizationRepresentationObject;
     }

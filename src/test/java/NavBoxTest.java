@@ -176,6 +176,14 @@ public class NavBoxTest {
         RemoveExtraAttributesTestData();
     }
 
+    @Test
+    public void testGetOrgByName() {
+        RemoveExtraAttributesTestData();
+        prepareExtraAttributesTestData();
+        testOrganizationsGetByName();
+        RemoveExtraAttributesTestData();
+    }
+
     private void prepareExtraAttributesTestData(){
         try (Connection con = datasource.getConnection()) {
             ScriptUtils.executeSqlScript(con, this.extraAttributesDataInsert);
@@ -214,19 +222,12 @@ public class NavBoxTest {
         assertNull("there are no attributes with organization = 403",response.getBody());
     }
 
-/*
-    @Test
-    public void testOrganizations() {
-        OrganizationEntity org = new OrganizationEntity();
-        org.setName("TestOrg");
-        org.setPName("torg");
+    public void testOrganizationsGetByName() {
+        ResponseEntity<String> response = template.getForEntity("/navbox/organization?p_name=org-number-two", String.class);
+        Assert.assertTrue(response.getStatusCodeValue() == 200);
 
-
-
-        Assert.assertTrue(response.getBody().getMessages().contains(ResponseStatus.INVALID_EMAIL.name()));
-        Assert.assertFalse(response.getBody().isSuccess());
+        response = template.getForEntity("/navbox/organization?p_name=2", String.class);
+        Assert.assertTrue(response.getStatusCodeValue() == 200);
     }
-*/
-
 
 }

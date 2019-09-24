@@ -255,11 +255,12 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 		 */
-
+		if (newStatus == OrderStatus.CLIENT_CONFIRMED) {
+			orderEntity.setCreationDate(new Date());
+		}
 		orderEntity.setStatus(newStatus.getValue());
 		orderEntity.setUpdateDate(new Date());
 		orderEntity = ordersRepository.save(orderEntity);
-
 		return new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
 	}
 
@@ -381,7 +382,9 @@ public class OrderServiceImpl implements OrderService {
 		obj.setTotal(obj.getShipping().add(obj.getSubtotal()));
 		obj.setStatus(OrderStatus.findEnum(entity.getStatus()).name());
 		//TODO set shipping address, shipping price
-        obj.setShippingAddress(entity.getAddress());
+		ShippingAddress address = new ShippingAddress();
+		address.setDetails(entity.getAddress());
+        obj.setShippingAddress(address);
 		if (getItems)
 			obj.setItems(itemsList);
 		return obj;
