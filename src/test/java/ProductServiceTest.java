@@ -114,7 +114,7 @@ public class ProductServiceTest {
 		//-----------------------------------------
 		System.out.println("product without stocks >>> " + response.getBody());		
 		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertValidResponseWithoutStocks(testData, response);
 		
 		//-----------------------------------------
 		cleanInsertedData(testData);
@@ -227,6 +227,17 @@ public class ProductServiceTest {
 		assertTrue( stocks.similar(expectedStocks));
 	}
 	
+	
+	
+	
+	
+	private void assertValidResponseWithoutStocks(ProductTestData testData, ResponseEntity<String> response) {
+		JSONObject productDetails = new JSONObject(response.getBody());
+		JSONArray variantList = productDetails.getJSONArray("variants");
+
+		assertProductDetailsRetrieved(response, productDetails);	
+		assertTrue("variants that have no returned stocks are not returned", variantList.isEmpty());
+	}
 	
 	
 

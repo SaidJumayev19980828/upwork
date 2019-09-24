@@ -203,20 +203,23 @@ public class ProductService {
 
     private List<VariantDTO> getVariantsList(List<ProductVariantsEntity> productVariants, Long productId, Long shopId) throws BusinessException{
 
-		List<VariantDTO> variantDTOList = new ArrayList<>();
+		return productVariants.stream()
+							.map(variant -> createVariantDto(shopId, variant))
+							.filter( variant -> !variant.getStocks().isEmpty())
+							.collect(Collectors.toList());
+	}
 
-		for(ProductVariantsEntity variant: productVariants) {			
-			VariantDTO variantObj = new VariantDTO();
-			variantObj.setId(variant.getId());
-			variantObj.setBarcode( variant.getBarcode() );
-			variantObj.setStocks( getStockList(variant, shopId) );
-			variantObj.setVariantFeatures( getVariantFeaturesValues(variant) );
-			variantObj.setImages( getProductVariantImages(variant.getId()) );
 
-			variantDTOList.add(variantObj);
-		}		
 
-		return variantDTOList;
+
+	private VariantDTO createVariantDto(Long shopId, ProductVariantsEntity variant)  {
+		VariantDTO variantObj = new VariantDTO();
+		variantObj.setId(variant.getId());
+		variantObj.setBarcode( variant.getBarcode() );
+		variantObj.setStocks( getStockList(variant, shopId) );
+		variantObj.setVariantFeatures( getVariantFeaturesValues(variant) );
+		variantObj.setImages( getProductVariantImages(variant.getId()) );
+		return variantObj;
 	}
     
     
@@ -330,7 +333,7 @@ public class ProductService {
 	
 	
 
-	private List<StockDTO> getStockList(ProductVariantsEntity variant,Long shopId) throws BusinessException {
+	private List<StockDTO> getStockList(ProductVariantsEntity variant,Long shopId)  {
 
 		List<StocksEntity> stocks = stockService.getVariantStockForShop(variant, shopId);
 		

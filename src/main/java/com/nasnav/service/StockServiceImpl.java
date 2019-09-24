@@ -152,7 +152,7 @@ public class StockServiceImpl implements StockService {
     
 
 	@Override
-	public List<StocksEntity> getVariantStockForShop(ProductVariantsEntity variant, Long shopId) throws BusinessException {
+	public List<StocksEntity> getVariantStockForShop(ProductVariantsEntity variant, Long shopId) {
 		List<StocksEntity> stocks  = new ArrayList<>();
 		if(shopId != null) {
 			stocks  = stockRepo.findByShopsEntity_IdAndProductVariantsEntity_Id(shopId, variant.getId());
@@ -160,12 +160,9 @@ public class StockServiceImpl implements StockService {
 			stocks  = stockRepo.findByProductVariantsEntity_Id(variant.getId());
 		}
         
-
-        if(stocks == null || stocks.isEmpty())
-        	throw new BusinessException(
-            		String.format("Product Variant with id [%d] has no stocks!", variant.getId())
-            		, "INVALID PARAM:product_id"
-            		, HttpStatus.NOT_ACCEPTABLE);
+		
+        if(stocks == null )
+        	stocks  = new ArrayList<>();
 
         stocks.stream().forEach(this::updateStockQuantity);
 
