@@ -43,8 +43,7 @@ public class DetailedOrderRepObject extends BaseRepresentationObject{
     private String status;
 
     @JsonProperty("shipping_address")
-    private String shippingAddress;
-    //private Address shippingAddress;
+    private ShippingAddress shippingAddress;
 
     @JsonProperty("items")
     private List<BasketItem> items;

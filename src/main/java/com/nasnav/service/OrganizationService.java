@@ -81,8 +81,11 @@ public class OrganizationService {
 
    public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
 
-        OrganizationEntity organizationEntity = organizationRepository.findOneByNameContainingIgnoreCase(organizationName);
-
+        OrganizationEntity organizationEntity = organizationRepository.findByPname(organizationName);
+        //Determine if search by name or not
+        if (organizationEntity == null) {
+            organizationEntity = organizationRepository.findOneByNameContainingIgnoreCase(organizationName);
+        }
         if (organizationEntity == null)
             throw new BusinessException("Organization not found", null, HttpStatus.NOT_FOUND);
 
