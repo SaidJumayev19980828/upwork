@@ -12,7 +12,7 @@ public interface OrganizationRepository extends JpaRepository<OrganizationEntity
 
     OrganizationEntity findOneByName(String name);
 
-    OrganizationEntity findOneByNameContainingIgnoreCase(String name);
+    OrganizationEntity findOneByNameIgnoreCase(String name);
 
     OrganizationEntity findOneById(Long id);
 
