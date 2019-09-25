@@ -226,8 +226,17 @@ public class NavBoxTest {
         ResponseEntity<String> response = template.getForEntity("/navbox/organization?p_name=org-number-two", String.class);
         Assert.assertTrue(response.getStatusCodeValue() == 200);
 
-        response = template.getForEntity("/navbox/organization?p_name=2", String.class);
+        response = template.getForEntity("/navbox/organization?p_name=organization_2", String.class);
         Assert.assertTrue(response.getStatusCodeValue() == 200);
+
+        response = template.getForEntity("/navbox/organization?p_name=organization 2", String.class);
+        Assert.assertTrue(response.getStatusCodeValue() == 404);
+
+        response = template.getForEntity("/navbox/organization?p_name=number-two", String.class);
+        Assert.assertTrue(response.getStatusCodeValue() == 404);
+
+        response = template.getForEntity("/navbox/organization?p_name=2", String.class);
+        Assert.assertTrue(response.getStatusCodeValue() == 404);
     }
 
 }
