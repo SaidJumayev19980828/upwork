@@ -386,7 +386,7 @@ public class ProductService {
 			}
 
 			if (searchName != null) {
-				products = products.stream().filter(product -> product.getName().contains(searchName)).collect(Collectors.toList());
+				products = products.stream().filter(product -> product.getName().toLowerCase().contains(searchName.toLowerCase())).collect(Collectors.toList());
 			}
 		}
 		return getProductsResponse(products, order, sort, start, count);
@@ -418,7 +418,7 @@ public class ProductService {
 		}
 
 		if (searchName != null) {
-			products = products.stream().filter(product -> product.getName().contains(searchName)).collect(Collectors.toList());
+			products = products.stream().filter(product -> product.getName().toLowerCase().contains(searchName.toLowerCase())).collect(Collectors.toList());
 		}
 
 		return getProductsResponse(products, order, sort, start, count);
