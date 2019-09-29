@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -46,6 +47,7 @@ import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.CategoriesRepository;
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.CsvHeaderNamesDTO;
@@ -56,11 +58,13 @@ import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.response.ProductListImportResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.VariantUpdateResponse;
+import com.nasnav.service.helpers.ProductCsvRowProcessor;
 import com.univocity.parsers.common.DataProcessingException;
 import com.univocity.parsers.common.ParsingContext;
 import com.univocity.parsers.common.RowProcessorErrorHandler;
@@ -103,6 +107,9 @@ public class DataImportServiceImpl implements DataImportService{
 	@Autowired
 	private StockService stockService;
 	
+	
+	@Autowired
+	private ProductFeaturesRepository featureRepo;
 	
 	
 	private Logger logger = Logger.getLogger(getClass());
@@ -223,7 +230,7 @@ public class DataImportServiceImpl implements DataImportService{
 	private List<ProductCsvImportDTO> toProductImportDto(List<ProductImportCsvRowData> rows, ProductListImportDTO importMetaData) throws BusinessException{
 		List<ProductCsvImportDTO> dtoList = new ArrayList<>();
 		for(ProductImportCsvRowData row: rows) {
-			dtoList.add(toProductImportDto(row, importMetaData));
+			dtoList.add( toProductImportDto(row, importMetaData) );
 		}
 		
 		return dtoList;
@@ -292,6 +299,11 @@ public class DataImportServiceImpl implements DataImportService{
 
 
 	private VariantUpdateDTO createVariantDto(ProductImportCsvRowData row) {
+		String features = Optional.ofNullable(row.getFeatures())
+								.map(JSONObject::new)
+								.map(JSONObject::toString)
+								.orElse(null);
+		
 		VariantUpdateDTO variant = new VariantUpdateDTO();
 		variant.setBarcode( row.getBarcode() );		
 		variant.setFeatures("{}");
@@ -299,6 +311,10 @@ public class DataImportServiceImpl implements DataImportService{
 		variant.setName(row.getName() );
 		variant.setOperation( Operation.CREATE );
 		variant.setPname(row.getPname());
+		if(features != null) {
+			variant.setFeatures( features);
+		}
+			
 		return variant;
 	}
 
@@ -341,17 +357,30 @@ public class DataImportServiceImpl implements DataImportService{
 
 
 	private List<ProductImportCsvRowData> parseCsvFile(MultipartFile file, ProductListImportDTO metaData) throws BusinessException {
+		List<ProductFeaturesEntity> orgFeatures = featureRepo.findByShopId( metaData.getShopId() );
 		
 		List<ProductImportCsvRowData> rows = new ArrayList<>();
 		
-		ByteArrayInputStream in = readCsvFile(file);
-		
-		BeanListProcessor<ProductImportCsvRowData> rowProcessor = createRowProcessor(metaData);		
+		ByteArrayInputStream in = readCsvFile(file);		
+		BeanListProcessor<ProductImportCsvRowData> rowProcessor = createRowProcessor(metaData, orgFeatures);		
 		RowParseErrorHandler rowParsingErrHandler = new RowParseErrorHandler();
 		CsvParserSettings settings = createParsingSettings(rowProcessor, rowParsingErrHandler);
 		
 		CsvParser parser = new CsvParser(settings);
 		
+		runCsvParser(in, rowParsingErrHandler, parser);
+		
+		rows = rowProcessor.getBeans();
+		
+		return rows;
+	}
+
+
+
+
+
+	private void runCsvParser(ByteArrayInputStream in, RowParseErrorHandler rowParsingErrHandler, CsvParser parser)
+			throws BusinessException {
 		try {
 			parser.parse(in);
 		}catch(Exception e) {
@@ -368,10 +397,6 @@ public class DataImportServiceImpl implements DataImportService{
 					, rowParsingErrHandler.getErrorMsgAsJson()
 					, HttpStatus.NOT_ACCEPTABLE); 
 		}
-		
-		rows = rowProcessor.getBeans();
-		
-		return rows;
 	}
 
 
@@ -391,11 +416,11 @@ public class DataImportServiceImpl implements DataImportService{
 
 
 
-	private BeanListProcessor<ProductImportCsvRowData> createRowProcessor(ProductListImportDTO metaData) {
+	private BeanListProcessor<ProductImportCsvRowData> createRowProcessor(ProductListImportDTO metaData, List<ProductFeaturesEntity> features) {
 		ColumnMapping mapper = createAttrToColMapping(metaData);
 		
 		BeanListProcessor<ProductImportCsvRowData> rowProcessor = 
-				new BeanListProcessor<ProductImportCsvRowData>(ProductImportCsvRowData.class);
+				new ProductCsvRowProcessor<ProductImportCsvRowData>(ProductImportCsvRowData.class, features);
 		rowProcessor.setColumnMapper(mapper);
 		rowProcessor.setStrictHeaderValidationEnabled(true);
 		return rowProcessor;

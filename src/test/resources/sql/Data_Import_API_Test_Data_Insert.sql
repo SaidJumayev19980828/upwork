@@ -21,6 +21,16 @@ INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) 
 
 
 
+--insert product features for the organziation
+INSERT INTO public.product_features(id,"name", p_name, description, organization_id)
+VALUES(7001,'size', 'size', 'test feature', 99001);
+INSERT INTO public.product_features(id,"name", p_name, description, organization_id)
+VALUES(7002,'color', 'color', 'test feature', 99001);
+INSERT INTO public.product_features(id,"name", p_name, description, organization_id)
+VALUES(7003,'color', 'color', 'test feature', 99002);
+
+
+
 -- dummy products
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200001, 'Bundle Product#1' , now() , now(), 0 , 99001, 201);
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200002, 'Bundle Product#2' , now() , now(), 0 , 99001, 201);
@@ -29,9 +39,9 @@ VALUES(200003, 'Product to update' , now() , now(), 0 , 99001, 201, 'u_shoe', 'o
 
 
 -- variants for each product
-insert into public.product_variants(id, "name" , product_id ,barcode) values(310001, 'var', 200001, '12345ABC');
-insert into public.product_variants(id, "name" , product_id ,barcode) values(310002, 'var', 200002, '45678EFG');
-insert into public.product_variants(id, "name" , product_id ,barcode, p_name, description) values(310003, 'Product to update', 200003, 'TT232222', 'u_shoe', 'old desc');
+insert into public.product_variants(id, "name" , product_id ,barcode, feature_spec) values(310001, 'var', 200001, '12345ABC', '{}');
+insert into public.product_variants(id, "name" , product_id ,barcode, feature_spec) values(310002, 'var', 200002, '45678EFG', '{}');
+insert into public.product_variants(id, "name" , product_id ,barcode, p_name, description, feature_spec) values(310003, 'Product to update', 200003, 'TT232222', 'u_shoe', 'old desc', '{}');
 
 
 -- stocks for variants

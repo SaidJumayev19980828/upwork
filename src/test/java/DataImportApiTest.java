@@ -5,6 +5,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -32,8 +34,6 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.nasnav.NavBox;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.CategoriesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
@@ -609,30 +609,44 @@ public class DataImportApiTest {
         
         
         assertEquals(2, stocks.size());
-        assertTrue( compareEntityFieldValues(stocks, StocksEntity::getCurrency, expected.getCurrencies())	);
+        assertTrue( propertyValuesIn(stocks, StocksEntity::getCurrency, expected.getCurrencies())	);
         
-        assertTrue( compareEntityFieldValues(stocks, StocksEntity::getQuantity, expected.getQuantities())	);
+        assertTrue( propertyValuesIn(stocks, StocksEntity::getQuantity, expected.getQuantities())	);
         assertTrue( compareEntityBigDecimalFieldValues(stocks, StocksEntity::getPrice, expected.getPrices())	);
 
         
                 
         
-        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getBarcode, expected.getBarcodes())	);
-        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getName, expected.getProductNames()) );
-        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getPname, expected.getPNames()) );
-        assertTrue( compareEntityFieldValues(variants, ProductVariantsEntity::getDescription, expected.getDescriptions()) );
+        assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getBarcode, expected.getBarcodes())	);
+        assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getName, expected.getProductNames()) );
+        assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getPname, expected.getPNames()) );
+        assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getDescription, expected.getDescriptions()) );
+        assertTrue( jsonValuesIn(variants, ProductVariantsEntity::getFeatureSpec, expected.getFeatureSpecs()) );
         
         
-        assertTrue( compareEntityFieldValues(products, ProductEntity::getName, expected.getProductNames()) );
-        assertTrue( compareEntityFieldValues(products, ProductEntity::getPname, expected.getPNames()) );
-        assertTrue( compareEntityFieldValues(products, ProductEntity::getDescription, expected.getDescriptions()) );
-        assertTrue( compareEntityFieldValues(products, ProductEntity::getCategoryId, expected.getCategories()) );
-        assertTrue( compareEntityFieldValues(products, ProductEntity::getBrandId, expected.getBrands()) );
+        assertTrue( propertyValuesIn(products, ProductEntity::getName, expected.getProductNames()) );
+        assertTrue( propertyValuesIn(products, ProductEntity::getPname, expected.getPNames()) );
+        assertTrue( propertyValuesIn(products, ProductEntity::getDescription, expected.getDescriptions()) );
+        assertTrue( propertyValuesIn(products, ProductEntity::getCategoryId, expected.getCategories()) );
+        assertTrue( propertyValuesIn(products, ProductEntity::getBrandId, expected.getBrands()) );
 	}
 	
 	
 	
 	
+	private boolean jsonValuesIn(List<ProductVariantsEntity> variants, Function<ProductVariantsEntity,String> jsonStringGetter, Set<JSONObject> expectedSpecs) {
+		return variants.stream()
+					.map(jsonStringGetter)
+					.map(JSONObject::new)
+					.allMatch(json -> expectedSpecs.stream().anyMatch(expected -> expected.similar(json)));
+		
+	}
+
+
+
+
+
+
 	private ExpectedSavedData getExpectedAllNewData() {
 		ExpectedSavedData data = new ExpectedSavedData();
 		
@@ -671,7 +685,7 @@ public class DataImportApiTest {
 		data.setDescriptions( setOf("squishy", "too hard") );
 		data.setCategories( setOf(201L, 202L) );
 		data.setBrands( setOf(101L, 102L) );
-		
+		data.setFeatureSpecs(  createExpectedFeautreSpec());
         
 		return data;
 	}
@@ -691,6 +705,7 @@ public class DataImportApiTest {
 		data.setDescriptions( setOf("squishy", "too hard") );
 		data.setCategories( setOf(201L, 202L) );
 		data.setBrands( setOf(101L, 102L) );
+		data.setFeatureSpecs(  createExpectedFeautreSpec());
 		
         
 		return data;
@@ -699,6 +714,31 @@ public class DataImportApiTest {
 	
 	
 	
+	private Set<JSONObject> createExpectedFeautreSpec() {
+		Set<JSONObject> specs = new HashSet<>();
+		JSONObject spec1 = createFeatureSpec("XXL", "Lettuce Heart");
+		JSONObject spec2 = createFeatureSpec("M", "Fo7loqy");
+		specs.addAll( Arrays.asList(spec1,spec2));
+		return specs;
+	}
+
+
+
+
+
+
+	private JSONObject createFeatureSpec(String size, String color) {
+		JSONObject spec1 = new JSONObject();
+		spec1.put("7001", size);
+		spec1.put("7002", color);
+		return spec1;
+	}
+
+
+
+
+
+
 	private ExpectedSavedData getExpectedNewOnlyAndUpdatedStocks() {
 		ExpectedSavedData data = new ExpectedSavedData();		
 
@@ -712,14 +752,28 @@ public class DataImportApiTest {
 		data.setDescriptions( setOf("old desc", "too hard") );
 		data.setCategories( setOf(201L, 202L) );
 		data.setBrands( setOf(101L, 102L) );
-        
+		data.setFeatureSpecs(  createNewProductOnlyExpectedFeautreSpec());
+		
 		return data;
 	}
 	
 	
 	
 	
-	private <T,V>  boolean  compareEntityFieldValues(List<T> entityList, Function<T,V> getter, Set<V> expectedValues) {
+	private Set<JSONObject> createNewProductOnlyExpectedFeautreSpec() {
+		Set<JSONObject> specs = new HashSet<>();
+		JSONObject spec1 = new JSONObject("{}") ;
+		JSONObject spec2 = createFeatureSpec("M", "Fo7loqy");
+		specs.addAll( Arrays.asList(spec1,spec2));
+		return specs;
+	}
+
+
+
+
+
+
+	private <T,V>  boolean  propertyValuesIn(List<T> entityList, Function<T,V> getter, Set<V> expectedValues) {
 		return entityList.stream()
 						.map(getter)
 						.collect(Collectors.toSet())
@@ -812,6 +866,13 @@ class ExpectedSavedData{
 	private Set<Long> categories;
 	private Set<Long> brands;
 	private Set<TransactionCurrency> currencies;
+	private Set<JSONObject> featureSpecs;
+	
+	
+	public ExpectedSavedData() {
+		featureSpecs = new HashSet<>();
+		featureSpecs.add(new JSONObject("{}") );
+	}
 }
 
 
