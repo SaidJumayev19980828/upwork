@@ -22,8 +22,15 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 			+ " and stock.shopsEntity.id = :shopsId"
 			)
 	List<StocksEntity> findByProductIdAndShopsId(@Param("productId") Long productId, @Param("shopsId") Long shopsId);
-	
-	
+
+
+	/*@Query("select stock from StocksEntity stock where variant_id = :variantId and shop_id = :shopId" +
+			" order by price ")*/
+	List<StocksEntity> findByProductVariantsEntityIdAndShopsEntityIdOrderByPriceAsc(Long variantId, Long shopId);
+
+	//@Query("select stock from StocksEntity stock where variant_id = :variantId order by price ")
+	List<StocksEntity> findByProductVariantsEntityIdOrderByPriceAsc(Long variantId);
+
 
 	List<StocksEntity> findByShopsEntity_Id(Long id);
 	
