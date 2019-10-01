@@ -3,18 +3,18 @@ package com.nasnav.service;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.AbstractMap;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -23,9 +23,11 @@ import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import javax.validation.Valid;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.collections.keyvalue.AbstractMapEntry;
+import org.apache.tomcat.util.http.fileupload.FileItem;
+import org.apache.tomcat.util.http.fileupload.disk.DiskFileItem;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -37,6 +39,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -59,6 +62,7 @@ import com.nasnav.dto.BundleDTO;
 import com.nasnav.dto.BundleElementUpdateDTO;
 import com.nasnav.dto.ProductBaseInfo;
 import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductImageBulkUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateDTO;
 import com.nasnav.dto.ProductImgDTO;
 import com.nasnav.dto.ProductRepresentationObject;
@@ -86,10 +90,18 @@ import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.VariantUpdateResponse;
+import com.nasnav.service.model.ImportedImage;
 import com.sun.istack.logging.Logger;
+import com.univocity.parsers.common.record.Record;
+import com.univocity.parsers.csv.CsvParser;
+import com.univocity.parsers.csv.CsvParserSettings;
 
 @Service
 public class ProductService {
+
+	
+
+	
 
 	private Logger logger = Logger.getLogger(ProductService.class);
 
@@ -1076,8 +1088,7 @@ public class ProductService {
 	public ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
 		validateProductImg(file, imgMetaData);
 		
-		ProductImageUpdateResponse response = saveProductImg(file, imgMetaData);
-		return response;
+		return saveProductImg(file, imgMetaData);
 	}
 
 
@@ -1912,6 +1923,182 @@ public class ProductService {
 	        }
 	    }
 	    return true;
+	}
+
+
+
+
+	public List<ProductImageUpdateResponse> updateProductImageBulk(@Valid MultipartFile zip, @Valid MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {		
+		validateUpdateImageBulkRequest(zip, csv, metaData);
+		
+		return saveImgsBulk(zip, csv, metaData);
+	}
+
+	
+	
+	
+
+
+
+	private List<ProductImageUpdateResponse> saveImgsBulk(@Valid MultipartFile zip, @Valid MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
+		List<ImportedImage> importedImgs = extractImgsToImport(zip, csv, metaData);
+		List<String> errors = new ArrayList<>();
+		List<ProductImageUpdateResponse> responses = new ArrayList<>(); 
+		
+		for(ImportedImage img : importedImgs) {
+			try {
+				responses.add( updateProductImage(img.getImage(), img.getImgMetaData()) );
+			}catch(Exception e) {
+				logger.log(Level.SEVERE, e.getMessage(), e);				
+				
+				errors.add( createImgImportErrMsg(img, e) );
+			}
+		}
+		
+		if(!errors.isEmpty()) {
+			throwExceptionWithErrorList(errors);
+		}
+		
+		return responses;
+	}
+
+
+
+
+	private void throwExceptionWithErrorList(List<String> errors) throws BusinessException {
+		JSONArray json = new JSONArray(errors);
+		throw new BusinessException(
+				ERR_PRODUCT_IMG_BULK_IMPORT
+				, json.toString()
+				, HttpStatus.NOT_ACCEPTABLE);
+	}
+
+
+
+
+	private String createImgImportErrMsg(ImportedImage img, Exception e) {
+		StringBuilder msg = new StringBuilder();
+		msg.append( String.format("Error importing image file with name[%s]", img.getImage().getOriginalFilename()) );
+		msg.append( System.getProperty("line.separator") );
+		msg.append("Error Message: " + e.getMessage());
+		String msgString = msg.toString();
+		return msgString;
+	}
+
+
+
+	
+	
+	
+
+	private List<ImportedImage> extractImgsToImport(@Valid MultipartFile zip, @Valid MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
+		List<ImportedImage> imgs = new ArrayList<>();
+		Map<String,String> fileBarcodeMap = createFileBarcodeMap(csv);
+		
+		try(ZipInputStream stream = new ZipInputStream(zip.getInputStream())){
+			;
+			ZipEntry zipEntry = stream.getNextEntry();
+			
+			while (zipEntry != null) {
+				if(zipEntry.isDirectory()) 
+					continue;
+				
+				int len = (int) zipEntry.getSize();
+				if(len <= 0 )
+					continue;
+				
+				byte[] data = new byte[len];
+				stream.read(data);
+				
+				
+				FileItem fileItem = new DiskFileItem();
+				MultipartFile file = new CommonsMultipartFile(fileItem);
+				
+	            zipEntry = stream.getNextEntry();
+	        }
+			
+			stream.closeEntry();
+		}catch(Exception e) {
+			throw new BusinessException(ERR_READ_ZIP, "INTERNAL SERVER ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		
+		return imgs;
+	}
+
+
+
+	
+
+	private Map<String, String> createFileBarcodeMap(MultipartFile csv) throws BusinessException {
+		if(csv == null ||csv.isEmpty())
+			return new HashMap<>();		
+		
+		return getCsvRecords(csv)
+					.stream()
+					.collect(Collectors.toMap(
+											rec -> rec.getString(1)
+											, rec ->rec.getString(0)));
+	}
+
+
+
+
+	private List<Record> getCsvRecords(MultipartFile csv) throws BusinessException {
+		List<Record> allRecords = new ArrayList<>();
+		
+		CsvParserSettings settings = new CsvParserSettings();
+		settings.setHeaderExtractionEnabled(true);
+		CsvParser parser = new CsvParser(settings );		
+		
+		try{
+			allRecords = parser.parseAllRecords(csv.getInputStream());
+		}catch(Exception e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);			
+			throw new BusinessException(ERR_CSV_PARSE_FAILURE, "INTERNAL SERVER ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		return allRecords;
+	}
+
+
+	
+
+
+	private void validateUpdateImageBulkRequest(@Valid MultipartFile zip, @Valid MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
+		if(metaData.getPriority() == null || metaData.getType() == null) {
+			throw new BusinessException(
+					"Missing required metadata parameters, required parameters are [type, priority]!"
+					, "MISSING PARAM"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		
+		validateImgBulkZip(zip);
+	}
+
+
+
+
+	private void validateImgBulkZip(MultipartFile zip) throws BusinessException {
+		if(zip.isEmpty()) {
+			throw new BusinessException(
+					"Provided Zip file has no data!"
+					, "INVALID PARAM:imgs_zip"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		String ext = com.google.common.io.Files.getFileExtension(zip.getOriginalFilename());
+		if(!ext.equalsIgnoreCase("zip")) {
+			throw new BusinessException(
+					"Provided images archive is not ZIP file!"
+					, "INVALID PARAM:imgs_zip"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
 	}
 
 }

@@ -1,0 +1,302 @@
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
+
+import org.json.JSONObject;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.mock.web.MockPart;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+
+import com.nasnav.NavBox;
+import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.FilesRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.ProductImagesRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.security.AuthenticationFilter;
+
+import net.jcip.annotations.NotThreadSafe;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
+@AutoConfigureMockMvc
+@PropertySource("classpath:database.properties")
+@NotThreadSafe 
+@ContextConfiguration(initializers = BaseDirInitialzer.class) //overrides the property "files.basepath" to use temp dir 
+@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD) //creates a new context with new temp dir for each test method
+@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_bulk_API_Test_Data_Insert.sql"})
+@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+public class ProductImgaeBulkUploadTest {
+	private static final String PRODUCT_IMG_BULK_URL = "/product/image/bulk";
+
+	private static final long TEST_PRODUCT_ID = 1001L;
+
+	private static final String USER_TOKEN = "101112";
+	
+	private static final String STORE_ADMIN_TOKEN = "ssErf33";
+
+	private static final String USER_FROM_OTHER_ORG_TOKEN = "131415";
+	
+
+	private static final String TEST_ZIP = "img_bulk_upload.zip";
+	private static final String TEST_CSV = "img_bulk_barcode.csv";
+	private static final String TEST_PHOTO_UPDATED = "nasnav--Test_Photo_UPDATED.png";
+
+	private static final String TEST_ZIP_DIR = "src/test/resources/img_bulk_zip";
+
+	private static final String TEST_INVALID_ZIP = "img_bulk_upload_invalid.zip";
+
+	@Value("${files.basepath}")
+	private String basePathStr;
+
+	private Path basePath;
+	
+	
+	@Autowired
+	private ProductRepository productRepository;
+	
+	
+	@Autowired
+	private FilesRepository filesRepo;
+	
+	@Autowired
+	private OrganizationRepository orgRepo;
+	
+	
+	@Autowired
+	private ProductImagesRepository imgRepo;
+	
+	
+	
+	@Autowired
+	private  MockMvc mockMvc;
+	
+	
+	@Before
+	public void setup() throws IOException {		
+		this.basePath = Paths.get(basePathStr);
+		
+		System.out.println("Test Files Base Path  >>>> " + basePath.toAbsolutePath());
+		
+		//The base directory must exists for all tests
+		assertTrue(Files.exists(basePath));
+		
+		//assert an empty temp directory was created for the test
+		try(Stream<Path> files = Files.list(basePath)){
+			assertEquals(0L, files.count());
+		}
+		
+	}
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkNoAuthz() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, "NON-EXISTING-TOKEN")
+	             .andExpect(status().is(401));					            
+//	             .andReturn()
+//	             .getResponse()
+//	             .getContentAsString();
+
+//		JSONObject responseJson = new JSONObject(response);
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkNoAuthN() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, STORE_ADMIN_TOKEN)
+	             .andExpect(status().is(403));					            
+	}
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkNoZip() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		MockMultipartFile csvPart = createCsvPart(TEST_CSV);				
+		MockPart jsonPart = createJsonPart(jsonBytes);
+		
+	    mockMvc.perform(MockMvcRequestBuilders.multipart(PRODUCT_IMG_BULK_URL)
+							                 .file(csvPart)
+							                 .part(jsonPart)
+							                 .header(AuthenticationFilter.TOKEN_HEADER, USER_TOKEN))
+	    		.andExpect(status().is(400));
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkMissingType() throws IOException, Exception {
+		
+		JSONObject json = createDummUploadRequest();
+		json.remove("type");
+		byte[] jsonBytes = json.toString().getBytes();
+		
+		performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(406));					            
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkMissingPriority() throws IOException, Exception {
+		
+		JSONObject json = createDummUploadRequest();
+		json.remove("priority");
+		
+		byte[] jsonBytes = json.toString().getBytes();
+		
+		performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(406));					            
+	}
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkEmptyZip() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		MockMultipartFile zipPart = createEmptyZipPart(TEST_ZIP);	
+		MockMultipartFile csvPart = createCsvPart(TEST_CSV);				
+		MockPart jsonPart = createJsonPart(jsonBytes);
+		
+	    mockMvc.perform(MockMvcRequestBuilders.multipart(PRODUCT_IMG_BULK_URL)
+	    									 .file(zipPart)
+							                 .file(csvPart)
+							                 .part(jsonPart)
+							                 .header(AuthenticationFilter.TOKEN_HEADER, USER_TOKEN))
+	    		.andExpect(status().is(400));
+	}
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkNotZipFile() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		performFileUpload(TEST_INVALID_ZIP, TEST_CSV, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(500));					            
+	}
+	
+	
+	
+	
+	private ResultActions performFileUpload(String zipFileName, String csvFileName, byte[] json, String userToken) throws IOException, Exception {
+				
+		MockMultipartFile zipPart = createZipPart(zipFileName);		
+		MockMultipartFile csvPart = createCsvPart(csvFileName);				
+		MockPart jsonPart = createJsonPart(json);
+		
+		ResultActions result = 
+		    mockMvc.perform(MockMvcRequestBuilders.multipart(PRODUCT_IMG_BULK_URL)
+								                 .file(zipPart)
+								                 .file(csvPart)
+								                 .part(jsonPart)
+								                 .header(AuthenticationFilter.TOKEN_HEADER, userToken));
+		return result;
+	}
+
+
+
+
+	private MockPart createJsonPart(byte[] json) {
+		MockPart jsonPart = new MockPart("properties", "properties",  json);		
+		jsonPart.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+		return jsonPart;
+	}
+
+
+
+
+	private MockMultipartFile createCsvPart(String csvFileName) throws IOException {
+		Path csv = Paths.get(TEST_ZIP_DIR).resolve(csvFileName).toAbsolutePath();
+		assertTrue(Files.exists(csv));
+		byte[] csvData = Files.readAllBytes(csv);		
+		MockMultipartFile csvPart = new MockMultipartFile("imgs_barcode_csv", csvFileName, "text/csv", csvData);
+		return csvPart;
+	}
+
+
+
+
+	private MockMultipartFile createZipPart(String zipFileName) throws IOException {
+		Path zip = Paths.get(TEST_ZIP_DIR).resolve(zipFileName).toAbsolutePath();
+		assertTrue(Files.exists(zip));
+		byte[] zipData = Files.readAllBytes(zip);		
+		MockMultipartFile zipPart = new MockMultipartFile("imgs_zip", zipFileName, "application/zip", zipData);
+		return zipPart;
+	}
+	
+	
+	
+	
+	
+	private MockMultipartFile createEmptyZipPart(String zipFileName) throws IOException {		
+		byte[] zipData = new byte[0];		
+		MockMultipartFile zipPart = new MockMultipartFile("imgs_zip", zipFileName, "application/zip", zipData);
+		return zipPart;
+	}
+	
+	
+	
+	
+	
+	
+	private JSONObject createDummUploadRequest() {
+		JSONObject metaData = new JSONObject();		
+		
+		metaData.put("type", 7);
+		metaData.put("priority", 1);
+		
+		return metaData;
+	}
+}
