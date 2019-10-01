@@ -689,34 +689,7 @@ public class ProductService {
 																	.map(ProductEntity::getRepresentation)
 																	.collect(Collectors.toList());
 			if (minPrice) {
-				List<ProductVariantsEntity> productsVariants = productVariantsRepository.findByProductEntity_IdIn(productIdList);
-				for (ProductRepresentationObject obj : productsRep) {
-					List<ProductVariantsEntity> productVariants = productsVariants.stream()
-																			      .filter(variant -> variant.getProductEntity().getId().equals(obj.getId()))
-																				  .collect(Collectors.toList());
-					if (productVariants.isEmpty())
-						obj.setAvailable(false);
-					else {
-						if (productVariants.size() > 1)
-							obj.setPrice(new BigDecimal(6666666.66)); //"multiple-variants"
-						else {
-							List<StocksEntity> productStocks;
-							if (shopId != null)
-								productStocks = stockRepository.findByProductVariantsEntityIdAndShopsEntityIdOrderByPriceAsc(productVariants.get(0).getId(), shopId);
-							else
-								productStocks = stockRepository.findByProductVariantsEntityIdOrderByPriceAsc(productVariants.get(0).getId());
-							if(!productStocks.isEmpty()) {
-								obj.setPrice(productStocks.get(0).getPrice());
-								obj.setDiscount(productStocks.get(0).getDiscount());
-								if (productStocks.get(0).getCurrency() != null)
-									obj.setCurrency(productStocks.get(0).getCurrency().ordinal());
-								obj.setStockId(productStocks.get(0).getId());
-							}
-							else
-								obj.setAvailable(false);
-						}
-					}
-				}
+				productsRep = getProductsMinPrices(productsRep, productIdList, shopId);
 			}
 			else
 				productsRep.forEach(pRep -> setProductAvailabilityAndPrice(stocks, pRep));
@@ -765,6 +738,42 @@ public class ProductService {
 
 		return productsResponse;
 	}
+
+
+	private List getProductsMinPrices(List<ProductRepresentationObject> productsRep, List<Long> productIdList, Long shopId) {
+		List<ProductVariantsEntity> productsVariants = productVariantsRepository.findByProductEntity_IdIn(productIdList);
+		for (ProductRepresentationObject obj : productsRep) {
+			List<ProductVariantsEntity> productVariants = productsVariants.stream()
+					.filter(variant -> variant.getProductEntity().getId().equals(obj.getId()))
+					.collect(Collectors.toList());
+			if (productVariants.isEmpty()) {
+				obj.setAvailable(false);
+				obj.setHidden(true);
+			}
+			else {
+				if (productVariants.size() > 1)
+					obj.setMultipleVariants(true);
+				else {
+					List<StocksEntity> productStocks;
+					if (shopId != null)
+						productStocks = stockRepository.findByProductVariantsEntityIdAndShopsEntityIdOrderByPriceAsc(productVariants.get(0).getId(), shopId);
+					else
+						productStocks = stockRepository.findByProductVariantsEntityIdOrderByPriceAsc(productVariants.get(0).getId());
+					if(!productStocks.isEmpty()) {
+						obj.setPrice(productStocks.get(0).getPrice());
+						obj.setDiscount(productStocks.get(0).getDiscount());
+						if (productStocks.get(0).getCurrency() != null)
+							obj.setCurrency(productStocks.get(0).getCurrency().ordinal());
+						obj.setStockId(productStocks.get(0).getId());
+					}
+					else
+						obj.setAvailable(false);
+				}
+			}
+		}
+		return productsRep;
+	}
+
 
 	private void setProductAvailabilityAndPrice(List<StocksEntity> stocks, ProductRepresentationObject productRep) {
 		Optional<StocksEntity> optionalStock = stocks.stream()															

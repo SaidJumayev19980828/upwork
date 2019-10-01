@@ -12,8 +12,7 @@ import com.nasnav.persistence.StocksEntity;
 public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 
 	List<StocksEntity> findByShopsEntity_IdAndProductVariantsEntity_Id( Long shopId, Long variantId);
-	
-	
+
 
 	@Query("select stock from StocksEntity stock "
 			+ " join stock.productVariantsEntity var "
@@ -24,17 +23,14 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 	List<StocksEntity> findByProductIdAndShopsId(@Param("productId") Long productId, @Param("shopsId") Long shopsId);
 
 
-	/*@Query("select stock from StocksEntity stock where variant_id = :variantId and shop_id = :shopId" +
-			" order by price ")*/
 	List<StocksEntity> findByProductVariantsEntityIdAndShopsEntityIdOrderByPriceAsc(Long variantId, Long shopId);
 
-	//@Query("select stock from StocksEntity stock where variant_id = :variantId order by price ")
+
 	List<StocksEntity> findByProductVariantsEntityIdOrderByPriceAsc(Long variantId);
 
 
 	List<StocksEntity> findByShopsEntity_Id(Long id);
-	
-	
+
 
 	@Query("select stock from StocksEntity stock "
 			+ " left join stock.productVariantsEntity var "
@@ -46,13 +42,10 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 	StocksEntity getOne(Long stockId);
 
 
-
 	Long countByProductVariantsEntity_Id(Long testVariantId);
 
 
-
 	Optional<StocksEntity> findByProductVariantsEntity_IdAndShopsEntity_Id(Long variantId, Long shopId);
-
 
 
 	List<StocksEntity> findByProductVariantsEntity_Id(Long id);

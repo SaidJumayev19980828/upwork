@@ -116,7 +116,7 @@ public class NavboxController {
 										 @RequestParam(name = "order", required = false) String order,
 										 @RequestParam(name = "brand_id", required = false) Long brandId,
 										 @RequestParam(name = "name", required = false) String name,
-										 @RequestParam(name = "minprice", required = false)boolean minPrice) throws BusinessException {
+										 @RequestParam(name = "minprice", required = false) boolean minPrice) throws BusinessException {
 
 		if (sort != null && ProductSortOptions.getProductSortOptions(sort) == null)
 			throw new BusinessException("Sort is limited to id, name, pname, price", null, HttpStatus.BAD_REQUEST);

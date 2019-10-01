@@ -2,14 +2,11 @@ import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.nasnav.dto.ProductRepresentationObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -581,11 +578,9 @@ public class ProductServiceTest {
 	public void testProductResponse(){
 		performTestProductResponseByFilters();
 		productBarcodeTest();
+		productMinPriceTest();
 	}
 
-	
-	
-	
 	
 	private void performTestProductResponseByFilters() {
 		//// testing brand_id filter ////
@@ -593,16 +588,16 @@ public class ProductServiceTest {
 		System.out.println(response.getBody());
 		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		long total = json.getLong("total");
-		assertEquals("there are total 16 products with with org_id = 99001 and no brand_id filter"
-				,16 , total);
+		assertEquals("there are total 21 products with with org_id = 99001 and no brand_id filter"
+				,21 , total);
 
 
 		response = template.getForEntity("/navbox/products?org_id=99001&brand_id=101", String.class);
 		System.out.println(response.getBody());
 		json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		total = json.getLong("total");
-		assertEquals("there are 10 products with brand_id = 101"
-				,10 , total);
+		assertEquals("there are 15 products with brand_id = 101"
+				,15 , total);
 
 
 		response = template.getForEntity("/navbox/products?org_id=99001&brand_id=102", String.class);
@@ -625,8 +620,6 @@ public class ProductServiceTest {
 		//// finish test
 	}
 	
-	
-	
 
 	private void assertJsonFieldExists(ResponseEntity<String> response) {
 		System.out.println("response JSON >>>  "+ response.getBody().toString());
@@ -635,9 +628,7 @@ public class ProductServiceTest {
 		assertTrue(response.getBody().toString().contains("p_name"));
 		assertTrue(response.getBody().toString().contains("image_url"));
 	}
-	
-	
-	
+
 
 	public void productBarcodeTest() {
 		// product 1001 doesn't have barcode
@@ -649,6 +640,24 @@ public class ProductServiceTest {
 		response = template.getForEntity("/navbox/product?product_id=1002", String.class);
 		System.out.println(response.getBody());
 		Assert.assertTrue(response.getBody().contains("barcode\":\"123456789"));
+	}
+
+
+	public void productMinPriceTest() {
+		// product #1001 with 1 variant and two stocks .. one with price 600 and the other 400 .. return lowest price info
+		ResponseEntity<Object> response = template.getForEntity("/navbox/products?org_id=99001&category_id=201" +
+				"&brand_id=101&minprice=true", Object.class);
+		Assert.assertTrue(response.getBody().toString().contains("price=400"));
+		Assert.assertTrue(response.getBody().toString().contains("multiple_variants=false"));
+
+		// product #1004 with no variants .. return hidden = true and no price info
+		response = template.getForEntity("/navbox/products?org_id=99001&category_id=201" +
+				"&brand_id=102&minprice=true", Object.class);
+		Assert.assertTrue(response.getBody().toString().contains("hidden=true"));
+
+		// product #1002 with 2 variants .. return multiple_variants = true
+		response = template.getForEntity("/navbox/products?shop_id=501&minprice=true", Object.class);
+		Assert.assertTrue(response.getBody().toString().contains("multiple_variants=true"));
 	}
 }
 

@@ -23,4 +23,6 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private BigDecimal discount;
     private int currency;
     private Long stockId;
+    private boolean multipleVariants;
+    private boolean hidden;
 }
