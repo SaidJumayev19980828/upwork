@@ -268,8 +268,9 @@ public class ProductService {
 			features =  productVariants
 					.stream()
 					.filter(this::hasFeatures)
-					.map(this::extractVariantFeatures)
+					.map(this::extractVariantFeatures)					
 					.flatMap(List::stream)
+					.distinct()
 					.collect(Collectors.toList());
 		}
 

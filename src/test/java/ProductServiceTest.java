@@ -567,7 +567,8 @@ public class ProductServiceTest {
 		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		long total = json.getLong("total");
 
-
+		//total here is the total of all items stocks, which makes no sense ... for now
+		//waiting until the frontend ask to change this behavior
 		assertEquals("only the total of actual products should be counted, bundles and services are not counted"
 						,51L , total);
 	}
@@ -650,6 +651,29 @@ public class ProductServiceTest {
 		System.out.println(response.getBody());
 		Assert.assertTrue(response.getBody().contains("barcode\":\"123456789"));
 	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})	
+	public void getProductWithMultipleVariantsTest() {
+		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=1001", String.class);
+		
+		JSONArray expectedVariantFeatures = createExpectedFeaturesJson();
+		JSONObject product = new JSONObject(response.getBody());
+		JSONArray variantFeatures = product.getJSONArray("variant_features");
+		JSONArray variants = product.getJSONArray("variants");
+		
+		assertEquals("Product 1001 has 5 variants, only the 4 with stock records will be returned" , 4, variants.length());
+		assertEquals("The product have only 2 variant features", 2, variantFeatures.length());
+		assertTrue(variantFeatures.similar(expectedVariantFeatures));		
+	}
+
+
+
 }
 
 
