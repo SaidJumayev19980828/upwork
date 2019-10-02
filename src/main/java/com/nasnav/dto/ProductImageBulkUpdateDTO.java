@@ -14,6 +14,4 @@ import lombok.NoArgsConstructor;
 public class ProductImageBulkUpdateDTO{
 	private Integer type;
 	private Integer priority;
-	
-	
 }

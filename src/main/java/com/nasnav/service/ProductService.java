@@ -1,6 +1,15 @@
 package com.nasnav.service;
 
+
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CSV_PARSE_FAILURE;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUCT_EXISTS_WITH_BARCODE;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMG_BULK_IMPORT;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_READ_ZIP;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING_IMG_FILE;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING_IMGS;
+
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -10,6 +19,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -26,8 +36,8 @@ import javax.persistence.criteria.Root;
 import javax.validation.Valid;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.tomcat.util.http.fileupload.FileItem;
-import org.apache.tomcat.util.http.fileupload.disk.DiskFileItem;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -44,7 +54,6 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Objects;
 import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
@@ -95,6 +104,9 @@ import com.sun.istack.logging.Logger;
 import com.univocity.parsers.common.record.Record;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
+
+
+
 
 @Service
 public class ProductService {
@@ -150,6 +162,10 @@ public class ProductService {
 	
 	@Autowired
 	private ProductServiceTransactions transactions;
+	
+	
+	@Autowired
+	private SecurityService securityService;
 
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
@@ -758,7 +774,7 @@ public class ProductService {
 	private void setProductAvailabilityAndPrice(List<StocksEntity> stocks, ProductRepresentationObject productRep) {
 		Optional<StocksEntity> optionalStock = stocks.stream()															
 													.filter(stock -> stock != null)
-													.filter(stock -> Objects.equal( getStockProductId(stock),  productRep.getId()))
+													.filter(stock -> Objects.equals( getStockProductId(stock),  productRep.getId()))
 													.findFirst();
 
 		if (optionalStock != null && optionalStock.isPresent()) {
@@ -1318,7 +1334,7 @@ public class ProductService {
 		Long userOrg = user.getOrganizationId();
 		Long productOrg = product.get().getOrganizationId();
 		
-		if(!Objects.equal(userOrg, productOrg))
+		if(!Objects.equals(userOrg, productOrg))
 			throw new BusinessException(
 					String.format("User with email [%s] have no rights to modify products from organization of id[%d]!", user.getEmail(), productOrg)
 					, "INSUFFICIENT RIGHTS"
@@ -1465,6 +1481,7 @@ public class ProductService {
 
 	private Order getBundleQueryOrderBy(BundleSearchParam params, CriteriaBuilder builder, Root<BundleEntity> root) {
 //		CriteriaBuilder builder = em.getCriteriaBuilder();	
+		@SuppressWarnings("rawtypes")
 		Path orderByAttr = root.get(params.getSort().getValue());
 		Order orderBy = builder.asc(orderByAttr);
 		if(params.getOrder().equals(SortOrder.DESC))
@@ -1794,7 +1811,7 @@ public class ProductService {
 	private boolean isInvalidFeatureKey(Long userOrgId, Optional<ProductFeaturesEntity> opt) {
 		return !opt.isPresent() 
 				|| opt.get().getOrganization() == null 
-				|| !Objects.equal(opt.get().getOrganization().getId(), userOrgId);
+				|| !Objects.equals(opt.get().getOrganization().getId(), userOrgId);
 	}
 
 
@@ -1995,38 +2012,236 @@ public class ProductService {
 
 	private List<ImportedImage> extractImgsToImport(@Valid MultipartFile zip, @Valid MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
-		List<ImportedImage> imgs = new ArrayList<>();
+		List<ImportedImage> imgs = new ArrayList<>();		
+		List<String> errors = new ArrayList<>();		
 		Map<String,String> fileBarcodeMap = createFileBarcodeMap(csv);
 		
-		try(ZipInputStream stream = new ZipInputStream(zip.getInputStream())){
-			;
-			ZipEntry zipEntry = stream.getNextEntry();
+		try(ZipInputStream stream = new ZipInputStream(zip.getInputStream())){	
 			
-			while (zipEntry != null) {
-				if(zipEntry.isDirectory()) 
-					continue;
-				
-				int len = (int) zipEntry.getSize();
-				if(len <= 0 )
-					continue;
-				
-				byte[] data = new byte[len];
-				stream.read(data);
-				
-				
-				FileItem fileItem = new DiskFileItem();
-				MultipartFile file = new CommonsMultipartFile(fileItem);
-				
-	            zipEntry = stream.getNextEntry();
-	        }
+			imgs = readZipStream(stream, metaData, fileBarcodeMap, errors);
 			
-			stream.closeEntry();
 		}catch(Exception e) {
-			throw new BusinessException(ERR_READ_ZIP, "INTERNAL SERVER ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new BusinessException(ERR_READ_ZIP, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		
 		
+		if(!errors.isEmpty()) {
+			String errorsJson = getErrorMsgAsJson(errors);
+			throw new BusinessException(ERR_IMPORTING_IMGS, errorsJson , HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
 		return imgs;
+	}
+
+
+
+	
+	
+
+	private List<ImportedImage> readZipStream(ZipInputStream stream, ProductImageBulkUpdateDTO metaData,
+			Map<String, String> fileBarcodeMap, List<String> errors) throws IOException {
+		
+		List<ImportedImage> imgs = new ArrayList<>();
+		
+		ZipEntry zipEntry = stream.getNextEntry();
+		
+		while (zipEntry != null) {						
+			readImgsFromZipEntry(zipEntry, stream, metaData, fileBarcodeMap, errors)
+					.forEach(imgs::add);
+			
+		    zipEntry = stream.getNextEntry();
+		}
+		
+		stream.closeEntry();
+		
+		return imgs;
+	}
+
+
+	
+	
+	
+
+	
+	/**
+	 * read a single image in the zip file, and return one or more "ImportedImage" based on the barcode,
+	 * as a single barcode can belong to both a product and a product variant.
+	 * */
+	private List<ImportedImage> readImgsFromZipEntry(ZipEntry zipEntry, ZipInputStream stream,
+			ProductImageBulkUpdateDTO metaData, Map<String, String> fileBarcodeMap, List<String> errors) {
+		List<ImportedImage> imgsFromEntry = new ArrayList<>();
+		
+		if(zipEntry.isDirectory() ) {
+			return new ArrayList<>();
+		} 
+		
+		try {
+			MultipartFile imgMultipartFile = readZipEntryIntoMultipartFile(stream, zipEntry);				
+			List<ProductImageUpdateDTO> imgsMetaData = createImportedImagesMetaData(zipEntry, fileBarcodeMap, metaData);				  
+			
+			imgsFromEntry = imgsMetaData.stream()
+									.map( meta -> new ImportedImage(imgMultipartFile, meta))
+									.collect(Collectors.toList());
+									
+		}catch(Exception e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			errors.add( createZipEntryErrorMsg(zipEntry, e) );
+		}
+		return imgsFromEntry;
+	}
+	
+	
+	
+	
+	
+	
+	private String createZipEntryErrorMsg(ZipEntry zipEntry, Exception e) {
+		return String.format(ERR_IMPORTING_IMG_FILE, zipEntry.getName(), e.getMessage());
+	}
+
+
+	
+	
+	
+	private String getErrorMsgAsJson(List<String> errors) {
+		JSONArray errorsJson = new JSONArray(errors);
+		
+		JSONObject main = new JSONObject();
+		main.put("msg", ERR_CSV_PARSE_FAILURE);
+		main.put("errors", errorsJson);
+		
+		return errorsJson.toString();
+	}
+	
+	
+
+	
+	
+	
+
+	/**
+	 * a single imported image is identified by barcode, which can be for a product record ,or a
+	 * product variant record.
+	 * So, we return metadata considering all cases:
+	 * - barcode exists for product only
+	 * - barcode exists for variant only
+	 * - barcode exists for both a product and a variant
+	 * */
+	private List<ProductImageUpdateDTO> createImportedImagesMetaData(ZipEntry zipEntry,Map<String,String> fileBarcodeMap, ProductImageBulkUpdateDTO metaData) throws BusinessException{
+		
+		String barcode = getBarcodeOfImportedImg(zipEntry, fileBarcodeMap);		
+		Long orgId = securityService.getCurrentUserOrganization();
+		
+		
+		ProductImageUpdateDTO productMetaData = 
+				productRepository.findByBarcodeAndOrganizationId(barcode, orgId)
+					.map(prod -> createImgMetaData(prod, metaData))
+					.orElse(null);
+		
+		ProductImageUpdateDTO variantMetaData =
+				productVariantsRepository.findByBarcodeAndProductEntity_OrganizationId(barcode, orgId)
+					.map(var -> createImgMetaData(var, metaData))
+					.orElse(null);
+		
+		if(productMetaData == null && variantMetaData == null) {
+			throw new BusinessException(
+					String.format(ERR_NO_PRODUCT_EXISTS_WITH_BARCODE, barcode, orgId)
+					, "INVALID PARAM:imgs_zip"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		return
+			Arrays.asList( productMetaData, variantMetaData )
+				  .stream()
+				  .filter(java.util.Objects::nonNull)
+				  .collect(Collectors.toList());
+	}
+
+
+	
+
+
+	private String getBarcodeOfImportedImg(ZipEntry zipEntry, Map<String, String> fileBarcodeMap) {
+		String fileName = zipEntry.getName();
+		String barcode = fileBarcodeMap.get(fileName);
+		if(barcode == null) {
+			barcode =  getBarcodeFromImgName(fileName);
+		}
+		return barcode;
+	}
+	
+	
+	
+	
+	
+	private MultipartFile readZipEntryIntoMultipartFile(ZipInputStream stream, ZipEntry zipEntry) throws Exception {
+		FileItem fileItem = createFileItem(zipEntry);
+		
+		readIntoFileItem(stream, fileItem);
+		
+		return new CommonsMultipartFile(fileItem);
+	}
+
+
+
+
+	private void readIntoFileItem(ZipInputStream stream, FileItem fileItem) throws IOException {
+		byte[] buffer = new byte[1024*100];
+		OutputStream fos = fileItem.getOutputStream();
+		int len;
+		while ((len = stream.read(buffer)) > 0) {
+            fos.write(buffer, 0, len);
+        }
+	}
+
+
+
+
+	private FileItem createFileItem(ZipEntry zipEntry) {
+		String fileName = zipEntry.getName();		
+		DiskFileItemFactory factory = new DiskFileItemFactory();
+		factory.setSizeThreshold(1024*1024);
+		FileItem fileItem = factory.createItem("image", "image/jpeg", false, fileName);
+		return fileItem;
+	}
+
+
+	
+	
+	
+	private ProductImageUpdateDTO createImgMetaData(ProductEntity prod, ProductImageBulkUpdateDTO metaData) {
+		ProductImageUpdateDTO imgMetaData = new  ProductImageUpdateDTO();
+		imgMetaData.setOperation(Operation.CREATE);
+		imgMetaData.setPriority( metaData.getPriority() );
+		imgMetaData.setType( metaData.getType() );
+		imgMetaData.setProductId(prod.getId());
+		imgMetaData.setVariantId(null);
+		
+		return imgMetaData;
+	}
+	
+	
+	
+	
+	
+	
+	private ProductImageUpdateDTO createImgMetaData(ProductVariantsEntity variant, ProductImageBulkUpdateDTO metaData) {
+		ProductImageUpdateDTO imgMetaData = new  ProductImageUpdateDTO();
+		imgMetaData.setOperation(Operation.CREATE);
+		imgMetaData.setPriority( metaData.getPriority() );
+		imgMetaData.setType( metaData.getType() );
+		imgMetaData.setProductId(variant.getProductEntity().getId());
+		imgMetaData.setVariantId(variant.getId());
+		
+		return imgMetaData;
+	}
+	
+	
+
+
+	private String getBarcodeFromImgName(String fileName) {
+		return com.google.common.io.Files.getNameWithoutExtension(fileName);
 	}
 
 

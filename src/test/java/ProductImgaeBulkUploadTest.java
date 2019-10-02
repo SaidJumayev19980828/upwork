@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,12 +33,10 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.nasnav.NavBox;
-import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.persistence.ProductEntity;
 import com.nasnav.security.AuthenticationFilter;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -65,6 +64,7 @@ public class ProductImgaeBulkUploadTest {
 	
 
 	private static final String TEST_ZIP = "img_bulk_upload.zip";
+	private static final String TEST_ZIP_NON_EXISTING_BARCODE ="img_bulk_upload_non_exisiting_barcode.zip";
 	private static final String TEST_CSV = "img_bulk_barcode.csv";
 	private static final String TEST_PHOTO_UPDATED = "nasnav--Test_Photo_UPDATED.png";
 
@@ -123,12 +123,7 @@ public class ProductImgaeBulkUploadTest {
 		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
 		
 		performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, "NON-EXISTING-TOKEN")
-	             .andExpect(status().is(401));					            
-//	             .andReturn()
-//	             .getResponse()
-//	             .getContentAsString();
-
-//		JSONObject responseJson = new JSONObject(response);
+	             .andExpect(status().is(401));	
 	}
 	
 	
@@ -225,6 +220,58 @@ public class ProductImgaeBulkUploadTest {
 		
 		performFileUpload(TEST_INVALID_ZIP, TEST_CSV, jsonBytes, USER_TOKEN)
 	             .andExpect(status().is(500));					            
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkTestInvalidBarcode() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		String response = 
+				performFileUpload(TEST_ZIP_NON_EXISTING_BARCODE, TEST_CSV, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(500))
+	             .andReturn()
+	             .getResponse()
+	             .getContentAsString();
+
+		JSONObject errorResponse = new JSONObject(response);
+		JSONArray errors = new JSONArray( errorResponse.getString("error") );
+		
+		assertTrue(errorResponse.has("error"));
+		assertEquals(1, errors.length());
+		//check no image was saved
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkWithCSVTest() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		String response = 
+				performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(200))
+	             .andReturn()
+	             .getResponse()
+	             .getContentAsString();
+
+		JSONArray responseJson = new JSONArray(response);
+		
+		assertEquals(
+				"import 2 images, one of them have a barcode that is used by both a product and a variant"
+				, 3 
+				, responseJson.length());
+				
+		
+		assertEquals( 3L, imgRepo.count());
 	}
 	
 	

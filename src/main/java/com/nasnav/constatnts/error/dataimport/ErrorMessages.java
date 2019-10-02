@@ -18,4 +18,7 @@ public class ErrorMessages {
 	public static final String ERR_CONVERT_TO_JSON = "Failed to serialize Object of type[%s] as json string";
 	public static final String ERR_PRODUCT_IMG_BULK_IMPORT = "Failed to import Images ! all changes have been rolled back! please, check the error list for more details!";
 	public static final String ERR_READ_ZIP = "Failed to read zip file!";
+	public static final String ERR_NO_PRODUCT_EXISTS_WITH_BARCODE = "There is no product nor a product variant that carries the barcode[%s] for organization with id[%d]";
+	public static final String ERR_IMPORTING_IMG_FILE = " Importing image file[%s] caused the error[%s]";
+	public static final String ERR_IMPORTING_IMGS = "Error importing images";
 }
