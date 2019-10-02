@@ -21,8 +21,7 @@ INSERT INTO public.employee_users(id, created_at, updated_at, email, organizatio
 VALUES (68, now(), now(), 'testuser1@nasnav.com', 99001, '101112',  502);
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
 VALUES (69, now(), now(), 'testuser2@nasnav.com', 99002, '131415',  501);
-INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
-VALUES (70, now(), now(), 'testuser3@nasnav.com', 99002, 'ssErf33',  501);
+
 
 --inserting Roles
 insert into roles(id, name, created_at, updated_at, organization_id) values(1, 'NASNAV_ADMIN', now(), now(), 99001);
@@ -36,12 +35,11 @@ insert into roles(id, name, created_at, updated_at, organization_id) values(3, '
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (20, 68, 1, now(), now());
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (21, 68, 2, now(), now());
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (22, 69, 2, now(), now());
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (23, 70, 5, now(), now());
 
 
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, barcode) VALUES (1002, 'product_2',101, 201, 99002, now(), now(),'123456789');
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, barcode) VALUES (1002, 'product_2',101, 201, 99001, now(), now(),'ABCDEFG123');
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1003, 'product_3',101, 202, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1004, 'product_4',102, 201, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1005, 'product_5',102, 202, 99001, now(), now());
@@ -53,13 +51,13 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 
 -- variants for each product
 insert into public.product_variants(id, "name" , product_id, barcode ) values(310001, 'var' 	, 1001, 'ABCD123');
-insert into public.product_variants(id, "name" , product_id, barcode ) values(310002, 'var' 	, 1002, '123456789');
-insert into public.product_variants(id, "name" , product_id ) values(310003, 'var' 	, 1003);
-insert into public.product_variants(id, "name" , product_id ) values(310004, 'var' 	, 1004);
-insert into public.product_variants(id, "name" , product_id ) values(310005, 'var' 	, 1005);
-insert into public.product_variants(id, "name" , product_id ) values(310006, 'var' 	, 1006);
-insert into public.product_variants(id, "name" , product_id ) values(310007, 'var' 	, 1007);
-insert into public.product_variants(id, "name" , product_id ) values(310008, 'var' 	, 1008);
+insert into public.product_variants(id, "name" , product_id, barcode  ) values(310002, 'var' 	, 1002, 'ABCDEFG123');
+insert into public.product_variants(id, "name" , product_id, barcode  ) values(310003, 'var' 	, 1003, 'SFSDFE2232');
+insert into public.product_variants(id, "name" , product_id, barcode  ) values(310004, 'var' 	, 1004, 'FDSFE2322');
+insert into public.product_variants(id, "name" , product_id, barcode  ) values(310005, 'var' 	, 1005, 'VBVGFYDRF2');
+insert into public.product_variants(id, "name" , product_id, barcode  ) values(310006, 'var' 	, 1006, 'FGZDFG234');
+insert into public.product_variants(id, "name" , product_id, barcode  ) values(310007, 'var' 	, 1007, 'SDFGS34SFGS');
+insert into public.product_variants(id, "name" , product_id, barcode  ) values(310008, 'var' 	, 1008, 'HKJLIKLJK45');
 
 
 
