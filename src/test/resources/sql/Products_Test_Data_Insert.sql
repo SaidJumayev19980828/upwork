@@ -63,7 +63,7 @@ insert into public.product_variants(id, "name" , product_id ) values(3100022, 'v
 
 --inserting stocks
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(601, 502, 3, now(), now(), 99001, 600.0, 310001);
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(605, 502, 4, now(), now(), 99001, 400.0, 310001);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(605, 501, 4, now(), now(), 99001, 400.0, 310001);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(602, 502, 8, now(), now(), 99001, 1200.0, 310003);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(604, 502, 6, now(), now(), 99001, 700.0, 310005);
 
