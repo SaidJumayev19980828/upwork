@@ -59,20 +59,14 @@ import net.jcip.annotations.NotThreadSafe;
 public class ProductImgaeBulkUploadTest {
 	private static final String PRODUCT_IMG_BULK_URL = "/product/image/bulk";
 
-	private static final long TEST_PRODUCT_ID = 1001L;
-
 	private static final String USER_TOKEN = "101112";
 	
 	private static final String STORE_ADMIN_TOKEN = "ssErf33";
-
-	private static final String USER_FROM_OTHER_ORG_TOKEN = "131415";
-	
+	private static final String OTHER_ORG_ADMIN_TOKEN = "131415";
 
 	private static final String TEST_ZIP = "img_bulk_upload.zip";
 	private static final String TEST_ZIP_NON_EXISTING_BARCODE ="img_bulk_upload_non_exisiting_barcode.zip";
 	private static final String TEST_CSV = "img_bulk_barcode.csv";
-	private static final String TEST_PHOTO_UPDATED = "nasnav--Test_Photo_UPDATED.png";
-
 	private static final String TEST_ZIP_DIR = "src/test/resources/img_bulk_zip";
 
 	private static final String TEST_ZIP_INVALID = "img_bulk_upload_invalid.zip";
@@ -83,6 +77,12 @@ public class ProductImgaeBulkUploadTest {
 
 	private static final String TEST_ZIP_EMPTY_IMG_FILE = "img_bulk_upload_empty_img_file.zip";
 
+	private static final String TEST_ZIP_INTERNAL_STRUCT = "img_bulk_upload_internal_structure.zip";
+
+	private static final String TEST_CSV_INTERNAL_STRUCT = "img_bulk_barcode_internal_struct.csv";
+
+	private static final String TEST_ZIP_INTERNAL_STRUCT_WITH_BARCODE = "img_bulk_upload_internal_structure_with_barcode.zip";
+
 	@Value("${files.basepath}")
 	private String basePathStr;
 
@@ -90,15 +90,7 @@ public class ProductImgaeBulkUploadTest {
 	
 	
 	@Autowired
-	private ProductRepository productRepository;
-	
-	
-	@Autowired
 	private FilesRepository filesRepo;
-	
-	@Autowired
-	private OrganizationRepository orgRepo;
-	
 	
 	@Autowired
 	private ProductImagesRepository imgRepo;
@@ -294,6 +286,33 @@ public class ProductImgaeBulkUploadTest {
 	
 	
 	
+	
+	@Test
+	public void updateImgBulkAdminOfOtherOrg() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		String response = 
+				performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, OTHER_ORG_ADMIN_TOKEN)
+	             .andExpect(status().is(500))
+	             .andReturn()
+	             .getResponse()
+	             .getContentAsString();
+
+		JSONObject errorResponse = new JSONObject(response);
+		JSONArray errors = new JSONArray( errorResponse.getString("error") );
+		
+		assertTrue(errorResponse.has("error"));
+		assertEquals(2, errors.length());
+		
+		
+		assertNoImgsImported();
+	}
+	
+	
+	
+	
+	
 	@Test
 	public void updateImgBulkWithCSVTest() throws IOException, Exception {
 		
@@ -308,6 +327,49 @@ public class ProductImgaeBulkUploadTest {
 
 		assertImgsImported(response);
 	}
+	
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkWithCSVAndInternalStructureTest() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		//test adding images inside internal folders of the ZIP file.
+		//The path of images in the CSV may start with '/' or not.
+		String response = 
+				performFileUpload(TEST_ZIP_INTERNAL_STRUCT, TEST_CSV_INTERNAL_STRUCT, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(200))
+	             .andReturn()
+	             .getResponse()
+	             .getContentAsString();
+
+		assertImgsImported(response);
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkNoCSVAndInternalStructureTest() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		String response = 
+				performFileUploadNoCSV(TEST_ZIP_INTERNAL_STRUCT_WITH_BARCODE, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(200))
+	             .andReturn()
+	             .getResponse()
+	             .getContentAsString();
+
+		assertImgsImported(response);
+	}
+	
+	
+	
 	
 	
 	

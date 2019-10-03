@@ -249,10 +249,10 @@ public class DataImportServiceImpl implements DataImportService{
 		dto.setStockDto( createStockDto(row, importMetaData) );
 		
 		Long orgId = security.getCurrentUserOrganization();
-		ProductVariantsEntity variantEnt = variantRepo.findByBarcodeAndProductEntity_OrganizationId(row.getBarcode(), orgId).get();
+		Optional<ProductVariantsEntity> variantEnt = variantRepo.findByBarcodeAndProductEntity_OrganizationId(row.getBarcode(), orgId);
 		
-		if(variantEnt != null) {
-			modifyProductImportDtoForUpdate(dto, row, variantEnt);
+		if(variantEnt != null && variantEnt.isPresent()) {
+			modifyProductImportDtoForUpdate(dto, row, variantEnt.get() );
 		}
 		
 		return dto;

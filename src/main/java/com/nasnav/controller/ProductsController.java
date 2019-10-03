@@ -29,6 +29,7 @@ import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.VariantUpdateResponse;
+import com.nasnav.service.ProductImageService;
 import com.nasnav.service.ProductService;
 
 import io.swagger.annotations.Api;
@@ -43,6 +44,9 @@ public class ProductsController {
 
 	@Autowired
 	ProductService productService;
+	
+	@Autowired
+	ProductImageService productImgService;
 	
 	
 	@ApiOperation(value = "Create or update a product", nickname = "product update", code = 201)
@@ -99,7 +103,7 @@ public class ProductsController {
             @RequestPart("properties") @Valid ProductImageUpdateDTO imgMetaData)
             		throws BusinessException {
 
-		return  productService.updateProductImage(file, imgMetaData);
+		return  productImgService.updateProductImage(file, imgMetaData);
     }
     
     
@@ -118,7 +122,7 @@ public class ProductsController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ProductImageDeleteResponse deleteProductImage(@RequestParam("image_id") @Valid Long imageId)
             		throws BusinessException {
-		return  productService.deleteImage(imageId);
+		return  productImgService.deleteImage(imageId);
     }
 	
 	
@@ -237,7 +241,7 @@ public class ProductsController {
             @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData)
             		throws BusinessException {
 
-		return  productService.updateProductImageBulk(zip, csv, metaData);
+		return  productImgService.updateProductImageBulk(zip, csv, metaData);
     }
 	
 	

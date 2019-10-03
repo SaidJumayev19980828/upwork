@@ -1,0 +1,807 @@
+package com.nasnav.service;
+
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CSV_PARSE_FAILURE;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING_IMGS;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING_IMG_FILE;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUCT_EXISTS_WITH_BARCODE;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMG_BULK_IMPORT;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_READ_ZIP;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import javax.validation.Valid;
+
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
+
+import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ProductImagesRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dto.ProductImageBulkUpdateDTO;
+import com.nasnav.dto.ProductImageUpdateDTO;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductImagesEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.response.ProductImageDeleteResponse;
+import com.nasnav.response.ProductImageUpdateResponse;
+import com.nasnav.service.model.ImportedImage;
+import com.sun.istack.logging.Logger;
+import com.univocity.parsers.common.record.Record;
+import com.univocity.parsers.csv.CsvParser;
+import com.univocity.parsers.csv.CsvParserSettings;
+
+
+
+@Service
+public class ProductImageServiceImpl implements ProductImageService {
+	
+	private Logger logger = Logger.getLogger(ProductService.class);
+	
+	@Autowired
+	private  ProductRepository productRepository;
+
+	@Autowired
+	private  ProductImagesRepository productImagesRepository;
+
+	
+	@Autowired
+	private  ProductVariantsRepository productVariantsRepository;
+
+	
+	@Autowired
+	private  FileService fileService;
+	
+	
+	@Autowired
+	private EmployeeUserRepository empRepo;
+	
+	@Autowired
+	private SecurityService securityService;
+	
+	
+	
+	
+
+	@Override
+	public ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		validateProductImg(file, imgMetaData);
+		
+		return saveProductImg(file, imgMetaData);
+	}
+
+
+
+	/**
+	 * assert all required parameters are validated before calling this, so we don't validate twice and
+	 * validation should be centralized !
+	 * if something fails here due to invalid data , then the validation should be fixed!
+	 * */
+	private ProductImageUpdateResponse saveProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		Operation opr = imgMetaData.getOperation();
+		
+		if(opr.equals(Operation.CREATE))
+			return saveNewProductImg(file, imgMetaData);
+		else
+			return saveUpdatedProductImg(file, imgMetaData);
+	}
+
+
+
+
+	private ProductImageUpdateResponse saveUpdatedProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());		
+		
+		
+		Long imgId = imgMetaData.getImageId();		
+		ProductImagesEntity entity = productImagesRepository.findById(imgId).get();
+		
+		
+		
+		String url = null;
+		String oldUrl = null;
+		if(file != null && !file.isEmpty()) {
+			 url = fileService.saveFile(file, user.getOrganizationId());
+			 oldUrl = entity.getUri();
+		}		
+		
+		
+		//to update a value , it should be already present in the JSON		
+		if(imgMetaData.isUpdated("priority"))
+			entity.setPriority( imgMetaData.getPriority() );
+		
+		if(imgMetaData.isUpdated("type"))
+			entity.setType( imgMetaData.getType() );
+		
+		if(imgMetaData.isUpdated("productId")) {
+			Long productId = imgMetaData.getProductId();
+			Optional<ProductEntity> productEntity = productRepository.findById( productId );
+			entity.setProductEntity(productEntity.get());
+		}
+		
+		if(url != null)
+			entity.setUri(url);
+		
+		if(imgMetaData.isUpdated("variantId")) {
+			Optional.ofNullable( imgMetaData.getVariantId() )
+					.flatMap(productVariantsRepository::findById)
+					.ifPresent(entity::setProductVariantsEntity);
+		}		
+		
+		entity = productImagesRepository.save(entity);
+		
+		if(url != null && oldUrl != null) {
+			fileService.deleteFileByUrl(oldUrl);
+		}
+		
+		return new ProductImageUpdateResponse(entity.getId(), url);
+	}
+
+
+
+
+	private ProductImageUpdateResponse saveNewProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData)
+			throws BusinessException {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		
+		String url = fileService.saveFile(file, user.getOrganizationId());
+		
+		Long imgId = saveProductImgToDB(imgMetaData, url);
+		
+		return new ProductImageUpdateResponse(imgId, url);
+	}
+
+
+
+
+	private Long saveProductImgToDB(ProductImageUpdateDTO imgMetaData, String uri) throws BusinessException {
+		Long productId = imgMetaData.getProductId();
+		Optional<ProductEntity> productEntity = productRepository.findById( productId );
+		
+		
+		ProductImagesEntity entity = new ProductImagesEntity();
+		entity.setPriority(imgMetaData.getPriority());
+		entity.setProductEntity(productEntity.get());		
+		entity.setType(imgMetaData.getType());
+		entity.setUri(uri);
+		Optional.ofNullable( imgMetaData.getVariantId() )
+				.flatMap(productVariantsRepository::findById)
+				.ifPresent(entity::setProductVariantsEntity);
+		
+		entity = productImagesRepository.save(entity);
+		
+		return entity.getId();
+	}
+
+
+
+
+	private void validateProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		if(imgMetaData == null)
+			throw new BusinessException("No Metadata provided for product image!", "INVALID PARAM", HttpStatus.NOT_ACCEPTABLE);
+		
+		if(!imgMetaData.isRequiredPropertyProvided("operation"))
+			throw new BusinessException("No operation provided!", "INVALID PARAM:operation", HttpStatus.NOT_ACCEPTABLE);
+					
+		
+		if(imgMetaData.getOperation().equals( Operation.CREATE )) {
+			validateNewProductImg(file, imgMetaData);
+		}else {
+			validateUpdatedProductImg(file, imgMetaData);
+		}
+			
+	}
+
+
+
+
+	private void validateUpdatedProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		if(!imgMetaData.areRequiredForUpdatePropertiesProvided()) {
+			throw new BusinessException(
+					String.format("Missing required parameters! required parameters for updating existing image are: %s", imgMetaData.getRequiredPropertiesForDataUpdate())
+					, "MISSING PARAM"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		validateProductOfImg(imgMetaData);		
+		
+		validateImgId(imgMetaData);
+		
+		if(file != null)
+			validateProductImgFile(file);	
+		
+	}
+
+
+
+
+	private void validateImgId(ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		//based on previous validations assert imageId is provided 
+		Long imgId = imgMetaData.getImageId();
+		
+		if( !productImagesRepository.existsById(imgId))
+			throw new BusinessException(
+					String.format("No product image exists with id: %d !", imgId)
+					, "INVALID PARAM:image_id"
+					, HttpStatus.NOT_ACCEPTABLE);
+	}
+
+
+
+
+	private void validateNewProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		if(!imgMetaData.areRequiredForCreatePropertiesProvided()) {
+			throw new BusinessException(
+					String.format("Missing required parameters! required parameters for adding new image are: %s", imgMetaData.getRequiredPropertiesForDataCreate())
+					, "MISSING PARAM"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		validateProductOfImg(imgMetaData);
+		
+		validateProductImgFile(file);		
+	}
+
+
+
+
+	private void validateProductOfImg(ProductImageUpdateDTO imgMetaData) throws BusinessException {
+		
+		Long productId = imgMetaData.getProductId();		
+		Optional<ProductEntity> product = productRepository.findById(productId);
+		if( !product.isPresent() )
+			throw new BusinessException(
+					String.format("Product Id :[%d] doesnot exists!", productId)
+					, "INVALID PARAM:product_id"
+					, HttpStatus.NOT_ACCEPTABLE);		
+		
+		
+		validateUserCanModifyProduct(product);		
+		
+		validateProductVariantForImg(imgMetaData, productId);
+			
+	}
+
+
+
+
+	private void validateProductVariantForImg(ProductImageUpdateDTO imgMetaData, Long productId) throws BusinessException {
+		Long variantId = imgMetaData.getVariantId();		
+		if(variantId != null ) {
+			Optional<ProductVariantsEntity> variant = productVariantsRepository.findById(variantId);
+			if(variantId != null && !variant.isPresent())
+				throw new BusinessException(
+						String.format("Product variant with id [%d] doesnot exists!", variantId)
+						, "INVALID PARAM:variant_id"
+						, HttpStatus.NOT_ACCEPTABLE);
+			
+			
+			if(variantNotForProduct(variant, productId))
+				throw new BusinessException(
+						String.format("Product variant with id [%d] doesnot belong to product with id [%d]!", variantId, productId)
+						, "INVALID PARAM:variant_id"
+						, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+
+
+	/**
+	 * product must follow the organization of the user 
+	 * */
+	private void validateUserCanModifyProduct(Optional<ProductEntity> product) throws BusinessException {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		Long userOrg = user.getOrganizationId();
+		Long productOrg = product.get().getOrganizationId();
+		
+		if(!Objects.equals(userOrg, productOrg))
+			throw new BusinessException(
+					String.format("User with email [%s] have no rights to modify products from organization of id[%d]!", user.getEmail(), productOrg)
+					, "INSUFFICIENT RIGHTS"
+					, HttpStatus.FORBIDDEN);
+	}
+
+
+
+	
+
+	private Boolean variantNotForProduct(Optional<ProductVariantsEntity> variant, Long productId) {
+		Boolean variantNotForProduct = variant.get().getProductEntity() == null 
+											|| !variant.get().getProductEntity().getId().equals(productId);
+		return variantNotForProduct;
+	}
+
+
+
+	
+
+	private void validateProductImgFile(MultipartFile file) throws BusinessException {
+		if(file == null || file.isEmpty() || file.getContentType() == null)
+			throw new BusinessException(
+					"No image file provided!"
+					, "MISSIG PARAM:image"
+					, HttpStatus.NOT_ACCEPTABLE);
+		
+		String mimeType = file.getContentType();
+		if(!mimeType.startsWith("image"))
+			throw new BusinessException(
+					String.format("Invalid file type[%]! only MIME 'image' types are accepted!", mimeType)
+					, "MISSIG PARAM:image"
+					, HttpStatus.NOT_ACCEPTABLE);
+	}
+
+
+
+	
+	@Override
+	public ProductImageDeleteResponse deleteImage(Long imgId) throws BusinessException {
+		ProductImagesEntity img = 
+				productImagesRepository.findById(imgId)
+				 				.orElseThrow(()-> new BusinessException("No Image exists with id ["+ imgId+"] !", "INVALID PARAM:image_id", HttpStatus.NOT_ACCEPTABLE));
+		
+		Long productId = Optional.ofNullable(img.getProductEntity())
+								.map(prod -> prod.getId())
+								.orElse(null);					
+		
+		validateImgToDelete(img);		
+		
+		productImagesRepository.deleteById(imgId);
+		
+		fileService.deleteFileByUrl(img.getUri());
+		
+		return new ProductImageDeleteResponse(productId);
+	}
+
+
+
+
+	private void validateImgToDelete(ProductImagesEntity img) throws BusinessException {
+		Long orgId = Optional.ofNullable(img.getProductEntity())
+								.map(prod -> prod.getOrganizationId())
+								.orElse(null);
+		
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		
+		if(!user.getOrganizationId().equals(orgId)) {
+			throw new BusinessException(
+					String.format("User from organization of id[%d] have no rights to delete product image of id[%d]",orgId, img.getId())
+					, "UNAUTHRORIZED"
+					, HttpStatus.FORBIDDEN);
+		}
+	}
+
+	
+	
+	
+
+
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public List<ProductImageUpdateResponse> updateProductImageBulk(@Valid MultipartFile zip, @Valid MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {		
+		validateUpdateImageBulkRequest(zip, csv, metaData);
+		
+		return saveImgsBulk(zip, csv, metaData);
+	}
+
+	
+	
+	
+
+
+
+	private List<ProductImageUpdateResponse> saveImgsBulk(@Valid MultipartFile zip, @Valid MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
+		List<ImportedImage> importedImgs = extractImgsToImport(zip, csv, metaData);
+		List<String> errors = new ArrayList<>();
+		List<ProductImageUpdateResponse> responses = new ArrayList<>(); 
+		
+		for(ImportedImage img : importedImgs) {
+			try {
+				responses.add( updateProductImage(img.getImage(), img.getImgMetaData()) );
+			}catch(Exception e) {
+				logger.log(Level.SEVERE, e.getMessage(), e);				
+				
+				errors.add( createImgImportErrMsg(img, e) );
+			}
+		}
+		
+		if(!errors.isEmpty()) {
+			rollbackImgBulkImport(responses);
+			throwExceptionWithErrorList(errors);
+		}
+		
+		return responses;
+	}
+
+
+
+	
+
+	private void rollbackImgBulkImport(List<ProductImageUpdateResponse> responses) throws BusinessException {
+		for(ProductImageUpdateResponse res: responses) {
+			deleteImage( res.getImageId() );
+		}
+		
+		TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+	}
+	
+	
+
+
+
+	private void throwExceptionWithErrorList(List<String> errors) throws BusinessException {
+		JSONArray json = new JSONArray(errors);
+		throw new BusinessException(
+				ERR_PRODUCT_IMG_BULK_IMPORT
+				, json.toString()
+				, HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+
+
+
+
+	private String createImgImportErrMsg(ImportedImage img, Exception e) {
+		StringBuilder msg = new StringBuilder();
+		msg.append( String.format("Error importing image file with name[%s]", img.getImage().getOriginalFilename()) );
+		msg.append( System.getProperty("line.separator") );
+		msg.append("Error Message: " + e.getMessage());
+		String msgString = msg.toString();
+		return msgString;
+	}
+
+
+
+	
+	
+	
+
+	private List<ImportedImage> extractImgsToImport(@Valid MultipartFile zip, @Valid MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
+		List<ImportedImage> imgs = new ArrayList<>();		
+		List<String> errors = new ArrayList<>();		
+		Map<String,String> fileBarcodeMap = createFileBarcodeMap(csv);
+		
+		try(ZipInputStream stream = new ZipInputStream(zip.getInputStream())){	
+			
+			imgs = readZipStream(stream, metaData, fileBarcodeMap, errors);
+			
+		}catch(Exception e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			throw new BusinessException(ERR_READ_ZIP, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		
+		if(!errors.isEmpty()) {
+			String errorsJson = getErrorMsgAsJson(errors);
+			throw new BusinessException(ERR_IMPORTING_IMGS, errorsJson , HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		return imgs;
+	}
+
+
+
+	
+	
+
+	private List<ImportedImage> readZipStream(ZipInputStream stream, ProductImageBulkUpdateDTO metaData,
+			Map<String, String> fileBarcodeMap, List<String> errors) throws IOException {
+		
+		List<ImportedImage> imgs = new ArrayList<>();
+		
+		ZipEntry zipEntry = stream.getNextEntry();
+		
+		while (zipEntry != null) {						
+			readImgsFromZipEntry(zipEntry, stream, metaData, fileBarcodeMap, errors)
+					.forEach(imgs::add);
+			
+		    zipEntry = stream.getNextEntry();
+		}
+		
+		stream.closeEntry();
+		
+		return imgs;
+	}
+
+
+	
+	
+	
+
+	
+	/**
+	 * read a single image in the zip file, and return one or more "ImportedImage" based on the barcode,
+	 * as a single barcode can belong to both a product and a product variant.
+	 * */
+	private List<ImportedImage> readImgsFromZipEntry(ZipEntry zipEntry, ZipInputStream stream,
+			ProductImageBulkUpdateDTO metaData, Map<String, String> fileBarcodeMap, List<String> errors) {
+		List<ImportedImage> imgsFromEntry = new ArrayList<>();
+		
+		if(zipEntry.isDirectory() ) {
+			return new ArrayList<>();
+		} 
+		
+		try {
+			MultipartFile imgMultipartFile = readZipEntryIntoMultipartFile(stream, zipEntry);				
+			List<ProductImageUpdateDTO> imgsMetaData = createImportedImagesMetaData(zipEntry, fileBarcodeMap, metaData);				  
+			
+			imgsFromEntry = imgsMetaData.stream()
+									.map( meta -> new ImportedImage(imgMultipartFile, meta))
+									.collect(Collectors.toList());
+									
+		}catch(Exception e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);
+			errors.add( createZipEntryErrorMsg(zipEntry, e) );
+		}
+		return imgsFromEntry;
+	}
+	
+	
+	
+	
+	
+	
+	private String createZipEntryErrorMsg(ZipEntry zipEntry, Exception e) {
+		return String.format(ERR_IMPORTING_IMG_FILE, zipEntry.getName(), e.getMessage());
+	}
+
+
+	
+	
+	
+	private String getErrorMsgAsJson(List<String> errors) {
+		JSONArray errorsJson = new JSONArray(errors);
+		
+		JSONObject main = new JSONObject();
+		main.put("msg", ERR_CSV_PARSE_FAILURE);
+		main.put("errors", errorsJson);
+		
+		return errorsJson.toString();
+	}
+	
+	
+
+	
+	
+	
+
+	/**
+	 * a single imported image is identified by barcode, which can be for a product record ,or a
+	 * product variant record.
+	 * So, we return metadata considering all cases:
+	 * - barcode exists for product only
+	 * - barcode exists for variant only
+	 * - barcode exists for both a product and a variant
+	 * */
+	private List<ProductImageUpdateDTO> createImportedImagesMetaData(ZipEntry zipEntry,Map<String,String> fileBarcodeMap, ProductImageBulkUpdateDTO metaData) throws BusinessException{
+		
+		String barcode = getBarcodeOfImportedImg(zipEntry, fileBarcodeMap);		
+		Long orgId = securityService.getCurrentUserOrganization();
+		
+		
+		ProductImageUpdateDTO productMetaData = 
+				productRepository.findByBarcodeAndOrganizationId(barcode, orgId)
+					.map(prod -> createImgMetaData(prod, metaData))
+					.orElse(null);
+		
+		ProductImageUpdateDTO variantMetaData =
+				productVariantsRepository.findByBarcodeAndProductEntity_OrganizationId(barcode, orgId)
+					.map(var -> createImgMetaData(var, metaData))
+					.orElse(null);
+		
+		if(productMetaData == null && variantMetaData == null) {
+			throw new BusinessException(
+					String.format(ERR_NO_PRODUCT_EXISTS_WITH_BARCODE, barcode, orgId)
+					, "INVALID PARAM:imgs_zip"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		return
+			Arrays.asList( productMetaData, variantMetaData )
+				  .stream()
+				  .filter(java.util.Objects::nonNull)
+				  .collect(Collectors.toList());
+	}
+
+
+	
+
+
+	private String getBarcodeOfImportedImg(ZipEntry zipEntry, Map<String, String> fileBarcodeMap) {
+		String fileName = zipEntry.getName();
+		String barcode = fileBarcodeMap.get(fileName);
+		if(barcode == null) {
+			barcode =  getBarcodeFromImgName(fileName);
+		}
+		return barcode;
+	}
+	
+	
+	
+	
+	
+	private MultipartFile readZipEntryIntoMultipartFile(ZipInputStream stream, ZipEntry zipEntry) throws Exception {
+		FileItem fileItem = createFileItem(zipEntry);
+		
+		readIntoFileItem(stream, fileItem);
+		
+		return new CommonsMultipartFile(fileItem);
+	}
+
+
+
+
+	private void readIntoFileItem(ZipInputStream stream, FileItem fileItem) throws IOException {
+		byte[] buffer = new byte[1024*100];
+		OutputStream fos = fileItem.getOutputStream();
+		int len;
+		while ((len = stream.read(buffer)) > 0) {
+            fos.write(buffer, 0, len);
+        }
+	}
+
+
+
+
+	private FileItem createFileItem(ZipEntry zipEntry) {
+		String fileName = zipEntry.getName();		
+		DiskFileItemFactory factory = new DiskFileItemFactory();
+		factory.setSizeThreshold(1024*1024);
+		FileItem fileItem = factory.createItem("image", "image/jpeg", false, fileName);
+		return fileItem;
+	}
+
+
+	
+	
+	
+	private ProductImageUpdateDTO createImgMetaData(ProductEntity prod, ProductImageBulkUpdateDTO metaData) {
+		ProductImageUpdateDTO imgMetaData = new  ProductImageUpdateDTO();
+		imgMetaData.setOperation(Operation.CREATE);
+		imgMetaData.setPriority( metaData.getPriority() );
+		imgMetaData.setType( metaData.getType() );
+		imgMetaData.setProductId(prod.getId());
+		imgMetaData.setVariantId(null);
+		
+		return imgMetaData;
+	}
+	
+	
+	
+	
+	
+	
+	private ProductImageUpdateDTO createImgMetaData(ProductVariantsEntity variant, ProductImageBulkUpdateDTO metaData) {
+		ProductImageUpdateDTO imgMetaData = new  ProductImageUpdateDTO();
+		imgMetaData.setOperation(Operation.CREATE);
+		imgMetaData.setPriority( metaData.getPriority() );
+		imgMetaData.setType( metaData.getType() );
+		imgMetaData.setProductId(variant.getProductEntity().getId());
+		imgMetaData.setVariantId(variant.getId());
+		
+		return imgMetaData;
+	}
+	
+	
+
+
+	private String getBarcodeFromImgName(String fileName) {
+		return com.google.common.io.Files.getNameWithoutExtension(fileName);
+	}
+
+
+
+	
+
+	private Map<String, String> createFileBarcodeMap(MultipartFile csv) throws BusinessException {
+		if(csv == null ||csv.isEmpty())
+			return new HashMap<>();		
+		
+		return getCsvRecords(csv)
+					.stream()
+					.collect(Collectors.toMap(
+											rec -> normalizeZipPath( rec.getString(1) )
+											, rec ->rec.getString(0)));
+	}
+
+
+
+
+	private String normalizeZipPath(String path) {
+		String normalized = path ;
+		if(path.startsWith("/")) {
+			normalized = path.replaceFirst("/", "");
+		}
+			
+		return normalized;
+	}
+
+
+
+	private List<Record> getCsvRecords(MultipartFile csv) throws BusinessException {
+		List<Record> allRecords = new ArrayList<>();
+		
+		CsvParserSettings settings = new CsvParserSettings();
+		settings.setHeaderExtractionEnabled(true);
+		CsvParser parser = new CsvParser(settings );		
+		
+		try{
+			allRecords = parser.parseAllRecords(csv.getInputStream());
+		}catch(Exception e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);			
+			throw new BusinessException(ERR_CSV_PARSE_FAILURE, "INTERNAL SERVER ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		return allRecords;
+	}
+
+
+	
+
+
+	private void validateUpdateImageBulkRequest(@Valid MultipartFile zip, @Valid MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
+		if(metaData.getPriority() == null || metaData.getType() == null) {
+			throw new BusinessException(
+					"Missing required metadata parameters, required parameters are [type, priority]!"
+					, "MISSING PARAM"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		
+		validateImgBulkZip(zip);
+	}
+
+
+
+
+	private void validateImgBulkZip(MultipartFile zip) throws BusinessException {
+		if(zip.isEmpty()) {
+			throw new BusinessException(
+					"Provided Zip file has no data!"
+					, "INVALID PARAM:imgs_zip"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		String ext = com.google.common.io.Files.getFileExtension(zip.getOriginalFilename());
+		if(!ext.equalsIgnoreCase("zip")) {
+			throw new BusinessException(
+					"Provided images archive is not ZIP file!"
+					, "INVALID PARAM:imgs_zip"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+
+}

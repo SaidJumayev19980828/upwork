@@ -1,11 +1,5 @@
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 
-import javax.sql.DataSource;
-
-import com.nasnav.dto.UserRepresentationObject;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,22 +12,22 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.*;
-import org.springframework.jdbc.datasource.init.ScriptUtils;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.controller.UserController;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.RoleEmployeeUserRepository;
-import com.nasnav.dao.RoleRepository;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.response.BaseResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
@@ -46,11 +40,9 @@ import net.jcip.annotations.NotThreadSafe;
 @AutoConfigureWebTestClient
 @NotThreadSafe
 @PropertySource("classpath:database.properties")
+@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/EmpUsers_Test_Data_Insert.sql"})
+@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class EmployeeUserCreationTest {
-
-	private MockMvc mockMvc;
-	private EmployeeUserEntity persistentUser;
-	private OrganizationEntity organization;
 
 	@Mock
 	private UserController userController;
@@ -64,80 +56,19 @@ public class EmployeeUserCreationTest {
 	@Autowired
 	EmployeeUserService employeeUserService;
 
-	@Autowired
-	private EmployeeUserRepository employeeUserRepository;
-
-	@Autowired
-	private OrganizationRepository organizationRepository;
-
-	@Autowired
-	private RoleRepository roleRepository;
-
-	@Autowired
-	private RoleEmployeeUserRepository roleEmployeeUserRepository;
-
 	@Value("classpath:sql/EmpUsers_Test_Data_Insert.sql")
 	private Resource userDataInsert;
 
 	@Value("classpath:sql/database_cleanup.sql")
 	private Resource databaseCleanup;
 
-	@Autowired
-	private DataSource datasource;
-
 	@Before
 	public void setup() {
 		config.mailDryRun = true;
-		mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
-		cleanup();
-		try (Connection con = datasource.getConnection()) {
-			ScriptUtils.executeSqlScript(con, userDataInsert);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		MockMvcBuilders.standaloneSetup(userController).build();		
 	}
 
-	@After
-	public void cleanup() {
-		try (Connection con = datasource.getConnection()) {
-			ScriptUtils.executeSqlScript(con, databaseCleanup);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
 
-/*
-	private void deleteRoleEmployeeUsers(Integer id) {
-		List<RoleEmployeeUser> roleEmployees = roleEmployeeUserRepository.findRoleEmployeeUsersById(id);
-		for(RoleEmployeeUser roleEmp : roleEmployees){
-			roleEmployeeUserRepository.delete(roleEmp);
-		}
-	}
-
-	private void deleteRoles(Integer id) {
-		List<Role> roles = roleRepository.getRolesOfEmployeeUser(id);
-		for(Role role : roles){
-			if (role.getId() != 1 && role.getId() != 2) {
-				roleRepository.delete(role);
-			}
-		}
-	}
-*/
-
-/*
-	private OrganizationEntity createOrganization() {
-		//create new organization
-		OrganizationEntity org = new OrganizationEntity();
-		org.setName("Test Organization");
-		org.setCreatedAt(new Date());
-		org.setUpdatedAt(new Date());
-		org.setDescription("Test Organization Description");
-		org.setId(99001L);
-
-		OrganizationEntity organization = organizationRepository.save(org);
-		return organization;
-	}
-*/
 
 	private HttpEntity<Object> getHttpEntity(Object body, String token, String id) {
 		HttpHeaders headers = new HttpHeaders();
@@ -153,7 +84,7 @@ public class EmployeeUserCreationTest {
         HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
 
-		Long id = response.getBody().getEntityId();
+		response.getBody().getEntityId();
 
 		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertEquals(200, response.getStatusCode().value());
@@ -259,7 +190,7 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
 
-		Long id = response.getBody().getEntityId();
+		response.getBody().getEntityId();
 		// try to create another employee user with the same email
 		response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
 
@@ -268,20 +199,6 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.EMAIL_EXISTS));
 	}
 
-
-/*
-	@Test
-	public void createEmployeeUserStoreRoleNoIdTest() {
-		HttpEntity<Object> employeeUserJson = getHttpEntity(
-				"{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": " + "99001" + ", \"store_id\": 0, \"role\": \"STORE_ADMIN\"}",
-				"abcdefg", "68");
-		ResponseEntity<UserApiResponse> response = template.postForEntity(
-				"/user/create", employeeUserJson, UserApiResponse.class);
-		Assert.assertFalse(response.getBody().isSuccess());
-		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_STORE));
-	}
-*/
 
 	@Test
 	public void employeeUserLoginNeedsActivationTest() {
@@ -292,7 +209,7 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> employeeUserJson = getHttpEntity(userBody, "abcdefg", "68");
 		HttpEntity<Object> employeeUserLoginJson = getHttpEntity(loginBody, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
-		Long id = response.getBody().getEntityId();
+		response.getBody().getEntityId();
 
 		// try to login with this user email before activation
 		ResponseEntity<UserApiResponse> loginResponse = template.postForEntity(
@@ -309,7 +226,7 @@ public class EmployeeUserCreationTest {
 		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 99001" + ", \"store_id\": 10, \"role\": \"NASNAV_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
-		Long id = response.getBody().getEntityId();
+		response.getBody().getEntityId();
 
 		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertEquals(200, response.getStatusCode().value());
@@ -321,7 +238,7 @@ public class EmployeeUserCreationTest {
 		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 99001" + ", \"store_id\": 10, \"role\": \"ORGANIZATION_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
-		Long id = response.getBody().getEntityId();
+		response.getBody().getEntityId();
 
 		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertEquals(200, response.getStatusCode().value());
@@ -352,7 +269,7 @@ public class EmployeeUserCreationTest {
 		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser5@nasnav.com" + "\" , \"role\": \"NASNAV_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
-		Long id = response.getBody().getEntityId();
+		response.getBody().getEntityId();
 
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_ORGANIZATION));
@@ -376,7 +293,7 @@ public class EmployeeUserCreationTest {
 				" \"org_id\": 99002" + ", \"role\": \"ORGANIZATION_MANAGER\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
-		Long id = response.getBody().getEntityId();
+		response.getBody().getEntityId();
 
 		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertEquals(200, response.getStatusCode().value());
@@ -399,7 +316,7 @@ public class EmployeeUserCreationTest {
 		String body = "{\"updated_user_id\":\"158\",\"name\":\"74man\",\"email\":\"" + "boda  Test@nasnav.com" + "\", \"org_id\": 99001" + "}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
-		Long id = response.getBody().getEntityId();
+		response.getBody().getEntityId();
 
 		Assert.assertFalse(response.getBody().isSuccess());
 		Assert.assertEquals(406, response.getStatusCode().value());
