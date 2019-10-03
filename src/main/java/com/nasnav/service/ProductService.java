@@ -1989,7 +1989,7 @@ public class ProductService {
 		throw new BusinessException(
 				ERR_PRODUCT_IMG_BULK_IMPORT
 				, json.toString()
-				, HttpStatus.NOT_ACCEPTABLE);
+				, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 

@@ -3,9 +3,12 @@ import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.json.JSONArray;
@@ -37,6 +40,8 @@ import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.persistence.FileEntity;
+import com.nasnav.persistence.ProductImagesEntity;
 import com.nasnav.security.AuthenticationFilter;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -70,7 +75,13 @@ public class ProductImgaeBulkUploadTest {
 
 	private static final String TEST_ZIP_DIR = "src/test/resources/img_bulk_zip";
 
-	private static final String TEST_INVALID_ZIP = "img_bulk_upload_invalid.zip";
+	private static final String TEST_ZIP_INVALID = "img_bulk_upload_invalid.zip";
+
+	private static final String TEST_CSV_NON_EXISTING_BARCODE = "img_bulk_non_existing_barcode.csv";
+
+	private static final String TEST_CSV_INCOMPLETE = "img_bulk_barcode_incomplete.csv";
+
+	private static final String TEST_ZIP_EMPTY_IMG_FILE = "img_bulk_upload_empty_img_file.zip";
 
 	@Value("${files.basepath}")
 	private String basePathStr;
@@ -123,7 +134,9 @@ public class ProductImgaeBulkUploadTest {
 		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
 		
 		performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, "NON-EXISTING-TOKEN")
-	             .andExpect(status().is(401));	
+	             .andExpect(status().is(401));
+		
+		assertNoImgsImported();
 	}
 	
 	
@@ -137,7 +150,9 @@ public class ProductImgaeBulkUploadTest {
 		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
 		
 		performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, STORE_ADMIN_TOKEN)
-	             .andExpect(status().is(403));					            
+	             .andExpect(status().is(403));
+		
+		assertNoImgsImported();
 	}
 	
 	
@@ -156,6 +171,8 @@ public class ProductImgaeBulkUploadTest {
 							                 .part(jsonPart)
 							                 .header(AuthenticationFilter.TOKEN_HEADER, USER_TOKEN))
 	    		.andExpect(status().is(400));
+	    
+	    assertNoImgsImported();
 	}
 	
 	
@@ -170,7 +187,9 @@ public class ProductImgaeBulkUploadTest {
 		byte[] jsonBytes = json.toString().getBytes();
 		
 		performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, USER_TOKEN)
-	             .andExpect(status().is(406));					            
+	             .andExpect(status().is(406));
+		
+		assertNoImgsImported();
 	}
 	
 	
@@ -187,7 +206,9 @@ public class ProductImgaeBulkUploadTest {
 		byte[] jsonBytes = json.toString().getBytes();
 		
 		performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, USER_TOKEN)
-	             .andExpect(status().is(406));					            
+	             .andExpect(status().is(406));	
+		
+		assertNoImgsImported();
 	}
 	
 	
@@ -207,7 +228,9 @@ public class ProductImgaeBulkUploadTest {
 							                 .file(csvPart)
 							                 .part(jsonPart)
 							                 .header(AuthenticationFilter.TOKEN_HEADER, USER_TOKEN))
-	    		.andExpect(status().is(400));
+	    		.andExpect(status().is(406));
+	    
+	    assertNoImgsImported();
 	}
 	
 	
@@ -218,8 +241,26 @@ public class ProductImgaeBulkUploadTest {
 		
 		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
 		
-		performFileUpload(TEST_INVALID_ZIP, TEST_CSV, jsonBytes, USER_TOKEN)
-	             .andExpect(status().is(500));					            
+		performFileUpload(TEST_CSV, TEST_CSV, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(406));
+		
+		assertNoImgsImported();
+	}
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkInvalidZipFile() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		//if the zip file is invalid , nothing will be read from it , but
+		//no exception is thrown.
+		performFileUpload(TEST_ZIP_INVALID, TEST_CSV, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(200));		
+		
+		assertNoImgsImported();
 	}
 	
 	
@@ -233,7 +274,7 @@ public class ProductImgaeBulkUploadTest {
 		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
 		
 		String response = 
-				performFileUpload(TEST_ZIP_NON_EXISTING_BARCODE, TEST_CSV, jsonBytes, USER_TOKEN)
+				performFileUpload(TEST_ZIP_NON_EXISTING_BARCODE, TEST_CSV_NON_EXISTING_BARCODE, jsonBytes, USER_TOKEN)
 	             .andExpect(status().is(500))
 	             .andReturn()
 	             .getResponse()
@@ -244,7 +285,9 @@ public class ProductImgaeBulkUploadTest {
 		
 		assertTrue(errorResponse.has("error"));
 		assertEquals(1, errors.length());
-		//check no image was saved
+		
+		
+		assertNoImgsImported();
 	}
 	
 	
@@ -263,15 +306,137 @@ public class ProductImgaeBulkUploadTest {
 	             .getResponse()
 	             .getContentAsString();
 
+		assertImgsImported(response);
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkNoCSVTest() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		String response = performFileUploadNoCSV(TEST_ZIP, jsonBytes, USER_TOKEN)
+									.andExpect(status().is(200))
+						    		.andReturn()
+						            .getResponse()
+						            .getContentAsString();	
+		
+		assertImgsImported(response);
+	}
+	
+	
+	
+	
+	
+	
+
+	@Test
+	public void updateImgBulkWithIncompleteCSVTest() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		String response = 
+				performFileUpload(TEST_ZIP, TEST_CSV_INCOMPLETE, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(200))
+	             .andReturn()
+	             .getResponse()
+	             .getContentAsString();
+
+		assertImgsImported(response);
+	}
+	
+	
+	
+
+	
+	
+	@Test
+	public void updateImgBulkTestEmptyImgFile() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		String response = 
+				performFileUpload(TEST_ZIP_EMPTY_IMG_FILE, TEST_CSV, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(500))
+	             .andReturn()
+	             .getResponse()
+	             .getContentAsString();
+
+		JSONObject errorResponse = new JSONObject(response);
+		JSONArray errors = new JSONArray( errorResponse.getString("error") );
+		
+		assertTrue(errorResponse.has("error"));
+		assertEquals(1, errors.length());
+		
+		
+		assertNoImgsImported();
+	}
+	
+	
+	
+	
+	
+
+	private void assertImgsImported(String response) {
 		JSONArray responseJson = new JSONArray(response);
-		
 		assertEquals(
-				"import 2 images, one of them have a barcode that is used by both a product and a variant"
+				"import 2 images, one of them have a barcode that is used by both a product and a variant, so the 2 images are imported as 3 records"
 				, 3 
-				, responseJson.length());
-				
+				, responseJson.length());				
 		
-		assertEquals( 3L, imgRepo.count());
+		assertEquals( 3L, imgRepo.count());		
+		
+		IntStream.range(0, responseJson.length())
+				.mapToObj(responseJson::getJSONObject)
+				.forEach(this::assertImageUploaded);
+	}
+	
+	
+	
+	
+	private void assertNoImgsImported() throws IOException {
+		assertEquals(0L, imgRepo.count());
+		assertEquals(0L, filesRepo.count());
+		try(Stream<Path> files = Files.walk(basePath)){
+			Long cnt = files.filter(path -> !Files.isDirectory(path) ).count();
+			assertEquals("no files should exist in the save directory", 0L, cnt.longValue());
+		}
+	}
+
+
+
+	
+	
+
+	private ResultActions performFileUploadNoCSV(String zipFileName, byte[] json, String userToken)
+			throws UnsupportedEncodingException, Exception {
+		MockMultipartFile zipPart = createZipPart(zipFileName);		
+		MockPart jsonPart = createJsonPart(json);
+		
+		return	mockMvc.perform(MockMvcRequestBuilders.multipart(PRODUCT_IMG_BULK_URL)
+	    									 .file(zipPart)
+							                 .part(jsonPart)
+							                 .header(AuthenticationFilter.TOKEN_HEADER, USER_TOKEN))
+			    		;
+	}
+	
+	
+	
+	
+	
+	private void assertImageUploaded(JSONObject response) {
+		Long imgId = response.getLong("image_id");
+		String imgUrl = response.getString("image_url");
+		
+		FileEntity fileEntity = filesRepo.findByUrl(imgUrl);
+		Path imgPath = basePath.resolve(fileEntity.getLocation());
+		
+		assertTrue(imgRepo.existsById(imgId));		
+		assertTrue(Files.exists(imgPath));
 	}
 	
 	

@@ -233,7 +233,7 @@ public class ProductsController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public List<ProductImageUpdateResponse> importProductImagesBulk(
             @RequestPart("imgs_zip") @Valid MultipartFile zip,
-            @RequestPart("imgs_barcode_csv") @Valid MultipartFile csv,
+            @RequestPart(name="imgs_barcode_csv", required=false )  MultipartFile csv,
             @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData)
             		throws BusinessException {
 

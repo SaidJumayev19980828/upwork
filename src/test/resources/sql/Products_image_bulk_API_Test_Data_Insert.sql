@@ -21,6 +21,9 @@ INSERT INTO public.employee_users(id, created_at, updated_at, email, organizatio
 VALUES (68, now(), now(), 'testuser1@nasnav.com', 99001, '101112',  502);
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
 VALUES (69, now(), now(), 'testuser2@nasnav.com', 99002, '131415',  501);
+INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+VALUES (70, now(), now(), 'testuser3@nasnav.com', 99001, 'ssErf33',  502);
+
 
 
 --inserting Roles
