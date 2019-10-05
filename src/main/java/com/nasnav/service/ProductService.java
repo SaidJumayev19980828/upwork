@@ -248,12 +248,12 @@ public class ProductService {
 			return null;
 
 		Integer id = Integer.parseInt(entry.getKey());
-		Optional<ProductFeaturesEntity> opt = productFeaturesRepository.findById(id);
-		if(!opt.isPresent())
+		Optional<ProductFeaturesEntity> featureOptional = productFeaturesRepository.findById(id);
+		if(!featureOptional.isPresent())
 			return null;
 
 		return new AbstractMap.SimpleEntry<>(
-				opt.get().getName()
+				featureOptional.get().getPname()
 				, entry.getValue().toString());
 
 	}
