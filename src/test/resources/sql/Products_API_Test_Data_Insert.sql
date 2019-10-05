@@ -80,9 +80,13 @@ values(1009 , 603);
 
 
 -- insert image for products  which should be deleted in tests
+INSERT INTO public.files(organization_id, url, location)
+VALUES(99001, 'img1.jpg', 'img1.jpg');
+INSERT INTO public.files(organization_id, url, location)
+VALUES(99001, 'img2.jpg', 'img2.jpg');
 INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
-VALUES(1008, null, 0, 1, 'img.jpg');
+VALUES(1008, null, 0, 1, 'img1.jpg');
 INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
-VALUES(1003, null, 0, 1, 'img.jpg');
+VALUES(1003, null, 0, 1, 'img2.jpg');
 
 
