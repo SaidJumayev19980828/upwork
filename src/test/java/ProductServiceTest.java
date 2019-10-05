@@ -89,10 +89,10 @@ public class ProductServiceTest {
 	private final String PRODUCT_VARIANT_P_NAME = "lipstick color";
 	private final String PRODUCT_FEATURE_1_VALUE = "red";
 	private final String PRODUCT_FEATURE_2_VALUE = "strawberry";
-	private final String PRODUCT_FEATURE_1_NAME = "color";
-	private final String PRODUCT_FEATURE_1_P_NAME = "lipstick color";
-	private final String PRODUCT_FEATURE_2_NAME = "flavour";
-	private final String PRODUCT_FEATURE_2_P_NAME = "lipstick flavour";
+	private final String PRODUCT_FEATURE_1_NAME = "Lispstick Color";
+	private final String PRODUCT_FEATURE_1_P_NAME = "lipstick_color";
+	private final String PRODUCT_FEATURE_2_NAME = "Lipstick flavour";
+	private final String PRODUCT_FEATURE_2_P_NAME = "lipstick_flavour";
 	private String FEATURE_SEPC_TEMPLATE = "{\"FEATURE_ID_1\":\"" + PRODUCT_FEATURE_1_VALUE + "\",\"FEATURE_ID_2\":\""
 			+ PRODUCT_FEATURE_2_VALUE + "\"}";
 
@@ -428,8 +428,8 @@ public class ProductServiceTest {
 	
 
 	private void assertVariantDetailRetrieved(JSONObject variant) {
-		assertEquals(PRODUCT_FEATURE_1_VALUE, variant.getString(PRODUCT_FEATURE_1_NAME));
-		assertEquals(PRODUCT_FEATURE_2_VALUE, variant.getString(PRODUCT_FEATURE_2_NAME));
+		assertEquals(PRODUCT_FEATURE_1_VALUE, variant.getString(PRODUCT_FEATURE_1_P_NAME));
+		assertEquals(PRODUCT_FEATURE_2_VALUE, variant.getString(PRODUCT_FEATURE_2_P_NAME));
 		assertEquals(PRODUCT_VARIANT_BARCODE, variant.getString("barcode"));
 	}
 	

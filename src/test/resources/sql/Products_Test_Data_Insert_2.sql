@@ -40,8 +40,8 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at
 
 
 --inserting product features
-INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(234,'color', 'lipstick color', 'whatever', 99001);
-INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(235,'flavour', 'lipstick flavour', 'bla bla bla', 99001);
+INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(234,'Lispstick Color', 'lipstick_color', 'whatever', 99001);
+INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(235,'Lipstick flavour', 'lipstick_flavour', 'bla bla bla', 99001);
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(236,'Shoe material', 's-material', 'Material of the shoes', 99001);
 
 
