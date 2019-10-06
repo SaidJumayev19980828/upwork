@@ -3,6 +3,7 @@ import java.math.BigDecimal;
 import java.net.Authenticator;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import org.junit.Before;
@@ -114,8 +115,8 @@ public class PaymentControllerTest {
 
 		// create order
 		OrdersEntity order = new OrdersEntity();
-		order.setCreationDate(new Date());
-		order.setUpdateDate(new Date());
+		order.setCreationDate( LocalDateTime.now()  );
+		order.setUpdateDate( LocalDateTime.now() );
 		order.setAmount(new BigDecimal(50));
 		order.setEmail("test@nasnav.com");
 		OrdersEntity orderEntity = orderRepository.save(order);

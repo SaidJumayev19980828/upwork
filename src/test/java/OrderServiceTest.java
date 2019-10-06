@@ -1,29 +1,34 @@
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
+import static org.junit.Assert.assertEquals;
 
+import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.List;
 
-import javax.sql.DataSource;
-
 import org.json.JSONArray;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.*;
-import org.springframework.jdbc.datasource.init.ScriptUtils;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.controller.OrdersController;
 import com.nasnav.dao.BasketRepository;
@@ -31,6 +36,9 @@ import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
+import com.nasnav.dto.BasketItem;
+import com.nasnav.dto.DetailedOrderRepObject;
+import com.nasnav.dto.ShippingAddress;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.OrdersEntity;
@@ -48,9 +56,10 @@ import net.jcip.annotations.NotThreadSafe;
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
 @NotThreadSafe
+@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert.sql"})
+@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class OrderServiceTest {
-
-	private static UserEntity persistentUser;
+	private static final String EXPECTED_COVER_IMG_URL = "99001/cover_img.jpg";
 
 	@Autowired
 	private TestRestTemplate template;
@@ -75,54 +84,7 @@ public class OrderServiceTest {
 	@Mock
 	private OrdersController ordersController;
 
-	@Value("classpath:sql/Orders_Test_Data_Insert.sql")
-	private Resource ordersDataInsert;
 
-
-	@Value("classpath:sql/database_cleanup.sql")
-	private Resource databaseCleanup;
-
-	@Autowired
-	private DataSource datasource;
-
-	@Before
-	public void setup() {
-		performDeleteSqlDataScript();
-		performInsertSqlDataScript();
-		persistentUser = userRepository.getByEmailAndOrganizationId("user1@nasnav.com", 99001L);
-		if (persistentUser == null) {
-			persistentUser = new UserEntity();
-			persistentUser.setName("user1");
-			persistentUser.setEmail("user1@nasnav.com");
-			persistentUser.setCreatedAt(LocalDateTime.now());
-			persistentUser.setUpdatedAt(LocalDateTime.now());
-			persistentUser.setAuthenticationToken("7657595");
-			persistentUser.setOrganizationId(99001L);
-			persistentUser.setEncryptedPassword("---");
-			userRepository.save(persistentUser);
-		}
-	}
-
-	@After
-	public  void cleanup() {
-		performDeleteSqlDataScript();
-	}
-
-	public void performInsertSqlDataScript() {
-		try (Connection con = datasource.getConnection()) {
-			ScriptUtils.executeSqlScript(con, ordersDataInsert);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void performDeleteSqlDataScript() {
-		try (Connection con = datasource.getConnection()) {
-			ScriptUtils.executeSqlScript(con, databaseCleanup);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
 
 	@Test
 	public void unregisteredUser() {
@@ -229,6 +191,7 @@ public class OrderServiceTest {
 
 	@Test
 	public void createnewOrder() {
+		UserEntity persistentUser = userRepository.getByEmailAndOrganizationId("user1@nasnav.com", 99001L);
 		Integer quantity = 5;
 		BigDecimal itemPrice = new BigDecimal(500).setScale(2);
 
@@ -281,6 +244,7 @@ public class OrderServiceTest {
 
 	@Test
 	public void updateCurrentOrder() {
+		UserEntity persistentUser = userRepository.getByEmailAndOrganizationId("user1@nasnav.com", 99001L);
 		Long stockId = 601L;
 		StocksEntity stocksEntity = stockRepository.findById(stockId).get();
 		ShopsEntity shopsEntity = stocksEntity.getShopsEntity();
@@ -300,8 +264,8 @@ public class OrderServiceTest {
 		ordersEntity.setAmount(amount);
 		ordersEntity.setShopsEntity(shopsEntity);
 		ordersEntity.setStatus(OrderStatus.NEW.getValue());
-		ordersEntity.setCreationDate(new Date());
-		ordersEntity.setUpdateDate(new Date());
+		ordersEntity.setCreationDate( LocalDateTime.now()  );
+		ordersEntity.setUpdateDate( LocalDateTime.now()  );
 		ordersEntity.setOrganizationEntity(organizationEntity);
 		ordersEntity = orderRepository.save(ordersEntity);
 
@@ -320,6 +284,7 @@ public class OrderServiceTest {
 
 	@Test
 	public void updateOrderNonExistingStatusTest() {
+		UserEntity persistentUser = userRepository.getByEmailAndOrganizationId("user1@nasnav.com", 99001L);
 		StocksEntity stock = createStock();
 		// create a new order, then take it's order id and try to make an update using it
 		ResponseEntity<OrderResponse> response = null;
@@ -542,5 +507,74 @@ public class OrderServiceTest {
 		for(OrdersEntity order : ordersList) {
 			Assert.assertTrue(order.getUserId() != null);
 		}
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getOrderInfoTest() throws JsonParseException, JsonMappingException, IOException {
+			
+		ResponseEntity<String> response = template.exchange("/order/info?order_id=33"
+														, HttpMethod.GET
+														,new HttpEntity<>(TestCommons.getHeaders(68, "101112"))
+														, String.class);
+		
+		System.out.println("Order >>>> " + response.getBody());
+		
+		ObjectMapper mapper = new ObjectMapper();
+		DetailedOrderRepObject body = mapper.readValue(response.getBody(), DetailedOrderRepObject.class);
+		
+		DetailedOrderRepObject expected = createExpectedOrderInfo(33L);
+		
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(expected, body);
+	}
+	
+	
+	
+	
+
+	private DetailedOrderRepObject createExpectedOrderInfo(Long orderId) {
+		OrdersEntity entity = orderRepository.findById(orderId).get();
+		
+		DetailedOrderRepObject order = new DetailedOrderRepObject();
+		order.setUserId(88L);
+		order.setCurrency("EGP");
+		order.setCreatedAt( entity.getCreationDate() );
+		order.setDeliveryDate( entity.getDeliveryDate() );
+		order.setOrderId( orderId );
+		order.setShipping( BigDecimal.ZERO );
+		order.setShippingAddress( createExpectedShippingAddr() );
+		order.setShopId( entity.getShopsEntity().getId() );
+		order.setStatus("CLIENT_CONFIRMED");
+		order.setSubtotal( new BigDecimal("600.00") );
+		order.setTotal( new BigDecimal("600.00"));		
+		order.setItems( createExpectedItems());
+		
+		return order;
+	}
+
+	private ShippingAddress createExpectedShippingAddr() {
+		ShippingAddress addr = new ShippingAddress();
+		addr.setDetails("");
+		return addr;
+	}
+	
+	
+	
+
+	private List<BasketItem> createExpectedItems() {
+		BasketItem item = new BasketItem();
+		item.setProductId(1001L);
+		item.setName("product_1");
+		item.setStockId( 601L );
+		item.setQuantity(14);
+		item.setTotalPrice( new BigDecimal("600.00") );
+		item.setThumb(EXPECTED_COVER_IMG_URL);
+		return Arrays.asList(item);
 	}
 }

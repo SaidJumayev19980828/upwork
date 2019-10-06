@@ -62,6 +62,8 @@ import com.univocity.parsers.csv.CsvParserSettings;
 @Service
 public class ProductImageServiceImpl implements ProductImageService {
 	
+	private static final String NO_IMG_FOUND_URL = "no_img_found.jpg";
+
 	private Logger logger = Logger.getLogger(ProductService.class);
 	
 	@Autowired
@@ -801,6 +803,39 @@ public class ProductImageServiceImpl implements ProductImageService {
 					, "INVALID PARAM:imgs_zip"
 					, HttpStatus.NOT_ACCEPTABLE);
 		}
+	}
+
+	
+	
+	
+	
+	@Override
+	public String getProductCoverImage(Long productId) {
+		return productImagesRepository
+							.findByProductEntity_IdOrderByPriority(productId)
+							.stream()
+							.filter(Objects::nonNull)
+							.filter(this::isProductCoverImage)
+							.sorted(this::compareByProductImageId)
+							.findFirst()
+							.map(img-> img.getUri())
+							.orElse(NO_IMG_FOUND_URL);
+	}
+	
+	
+	
+	
+	
+	private Boolean isProductCoverImage(ProductImagesEntity img) {
+		return Objects.equals(img.getPriority(),0);
+	}
+	
+	
+	
+	
+	
+	private Integer compareByProductImageId(ProductImagesEntity img1, ProductImagesEntity img2) {
+		return Long.compare(img1.getId(), img2.getId());
 	}
 
 

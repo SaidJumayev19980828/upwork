@@ -22,5 +22,7 @@ public interface ProductImageService {
 			@Valid MultipartFile zip
 			,@Valid MultipartFile csv
 			,@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException;
+
+	String getProductCoverImage(Long productId);
 	
 }

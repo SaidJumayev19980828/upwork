@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -49,6 +50,10 @@ public class OrderServiceImpl implements OrderService {
 
 	private final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class.getName());
 	private final ProductRepository productRepository;
+	
+	
+	@Autowired
+	private ProductImageService imgService;
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
@@ -133,11 +138,11 @@ public class OrderServiceImpl implements OrderService {
 		OrdersEntity orderEntity = new OrdersEntity();
 		orderEntity.setAddress(orderJsonDto.getAddress());
 		orderEntity.setAmount(calculateOrderAmount(orderJsonDto, stocksEntites));
-		orderEntity.setCreationDate(new Date());
+		orderEntity.setCreationDate( LocalDateTime.now() );
 		// TODO ordersEntity.setPayment_type(payment_type);
 		orderEntity.setShopsEntity(stocksEntites.get(0).getShopsEntity());
 		orderEntity.setStatus(OrderStatus.NEW.getValue());
-		orderEntity.setUpdateDate(new Date());
+		orderEntity.setUpdateDate( LocalDateTime.now()  );
 		orderEntity.setUserId(userId);
 
 		orderEntity = ordersRepository.save(orderEntity);
@@ -232,7 +237,7 @@ public class OrderServiceImpl implements OrderService {
 
 		orderEntity.setAmount(calculateOrderAmount(orderJsonDto, stocksEntites));
 		orderEntity.setShopsEntity(stocksEntites.get(0).getShopsEntity());
-		orderEntity.setUpdateDate(new Date());
+		orderEntity.setUpdateDate( LocalDateTime.now());
 		orderEntity = ordersRepository.save(orderEntity);
 
 		addItemsToBasket(orderJsonDto, orderEntity, stocksEntites);
@@ -256,10 +261,10 @@ public class OrderServiceImpl implements OrderService {
 
 		 */
 		if (newStatus == OrderStatus.CLIENT_CONFIRMED) {
-			orderEntity.setCreationDate(new Date());
+			orderEntity.setCreationDate( LocalDateTime.now() );
 		}
 		orderEntity.setStatus(newStatus.getValue());
-		orderEntity.setUpdateDate(new Date());
+		orderEntity.setUpdateDate( LocalDateTime.now() );
 		orderEntity = ordersRepository.save(orderEntity);
 		return new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
 	}
@@ -340,8 +345,8 @@ public class OrderServiceImpl implements OrderService {
 			}
 			createdOrderEntity = new OrdersEntity();
 
-			createdOrderEntity.setCreationDate(new Date(System.currentTimeMillis()));
-			createdOrderEntity.setUpdateDate(new Date(System.currentTimeMillis()));
+			createdOrderEntity.setCreationDate( LocalDateTime.now() );
+			createdOrderEntity.setUpdateDate(LocalDateTime.now() );
 			// FIXME: HOW COME THE AMOUNT IS SET AS RANDOM VALUE??
 			createdOrderEntity.setAmount(BigDecimal.valueOf(new Random().nextDouble()));
 		}
@@ -389,34 +394,49 @@ public class OrderServiceImpl implements OrderService {
 			obj.setItems(itemsList);
 		return obj;
 	}
+	
+	
+	
+	
 
 	private List<BasketItem> getBasketItems(Long orderId) {
 		List<BasketsEntity> itemsEntityList = basketRepository.findByOrdersEntity_Id(orderId);
-		List<BasketItem> basketItems = new ArrayList<>();
-		ProductEntity product;
-		StocksEntity stock;
-		for(BasketsEntity entityItem: itemsEntityList){
-			stock = entityItem.getStocksEntity();
-			product = stock.getProductVariantsEntity().getProductEntity();
-			BasketItem item = new BasketItem();
-			item.setProductId(product.getId());
-			item.setName(product.getName());
-			item.setPname(product.getPname());
-			item.setStockId(stock.getId());
-			item.setQuantity(entityItem.getQuantity().intValue());
-			//TODO set item unit //
-			item.setTotalPrice(entityItem.getPrice());
-			item.setThumb(product.getCoverImage());
-			item.setCurrency(TransactionCurrency.getTransactionCurrency(entityItem.getCurrency()).name());
-			basketItems.add(item);
-		}
-		return basketItems;
+		return itemsEntityList.stream()
+							.map(this::toBasketItem)
+							.collect(Collectors.toList());
 	}
+	
+	
+	
+	
+
+	private BasketItem toBasketItem(BasketsEntity entityItem) {
+		StocksEntity stock = entityItem.getStocksEntity();
+		ProductEntity product = stock.getProductVariantsEntity().getProductEntity();
+		
+		BasketItem item = new BasketItem();
+		item.setProductId(product.getId());
+		item.setName(product.getName());
+		item.setPname(product.getPname());
+		item.setStockId(stock.getId());
+		item.setQuantity(entityItem.getQuantity().intValue());
+		//TODO set item unit //
+		item.setTotalPrice(entityItem.getPrice());
+		item.setThumb( imgService.getProductCoverImage( product.getId() ));
+		item.setCurrency(TransactionCurrency.getTransactionCurrency(entityItem.getCurrency()).name());
+		
+		return item;
+	}
+	
+	
+	
 
 	private BigDecimal calculateOrderAmount(List<BasketItem> items) {
 		BigDecimal total = new BigDecimal(0);
-		for(BasketItem item: items)
+		for(BasketItem item: items) {
 			total = total.add(item.getTotalPrice());
+		}
+			
 		return total;
 	}
 	

@@ -2,11 +2,14 @@ import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import com.nasnav.dto.ProductRepresentationObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -310,7 +313,6 @@ public class ProductServiceTest {
 		productEntity.setOrganizationId(99001L);
 		productEntity.setDescription(PRODUCT_DESC);
 		productEntity.setBarcode(PRODUCT_PRODUCT_BARCODE);
-		productEntity.setCoverImage(PRODUCT_IMG_URL);
 		productEntity = productRepository.save(productEntity);
 		return productEntity;
 	}

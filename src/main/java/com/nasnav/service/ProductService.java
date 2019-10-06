@@ -1,11 +1,11 @@
 package com.nasnav.service;
 
 
-
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.math.BigDecimal;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -145,6 +145,10 @@ public class ProductService {
 	
 	@Autowired
 	private SecurityService securityService;
+	
+	
+	@Autowired
+	private ProductImageService imgService;
 
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
@@ -161,6 +165,8 @@ public class ProductService {
 	}
 
 
+	
+	
 
 
 	public ProductDetailsDTO getProduct(Long productId, Long shopId) throws BusinessException{
@@ -171,28 +177,57 @@ public class ProductService {
 		}
 
 		ProductEntity product = optionalProduct.get();
+		List<ProductVariantsEntity> productVariants = getProductVariants(product);
+		
+		return createProductDetailsDTO(product, shopId, productVariants);
+	}
 
-		List<ProductVariantsEntity> productVariants = productVariantsRepository.findByProductEntity_Id(productId);
+	
+	
 
-		List<VariantDTO> variantsDTOList;
-		if (productVariants != null && !productVariants.isEmpty()) {
-			variantsDTOList = getVariantsList(productVariants, productId, shopId);
-		} else {
-			throw new BusinessException(
-							String.format("Product with id[%d] doesn't have any variants! A product must have at least one variant.", productId)
-							, "INVALID DATA"
-							, HttpStatus.INTERNAL_SERVER_ERROR);
+
+
+	private ProductDetailsDTO createProductDetailsDTO(ProductEntity product, Long shopId, List<ProductVariantsEntity> productVariants) throws BusinessException {
+		
+		List<VariantDTO> variantsDTOList = getVariantsList(productVariants, product.getId(), shopId);
+		
+		ProductDetailsDTO productDTO = null;
+		try {
+			productDTO = toProductDetailsDTO(product);
+			productDTO.setVariants(variantsDTOList);
+			productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
+			productDTO.setBundleItems( getBundleItems(product));
+			productDTO.setImages( getProductImages(product.getId() ) );
+		} catch (IllegalAccessException | InvocationTargetException e) {
+			logger.log(Level.SEVERE, e.getMessage(), e );
+			throw new BusinessException( 
+					String.format(ERR_PRODUCT_READ_FAIL, product.getId())
+					,"INTERNAL SERVER ERROR"
+					, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-
-		ProductDetailsDTO productDTO = new ProductDetailsDTO(product);
-		productDTO.setVariants(variantsDTOList);
-		productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
-		productDTO.setBundleItems( getBundleItems(product));
-		productDTO.setImages( getProductImages(productId) );
-
+		
 		return productDTO;
 	}
 
+
+
+	
+	
+	
+
+	private List<ProductVariantsEntity> getProductVariants(ProductEntity product) throws BusinessException {
+		List<ProductVariantsEntity> productVariants = productVariantsRepository.findByProductEntity_Id(product.getId());
+		if (productVariants == null || productVariants.isEmpty()) {
+			throw new BusinessException(
+					String.format(ERR_PRODUCT_HAS_NO_VARIANTS, product.getId())
+					, "INVALID DATA"
+					, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return productVariants;
+	}
+
+	
+	
 	
 	
 
@@ -327,7 +362,7 @@ public class ProductService {
 	private List<ProductImgDTO> getProductVariantImages(Long variantId) {
 		List<ProductImagesEntity> variantImages = productImagesRepository.findByProductVariantsEntity_Id(variantId);
 
-		List<ProductImgDTO> variantImagesArray = null;
+		List<ProductImgDTO> variantImagesArray = new ArrayList<>();
 		if (variantImages != null && !variantImages.isEmpty()) {
 			variantImagesArray = variantImages.stream()
 					.filter(img-> img != null)
@@ -693,7 +728,7 @@ public class ProductService {
 			}				
 
 			List<ProductRepresentationObject> productsRep = products.stream()
-																	.map(ProductEntity::getRepresentation)
+																	.map(this::getProductRepresentation)
 																	.collect(Collectors.toList());
 			if (minPrice) {
 				productsRep = getProductsMinPrices(productsRep, productIdList, shopId);
@@ -1194,7 +1229,7 @@ public class ProductService {
 		BundleDTO dto = new BundleDTO();
 		
 		dto.setId(entity.getId());
-		dto.setImageUrl(entity.getCoverImage());
+		dto.setImageUrl( imgService.getProductCoverImage( entity.getId() ));
 		dto.setName(entity.getName());
 		dto.setPname(entity.getPname());
 		
@@ -1216,7 +1251,7 @@ public class ProductService {
 		List<Long> productIdList = bundleRepository.getBundleItemsProductIds(entity.getId());
 		List<ProductBaseInfo> productlist = productRepository.findByIdInOrderByNameAsc(productIdList)
 																.stream()
-															.map(ProductEntity::getRepresentation)
+															.map(this::getProductRepresentation)
 															.map(this::toProductBaseInfo)
 															.collect(Collectors.toList());
 		
@@ -1637,9 +1672,35 @@ public class ProductService {
 	    }
 	    return true;
 	}
+	
+	
+	
+	
+	
+  private ProductRepresentationObject getProductRepresentation(ProductEntity product) {
+      ProductRepresentationObject productRepresentationObject = new ProductRepresentationObject();
+      productRepresentationObject.setId( product.getId());
+      productRepresentationObject.setImageUrl( imgService.getProductCoverImage(product.getId()) );
+      productRepresentationObject.setName(product.getName());
+      productRepresentationObject.setPname( product.getPname());
+      productRepresentationObject.setCategoryId( product.getCategoryId());
+      productRepresentationObject.setBrandId( product.getBrandId());
+      productRepresentationObject.setBarcode( product.getBarcode());
+      return productRepresentationObject;
+  }
 
 
 
+  
+  private ProductDetailsDTO toProductDetailsDTO(ProductEntity product) throws IllegalAccessException, InvocationTargetException {
+	  	ProductDetailsDTO dto = new ProductDetailsDTO();
+	  	
+		BeanUtils.copyProperties( getProductRepresentation(product) , dto);	
+		dto.setDescription( product.getDescription() );
+		dto.setProductType( product.getProductType() );
+		
+		return dto;
+	}
 
 	
 }
