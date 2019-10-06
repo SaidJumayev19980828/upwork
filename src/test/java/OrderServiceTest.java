@@ -29,6 +29,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nasnav.NavBox;
 import com.nasnav.controller.OrdersController;
 import com.nasnav.dao.BasketRepository;
@@ -526,6 +527,7 @@ public class OrderServiceTest {
 		System.out.println("Order >>>> " + response.getBody());
 		
 		ObjectMapper mapper = new ObjectMapper();
+		mapper.registerModule(new JavaTimeModule());
 		DetailedOrderRepObject body = mapper.readValue(response.getBody(), DetailedOrderRepObject.class);
 		
 		DetailedOrderRepObject expected = createExpectedOrderInfo(33L);

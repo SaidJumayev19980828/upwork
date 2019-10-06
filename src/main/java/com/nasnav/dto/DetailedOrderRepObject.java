@@ -18,7 +18,7 @@ import lombok.EqualsAndHashCode;
         "status"
 })*/
 @Data
-@EqualsAndHashCode(callSuper=true)
+@EqualsAndHashCode(callSuper=false)
 public class DetailedOrderRepObject extends BaseRepresentationObject{
     @JsonProperty("user_id")
     private long userId;

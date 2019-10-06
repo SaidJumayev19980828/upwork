@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-@EqualsAndHashCode(callSuper=true)
+@EqualsAndHashCode(callSuper=false)
 public class BundleResponse extends BaseResponse {
 	
 	private Long total;

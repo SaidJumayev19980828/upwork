@@ -1694,8 +1694,8 @@ public class ProductService {
   
   private ProductDetailsDTO toProductDetailsDTO(ProductEntity product) throws IllegalAccessException, InvocationTargetException {
 	  	ProductDetailsDTO dto = new ProductDetailsDTO();
-	  	
-		BeanUtils.copyProperties( getProductRepresentation(product) , dto);	
+	  	ProductRepresentationObject representationObj = getProductRepresentation(product);
+		BeanUtils.copyProperties( dto , representationObj);	
 		dto.setDescription( product.getDescription() );
 		dto.setProductType( product.getProductType() );
 		
