@@ -89,10 +89,10 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 //    List<ProductEntity> findByIdInAndCategoryIdOrderByPriceeAsc(List<Long> ids,Long categoryId);
 //    List<ProductEntity> findByIdInAndCategoryIdOrderByPriceDesc(List<Long> ids,Long categoryId);
 
-    @Query("SELECT distinct products.categoryId FROM ProductEntity products where products.organizationId = :organizationId")
+    @Query("SELECT distinct products.categoryId FROM ProductEntity products WHERE products.organizationId = :organizationId AND products.categoryId IS NOT NULL")
     List<Long> getOrganizationCategoriesId(@Param("organizationId") Long organizationId);
 
-    @Query("SELECT products.id FROM ProductEntity products where products.categoryId = :categoryId")
+    @Query("SELECT products.id FROM ProductEntity products WHERE products.categoryId = :categoryId")
     List<Long> getProductsByCategoryId(@Param("categoryId") Long categoryId);
 	
 	Optional<ProductEntity> findByBarcodeAndOrganizationId(String barcode, Long orgId);

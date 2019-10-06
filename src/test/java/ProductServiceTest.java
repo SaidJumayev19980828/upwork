@@ -2,14 +2,11 @@ import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.nasnav.dto.ProductRepresentationObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -92,10 +89,10 @@ public class ProductServiceTest {
 	private final String PRODUCT_VARIANT_P_NAME = "lipstick color";
 	private final String PRODUCT_FEATURE_1_VALUE = "red";
 	private final String PRODUCT_FEATURE_2_VALUE = "strawberry";
-	private final String PRODUCT_FEATURE_1_NAME = "color";
-	private final String PRODUCT_FEATURE_1_P_NAME = "lipstick color";
-	private final String PRODUCT_FEATURE_2_NAME = "flavour";
-	private final String PRODUCT_FEATURE_2_P_NAME = "lipstick flavour";
+	private final String PRODUCT_FEATURE_1_NAME = "Lispstick Color";
+	private final String PRODUCT_FEATURE_1_P_NAME = "lipstick_color";
+	private final String PRODUCT_FEATURE_2_NAME = "Lipstick flavour";
+	private final String PRODUCT_FEATURE_2_P_NAME = "lipstick_flavour";
 	private String FEATURE_SEPC_TEMPLATE = "{\"FEATURE_ID_1\":\"" + PRODUCT_FEATURE_1_VALUE + "\",\"FEATURE_ID_2\":\""
 			+ PRODUCT_FEATURE_2_VALUE + "\"}";
 
@@ -431,8 +428,8 @@ public class ProductServiceTest {
 	
 
 	private void assertVariantDetailRetrieved(JSONObject variant) {
-		assertEquals(PRODUCT_FEATURE_1_VALUE, variant.getString(PRODUCT_FEATURE_1_NAME));
-		assertEquals(PRODUCT_FEATURE_2_VALUE, variant.getString(PRODUCT_FEATURE_2_NAME));
+		assertEquals(PRODUCT_FEATURE_1_VALUE, variant.getString(PRODUCT_FEATURE_1_P_NAME));
+		assertEquals(PRODUCT_FEATURE_2_VALUE, variant.getString(PRODUCT_FEATURE_2_P_NAME));
 		assertEquals(PRODUCT_VARIANT_BARCODE, variant.getString("barcode"));
 	}
 	
@@ -581,28 +578,26 @@ public class ProductServiceTest {
 	public void testProductResponse(){
 		performTestProductResponseByFilters();
 		productBarcodeTest();
+		productMinPriceTest();
 	}
 
-	
-	
-	
-	
+
 	private void performTestProductResponseByFilters() {
 		//// testing brand_id filter ////
 		ResponseEntity<String> response = template.getForEntity("/navbox/products?org_id=99001", String.class);
 		System.out.println(response.getBody());
 		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		long total = json.getLong("total");
-		assertEquals("there are total 16 products with with org_id = 99001 and no brand_id filter"
-				,16 , total);
+		assertEquals("there are total 21 products with with org_id = 99001 and no brand_id filter"
+				,21 , total);
 
 
 		response = template.getForEntity("/navbox/products?org_id=99001&brand_id=101", String.class);
 		System.out.println(response.getBody());
 		json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		total = json.getLong("total");
-		assertEquals("there are 10 products with brand_id = 101"
-				,10 , total);
+		assertEquals("there are 15 products with brand_id = 101"
+				,15 , total);
 
 
 		response = template.getForEntity("/navbox/products?org_id=99001&brand_id=102", String.class);
@@ -624,9 +619,7 @@ public class ProductServiceTest {
 		assertTrue(response.getBody().toString().contains("category_id"));
 		//// finish test
 	}
-	
-	
-	
+
 
 	private void assertJsonFieldExists(ResponseEntity<String> response) {
 		System.out.println("response JSON >>>  "+ response.getBody().toString());
@@ -635,9 +628,7 @@ public class ProductServiceTest {
 		assertTrue(response.getBody().toString().contains("p_name"));
 		assertTrue(response.getBody().toString().contains("image_url"));
 	}
-	
-	
-	
+
 
 	public void productBarcodeTest() {
 		// product 1001 doesn't have barcode
@@ -650,6 +641,47 @@ public class ProductServiceTest {
 		System.out.println(response.getBody());
 		Assert.assertTrue(response.getBody().contains("barcode\":\"123456789"));
 	}
+
+
+	public void productMinPriceTest() {
+		// product #1001 with 1 variant and two stocks .. one with price 600 and the other 400 .. return lowest price info
+		ResponseEntity<Object> response = template.getForEntity("/navbox/products?org_id=99001&category_id=201" +
+				"&brand_id=101&minprice=true", Object.class);
+		Assert.assertTrue(response.getBody().toString().contains("price=400"));
+		Assert.assertTrue(response.getBody().toString().contains("multiple_variants=false"));
+
+		// product #1004 with no variants .. return hidden = true and no price info
+		response = template.getForEntity("/navbox/products?org_id=99001&category_id=201" +
+				"&brand_id=102&minprice=true", Object.class);
+		Assert.assertTrue(response.getBody().toString().contains("hidden=true"));
+
+		// product #1002 with 2 variants .. return multiple_variants = true
+		response = template.getForEntity("/navbox/products?shop_id=501&minprice=true", Object.class);
+		Assert.assertTrue(response.getBody().toString().contains("multiple_variants=true"));
+	}
+
+
+
+
+
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void getProductWithMultipleVariantsTest() {
+		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=1001", String.class);
+
+		JSONArray expectedVariantFeatures = createExpectedFeaturesJson();
+		JSONObject product = new JSONObject(response.getBody());
+		JSONArray variantFeatures = product.getJSONArray("variant_features");
+		JSONArray variants = product.getJSONArray("variants");
+
+		assertEquals("Product 1001 has 5 variants, only the 4 with stock records will be returned" , 4, variants.length());
+		assertEquals("The product have only 2 variant features", 2, variantFeatures.length());
+		assertTrue(variantFeatures.similar(expectedVariantFeatures));
+	}
+
+
+
 }
 
 
