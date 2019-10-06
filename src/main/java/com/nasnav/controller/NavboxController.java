@@ -150,14 +150,14 @@ public class NavboxController {
 	@ApiOperation(value = "Get information about a specific product", nickname = "productInfo")
 	@ApiResponses(value = {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
-			@io.swagger.annotations.ApiResponse(code = 204, message = "Product does not exist")
+			@io.swagger.annotations.ApiResponse(code = 404, message = "Product does not exist")
 			})
 	@GetMapping(value="/product",produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getProduct(@RequestParam(name = "product_id") Long productId,
 										@RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
 
 		ProductDetailsDTO response = productService.getProduct(productId, shopId);
-		return response == null ? new ResponseEntity<>(HttpStatus.NO_CONTENT) : new ResponseEntity<>(response, HttpStatus.OK);
+		return response == null ? new ResponseEntity<>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
 	@ApiOperation(value = "Get information about a specific Organization's extra attributes", nickname = "organizationInfo")
@@ -180,7 +180,7 @@ public class NavboxController {
 	public ResponseEntity<?> getCategories(@RequestParam(name = "org_id", required = false) Long organizationId,
 										   @RequestParam(name = "category_id", required = false) Long categoryId) throws BusinessException {
 		List<CategoryRepresentationObject> response = categoryService.getCategories(organizationId, categoryId);
-		//return response.size() == 0 ? new ResponseEntity<>(response, HttpStatus.NO_CONTENT) : new ResponseEntity<>(response, HttpStatus.OK);
+
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 }
