@@ -180,6 +180,8 @@ public class ProductService {
 
 		ProductDetailsDTO productDTO = new ProductDetailsDTO(product);
 		productDTO.setVariants(variantsDTOList);
+		if (variantsDTOList != null && variantsDTOList.size() > 1)
+			productDTO.setMultipleVariants(true);
 		productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
 		productDTO.setBundleItems( getBundleItems(product));
 		productDTO.setImages( getProductImages(productId) );
