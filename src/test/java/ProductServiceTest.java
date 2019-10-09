@@ -25,15 +25,19 @@ import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
+import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
+import com.nasnav.persistence.FileEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.ProductImagesEntity;
 import com.nasnav.persistence.ProductTypes;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.ShopsEntity;
@@ -79,6 +83,12 @@ public class ProductServiceTest {
 
 	@Autowired
 	private OrganizationRepository organizationRepository;
+	
+	@Autowired
+	private FilesRepository fileRepository;
+	
+	@Autowired
+	private ProductImagesRepository imgRepository;
 	
 	private final String PRODUCT_NAME = "LIPSTICK";
 	private final String PRODUCT_P_NAME = "LIPSTICK PRODUCT";
@@ -247,24 +257,28 @@ public class ProductServiceTest {
 		OrganizationEntity org = organizationRepository.findOneById(99001L);		
 		
 		testData.productEntity = createDummyProduct();		
+		testData.imgFile = createProductImageFile(org);
+		testData.img = createProductImage(testData.productEntity);
 		testData.productFeaturesEntity_1 = createDummyFeature1(org);
 		testData.productFeaturesEntity_2 = createDummyFeature2(org);
 		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);		
 		testData.productVariantsEntity = createDummyVariant(testData.productEntity, testData.spec);
 		testData.shopEntities = createDummyShops(org, 1);
 		testData.stocksEntities = createDummyStocks(testData.productVariantsEntity, org, testData.shopEntities);
+		
 		return testData;
 	}
 	
 	
-	
-	
+
 	private ProductTestData createProductTestDataWithoutStocks() {
 		ProductTestData testData = new ProductTestData();
 		
 		OrganizationEntity org = organizationRepository.findOneById(99001L);		
 		
 		testData.productEntity = createDummyProduct();		
+		testData.imgFile = createProductImageFile(org);
+		testData.img = createProductImage(testData.productEntity);
 		testData.productFeaturesEntity_1 = createDummyFeature1(org);
 		testData.productFeaturesEntity_2 = createDummyFeature2(org);
 		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);		
@@ -280,7 +294,9 @@ public class ProductServiceTest {
 		
 		OrganizationEntity org = organizationRepository.findOneById(99001L);		
 		
-		testData.productEntity = createDummyProduct();		
+		testData.productEntity = createDummyProduct();	
+		testData.imgFile = createProductImageFile(org);
+		testData.img = createProductImage(testData.productEntity);
 		testData.productFeaturesEntity_1 = createDummyFeature1(org);
 		testData.productFeaturesEntity_2 = createDummyFeature2(org);
 		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);		
@@ -310,11 +326,48 @@ public class ProductServiceTest {
 		productEntity.setOrganizationId(99001L);
 		productEntity.setDescription(PRODUCT_DESC);
 		productEntity.setBarcode(PRODUCT_PRODUCT_BARCODE);
-		productEntity.setCoverImage(PRODUCT_IMG_URL);
 		productEntity = productRepository.save(productEntity);
+				
 		return productEntity;
 	}
+
+
+
+
+	private ProductImagesEntity createProductImage(ProductEntity productEntity) {
+		
+		
+		ProductImagesEntity img = new ProductImagesEntity();
+		img.setPriority(0);		//product cover images has priority zero
+		img.setProductEntity(productEntity);
+		img.setType(7);
+		img.setUri(PRODUCT_IMG_URL);
+		
+		return imgRepository.save(img);
+	}
 	
+	
+
+	
+	
+	private FileEntity createProductImageFile(OrganizationEntity org) {
+		FileEntity file = null;		
+		file = fileRepository.findByUrl(PRODUCT_IMG_URL);
+		
+		if(file == null) {
+			file = new FileEntity();
+			file.setLocation("/img.jpg");
+			file.setMimetype("image/jpeg");
+			file.setOrganization(org);
+			file.setUrl(PRODUCT_IMG_URL);
+			file.setOriginalFileName("img.jpg");
+		}		
+		
+		return fileRepository.save(file);
+	}
+
+
+
 	
 	
 
@@ -359,7 +412,8 @@ public class ProductServiceTest {
 		productVariantsEntity.setFeatureSpec(spec);
 		productVariantsEntity.setPname(PRODUCT_VARIANT_P_NAME);
 		productVariantsEntity.setProductEntity(productEntity);
-		productVariantsEntity = productVariantsRepository.save(productVariantsEntity);
+		productVariantsEntity = productVariantsRepository.save(productVariantsEntity);		
+		
 		return productVariantsEntity;
 	}
 	
@@ -416,6 +470,8 @@ public class ProductServiceTest {
 	
 
 	private void cleanInsertedData(ProductTestData testData) {
+		fileRepository.delete(testData.imgFile);
+		imgRepository.delete(testData.img);
 		testData.stocksEntities.forEach(stockRepository::delete);
 		testData.shopEntities.forEach(shopsRepository::delete);
 		productVariantsRepository.delete( testData.productVariantsEntity );		
@@ -694,6 +750,8 @@ class ProductTestData{
 	ProductVariantsEntity productVariantsEntity;
 	List<ShopsEntity> shopEntities ;
 	List<StocksEntity> stocksEntities;
+	ProductImagesEntity img;
+	FileEntity imgFile;
 	
 	ProductTestData(){
 		shopEntities = new ArrayList<>();

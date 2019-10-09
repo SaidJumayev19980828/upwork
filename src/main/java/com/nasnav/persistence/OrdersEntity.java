@@ -1,20 +1,28 @@
 package com.nasnav.persistence;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.Set;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.OrderRepresentationObject;
-import com.nasnav.enumerations.OrderStatus;
-import com.nasnav.enumerations.PaymentStatus;
 import org.hibernate.annotations.Type;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.dto.OrderRepresentationObject;
+import com.nasnav.enumerations.OrderStatus;
+import com.nasnav.enumerations.PaymentStatus;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -54,17 +62,14 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 		this.status = status.getValue();
 	}
 
-	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "created_at", nullable = false, length = 29)
-	private Date creationDate;
+	private LocalDateTime creationDate;
 
-	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "updated_at", nullable = false, length = 29)
-	private Date updateDate;
+	private LocalDateTime updateDate;
 
-	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "date_delivery", nullable = false, length = 29)
-	private Date deliveryDate;
+	private LocalDateTime deliveryDate;
 
 	private Integer status;
 
@@ -112,6 +117,6 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 
 	public OrdersEntity() {
 		this.paymentStatus = PaymentStatus.UNPAID.getValue();
-		this.creationDate = new Date();
+		this.creationDate = LocalDateTime.now();
 	}
 }

@@ -1,5 +1,9 @@
 package com.nasnav.service;
 
+
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
@@ -12,6 +16,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -140,6 +145,14 @@ public class ProductService {
 	@Autowired
 	private ProductServiceTransactions transactions;
 
+
+	@Autowired
+	private SecurityService securityService;
+
+
+	@Autowired
+	private ProductImageService imgService;
+
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
 	                      ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
@@ -180,8 +193,6 @@ public class ProductService {
 
 		ProductDetailsDTO productDTO = new ProductDetailsDTO(product);
 		productDTO.setVariants(variantsDTOList);
-		if (variantsDTOList != null && variantsDTOList.size() > 1)
-			productDTO.setMultipleVariants(true);
 		productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
 		productDTO.setBundleItems( getBundleItems(product));
 		productDTO.setImages( getProductImages(productId) );
@@ -189,14 +200,33 @@ public class ProductService {
 		return productDTO;
 	}
 
-	
+
+
+
+
+
+
+	private List<ProductVariantsEntity> getProductVariants(ProductEntity product) throws BusinessException {
+		List<ProductVariantsEntity> productVariants = productVariantsRepository.findByProductEntity_Id(product.getId());
+		if (productVariants == null || productVariants.isEmpty()) {
+			throw new BusinessException(
+					String.format(ERR_PRODUCT_HAS_NO_VARIANTS, product.getId())
+					, "INVALID DATA"
+					, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return productVariants;
+	}
+
+
+
+
 	
 
 	private List<ProductRepresentationObject> getBundleItems(ProductEntity product) {
 
 		List<Long> bundleProductsIdList = bundleRepository.getBundleItemsProductIds(product.getId());
 		List<ProductEntity> bundleProducts = this.getProductsByIds(bundleProductsIdList , "asc", "name");
-		ProductsResponse response = this.getProductsResponse(bundleProducts,"asc" , "name" , 0, Integer.MAX_VALUE, false, null );
+		ProductsResponse response = this.getProductsResponse(bundleProducts,"asc" , "name" , 0, Integer.MAX_VALUE );
 		List<ProductRepresentationObject> productRepList = response == null? new ArrayList<>() : response.getProducts();
 		return productRepList;
 	}
@@ -250,12 +280,12 @@ public class ProductService {
 			return null;
 
 		Integer id = Integer.parseInt(entry.getKey());
-		Optional<ProductFeaturesEntity> featureOptional = productFeaturesRepository.findById(id);
-		if(!featureOptional.isPresent())
+		Optional<ProductFeaturesEntity> opt = productFeaturesRepository.findById(id);
+		if(!opt.isPresent())
 			return null;
 
 		return new AbstractMap.SimpleEntry<>(
-				featureOptional.get().getPname()
+				opt.get().getName()
 				, entry.getValue().toString());
 
 	}
@@ -271,9 +301,8 @@ public class ProductService {
 			features =  productVariants
 					.stream()
 					.filter(this::hasFeatures)
-					.map(this::extractVariantFeatures)					
+					.map(this::extractVariantFeatures)
 					.flatMap(List::stream)
-					.distinct()
 					.collect(Collectors.toList());
 		}
 
@@ -352,7 +381,7 @@ public class ProductService {
 
 
 	public ProductsResponse getProductsResponseByShopId(Long shopId, Long categoryId, Long brandId, Integer start,
-	                                                    Integer count, String sort, String order, String searchName, boolean minPrice) {
+	                                                    Integer count, String sort, String order, String searchName) {
 
 		if (start == null)
 			start = defaultStart;
@@ -390,22 +419,23 @@ public class ProductService {
 			}
 
 			if (searchName != null) {
-				products = products.stream().filter(product -> product.getName().toLowerCase().contains(searchName.toLowerCase())).collect(Collectors.toList());
+				products = products.stream().filter(product -> product.getName().contains(searchName)).collect(Collectors.toList());
 			}
 		}
-		return getProductsResponse(products, order, sort, start, count, minPrice,shopId);
+		return getProductsResponse(products, order, sort, start, count);
 
 	}
 
 	public ProductsResponse getProductsResponseByOrganizationId(Long organizationId, Long categoryId, Long brandId,
-	                                                            Integer start, Integer count, String sort, String order,
-																String searchName, boolean minPrice) {
+	                                                            Integer start, Integer count, String sort, String order, String searchName) {
 		if (start == null)
 			start = defaultStart;
 		if (count == null)
 			count = defaultCount;
+
 		if (sort == null)
 			sort = defaultSortAttribute;
+
 		if (order == null)
 			order = defaultOrder;
 
@@ -421,10 +451,10 @@ public class ProductService {
 		}
 
 		if (searchName != null) {
-			products = products.stream().filter(product -> product.getName().toLowerCase().contains(searchName.toLowerCase())).collect(Collectors.toList());
+			products = products.stream().filter(product -> product.getName().contains(searchName)).collect(Collectors.toList());
 		}
 
-		return getProductsResponse(products, order, sort, start, count, minPrice, null);
+		return getProductsResponse(products, order, sort, start, count);
 	}
 
 	private List<ProductEntity> getProductsForOrganizationId(Long organizationId, String order, String sort) {
@@ -677,25 +707,26 @@ public class ProductService {
 	
 
 	private ProductsResponse getProductsResponse(List<ProductEntity> products, String order, String sort, Integer start,
-	                                             Integer count, boolean minPrice, Long shopId) {
+	                                             Integer count) {
+
 		ProductsResponse productsResponse = null;
 		if (products != null) {
 			productsResponse = new ProductsResponse();
-			List<Long> productIdList = products.stream().map(product -> product.getId()).collect(Collectors.toList());
 
+			List<Long> productIdList = products.stream()
+												.map(product -> product.getId())
+												.collect(Collectors.toList() );
+			
 			List<StocksEntity> stocks = new ArrayList<>();
 			if(!productIdList.isEmpty()) {
-				stocks.addAll(stockRepository.findByProductIdIn(productIdList));
+				stocks.addAll( stockRepository.findByProductIdIn(productIdList) );
 			}				
 
 			List<ProductRepresentationObject> productsRep = products.stream()
 																	.map(ProductEntity::getRepresentation)
 																	.collect(Collectors.toList());
-			if (minPrice) {
-				productsRep = getProductsMinPrices(productsRep, productIdList, shopId);
-			}
-			else
-				productsRep.forEach(pRep -> setProductAvailabilityAndPrice(stocks, pRep));
+			
+			productsRep.forEach(pRep -> setProductAvailabilityAndPrice(stocks, pRep));
 
 			if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE) {
 
@@ -743,39 +774,6 @@ public class ProductService {
 	}
 
 
-	private List getProductsMinPrices(List<ProductRepresentationObject> productsRep, List<Long> productIdList, Long shopId) {
-		List<ProductVariantsEntity> productsVariants = productVariantsRepository.findByProductEntity_IdIn(productIdList);
-		for (ProductRepresentationObject obj : productsRep) {
-			List<ProductVariantsEntity> productVariants = productsVariants.stream()
-					.filter(variant -> variant.getProductEntity().getId().equals(obj.getId()))
-					.collect(Collectors.toList());
-			if (productVariants.isEmpty()) {
-				obj.setAvailable(false);
-				obj.setHidden(true);
-			}
-			else {
-				if (productVariants.size() > 1)
-					obj.setMultipleVariants(true);
-				else {
-					List<StocksEntity> productStocks;
-					if (shopId != null)
-						productStocks = stockRepository.findByProductVariantsEntityIdAndShopsEntityIdOrderByPriceAsc(productVariants.get(0).getId(), shopId);
-					else
-						productStocks = stockRepository.findByProductVariantsEntityIdOrderByPriceAsc(productVariants.get(0).getId());
-					if(!productStocks.isEmpty()) {
-						obj.setPrice(productStocks.get(0).getPrice());
-						obj.setDiscount(productStocks.get(0).getDiscount());
-						if (productStocks.get(0).getCurrency() != null)
-							obj.setCurrency(productStocks.get(0).getCurrency().ordinal());
-						obj.setStockId(productStocks.get(0).getId());
-					}
-					else
-						obj.setAvailable(false);
-				}
-			}
-		}
-		return productsRep;
-	}
 
 
 	private void setProductAvailabilityAndPrice(List<StocksEntity> stocks, ProductRepresentationObject productRep) {
@@ -786,11 +784,15 @@ public class ProductService {
 
 		if (optionalStock != null && optionalStock.isPresent()) {
 			productRep.setAvailable(true);
-			//productRep.setPrice(optionalStock.get().getPrice());
+			productRep.setPrice(optionalStock.get().getPrice());
 		} else {
 			productRep.setAvailable(false);
 		}
 	}
+	
+	
+	
+	
 	
 	private Long getStockProductId(StocksEntity stock) {
 		return Optional.ofNullable(stock)
@@ -799,6 +801,9 @@ public class ProductService {
 				.map(ProductEntity::getId)
 				.orElse(0L);
 	}
+	
+	
+	
 	
 	
 	public ProductUpdateResponse updateProduct(String productJson, Boolean isBundle) throws BusinessException {

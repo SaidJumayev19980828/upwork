@@ -39,7 +39,7 @@ import lombok.ToString;
 @DiscriminatorFormula("COALESCE(product_type,0)")        //TODO: we only need this until the Column PRODUCTS.PRODUCT_TYPE is set as non-null
 @Data
 @EqualsAndHashCode(callSuper=false)
-public class ProductEntity extends AbstractPersistable<Long> implements BaseEntity {
+public class ProductEntity extends AbstractPersistable<Long>  {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,8 +52,6 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
 
     private String description;
 
-    @Column(name = "cover_image")
-    private String coverImage;
 
     @Column(name = "info_updated")
     private Boolean infoUpdated;
@@ -100,16 +98,5 @@ public class ProductEntity extends AbstractPersistable<Long> implements BaseEnti
 
 
 
-    @Override
-    public ProductRepresentationObject getRepresentation() {
-        ProductRepresentationObject productRepresentationObject = new ProductRepresentationObject();
-        productRepresentationObject.setId(getId());
-        productRepresentationObject.setImageUrl(getCoverImage());
-        productRepresentationObject.setName(getName());
-        productRepresentationObject.setPname(getPname());
-        productRepresentationObject.setCategoryId(getCategoryId());
-        productRepresentationObject.setBrandId(getBrandId());
-        productRepresentationObject.setBarcode(getBarcode());
-        return productRepresentationObject;
-    }
+
 }

@@ -143,24 +143,22 @@ public abstract class BaseJsonDTO {
 	
 	
 	/**
-	 * @return if properties that required for creating new data are:
+	 * @return if properties that are required for creating new data are:
 	 * - were all updated at least once
 	 * */
 	@JsonIgnore
 	public Boolean areRequiredForDataCreatePropertiesPresent() {
-		return areRequiredPropertiesPresent(Required.FOR_CREATE)
-					&& areRequiredPropertiesPresent(Required.ALWAYS);
+		return areRequiredPropertiesPresent(Required.FOR_CREATE);
 	}
 	
 	
 	/**
-	 * @return if properties that required for updating existing data are:
+	 * @return if properties that are required for updating existing data are:
 	 * - were all updated at least once
 	 * */
 	@JsonIgnore
 	public Boolean areRequiredForDataUpdatePropertiesPresent() {
-		return areRequiredPropertiesPresent(Required.FOR_UPDATE)
-				&& areRequiredPropertiesPresent(Required.ALWAYS);
+		return areRequiredPropertiesPresent(Required.FOR_UPDATE);
 	}
 
 

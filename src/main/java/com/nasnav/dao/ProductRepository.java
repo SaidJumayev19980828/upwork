@@ -1,11 +1,13 @@
 package com.nasnav.dao;
 
-import com.nasnav.persistence.ProductEntity;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
+import com.nasnav.persistence.ProductEntity;
 
 public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
@@ -92,6 +94,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
     @Query("SELECT products.id FROM ProductEntity products WHERE products.categoryId = :categoryId")
     List<Long> getProductsByCategoryId(@Param("categoryId") Long categoryId);
+	
+	Optional<ProductEntity> findByBarcodeAndOrganizationId(String barcode, Long orgId);
 }
 
 

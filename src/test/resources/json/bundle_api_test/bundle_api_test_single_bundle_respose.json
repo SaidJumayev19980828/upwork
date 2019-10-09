@@ -1,17 +1,18 @@
 {
+    "success":true,
     "total": 1,
     "bundles": [
         {
             "id": 200005,
             "name": "#Bundle 3",
-            "image_url": null,
+            "image_url": "no_img_found.jpg",
             "p_name": null,
             "price": "10.10",
             "products": [
                 {
                     "id": 200001,
                     "name": "Bundle Product#1",
-                    "image_url": null,
+                    "image_url": "no_img_found.jpg",
                     "p_name": null
                 }
             ]

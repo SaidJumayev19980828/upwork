@@ -51,6 +51,7 @@ import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductImagesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.security.AuthenticationFilter;
+import com.nasnav.service.ProductImageService;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -78,6 +79,8 @@ public class ProductImageApiTest {
 
 	private static final String TEST_IMG_DIR = "src/test/resources/test_imgs_to_upload";
 
+	private static final String EXPECTED_COVER_IMG_URL = "99001/cover_img.jpg";
+
 	@Value("${files.basepath}")
 	private String basePathStr;
 
@@ -102,6 +105,11 @@ public class ProductImageApiTest {
 	
 	@Autowired
 	private  MockMvc mockMvc;
+	
+	
+	
+	@Autowired
+	private ProductImageService imgService;
 	
 	
 	@Before
@@ -129,7 +137,7 @@ public class ProductImageApiTest {
 		String fileName = TEST_PHOTO;
 		ProductEntity product = productRepository.findById(1001L).get();		
 		
-		JSONObject imgReq = createDummyyProductUploadImgRequest(product);
+		JSONObject imgReq = createDummyProductUploadImgRequest(product);
 		imgReq.put("operation", Operation.UPDATE.getValue());
 		imgReq.remove("image_id");
 		
@@ -144,7 +152,7 @@ public class ProductImageApiTest {
 		String fileName = TEST_PHOTO;
 		ProductEntity product = productRepository.findById(1001L).get();		
 		
-		JSONObject imgReq = createDummyyProductUploadImgRequest(product);
+		JSONObject imgReq = createDummyProductUploadImgRequest(product);
 		imgReq.remove("image_id");
 		
 		uploadValidTestImg(fileName, imgReq.toString().getBytes() , product, imgReq);
@@ -158,7 +166,7 @@ public class ProductImageApiTest {
 		String fileName = TEST_PHOTO;
 		ProductEntity product = productRepository.findById(1001L).get();		
 		
-		JSONObject imgReq = createDummyyProductUploadImgRequest(product);
+		JSONObject imgReq = createDummyProductUploadImgRequest(product);
 		imgReq.put("operation", Operation.UPDATE.getValue());
 		imgReq.remove("image_id");
 		
@@ -187,7 +195,7 @@ public class ProductImageApiTest {
 		String fileName = TEST_PHOTO;
 		ProductEntity product = productRepository.findById(1001L).get();		
 		
-		JSONObject imgReq = createDummyyProductUploadImgRequest(product);
+		JSONObject imgReq = createDummyProductUploadImgRequest(product);
 		imgReq.remove("product_id");
 		
 		uploadInvalidTestImg(fileName, imgReq.toString().getBytes() , product);
@@ -204,7 +212,7 @@ public class ProductImageApiTest {
 		String fileName = TEST_PHOTO;
 		ProductEntity product = productRepository.findById(1001L).get();		
 		
-		JSONObject imgReq = createDummyyProductUploadImgRequest(product);
+		JSONObject imgReq = createDummyProductUploadImgRequest(product);
 		imgReq.put("product_id", JSONObject.NULL);
 		
 		uploadInvalidTestImg(fileName, imgReq.toString().getBytes() , product);
@@ -218,7 +226,7 @@ public class ProductImageApiTest {
 		String fileName = TEST_PHOTO;
 		ProductEntity product = productRepository.findById(1001L).get();		
 		
-		JSONObject imgReq = createDummyyProductUploadImgRequest(product);
+		JSONObject imgReq = createDummyProductUploadImgRequest(product);
 		imgReq.put("product_id", 999999L);
 		
 		uploadInvalidTestImg(fileName, imgReq.toString().getBytes() , product);
@@ -233,7 +241,7 @@ public class ProductImageApiTest {
 		String fileName = TEST_PHOTO;
 		ProductEntity product = productRepository.findById(1001L).get();		
 		
-		JSONObject imgReq = createDummyyProductUploadImgRequest(product);
+		JSONObject imgReq = createDummyProductUploadImgRequest(product);
 		
 		Long orgId = product.getOrganizationId();		
 		String sanitizedFileName = StringUtils.getFileNameSanitized(fileName);		
@@ -259,7 +267,7 @@ public class ProductImageApiTest {
 		String fileName = TEST_PHOTO;
 		ProductEntity product = productRepository.findById(1001L).get();		
 		
-		JSONObject imgReq = createDummyyProductUploadImgRequest(product);
+		JSONObject imgReq = createDummyProductUploadImgRequest(product);
 		imgReq.remove("operation");
 		
 		uploadInvalidTestImg(fileName, imgReq.toString().getBytes() , product);
@@ -296,7 +304,7 @@ public class ProductImageApiTest {
 		String fileName = TEST_PHOTO;
 		ProductEntity product = productRepository.findById(1001L).get();		
 		
-		JSONObject imgReq = createDummyyProductUploadImgRequest(product);
+		JSONObject imgReq = createDummyProductUploadImgRequest(product);
 		
 		uploadValidTestImg(fileName, imgReq.toString().getBytes() , product, imgReq);		 
 	}
@@ -305,7 +313,7 @@ public class ProductImageApiTest {
 	
 	
 	
-	private JSONObject createDummyyProductUploadImgRequest(ProductEntity product) {
+	private JSONObject createDummyProductUploadImgRequest(ProductEntity product) {
 		JSONObject imgData = new JSONObject();
 		
 		imgData.put("product_id", product.getId());
@@ -498,7 +506,7 @@ public class ProductImageApiTest {
 		String fileName = TEST_PHOTO;
 		ProductEntity product = productRepository.findById(TEST_PRODUCT_ID).get();		
 		
-		JSONObject imgReq = createDummyyProductUploadImgRequest(product);
+		JSONObject imgReq = createDummyProductUploadImgRequest(product);
 		
 		JSONObject origResponse = uploadValidTestImg(fileName, imgReq.toString().getBytes() , product, imgReq);	
 		
@@ -578,7 +586,7 @@ public class ProductImageApiTest {
 		String fileName = TEST_PHOTO;
 		ProductEntity product = productRepository.findById(TEST_PRODUCT_ID).get();		
 		
-		JSONObject imgReq = createDummyyProductUploadImgRequest(product);
+		JSONObject imgReq = createDummyProductUploadImgRequest(product);
 		
 		JSONObject origResponse = uploadValidTestImg(fileName, imgReq.toString().getBytes() , product, imgReq);	
 		
@@ -654,7 +662,7 @@ public class ProductImageApiTest {
 		String fileName = TEST_PHOTO;
 		ProductEntity product = productRepository.findById(TEST_PRODUCT_ID).get();		
 		
-		JSONObject imgReq = createDummyyProductUploadImgRequest(product);
+		JSONObject imgReq = createDummyProductUploadImgRequest(product);
 		
 		JSONObject origResponse = uploadValidTestImg(fileName, imgReq.toString().getBytes() , product, imgReq);	
 		
@@ -702,7 +710,7 @@ public class ProductImageApiTest {
 		String fileName = TEST_PHOTO;
 		ProductEntity product = productRepository.findById(TEST_PRODUCT_ID).get();		
 		
-		JSONObject imgReq = createDummyyProductUploadImgRequest(product);
+		JSONObject imgReq = createDummyProductUploadImgRequest(product);
 		
 		JSONObject origResponse = uploadValidTestImg(fileName, imgReq.toString().getBytes() , product, imgReq);	
 		
@@ -742,7 +750,7 @@ public class ProductImageApiTest {
 		String fileName = TEST_PHOTO;
 		ProductEntity product = productRepository.findById(TEST_PRODUCT_ID).get();		
 		
-		JSONObject imgReq = createDummyyProductUploadImgRequest(product);
+		JSONObject imgReq = createDummyProductUploadImgRequest(product);
 		
 		JSONObject origResponse = uploadValidTestImg(fileName, imgReq.toString().getBytes() , product, imgReq);	
 		
@@ -764,6 +772,18 @@ public class ProductImageApiTest {
 		assertTrue(imgRepo.existsById( origImgId ));
 		assertTrue(filesRepo.existsById( origImgFileEntity.getId() ));
 		assertTrue(Files.exists( filePath ));
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_Cover_Image_Test_Data_Insert.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getProductCoverImageTest() {
+		assertEquals(EXPECTED_COVER_IMG_URL, imgService.getProductCoverImage(1001L));
 	}
 	
 }

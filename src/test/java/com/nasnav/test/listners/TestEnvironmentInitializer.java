@@ -2,8 +2,6 @@ package com.nasnav.test.listners;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -14,7 +12,6 @@ import org.junit.runner.Description;
 import org.junit.runner.Result;
 import org.junit.runner.notification.RunListener;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.test.context.jdbc.Sql;
 
 /**
  * A Junit test listner that clears the  testing data before running every test.
@@ -166,7 +163,7 @@ public class TestEnvironmentInitializer extends RunListener {
 				throw new IllegalStateException(msg);
 			}
 			
-			sql = IOUtils.toString(in, StandardCharsets.UTF_8);
+			sql = IOUtils.toString(in);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

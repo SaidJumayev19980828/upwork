@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -16,5 +17,5 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
 	void deleteByProductEntity_Id(Long productId);
 
-	ProductVariantsEntity findByBarcodeAndProductEntity_OrganizationId(String barcode, Long orgId);
+	Optional<ProductVariantsEntity> findByBarcodeAndProductEntity_OrganizationId(String barcode, Long orgId);
 }

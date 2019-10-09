@@ -1,12 +1,8 @@
 import java.math.BigDecimal;
-import java.util.Collection;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 
-import com.nasnav.dao.*;
-import com.nasnav.persistence.*;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,16 +15,32 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 
 import com.nasnav.NavBox;
+import com.nasnav.dao.BasketRepository;
+import com.nasnav.dao.OrderRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.PaymentsRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.qnb.Account;
 import com.nasnav.payments.qnb.Session;
+import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.UserEntity;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -163,7 +175,7 @@ public class QnbHostedSessionPayment {
         OrdersEntity order = new OrdersEntity();
         
 //        order.setCreationDate(new Date());
-        order.setUpdateDate(new Date());
+        order.setUpdateDate( LocalDateTime.now() );
         order.setAmount(new BigDecimal(500));
         order.setShopsEntity(shopEntity);
         order.setEmail("test@nasnav.com");

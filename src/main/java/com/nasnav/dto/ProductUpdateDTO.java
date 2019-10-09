@@ -1,6 +1,5 @@
 package com.nasnav.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -34,14 +33,6 @@ public class ProductUpdateDTO  extends ProductEntity{
     public Long getProductId() {
     	return this.getId();
     }
-    
-    
-    @Override
-    @JsonIgnore
-    public ProductRepresentationObject getRepresentation() {
-    	return super.getRepresentation();
-    }
-    
     
    
 }

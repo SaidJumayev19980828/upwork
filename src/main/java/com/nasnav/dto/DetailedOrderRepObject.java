@@ -1,15 +1,14 @@
 package com.nasnav.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
-import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 /*@JsonPropertyOrder({
@@ -19,7 +18,7 @@ import java.util.List;
         "status"
 })*/
 @Data
-@EqualsAndHashCode(callSuper=true)
+@EqualsAndHashCode(callSuper=false)
 public class DetailedOrderRepObject extends BaseRepresentationObject{
     @JsonProperty("user_id")
     private long userId;
@@ -36,9 +35,9 @@ public class DetailedOrderRepObject extends BaseRepresentationObject{
     @JsonProperty("currency")
     private String currency;
     @JsonProperty("creation_date")
-    private Date createdAt;
+    private LocalDateTime createdAt;
     @JsonProperty("delivery_date")
-    private Date deliveryDate;
+    private LocalDateTime deliveryDate;
     @JsonProperty("status")
     private String status;
 

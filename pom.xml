@@ -150,7 +150,11 @@
 		    <artifactId>univocity-parsers</artifactId>
 		    <version>2.8.3</version>
 		</dependency>
-		
+		<dependency>
+		    <groupId>commons-fileupload</groupId>
+		    <artifactId>commons-fileupload</artifactId>
+		    <version>1.4</version>
+		</dependency>
 
 
 
@@ -183,7 +187,8 @@
             <version>${spring.boot.version}</version>
             <scope>test</scope>
         </dependency>
-
+		
+		
 
 
     </dependencies>
@@ -253,4 +258,13 @@
         </plugins>
     </build>
 
+    <dependencyManagement>
+    	<dependencies>
+    		<dependency>
+    			<groupId>commons-io</groupId>
+    			<artifactId>commons-io</artifactId>
+    			<version>2.6</version>
+    		</dependency>
+    	</dependencies>
+    </dependencyManagement>
 </project>

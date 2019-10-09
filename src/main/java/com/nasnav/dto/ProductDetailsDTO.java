@@ -24,9 +24,5 @@ public class ProductDetailsDTO extends ProductRepresentationObject {
 	private List<VariantFeatureDTO> variantFeatures;
 	private List<ProductRepresentationObject> bundleItems;
 	
-	public ProductDetailsDTO(ProductEntity product) {
-		BeanUtils.copyProperties(product.getRepresentation(), this);	
-		this.description = product.getDescription();
-		this.productType = product.getProductType();
-	}
+	
 }

@@ -1,12 +1,14 @@
 package com.nasnav.controller;
 
+import java.util.List;
+
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,15 +19,17 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.dto.BundleElementUpdateDTO;
+import com.nasnav.dto.ProductImageBulkUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateDTO;
 import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.BundleSearchParam;
+import com.nasnav.response.BundleResponse;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.ProductUpdateResponse;
-import com.nasnav.response.BundleResponse;
 import com.nasnav.response.VariantUpdateResponse;
+import com.nasnav.service.ProductImageService;
 import com.nasnav.service.ProductService;
 
 import io.swagger.annotations.Api;
@@ -40,6 +44,9 @@ public class ProductsController {
 
 	@Autowired
 	ProductService productService;
+	
+	@Autowired
+	ProductImageService productImgService;
 	
 	
 	@ApiOperation(value = "Create or update a product", nickname = "product update", code = 201)
@@ -96,7 +103,7 @@ public class ProductsController {
             @RequestPart("properties") @Valid ProductImageUpdateDTO imgMetaData)
             		throws BusinessException {
 
-		return  productService.updateProductImage(file, imgMetaData);
+		return  productImgService.updateProductImage(file, imgMetaData);
     }
     
     
@@ -115,7 +122,7 @@ public class ProductsController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ProductImageDeleteResponse deleteProductImage(@RequestParam("image_id") @Valid Long imageId)
             		throws BusinessException {
-		return  productService.deleteImage(imageId);
+		return  productImgService.deleteImage(imageId);
     }
 	
 	
@@ -197,9 +204,9 @@ public class ProductsController {
 	
 	
 	
-	@ApiOperation(value = "delete image for product variant", nickname = "product variant image delete", code = 201)
+	@ApiOperation(value = "update product variant", nickname = "product variant save", code = 201)
     @ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "Product image deleted"),
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Product variant saved"),
             @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
@@ -211,6 +218,30 @@ public class ProductsController {
     public VariantUpdateResponse updateProductVariant(@RequestBody VariantUpdateDTO variant)
             		throws BusinessException {
 		return  productService.updateVariant(variant);
+    }
+	
+	
+	
+	
+	
+	
+	@ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Images imported successfully"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+	@ResponseStatus(HttpStatus.OK)
+	@PostMapping(value = "image/bulk",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public List<ProductImageUpdateResponse> importProductImagesBulk(
+            @RequestPart("imgs_zip") @Valid MultipartFile zip,
+            @RequestPart(name="imgs_barcode_csv", required=false )  MultipartFile csv,
+            @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData)
+            		throws BusinessException {
+
+		return  productImgService.updateProductImageBulk(zip, csv, metaData);
     }
 	
 	
