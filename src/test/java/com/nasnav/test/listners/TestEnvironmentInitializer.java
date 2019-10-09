@@ -2,6 +2,7 @@ package com.nasnav.test.listners;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -163,7 +164,7 @@ public class TestEnvironmentInitializer extends RunListener {
 				throw new IllegalStateException(msg);
 			}
 			
-			sql = IOUtils.toString(in);
+			sql = IOUtils.toString(in, StandardCharsets.UTF_8);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -39,7 +39,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     private static  RequestMatcher protectedUrlList ;
     private static  RequestMatcher publicUrlList ;
 
-    
     //- Any url is authenticated by default.
     //- to permit a url to all users without AuthN, add it to PUBLIC_URLS.
     //- to set certain roles who can access the url, add it in "permissions"
@@ -125,8 +124,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     	 
     	webSecurity.ignoring().requestMatchers(publicUrlList);
     }
-    
-    
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
@@ -149,7 +146,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             .formLogin().disable()
             .httpBasic().disable()
             .logout().disable();
-        
+	    http.cors();
     }
     
     
