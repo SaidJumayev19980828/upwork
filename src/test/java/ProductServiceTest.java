@@ -470,8 +470,8 @@ public class ProductServiceTest {
 	
 
 	private void cleanInsertedData(ProductTestData testData) {
-		fileRepository.delete(testData.imgFile);
 		imgRepository.delete(testData.img);
+		fileRepository.delete(testData.imgFile);
 		testData.stocksEntities.forEach(stockRepository::delete);
 		testData.shopEntities.forEach(shopsRepository::delete);
 		productVariantsRepository.delete( testData.productVariantsEntity );		
