@@ -376,12 +376,14 @@ public class OrderServiceImpl implements OrderService {
 		DetailedOrderRepObject obj = new DetailedOrderRepObject();
 		obj.setUserId(entity.getUserId());
 		obj.setShopId(entity.getShopsEntity().getId());
-		//if (!getItems)
-			obj.setOrderId(orderId);
+		obj.setOrderId(orderId);
 		obj.setCreatedAt(entity.getCreationDate());
 		obj.setDeliveryDate(entity.getDeliveryDate());
-		if (itemsList.size() > 0)
+		if (itemsList.size() > 0) {
 			obj.setCurrency(itemsList.get(0).getCurrency());
+			List<Integer> l = itemsList.stream().map(item -> item.getQuantity()).collect(Collectors.toList());
+			obj.setTotalQuantity(l.stream().mapToInt(Integer::intValue).sum());
+		}
 		obj.setSubtotal(calculateOrderAmount(itemsList));
 		obj.setShipping(new BigDecimal(0));
 		obj.setTotal(obj.getShipping().add(obj.getSubtotal()));
