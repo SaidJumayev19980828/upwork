@@ -14,6 +14,7 @@ DELETE FROM public.roles WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.employee_users WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.social_links WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.organization_images where organization_id between 99000 and 99999;
 DELETE FROM public.files  where organization_id between 99000 and 99999;
 DELETE FROM public.files  where orig_filename = 'nasnav--Test_Photo.png';  -- for test files with no organization
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;

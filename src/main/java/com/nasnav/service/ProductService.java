@@ -1232,11 +1232,10 @@ public class ProductService {
 
 
 
-
 	private void validateUpdatedProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
 		if(!imgMetaData.areRequiredForUpdatePropertiesProvided()) {
 			throw new BusinessException(
-					String.format("Missing required parameters! required parameters for updating existing image are: %s", imgMetaData.getRequiredPropertiesForDataUpdate())
+					String.format("Missing required parameters! required parameters for updating existing image are: %s", imgMetaData.getRequiredPropertyNamesForDataUpdate())
 					, "MISSING PARAM"
 					, HttpStatus.NOT_ACCEPTABLE);
 		}
