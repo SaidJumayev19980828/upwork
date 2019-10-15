@@ -1,17 +1,18 @@
 
-import com.nasnav.AppConfig;
-import com.nasnav.NavBox;
-import com.nasnav.controller.ShopsController;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.response.ShopResponse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
+
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.skyscreamer.jsonassert.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,37 +22,25 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import javax.sql.DataSource;
+import com.nasnav.NavBox;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.persistence.ShopsEntity;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-
+import net.jcip.annotations.NotThreadSafe;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
+@NotThreadSafe
 public class ShopsUpdateTest {
 
     @Autowired
     private TestRestTemplate template;
-
-    @Mock
-    private ShopsController shopsController;
-
-    @Autowired
-    private AppConfig config;
-
+    
     @Autowired
     private ShopsRepository shopsRepository;
 
@@ -66,8 +55,6 @@ public class ShopsUpdateTest {
 
     @Before
     public void setup() {
-        config.mailDryRun = true;
-        MockMvcBuilders.standaloneSetup(shopsController).build();
         PerformSqlScript(userDataInsert);
     }
 
@@ -121,6 +108,10 @@ public class ShopsUpdateTest {
         Assert.assertEquals("", false, jsonResponse.getBoolean("success"));
         Assert.assertEquals(403, response.getStatusCode().value());
     }
+    
+    
+    
+    
 
     @Test
     public void testCreateShopDifferentOrganization(){
@@ -132,6 +123,10 @@ public class ShopsUpdateTest {
         Assert.assertEquals("", false, jsonResponse.getBoolean("success"));
         Assert.assertEquals(403, response.getStatusCode().value());
     }
+    
+    
+    
+    
 
     @Test
     public void testCreateShopDifferentData(){
@@ -166,6 +161,10 @@ public class ShopsUpdateTest {
         shopsRepository.deleteById(id);
     }
 
+    
+    
+    
+    
     @Test
     public void testUpdateShopDifferentData(){
         //create a shop first

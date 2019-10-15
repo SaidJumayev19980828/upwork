@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.OrganizationEntity;
 
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -27,5 +28,6 @@ public interface SecurityService {
     
     EmployeeUserEntity getCurrentUser();
     
-    Long getCurrentUserOrganization();
+    Long getCurrentUserOrganizationId();
+    OrganizationEntity getCurrentUserOrganization();
 }

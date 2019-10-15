@@ -2,6 +2,7 @@ package com.nasnav.service.helpers;
 
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,15 +25,25 @@ public class ShopServiceHelper extends BeanUtils{
 
     private final MallRepository mallRepo;
     
+    
     @Autowired
     private OrganizationRepository orgRepo;
     
+    
     @Autowired
     private SecurityService sercurityService;
+    
+    
+    
+    
 
     public ShopServiceHelper(MallRepository mallRepository){
         this.mallRepo = mallRepository;
     }
+    
+    
+    
+    
 
     public String[] getNullProperties(ShopJsonDTO shopJson) {
         final BeanWrapper src = new BeanWrapperImpl(shopJson);
@@ -45,6 +56,10 @@ public class ShopServiceHelper extends BeanUtils{
         String[] result = new String[nullProperties.size()];
         return nullProperties.toArray(result);
     }
+    
+    
+    
+    
 
     public ShopsEntity setAdditionalShopProperties(ShopsEntity shopsEntity, ShopJsonDTO shopJson){
         if (shopJson.getMallId() != null){
@@ -57,9 +72,10 @@ public class ShopServiceHelper extends BeanUtils{
             shopsEntity.setPStreet(StringUtils.encodeUrl(shopJson.getStreet()));
         }
         
-        
-        Optional<OrganizationEntity> org = orgRepo.findById(sercurityService.getCurrentUserOrganization());                
-        shopsEntity.setOrganizationEntity(org.get());
+        OrganizationEntity org = sercurityService.getCurrentUserOrganization();               
+        shopsEntity.setOrganizationEntity(org);        
+        shopsEntity.setCreatedAt(new Date());
+        shopsEntity.setUpdatedAt(new Date());
         
         return shopsEntity;
     }

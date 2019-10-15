@@ -70,6 +70,8 @@ public class DataImportApiTest {
 	
 	private static final Long TEST_UPDATE_SHOP = 100004L;
 
+	@Value("classpath:/files/product__list_upload_variants.csv")
+    private Resource csvFileVariants;
 
 	@Value("classpath:/files/product__list_upload.csv")
     private Resource csvFile;
@@ -385,6 +387,32 @@ public class DataImportApiTest {
         assertProductDataImported(TEST_IMPORT_SHOP, expected);
        
 	}
+	
+	
+	
+	
+	
+	@Test
+	public void uploadProductCSVNewDataVariantsTest() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+        
+		ProductDataCount before = countProductData();	
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariants, importProperties);
+		
+		result.andExpect(status().is(200));
+		
+		ProductDataCount after = countProductData();
+		assertEquals(2, after.product - before.product);
+        assertEquals(4, after.variant - before.variant);
+        assertEquals(4, after.stocks  - before.stocks);
+        
+
+        ExpectedSavedData expected = getExpectedAllNewVariantsData();
+        assertProductDataImported(TEST_IMPORT_SHOP, expected);
+       
+	}
 
 
 
@@ -608,7 +636,7 @@ public class DataImportApiTest {
 												.collect(Collectors.toList()); 
         
         
-        assertEquals(2, stocks.size());
+        assertEquals(expected.getStocksNum().intValue() , stocks.size());
         assertTrue( propertyValuesIn(stocks, StocksEntity::getCurrency, expected.getCurrencies())	);
         
         assertTrue( propertyValuesIn(stocks, StocksEntity::getQuantity, expected.getQuantities())	);
@@ -660,7 +688,30 @@ public class DataImportApiTest {
 		data.setDescriptions( setOf("squishy", "too hard") );
 		data.setCategories( setOf(201L, 202L) );
 		data.setBrands(setOf(101L, 102L) );
+		data.setStocksNum(2);
         
+		return data;
+	}
+	
+	
+	
+	
+	private ExpectedSavedData getExpectedAllNewVariantsData() {
+		ExpectedSavedData data = new ExpectedSavedData();
+		
+		data.setQuantities( setOf(101,102,45) );
+		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6")));
+		data.setCurrencies(setOf(TransactionCurrency.EGP));
+		
+		data.setBarcodes( setOf("1354ABN", "87847777EW", "878466658S", "878849956E") );
+		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
+		data.setPNames(setOf("s_shoe", "h_shoe") );
+		data.setDescriptions( setOf("squishy", "too hard") );
+		data.setCategories( setOf(201L, 202L) );
+		data.setBrands(setOf(101L, 102L) );
+		data.setStocksNum(4);
+		data.setFeatureSpecs(  createNewVariantsExpectedFeautreSpec());
+		
 		return data;
 	}
 
@@ -672,6 +723,21 @@ public class DataImportApiTest {
 	
 	
 	
+	private Set<JSONObject> createNewVariantsExpectedFeautreSpec() {
+		Set<JSONObject> specs = new HashSet<>();
+		JSONObject spec1 = createFeatureSpec("XXL", "Lettuce Heart");
+		JSONObject spec2 = createFeatureSpec("M", "Fo7loqy");
+		JSONObject spec3 = createFeatureSpec("L", "Browny");
+		JSONObject spec4 = createFeatureSpec("XXXL", "PINKY");
+		specs.addAll( Arrays.asList(spec1, spec2, spec3, spec4));
+		return specs;
+	}
+
+
+
+
+
+
 	private ExpectedSavedData getExpectedNewAndUpdatedDataWithStocks() {
 		ExpectedSavedData data = new ExpectedSavedData();		
 
@@ -686,7 +752,8 @@ public class DataImportApiTest {
 		data.setCategories( setOf(201L, 202L) );
 		data.setBrands( setOf(101L, 102L) );
 		data.setFeatureSpecs(  createExpectedFeautreSpec());
-        
+		data.setStocksNum(2);
+		
 		return data;
 	}
 	
@@ -706,7 +773,7 @@ public class DataImportApiTest {
 		data.setCategories( setOf(201L, 202L) );
 		data.setBrands( setOf(101L, 102L) );
 		data.setFeatureSpecs(  createExpectedFeautreSpec());
-		
+		data.setStocksNum(2);
         
 		return data;
 	}
@@ -753,6 +820,7 @@ public class DataImportApiTest {
 		data.setCategories( setOf(201L, 202L) );
 		data.setBrands( setOf(101L, 102L) );
 		data.setFeatureSpecs(  createNewProductOnlyExpectedFeautreSpec());
+		data.setStocksNum(2);
 		
 		return data;
 	}
@@ -867,7 +935,7 @@ class ExpectedSavedData{
 	private Set<Long> brands;
 	private Set<TransactionCurrency> currencies;
 	private Set<JSONObject> featureSpecs;
-	
+	private Integer stocksNum;
 	
 	public ExpectedSavedData() {
 		featureSpecs = new HashSet<>();
