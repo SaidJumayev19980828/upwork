@@ -30,6 +30,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import javax.sql.DataSource;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -147,10 +151,19 @@ public class ShopsUpdateTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,70,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
-        shopsRepository.deleteById(jsonResponse.getLong("store_id"));
+        
+        assertEquals("", true, jsonResponse.getBoolean("success"));
+        assertEquals(200, response.getStatusCode().value());
+        
+        Long id = jsonResponse.getLong("store_id");
+        ShopsEntity saved = shopsRepository.findById(id).get();
+        
+        assertNotNull(saved.getOrganizationEntity());
+        assertEquals(99001L, saved.getOrganizationEntity().getId().longValue());
 
-        Assert.assertEquals("", true, jsonResponse.getBoolean("success"));
-        Assert.assertEquals(200, response.getStatusCode().value());
+        
+        
+        shopsRepository.deleteById(id);
     }
 
     @Test

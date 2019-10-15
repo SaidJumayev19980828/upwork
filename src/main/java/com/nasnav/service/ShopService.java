@@ -84,7 +84,7 @@ public class ShopService {
         return  ((ShopRepresentationObject)shopsEntityOptional.get().getRepresentation());
     }
 
-    public ShopResponse createShop(Long userId, ShopJsonDTO shopJson){
+    public ShopResponse createShop(Long userId, ShopJsonDTO shopJson) throws BusinessException{
         List<String> userRoles = employeeUserServicehelper.getEmployeeUserRoles(userId);
         Long employeeUserOrgId = employeeUserRepository.getById(userId).getOrganizationId();
         if (!userRoles.contains("ORGANIZATION_MANAGER") || !employeeUserOrgId.equals(shopJson.getOrgId())){
