@@ -11,6 +11,7 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_I
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMPORT_MISSING_PARAM;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_SHOP_ID_NOT_EXIST;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_CHANGE_OTHER_ORG_SHOP;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PREPARE_PRODUCT_DTO_DATA;
 import static com.nasnav.persistence.EntityUtils.anyIsNull;
 
 import java.io.ByteArrayInputStream;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 
 import org.apache.commons.beanutils.BeanMap;
+import org.apache.commons.beanutils.BeanUtils;
 import org.jboss.logging.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -48,6 +50,7 @@ import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.CategoriesRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.CsvHeaderNamesDTO;
@@ -58,6 +61,7 @@ import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.ShopsEntity;
@@ -110,6 +114,10 @@ public class DataImportServiceImpl implements DataImportService{
 	
 	@Autowired
 	private ProductFeaturesRepository featureRepo;
+	
+	
+	@Autowired
+	private ProductRepository prodcutRepo;
 	
 	
 	private Logger logger = Logger.getLogger(getClass());
@@ -174,7 +182,7 @@ public class DataImportServiceImpl implements DataImportService{
 	private void saveSingleProductCsvRowToDB(ProductCsvImportDTO dto, ProductListImportDTO importMetaData) throws BusinessException{
 		if(dto.isExisting()) {
 			if( importMetaData.isUpdateProduct()) {
-				Long productId = saveProductDto(dto);
+				Long productId = saveProductDto( dto.getProductDto() );
 				productService.updateVariant(dto.getVariantDto());
 			}
 			
@@ -192,7 +200,7 @@ public class DataImportServiceImpl implements DataImportService{
 
 
 	private void saveNewImportedProduct(ProductCsvImportDTO dto) throws BusinessException {
-		Long productId = saveProductDto(dto);
+		Long productId = saveProductDto(dto.getProductDto());
 		dto.getVariantDto().setProductId(productId);
 		VariantUpdateResponse variantResponse = productService.updateVariant(dto.getVariantDto());
 		Long variantId = variantResponse.getVariantId();
@@ -205,23 +213,54 @@ public class DataImportServiceImpl implements DataImportService{
 
 
 
-	private Long saveProductDto(ProductCsvImportDTO dto) throws BusinessException {
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.setSerializationInclusion(Include.NON_NULL);
+	private Long saveProductDto(ProductUpdateDTO dto) throws BusinessException {
+		String productDtoJson = getProductDtoJson(dto);		
+		ProductUpdateResponse productResponse = productService.updateProduct(productDtoJson, false);
+		Long productId = productResponse.getProductId();
+		return productId;
+	}
+
+
+
+
+
+	private String getProductDtoJson(ProductUpdateDTO dto) throws BusinessException {
+		ProductUpdateDTO dtoClone = prepareProductUpdateDto(dto);		
 		String productDtoJson = "";
-		try {
-			productDtoJson = mapper.writeValueAsString(dto.getProductDto());
+		try {	
+			ObjectMapper mapper = new ObjectMapper();
+			mapper.setSerializationInclusion(Include.NON_NULL);
+			productDtoJson = mapper.writeValueAsString(dtoClone);
 		}catch(Exception e) {
 			logger.error(e,e);
 			throw new BusinessException(
-					String.format(ERR_CONVERT_TO_JSON, dto.getProductDto().getClass().getName())
+					String.format(ERR_CONVERT_TO_JSON, dtoClone.getClass().getName())
 					, "INTERNAL SERVER ERROR"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		
-		ProductUpdateResponse productResponse = productService.updateProduct(productDtoJson.toString(), false);
-		Long productId = productResponse.getProductId();
-		return productId;
+		return productDtoJson;
+	}
+
+
+
+
+
+	private ProductUpdateDTO prepareProductUpdateDto(ProductUpdateDTO dto) throws BusinessException {
+		try {
+			ProductUpdateDTO dtoClone = (ProductUpdateDTO)BeanUtils.cloneBean(dto);
+			Optional<ProductEntity> product = prodcutRepo.findByName(dto.getName());
+			if(product.isPresent()) {
+				dtoClone.setId( product.get().getId());
+				dtoClone.setOperation(Operation.UPDATE);
+			}
+			return dtoClone;
+		} catch (Exception e) {
+			logger.error(e,e);
+			throw new BusinessException(
+					String.format( ERR_PREPARE_PRODUCT_DTO_DATA, dto.toString())
+					, "INTERNAL SERVER ERROR"
+					, HttpStatus.INTERNAL_SERVER_ERROR);
+		}		
 	}
 
 
@@ -252,7 +291,7 @@ public class DataImportServiceImpl implements DataImportService{
 		Optional<ProductVariantsEntity> variantEnt = variantRepo.findByBarcodeAndProductEntity_OrganizationId(row.getBarcode(), orgId);
 		
 		if(variantEnt != null && variantEnt.isPresent()) {
-			modifyProductImportDtoForUpdate(dto, row, variantEnt.get() );
+			modifyProductCsvImportDtoForUpdate(dto, row, variantEnt.get() );
 		}
 		
 		return dto;
@@ -262,7 +301,7 @@ public class DataImportServiceImpl implements DataImportService{
 
 
 
-	private void modifyProductImportDtoForUpdate(ProductCsvImportDTO dto, ProductImportCsvRowData row, ProductVariantsEntity variantEnt)
+	private void modifyProductCsvImportDtoForUpdate(ProductCsvImportDTO dto, ProductImportCsvRowData row, ProductVariantsEntity variantEnt)
 			throws BusinessException {
 		dto.setExisting(true);
 		

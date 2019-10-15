@@ -21,4 +21,5 @@ public class ErrorMessages {
 	public static final String ERR_NO_PRODUCT_EXISTS_WITH_BARCODE = "There is no product nor a product variant that carries the barcode[%s] for organization with id[%d]";
 	public static final String ERR_IMPORTING_IMG_FILE = " Importing image file[%s] caused the error[%s]";
 	public static final String ERR_IMPORTING_IMGS = "Error importing images";
+	public static final String ERR_PREPARE_PRODUCT_DTO_DATA = "Failed to prepare product data for save/update! product data: [%s]";
 }
