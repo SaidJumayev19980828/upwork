@@ -103,4 +103,17 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 		return user;
 	}
 
+
+
+
+	@Override
+	public BaseUserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId) {		
+		BaseUserEntity user = userRepo.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
+		
+		if(user == null)
+			user = empRepo.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
+		
+		return user;		
+	}
+
 }

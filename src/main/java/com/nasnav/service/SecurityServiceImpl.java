@@ -91,9 +91,7 @@ public class SecurityServiceImpl implements SecurityService {
 			throwInvalidCredentialsException();
 		}
 		
-		
-		BaseUserEntity userEntity = userRepo.getByEmailAndOrganizationId(loginData.email, loginData.orgId);
-		
+		BaseUserEntity userEntity = userRepo.getByEmailIgnoreCaseAndOrganizationId(loginData.email, loginData.orgId);
 		
 		if(userEntity == null) {
 			throwInvalidCredentialsException();
