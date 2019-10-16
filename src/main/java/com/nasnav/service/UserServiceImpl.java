@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
@@ -32,7 +33,6 @@ import com.nasnav.dto.UserDTOs;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;

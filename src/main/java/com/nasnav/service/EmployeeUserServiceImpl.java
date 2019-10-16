@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import com.google.common.base.Enums;
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;

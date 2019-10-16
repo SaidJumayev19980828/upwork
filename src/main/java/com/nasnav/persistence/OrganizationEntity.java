@@ -1,20 +1,14 @@
 package com.nasnav.persistence;
 
 import java.util.Date;
-import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import org.springframework.data.jpa.domain.AbstractPersistable;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrganizationRepresentationObject;
 
@@ -25,11 +19,12 @@ import lombok.EqualsAndHashCode;
 @Table(name = "organizations")
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class OrganizationEntity extends AbstractPersistable<Long> implements BaseEntity {
+public class OrganizationEntity implements BaseEntity {
 
     public enum Type { Brand, Mall, Store, Pharmacies, Unknown }
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id 
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(unique = true)
@@ -37,10 +32,13 @@ public class OrganizationEntity extends AbstractPersistable<Long> implements Bas
 
     private String description;
     private String type;
+    
     @Column(name = "p_name")
     private String pname;
+    
     @Column(name = "created_at")
     private Date createdAt;
+    
     @Column(name = "updated_at")
     private Date updatedAt = new Date();
 

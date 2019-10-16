@@ -1,4 +1,4 @@
-import static com.nasnav.persistence.EntityUtils.setOf;
+import static com.nasnav.commons.utils.EntityUtils.setOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;

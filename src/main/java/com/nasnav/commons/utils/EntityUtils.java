@@ -1,4 +1,4 @@
-package com.nasnav.persistence;
+package com.nasnav.commons.utils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;

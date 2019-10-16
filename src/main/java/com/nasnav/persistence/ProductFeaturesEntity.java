@@ -20,10 +20,13 @@ public class ProductFeaturesEntity {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private Integer id;
+	
 	@Column(name="name")
 	private String name;
+	
 	@Column(name="p_name")
 	private String pname;
+	
 	@Column(name="description")
 	private String description;
 	

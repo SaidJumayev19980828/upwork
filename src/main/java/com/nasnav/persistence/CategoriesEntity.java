@@ -1,15 +1,21 @@
 package com.nasnav.persistence;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.nasnav.dto.BaseRepresentationObject;
-import com.nasnav.dto.CategoryRepresentationObject;
-import lombok.Data;
+import java.time.LocalDateTime;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import javax.persistence.*;
-import java.time.LocalDateTime;
+import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.dto.CategoryRepresentationObject;
+
+import lombok.Data;
 
 @Table(name = "categories")
 @Entity
@@ -19,24 +25,27 @@ public class CategoriesEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
     @Column(name = "name")
     private String name;
+    
     @Column(name = "p_name")
     private String pname;
+    
     @Column(name = "logo")
     private String logo;
+    
     @Column(name = "parent_id")
     private Integer parentId;
+    
     @Column(name = "created_at")
     @CreationTimestamp
     private LocalDateTime createdAt;
+    
     @Column(name = "updated_at")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-//    @OneToOne(mappedBy = "categoriesEntity")
-//    @JsonIgnore
-//    private ProductEntity productEntity;
 
     //@Override
     public BaseRepresentationObject getRepresentation() {
