@@ -1,7 +1,10 @@
 package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.dto.OrganizationImagesRepresentationObject;
+import com.nasnav.dto.OrganizationRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.jpa.domain.AbstractPersistable;
@@ -36,8 +39,14 @@ public class OrganizationImagesEntity extends AbstractPersistable<Long> implemen
 
     @Override
     public BaseRepresentationObject getRepresentation() {
-        // TODO Auto-generated method stub
-        return null;
+        OrganizationImagesRepresentationObject orgImgRepObj = new OrganizationImagesRepresentationObject();
+        orgImgRepObj.setId(getId());
+        //orgImgRepObj.setOrganizationId(getOrganizationEntity().getId());
+        if (getShopsEntity() != null)
+            orgImgRepObj.setShopId(getShopsEntity().getId());
+        orgImgRepObj.setType(getType());
+        orgImgRepObj.setUri(getUri());
+        return orgImgRepObj;
     }
 }
 

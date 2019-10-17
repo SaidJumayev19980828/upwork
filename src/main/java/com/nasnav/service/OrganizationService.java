@@ -24,11 +24,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -82,71 +78,51 @@ public class OrganizationService {
     }
 
     public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
-
         OrganizationEntity organizationEntity = organizationRepository.findByPname(organizationName);
-        if (organizationEntity == null) {
+        if (organizationEntity == null)
             organizationEntity = organizationRepository.findOneByNameIgnoreCase(organizationName);
-        }
+
         if (organizationEntity == null)
             throw new BusinessException("Organization not found", null, HttpStatus.NOT_FOUND);
 
-        OrganizationRepresentationObject organizationRepresentationObject = ((OrganizationRepresentationObject) organizationEntity.getRepresentation());
-
-        //TODO add brandRepresentationObjects from other repository
-        SocialEntity socialEntity = socialRepository.findOneByOrganizationEntity_Id(organizationRepresentationObject.getId());
-
-        if (socialEntity != null) {
-            organizationRepresentationObject.setSocial((SocialRepresentationObject) socialEntity.getRepresentation());
-        }
-
-        OrganizationThemeEntity organizationThemeEntity = organizationThemeRepository.findOneByOrganizationEntity_Id(organizationRepresentationObject.getId());
-
-        if (organizationThemeEntity != null) {
-            organizationRepresentationObject.setThemes((OrganizationThemesRepresentationObject) organizationThemeEntity.getRepresentation());
-        }
-
-        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_Id(organizationRepresentationObject.getId());
-
-        if (brandsEntityList != null && !brandsEntityList.isEmpty()) {
-
-            List<Organization_BrandRepresentationObject> repList = brandsEntityList.stream().map(rep -> ((Organization_BrandRepresentationObject) rep.getRepresentation())).collect(Collectors.toList());
-            organizationRepresentationObject.setBrands(repList);
-        }
-        return organizationRepresentationObject;
+        return getOrganizationAdditionalData(organizationEntity);
     }
 
     public OrganizationRepresentationObject getOrganizationById(Long organizationId) throws BusinessException {
-
         OrganizationEntity organizationEntity = organizationRepository.findOneById(organizationId);
 
         if (organizationEntity == null)
             throw new BusinessException("Organization not found", null, HttpStatus.NOT_FOUND);
 
-        OrganizationRepresentationObject organizationRepresentationObject = ((OrganizationRepresentationObject) organizationEntity.getRepresentation());
-
-        //TODO add brandRepresentationObjects from other repository
-        SocialEntity socialEntity = socialRepository.findOneByOrganizationEntity_Id(organizationRepresentationObject.getId());
-
-        if (socialEntity != null) {
-            organizationRepresentationObject.setSocial((SocialRepresentationObject) socialEntity.getRepresentation());
-        }
-
-        OrganizationThemeEntity organizationThemeEntity = organizationThemeRepository.findOneByOrganizationEntity_Id(organizationRepresentationObject.getId());
-
-        if (organizationThemeEntity != null) {
-            organizationRepresentationObject.setThemes((OrganizationThemesRepresentationObject) organizationThemeEntity.getRepresentation());
-        }
-
-        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_Id(organizationRepresentationObject.getId());
-
-        if (brandsEntityList != null && !brandsEntityList.isEmpty()) {
-
-            List<Organization_BrandRepresentationObject> repList = brandsEntityList.stream().map(rep -> ((Organization_BrandRepresentationObject) rep.getRepresentation())).collect(Collectors.toList());
-            organizationRepresentationObject.setBrands(repList);
-        }
-        return organizationRepresentationObject;
+        return getOrganizationAdditionalData(organizationEntity);
     }
 
+    private OrganizationRepresentationObject getOrganizationAdditionalData(OrganizationEntity entity) {
+        OrganizationRepresentationObject orgRepObj = ((OrganizationRepresentationObject) entity.getRepresentation());
+
+        //TODO add brandRepresentationObjects from other repository
+        SocialEntity socialEntity = socialRepository.findOneByOrganizationEntity_Id(orgRepObj.getId());
+        if (socialEntity != null)
+            orgRepObj.setSocial((SocialRepresentationObject) socialEntity.getRepresentation());
+
+        OrganizationThemeEntity organizationThemeEntity = organizationThemeRepository.findOneByOrganizationEntity_Id(orgRepObj.getId());
+        if (organizationThemeEntity != null)
+            orgRepObj.setThemes((OrganizationThemesRepresentationObject) organizationThemeEntity.getRepresentation());
+
+        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_Id(orgRepObj.getId());
+        if (brandsEntityList != null && !brandsEntityList.isEmpty()) {
+            List<Organization_BrandRepresentationObject> repList = brandsEntityList.stream().map(rep -> ((Organization_BrandRepresentationObject) rep.getRepresentation())).collect(Collectors.toList());
+            orgRepObj.setBrands(repList);
+        }
+
+        List <OrganizationImagesEntity> orgImgEntities = organizationImagesRepository.findByOrganizationEntityId(orgRepObj.getId());
+        if (orgImgEntities != null && !orgImgEntities.isEmpty()) {
+            List<OrganizationImagesRepresentationObject> imagesList = orgImgEntities.stream().map(rep -> ((OrganizationImagesRepresentationObject) rep.getRepresentation())).collect(Collectors.toList());
+            orgRepObj.setImages(imagesList);
+        }
+
+        return orgRepObj;
+    }
 
     public List<ExtraAttributesRepresentationObject> getOrganizationExtraAttributesById(Long organizationId){
         List<ExtraAttributesEntity> extraAttributes = null;

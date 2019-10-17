@@ -32,6 +32,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	 */
 	UserEntity getByEmailAndOrganizationId(String email, Long orgId);
 
+	UserEntity getByEmail(String email);
+
 	/**
 	 * Check if the passed resetPasswordToken already exist before or not.
 	 *

@@ -19,6 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -364,7 +366,12 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	public OrderResponse getOrderInfo(Long orderId) {
-		if (ordersRepository.existsById(orderId)) {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  employeeUserRepository.getOneByEmail(auth.getName());
+		if (user == null)
+			user =  userRepository.getByEmail(auth.getName());
+
+		if (ordersRepository.existsByIdAndUserID(orderId, user.getId())) {
 			return new OrderResponse(getDetailedOrderInfo(orderId, true));
 		}
 		return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
@@ -501,7 +508,7 @@ public class OrderServiceImpl implements OrderService {
 					} else if (userId != null) {
 						ordersEntityList = ordersRepository.findByUserId(userId);
 					} else if (storeId != null){
-						ordersEntityList = ordersRepository.findByshopsEntityId(storeId);
+						ordersEntityList = ordersRepository.findByShopsEntityId(storeId);
 					} else {
 						ordersEntityList = ordersRepository.findAll();
 					}

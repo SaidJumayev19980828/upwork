@@ -11,6 +11,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.nasnav.dao.*;
+import com.nasnav.dto.OrganizationImagesRepresentationObject;
+import com.nasnav.persistence.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,23 +21,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dao.RoleRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.response.StockUpdateResponse;
@@ -48,15 +40,17 @@ public class ShopService {
     private final EmployeeUserServiceHelper employeeUserServicehelper;
     private final EmployeeUserRepository employeeUserRepository;
     private final ShopServiceHelper shopServiceHelper;
-    
+    private final OrganizationImagesRepository orgImgRepo;
     
     @Autowired
     public ShopService(ShopsRepository shopsRepository, EmployeeUserServiceHelper employeeUserServicehelper,
-                       EmployeeUserRepository employeeUserRepository, ShopServiceHelper shopServiceHelper){
+                       EmployeeUserRepository employeeUserRepository, ShopServiceHelper shopServiceHelper,
+                       OrganizationImagesRepository orgImgRepo){
         this.shopsRepository = shopsRepository;
         this.employeeUserServicehelper = employeeUserServicehelper;
         this.employeeUserRepository = employeeUserRepository;
         this.shopServiceHelper = shopServiceHelper;
+        this.orgImgRepo = orgImgRepo;
     }
 
     public List<ShopRepresentationObject> getOrganizationShops(Long organizationId) throws BusinessException {
@@ -81,7 +75,13 @@ public class ShopService {
         if(shopsEntityOptional==null || !shopsEntityOptional.isPresent())
             throw new BusinessException("Shop not found",null, HttpStatus.NOT_FOUND);
 
-        return  ((ShopRepresentationObject)shopsEntityOptional.get().getRepresentation());
+        ShopRepresentationObject shopRepObj = (ShopRepresentationObject)shopsEntityOptional.get().getRepresentation();
+        List<OrganizationImagesEntity> imageEntities = orgImgRepo.findByShopsEntityId(shopId);
+        if(imageEntities != null && !imageEntities.isEmpty())
+            shopRepObj.setImages(imageEntities.stream().map(entity -> (OrganizationImagesRepresentationObject) entity.getRepresentation())
+                                                       .collect(Collectors.toList()));
+
+        return  shopRepObj;
     }
 
     public ShopResponse createShop(Long userId, ShopJsonDTO shopJson){
