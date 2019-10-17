@@ -1,0 +1,239 @@
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.stream.Stream;
+
+import com.nasnav.dao.*;
+import com.nasnav.response.OrganizationResponse;
+import com.nasnav.response.ProductImageUpdateResponse;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+
+import com.nasnav.NavBox;
+
+import net.jcip.annotations.NotThreadSafe;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+
+import javax.sql.DataSource;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
+@AutoConfigureMockMvc
+@PropertySource("classpath:database.properties")
+public class OrganizationImageApiTest {
+
+    @Value("classpath:test_imgs_to_upload/nasnav--Test_Photo.png")
+    private Resource file;
+
+    @Value("classpath:sql/Organizations_image_API_Test_Data_Insert.sql")
+    private Resource organizationsDataInsert;
+    @Value("classpath:sql/database_cleanup.sql")
+    private Resource databaseCleanup;
+
+    @Autowired
+    private DataSource datasource;
+
+    @Value("${files.basepath}")
+    private String basePathStr;
+
+    @Autowired
+    private TestRestTemplate template;
+
+    private Path basePath;
+
+    @Autowired
+    private FilesRepository filesRepo;
+    @Autowired
+    private OrganizationRepository orgRepo;
+    @Autowired
+    private OrganizationImagesRepository imgRepo;
+    @Autowired
+    private MockMvc mockMvc;
+
+    /*@Before
+    public void setup() throws IOException {
+        this.basePath = Paths.get(basePathStr);
+        System.out.println("Test Files Base Path  >>>> " + basePath.toAbsolutePath());
+        //The base directory must exists for all tests
+        assertTrue(Files.exists(basePath));
+        //assert an empty temp directory was created for the test
+        try(Stream<Path> files = Files.list(basePath)){
+            assertEquals(0L, files.count());
+        }
+    }*/
+
+    @Before
+    public void setup(){
+        performSqlScript(databaseCleanup);
+        performSqlScript(organizationsDataInsert);
+    }
+
+    @After
+    public void cleanup(){
+        performSqlScript(databaseCleanup);
+    }
+
+    void performSqlScript(Resource resource) {
+        try (Connection con = datasource.getConnection()) {
+            ScriptUtils.executeSqlScript(con, resource);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void organizationImageMissingImageIdTest() {
+        String body = "{\"org_id\":99002, \"operation\":\"update\"" + "}";
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("properties", body);
+        map.add("image", file);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 69, "456", MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<Object> response = template.postForEntity("/organization/image", json, Object.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+        Assert.assertTrue(response.getBody().toString().contains("MISSING PARAM"));
+    }
+
+    @Test
+    public void organizationNewImageMissingImageTest() {
+        String body = "{\"org_id\":99002, \"operation\":\"create\"" + "}";
+        Resource emptyFile = null;
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("properties", body);
+        map.add("image", emptyFile);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 69, "456", MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<Object> response = template.postForEntity("/organization/image", json, Object.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+        Assert.assertTrue(response.getBody().toString().contains("MISSING PARAM"));
+    }
+
+    @Test
+    public void organizationImageUpdateNoImgTest() {
+        String body = "{\"org_id\":99002, \"operation\":\"update\", \"image_id\":10101 " + "}";
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("properties", body);
+        map.add("image", file);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 69, "456", MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<Object> response = template.postForEntity("/organization/image", json, Object.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void organizationImageMissingOrganizationIdTest() {
+        String body = "{ \"operation\":\"create\"" + "}";
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("properties", body);
+        map.add("image", file);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 69, "456", MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<Object> response = template.postForEntity("/organization/image", json, Object.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+        Assert.assertTrue(response.getBody().toString().contains("MISSING PARAM"));
+    }
+
+    @Test
+    public void organizationImageNullOrganizationTest() {
+        String body = "{\"org_id\":null, \"operation\":\"create\"" + "}";
+        Resource emptyFile = null;
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("properties", body);
+        map.add("image", emptyFile);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 69, "456", MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<Object> response = template.postForEntity("/organization/image", json, Object.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+        Assert.assertTrue(response.getBody().toString().contains("MISSING PARAM"));
+    }
+
+    @Test
+    public void organizationImageNonExistingOrganizationIdTest() {
+        String body = "{\"org_id\":99004, \"operation\":\"create\"" + "}";
+        Resource emptyFile = null;
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("properties", body);
+        map.add("image", emptyFile);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 69, "456", MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<Object> response = template.postForEntity("/organization/image", json, Object.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+        Assert.assertTrue(response.getBody().toString().contains("MISSING PARAM"));
+    }
+
+    @Test
+    public void organizationImageOrganizationIdFromAnotherOrgTest() {
+        String body = "{\"org_id\":99001, \"operation\":\"create\", \"type\":1 " + "}";
+        Resource emptyFile = null;
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("properties", body);
+        map.add("image", emptyFile);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 69, "456", MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<Object> response = template.postForEntity("/organization/image", json, Object.class);
+        Assert.assertEquals(403, response.getStatusCode().value());
+    }
+
+    @Test
+    public void organizationImageMissingOperationTest() {
+        String body = "{\"org_id\":99002 }";
+        Resource emptyFile = null;
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("properties", body);
+        map.add("image", emptyFile);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 69, "456", MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<Object> response = template.postForEntity("/organization/image", json, Object.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+        Assert.assertTrue(response.getBody().toString().contains("MISSING PARAM"));
+    }
+
+    @Test
+    public void organizationNewImageUploadTest() {
+        String body = "{\"org_id\":99002, \"operation\":\"create\", \"type\":1 " + "}";
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("properties", body);
+        map.add("image", file);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 69, "456", MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<Object> response = template.postForEntity("/organization/image", json, Object.class);
+        Assert.assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void organizationUpdateImageUploadTest() {
+        String body = "{\"org_id\":99002, \"operation\":\"update\", \"image_id\": 901}";
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("properties", body);
+        map.add("image", file);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map, 69, "456", MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<Object> response = template.postForEntity("/organization/image", json, Object.class);
+        Assert.assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void organizationUpdateImageFailedTest() {
+
+    }
+
+
+}
