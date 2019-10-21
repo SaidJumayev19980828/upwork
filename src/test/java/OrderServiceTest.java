@@ -556,6 +556,7 @@ public class OrderServiceTest {
 		order.setSubtotal( new BigDecimal("600.00") );
 		order.setTotal( new BigDecimal("600.00"));		
 		order.setItems( createExpectedItems());
+		order.setTotalQuantity(14);
 		
 		return order;
 	}
