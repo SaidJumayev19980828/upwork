@@ -38,10 +38,6 @@ public class DataImportContoller {
 	
 	@Autowired
 	private DataImportService importService;
-	
-	
-	@Autowired
-    private SecurityService securityService;
 
 
 	@ApiResponses(value = {
@@ -60,46 +56,6 @@ public class DataImportContoller {
             		throws BusinessException {
 
 		return  importService.importProductListFromCSV(file, importMetaData);
-    }
-	
-	
-	
-	
-	
-	
-	
-	
-	@GetMapping(value = "productlist/login")
-    public ModelAndView loginPage(@PathParam("msg") String msg, ModelMap model)	throws BusinessException {
-		model.addAttribute("msg", msg);
-		return  new ModelAndView("csv_upload_login", model);
-    }
-	
-	
-	
-	
-	@PostMapping(value = "productlist/login")
-    public ModelAndView login(@RequestParam String username
-    		, @RequestParam String password
-    		, @RequestParam Long orgId 
-    		, ModelMap model)	throws BusinessException {
-		
-		UserLoginObject loginObj = new UserLoginObject();
-		loginObj.email = username;
-		loginObj.employee = true;
-		loginObj.orgId = orgId;
-		loginObj.password = password;
-		
-		String token = null;
-		try {
-			token = securityService.login(loginObj).getToken();
-			model.addAttribute("token", token);
-	        return new ModelAndView("upload_product_csv_form", model);
-		}catch(BusinessException e) {
-			model.addAttribute("msg", "invalid username - password - organization id combination!");
-	        return new ModelAndView("csv_upload_login", model);
-		}
-
     }
 	
 }

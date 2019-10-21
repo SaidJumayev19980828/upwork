@@ -57,21 +57,23 @@
   </style>
   <meta charset="UTF-8">
   <title>NasNav</title>
+  <script th:inline="javascript">
+            /*<![CDATA[*/
+    
+            var token = /*[[${token}]]*/ 'default';
+    
+            /*]]>*/
+        </script>
+    <script src="/js/upload_products.js"></script>
 </head>
 
 <body>
   <div class="wrapper">
-    <form class="form-signin" target="/dirty_dashboard/login" method="POST">
-      <h2 class="form-signin-heading">Nasnav</h2>
-      <input type="text" class="form-control" name="username" placeholder="Email Address" required="" autofocus="" />
-      <input type="text" class="form-control" name="orgId" placeholder="Organization Id" required=""  />
-      <input type="password" class="form-control" name="password" placeholder="Password"  />   
-      <div>
-        <button class="btn btn-lg btn-primary btn-block" type="submit">Login</button>
-      </div>         
-      <div th:text="${msg}">
-      </div>
-    </form>
+    <a>Add Organization</a>
+    <a>Add Product Features</a>
+    <a>Add Brands</a>
+    <a href="/dirty_dashboard/upload_product_csv_form">Import Products</a>
+    <a>Import Products Images</a>
   </div>
 </body>
 
