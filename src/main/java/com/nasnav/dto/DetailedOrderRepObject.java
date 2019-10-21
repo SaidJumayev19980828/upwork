@@ -40,6 +40,8 @@ public class DetailedOrderRepObject extends BaseRepresentationObject{
     private LocalDateTime deliveryDate;
     @JsonProperty("status")
     private String status;
+    @JsonProperty("total_quantity")
+    private int totalQuantity;
 
     @JsonProperty("shipping_address")
     private ShippingAddress shippingAddress;
