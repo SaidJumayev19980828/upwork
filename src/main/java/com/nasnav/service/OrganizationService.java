@@ -558,11 +558,15 @@ public class OrganizationService {
         entity.setType(imgMetaData.getType());
         entity.setUri(url);
         if  (imgMetaData.getShopId() != null) {
-            if(shopsRepository.findById(imgMetaData.getShopId()).isPresent()) {
-                entity.setShopsEntity(shopsRepository.findById(imgMetaData.getShopId()).get());
-            } else {
+            Optional<ShopsEntity> shop = shopsRepository.findById(imgMetaData.getShopId());
+            if(!shop.isPresent())
                 throw new BusinessException("INVALID PARAM: shop_id", "Provided shop_id doesn't match any existing shop", HttpStatus.NOT_ACCEPTABLE);
-            }
+
+            else if (!shop.get().getOrganizationEntity().getId().equals(imgMetaData.getOrganizationId()))
+                throw new BusinessException("INVALID PARAM: shop_id", "Provided shop_id doesn't belong to organization #"
+                        + imgMetaData.getOrganizationId(), HttpStatus.NOT_ACCEPTABLE);
+
+            entity.setShopsEntity(shopsRepository.findById(imgMetaData.getShopId()).get());
         }
 
         entity = organizationImagesRepository.save(entity);

@@ -39,7 +39,7 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
     List<OrdersEntity> findByOrganizationEntityIdAndStatus(Long orgId, Integer status);
     List<OrdersEntity> findByOrganizationEntityIdAndStatusAndUserId(Long orgId, Integer status, Long userId);
 
-    Boolean existsByIdAndUserID(Long orderId, Long userId);
+    Boolean existsByIdAndUserId(Long orderId, Long userId);
 
     List<OrdersEntity> findByStatus(Integer status);
 }

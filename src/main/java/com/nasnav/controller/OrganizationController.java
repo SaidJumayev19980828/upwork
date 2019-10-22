@@ -52,10 +52,9 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
-    public ResponseEntity updateOrganizationData(@RequestHeader(value = "User-ID") Long userId,
-                                         @RequestHeader (value = "User-Token") String userToken,
-                                         @RequestPart String jsonString,
-                                         @RequestPart(value = "logo", required = false) @Valid MultipartFile file) throws Exception {
+    public ResponseEntity updateOrganizationData(@RequestHeader (value = "User-Token") String userToken,
+                                                 @RequestPart String jsonString,
+                                                 @RequestPart(value = "logo", required = false) @Valid MultipartFile file) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         OrganizationDTO.OrganizationModificationDTO json = mapper.readValue(jsonString, OrganizationDTO.OrganizationModificationDTO.class);
         OrganizationResponse response = orgService.updateOrganizationData(userToken, json, file);
@@ -80,8 +79,7 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "brand", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
-    public ResponseEntity updateOrganizationData(@RequestHeader(value = "User-ID") Long userId,
-                                                 @RequestHeader (value = "User-Token") String userToken,
+    public ResponseEntity updateOrganizationData(@RequestHeader (value = "User-Token") String userToken,
                                                  @RequestPart String jsonString,
                                                  @RequestPart(value = "logo", required = false) @Valid MultipartFile logo,
                                                  @RequestPart(value = "banner", required = false) @Valid MultipartFile banner) throws Exception {
@@ -100,10 +98,7 @@ public class OrganizationController {
         }
         return new ResponseEntity(response, response.getHttpStatus());
     }
-    
-    
-    
-    
+
 
     @ApiOperation(value = "get product features for organization", nickname = "GetOrgProductFeatures", code = 200)
     @ApiResponses(value = {
@@ -115,9 +110,7 @@ public class OrganizationController {
     public List<ProductFeatureDTO> updateOrganizationData(@RequestParam("organization_id") Long orgId) throws Exception {
     	return orgService.getProductFeatures(orgId);
     }
-    
-    
-    
+
     
     @ApiOperation(value = "add/update product features for organization", nickname = "PostOrgProductFeatures", code = 200)
     @ApiResponses(value = {
@@ -132,7 +125,6 @@ public class OrganizationController {
     	return orgService.updateProductFeature(featureDto);
     }
 
-
     @ApiOperation(value = "add/update organization images", nickname = "PostOrgImg", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -142,8 +134,7 @@ public class OrganizationController {
     @PostMapping(value = "image"
             , produces = MediaType.APPLICATION_JSON_UTF8_VALUE
             , consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ProductImageUpdateResponse updateProductFeature(@RequestHeader("User-ID") Long userId,
-                                                           @RequestHeader("User-Token") String token,
+    public ProductImageUpdateResponse updateProductFeature(@RequestHeader("User-Token") String token,
                                                            @RequestPart(value = "image", required = false) @Valid MultipartFile file,
                                                            @RequestPart("properties") @Valid String jsonString) throws Exception {
         ObjectMapper mapper = new ObjectMapper();

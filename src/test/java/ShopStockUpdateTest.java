@@ -78,7 +78,7 @@ public class ShopStockUpdateTest {
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , 0L, "non-existing-token");
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , "non-existing-token");
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -100,7 +100,7 @@ public class ShopStockUpdateTest {
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -121,7 +121,7 @@ public class ShopStockUpdateTest {
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -141,7 +141,7 @@ public class ShopStockUpdateTest {
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -161,7 +161,7 @@ public class ShopStockUpdateTest {
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -182,7 +182,7 @@ public class ShopStockUpdateTest {
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.remove("shop_id");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -204,7 +204,7 @@ public class ShopStockUpdateTest {
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.remove("variant_id");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -227,7 +227,7 @@ public class ShopStockUpdateTest {
 		updateReq.remove("price");
 		updateReq.remove("currency");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -249,7 +249,7 @@ public class ShopStockUpdateTest {
 		updateReq.remove("quantity");
 		updateReq.remove("price");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -272,7 +272,7 @@ public class ShopStockUpdateTest {
 		updateReq.remove("quantity");
 		updateReq.remove("currency");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -292,7 +292,7 @@ public class ShopStockUpdateTest {
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.remove("quantity");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -314,7 +314,7 @@ public class ShopStockUpdateTest {
 		updateReq.remove("price");
 		updateReq.remove("currency");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -335,7 +335,7 @@ public class ShopStockUpdateTest {
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.put("currency", -140);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -357,7 +357,7 @@ public class ShopStockUpdateTest {
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.put("price", -140);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -379,7 +379,7 @@ public class ShopStockUpdateTest {
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.put("shop_id", 1111111L);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -402,7 +402,7 @@ public class ShopStockUpdateTest {
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.put("variant_id", 1111111L);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -428,7 +428,7 @@ public class ShopStockUpdateTest {
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
@@ -467,7 +467,7 @@ public class ShopStockUpdateTest {
 		updateReq.remove("price");	
 		updateReq.remove("currency");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"

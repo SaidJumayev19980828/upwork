@@ -92,8 +92,10 @@ public class OrderServiceImpl implements OrderService {
 		return value;
 	}
 
-	public OrderResponse updateOrder(OrderJsonDto orderJson, Long userId) {
-
+	public OrderResponse updateOrder(OrderJsonDto orderJson) {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		BaseUserEntity user =  userRepository.getByEmail(auth.getName());
+		Long userId = user.getId();
 		if ((orderJson.getId() == null || orderJson.getId() == 0)
 				&& (orderJson.getBasket() == null || orderJson.getBasket().size() == 0)) {
 
@@ -368,12 +370,14 @@ public class OrderServiceImpl implements OrderService {
 	public OrderResponse getOrderInfo(Long orderId) {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		BaseUserEntity user =  employeeUserRepository.getOneByEmail(auth.getName());
-		if (user == null)
-			user =  userRepository.getByEmail(auth.getName());
+		if (user == null) {
+			user = userRepository.getByEmail(auth.getName());
+			if (ordersRepository.existsByIdAndUserId(orderId, user.getId()))
+				return new OrderResponse(getDetailedOrderInfo(orderId, true));
+		} else
+			if (ordersRepository.existsById(orderId))
+				return new OrderResponse(getDetailedOrderInfo(orderId, true));
 
-		if (ordersRepository.existsByIdAndUserID(orderId, user.getId())) {
-			return new OrderResponse(getDetailedOrderInfo(orderId, true));
-		}
 		return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
 	}
 
@@ -450,8 +454,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	@Override
-	public List<DetailedOrderRepObject> getOrdersList(Long loggedUserId, String userToken, Long userId, Long storeId,
-														 Long orgId, String status){
+	public List<DetailedOrderRepObject> getOrdersList(String userToken, Long userId, Long storeId, Long orgId, String status){
 		List<OrdersEntity> ordersEntityList;
 		List<DetailedOrderRepObject> ordersRep = new ArrayList<>();
 		Integer statusId = -1;
@@ -460,36 +463,37 @@ public class OrderServiceImpl implements OrderService {
 				statusId = (OrderStatus.findEnum(status)).getValue();
 			}
 		}
-		List<String> employeeUserRoles = employeeUserServiceHelper.getEmployeeUserRoles(loggedUserId);
-		UserEntity user = userRepository.getByIdAndAuthenticationToken(loggedUserId, userToken);
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		UserEntity user = userRepository.getByEmail(auth.getName());
 		if (user == null){ // EmployeeUser
-			EmployeeUserEntity employeeUser = employeeUserRepository.getByIdAndAuthenticationToken(loggedUserId, userToken);
+			EmployeeUserEntity empUser = employeeUserRepository.getOneByEmail(auth.getName());
+			List<String> employeeUserRoles = employeeUserServiceHelper.getEmployeeUserRoles(empUser.getId());
 			if (employeeUserRoles.contains("STORE_ADMIN") || employeeUserRoles.contains("STORE_MANAGER") || employeeUserRoles.contains("STORE_EMPLOYEE")){
-				storeId = employeeUser.getShopId();
+				storeId = empUser.getShopId();
 			} else if (employeeUserRoles.contains("ORGANIZATION_ADMIN") || employeeUserRoles.contains("ORGANIZATION_MANAGER") || employeeUserRoles.contains("ORGANIZATION_EMPLOYEE")) {
-				orgId = employeeUser.getOrganizationId();
+				orgId = empUser.getOrganizationId();
 			}
 			if (statusId != -1){
 				if (orgId != null){
-					if (userId != null && storeId != null) {
+					if (userId != null && storeId != null)
 						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatusAndUserIdAndOrganizationEntityId(storeId, statusId, userId, orgId);
-					} else if (userId != null) {
+					else if (userId != null)
 						ordersEntityList = ordersRepository.findByOrganizationEntityIdAndStatusAndUserId(orgId, statusId, userId);
-					} else if (storeId != null){
+					else if (storeId != null)
 						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatusAndOrganizationEntityId(storeId, statusId, orgId);
-					} else {
+					else
 						ordersEntityList = ordersRepository.findByOrganizationEntityIdAndStatus(orgId, statusId);
-					}
+
 				} else {
-					if (userId != null && storeId != null) {
+					if (userId != null && storeId != null)
 						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatusAndUserId(storeId, statusId, userId);
-					} else if (userId != null) {
+					else if (userId != null)
 						ordersEntityList = ordersRepository.findByUserIdAndStatus(userId, statusId);
-					} else if (storeId != null){
+					else if (storeId != null)
 						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatus(storeId, statusId);
-					} else {
+					else
 						ordersEntityList = ordersRepository.findByStatus(statusId);
-					}
+
 				}
 			} else {
 				if (orgId != null){
@@ -516,9 +520,9 @@ public class OrderServiceImpl implements OrderService {
 			}
 		} else { // User
 			if (statusId != -1){
-				ordersEntityList = ordersRepository.findByUserIdAndStatus(loggedUserId, statusId);
+				ordersEntityList = ordersRepository.findByUserIdAndStatus(user.getId(), statusId);
 			} else {
-				ordersEntityList = ordersRepository.findByUserId(loggedUserId);
+				ordersEntityList = ordersRepository.findByUserId(user.getId());
 			}
 		}
 		for(OrdersEntity orders: ordersEntityList) {

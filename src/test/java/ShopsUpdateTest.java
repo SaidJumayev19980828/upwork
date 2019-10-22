@@ -85,7 +85,7 @@ public class ShopsUpdateTest {
     public void testCreateShopDifferentRoles(){
         // create shop using Org_Mananger role (test success)
         String body = "{\"org_id\":99001,\"shop_name\":\"Test_shop\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,70,"161718");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         shopsRepository.deleteById(jsonResponse.getLong("store_id"));
@@ -94,7 +94,7 @@ public class ShopsUpdateTest {
         Assert.assertEquals(200, response.getStatusCode().value());
 
         // create shop using Store_Mananger role (test fail)
-        json = TestCommons.getHttpEntity(body,71,"192021");
+        json = TestCommons.getHttpEntity(body,"192021");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
@@ -102,7 +102,7 @@ public class ShopsUpdateTest {
         Assert.assertEquals(403, response.getStatusCode().value());
 
         // create shop using Nasnav_Admin role (test fail)
-        json = TestCommons.getHttpEntity(body,68,"101112");
+        json = TestCommons.getHttpEntity(body,"101112");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
@@ -110,7 +110,7 @@ public class ShopsUpdateTest {
         Assert.assertEquals(403, response.getStatusCode().value());
 
         // create shop using Org_Admin role (test fail)
-        json = TestCommons.getHttpEntity(body,69,"131415");
+        json = TestCommons.getHttpEntity(body,"131415");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
@@ -120,12 +120,12 @@ public class ShopsUpdateTest {
 
     @Test
     public void testCreateShopDifferentOrganization(){
-        String body = "{\"org_id\":802,\"shop_name\":\"Test_shop\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,70,"161718");
+        String body = "{\"org_id\":99002,\"shop_name\":\"Test_shop\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
-        Assert.assertEquals("", false, jsonResponse.getBoolean("success"));
+        Assert.assertEquals( false, jsonResponse.getBoolean("success"));
         Assert.assertEquals(403, response.getStatusCode().value());
     }
 
@@ -144,7 +144,7 @@ public class ShopsUpdateTest {
                 "  \"mall_id\": 901,\n" +
                 "  \"photo\": \"/photos/photo_512.jpg\",\n" +
                 "  \"shop_name\": \"Eventure For Shipping\"\n" + "}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,70,"161718");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         shopsRepository.deleteById(jsonResponse.getLong("store_id"));
@@ -169,7 +169,7 @@ public class ShopsUpdateTest {
                 "  \"mall_id\": 901,\n" +
                 "  \"photo\": \"/photos/photo_512.jpg\",\n" +
                 "  \"shop_name\": \"Eventure For Shipping\"\n" + "}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,70,"161718");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         
@@ -181,7 +181,7 @@ public class ShopsUpdateTest {
                 "\"id\":" + oldShop.getId() +",\n" +
                 "  \"brand_id\": 102,\n" +
                 "  \"shop_name\": \"Different Shop\"\n" + "}";
-        json = TestCommons.getHttpEntity(body,70,"161718");
+        json = TestCommons.getHttpEntity(body,"161718");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         ShopsEntity newShop = shopsRepository.findById(jsonResponse.getLong("store_id")).get();

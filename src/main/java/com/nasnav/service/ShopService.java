@@ -84,9 +84,20 @@ public class ShopService {
         return  shopRepObj;
     }
 
-    public ShopResponse createShop(Long userId, ShopJsonDTO shopJson){
-        List<String> userRoles = employeeUserServicehelper.getEmployeeUserRoles(userId);
-        Long employeeUserOrgId = employeeUserRepository.getById(userId).getOrganizationId();
+    public ShopResponse shopModification(ShopJsonDTO shopJson){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        BaseUserEntity user =  employeeUserRepository.getOneByEmail(auth.getName());
+        List<String> userRoles = employeeUserServicehelper.getEmployeeUserRoles(user.getId());
+        Long employeeUserOrgId = employeeUserRepository.getById(user.getId()).getOrganizationId();
+        Long employeeUserShopId = employeeUserRepository.getById(user.getId()).getShopId();
+        if (shopJson.getId() == null){
+            return createShop(shopJson, employeeUserOrgId, userRoles);
+        } else {
+            return updateShop(shopJson, employeeUserOrgId, employeeUserShopId, userRoles);
+        }
+    }
+
+    private ShopResponse createShop(ShopJsonDTO shopJson, Long employeeUserOrgId, List<String> userRoles){
         if (!userRoles.contains("ORGANIZATION_MANAGER") || !employeeUserOrgId.equals(shopJson.getOrgId())){
             return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.FORBIDDEN);
         }
@@ -100,10 +111,7 @@ public class ShopService {
         return new ShopResponse(shopsEntity.getId(), HttpStatus.OK);
     }
 
-    public ShopResponse updateShop(Long userId, ShopJsonDTO shopJson){
-        List<String> userRoles = employeeUserServicehelper.getEmployeeUserRoles(userId);
-        Long employeeUserOrgId = employeeUserRepository.getById(userId).getOrganizationId();
-        Long employeeUserShopId = employeeUserRepository.getById(userId).getId();
+    private ShopResponse updateShop(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId, List<String> userRoles){
         if (!userRoles.contains("ORGANIZATION_MANAGER") && !userRoles.contains("STORE_MANAGER")){
             return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.FORBIDDEN);
         }
@@ -124,10 +132,5 @@ public class ShopService {
         shopsRepository.save(shopsEntity);
         return new ShopResponse(shopsEntity.getId(), HttpStatus.OK);
     }
-    
-    
-    
-    
 
-	
 }

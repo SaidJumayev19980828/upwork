@@ -50,24 +50,18 @@ public class OrdersController {
     @PostMapping(value = "update",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<?> updateOrder(
-            @RequestHeader(name = "User-ID") Long userId,
-            @RequestHeader(name = "User-Token") String userToken,
-            @RequestBody OrderJsonDto orderJson)
-            		throws BusinessException {
-    	OrderResponse response = this.orderService.updateOrder(orderJson,userId);
+    public ResponseEntity<?> updateOrder(@RequestHeader(name = "User-Token") String userToken,
+            							 @RequestBody OrderJsonDto orderJson) throws BusinessException {
+    	OrderResponse response = this.orderService.updateOrder(orderJson);
         return new ResponseEntity<>(response, response.getCode());
     }
 
 	@ApiOperation(value = "Get information about order", nickname = "orderInfo", code = 201)
-	@ApiResponses(value = {
-			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
-			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
-	})
+	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+						   @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
     @GetMapping(value = "/info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
     public ResponseEntity<?> getOrderInfo(
-    		@RequestHeader(name = "User-ID", required = true) Long userId,
-            @RequestHeader(name = "User-Token", required = true) String userToken,
+            @RequestHeader(name = "User-Token") String userToken,
             @RequestParam(name = "order_id") Long orderId) {
     	OrderResponse response = this.orderService.getOrderInfo(orderId);
     	if(response.getCode().equals(HttpStatus.OK)) {
@@ -84,18 +78,12 @@ public class OrdersController {
 			//@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
 	})
 	@GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public ResponseEntity<?> getOrdersList(@RequestHeader(name = "User-ID", required = true) Long loggedUserId,
-										 @RequestHeader(name = "User-Token", required = true) String userToken,
-										 @RequestParam(name = "user_id", required = false) Long userId,  //search parameter
-										 @RequestParam(name = "store_id", required = false) Long storeId,
-										 @RequestParam(name = "org_id", required = false) Long orgId,
-										 @RequestParam(name = "status", required = false) String status) throws BusinessException {
-		List<DetailedOrderRepObject> response;
-		if(userToken == null ||
-				(!userService.checkAuthToken(loggedUserId, userToken) && !employeeUserService.checkAuthToken(loggedUserId, userToken))) {
-			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-		}
-		response = this.orderService.getOrdersList(loggedUserId, userToken, userId, storeId, orgId, status);
+	public ResponseEntity<?> getOrdersList(@RequestHeader(name = "User-Token") String userToken,
+										   @RequestParam(name = "user_id", required = false) Long userId,  //search parameter
+										   @RequestParam(name = "store_id", required = false) Long storeId,
+										   @RequestParam(name = "org_id", required = false) Long orgId,
+										   @RequestParam(name = "status", required = false) String status) throws BusinessException {
+		List<DetailedOrderRepObject> response = this.orderService.getOrdersList(userToken, userId, storeId, orgId, status);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 }
