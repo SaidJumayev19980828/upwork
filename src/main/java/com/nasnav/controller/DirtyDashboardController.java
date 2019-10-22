@@ -1,5 +1,7 @@
 package com.nasnav.controller;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.websocket.server.PathParam;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,16 +10,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.view.RedirectView;
 
 import com.nasnav.dto.UserDTOs.UserLoginObject;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.response.UserApiResponse;
+import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.SecurityService;
-
-import io.swagger.models.HttpMethod;
 
 @RestController
 @RequestMapping("/dirty_dashboard")
@@ -28,7 +32,11 @@ public class DirtyDashboardController {
     private SecurityService securityService;
 	
 	
-	@RequestMapping(value = "login_page" , method = {RequestMethod.POST, RequestMethod.GET})
+	@Autowired
+	private EmployeeUserService empService;
+	
+	
+	@GetMapping(value = "login_page")
     public ModelAndView loginPage(@PathParam("msg") String msg, ModelMap model)	throws BusinessException {
 		model.addAttribute("msg", msg);
 		return  new ModelAndView("csv_upload_login", model);
@@ -37,11 +45,13 @@ public class DirtyDashboardController {
 	
 	
 	
-	@RequestMapping(value = "login" , method = {RequestMethod.POST, RequestMethod.GET})
+	@PostMapping(value = "login")
     public ModelAndView login(@RequestParam String username
     		, @RequestParam String password
     		, @RequestParam Long orgId 
-    		, ModelMap model)	throws BusinessException {
+    		, ModelMap model
+    		, HttpServletRequest request
+    		, HttpServletResponse response)	throws BusinessException {
 		
 		UserLoginObject loginObj = new UserLoginObject();
 		loginObj.email = username;
@@ -51,12 +61,13 @@ public class DirtyDashboardController {
 		
 		String token = null;
 		try {
-			token = securityService.login(loginObj).getToken();
-			model.addAttribute("token", token);
-	        return new ModelAndView("dashboard", model);
+			UserApiResponse loginDetails = securityService.login(loginObj);
+			token = loginDetails.getToken();			
+			BaseUserEntity user = empService.getUserById(loginDetails.getEntityId());
+			return prepareDasboardPage(token, model, user);
 		}catch(BusinessException e) {
-			model.addAttribute("msg", "invalid username - password - organization id combination!");
-	        return new ModelAndView("csv_upload_login", model);
+			String msg = "invalid username - password - organization id combination!";
+	        return new ModelAndView("/dirty_dashboard/login_page?msg=" + msg);
 		}
 
     }
@@ -67,10 +78,24 @@ public class DirtyDashboardController {
 	
 	@GetMapping(value = "dashboard")
     public ModelAndView dasboardPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
-		model.addAttribute("token", token);
-		return  new ModelAndView("dashboard", model);
+		BaseUserEntity user = securityService.getCurrentUser();
+		return prepareDasboardPage(token, model, user);
     }
 	
+	
+	
+	
+	
+	
+	private ModelAndView prepareDasboardPage(String token, ModelMap model, BaseUserEntity user) {
+		Boolean isNasnavAdmin = securityService.userHasRole(user, Roles.NASNAV_ADMIN);
+		Boolean isOrgAdmin = securityService.userHasRole(user, Roles.ORGANIZATION_ADMIN);
+		
+		model.addAttribute("isNasnavAdmin", isNasnavAdmin);
+		model.addAttribute("isOrgAdmin", isOrgAdmin);
+		model.addAttribute("token", token);		
+		return  new ModelAndView("dashboard", model);
+	}
 	
 	
 	
@@ -79,5 +104,15 @@ public class DirtyDashboardController {
 	public ModelAndView csvUploadPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
 		model.addAttribute("token", token);
         return new ModelAndView("upload_product_csv_form", model);
+    }
+	
+	
+	
+	
+	
+	@GetMapping("org_mgr")
+	public ModelAndView orgMgrPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+		model.addAttribute("token", token);
+        return new ModelAndView("org_mgr", model);
     }
 }

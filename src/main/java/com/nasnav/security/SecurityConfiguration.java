@@ -93,6 +93,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/favicon.ico")
                         , patternOf("/static/**")
                         , patternOf("/js/**")
+                        , patternOf("/css/**")
                         , patternOf("/files/**"							, HttpMethod.GET)
                  );
 

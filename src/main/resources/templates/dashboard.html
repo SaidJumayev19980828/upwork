@@ -1,79 +1,42 @@
 <!DOCTYPE html>
 <html>
 
-<head>
-  <style>
-    @import "bourbon";
-
-    body {
-      background: #eee !important;
-    }
-
-    .wrapper {
-      margin-top: 80px;
-      margin-bottom: 80px;
-    }
-
-    .form-signin {
-      max-width: 380px;
-      padding: 15px 35px 45px;
-      margin: 0 auto;
-      background-color: #fff;
-      border: 1px solid rgba(0, 0, 0, 0.1);
-    }
-      .form-signin-heading,
-      .checkbox {
-        margin-bottom: 30px;
-      }
-
-      .checkbox {
-        font-weight: normal;
-      }
-
-      .form-control {
-        position: relative;
-        font-size: 16px;
-        height: auto;
-        padding: 10px;
-        @include box-sizing(border-box);
-
-        &:focus {
-          z-index: 2;
-        }
-      }
-
-      input[type="text"] {
-        margin-bottom: -1px;
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-      }
-
-      input[type="password"] {
-        margin-bottom: 20px;
-        border-top-left-radius: 0;
-        border-top-right-radius: 0;
-      }
-    }
-  </style>
+<head>  
+  <link rel="stylesheet" href="/css/style.css">
   <meta charset="UTF-8">
   <title>NasNav</title>
+  <script src="/js/jquery-3.4.1.min.js"></script>
+  <script type="text/javascript" src="/js/jquery.serializejson.js"></script>  
+  <script type="text/javascript" src="/js/utils.js"></script>  
   <script th:inline="javascript">
             /*<![CDATA[*/
     
             var token = /*[[${token}]]*/ 'default';
     
             /*]]>*/
-        </script>
-    <script src="/js/upload_products.js"></script>
+  </script>
 </head>
 
 <body>
   <div class="wrapper">
-    <a>Add Organization</a>
-    <a>Add Product Features</a>
-    <a>Add Brands</a>
-    <a href="/dirty_dashboard/upload_product_csv_form">Import Products</a>
-    <a>Import Products Images</a>
+  	<h1>Dirty Dashboard!</h1>
+  	<div class="btn-group">
+  		<div th:if="${isNasnavAdmin}">
+  			<button onclick="openPage('/dirty_dashboard/org_mgr')>Add Organization</button>
+	   		<button>Add Categories</button>
+	   		<button>Add Users</button>
+  		</div>
+	   
+	   
+	   <div th:if="${isOrgAdmin}">
+	   		<button >Add Product Features</button>
+	  		<button >Add Brands</button>
+	   		<button onclick="openPage('/dirty_dashboard/upload_product_csv_form')">Import Products</button>
+	   		<button >Import Products Images</button>	
+	   </div>
+	      
+  	</div>
+    
   </div>
 </body>
 

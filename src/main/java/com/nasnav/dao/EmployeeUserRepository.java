@@ -49,6 +49,8 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	List<EmployeeUserEntity> findByOrganizationIdAndIdIn(Long orgId, List<Long> employeesIds);
 	List<EmployeeUserEntity> findByShopIdAndIdIn(Long shopId, List<Long> employeesIds);
 	List<EmployeeUserEntity> findByOrganizationIdAndShopIdAndIdIn(Long orgId, Long shopId, List<Long> employeesIds);
+
+	EmployeeUserEntity getOneByEmailIgnoreCase(String email);
 }
 
 

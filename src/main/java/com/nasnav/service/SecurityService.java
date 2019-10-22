@@ -6,6 +6,7 @@ import com.nasnav.persistence.EmployeeUserEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.nasnav.dto.UserDTOs;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.UserApiResponse;
 
@@ -28,4 +29,7 @@ public interface SecurityService {
     EmployeeUserEntity getCurrentUser();
     
     Long getCurrentUserOrganization();
+    
+    Boolean userHasRole(BaseUserEntity user, Roles role);
+    Boolean currentUserHasRole(Roles role);
 }

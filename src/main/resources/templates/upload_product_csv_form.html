@@ -11,40 +11,10 @@
     
             /*]]>*/
         </script>
+    <script type="text/javascript" src="/js/utils.js"></script>
     <script src="/js/upload_products.js"></script>
-    <style>
-        /* Style inputs */
-        input[type=text],input[type=number],input[type=file],
-        select {
-            width: 50%;
-            padding: 12px 20px;
-            margin: 8px 0;
-            display: inline-block;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-       
-
-        /* Style the submit button */
-        input[type=button] {
-            width: 50%;
-            background-color: #4CAF50;
-            color: white;
-            padding: 14px 20px;
-            margin: 8px 0;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        /* Add a background color to the submit button on mouse-over */
-        input[type=button]:hover {
-            background-color: #45a049;
-        }
-    </style>
-   
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/form_style.css">
     <meta charset="UTF-8">
     <title>NasNav</title>
 </head>
@@ -97,6 +67,9 @@
     <form>
         <input type="button" id="upload-form-btn" onclick="upload()" value="Upload"></input>
     </form>
+    <div>
+	   	<button onclick="openPage('/dirty_dashboard/dashboard')" style="background-color: red">Back</button>
+	</div>
     <div id="error-container" style="border: black">
         <div id="error-desc">
 

@@ -3,6 +3,7 @@ package com.nasnav.service;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -22,6 +23,7 @@ import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.CommonUserRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dto.UserDTOs.UserLoginObject;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.persistence.BaseUserEntity;
@@ -202,10 +204,12 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Override
 	public EmployeeUserEntity getCurrentUser() {
+		String x = SecurityContextHolder.getContext().getAuthentication().getName();
+		String y = x.toString().toLowerCase();
 		return Optional.ofNullable( SecurityContextHolder.getContext() )
 						.map(c -> c.getAuthentication())
 						.map(Authentication::getName)
-						.map(empRepo::getOneByEmail)
+						.map(empRepo::getOneByEmailIgnoreCase)
 						.orElseThrow(()-> new IllegalStateException("Could not retrieve current user!"));
 	}
 
@@ -218,7 +222,30 @@ public class SecurityServiceImpl implements SecurityService {
 		return Optional.ofNullable( getCurrentUser() )
 						.map(EmployeeUserEntity::getOrganizationId)
 						.orElseThrow(() -> new IllegalStateException("Current User has no organization!"));
-	}	
+	}
+
+
+
+
+
+	@Override
+	public Boolean userHasRole(BaseUserEntity user, Roles role) {
+		List<GrantedAuthority> roles = getUserRoles(user);
+		return roles.stream()
+					.map(GrantedAuthority::getAuthority)
+					.filter(Objects::nonNull)
+					.anyMatch(auth -> Objects.equals( auth, role.getValue()));
+	}
+	
+	
+	
+	
+	
+	@Override
+	public Boolean currentUserHasRole(Roles role) {
+		BaseUserEntity user = getCurrentUser();
+		return userHasRole(user, role);
+	}
 	
 }
 
