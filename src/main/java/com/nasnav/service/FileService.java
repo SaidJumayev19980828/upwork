@@ -135,9 +135,9 @@ public class FileService {
 
 	private String getUniqueName(String origName, Long orgId) {		
 		Optional<String> opt = Optional.of(origName)
-							.map(this::sanitize) 
-							.filter(name -> notUniqueFileName(name, orgId))					
-							.map(this::getUniqueRandomName);
+										.map(this::sanitize) 
+										.filter(name -> notUniqueFileName(name, orgId))					
+										.map(this::getUniqueRandomName);
 		if (opt.isPresent()) {
 			return opt.get();
 		}

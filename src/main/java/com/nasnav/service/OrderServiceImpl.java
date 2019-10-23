@@ -6,10 +6,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.OrderRepresentationObject;
@@ -25,12 +27,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.enumerations.TransactionCurrency;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.response.exception.OrderValidationException;
 
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
+import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
+import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_UPDATED_ORDER_WITH_NO_ID;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NEW_ORDER_WITH_EMPTY_BASKET;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NEW_ORDER_WITH_ID;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ITEM_QUANTITY;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NULL_ITEM;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_BASKET_ITEM;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NON_EXISTING_STOCK_ID;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -89,39 +101,120 @@ public class OrderServiceImpl implements OrderService {
 
 		return value;
 	}
+	
+	
+	
+	
+	
+	@Override
+	public OrderResponse updateOrder(OrderJsonDto orderJson, Long userId) throws BusinessException {
 
-	public OrderResponse updateOrder(OrderJsonDto orderJson, Long userId) {
+		validateOrder(orderJson);
 
-		if ((orderJson.getId() == null || orderJson.getId() == 0)
-				&& (orderJson.getBasket() == null || orderJson.getBasket().size() == 0)) {
-
-			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
-		}
-
-		if ((orderJson.getStatus() == null || orderJson.getStatus().equals(OrderStatus.NEW.toString()))
-				&& (orderJson.getBasket() == null || orderJson.getBasket().size() == 0)) {
-			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
-		}
-
-		if (orderJson.getId() == null || orderJson.getId() == 0) {
+		if (isNewOrder(orderJson)) {
 			return createNewOrderAndBasketItems(orderJson, userId);
-		} else if (orderJson.getStatus() != null) {
-			return updateCurrentOrder(orderJson);
 		} else {
-			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
+			return updateCurrentOrder(orderJson);
 		}
-		// map order object from API to OrdersEntity
-//		OrderResponse orderMappingResponse = mapOrderJsonToOrderEntity(orderJson);
-//		if (orderMappingResponse.getCode().equals(HttpStatus.NOT_ACCEPTABLE)) {
-//			return orderMappingResponse;
-//		}
-//		return updateOrCreateOrderEntity(orderMappingResponse.getEntity());
 	}
+	
+	
+	
+	
+
+	private void validateOrder(OrderJsonDto order) throws BusinessException {
+		if(isNullOrZero(order.getId()) 
+				&& !Objects.equals(order.getStatus(), OrderStatus.NEW.toString() )) {
+			throwInvalidOrderException(ERR_UPDATED_ORDER_WITH_NO_ID);
+		}
+		
+		if(!isNullOrZero(order.getId()) 
+				&& Objects.equals(order.getStatus(), OrderStatus.NEW.toString() )) {
+			throwInvalidOrderException(ERR_NEW_ORDER_WITH_ID);
+		}
+		
+		
+		if (isNewOrder(order) && isNullOrEmpty(order.getBasket()) ) {
+			throwInvalidOrderException(ERR_NEW_ORDER_WITH_EMPTY_BASKET);
+		}	
+		
+		List<BasketItemDTO> basket = order.getBasket();
+		
+		if(basket!= null && isNewOrder(order) ){
+			validateBasketItems(order);
+			List<Long> itemStockIds = basket.stream()
+												.map(BasketItemDTO::getStockId)
+												.collect(Collectors.toList());
+			List<StocksEntity> itemsStocks = (List<StocksEntity>) stockRepository.findAllById(itemStockIds);
+		}
+		
+		//referenced stocks are invalid (non-existing stock_id, price is negative)
+		//basket item( quantity < stock)
+		//multiple shops are referenced
+	}
+	
+	
+	
+	
+
+	private void validateBasketItems(OrderJsonDto order) throws BusinessException {
+		List<BasketItemDTO> basket = order.getBasket();
+		
+		for(BasketItemDTO item: basket) {
+			validateBasketItem(item);
+		}
+	}
+	
+	
+	
+	
+	
+	private void validateBasketItem(BasketItemDTO item) throws BusinessException {
+		if(item == null) {
+			throwInvalidOrderException(ERR_NULL_ITEM);
+		}
+		
+		if(item.getQuantity() == null || item.getQuantity() <= 0) {
+			throwInvalidOrderException(ERR_INVALID_ITEM_QUANTITY);
+		}
+		
+		if(item.getStockId() == null || stockRepository.existsById( item.getStockId())) {
+			throwInvalidOrderException(ERR_NON_EXISTING_STOCK_ID);
+		}		
+	}
+	
+	
+	
+	private boolean isNewOrder(OrderJsonDto orderJson) {
+		return isNullOrZero(orderJson.getId()) 
+				 	&& Objects.equals(orderJson.getStatus(), OrderStatus.NEW.toString() );
+	}
+	
+	
+	
+
+	private void throwInvalidOrderException() throws BusinessException {
+		throwInvalidOrderException( OrderFailedStatus.INVALID_ORDER.toString() );
+	}
+	
+	
+	
+	
+	
+	private void throwInvalidOrderException(String msg) throws BusinessException {
+		String error = OrderFailedStatus.INVALID_ORDER.toString();
+		throw new BusinessException( msg, error, HttpStatus.NOT_ACCEPTABLE);
+	}
+	
+	
+	
+	
 
 	private OrderResponse createNewOrderAndBasketItems(OrderJsonDto orderJsonDto, Long userId) {
 
 		// Getting the stocks related to current order
 		List<StocksEntity> stocksEntites = getCurrentStock(orderJsonDto);
+		
 		// Getting the actual added stock items
 		Long availableStock = stocksEntites.stream().filter(stock -> stock != null).count();
 
@@ -154,6 +247,10 @@ public class OrderServiceImpl implements OrderService {
 		return orderResponse;
 
 	}
+	
+	
+	
+	
 
 	private List<StocksEntity> getCurrentStock(OrderJsonDto orderJsonDto) {
 		// Getting the stocks related to current order
@@ -173,16 +270,19 @@ public class OrderServiceImpl implements OrderService {
 		// TODO check for pending orders logic and what to do
 		return stocksEntites;
 	}
+	
+	
+	
+	
 
-
-	/**
-	 * @return if stock Id is invalid or available quantity is less than required
-	 * */
-	private boolean isInvalidStock(BasketItemDTO basketItem, Optional<StocksEntity> optionalStocksEntity) {
-		Integer q = stockService.getStockQuantity(optionalStocksEntity.get());
-		return optionalStocksEntity == null || !optionalStocksEntity.isPresent()
-				|| basketItem.getQuantity() > q
-				|| optionalStocksEntity.get().getPrice().doubleValue() <= 0;
+	private boolean isInvalidStock(BasketItemDTO basketItem, Optional<StocksEntity> stock) {
+		if(stock == null || !stock.isPresent()) {
+			return true;
+		}
+			
+		Integer stockQuantity = stockService.getStockQuantity(stock.get());
+		return basketItem.getQuantity() > stockQuantity
+				|| stock.get().getPrice().doubleValue() <= 0;
 	}
 
 

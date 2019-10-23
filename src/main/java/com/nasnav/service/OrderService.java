@@ -3,6 +3,7 @@ package com.nasnav.service;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.enumerations.TransactionCurrency;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.response.OrderResponse;
 
@@ -17,7 +18,7 @@ public interface OrderService {
 		public TransactionCurrency currency;
 	}
 
-	public OrderResponse updateOrder(OrderJsonDto orderJson,Long userId);
+	public OrderResponse updateOrder(OrderJsonDto orderJson,Long userId) throws BusinessException;
 
 	public OrderResponse getOrderInfo(Long orderId);
 

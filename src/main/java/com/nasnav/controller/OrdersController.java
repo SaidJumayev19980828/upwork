@@ -41,6 +41,12 @@ public class OrdersController {
 	@Autowired
 	private EmployeeUserService employeeUserService;
 
+	
+	
+	
+	
+	
+	
     @ApiOperation(value = "Create or update an order", nickname = "orderUpdate", code = 201)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Order created or updated"),
@@ -50,14 +56,19 @@ public class OrdersController {
     @PostMapping(value = "update",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<?> updateOrder(
+    public OrderResponse updateOrder(
             @RequestHeader(name = "User-ID") Long userId,
             @RequestHeader(name = "User-Token") String userToken,
             @RequestBody OrderJsonDto orderJson)
             		throws BusinessException {
-    	OrderResponse response = this.orderService.updateOrder(orderJson,userId);
-        return new ResponseEntity<>(response, response.getCode());
+    	
+    	return orderService.updateOrder(orderJson,userId);
     }
+    
+    
+    
+    
+    
 
 	@ApiOperation(value = "Get information about order", nickname = "orderInfo", code = 201)
 	@ApiResponses(value = {

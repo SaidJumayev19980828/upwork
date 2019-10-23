@@ -6,8 +6,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,6 +52,8 @@ import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.UserService;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
 
 @RunWith(SpringRunner.class)
@@ -539,6 +543,74 @@ public class OrderServiceTest {
 	
 	
 	
+	
+	@Test
+	public void addOrderNewStatusNonExistingItemToEmptyBasket() {
+		JSONObject request = createOrderUpdateRequestWithNonExistingStock();
+		
+		ResponseEntity<OrderResponse> response = 
+				template.postForEntity("/order/update"
+									, TestCommons.getHttpEntity(request.toString() , 88, "123")
+									, OrderResponse.class);
+		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+	}
+	
+	
+	
+	
+	
+	
+
+	private JSONObject createOrderUpdateRequestWithNonExistingStock() {
+		Long nonExistingId = Long.MAX_VALUE;		
+		return createOrderUpdateRequestWithBasketItems(OrderStatus.NEW, item(nonExistingId, 333));
+	}
+	
+	
+	
+	
+	
+	private JSONObject createOrderUpdateRequestWithBasketItems(OrderStatus status, Item... items) {
+		JSONArray basket = createBasket( items);
+		
+		JSONObject request = new JSONObject();
+		request.put("status", status.name());
+		request.put("basket", basket);
+		return request;
+	}
+	
+	
+	
+	
+	
+	private Item item(Long stockId, Integer quantity) {
+		return new Item(stockId, quantity);
+	}
+	
+	
+	
+	
+	private JSONArray createBasket(Item...items) {
+		return new JSONArray( 
+				Arrays.asList(items)
+						.stream()
+						.map(this::toJsonObject)				
+						.collect(Collectors.toList())
+				);
+	}
+	
+	
+	
+	
+	
+	private JSONObject toJsonObject(Item item) {
+		JSONObject basketItem = new JSONObject();		
+		basketItem.put("stock_id", item.getStockId());
+		basketItem.put("quantity", item.getQuantity());		
+		return basketItem;
+	}
+	
+	
 
 	private DetailedOrderRepObject createExpectedOrderInfo(Long orderId) {
 		OrdersEntity entity = orderRepository.findById(orderId).get();
@@ -580,4 +652,12 @@ public class OrderServiceTest {
 		item.setThumb(EXPECTED_COVER_IMG_URL);
 		return Arrays.asList(item);
 	}
+}
+
+
+@Data
+@AllArgsConstructor
+class Item{
+	private Long stockId;
+	private Integer quantity;
 }

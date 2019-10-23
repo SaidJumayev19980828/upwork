@@ -3,6 +3,7 @@ package com.nasnav.dto;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.nasnav.enumerations.OrderStatus;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -28,4 +29,10 @@ public class OrderJsonDto{
 	@ApiModelProperty(value = "Delivery address", example = "Somewhere behind a grocery store")
 	@JsonProperty("delivery_address")
 	private String address;
+	
+	
+	
+	public OrderJsonDto(){
+		status = OrderStatus.NEW.toString();
+	}
 }
