@@ -15,7 +15,9 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Type;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
@@ -63,9 +65,11 @@ public class OrdersEntity implements BaseEntity{
 	}
 
 	@Column(name = "created_at", nullable = false, length = 29)
+	@CreationTimestamp
 	private LocalDateTime creationDate;
 
 	@Column(name = "updated_at", nullable = false, length = 29)
+	@UpdateTimestamp
 	private LocalDateTime updateDate;
 
 	@Column(name = "date_delivery", nullable = false, length = 29)

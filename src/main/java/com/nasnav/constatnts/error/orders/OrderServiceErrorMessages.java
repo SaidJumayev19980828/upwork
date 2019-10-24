@@ -9,4 +9,8 @@ public class OrderServiceErrorMessages {
 	public static final String ERR_NULL_ITEM = "Null Basket Item!";
 	public static final String ERR_NON_EXISTING_STOCK_ID = "Invalid Basket Item with non-existing Stock!";
 	public static final String ERR_INVALID_BASKET_ITEM = "Invalid Basket item!";
+	public static final String ERR_NO_ENOUGH_STOCK = "Basket Item has insufficient stock!";
+	public static final String ERR_ITEMS_FROM_MULTIPLE_SHOPS = "Basket items belong to multiple shops!";
+	public static final String ERR_INVALID_ORDER_STATUS = "Invalid Order status!";
+	public static final String ERR_ORDER_NOT_EXISTS = "No Order exists with id[%s]";
 }

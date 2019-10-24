@@ -17,4 +17,5 @@ public interface CommonUserRepository{
 	BaseUserEntity saveAndFlush(BaseUserEntity userEntity) throws BusinessException;
 	BaseUserEntity getByEmailAndOrganizationId(String email, Long org_id);
 	BaseUserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
+	BaseUserEntity getByEmailIgnoreCase(String email);
 }

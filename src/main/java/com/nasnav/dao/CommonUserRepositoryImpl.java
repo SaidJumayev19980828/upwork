@@ -116,4 +116,17 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 		return user;		
 	}
 
+
+
+
+	@Override
+	public BaseUserEntity getByEmailIgnoreCase(String email) {
+		BaseUserEntity user = userRepo.getByEmailIgnoreCase(email);
+		
+		if(user == null)
+			user = empRepo.getByEmailIgnoreCase(email);
+		
+		return user;
+	}
+
 }

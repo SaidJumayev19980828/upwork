@@ -1,21 +1,19 @@
 package com.nasnav.test.helpers;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.dao.BundleRepository;
+import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.persistence.BundleEntity;
+import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
@@ -34,6 +32,10 @@ public class TestHelper {
 	
 	@Autowired
 	private ProductVariantsRepository variantRepo;
+	
+	
+	@Autowired
+	private OrdersRepository orderRepo;
 	
 	
 	@Transactional(readOnly = true)
@@ -107,6 +109,21 @@ public class TestHelper {
 		updatedVariant.getStocks();
 		
 		return updatedVariant;
+	}
+	
+	
+	
+	
+	@Transactional
+	public OrdersEntity getOrderEntityFullData(Long orderId) {
+		OrdersEntity order = orderRepo.findById(orderId).get();
+		
+		//just call them to make hibernate cache these entities while being in the transaction
+		order.getBasketsEntity().stream().forEach( i-> i.toString());		
+		order.getOrganizationEntity();
+		order.getShopsEntity();
+		
+		return order;
 	}
 		
 

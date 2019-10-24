@@ -26,7 +26,7 @@ public interface SecurityService {
     UserApiResponse login(UserDTOs.UserLoginObject body) throws BusinessException;
     
     
-    EmployeeUserEntity getCurrentUser();
+    BaseUserEntity getCurrentUser();
     
     Long getCurrentUserOrganizationId();
     OrganizationEntity getCurrentUserOrganization();
