@@ -1,5 +1,6 @@
 package com.nasnav.dto;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -34,5 +35,6 @@ public class OrderJsonDto{
 	
 	public OrderJsonDto(){
 		status = OrderStatus.NEW.toString();
+		basket = new ArrayList<>();
 	}
 }

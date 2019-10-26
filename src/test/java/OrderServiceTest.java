@@ -65,6 +65,9 @@ import net.jcip.annotations.NotThreadSafe;
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class OrderServiceTest {
+	
+	//TODO: test adding bundle product as basket item, test the quantity calculation will work
+	
 	private static final String EXPECTED_COVER_IMG_URL = "99001/cover_img.jpg";
 
 	@Autowired

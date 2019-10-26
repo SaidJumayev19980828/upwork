@@ -2,8 +2,10 @@ package com.nasnav.persistence;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -96,7 +98,7 @@ public class OrdersEntity implements BaseEntity{
 	@JoinColumn(name = "organization_id", nullable = false)
 	private OrganizationEntity organizationEntity;
 
-	@OneToMany(mappedBy = "ordersEntity")
+	@OneToMany(mappedBy = "ordersEntity", cascade = {CascadeType.PERSIST})
     private Set<BasketsEntity> basketsEntity;
 
 	@Override
@@ -116,5 +118,22 @@ public class OrdersEntity implements BaseEntity{
 	public OrdersEntity() {
 		this.paymentStatus = PaymentStatus.UNPAID.getValue();
 		this.creationDate = LocalDateTime.now();
+		basketsEntity = new HashSet<>();
+	}
+	
+	
+	
+	
+	
+	public void addBasketItem(BasketsEntity item) {
+		item.setOrdersEntity(this);
+		basketsEntity.add(item);
+	}
+
+	
+	
+	public void removeBasketItem(BasketsEntity item) {
+		item.setOrdersEntity(null);
+		basketsEntity.remove(item);
 	}
 }

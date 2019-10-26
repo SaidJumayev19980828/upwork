@@ -1,6 +1,20 @@
 package com.nasnav.service;
 
-import java.io.IOException;
+import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
+import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_CALC_ORDER_FAILED;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ITEM_QUANTITY;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ORDER_STATUS;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ORDER_STATUS_UPDATE;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ITEMS_FROM_MULTIPLE_SHOPS;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NEW_ORDER_WITH_EMPTY_BASKET;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NON_EXISTING_STOCK_ID;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NO_ENOUGH_STOCK;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NULL_ITEM;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_EXISTS;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_UPDATED_ORDER_WITH_NO_ID;
+import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -8,42 +22,38 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.stream.Collectors;
 
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
-import com.nasnav.persistence.*;
-import com.nasnav.service.helpers.EmployeeUserServiceHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.dao.BasketRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.BasketItem;
+import com.nasnav.dto.BasketItemDTO;
+import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.OrderJsonDto;
-import com.nasnav.enumerations.TransactionCurrency;
-import com.nasnav.exceptions.BusinessException;
+import com.nasnav.dto.ShippingAddress;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
+import com.nasnav.enumerations.TransactionCurrency;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.OrderResponse;
-import com.nasnav.response.exception.OrderValidationException;
-
-import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
-import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
-import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_UPDATED_ORDER_WITH_NO_ID;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NEW_ORDER_WITH_EMPTY_BASKET;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NEW_ORDER_WITH_ID;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ITEM_QUANTITY;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NULL_ITEM;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NON_EXISTING_STOCK_ID;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NO_ENOUGH_STOCK;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ITEMS_FROM_MULTIPLE_SHOPS;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ORDER_STATUS;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_EXISTS;
+import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -62,7 +72,6 @@ public class OrderServiceImpl implements OrderService {
 	
 	private final UserRepository userRepository;
 
-	private final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class.getName());
 	
 	
 	@Autowired
@@ -117,9 +126,9 @@ public class OrderServiceImpl implements OrderService {
 		validateOrder(orderJson);
 
 		if (isNewOrderToBeCreated(orderJson)) {
-			return createNewOrderAndBasketItems(orderJson, userId);
+			return createNewOrderAndBasketItems(orderJson);
 		} else {
-			return updateCurrentOrder(orderJson);
+			return updateOrder(orderJson);
 		}
 	}
 	
@@ -139,10 +148,6 @@ public class OrderServiceImpl implements OrderService {
 			throwInvalidOrderException(ERR_UPDATED_ORDER_WITH_NO_ID);
 		}
 		
-//		if(!isNullOrZero(order.getId()) 
-//				&& Objects.equals(order.getStatus(), OrderStatus.NEW.toString() )) {
-//			throwInvalidOrderException(ERR_NEW_ORDER_WITH_ID);
-//		}		
 		
 		//TODO: can be removed, there is no reason for not-accepting empty baskets at the first place
 		//it can be handled at confirmation
@@ -150,8 +155,7 @@ public class OrderServiceImpl implements OrderService {
 			throwInvalidOrderException(ERR_NEW_ORDER_WITH_EMPTY_BASKET);
 		}
 		
-		if(!Objects.equals(order.getStatus(), OrderStatus.NEW.toString() )
-				&& !isNullOrZero(order.getId()) ) {
+		if( !isNullOrZero(order.getId()) ) {
 			Optional<OrdersEntity> orderEntity = ordersRepository.findById(order.getId());
 			if(!orderEntity.isPresent()) {
 				throwInvalidOrderException(ERR_ORDER_NOT_EXISTS);
@@ -190,7 +194,7 @@ public class OrderServiceImpl implements OrderService {
 		}
 		
 						
-		if( countBasketItemShops(basket) > 1) {
+		if( countShops(basket) > 1) {
 			throwInvalidOrderException(ERR_ITEMS_FROM_MULTIPLE_SHOPS);
 		}
 	}
@@ -199,7 +203,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 
-	private Long countBasketItemShops(List<BasketItemDTO> basket) {
+	private Long countShops(List<BasketItemDTO> basket) {
 		List<StocksEntity> stocks = getBasketStocks(basket);
 		Long shopsCount = stocks.stream()
 								.map(StocksEntity::getShopsEntity)
@@ -214,8 +218,12 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
-
+	
 	private List<StocksEntity> getBasketStocks(List<BasketItemDTO> basket) {
+		if(basket == null) {
+			return new ArrayList<>();
+		}
+		
 		List<Long> itemStockIds = basket.stream()
 										.map(BasketItemDTO::getStockId)
 										.collect(Collectors.toList());
@@ -247,7 +255,7 @@ public class OrderServiceImpl implements OrderService {
 			throwInvalidOrderException(ERR_NON_EXISTING_STOCK_ID);
 		}
 		
-		if(item.getQuantity() > stocks.get().getQuantity()) {
+		if(item.getQuantity() > stockService.getStockQuantity( stocks.get() )) {
 			throwInvalidOrderException(ERR_NO_ENOUGH_STOCK);
 		}		
 	}
@@ -263,57 +271,32 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
-
-	private void throwInvalidOrderException() throws BusinessException {
-		throwInvalidOrderException( OrderFailedStatus.INVALID_ORDER.toString() );
-	}
-	
-	
 	
 	
 	
 	private void throwInvalidOrderException(String msg) throws BusinessException {
+		throw getInvalidOrderException(msg);
+	}
+	
+	
+	
+	
+	
+	private BusinessException getInvalidOrderException(String msg) {
 		String error = OrderFailedStatus.INVALID_ORDER.toString();
-		throw new BusinessException( msg, error, HttpStatus.NOT_ACCEPTABLE);
+		return new BusinessException( msg, error, HttpStatus.NOT_ACCEPTABLE);
 	}
 	
 	
 	
 	
 
-	private OrderResponse createNewOrderAndBasketItems(OrderJsonDto orderJsonDto, Long userId) {
-
-		// Getting the stocks related to current order
-		List<StocksEntity> stocksEntites = getCurrentStock(orderJsonDto);
+	private OrderResponse createNewOrderAndBasketItems(OrderJsonDto order) throws BusinessException {
 		
-		// Getting the actual added stock items
-		Long availableStock = stocksEntites.stream().filter(stock -> stock != null).count();
-
-		// Return error cause stock is not available
-		if (availableStock != orderJsonDto.getBasket().size()) {
-			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
-		}
-
-		Long numberOfShops = stocksEntites.stream().map(stock -> stock.getShopsEntity().getId()).distinct().count();
-		if (numberOfShops > 1) {
-			return new OrderResponse(OrderFailedStatus.MULTIPLE_STORES, HttpStatus.NOT_ACCEPTABLE);
-		}
-		
-		BaseUserEntity user = securityService.getCurrentUser();
-		OrganizationEntity org = securityService.getCurrentUserOrganization();
-
-		OrdersEntity orderEntity = new OrdersEntity();
-		orderEntity.setAddress(orderJsonDto.getAddress());
-		orderEntity.setAmount(calculateOrderAmount(orderJsonDto, stocksEntites));
-		// TODO ordersEntity.setPayment_type(payment_type);
-		orderEntity.setShopsEntity(stocksEntites.get(0).getShopsEntity());
-		orderEntity.setStatus(OrderStatus.NEW.getValue());
-		orderEntity.setUserId(user.getId());
-		orderEntity.setOrganizationEntity(org);
-
+		OrdersEntity orderEntity = createNewOrderEntity(order);
 		orderEntity = ordersRepository.save(orderEntity);
 
-		addItemsToBasket(orderJsonDto, orderEntity, stocksEntites);
+		addItemsToBasket(order, orderEntity);
 
 		OrderResponse orderResponse = new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
 		orderResponse.setCode(HttpStatus.CREATED);
@@ -324,215 +307,168 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 
-	private List<StocksEntity> getCurrentStock(OrderJsonDto orderJsonDto) {
-		// Getting the stocks related to current order
-		List<StocksEntity> stocksEntites = new ArrayList<>(orderJsonDto.getBasket().size());
+	private OrdersEntity createNewOrderEntity(OrderJsonDto order) {
+		BaseUserEntity user = securityService.getCurrentUser();
+		OrganizationEntity org = securityService.getCurrentUserOrganization();
+		ShopsEntity shop = getOrderShop(order);
 
-		orderJsonDto.getBasket().stream()
-				.filter(basketItem -> basketItem.getQuantity() > 0 && basketItem.getStockId() != null)
-				.forEach(basketItem -> {
-					Optional<StocksEntity> optionalStocksEntity = stockRepository.findById(basketItem.getStockId());
-
-					if (isInvalidStock(basketItem, optionalStocksEntity)) {
-						return;
-					}
-					stocksEntites.add(optionalStocksEntity.get());
-				});
-
-		// TODO check for pending orders logic and what to do
-		return stocksEntites;
+		OrdersEntity orderEntity = new OrdersEntity();
+		orderEntity.setAddress(order.getAddress());
+		orderEntity.setAmount( calculateOrderTotalValue(order) );
+		// TODO ordersEntity.setPayment_type(payment_type);
+		orderEntity.setShopsEntity(shop);
+		orderEntity.setStatus( OrderStatus.NEW.getValue() );
+		orderEntity.setUserId( user.getId() );
+		orderEntity.setOrganizationEntity( org );
+		return orderEntity;
 	}
 	
 	
 	
 	
 
-	private boolean isInvalidStock(BasketItemDTO basketItem, Optional<StocksEntity> stock) {
-		if(stock == null || !stock.isPresent()) {
-			return true;
-		}
-			
-		Integer stockQuantity = stockService.getStockQuantity(stock.get());
-		return basketItem.getQuantity() > stockQuantity
-				|| stock.get().getPrice().doubleValue() <= 0;
+	private ShopsEntity getOrderShop(OrderJsonDto order) {
+		List<StocksEntity> stocksEntites = getBasketStocks( order.getBasket() );
+		
+		ShopsEntity shop = stocksEntites.stream()
+										.map(StocksEntity::getShopsEntity)
+										.findFirst()
+										.orElse(null);
+		return shop;
 	}
+	
+
+	
 
 
+	private OrderResponse updateOrder(OrderJsonDto orderJsonDto) throws BusinessException {
 
-	private OrderResponse updateCurrentOrder(OrderJsonDto orderJsonDto) {
+		OrderStatus newStatus = Optional.ofNullable(orderJsonDto.getStatus())
+										.map(OrderStatus::findEnum)
+										.orElse(OrderStatus.NEW);
 
-		OrderStatus newStatus = OrderStatus.findEnum(orderJsonDto.getStatus());
-		if (newStatus == null && (orderJsonDto.getBasket() == null || orderJsonDto.getBasket().isEmpty())) {
-			log.error("Order update should be either status or changing basket items");
-			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
+		Optional<OrdersEntity> optional = ordersRepository.findById( orderJsonDto.getId() );
+		if(!optional.isPresent()) {
+			throwInvalidOrderException(ERR_ORDER_NOT_EXISTS);
 		}
-		Optional<OrdersEntity> orderOptional = ordersRepository.findById(orderJsonDto.getId());
+		OrdersEntity orderEntity = optional.get();	
 
-		if (orderOptional == null || !orderOptional.isPresent()) {
-			log.error("Supplied Order Id was not found");
-			return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.BAD_REQUEST);
+		OrderResponse orderResponse = updateCurrentOrderStatus(orderJsonDto, orderEntity, newStatus);
+		if ( newStatus.equals( OrderStatus.NEW )) {
+			orderResponse = updateOrderBasket(orderJsonDto, orderEntity);
 		}
-
-		OrdersEntity orderEntity = orderOptional.get();
-
-		OrderStatus currentOrderStatus = OrderStatus.findEnum(orderEntity.getStatus());
-
-		OrderResponse orderResponse = null;
-		if (newStatus != null) {
-			orderResponse = updateCurrentOrderStatus(orderJsonDto, orderEntity, newStatus, currentOrderStatus);
-		}
-
-		if (orderJsonDto.getBasket() != null && !orderJsonDto.getBasket().isEmpty()) {
-			orderResponse = updateCurrentOrderBasket(orderJsonDto, orderEntity);
-		}
-
 		return orderResponse;
 	}
+	
+	
+	
+	
 
-	private OrderResponse updateCurrentOrderBasket(OrderJsonDto orderJsonDto, OrdersEntity orderEntity) {
+	private OrderResponse updateOrderBasket(OrderJsonDto order, OrdersEntity orderEntity) throws BusinessException {
 
-		basketRepository.deleteByOrdersEntity_Id(orderJsonDto.getId());
-
-		// Getting the stocks related to current order
-		List<StocksEntity> stocksEntites = new ArrayList<>(orderJsonDto.getBasket().size());
-
-		orderJsonDto.getBasket().stream().filter(basketItem -> basketItem.getStockId() != null).forEach(basketItem -> {
-			Optional<StocksEntity> optionalStocksEntity = stockRepository.findById(basketItem.getStockId());
-
-			if (isInvalidStock(basketItem , optionalStocksEntity)) {
-				// stock Id is invalid or available quantity is less than required
-				log.error("Stock Id {} is invalid", basketItem.getStockId());
-				return;
-			}
-			stocksEntites.add(optionalStocksEntity.get());
-		});
-
-		orderEntity.setAmount(calculateOrderAmount(orderJsonDto, stocksEntites));
-		orderEntity.setShopsEntity(stocksEntites.get(0).getShopsEntity());
-		orderEntity.setUpdateDate( LocalDateTime.now());
+		basketRepository.deleteByOrdersEntity_Id(order.getId());
+		
+		orderEntity.setAmount( calculateOrderTotalValue(order) );
+		orderEntity.setShopsEntity( getOrderShop( order) );
 		orderEntity = ordersRepository.save(orderEntity);
 
-		addItemsToBasket(orderJsonDto, orderEntity, stocksEntites);
+		addItemsToBasket(order, orderEntity);
 
 		return new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
-
 	}
+	
+	
 
+	
 	private OrderResponse updateCurrentOrderStatus(OrderJsonDto orderJsonDto, OrdersEntity orderEntity,
-												   OrderStatus newStatus, OrderStatus currentOrderStatus) {
+												   OrderStatus newStatus) throws BusinessException {
 
-
-		// commented as baskets are required only for new orders
-		/*
-		if ((newStatus.getValue() >= currentOrderStatus.getValue())
-				&& (orderJsonDto.getBasket() == null || orderJsonDto.getBasket().isEmpty())) {
-			// TODO check with Marek if this valid from business perspective
-			log.error("Cannot update order staus to previous status");
-			return new OrderResponse(OrderFailedStatus.INVALID_STATUS, HttpStatus.BAD_REQUEST);
+		OrderStatus currentOrderStatus = OrderStatus.findEnum(orderEntity.getStatus());		
+		if ((newStatus.getValue() < currentOrderStatus.getValue()) ) {
+			throwInvalidOrderException(ERR_INVALID_ORDER_STATUS_UPDATE);
 		}
-
-		 */
+		
 		if (newStatus == OrderStatus.CLIENT_CONFIRMED) {
+			//TODO: WHY ???
 			orderEntity.setCreationDate( LocalDateTime.now() );
 		}
 		orderEntity.setStatus(newStatus.getValue());
-		orderEntity.setUpdateDate( LocalDateTime.now() );
 		orderEntity = ordersRepository.save(orderEntity);
+		
 		return new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
 	}
+	
+	
+	
 
-	private void addItemsToBasket(OrderJsonDto orderJsonDto, OrdersEntity orderEntity,
-								  List<StocksEntity> stocksEntites) {
-
-		for (BasketItemDTO basketItem : orderJsonDto.getBasket()) {
-			StocksEntity stocksEntity = stocksEntites.stream().filter(stock -> stock.getId().equals(basketItem.getStockId()))
-					.findFirst().get();
-			BasketsEntity basketsEntity = new BasketsEntity();
-			basketsEntity.setStocksEntity(stocksEntity);
-			basketsEntity.setOrdersEntity(orderEntity);
-			// TODO make sure price here means item price multiplied by quantity
-			basketsEntity.setPrice(new BigDecimal(basketItem.getQuantity()).multiply(stocksEntity.getPrice()));
-			basketsEntity.setQuantity(new BigDecimal(basketItem.getQuantity()));
-
-			// TODO how currency determined for specific order
-			basketsEntity.setCurrency(TransactionCurrency.EGP.getValue());
-
-			basketRepository.save(basketsEntity);
+	private void addItemsToBasket(OrderJsonDto orderJsonDto, OrdersEntity orderEntity) throws BusinessException {
+		List<BasketItemDTO> basketItems = orderJsonDto.getBasket();
+		if(basketItems == null) {
+			return;
 		}
-
-	}
-
-	private BigDecimal calculateOrderAmount(OrderJsonDto orderJsonDto, List<StocksEntity> stocksEntites) {
-
-		return orderJsonDto.getBasket().stream().map(basketItem -> {
-
-			BigDecimal price = stocksEntites.stream().filter(stock -> stock.getId().equals(basketItem.getStockId()))
-					.findFirst().get().getPrice();
-			// TODO Discount rules to be applied if required
-
-			return price.multiply(new BigDecimal(basketItem.getQuantity()));
-		}).reduce(BigDecimal.ZERO, BigDecimal::add);
-
-	}
-
-	private OrderResponse mapOrderJsonToOrderEntity(OrderJsonDto orderJson) {
-		OrdersEntity entity = new OrdersEntity();
-		entity.setId(orderJson.getId());
-		if (orderJson.getStatus() != null && !orderJson.getStatus().isEmpty()) {
-			OrderStatus statusEnum = OrderStatus.findEnum(orderJson.getStatus());
-			if (statusEnum == null) {
-				return new OrderResponse(OrderFailedStatus.INVALID_STATUS, HttpStatus.NOT_ACCEPTABLE);
-			}
-			entity.setStatus(statusEnum.ordinal());
-		} else {
-			entity.setStatus(0);
+		
+		for (BasketItemDTO basketItem : basketItems) {
+			BasketsEntity itemEntity = toBasketEntity(basketItem, orderEntity);
+			basketRepository.save(itemEntity);
 		}
-		entity.setAddress(orderJson.getAddress());
-//		entity.setBasket(orderJson.getBasket().toString());
-		return new OrderResponse(entity);
 	}
+	
+	
+	
+	
+	private BasketsEntity toBasketEntity(BasketItemDTO item, OrdersEntity order) throws BusinessException {
+		StocksEntity stock = Optional.ofNullable(item)
+									.map(BasketItemDTO::getStockId)
+									.flatMap(stockRepository::findById)
+									.orElseThrow(() ->  getInvalidOrderException(ERR_NON_EXISTING_STOCK_ID));
+		
+		BasketsEntity basketsEntity = new BasketsEntity();
+		basketsEntity.setStocksEntity(stock);
+		basketsEntity.setOrdersEntity(order);
+		// TODO make sure price here means item price multiplied by quantity
+		basketsEntity.setPrice(new BigDecimal(item.getQuantity()).multiply(stock.getPrice()));
+		basketsEntity.setQuantity(new BigDecimal(item.getQuantity()));
 
-	private OrderJsonDto mapOrderStringToOrderJsonDto(String orderString) {
-		OrderJsonDto orderJson;
-		try {
-			orderJson = new ObjectMapper().readValue(orderString, OrderJsonDto.class);
-		} catch (IOException e) {
-			throw new OrderValidationException("Error Occured while parsing order object",
-					OrderFailedStatus.INVALID_ORDER);
+		// TODO how currency determined for specific order
+		basketsEntity.setCurrency(TransactionCurrency.EGP.getValue());
+
+		return basketsEntity;
+	}
+	
+	
+	
+
+	private BigDecimal calculateOrderTotalValue(OrderJsonDto order) {
+		List<BasketItemDTO> basket = order.getBasket();
+		if(basket == null) {
+			return BigDecimal.ZERO;
 		}
-		return orderJson;
+		
+		return basket.stream()
+					.map(this::getBasketItemValue)
+					.reduce(BigDecimal.ZERO, BigDecimal::add);
 	}
-
-	private OrderResponse updateOrCreateOrderEntity(OrdersEntity orderEntity) {
-		OrdersEntity createdOrderEntity = orderEntity;
-		if (orderEntity.getId() != null && orderEntity.getId() != 0) {
-			Optional<OrdersEntity> foundOrdersEntity = ordersRepository.findById(orderEntity.getId());
-			if (foundOrdersEntity == null || !foundOrdersEntity.isPresent()) {
-				return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
-			}
-			createdOrderEntity = foundOrdersEntity.get();
-		} else {
-			if (orderEntity.getStatus() != null && orderEntity.getStatus() != 0) {
-				return new OrderResponse(OrderFailedStatus.INVALID_STATUS, HttpStatus.NOT_ACCEPTABLE);
-			}
-			createdOrderEntity = new OrdersEntity();
-
-			createdOrderEntity.setCreationDate( LocalDateTime.now() );
-			createdOrderEntity.setUpdateDate(LocalDateTime.now() );
-			// FIXME: HOW COME THE AMOUNT IS SET AS RANDOM VALUE??
-			createdOrderEntity.setAmount(BigDecimal.valueOf(new Random().nextDouble()));
-		}
-		createdOrderEntity.setStatus(orderEntity.getStatus());
-
-//		if (orderEntity.getBasketsEntities() != null && !orderEntity.getBasketsEntities().isEmpty()) {
-////    		createdOrderEntity.setBasket(orderEntity.getBasketsEntity().toString());
-//		}
-
-		createdOrderEntity.setAddress(orderEntity.getAddress());
-		ordersRepository.save(createdOrderEntity);
-
-		return new OrderResponse(createdOrderEntity.getId(), createdOrderEntity.getAmount());
+	
+	
+	
+	
+	private BigDecimal getBasketItemValue(BasketItemDTO item) {
+		BigDecimal quantity = Optional.ofNullable( item.getQuantity() )
+										.map(BigDecimal::new)
+										.orElse(BigDecimal.ZERO);
+		
+		return Optional.ofNullable(item)
+						.map(BasketItemDTO::getStockId)
+						.flatMap(stockRepository::findById)
+						.map(StocksEntity::getPrice)
+						.filter(Objects::nonNull)
+						.map(price -> price.multiply(quantity))
+						.orElseThrow( () ->  new RuntimeException(ERR_CALC_ORDER_FAILED));
 	}
+	
+	
+
+
 
 	@Override
 	public OrderResponse getOrderInfo(Long orderId) {

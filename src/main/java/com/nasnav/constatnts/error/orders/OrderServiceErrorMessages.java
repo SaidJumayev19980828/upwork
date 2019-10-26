@@ -13,4 +13,6 @@ public class OrderServiceErrorMessages {
 	public static final String ERR_ITEMS_FROM_MULTIPLE_SHOPS = "Basket items belong to multiple shops!";
 	public static final String ERR_INVALID_ORDER_STATUS = "Invalid Order status!";
 	public static final String ERR_ORDER_NOT_EXISTS = "No Order exists with id[%s]";
+	public static final String ERR_CALC_ORDER_FAILED = "Failed to calculate order value!";
+	public static final String ERR_INVALID_ORDER_STATUS_UPDATE = "Cannot update order staus to previous status";
 }
