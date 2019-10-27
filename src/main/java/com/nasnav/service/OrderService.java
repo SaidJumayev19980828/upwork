@@ -18,11 +18,11 @@ public interface OrderService {
 		public TransactionCurrency currency;
 	}
 
-	public OrderResponse updateOrder(OrderJsonDto orderJson,Long userId) throws BusinessException;
+	public OrderResponse handleOrder(OrderJsonDto orderJson) throws BusinessException;
 
 	public OrderResponse getOrderInfo(Long orderId);
 
 	public OrderValue getOrderValue(OrdersEntity orderEntity);
 
-	public List<DetailedOrderRepObject> getOrdersList(Long loggedUserId, String userToken, Long userId, Long storeId, Long orgId, String status);
+	public List<DetailedOrderRepObject> getOrdersList(String userToken, Long userId, Long storeId, Long orgId, String status);
 }

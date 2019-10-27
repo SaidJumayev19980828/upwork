@@ -1,7 +1,7 @@
 package com.nasnav.controller;
 
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.service.EmployeeUserService;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -14,18 +14,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.OrderService;
-import com.nasnav.service.UserService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @RestController
 @RequestMapping("/order")
@@ -35,17 +32,7 @@ public class OrdersController {
     @Autowired
     private OrderService orderService;
     
-    @Autowired
-	private UserService userService;
-
-	@Autowired
-	private EmployeeUserService employeeUserService;
-
-	
-	
-	
-	
-	
+    
 	
     @ApiOperation(value = "Create or update an order", nickname = "orderUpdate", code = 201)
     @ApiResponses(value = {
@@ -57,12 +44,12 @@ public class OrdersController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public OrderResponse updateOrder(
-            @RequestHeader(name = "User-ID") Long userId,
+            
             @RequestHeader(name = "User-Token") String userToken,
             @RequestBody OrderJsonDto orderJson)
             		throws BusinessException {
     	
-    	return orderService.updateOrder(orderJson,userId);
+    	return orderService.handleOrder(orderJson);        
     }
     
     
@@ -71,14 +58,11 @@ public class OrdersController {
     
 
 	@ApiOperation(value = "Get information about order", nickname = "orderInfo", code = 201)
-	@ApiResponses(value = {
-			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
-			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
-	})
+	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+						   @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
     @GetMapping(value = "/info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
     public ResponseEntity<?> getOrderInfo(
-    		@RequestHeader(name = "User-ID", required = true) Long userId,
-            @RequestHeader(name = "User-Token", required = true) String userToken,
+            @RequestHeader(name = "User-Token") String userToken,
             @RequestParam(name = "order_id") Long orderId) {
     	OrderResponse response = this.orderService.getOrderInfo(orderId);
     	if(response.getCode().equals(HttpStatus.OK)) {
@@ -95,18 +79,12 @@ public class OrdersController {
 			//@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
 	})
 	@GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public ResponseEntity<?> getOrdersList(@RequestHeader(name = "User-ID", required = true) Long loggedUserId,
-										 @RequestHeader(name = "User-Token", required = true) String userToken,
-										 @RequestParam(name = "user_id", required = false) Long userId,  //search parameter
-										 @RequestParam(name = "store_id", required = false) Long storeId,
-										 @RequestParam(name = "org_id", required = false) Long orgId,
-										 @RequestParam(name = "status", required = false) String status) throws BusinessException {
-		List<DetailedOrderRepObject> response;
-		if(userToken == null ||
-				(!userService.checkAuthToken(loggedUserId, userToken) && !employeeUserService.checkAuthToken(loggedUserId, userToken))) {
-			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-		}
-		response = this.orderService.getOrdersList(loggedUserId, userToken, userId, storeId, orgId, status);
+	public ResponseEntity<?> getOrdersList(@RequestHeader(name = "User-Token") String userToken,
+										   @RequestParam(name = "user_id", required = false) Long userId,  //search parameter
+										   @RequestParam(name = "store_id", required = false) Long storeId,
+										   @RequestParam(name = "org_id", required = false) Long orgId,
+										   @RequestParam(name = "status", required = false) String status) throws BusinessException {
+		List<DetailedOrderRepObject> response = this.orderService.getOrdersList(userToken, userId, storeId, orgId, status);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 }

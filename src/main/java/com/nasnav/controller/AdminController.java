@@ -34,8 +34,7 @@ public class AdminController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "organization", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity createOrganization(@RequestHeader (value = "User-ID") Long userId,
-                                             @RequestHeader (value = "User-Token") String userToken,
+    public ResponseEntity createOrganization(@RequestHeader (value = "User-Token") String userToken,
                                              @RequestBody OrganizationDTO.OrganizationCreationDTO json)  throws BusinessException {
 	    OrganizationResponse response = organizationService.createOrganization(json);
 	    return new ResponseEntity(response, response.getHttpStatus());
@@ -48,13 +47,14 @@ public class AdminController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
 	})
 	@PostMapping(value = "category", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public ResponseEntity createCategory(@RequestHeader (value = "User-ID", required = true) Long userId,
-	                                     @RequestHeader (value = "User-Token", required = true) String userToken,
+	public ResponseEntity createCategory(@RequestHeader (value = "User-Token") String userToken,
 	                                     @RequestBody CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
-		if (categoryJson.getOperation().equals("update")){
-			return categoryService.updateCategory(categoryJson);
-		}
-		return categoryService.createCategory(categoryJson);
+    	if (categoryJson.getOperation() != null)
+			if (categoryJson.getOperation().equals("update"))
+				return categoryService.updateCategory(categoryJson);
+			else if (categoryJson.getOperation().equals("create"))
+				return categoryService.createCategory(categoryJson);
+		throw new BusinessException("INVAILD_PARAM: operation","No correct operation provided", HttpStatus.NOT_ACCEPTABLE);
 	}
 
 
@@ -65,8 +65,7 @@ public class AdminController {
 			@io.swagger.annotations.ApiResponse(code = 409, message = "Category is used by other entities"),
 	})
 	@DeleteMapping(value = "category", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public ResponseEntity deleteCategory(@RequestHeader (value = "User-ID") Long userId,
-	                                     @RequestHeader (value = "User-Token") String userToken,
+	public ResponseEntity deleteCategory(@RequestHeader (value = "User-Token") String userToken,
 	                                     @RequestParam (value = "category_id") Long categoryId ) throws BusinessException {
 		if (categoryId == null ){
 			throw new BusinessException("MISSING_PRARM: Category_id", "",HttpStatus.NOT_ACCEPTABLE);

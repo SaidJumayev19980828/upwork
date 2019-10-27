@@ -97,9 +97,9 @@ INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 --inserting orders
 INSERT INTO public.orders
 (id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status)
-VALUES(33,'', '', '', 0, 88, now(), now(), now(), 99001, 1, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 0.0, 0);
+VALUES(330002,'', '', '', 0, 88, now(), now(), now(), 99001, 1, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 600.00, 0);
 
 
-INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(33, 601, 14, 600.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330002, 601, 14, 600.0, 1);
 
 

@@ -59,7 +59,7 @@ public class ProductVariantApiTest {
 	
 	@Test
 	public void variantCreateNoAuthNTest() {
-		HttpEntity request = TestCommons.getHttpEntity("",0,"INVALID TOKEN");
+		HttpEntity request = TestCommons.getHttpEntity("","INVALID TOKEN");
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -77,7 +77,7 @@ public class ProductVariantApiTest {
 	public void productVariantUpdateNoAuthZTest() {
 		BaseUserEntity user = empRepo.getById(68L); //not an organization admin
 		
-		HttpEntity request = TestCommons.getHttpEntity("", user.getId(), user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity("", user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -97,7 +97,7 @@ public class ProductVariantApiTest {
 		
 		JSONObject json = createProductVariantRequest();
 		json.remove("operation");
-		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -116,7 +116,7 @@ public class ProductVariantApiTest {
 		
 		JSONObject json = createProductVariantRequest();
 		json.remove("product_id");
-		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -135,7 +135,7 @@ public class ProductVariantApiTest {
 		
 		JSONObject json = createProductVariantRequest();
 		json.remove("features");
-		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -156,7 +156,7 @@ public class ProductVariantApiTest {
 		JSONObject json = createProductVariantRequest();
 		json.put("operation", Operation.UPDATE.getValue());
 		json.remove("variant_id");
-		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -176,7 +176,7 @@ public class ProductVariantApiTest {
 		BaseUserEntity user = empRepo.getById(69L);
 		
 		JSONObject json = createProductVariantRequest();		
-		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -213,7 +213,7 @@ public class ProductVariantApiTest {
 		json.put("variant_id", TEST_VARIANT_ID);
 		json.put("name", "updated");
 		json.put("features", "{\"234\": 30, \"235\": \"WHITE\"}");
-		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -247,7 +247,7 @@ public class ProductVariantApiTest {
 		json.put("operation", Operation.UPDATE.getValue());
 		json.put("variant_id", TEST_VARIANT_ID);
 		
-		HttpEntity request = TestCommons.getHttpEntity(json.toString(), user.getId(), user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString(), user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -268,7 +268,7 @@ public class ProductVariantApiTest {
 		JSONObject json = createProductVariantRequest();
 		json.put("features", "{\"236\": 37, \"235\": \"BLack\"}");
 		
-		HttpEntity request = TestCommons.getHttpEntity(json.toString(), user.getId(), user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString(), user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -290,7 +290,7 @@ public class ProductVariantApiTest {
 		JSONObject json = createProductVariantRequest();
 		json.put("features", "{\"888888\": 37, \"235\": \"BLack\"}");
 		
-		HttpEntity request = TestCommons.getHttpEntity(json.toString(), user.getId(), user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString(), user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST

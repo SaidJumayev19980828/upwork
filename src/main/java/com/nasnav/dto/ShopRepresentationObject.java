@@ -40,4 +40,5 @@ public class ShopRepresentationObject extends BaseRepresentationObject{
     @JsonProperty("open")
     private OpenWorkingDays openWorkingDays;
 
+    private List<OrganizationImagesRepresentationObject> images;
 }

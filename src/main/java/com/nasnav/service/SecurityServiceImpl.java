@@ -206,8 +206,6 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Override
 	public BaseUserEntity getCurrentUser() {
-		String x = SecurityContextHolder.getContext().getAuthentication().getName();
-		String y = x.toLowerCase();
 		return Optional.ofNullable( SecurityContextHolder.getContext() )
 						.map(c -> c.getAuthentication())
 						.map(Authentication::getName)

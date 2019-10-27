@@ -102,7 +102,7 @@ public class OrderServiceTest {
 		
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stock.getId(), stock.getQuantity()));
 		ResponseEntity<String> response = template.postForEntity("/order/update"
-															, TestCommons.getHttpEntity(request.toString(), 1, "XX")
+															, TestCommons.getHttpEntity(request.toString(), "XX")
 															, String.class);
 		
 		//---------------------------------------------------------------
@@ -120,7 +120,7 @@ public class OrderServiceTest {
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW);
 		ResponseEntity<OrderResponse> response = 
 				template.postForEntity("/order/update"
-										, TestCommons.getHttpEntity(request.toString(), 88, "123")
+										, TestCommons.getHttpEntity(request.toString(), "123")
 										, OrderResponse.class);
 		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
 	}
@@ -137,7 +137,7 @@ public class OrderServiceTest {
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stock.getId(), stock.getQuantity()));
 		ResponseEntity<OrderResponse> response = 
 				template.postForEntity("/order/update"
-										, TestCommons.getHttpEntity(request.toString(), 88, "123")
+										, TestCommons.getHttpEntity(request.toString(), "123")
 										, OrderResponse.class);
 
 		// get the returned orderId
@@ -154,7 +154,7 @@ public class OrderServiceTest {
 		
 		ResponseEntity<OrderResponse> updateResponse = 
 				template.postForEntity("/order/update"
-										, TestCommons.getHttpEntity(updateRequest.toString(), 88, "123")
+										, TestCommons.getHttpEntity(updateRequest.toString(), "123")
 										, OrderResponse.class);
 		System.out.println("----------response-----------------" + updateResponse);
 		
@@ -174,7 +174,7 @@ public class OrderServiceTest {
 		
 		ResponseEntity<OrderResponse> response = 
 				template.postForEntity("/order/update"
-										, TestCommons.getHttpEntity( updateRequest.toString(),88 ,"123")
+										, TestCommons.getHttpEntity( updateRequest.toString(), "123")
 										, OrderResponse.class);
 
 		assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
@@ -190,7 +190,7 @@ public class OrderServiceTest {
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(9845757332L, 4));
 		ResponseEntity<String> response = 
 				template.postForEntity("/order/update"
-										, TestCommons.getHttpEntity(request.toString(), 88, "123")
+										, TestCommons.getHttpEntity(request.toString(), "123")
 										, String.class);
 		
 		//---------------------------------------------------------------
@@ -229,7 +229,7 @@ public class OrderServiceTest {
 			JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stocksEntity.getId(), quantity));
 			ResponseEntity<String> response = 
 					template.postForEntity("/order/update"
-											, TestCommons.getHttpEntity( request.toString(), persistentUser.getId(), persistentUser.getAuthenticationToken())
+											, TestCommons.getHttpEntity( request.toString(), persistentUser.getAuthenticationToken())
 											, String.class);
 			
 			//---------------------------------------------------------------
@@ -276,7 +276,7 @@ public class OrderServiceTest {
 		request.put("order_id", orderId);
 		ResponseEntity<OrderResponse> response = 
 					template.postForEntity("/order/update"
-								, TestCommons.getHttpEntity(request.toString(),	persistentUser.getId(), persistentUser.getAuthenticationToken())
+								, TestCommons.getHttpEntity(request.toString(), persistentUser.getAuthenticationToken())
 								, OrderResponse.class);
 
 		//---------------------------------------------------------------
@@ -335,7 +335,7 @@ public class OrderServiceTest {
 		// create a new order, then take it's order id and try to make an update using it
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stock.getId(), stock.getQuantity()));
 		ResponseEntity<String> response = template.postForEntity("/order/update"
-														, TestCommons.getHttpEntity(request.toString(), persistentUser.getId(), persistentUser.getAuthenticationToken())
+														, TestCommons.getHttpEntity(request.toString(), persistentUser.getAuthenticationToken())
 														, String.class);
 
 		// get the returned orderId
@@ -351,7 +351,7 @@ public class OrderServiceTest {
 		
 		ResponseEntity<String> updateResponse  = 
 				template.postForEntity("/order/update"
-							, TestCommons.getHttpEntity( updateRequest.toString(),persistentUser.getId(), persistentUser.getAuthenticationToken())
+							, TestCommons.getHttpEntity( updateRequest.toString(), persistentUser.getAuthenticationToken())
 							, String.class);
 		//---------------------------------------------------------------
 		assertEquals(HttpStatus.NOT_ACCEPTABLE, updateResponse.getStatusCode());
@@ -385,7 +385,7 @@ public class OrderServiceTest {
 
 	@Test // Nasnav_Admin diffterent filters test
 	public void ordersListNasnavAdminDifferentFiltersTest() {
-		HttpHeaders header = TestCommons.getHeaders(68, "101112");
+		HttpHeaders header = TestCommons.getHeaders("101112");
 		// no filters
 		ResponseEntity<String> response = template.exchange("/order/list", HttpMethod.GET, new HttpEntity<>(header), String.class);
 
@@ -482,7 +482,7 @@ public class OrderServiceTest {
 
 	@Test // Organization roles diffterent filters test
 	public void ordersListOrganizationDifferentFiltersTest() {
-		HttpHeaders header = TestCommons.getHeaders(70, "161718");
+		HttpHeaders header = TestCommons.getHeaders("161718");
 		ResponseEntity<String> response = template.exchange("/order/list", HttpMethod.GET, new HttpEntity<>(header), String.class);
 		JSONArray body = new JSONArray(response.getBody());
 		long count = body.length();
@@ -490,7 +490,7 @@ public class OrderServiceTest {
 		assertTrue(200 == response.getStatusCode().value());
 		assertEquals("user#70 is Organization employee in org#99003 so he can view all orderes within org#99003", 7, count);
 
-		header = TestCommons.getHeaders(69, "131415");
+		header = TestCommons.getHeaders("131415");
 		response = template.exchange("/order/list", HttpMethod.GET, new HttpEntity<>(header), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
@@ -498,7 +498,7 @@ public class OrderServiceTest {
 		assertTrue(200 == response.getStatusCode().value());
 		assertEquals("user#69 is Organization admin in org#99002 so he can view all orderes within org#99002", 6, count);
 
-		header = TestCommons.getHeaders(71, "192021");
+		header = TestCommons.getHeaders("192021");
 		response = template.exchange("/order/list", HttpMethod.GET, new HttpEntity<>(header), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
@@ -515,16 +515,8 @@ public class OrderServiceTest {
 	public void ordersListUnAuthTest() {
 		// invalid user-id test
 		ResponseEntity<String> response = template.exchange("/order/list?store_id=501", HttpMethod.GET,
-				new HttpEntity<>(TestCommons.getHeaders(99, "789")), String.class); //no user with id = 99
+				new HttpEntity<>(TestCommons.getHeaders("NO_EXISATING_TOKEN")), String.class); //no user with id = 99
 
-		assertTrue(401 == response.getStatusCode().value());
-		assertEquals(HttpStatus.UNAUTHORIZED,response.getStatusCode());
-
-		// invalid user-token test
-		response = template.exchange("/order/list?store_id=501", HttpMethod.GET,
-				new HttpEntity<>(TestCommons.getHeaders(88, "invalidtoken")), String.class); //no user with token = invalidtoken
-
-		assertTrue(401 == response.getStatusCode().value());
 		assertEquals(HttpStatus.UNAUTHORIZED,response.getStatusCode());
 	}
 	
@@ -537,15 +529,14 @@ public class OrderServiceTest {
 	public void ordersListInvalidfiltersTest() {
 		// by store_id only
 		ResponseEntity<String> response = template.exchange("/order/list?store_id=550", HttpMethod.GET,
-				new HttpEntity<>(TestCommons.getHeaders(68, "101112")), String.class);
+				new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
 		JSONArray body = new JSONArray(response.getBody());
 		long count = body.length();
-
 		assertTrue(200 == response.getStatusCode().value());
 		assertEquals("No orders with store_id = 550 ", 0, count);
 
 		// by user_id
-		response = template.exchange("/order/list?user_id=99", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders(68, "101112")), String.class);
+		response = template.exchange("/order/list?user_id=99", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
@@ -553,7 +544,7 @@ public class OrderServiceTest {
 		assertEquals("no orders with user_id = 99",0,count);
 
 		// by org_id
-		response = template.exchange("/order/list?org_id=999999", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders(68, "101112")), String.class);
+		response = template.exchange("/order/list?org_id=999999", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
@@ -562,7 +553,7 @@ public class OrderServiceTest {
 
 		// by status
 		response = template.exchange("/order/list?status=invalid_status", HttpMethod.GET,
-				new HttpEntity<>(TestCommons.getHeaders(68, "101112")), String.class);
+				new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
@@ -592,9 +583,9 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getOrderInfoTest() throws JsonParseException, JsonMappingException, IOException {
 			
-		ResponseEntity<String> response = template.exchange("/order/info?order_id=33"
+		ResponseEntity<String> response = template.exchange("/order/info?order_id=330002"
 														, HttpMethod.GET
-														,new HttpEntity<>(TestCommons.getHeaders(68, "101112"))
+														,new HttpEntity<>(TestCommons.getHeaders("101112"))
 														, String.class);
 		
 		System.out.println("Order >>>> " + response.getBody());
@@ -603,7 +594,7 @@ public class OrderServiceTest {
 		mapper.registerModule(new JavaTimeModule());
 		DetailedOrderRepObject body = mapper.readValue(response.getBody(), DetailedOrderRepObject.class);
 		
-		DetailedOrderRepObject expected = createExpectedOrderInfo(33L);
+		DetailedOrderRepObject expected = createExpectedOrderInfo(330002L);
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(expected, body);
@@ -619,7 +610,7 @@ public class OrderServiceTest {
 		
 		ResponseEntity<String> response = 
 				template.postForEntity("/order/update"
-									, TestCommons.getHttpEntity(request.toString() , 88, "123")
+									, TestCommons.getHttpEntity(request.toString(), "123")
 									, String.class);
 		
 		assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
@@ -635,7 +626,7 @@ public class OrderServiceTest {
 		
 		ResponseEntity<String> response = 
 				template.postForEntity("/order/update"
-									, TestCommons.getHttpEntity(request.toString() , 88, "123")
+									, TestCommons.getHttpEntity(request.toString(), "123")
 									, String.class);
 		
 		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());

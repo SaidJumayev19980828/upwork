@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.nasnav.dao.BasketRepository;
@@ -95,6 +97,10 @@ public class OrderServiceImpl implements OrderService {
 		this.employeeUserServiceHelper = employeeUserServiceHelper;
 		this.employeeUserRepository = employeeUserRepository;
 	}
+	
+	
+	
+	
 
 	public OrderValue getOrderValue(OrdersEntity order) {
 		TransactionCurrency currency = null;
@@ -121,7 +127,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	@Override
-	public OrderResponse updateOrder(OrderJsonDto orderJson, Long userId) throws BusinessException {
+	public OrderResponse handleOrder(OrderJsonDto orderJson) throws BusinessException {
 
 		validateOrder(orderJson);
 
@@ -452,6 +458,8 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
+	
+	
 	private BigDecimal getBasketItemValue(BasketItemDTO item) {
 		BigDecimal quantity = Optional.ofNullable( item.getQuantity() )
 										.map(BigDecimal::new)
@@ -472,30 +480,44 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	public OrderResponse getOrderInfo(Long orderId) {
-		if (ordersRepository.existsById(orderId)) {
-			return new OrderResponse(getDetailedOrderInfo(orderId, true));
-		}
+		
+		BaseUserEntity user = securityService.getCurrentUser();
+		
+		if (user instanceof UserEntity) {
+			if (ordersRepository.existsByIdAndUserId(orderId, user.getId()))
+				return new OrderResponse(getDetailedOrderInfo(orderId, true));
+		} else
+			if (ordersRepository.existsById(orderId))
+				return new OrderResponse(getDetailedOrderInfo(orderId, true));
+
 		return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
 	}
-
+	
+	
+	
+	
+	//TODO: doesn't support getting shipment fees
 	private DetailedOrderRepObject getDetailedOrderInfo(Long orderId, boolean getItems) {
 		OrdersEntity entity = ordersRepository.findById(orderId).get();
 		List<BasketItem> itemsList = getBasketItems(orderId);
+		
 		DetailedOrderRepObject obj = new DetailedOrderRepObject();
+		obj.setOrderId(entity.getId() );
 		obj.setUserId(entity.getUserId());
 		obj.setShopId(entity.getShopsEntity().getId());
-		obj.setOrderId(orderId);
 		obj.setCreatedAt(entity.getCreationDate());
-		obj.setDeliveryDate(entity.getDeliveryDate());
-		if (itemsList.size() > 0) {
-			obj.setCurrency(itemsList.get(0).getCurrency());
-			List<Integer> l = itemsList.stream().map(item -> item.getQuantity()).collect(Collectors.toList());
-			obj.setTotalQuantity(l.stream().mapToInt(Integer::intValue).sum());
-		}
-		obj.setSubtotal(calculateOrderAmount(itemsList));
+		obj.setDeliveryDate(entity.getDeliveryDate());		
+		obj.setSubtotal( entity.getAmount() );
 		obj.setShipping(new BigDecimal(0));
 		obj.setTotal(obj.getShipping().add(obj.getSubtotal()));
 		obj.setStatus(OrderStatus.findEnum(entity.getStatus()).name());
+		if (itemsList.size() > 0) {
+			obj.setCurrency(itemsList.get(0).getCurrency());
+			Integer totalQuantity = itemsList.stream()
+											.map(BasketItem::getQuantity)
+											.reduce(0, Integer::sum);										
+			obj.setTotalQuantity( totalQuantity);
+		}
 		//TODO set shipping address, shipping price
 		ShippingAddress address = new ShippingAddress();
 		address.setDetails(entity.getAddress());
@@ -550,11 +572,10 @@ public class OrderServiceImpl implements OrderService {
 		return total;
 	}
 	
-	
+		
 	
 	@Override
-	public List<DetailedOrderRepObject> getOrdersList(Long loggedUserId, String userToken, Long userId, Long storeId,
-														 Long orgId, String status){
+	public List<DetailedOrderRepObject> getOrdersList(String userToken, Long userId, Long storeId, Long orgId, String status){
 		List<OrdersEntity> ordersEntityList;
 		List<DetailedOrderRepObject> ordersRep = new ArrayList<>();
 		Integer statusId = -1;
@@ -563,36 +584,37 @@ public class OrderServiceImpl implements OrderService {
 				statusId = (OrderStatus.findEnum(status)).getValue();
 			}
 		}
-		List<String> employeeUserRoles = employeeUserServiceHelper.getEmployeeUserRoles(loggedUserId);
-		UserEntity user = userRepository.getByIdAndAuthenticationToken(loggedUserId, userToken);
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		UserEntity user = userRepository.getByEmail(auth.getName());
 		if (user == null){ // EmployeeUser
-			EmployeeUserEntity employeeUser = employeeUserRepository.getByIdAndAuthenticationToken(loggedUserId, userToken);
+			EmployeeUserEntity empUser = employeeUserRepository.getOneByEmail(auth.getName());
+			List<String> employeeUserRoles = employeeUserServiceHelper.getEmployeeUserRoles(empUser.getId());
 			if (employeeUserRoles.contains("STORE_ADMIN") || employeeUserRoles.contains("STORE_MANAGER") || employeeUserRoles.contains("STORE_EMPLOYEE")){
-				storeId = employeeUser.getShopId();
+				storeId = empUser.getShopId();
 			} else if (employeeUserRoles.contains("ORGANIZATION_ADMIN") || employeeUserRoles.contains("ORGANIZATION_MANAGER") || employeeUserRoles.contains("ORGANIZATION_EMPLOYEE")) {
-				orgId = employeeUser.getOrganizationId();
+				orgId = empUser.getOrganizationId();
 			}
 			if (statusId != -1){
 				if (orgId != null){
-					if (userId != null && storeId != null) {
+					if (userId != null && storeId != null)
 						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatusAndUserIdAndOrganizationEntityId(storeId, statusId, userId, orgId);
-					} else if (userId != null) {
+					else if (userId != null)
 						ordersEntityList = ordersRepository.findByOrganizationEntityIdAndStatusAndUserId(orgId, statusId, userId);
-					} else if (storeId != null){
+					else if (storeId != null)
 						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatusAndOrganizationEntityId(storeId, statusId, orgId);
-					} else {
+					else
 						ordersEntityList = ordersRepository.findByOrganizationEntityIdAndStatus(orgId, statusId);
-					}
+
 				} else {
-					if (userId != null && storeId != null) {
+					if (userId != null && storeId != null)
 						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatusAndUserId(storeId, statusId, userId);
-					} else if (userId != null) {
+					else if (userId != null)
 						ordersEntityList = ordersRepository.findByUserIdAndStatus(userId, statusId);
-					} else if (storeId != null){
+					else if (storeId != null)
 						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatus(storeId, statusId);
-					} else {
+					else
 						ordersEntityList = ordersRepository.findByStatus(statusId);
-					}
+
 				}
 			} else {
 				if (orgId != null){
@@ -611,7 +633,7 @@ public class OrderServiceImpl implements OrderService {
 					} else if (userId != null) {
 						ordersEntityList = ordersRepository.findByUserId(userId);
 					} else if (storeId != null){
-						ordersEntityList = ordersRepository.findByshopsEntityId(storeId);
+						ordersEntityList = ordersRepository.findByShopsEntityId(storeId);
 					} else {
 						ordersEntityList = ordersRepository.findAll();
 					}
@@ -619,9 +641,9 @@ public class OrderServiceImpl implements OrderService {
 			}
 		} else { // User
 			if (statusId != -1){
-				ordersEntityList = ordersRepository.findByUserIdAndStatus(loggedUserId, statusId);
+				ordersEntityList = ordersRepository.findByUserIdAndStatus(user.getId(), statusId);
 			} else {
-				ordersEntityList = ordersRepository.findByUserId(loggedUserId);
+				ordersEntityList = ordersRepository.findByUserId(user.getId());
 			}
 		}
 		for(OrdersEntity orders: ordersEntityList) {
