@@ -3,9 +3,8 @@ package com.nasnav.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -61,15 +60,11 @@ public class OrdersController {
 	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 						   @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
     @GetMapping(value = "/info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
-    public ResponseEntity<?> getOrderInfo(
+    public DetailedOrderRepObject getOrderInfo(
             @RequestHeader(name = "User-Token") String userToken,
-            @RequestParam(name = "order_id") Long orderId) {
-    	OrderResponse response = this.orderService.getOrderInfo(orderId);
-    	if(response.getCode().equals(HttpStatus.OK)) {
-        	return new ResponseEntity<>(response.getDetailedOrder(), response.getCode());
-    	}
-    	
-    	return new ResponseEntity<>(response, response.getCode());
+            @RequestParam(name = "order_id") Long orderId) throws BusinessException {
+		
+    	return this.orderService.getOrderInfo(orderId);    	
     }
 	
 	
@@ -93,4 +88,33 @@ public class OrdersController {
 		
 		return  this.orderService.getOrdersList(userToken, userId, storeId, orgId, status);
 	}
+	
+	
+	
+	
+	
+	@ApiOperation(value = "Get the current new order", nickname = "currentOrder", code = 201)
+	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+						   @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
+    @GetMapping(value = "/current", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
+    public DetailedOrderRepObject getCurrentNewOrder(
+            @RequestHeader(name = "User-Token") String userToken) throws BusinessException {
+		
+    	return this.orderService.getCurrentOrder();    	
+    }
+	
+	
+	
+	
+	
+	
+	@ApiOperation(value = "delete current order", nickname = "deleteCurrentOrder", code = 201)
+	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+						   @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
+    @DeleteMapping(value = "/current", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
+    public void deleteNewOrder(
+            @RequestHeader(name = "User-Token") String userToken) {
+		
+    	 this.orderService.deleteCurrentOrders();    	
+    }
 }

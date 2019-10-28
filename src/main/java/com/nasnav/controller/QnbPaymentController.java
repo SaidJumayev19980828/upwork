@@ -2,7 +2,7 @@ package com.nasnav.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dao.OrderRepository;
+import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dto.OrderSessionResponse;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.qnb.Account;
@@ -29,12 +29,12 @@ public class QnbPaymentController {
     
     private final PaymentService paymentService;
 
-    private final OrderRepository orderRepository;
+    private final OrdersRepository orderRepository;
 
     private final Session session;
 
     @Autowired
-    public QnbPaymentController(PaymentService paymentService, OrderRepository orderRepository, Session session) {
+    public QnbPaymentController(PaymentService paymentService, OrdersRepository orderRepository, Session session) {
 //        this.activeSessions = activeSessions;
         this.paymentService = paymentService;
         this.orderRepository = orderRepository;

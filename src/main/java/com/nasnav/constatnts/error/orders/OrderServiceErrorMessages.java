@@ -15,4 +15,5 @@ public class OrderServiceErrorMessages {
 	public static final String ERR_ORDER_NOT_EXISTS = "No Order exists with id[%s]";
 	public static final String ERR_CALC_ORDER_FAILED = "Failed to calculate order value!";
 	public static final String ERR_INVALID_ORDER_STATUS_UPDATE = "Cannot update order staus to previous status";
+	public static final String ERR_NO_CURRENT_ORDER = "User have no new orders!";
 }

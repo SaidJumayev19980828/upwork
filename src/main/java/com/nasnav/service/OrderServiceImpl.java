@@ -13,6 +13,7 @@ import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_N
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NULL_ITEM;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_EXISTS;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_UPDATED_ORDER_WITH_NO_ID;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NO_CURRENT_ORDER;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
 
 import java.math.BigDecimal;
@@ -487,19 +488,23 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
-	public OrderResponse getOrderInfo(Long orderId) {
+	public DetailedOrderRepObject getOrderInfo(Long orderId) throws BusinessException {
 		
 		BaseUserEntity user = securityService.getCurrentUser();
 		
-		if (user instanceof UserEntity) {
-			if (ordersRepository.existsByIdAndUserId(orderId, user.getId()))
-				return new OrderResponse(getDetailedOrderInfo(orderId, true));
-		} else
-			if (ordersRepository.existsById(orderId))
-				return new OrderResponse(getDetailedOrderInfo(orderId, true));
+		if (user instanceof UserEntity 
+				&& ordersRepository.existsByIdAndUserId(orderId, user.getId())) {
+			return getDetailedOrderInfo(orderId, true);
+		} else if (ordersRepository.existsById(orderId)) {
+			return getDetailedOrderInfo(orderId, true);
+		}			
 
-		return new OrderResponse(OrderFailedStatus.INVALID_ORDER, HttpStatus.NOT_ACCEPTABLE);
+		throwInvalidOrderException( OrderFailedStatus.INVALID_ORDER.toString() );
+		
+		return null;
 	}
+	
+	
 	
 	
 	
@@ -660,5 +665,34 @@ public class OrderServiceImpl implements OrderService {
 			//.collect(Collectors.toList());
 		}
 		return ordersRep;
+	}
+
+
+
+
+
+	@Override
+	public DetailedOrderRepObject getCurrentOrder() throws BusinessException {
+		BaseUserEntity user = securityService.getCurrentUser();
+		
+		OrdersEntity entity = ordersRepository.findFirstByUserIdAndStatusOrderByUpdateDateDesc( user.getId(), OrderStatus.NEW.getValue() )
+											 .orElseThrow(() -> getNoCurrentOrderFoundException() );
+		
+		return getDetailedOrderInfo(entity.getId(), true);
+	}
+
+
+	
+	
+	
+	private BusinessException getNoCurrentOrderFoundException() {
+		return new BusinessException("User have no new orders!", "NOT FOUND", HttpStatus.NOT_FOUND);
+	}
+
+
+
+	@Override
+	public void deleteCurrentOrders() {
+		
 	}
 }

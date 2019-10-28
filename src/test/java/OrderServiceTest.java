@@ -594,7 +594,7 @@ public class OrderServiceTest {
 		mapper.registerModule(new JavaTimeModule());
 		DetailedOrderRepObject body = mapper.readValue(response.getBody(), DetailedOrderRepObject.class);
 		
-		DetailedOrderRepObject expected = createExpectedOrderInfo(330002L);
+		DetailedOrderRepObject expected = createExpectedOrderInfo(330002L, new BigDecimal("600.00"), 14, "CLIENT_CONFIRMED");
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(expected, body);
@@ -635,6 +635,8 @@ public class OrderServiceTest {
 	
 	
 	
+	
+	
 	@Test
 	public void updateNewOrderWithTooHighQuantityToEmptyBasket() {
 		JSONObject request = createOrderUpdateRequestWithInvalidQuantity();
@@ -647,6 +649,146 @@ public class OrderServiceTest {
 		
 		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
 	}
+	
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getCurrentOrderNoAuthTest() throws JsonParseException, JsonMappingException, IOException {
+			
+		ResponseEntity<String> response = template.getForEntity("/order/current", String.class);
+				
+		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void deleteCurrentOrderNoAuthTest() throws JsonParseException, JsonMappingException, IOException {
+			
+		ResponseEntity<String> response = template.exchange("/order/current"
+															, HttpMethod.DELETE
+															, new HttpEntity<>(TestCommons.getHeaders("NON_EXISTING_TOKEN"))
+															, String.class);
+				
+		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getCurrentOrderTest() throws JsonParseException, JsonMappingException, IOException {
+			
+		ResponseEntity<String> response = template.exchange("/order/current"
+														, HttpMethod.GET
+														, new HttpEntity<>(TestCommons.getHeaders("123"))
+														, String.class);
+		
+		System.out.println("Order >>>> " + response.getBody());
+		
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.registerModule(new JavaTimeModule());
+		DetailedOrderRepObject body = mapper.readValue(response.getBody(), DetailedOrderRepObject.class);
+		
+		DetailedOrderRepObject expected = createExpectedOrderInfo(330003L, new BigDecimal("300.00"), 7, "NEW");
+		
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(expected, body);
+	}
+	
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getCurrentOrderNotFoundTest() throws JsonParseException, JsonMappingException, IOException {
+			
+		ResponseEntity<String> response = template.exchange("/order/current"
+														, HttpMethod.GET
+														, new HttpEntity<>(TestCommons.getHeaders("789"))
+														, String.class);
+		
+		System.out.println("Order >>>> " + response.getBody());	
+		
+		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getCurrentOrderUserHasNoOrdersTest() throws JsonParseException, JsonMappingException, IOException {
+			
+		ResponseEntity<String> response = template.exchange("/order/current"
+														, HttpMethod.GET
+														, new HttpEntity<>(TestCommons.getHeaders("011"))
+														, String.class);
+		
+		System.out.println("Order >>>> " + response.getBody());	
+		
+		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getCurrentOrderUserHasMultipleNewOrdersTest() throws JsonParseException, JsonMappingException, IOException {
+			
+		ResponseEntity<String> response = template.exchange("/order/current"
+														, HttpMethod.GET
+														, new HttpEntity<>(TestCommons.getHeaders("456"))
+														, String.class);
+		
+		
+		System.out.println("Order >>>> " + response.getBody());
+		
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.registerModule(new JavaTimeModule());
+		DetailedOrderRepObject body = mapper.readValue(response.getBody(), DetailedOrderRepObject.class);
+		
+		DetailedOrderRepObject expected = createExpectedOrderInfo(330004L, new BigDecimal("200.00"), 5, "NEW");
+		
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(expected, body);
+	}
+	
+	
+	
+	
 	
 	
 	
@@ -711,7 +853,7 @@ public class OrderServiceTest {
 	
 	
 
-	private DetailedOrderRepObject createExpectedOrderInfo(Long orderId) {
+	private DetailedOrderRepObject createExpectedOrderInfo(Long orderId, BigDecimal price, Integer quantity, String status) {
 		OrdersEntity entity = orderRepository.findById(orderId).get();
 		
 		DetailedOrderRepObject order = new DetailedOrderRepObject();
@@ -723,11 +865,11 @@ public class OrderServiceTest {
 		order.setShipping( BigDecimal.ZERO );
 		order.setShippingAddress( createExpectedShippingAddr() );
 		order.setShopId( entity.getShopsEntity().getId() );
-		order.setStatus("CLIENT_CONFIRMED");
-		order.setSubtotal( new BigDecimal("600.00") );
-		order.setTotal( new BigDecimal("600.00"));		
-		order.setItems( createExpectedItems());
-		order.setTotalQuantity(14);
+		order.setStatus( status );
+		order.setSubtotal( price );
+		order.setTotal( price);		
+		order.setItems( createExpectedItems(price, quantity));
+		order.setTotalQuantity(quantity);
 		
 		return order;
 	}
@@ -741,13 +883,13 @@ public class OrderServiceTest {
 	
 	
 
-	private List<BasketItem> createExpectedItems() {
+	private List<BasketItem> createExpectedItems(BigDecimal price, Integer quantity) {
 		BasketItem item = new BasketItem();
 		item.setProductId(1001L);
 		item.setName("product_1");
 		item.setStockId( 601L );
-		item.setQuantity(14);
-		item.setTotalPrice( new BigDecimal("600.00") );
+		item.setQuantity(quantity);
+		item.setTotalPrice( price );
 		item.setThumb(EXPECTED_COVER_IMG_URL);
 		return Arrays.asList(item);
 	}
