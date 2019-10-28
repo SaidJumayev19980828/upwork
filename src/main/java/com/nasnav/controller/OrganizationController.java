@@ -60,6 +60,11 @@ public class OrganizationController {
         OrganizationResponse response = orgService.updateOrganizationData(userToken, json, file);
         return new ResponseEntity(response, response.getHttpStatus());
     }
+    
+    
+    
+    
+    
 
     @ApiOperation(value = "Get Organization brands data", nickname = "getBrands", code = 200)
     @ApiResponses(value = {
@@ -71,6 +76,11 @@ public class OrganizationController {
     public ResponseEntity getOrganizationBrands(@RequestParam(value = "org_id") Long orgId) {
         return new ResponseEntity(orgService.getOrganizationBrands(orgId), HttpStatus.OK);
     }
+    
+    
+    
+    
+    
 
     @ApiOperation(value = "add or update Organization brand", nickname = "BrandModification", code = 200)
     @ApiResponses(value = {
@@ -100,6 +110,10 @@ public class OrganizationController {
     }
 
 
+    
+    
+    
+    
     @ApiOperation(value = "get product features for organization", nickname = "GetOrgProductFeatures", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -111,6 +125,10 @@ public class OrganizationController {
     	return orgService.getProductFeatures(orgId);
     }
 
+    
+    
+    
+    
     
     @ApiOperation(value = "add/update product features for organization", nickname = "PostOrgProductFeatures", code = 200)
     @ApiResponses(value = {
@@ -124,6 +142,12 @@ public class OrganizationController {
     public ProductFeatureUpdateResponse updateProductFeature(@RequestBody ProductFeatureUpdateDTO featureDto) throws Exception {
     	return orgService.updateProductFeature(featureDto);
     }
+    
+    
+    
+    
+    
+    
 
     @ApiOperation(value = "add/update organization images", nickname = "PostOrgImg", code = 200)
     @ApiResponses(value = {

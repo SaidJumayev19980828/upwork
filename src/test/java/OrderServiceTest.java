@@ -635,8 +635,24 @@ public class OrderServiceTest {
 	
 	
 	
+	@Test
+	public void updateNewOrderWithTooHighQuantityToEmptyBasket() {
+		JSONObject request = createOrderUpdateRequestWithInvalidQuantity();
+		request.put("order_id", 33L);
+		
+		ResponseEntity<String> response = 
+				template.postForEntity("/order/update"
+									, TestCommons.getHttpEntity(request.toString(), "123")
+									, String.class);
+		
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+	}
+	
+	
+	
+	
 	private JSONObject createOrderUpdateRequestWithInvalidQuantity() {
-		Integer qunantity = Integer.MAX_VALUE;		
+		Integer qunantity = Integer.MAX_VALUE/100;		
 		return createOrderRequestWithBasketItems(OrderStatus.NEW, item(601L, qunantity));
 	}
 	
@@ -645,7 +661,7 @@ public class OrderServiceTest {
 	
 
 	private JSONObject createOrderUpdateRequestWithNonExistingStock() {
-		Long nonExistingId = Long.MAX_VALUE;		
+		Long nonExistingId = Long.MAX_VALUE/100;		
 		return createOrderRequestWithBasketItems(OrderStatus.NEW, item(nonExistingId, 333));
 	}
 	

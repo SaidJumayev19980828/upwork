@@ -71,6 +71,11 @@ public class OrdersController {
     	
     	return new ResponseEntity<>(response, response.getCode());
     }
+	
+	
+	
+	
+	
 
 	@ApiOperation(value = "Get list of orders", nickname = "orderList", code = 200)
 	@ApiResponses(value = {
@@ -79,12 +84,13 @@ public class OrdersController {
 			//@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
 	})
 	@GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public ResponseEntity<?> getOrdersList(@RequestHeader(name = "User-Token") String userToken,
-										   @RequestParam(name = "user_id", required = false) Long userId,  //search parameter
-										   @RequestParam(name = "store_id", required = false) Long storeId,
-										   @RequestParam(name = "org_id", required = false) Long orgId,
-										   @RequestParam(name = "status", required = false) String status) throws BusinessException {
-		List<DetailedOrderRepObject> response = this.orderService.getOrdersList(userToken, userId, storeId, orgId, status);
-		return new ResponseEntity<>(response, HttpStatus.OK);
+	public List<DetailedOrderRepObject> getOrdersList(
+											@RequestHeader(name = "User-Token") String userToken,
+											@RequestParam(name = "user_id", required = false) Long userId,  //search parameter
+											@RequestParam(name = "store_id", required = false) Long storeId,
+											@RequestParam(name = "org_id", required = false) Long orgId,
+											@RequestParam(name = "status", required = false) String status) throws BusinessException {
+		
+		return  this.orderService.getOrdersList(userToken, userId, storeId, orgId, status);
 	}
 }

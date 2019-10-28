@@ -149,7 +149,7 @@ public class OrderServiceImpl implements OrderService {
 			throwInvalidOrderException(ERR_INVALID_ORDER_STATUS);
 		}
 		
-		if(!Objects.equals(order.getStatus(), OrderStatus.NEW.toString() )
+		if(!isNewOrder(order)
 				&& isNullOrZero(order.getId()) ) {
 			throwInvalidOrderException(ERR_UPDATED_ORDER_WITH_NO_ID);
 		}
@@ -170,9 +170,17 @@ public class OrderServiceImpl implements OrderService {
 		
 		List<BasketItemDTO> basket = order.getBasket();
 		
-		if(basket!= null && isNewOrderToBeCreated(order) ){
+		if(basket!= null &&  isNewOrder(order)){
 			validateBasketItems(order);			
 		}		
+	}
+
+
+
+
+
+	private boolean isNewOrder(OrderJsonDto order) {
+		return Objects.equals(order.getStatus(), OrderStatus.NEW.toString() );
 	}
 	
 	
@@ -271,7 +279,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	private boolean isNewOrderToBeCreated(OrderJsonDto orderJson) {
-		return Objects.equals(orderJson.getStatus(), OrderStatus.NEW.toString() )
+		return isNewOrder(orderJson)
 					&& isNullOrZero(orderJson.getId());
 	}
 	
