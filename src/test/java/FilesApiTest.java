@@ -207,7 +207,7 @@ public class FilesApiTest {
 		String fileName = TEST_PHOTO;
 		Long orgId = null;
 		
-		String sanitizedFileName = StringUtils.getFileNameSanitized(fileName);		
+		String sanitizedFileName = StringUtils.getFileNameSanitized(fileName);
 		String expectedUrl =  sanitizedFileName;
 		Path expectedPath = Paths.get(sanitizedFileName);
 		

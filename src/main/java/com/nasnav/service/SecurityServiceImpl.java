@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.nasnav.persistence.OrganizationEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -30,7 +31,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.EntityUtils;
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;

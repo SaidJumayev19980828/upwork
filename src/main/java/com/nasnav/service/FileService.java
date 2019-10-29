@@ -30,86 +30,75 @@ import com.nasnav.service.model.FileUrlResource;
 
 @Service
 public class FileService {
-	
+
 	private static Logger logger = Logger.getLogger(FileService.class);
-	
+
 	@Value("${files.basepath}")
 	private String basePathStr;
-	
+
 	private Path basePath;
-	
-	@Autowired
-	private OrganizationRepository orgRepo;
-	
-	
-	@Autowired
-	private FilesRepository filesRepo;
 
 	@Autowired
-	private SecurityService securityService;
+	private OrganizationRepository orgRepo;
+
+
+	@Autowired
+	private FilesRepository filesRepo;
 
 	@PostConstruct
 	public void setupFileLocation() throws BusinessException {
 		this.basePath = Paths.get(basePathStr);
-		
+
 		if(!Files.exists(basePath) ) {
 			try {
-	            Files.createDirectories(basePath);
-	        } catch (Exception ex) {
-	            throw new BusinessException("Could not create the Base directory for storing files!", "", HttpStatus.INTERNAL_SERVER_ERROR);
-	        }
+				Files.createDirectories(basePath);
+			} catch (Exception ex) {
+				throw new BusinessException("Could not create the Base directory for storing files!", "", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
 		}
 	}
-	
-	
-	
-	
-	public String saveFile(MultipartFile file, Long organizationId) throws BusinessException {
-		Long orgId;
-		if (organizationId == null)
-			orgId = securityService.getCurrentUserOrganization();
-		else
-			orgId = organizationId;
+
+
+
+
+	public String saveFile(MultipartFile file, Long orgId) throws BusinessException {
 
 		if(orgId != null && !orgRepo.existsById(orgId)) {
-			throw new BusinessException("No Organization exists with id: " + orgId, "INVALID PARAM:org_id", HttpStatus.NOT_ACCEPTABLE);									
+			throw new BusinessException("No Organization exists with id: " + orgId, "INVALID PARAM:org_id", HttpStatus.NOT_ACCEPTABLE);
 		}
-
-
-
 		if(StringUtils.isBlankOrNull(file.getOriginalFilename()) ) {
 			throw new BusinessException("No file name provided!", "INVALID PARAM:file", HttpStatus.NOT_ACCEPTABLE);
 		}
-		
-		String origName = file.getOriginalFilename();	
+
+		String origName = file.getOriginalFilename();
 		String uniqeFileName = getUniqueName(origName, orgId );
 		String url = getUrl(uniqeFileName, orgId);
-		Path location = getRelativeLocation(uniqeFileName, orgId); 		
+		Path location = getRelativeLocation(uniqeFileName, orgId);
 
 		saveFile(file, uniqeFileName, orgId );
-		
+
 		if(Files.exists(basePath.resolve(location) )) {
 			saveToDatabase(origName, location , url, orgId);
-		}	
-		
+		}
+
 		return url;
 	}
 
 
 
 
-	private void saveToDatabase(String origName, Path location, String url, Long orgId) throws BusinessException {		
-		
+	private void saveToDatabase(String origName, Path location, String url, Long orgId) throws BusinessException {
+
 		OrganizationEntity org = orgRepo.findOneById(orgId);
 		String mimeType = getMimeType(basePath.resolve(location));
-		
+
 		FileEntity fileEntity = new FileEntity();
 		fileEntity.setLocation( location.toString().replace("\\", "/") );
 		fileEntity.setOriginalFileName(origName);
 		fileEntity.setUrl(url);
 		fileEntity.setMimetype(mimeType);
 		fileEntity.setOrganization(org);
-		
+
 		fileEntity = filesRepo.save(fileEntity);
 	}
 
@@ -118,7 +107,7 @@ public class FileService {
 
 	private String getMimeType(Path file) throws BusinessException {
 		String mimeType = MediaType.OCTET_STREAM.toString();
-		
+
 		Tika tika = new Tika();
 		try {
 			mimeType = tika.detect(file);
@@ -126,7 +115,7 @@ public class FileService {
 			logger.error(e,e);
 			throw new BusinessException("Failed to parse MIME type for the file: "+ file, "INTERNAL ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		
+
 		return mimeType;
 	}
 
@@ -135,42 +124,42 @@ public class FileService {
 
 	private Path getSaveDir(Long orgId) {
 		Path saveDir = Optional.ofNullable(orgId)
-							.map(id -> id.toString())
-							.map(basePath::resolve)
-							.orElse(basePath);
+				.map(id -> id.toString())
+				.map(basePath::resolve)
+				.orElse(basePath);
 		return saveDir;
 	}
 
 
 
 
-	private String getUniqueName(String origName, Long orgId) {		
+	private String getUniqueName(String origName, Long orgId) {
 		Optional<String> opt = Optional.of(origName)
-										.map(this::sanitize) 
-										.filter(name -> notUniqueFileName(name, orgId))					
-										.map(this::getUniqueRandomName);
+				.map(this::sanitize)
+				.filter(name -> notUniqueFileName(name, orgId))
+				.map(this::getUniqueRandomName);
 		if (opt.isPresent()) {
 			return opt.get();
 		}
 		return Optional.of(origName)
-							.map(this::sanitize) 
-							.get();
+				.map(this::sanitize)
+				.get();
 	}
 
 
-	
-	private String sanitize(String name) {	
+
+	private String sanitize(String name) {
 		return StringUtils.getFileNameSanitized(name);
 	}
 
 
 	private boolean notUniqueFileName(String origName, Long orgId) {
-		String url = getUrl(origName, orgId);		
-		Path location = getRelativeLocation(origName, orgId);		
-		
-		return  filesRepo.existsByUrl(url) 
-					|| filesRepo.existsByLocation(location.toString())
-					|| Files.exists(location) ;
+		String url = getUrl(origName, orgId);
+		Path location = getRelativeLocation(origName, orgId);
+
+		return  filesRepo.existsByUrl(url)
+				|| filesRepo.existsByLocation(location.toString())
+				|| Files.exists(location) ;
 	}
 
 
@@ -178,7 +167,7 @@ public class FileService {
 
 	private Path getRelativeLocation(String origName, Long orgId) {
 		return basePath.relativize( getSaveDir(orgId) )
-						.resolve(origName);
+				.resolve(origName);
 	}
 
 
@@ -186,8 +175,8 @@ public class FileService {
 
 	private String getUrl(String origName, Long orgId) {
 		String url = Optional.ofNullable(orgId)
-								.map(id -> String.format("%d/%s", id, origName))
-								.orElse(origName);
+				.map(id -> String.format("%d/%s", id, origName))
+				.orElse(origName);
 		return url;
 	}
 
@@ -207,7 +196,7 @@ public class FileService {
 	private void saveFile(MultipartFile file, String uniqeFileName, Long orgId) throws BusinessException {
 		Path saveDir = getSaveDir(orgId);
 		createDirIfNotExists(saveDir);
-		Path targetLocation = saveDir.resolve(uniqeFileName);		
+		Path targetLocation = saveDir.resolve(uniqeFileName);
 		try {
 			file.transferTo(targetLocation);
 		} catch (IOException e) {
@@ -223,7 +212,7 @@ public class FileService {
 		if(!Files.exists(saveDir)) {
 			try {
 				Files.createDirectories(saveDir);
-			} catch (IOException e) {				
+			} catch (IOException e) {
 				logger.error(e,e);
 				throw new BusinessException("Failed to create directory at location : " + saveDir, "FAILED TO CREATE DIRECTORY", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
@@ -234,20 +223,20 @@ public class FileService {
 
 
 	public FileUrlResource getFileAsResource(String url) throws BusinessException {
-				
+
 		String modUrl = reformUrl(url);
 		FileEntity fileInfo = filesRepo.findByUrl(modUrl);
-		
+
 		if(fileInfo == null) {
 			throw new BusinessException("No file exists with url: " + url, "INVALID PARAM:url", HttpStatus.NOT_ACCEPTABLE);
 		}
-		
+
 		Path location = basePath.resolve(fileInfo.getLocation());
-		
+
 		if(!Files.exists(location)){
 			throw new BusinessException("No file exists with url: " + url, "INVALID PARAM:url", HttpStatus.NOT_ACCEPTABLE);
 		}
-		
+
 		FileUrlResource resource = null;
 		try {
 			resource =  new FileUrlResource(location.toUri(), fileInfo.getMimetype(), fileInfo.getOriginalFileName());
@@ -255,7 +244,7 @@ public class FileService {
 			logger.error(e,e);
 			throw new BusinessException("Failed to download file with url: " + url, "INTERNAL_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-			
+
 		return resource;
 	}
 
@@ -264,26 +253,26 @@ public class FileService {
 
 	private String reformUrl(String url) throws BusinessException {
 		return Optional.ofNullable(url)
-							.filter(u -> u.length()> 2)
-							.filter(u -> u.startsWith("/"))
-							.map(u -> u.substring(1))
-						.orElseThrow(() -> new BusinessException("Invalid URL : " + url, "INVALID PARAM:url", HttpStatus.NOT_ACCEPTABLE));
+				.filter(u -> u.length()> 2)
+				.filter(u -> u.startsWith("/"))
+				.map(u -> u.substring(1))
+				.orElseThrow(() -> new BusinessException("Invalid URL : " + url, "INVALID PARAM:url", HttpStatus.NOT_ACCEPTABLE));
 	}
 
 
 
 
-	public void deleteFileByUrl(String url) throws BusinessException{	
+	public void deleteFileByUrl(String url) throws BusinessException{
 		FileEntity file = filesRepo.findByUrl(url);
-		
+
 		if(file == null) 	//if file doesn't exist in database, then job's done!
 			return;
-		
+
 		Path path = basePath.resolve(file.getLocation());
-		
-		try {			
+
+		try {
 			filesRepo.delete(file);
-			
+
 			Files.deleteIfExists(path);
 		} catch (IOException e) {
 			logger.error(e,e);

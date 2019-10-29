@@ -140,4 +140,17 @@ public class DirtyDashboardController {
 		return new ModelAndView("upload_product_image_csv_form", model);
 	}
 
+	@GetMapping("file_upload")
+	public ModelAndView fileUploadPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+		BaseUserEntity user = securityService.getCurrentUser();
+		Boolean isNasnavAdmin = securityService.userHasRole(user, Roles.NASNAV_ADMIN);
+		Boolean isOrgAdmin = securityService.userHasRole(user, Roles.ORGANIZATION_ADMIN);
+		Long organization_id = securityService.getCurrentUserOrganizationId();
+
+		model.addAttribute("isNasnavAdmin", isNasnavAdmin);
+		model.addAttribute("isOrgAdmin", isOrgAdmin);
+		model.addAttribute("organization_id", organization_id);
+		model.addAttribute("token", token);
+		return new ModelAndView("file_upload", model);
+	}
 }
