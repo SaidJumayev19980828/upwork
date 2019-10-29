@@ -609,7 +609,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	private List<ProductImageUpdateDTO> createImportedImagesMetaData(ZipEntry zipEntry,Map<String,String> fileBarcodeMap, ProductImageBulkUpdateDTO metaData) throws BusinessException{
 		
 		String barcode = getBarcodeOfImportedImg(zipEntry, fileBarcodeMap);		
-		Long orgId = securityService.getCurrentUserOrganization();
+		Long orgId = securityService.getCurrentUserOrganizationId();
 		
 		
 		ProductImageUpdateDTO productMetaData = 

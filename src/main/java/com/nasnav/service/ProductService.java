@@ -42,6 +42,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
 import com.nasnav.commons.enums.SortOrder;
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.BasketRepository;
@@ -72,7 +73,6 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.BundleEntity;
-import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductImagesEntity;
@@ -1252,11 +1252,10 @@ public class ProductService {
 
 
 
-
 	private void validateUpdatedProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
 		if(!imgMetaData.areRequiredForUpdatePropertiesProvided()) {
 			throw new BusinessException(
-					String.format("Missing required parameters! required parameters for updating existing image are: %s", imgMetaData.getRequiredPropertiesForDataUpdate())
+					String.format("Missing required parameters! required parameters for updating existing image are: %s", imgMetaData.getRequiredPropertyNamesForDataUpdate())
 					, "MISSING PARAM"
 					, HttpStatus.NOT_ACCEPTABLE);
 		}

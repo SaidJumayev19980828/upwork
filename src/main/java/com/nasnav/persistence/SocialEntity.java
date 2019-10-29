@@ -16,11 +16,14 @@ public class SocialEntity implements BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
     private String facebook;
     private String twitter;
     private String instagram;
+    
     @Column(name = "created_at")
     private Date createdAt;
+    
     @Column(name = "updated_at")
     private Date updatedAt;
 

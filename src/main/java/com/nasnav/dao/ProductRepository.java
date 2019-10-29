@@ -96,6 +96,7 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     List<Long> getProductsByCategoryId(@Param("categoryId") Long categoryId);
 	
 	Optional<ProductEntity> findByBarcodeAndOrganizationId(String barcode, Long orgId);
+	Optional<ProductEntity> findByName(String name);
 }
 
 

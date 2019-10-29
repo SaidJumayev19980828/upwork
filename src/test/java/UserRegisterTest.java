@@ -3,6 +3,7 @@ import java.util.Date;
 
 import javax.annotation.PreDestroy;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -417,6 +418,29 @@ public class UserRegisterTest {
 		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
+	
+	
+	
+	@Test
+	public void testUserShouldLoginUppercaseEmail() {
+		//try to get new password to use it for login
+		String newPassword = "New_Password"; 
+		
+		resetUserPassword(newPassword);
+
+		// login using the new password and email with different character case
+		String email = StringUtils.swapCase(persistentUser.getEmail());
+		HttpEntity<Object> userJson = getHttpEntity(
+				"{\"password\":\"" + newPassword + "\", \"email\":\"" + email + "\", \"org_id\": " +  organization.getId() + " }");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
+				UserApiResponse.class);
+
+		Assert.assertTrue(response.getBody().isSuccess());
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+	
+	
+	
 
 	@Test
 	public void testInvalidCredentialsLogin() {

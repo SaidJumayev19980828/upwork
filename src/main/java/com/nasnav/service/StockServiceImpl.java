@@ -1,6 +1,6 @@
 package com.nasnav.service;
 
-import static com.nasnav.persistence.EntityUtils.anyIsNull;
+import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

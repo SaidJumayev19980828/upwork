@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import com.google.common.base.Enums;
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
@@ -50,7 +51,8 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		List<String> rolesList = Arrays.asList(employeeUserJson.role.split(","));
 		helper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.orgId, rolesList);
 		// get current logged in user
-		EmployeeUserEntity currentUser = securityService.getCurrentUser();
+		EmployeeUserEntity currentUser = getCurrentUser();
+		
 		// check if email and organization id already exists
 		if (employeeUserRepository.getByEmailAndOrganizationId(employeeUserJson.email, employeeUserJson.orgId) == null) {
 			int userType = helper.roleCanCreateUser(currentUser.getId());
@@ -91,6 +93,18 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 				HttpStatus.NOT_ACCEPTABLE);
 	}
 
+	private EmployeeUserEntity getCurrentUser() {
+		BaseUserEntity baseCurrentUser = securityService.getCurrentUser();
+		
+		if(!(baseCurrentUser instanceof EmployeeUserEntity)) {
+			throw new EntityValidationException("Insufficient Rights ",
+					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
+		}
+		
+		EmployeeUserEntity currentUser = (EmployeeUserEntity)baseCurrentUser;
+		return currentUser;
+	}
+
 	@Override
 	public UserApiResponse updateEmployeeUser(Long userId, String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
 		EmployeeUserEntity updateUser,currentUser;
@@ -100,7 +114,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 			throw new EntityValidationException(""+ResponseStatus.INSUFFICIENT_RIGHTS,
 					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
 		}
-		currentUser = securityService.getCurrentUser();
+		currentUser = getCurrentUser();
 		if (StringUtils.isBlankOrNull(employeeUserJson.getUpdatedUserId())) {// check if same user doing the update
 			updateUser = employeeUserRepository.getById(userId);
 		} else {

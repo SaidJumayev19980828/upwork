@@ -4,6 +4,8 @@ import java.util.List;
 
 import javax.validation.Valid;
 
+import com.nasnav.dto.*;
+import com.nasnav.response.ProductImageUpdateResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -20,10 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dto.BrandDTO;
-import com.nasnav.dto.OrganizationDTO;
-import com.nasnav.dto.ProductFeatureDTO;
-import com.nasnav.dto.ProductFeatureUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
@@ -54,10 +52,9 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
-    public ResponseEntity updateOrganizationData(@RequestHeader(value = "User-ID") Long userId,
-                                         @RequestHeader (value = "User-Token") String userToken,
-                                         @RequestPart String jsonString,
-                                         @RequestPart(value = "logo", required = false) @Valid MultipartFile file) throws Exception {
+    public ResponseEntity updateOrganizationData(@RequestHeader (value = "User-Token") String userToken,
+                                                 @RequestPart String jsonString,
+                                                 @RequestPart(value = "logo", required = false) @Valid MultipartFile file) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         OrganizationDTO.OrganizationModificationDTO json = mapper.readValue(jsonString, OrganizationDTO.OrganizationModificationDTO.class);
         OrganizationResponse response = orgService.updateOrganizationData(userToken, json, file);
@@ -75,6 +72,11 @@ public class OrganizationController {
         return new ResponseEntity(orgService.getOrganizationBrands(orgId), HttpStatus.OK);
     }
 
+
+
+
+
+
     @ApiOperation(value = "add or update Organization brand", nickname = "BrandModification", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -82,9 +84,8 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "brand", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
-    public ResponseEntity updateOrganizationData(@RequestHeader(value = "User-ID") Long userId,
-                                                 @RequestHeader (value = "User-Token") String userToken,
-                                                 @RequestPart ("properties") String jsonString,
+    public ResponseEntity updateOrganizationData(@RequestHeader (value = "User-Token") String userToken,
+                                                 @RequestPart String jsonString,
                                                  @RequestPart(value = "logo", required = false) @Valid MultipartFile logo,
                                                  @RequestPart(value = "banner", required = false) @Valid MultipartFile banner) throws Exception {
         ObjectMapper mapper = new ObjectMapper();

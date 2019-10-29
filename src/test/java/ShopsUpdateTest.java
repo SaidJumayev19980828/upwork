@@ -1,17 +1,18 @@
 
-import com.nasnav.AppConfig;
-import com.nasnav.NavBox;
-import com.nasnav.controller.ShopsController;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.response.ShopResponse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
+
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.skyscreamer.jsonassert.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,33 +22,25 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
+import com.nasnav.NavBox;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.persistence.ShopsEntity;
 
+import net.jcip.annotations.NotThreadSafe;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
+@NotThreadSafe
 public class ShopsUpdateTest {
 
     @Autowired
     private TestRestTemplate template;
-
-    @Mock
-    private ShopsController shopsController;
-
-    @Autowired
-    private AppConfig config;
-
+    
     @Autowired
     private ShopsRepository shopsRepository;
 
@@ -62,8 +55,6 @@ public class ShopsUpdateTest {
 
     @Before
     public void setup() {
-        config.mailDryRun = true;
-        MockMvcBuilders.standaloneSetup(shopsController).build();
         PerformSqlScript(userDataInsert);
     }
 
@@ -85,7 +76,7 @@ public class ShopsUpdateTest {
     public void testCreateShopDifferentRoles(){
         // create shop using Org_Mananger role (test success)
         String body = "{\"org_id\":99001,\"shop_name\":\"Test_shop\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,70,"161718");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         shopsRepository.deleteById(jsonResponse.getLong("store_id"));
@@ -94,7 +85,7 @@ public class ShopsUpdateTest {
         Assert.assertEquals(200, response.getStatusCode().value());
 
         // create shop using Store_Mananger role (test fail)
-        json = TestCommons.getHttpEntity(body,71,"192021");
+        json = TestCommons.getHttpEntity(body,"192021");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
@@ -102,7 +93,7 @@ public class ShopsUpdateTest {
         Assert.assertEquals(403, response.getStatusCode().value());
 
         // create shop using Nasnav_Admin role (test fail)
-        json = TestCommons.getHttpEntity(body,68,"101112");
+        json = TestCommons.getHttpEntity(body,"101112");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
@@ -110,24 +101,32 @@ public class ShopsUpdateTest {
         Assert.assertEquals(403, response.getStatusCode().value());
 
         // create shop using Org_Admin role (test fail)
-        json = TestCommons.getHttpEntity(body,69,"131415");
+        json = TestCommons.getHttpEntity(body,"131415");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
         Assert.assertEquals("", false, jsonResponse.getBoolean("success"));
         Assert.assertEquals(403, response.getStatusCode().value());
     }
+    
+    
+    
+    
 
     @Test
     public void testCreateShopDifferentOrganization(){
-        String body = "{\"org_id\":802,\"shop_name\":\"Test_shop\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,70,"161718");
+        String body = "{\"org_id\":99002,\"shop_name\":\"Test_shop\"}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
-        Assert.assertEquals("", false, jsonResponse.getBoolean("success"));
+        Assert.assertEquals( false, jsonResponse.getBoolean("success"));
         Assert.assertEquals(403, response.getStatusCode().value());
     }
+    
+    
+    
+    
 
     @Test
     public void testCreateShopDifferentData(){
@@ -144,15 +143,28 @@ public class ShopsUpdateTest {
                 "  \"mall_id\": 901,\n" +
                 "  \"photo\": \"/photos/photo_512.jpg\",\n" +
                 "  \"shop_name\": \"Eventure For Shipping\"\n" + "}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,70,"161718");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
-        shopsRepository.deleteById(jsonResponse.getLong("store_id"));
+        
+        assertEquals("", true, jsonResponse.getBoolean("success"));
+        assertEquals(200, response.getStatusCode().value());
+        
+        Long id = jsonResponse.getLong("store_id");
+        ShopsEntity saved = shopsRepository.findById(id).get();
+        
+        assertNotNull(saved.getOrganizationEntity());
+        assertEquals(99001L, saved.getOrganizationEntity().getId().longValue());
 
-        Assert.assertEquals("", true, jsonResponse.getBoolean("success"));
-        Assert.assertEquals(200, response.getStatusCode().value());
+        
+        
+        shopsRepository.deleteById(id);
     }
 
+    
+    
+    
+    
     @Test
     public void testUpdateShopDifferentData(){
         //create a shop first
@@ -169,7 +181,7 @@ public class ShopsUpdateTest {
                 "  \"mall_id\": 901,\n" +
                 "  \"photo\": \"/photos/photo_512.jpg\",\n" +
                 "  \"shop_name\": \"Eventure For Shipping\"\n" + "}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,70,"161718");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         
@@ -181,7 +193,7 @@ public class ShopsUpdateTest {
                 "\"id\":" + oldShop.getId() +",\n" +
                 "  \"brand_id\": 102,\n" +
                 "  \"shop_name\": \"Different Shop\"\n" + "}";
-        json = TestCommons.getHttpEntity(body,70,"161718");
+        json = TestCommons.getHttpEntity(body,"161718");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         ShopsEntity newShop = shopsRepository.findById(jsonResponse.getLong("store_id")).get();

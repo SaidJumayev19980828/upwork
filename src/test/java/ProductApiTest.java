@@ -18,6 +18,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -59,7 +60,12 @@ public class ProductApiTest {
 	
 	
 	@Autowired
-	private ProductImagesRepository imgRepo;;
+	private ProductImagesRepository imgRepo;
+	
+	
+	@Autowired
+	private JdbcTemplate jdbc;
+	
 	
 	@Test
 	public void createProductUserWithNoRightsTest() throws JsonProcessingException {
@@ -67,7 +73,7 @@ public class ProductApiTest {
 		
 		JSONObject productJson = createNewDummyProduct();		
 		
-		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/info"
@@ -128,7 +134,7 @@ public class ProductApiTest {
 		product.put("name","updated product");
 		product.put("brand_id", JSONObject.NULL);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(product.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(product.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<ProductUpdateResponse> response = 
 				template.exchange("/product/info"
@@ -161,7 +167,7 @@ public class ProductApiTest {
 	private ResponseEntity<ProductUpdateResponse> postProductData(BaseUserEntity user, JSONObject productJson)
 			throws JsonProcessingException {
 		
-		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<ProductUpdateResponse> response = 
 				template.exchange("/product/info"
@@ -398,7 +404,7 @@ public class ProductApiTest {
 	private ResponseEntity<String> postInvalidProductData(BaseUserEntity user, JSONObject productJson)
 			throws JsonProcessingException {				
 		
-		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/info"
@@ -482,7 +488,7 @@ public class ProductApiTest {
 		
 		assertTrue(productRepository.existsById(productId)); //assert product exists before delete
 		
-		HttpEntity request =  TestCommons.getHttpEntity("" , 4444, "InvalidToken");
+		HttpEntity request =  TestCommons.getHttpEntity("" ,"InvalidToken");
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product?product_id=" + productId
@@ -533,7 +539,7 @@ public class ProductApiTest {
 
 
 	private ResponseEntity<String> deleteProduct(BaseUserEntity user, Long productId) {
-		HttpEntity request =  TestCommons.getHttpEntity("" , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product?product_id=" + productId
@@ -541,6 +547,37 @@ public class ProductApiTest {
 						, request
 						, String.class);
 		return response;
+	}
+	
+	
+	
+	
+	
+	//tests that hibernate is actually using GenerationType.IDENTITY strategy for generating product 
+	//id's. But the test recreates HIBERNATE_SEQUENCE and set its start value to 1.
+	//so, if we later used HIBERNATE_SEQUENCE, it can be dangerous if it ran by accident on 
+	//the production database.
+	//The SQL script for re-creating HIBERNATE_SEQUENCE will be commented as well.
+	
+	//@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void testIdGeneration() {
+		
+		Long maxProductId = jdbc.queryForObject("select max(id) from public.products", Long.class); 
+		
+		ProductEntity newProduct = new ProductEntity();
+		newProduct.setName("new Product");
+		newProduct.setBrandId(101L);
+		newProduct.setOrganizationId(99001L);
+		newProduct.setCategoryId(201L);
+		
+		newProduct = productRepository.save(newProduct);
+		
+		assertTrue("24 products were inserted directly into the database, with their id's assigned from a sequence."
+				+ "Hibernate sequence was set to 1, so if hibernate uses it instead and generated the id, it will be "
+				+ "less than max PRODUCTS.ID "
+				, newProduct.getId() > maxProductId);
 	}
 
 }

@@ -22,7 +22,18 @@ public class NavBox
         Properties databaseProperties = PropertiesLoaderUtils.loadProperties(database);
         databaseProperties.forEach((key, value) -> System.setProperty((String)key, (String)value));
 
-        SpringApplication.run(NavBox.class, args);
+        
+        //---------------------------------------------------------------
+        //set multipart properties here until we can modify application.properties on the server
+        Properties properties = new Properties();
+        properties.put("spring.servlet.multipart.max-file-size", -1);
+        properties.put("spring.servlet.multipart.max-request-size", -1);
+        
+        SpringApplication application = new SpringApplication(NavBox.class);
+        application.setDefaultProperties(properties);
+        application.run(args);
+        //---------------------------------------------------------------
+//        SpringApplication.run(NavBox.class, args);
     }
 }
 

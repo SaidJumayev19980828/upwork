@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.OrganizationEntity;
 
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -26,10 +27,11 @@ public interface SecurityService {
     UserApiResponse login(UserDTOs.UserLoginObject body) throws BusinessException;
     
     
-    EmployeeUserEntity getCurrentUser();
+    BaseUserEntity getCurrentUser();
     
-    Long getCurrentUserOrganization();
-    
+    Long getCurrentUserOrganizationId();
+    OrganizationEntity getCurrentUserOrganization();
+
     Boolean userHasRole(BaseUserEntity user, Roles role);
     Boolean currentUserHasRole(Roles role);
 }

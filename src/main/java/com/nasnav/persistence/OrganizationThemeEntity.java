@@ -17,32 +17,46 @@ public class OrganizationThemeEntity implements BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
     @Column(name = "first_color")
     private String firstColor;
+    
     @Column(name = "second_color")
     private String secondColor;
+    
     @Column(name = "first_section")
     private Boolean firstSection;
+    
     @Column(name = "first_section_product")
     private Integer firstSectionProduct;
+    
     @Column(name = "first_section_image")
     private String firstSectionImage;
+    
     private String logo;
+    
     @Column(name = "second_section")
     private Boolean secondSection;
+    
     @Column(name = "second_section_product")
     private Integer secondSectionProduct;
+    
     @Column(name = "second_section_image")
     private String secondSectionImage;
+    
     @Column(name = "slider_body")
     private Boolean sliderBody;
+    
     @Column(name = "slider_header")
     private String sliderHeader;
+    
     @Column(name = "slider_images")
     @Type(type = "com.nasnav.persistence.GenericArrayType")
     private String[] sliderImages;
+    
     @Column(name = "created_at")
     private Date createdAt;
+    
     @Column(name = "updated_at")
     private Date updatedAt;
 

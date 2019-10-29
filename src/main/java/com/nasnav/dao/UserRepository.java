@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.Role;
 import com.nasnav.persistence.UserEntity;
@@ -31,6 +32,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	 * @return UserEntity
 	 */
 	UserEntity getByEmailAndOrganizationId(String email, Long orgId);
+
+	UserEntity getByEmail(String email);
 
 	/**
 	 * Check if the passed resetPasswordToken already exist before or not.
@@ -73,4 +76,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	
 	
 	Optional<UserEntity> findByAuthenticationToken(String authToken);
+
+	UserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
+
+	UserEntity getByEmailIgnoreCase(String email);
 }

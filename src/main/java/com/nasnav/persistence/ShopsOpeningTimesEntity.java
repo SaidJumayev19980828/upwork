@@ -28,10 +28,13 @@ public class ShopsOpeningTimesEntity {
 	
 	@Column(name = "day_of_week")
 	private Integer dayOfWeek;
+	
 	private Timestamp opens;
 	private Timestamp closes;
+	
 	@Column(name="valid_from")
 	private Date validFrom; 
+	
 	@Column(name="valid_through")
 	private Date validThrough;
 

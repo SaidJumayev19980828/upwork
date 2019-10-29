@@ -11,7 +11,6 @@ import java.util.Optional;
 @Service
 public class BrandService {
 
-
     private final BrandsRepository brandsRepository;
 
     @Autowired

@@ -18,10 +18,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.CommonUserRepository;
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dto.UserDTOs.UserLoginObject;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.BusinessException;
@@ -48,6 +50,10 @@ public class SecurityServiceImpl implements SecurityService {
 	private EmployeeUserRepository empRepo;
 	
 	
+	@Autowired
+	private OrganizationRepository orgRepo;
+
+
 	@Override
 	public Optional<UserDetails> findUserByAuthToken(String token){
 		return Optional.ofNullable(token)
@@ -87,9 +93,7 @@ public class SecurityServiceImpl implements SecurityService {
 			throwInvalidCredentialsException();
 		}
 		
-		
-		BaseUserEntity userEntity = userRepo.getByEmailAndOrganizationId(loginData.email, loginData.orgId);
-		
+		BaseUserEntity userEntity = userRepo.getByEmailIgnoreCaseAndOrganizationId(loginData.email, loginData.orgId);
 		
 		if(userEntity == null) {
 			throwInvalidCredentialsException();
@@ -203,13 +207,11 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	@Override
-	public EmployeeUserEntity getCurrentUser() {
-		String x = SecurityContextHolder.getContext().getAuthentication().getName();
-		String y = x.toString().toLowerCase();
+	public BaseUserEntity getCurrentUser() {
 		return Optional.ofNullable( SecurityContextHolder.getContext() )
 						.map(c -> c.getAuthentication())
 						.map(Authentication::getName)
-						.map(empRepo::getOneByEmailIgnoreCase)
+						.map(userRepo::getByEmailIgnoreCase)
 						.orElseThrow(()-> new IllegalStateException("Could not retrieve current user!"));
 	}
 
@@ -218,9 +220,21 @@ public class SecurityServiceImpl implements SecurityService {
 	
 
 	@Override
-	public Long getCurrentUserOrganization() {
+	public Long getCurrentUserOrganizationId() {
 		return Optional.ofNullable( getCurrentUser() )
-						.map(EmployeeUserEntity::getOrganizationId)
+						.map(BaseUserEntity::getOrganizationId)
+						.orElseThrow(() -> new IllegalStateException("Current User has no organization!"));
+	}
+
+
+
+
+
+	@Override
+	public OrganizationEntity getCurrentUserOrganization() {
+		return Optional.ofNullable( getCurrentUser() )
+						.map(BaseUserEntity::getOrganizationId)
+						.flatMap(orgRepo::findById)
 						.orElseThrow(() -> new IllegalStateException("Current User has no organization!"));
 	}
 
@@ -236,11 +250,11 @@ public class SecurityServiceImpl implements SecurityService {
 					.filter(Objects::nonNull)
 					.anyMatch(auth -> Objects.equals( auth, role.getValue()));
 	}
-	
-	
-	
-	
-	
+
+
+
+
+
 	@Override
 	public Boolean currentUserHasRole(Roles role) {
 		BaseUserEntity user = getCurrentUser();

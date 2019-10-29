@@ -2,21 +2,24 @@ package com.nasnav.persistence;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Type;
-import org.springframework.data.jpa.domain.AbstractPersistable;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
@@ -31,9 +34,10 @@ import lombok.EqualsAndHashCode;
 @Table(name="orders")
 @Data
 @EqualsAndHashCode(callSuper=false)
-public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntity{
+public class OrdersEntity implements BaseEntity{
 
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id", unique = true, nullable = false)
 	private Long id;
 
@@ -63,9 +67,11 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	}
 
 	@Column(name = "created_at", nullable = false, length = 29)
+	@CreationTimestamp
 	private LocalDateTime creationDate;
 
 	@Column(name = "updated_at", nullable = false, length = 29)
+	@UpdateTimestamp
 	private LocalDateTime updateDate;
 
 	@Column(name = "date_delivery", nullable = false, length = 29)
@@ -80,11 +86,6 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	private BigDecimal amount;
 
 
-//	private Integer currency;
-
-
-//	@Column(name ="shop_id")
-//	private Long shopId;
 	//TODO decide between relational or not
 	//@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -97,8 +98,7 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	@JoinColumn(name = "organization_id", nullable = false)
 	private OrganizationEntity organizationEntity;
 
-    //@OneToOne(mappedBy = "OrdersEntity", fetch = FetchType.LAZY)
-	@OneToMany(mappedBy = "ordersEntity")
+	@OneToMany(mappedBy = "ordersEntity", cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
     private Set<BasketsEntity> basketsEntity;
 
 	@Override
@@ -118,5 +118,22 @@ public class OrdersEntity extends AbstractPersistable<Long> implements BaseEntit
 	public OrdersEntity() {
 		this.paymentStatus = PaymentStatus.UNPAID.getValue();
 		this.creationDate = LocalDateTime.now();
+		basketsEntity = new HashSet<>();
+	}
+	
+	
+	
+	
+	
+	public void addBasketItem(BasketsEntity item) {
+		item.setOrdersEntity(this);
+		basketsEntity.add(item);
+	}
+
+	
+	
+	public void removeBasketItem(BasketsEntity item) {
+		item.setOrdersEntity(null);
+		basketsEntity.remove(item);
 	}
 }

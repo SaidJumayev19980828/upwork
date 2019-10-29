@@ -2,6 +2,7 @@ package com.nasnav.persistence;
 // Generated Mar 24, 2019 2:51:31 PM by Hibernate Tools 5.1.10.Final
 
 import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -16,6 +17,8 @@ import javax.persistence.TemporalType;
 @Table(name = "roles", schema = "public")
 public class Roles implements java.io.Serializable {
 
+	private static final long serialVersionUID = 154487859L;
+	
 	private int id;
 	private String name;
 	private Date createdAt;

@@ -12,12 +12,9 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
@@ -31,7 +28,7 @@ import lombok.ToString;
 @Entity
 @Data
 @EqualsAndHashCode(callSuper=false)
-public class StocksEntity extends AbstractPersistable<Long> implements BaseEntity{
+public class StocksEntity {
 
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -82,16 +79,11 @@ public class StocksEntity extends AbstractPersistable<Long> implements BaseEntit
 	public TransactionCurrency getCurrency() {
 		return TransactionCurrency.getTransactionCurrency(this.currency);
 	}
+	
+	
 	public void setCurrency(TransactionCurrency currency) {
 		this.currency = currency.getValue();
 	}
 
-	
-	
-	@Override
-	public BaseRepresentationObject getRepresentation() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 }

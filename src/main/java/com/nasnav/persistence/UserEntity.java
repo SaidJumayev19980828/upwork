@@ -1,22 +1,19 @@
 package com.nasnav.persistence;
 
-import com.nasnav.dto.Address;
-import com.nasnav.dto.UserRepresentationObject;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.nasnav.constatnts.EntityConstants;
+import com.nasnav.dto.Address;
 import com.nasnav.dto.UserDTOs;
+import com.nasnav.dto.UserRepresentationObject;
 
-import java.time.LocalDateTime;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Data
 @Entity
@@ -52,6 +49,8 @@ public class UserEntity extends BaseUserEntity{
         user.setUpdatedAt(LocalDateTime.now());
         return user;
     }
+    
+    
 
     public static UserRepresentationObject getRepresentation(UserEntity userEntity) {
         UserRepresentationObject obj = new UserRepresentationObject();

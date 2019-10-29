@@ -2,22 +2,28 @@ package com.nasnav.persistence;
 
 import java.math.BigDecimal;
 
-import javax.persistence.*;
-
-import lombok.ToString;
-import org.springframework.data.jpa.domain.AbstractPersistable;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Entity
 @Table(name="baskets")
 @Data
 @EqualsAndHashCode(callSuper=false)
-public class BasketsEntity extends AbstractPersistable<Long> implements BaseEntity{
+public class BasketsEntity implements BaseEntity{
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

@@ -1,25 +1,30 @@
 package com.nasnav.persistence;
 
 
-import javax.persistence.*;
+import java.util.Date;
 
-import com.nasnav.dto.ExtraAttributesRepresentationObject;
-import org.springframework.data.jpa.domain.AbstractPersistable;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
 import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.dto.ExtraAttributesRepresentationObject;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
-import java.util.Date;
 
 @Entity
 @Table(name = "extra_attributes")
 @Data
 @EqualsAndHashCode(callSuper = false)
 
-public class ExtraAttributesEntity extends AbstractPersistable<Long> implements BaseEntity {
+public class ExtraAttributesEntity implements BaseEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "key_name")
@@ -31,9 +36,6 @@ public class ExtraAttributesEntity extends AbstractPersistable<Long> implements 
     @Column(name = "organization_id")
     private Long organizationId;
 
-   /* @ManyToOne(cascade = CascadeType.MERGE)
-    @JoinColumn(name = "organization_id", referencedColumnName = "id")
-    private OrganizationEntity organizationEntity;*/
 
     @Column(name = "icon")
     private String iconUrl;

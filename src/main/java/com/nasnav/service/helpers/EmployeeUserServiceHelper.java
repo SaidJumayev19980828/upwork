@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.nasnav.AppConfig;
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
@@ -25,7 +26,6 @@ import com.nasnav.dto.UserDTOs.EmployeeUserCreationObject;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.EntityUtils;
 import com.nasnav.persistence.Role;
 import com.nasnav.persistence.RoleEmployeeUser;
 import com.nasnav.response.ApiResponseBuilder;
