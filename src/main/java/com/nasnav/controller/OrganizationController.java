@@ -84,7 +84,7 @@ public class OrganizationController {
     @PostMapping(value = "brand", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
     public ResponseEntity updateOrganizationData(@RequestHeader(value = "User-ID") Long userId,
                                                  @RequestHeader (value = "User-Token") String userToken,
-                                                 @RequestPart String jsonString,
+                                                 @RequestPart ("properties") String jsonString,
                                                  @RequestPart(value = "logo", required = false) @Valid MultipartFile logo,
                                                  @RequestPart(value = "banner", required = false) @Valid MultipartFile banner) throws Exception {
         ObjectMapper mapper = new ObjectMapper();

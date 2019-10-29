@@ -19,20 +19,22 @@
 
 <body>
   <div class="wrapper">
-  	<h1>Dirty Dashboard!</h1>
+  	<div class="title">
+		<h1>Dirty Dashboard!</h1>
+	</div>
   	<div class="btn-group">
   		<div th:if="${isNasnavAdmin}">
-  			<button onclick="openPage('/dirty_dashboard/org_mgr')>Add Organization</button>
-	   		<button>Add Categories</button>
+  			<button onclick="openPage('/dirty_dashboard/org_mgr')">Add Organization</button>
+	   		<button onclick="openPage('/dirty_dashboard/cat_mgr')">Add Categories</button>
 	   		<button>Add Users</button>
   		</div>
-	   
-	   
+
+
 	   <div th:if="${isOrgAdmin}">
-	   		<button >Add Product Features</button>
-	  		<button >Add Brands</button>
+	   		<button onclick="openPage('/dirty_dashboard/products_feature')">Add Product Features</button>
+	  		<button onclick="openPage('/dirty_dashboard/brand_mgr')">Add Brands</button>
 	   		<button onclick="openPage('/dirty_dashboard/upload_product_csv_form')">Import Products</button>
-	   		<button >Import Products Images</button>	
+	   		<button onclick="openPage('/dirty_dashboard/upload_product_image_csv_form')">Import Products Images</button>
 	   </div>
 	      
   	</div>

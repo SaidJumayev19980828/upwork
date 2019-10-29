@@ -12,7 +12,7 @@
             /*]]>*/
         </script>
     <script type="text/javascript" src="/js/utils.js"></script>
-    <script src="/js/org_mgr.js"></script>
+    <script src="/js/upload_products_images.js"></script>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/form_style.css">
     <meta charset="UTF-8">
@@ -20,18 +20,33 @@
 </head>
 
 <body>
+
     <div class="title">
-        <h1>Add New Organization</h1>
+        <h1>Upload Products Images CSV File</h1>
     </div>
-    <form class="main-form" id="org-form">
+
+    <form id="upload-form" class="main-form">
+        <input type="hidden" name="token" th:value="${token}">
+    </form>
+
+    <form id="properites-form" class="main-form">
         <div>
-            <input type="text" name="name" placeholder="Organization Name" required />
-            <input type="text" name="p_name" placeholder="Organization PName" required />
+            <input type="text" name="type" placeholder="Image Type" required />
+            <input type="text" name="priority" placeholder="Image Priority" required />
         </div>
     </form>
-    <form class="main-form">
-        <input type="button" id="submit-form-btn" onclick="postOrgData('org-form')" value="Submit"></input>
+
+    <form id="file-form" class="main-form">
+        <div>
+            Images Barcode CSV file<input type="file" name="csv" placeholder="Csv File" required id="csv"/>
+            ZIP Images file<input type="file" name="zip" placeholder="Zip File" required id="zip"/>
+        </div>
     </form>
+
+    <form class="main-form">
+        <input type="button" id="upload-form-btn" onclick="upload('properites-form')" value="Upload"></input>
+    </form>
+
     <div class="main-form">
 	   	<button onclick="openPage('/dirty_dashboard/dashboard')" style="background-color: red">Back</button>
 	</div>

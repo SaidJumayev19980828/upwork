@@ -20,8 +20,10 @@
 </head>
 
 <body>
-    <h1>Upload Products CSV File</h1>
-    <form id="upload-form">
+    <div class="title">
+        <h1>Upload Products CSV File</h1>
+    </div>
+    <form id="upload-form" class="main-form">
         <input type="hidden" name="token" th:value="${token}">
         <div>
             <input id="dryrun" type="checkbox" name="dryrun" placeholder="Validate Only" >
@@ -44,8 +46,10 @@
 
         </div>
     </form>
-    <h2>CSV Columns Names</h2>
-    <form id="headers-form">
+    <div class="title">
+        <h2>CSV Columns Names</h2>
+    </div>
+    <form id="headers-form" class="main-form">
         <div>
             <input type="text" name="name_header" placeholder="Name Column header" required />
             <input type="text" name="pname_header" placeholder="PName Column header" required />
@@ -59,15 +63,15 @@
 
         </div>
     </form>
-    <form id="file-select-form">
+    <form id="file-select-form" class="main-form">
         <div>
             <input type="file" name="csv" placeholder="Csv File" required id="file" />
         </div>
     </form>
-    <form>
+    <form class="main-form">
         <input type="button" id="upload-form-btn" onclick="upload()" value="Upload"></input>
     </form>
-    <div>
+    <div class="main-form">
 	   	<button onclick="openPage('/dirty_dashboard/dashboard')" style="background-color: red">Back</button>
 	</div>
     <div id="error-container" style="border: black">

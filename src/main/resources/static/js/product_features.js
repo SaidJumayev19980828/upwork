@@ -1,10 +1,8 @@
 
-
-
-function postOrgData(formName) {
+function postProductFeatureData(formName) {
     $.ajax({
         type: 'POST',
-        url: "/admin/organization",
+        url: "/organization/products_feature",
         headers: {
             "User-Token": token,
             'Content-Type': "application/json; charset=utf-8"
@@ -13,7 +11,7 @@ function postOrgData(formName) {
         data: JSON.stringify($("#"+formName).serializeJSON()),
         success: function (response) {
             console.log(response);
-	        alert("Organization created!\nOrganization ID = " + response.organization_id);
+	        alert("Feature created!\nFeature ID = " + response.feature_id);
         },
         error: function (xhr) {
             alert(xhr.responseJSON.message +"\n" +xhr.responseJSON.error);

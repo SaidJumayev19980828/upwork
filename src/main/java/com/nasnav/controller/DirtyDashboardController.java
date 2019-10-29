@@ -4,7 +4,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.websocket.server.PathParam;
 
+import com.nasnav.dto.OrganizationDTO;
+import com.nasnav.response.OrganizationResponse;
+import com.nasnav.service.OrganizationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,7 +38,6 @@ public class DirtyDashboardController {
 	
 	@Autowired
 	private EmployeeUserService empService;
-	
 	
 	@GetMapping(value = "login_page")
     public ModelAndView loginPage(@PathParam("msg") String msg, ModelMap model)	throws BusinessException {
@@ -107,12 +110,34 @@ public class DirtyDashboardController {
     }
 	
 	
-	
-	
-	
 	@GetMapping("org_mgr")
 	public ModelAndView orgMgrPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
 		model.addAttribute("token", token);
         return new ModelAndView("org_mgr", model);
     }
+
+	@GetMapping("brand_mgr")
+	public ModelAndView brandMgrPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+		model.addAttribute("token", token);
+		return new ModelAndView("brand_mgr", model);
+	}
+
+	@GetMapping("cat_mgr")
+	public ModelAndView catMgrPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+		model.addAttribute("token", token);
+		return new ModelAndView("cat_mgr", model);
+	}
+
+	@GetMapping("products_feature")
+	public ModelAndView prodFeaturePage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+		model.addAttribute("token", token);
+		return new ModelAndView("products_feature", model);
+	}
+
+	@GetMapping("upload_product_image_csv_form")
+	public ModelAndView csvUploadImgPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+		model.addAttribute("token", token);
+		return new ModelAndView("upload_product_image_csv_form", model);
+	}
+
 }

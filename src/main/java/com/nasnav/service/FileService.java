@@ -44,7 +44,10 @@ public class FileService {
 	
 	@Autowired
 	private FilesRepository filesRepo;
-	
+
+	@Autowired
+	private SecurityService securityService;
+
 	@PostConstruct
 	public void setupFileLocation() throws BusinessException {
 		this.basePath = Paths.get(basePathStr);
@@ -61,11 +64,19 @@ public class FileService {
 	
 	
 	
-	public String saveFile(MultipartFile file, Long orgId) throws BusinessException {
-		
+	public String saveFile(MultipartFile file, Long organizationId) throws BusinessException {
+		Long orgId;
+		if (organizationId == null)
+			orgId = securityService.getCurrentUserOrganization();
+		else
+			orgId = organizationId;
+
 		if(orgId != null && !orgRepo.existsById(orgId)) {
 			throw new BusinessException("No Organization exists with id: " + orgId, "INVALID PARAM:org_id", HttpStatus.NOT_ACCEPTABLE);									
 		}
+
+
+
 		if(StringUtils.isBlankOrNull(file.getOriginalFilename()) ) {
 			throw new BusinessException("No file name provided!", "INVALID PARAM:file", HttpStatus.NOT_ACCEPTABLE);
 		}
