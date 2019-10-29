@@ -44,4 +44,8 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
     List<OrdersEntity> findByStatus(Integer status);    
 
 	Optional<OrdersEntity> findFirstByUserIdAndStatusOrderByUpdateDateDesc(Long id, Integer value);
+
+	Long countByStatusAndUserId(Integer value, long l);
+
+	void deleteByStatusAndUserId(Integer value, Long id);
 }

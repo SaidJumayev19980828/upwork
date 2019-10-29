@@ -98,7 +98,7 @@ public class OrdersEntity implements BaseEntity{
 	@JoinColumn(name = "organization_id", nullable = false)
 	private OrganizationEntity organizationEntity;
 
-	@OneToMany(mappedBy = "ordersEntity", cascade = {CascadeType.PERSIST})
+	@OneToMany(mappedBy = "ordersEntity", cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
     private Set<BasketsEntity> basketsEntity;
 
 	@Override

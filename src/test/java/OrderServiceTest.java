@@ -1,5 +1,6 @@
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -594,7 +595,7 @@ public class OrderServiceTest {
 		mapper.registerModule(new JavaTimeModule());
 		DetailedOrderRepObject body = mapper.readValue(response.getBody(), DetailedOrderRepObject.class);
 		
-		DetailedOrderRepObject expected = createExpectedOrderInfo(330002L, new BigDecimal("600.00"), 14, "CLIENT_CONFIRMED");
+		DetailedOrderRepObject expected = createExpectedOrderInfo(330002L, new BigDecimal("600.00"), 14, "CLIENT_CONFIRMED", 88L);
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(expected, body);
@@ -676,23 +677,6 @@ public class OrderServiceTest {
 	
 	
 	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void deleteCurrentOrderNoAuthTest() throws JsonParseException, JsonMappingException, IOException {
-			
-		ResponseEntity<String> response = template.exchange("/order/current"
-															, HttpMethod.DELETE
-															, new HttpEntity<>(TestCommons.getHeaders("NON_EXISTING_TOKEN"))
-															, String.class);
-				
-		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-	}
-	
-	
-	
-	
-	
 	
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
@@ -710,7 +694,7 @@ public class OrderServiceTest {
 		mapper.registerModule(new JavaTimeModule());
 		DetailedOrderRepObject body = mapper.readValue(response.getBody(), DetailedOrderRepObject.class);
 		
-		DetailedOrderRepObject expected = createExpectedOrderInfo(330003L, new BigDecimal("300.00"), 7, "NEW");
+		DetailedOrderRepObject expected = createExpectedOrderInfo(330003L, new BigDecimal("300.00"), 7, "NEW", 88L);
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(expected, body);
@@ -771,8 +755,7 @@ public class OrderServiceTest {
 		ResponseEntity<String> response = template.exchange("/order/current"
 														, HttpMethod.GET
 														, new HttpEntity<>(TestCommons.getHeaders("456"))
-														, String.class);
-		
+														, String.class);		
 		
 		System.out.println("Order >>>> " + response.getBody());
 		
@@ -780,12 +763,64 @@ public class OrderServiceTest {
 		mapper.registerModule(new JavaTimeModule());
 		DetailedOrderRepObject body = mapper.readValue(response.getBody(), DetailedOrderRepObject.class);
 		
-		DetailedOrderRepObject expected = createExpectedOrderInfo(330004L, new BigDecimal("200.00"), 5, "NEW");
+		DetailedOrderRepObject expected = createExpectedOrderInfo(330004L, new BigDecimal("200.00"), 5, "NEW", 89L);
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(expected, body);
 	}
 	
+	
+
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void deleteCurrentOrderNoAuthTest() throws JsonParseException, JsonMappingException, IOException {
+			
+		ResponseEntity<String> response = template.exchange("/order/current"
+															, HttpMethod.DELETE
+															, new HttpEntity<>(TestCommons.getHeaders("NON_EXISTING_TOKEN"))
+															, String.class);
+				
+		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	
+	
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void deleteCurrentOrderTest() throws JsonParseException, JsonMappingException, IOException {
+		long countAllBefore = orderRepository.count();
+		long countBefore = orderRepository.countByStatusAndUserId(OrderStatus.NEW.getValue() , 89L);
+		
+		//-------------------------------------------
+		
+		ResponseEntity<String> response = template.exchange("/order/current"
+															, HttpMethod.DELETE
+															, new HttpEntity<>(TestCommons.getHeaders("456"))
+															, String.class);
+		
+		//-------------------------------------------
+		long countAfter = orderRepository.countByStatusAndUserId(OrderStatus.NEW.getValue() , 89L);
+		long countAllAfter = orderRepository.count();
+				
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertNotEquals( 0L, countBefore);
+		assertNotEquals(countAllBefore, countBefore);
+		assertEquals( 0L, countAfter);
+		assertEquals("check that other users orders were not affected"
+					, countBefore - countAfter
+					, countAllBefore - countAllAfter);
+	}
 	
 	
 	
@@ -853,11 +888,11 @@ public class OrderServiceTest {
 	
 	
 
-	private DetailedOrderRepObject createExpectedOrderInfo(Long orderId, BigDecimal price, Integer quantity, String status) {
+	private DetailedOrderRepObject createExpectedOrderInfo(Long orderId, BigDecimal price, Integer quantity, String status, Long userId) {
 		OrdersEntity entity = orderRepository.findById(orderId).get();
 		
 		DetailedOrderRepObject order = new DetailedOrderRepObject();
-		order.setUserId(88L);
+		order.setUserId(userId);
 		order.setCurrency("EGP");
 		order.setCreatedAt( entity.getCreationDate() );
 		order.setDeliveryDate( entity.getDeliveryDate() );

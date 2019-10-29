@@ -30,6 +30,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.EmployeeUserRepository;
@@ -692,7 +693,10 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
+	@Transactional
 	public void deleteCurrentOrders() {
+		BaseUserEntity user = securityService.getCurrentUser();
 		
+		ordersRepository.deleteByStatusAndUserId( OrderStatus.NEW.getValue(), user.getId());
 	}
 }
