@@ -120,8 +120,6 @@ public class UserRegisterTest {
 		OrganizationEntity org = new OrganizationEntity();
 		org.setId(getNewDummyOrgId());
 		org.setName("Test Organization");
-		org.setCreatedAt(new Date());
-		org.setUpdatedAt(new Date());
 		org.setDescription("Test Organization Description");		
 
 		OrganizationEntity organization = organizationRepository.saveAndFlush(org);

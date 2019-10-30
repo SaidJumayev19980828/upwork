@@ -158,8 +158,6 @@ public class OrganizationService {
         OrganizationEntity newOrg = new OrganizationEntity();
         newOrg.setName(json.name);
         newOrg.setPname(json.pname);
-        newOrg.setCreatedAt(new Date());
-        newOrg.setCreatedAt(new Date());
         organizationRepository.save(newOrg);
         return new OrganizationResponse(newOrg.getId(), 0);
     }
@@ -185,7 +183,6 @@ public class OrganizationService {
             orgTheme = organizationThemeRepository.findOneByOrganizationEntity_Id(json.organizationId);
             if (orgTheme == null) {
                 orgTheme = new OrganizationThemeEntity();
-                orgTheme.setCreatedAt(new Date());
                 orgTheme.setOrganizationEntity(organization);
             }
             String mimeType = file.getContentType();
@@ -194,7 +191,6 @@ public class OrganizationService {
                         "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!", HttpStatus.NOT_ACCEPTABLE);
 
             orgTheme.setLogo(fileService.saveFile(file, json.organizationId));
-            orgTheme.setUpdatedAt(new Date());
         }
         SocialEntity socialEntity = helper.addSocialLinks(json, organization);
 
@@ -204,7 +200,6 @@ public class OrganizationService {
         if (orgTheme != null)
             organizationThemeRepository.save(orgTheme);
 
-        organization.setUpdatedAt(new Date());
         organizationRepository.save(organization);
         return new OrganizationResponse();
     }

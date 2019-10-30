@@ -113,7 +113,6 @@ public class NavBoxTest {
         // TODO: no support for opening times yet
         ShopsEntity shop = new ShopsEntity();
         OrganizationEntity org  = new OrganizationEntity();
-        org.setCreatedAt(new Date());
         organizationRepository.save(org);
         long orgId = org.getId();
         shop.setOrganizationEntity(org);

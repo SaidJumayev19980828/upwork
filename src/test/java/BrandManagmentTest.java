@@ -1,5 +1,9 @@
-import com.nasnav.NavBox;
-import com.nasnav.response.OrganizationResponse;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+
+import javax.sql.DataSource;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -20,10 +24,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.List;
+import com.nasnav.NavBox;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -65,7 +66,7 @@ public class BrandManagmentTest {
     public void createBrandSuccessTest() {
         String body = "{\"operation\":\"create\", \"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("jsonString", body);
+        map.add("properties", body);
         map.add("logo", file);
         map.add("banner", file);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
@@ -77,7 +78,7 @@ public class BrandManagmentTest {
     public void setBrandMissingOperationTest() {
         String body = "{\"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("jsonString", body);
+        map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
@@ -87,7 +88,7 @@ public class BrandManagmentTest {
     public void setBrandInvalidOperationTest() {
         String body = "{\"operation\":\"invalid_operation\", \"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("jsonString", body);
+        map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
@@ -97,7 +98,7 @@ public class BrandManagmentTest {
     public void createBrandMissingNameTest() {
         String body = "{\"operation\":\"create\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("jsonString", body);
+        map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
@@ -107,7 +108,7 @@ public class BrandManagmentTest {
     public void createBrandInvalidNameTest() {
         String body = "{\"operation\":\"create\", \"name\":\"12Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("jsonString", body);
+        map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
@@ -117,7 +118,7 @@ public class BrandManagmentTest {
     public void createBrandInvalidPnameTest() {
         String body = "{\"operation\":\"create\", \"name\":\"Alfa Romero\", \"name\":\"12Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("jsonString", body);
+        map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
@@ -127,7 +128,7 @@ public class BrandManagmentTest {
     public void createBrandInvalidFilesTest() {
         String body = "{\"operation\":\"create\", \"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("jsonString", body);
+        map.add("properties", body);
         map.add("logo", databaseCleanup);
         map.add("banner", brandsDataInsert);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
@@ -139,7 +140,7 @@ public class BrandManagmentTest {
     public void updateBrandInvalidNameTest() {
         String body = "{\"operation\":\"update\", \"brand_id\": 101,\"name\":\"12Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("jsonString", body);
+        map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
@@ -149,7 +150,7 @@ public class BrandManagmentTest {
     public void updateBrandInvalidPnameTest() {
         String body = "{\"operation\":\"update\", \"brand_id\": 101,\"name\":\"Alfa Romero\", \"name\":\"12Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("jsonString", body);
+        map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
@@ -159,7 +160,7 @@ public class BrandManagmentTest {
     public void updateBrandInvalidFilesTest() {
         String body = "{\"operation\":\"update\", \"brand_id\": 101,\"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("jsonString", body);
+        map.add("properties", body);
         map.add("logo", databaseCleanup);
         map.add("banner", brandsDataInsert);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
@@ -171,7 +172,7 @@ public class BrandManagmentTest {
     public void updateBrandMissingIdTest() {
         String body = "{\"operation\":\"update\", \"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("jsonString", body);
+        map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
@@ -181,7 +182,7 @@ public class BrandManagmentTest {
     public void updateBrandInvalidIdTest() {
         String body = "{\"operation\":\"update\", \"brand_id\": 9999999, \"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("jsonString", body);
+        map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map, "hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(404, response.getStatusCode().value());
@@ -191,7 +192,7 @@ public class BrandManagmentTest {
     public void updateBrandUnauthorizedUserTest() {
         String body = "{\"operation\":\"update\", \"brand_id\": 101, \"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("jsonString", body);
+        map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"abcdefg", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(403, response.getStatusCode().value());
@@ -201,7 +202,7 @@ public class BrandManagmentTest {
     public void createBrandUnauthorizedUserTest() {
         String body = "{\"operation\":\"create\", \"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("jsonString", body);
+        map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"abcdefg", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(403, response.getStatusCode().value());
@@ -211,7 +212,7 @@ public class BrandManagmentTest {
     public void updateBrandSuccessTest() {
         String body = "{\"operation\":\"update\", \"brand_id\": 101, \"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("jsonString", body);
+        map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(200, response.getStatusCode().value());
