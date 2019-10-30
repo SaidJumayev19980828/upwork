@@ -17,20 +17,30 @@ import java.io.IOException;
 public class AuthenticationFilter extends AbstractAuthenticationProcessingFilter {
 
     public static final String TOKEN_HEADER = "User-Token";
+    
+    
+    
 
     AuthenticationFilter(final RequestMatcher requiresAuth) {
         super(requiresAuth);
     }
+    
+    
+    
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws AuthenticationException, IOException, ServletException {
 
         String token= httpServletRequest.getHeader(TOKEN_HEADER);
-        Authentication requestAuthentication = new UsernamePasswordAuthenticationToken(token, token);
+        UsernamePasswordAuthenticationToken requestAuthentication = new UsernamePasswordAuthenticationToken(token, token);
         return getAuthenticationManager().authenticate(requestAuthentication);
 
     }
 
+    
+    
+    
+    
     @Override
     protected void successfulAuthentication(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain, final Authentication authResult) throws IOException, ServletException {
         SecurityContextHolder.getContext().setAuthentication(authResult);

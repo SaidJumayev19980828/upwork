@@ -4,6 +4,7 @@ import java.util.Date;
 import javax.annotation.PreDestroy;
 
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -438,6 +439,30 @@ public class UserRegisterTest {
 		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void testUserSameEmailDifferentOrgShouldLogin() {
+		
+		// login using the new password
+		JSONObject request = new JSONObject();
+		request.put("email", "user1@nasnav.com");
+		request.put("password", "12345678");
+		request.put("org_id", 99001L);
+		
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login"
+																, getHttpEntity(request.toString())
+																, UserApiResponse.class);
+
+		Assert.assertTrue(response.getBody().isSuccess());
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+	
+	
 	
 	
 	

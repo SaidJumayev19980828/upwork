@@ -27,7 +27,9 @@ INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentic
 INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id)
     VALUES (90, 'user3@nasnav.com',now(), now(), 'user3','789', 99003);
 INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id)
-	VALUES (91, 'user4@nasnav.com',now(), now(), 'user4','011', 99003);
+	VALUES (91, 'user4@nasnav.com',now(), now(), 'user4','011', 99003);--inserting users
+INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id)
+    VALUES (88001, 'user1@nasnav.com',now(), now(), 'user1','88657aser', 99003);
 
 
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)

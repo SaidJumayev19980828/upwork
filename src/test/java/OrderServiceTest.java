@@ -591,9 +591,7 @@ public class OrderServiceTest {
 		
 		System.out.println("Order >>>> " + response.getBody());
 		
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new JavaTimeModule());
-		DetailedOrderRepObject body = mapper.readValue(response.getBody(), DetailedOrderRepObject.class);
+		DetailedOrderRepObject body = readDetailedOrderRepObjectResponse(response);
 		
 		DetailedOrderRepObject expected = createExpectedOrderInfo(330002L, new BigDecimal("600.00"), 14, "CLIENT_CONFIRMED", 88L);
 		
@@ -690,14 +688,25 @@ public class OrderServiceTest {
 		
 		System.out.println("Order >>>> " + response.getBody());
 		
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new JavaTimeModule());
-		DetailedOrderRepObject body = mapper.readValue(response.getBody(), DetailedOrderRepObject.class);
+		DetailedOrderRepObject body = readDetailedOrderRepObjectResponse(response);
 		
 		DetailedOrderRepObject expected = createExpectedOrderInfo(330003L, new BigDecimal("300.00"), 7, "NEW", 88L);
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(expected, body);
+	}
+
+
+
+
+
+
+	private DetailedOrderRepObject readDetailedOrderRepObjectResponse(ResponseEntity<String> response)
+			throws IOException, JsonParseException, JsonMappingException {
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.registerModule(new JavaTimeModule());
+		DetailedOrderRepObject body = mapper.readValue(response.getBody(), DetailedOrderRepObject.class);
+		return body;
 	}
 	
 	
@@ -759,9 +768,7 @@ public class OrderServiceTest {
 		
 		System.out.println("Order >>>> " + response.getBody());
 		
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new JavaTimeModule());
-		DetailedOrderRepObject body = mapper.readValue(response.getBody(), DetailedOrderRepObject.class);
+		DetailedOrderRepObject body = readDetailedOrderRepObjectResponse(response);
 		
 		DetailedOrderRepObject expected = createExpectedOrderInfo(330004L, new BigDecimal("200.00"), 5, "NEW", 89L);
 		
