@@ -1,7 +1,14 @@
 
 function postCatData(category) {
+    if($("#category_selector").val() != "update")
+        $("#cat_id").val('');
+
     var fileData = new FormData();
-    var data =  ($("#" + category).serializeJSON())
+    var data =  $("#" + category).serializeJSON();
+
+    data.operation = $("#category_selector").val();
+
+    data = removeEmpty(data);
     fileData.append('file', document.getElementById('logo').files[0]);
     $.ajax({
         type: 'POST',
@@ -17,7 +24,10 @@ function postCatData(category) {
         enctype: 'multipart/form-data',
         data: fileData,
         success: function (response) {
-            data.logo = response;
+        },
+        complete: function (response){
+            if(response.responseText)
+                data.logo = response.responseText;
             console.log(JSON.stringify(data))
             $.ajax({
                 type: 'POST',
@@ -29,7 +39,7 @@ function postCatData(category) {
                 },
                 data: JSON.stringify(data),
                 success: function (res) {
-                    alert("category created!\ncategory ID = " + res.category_id);
+                    alert("category "+$("#category_selector").val()+"d\ncategory ID = " + res.category_id);
                 },
                 error: function (xhr) {
                     alert(xhr.responseJSON.message +"\n" +xhr.responseJSON.error);
@@ -42,4 +52,12 @@ function postCatData(category) {
     });
 
      //End of Ajax
+}
+
+function  removeEmpty(obj) {
+    for (var propName in obj)
+        if (obj[propName] == "")
+            delete obj[propName];
+
+    return obj;
 }
