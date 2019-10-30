@@ -116,6 +116,15 @@ public class DirtyDashboardController {
         return new ModelAndView("org_mgr", model);
     }
 
+	@GetMapping("org_info")
+	public ModelAndView orgInfoPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+		Long organization_id = securityService.getCurrentUserOrganizationId();
+
+		model.addAttribute("org_id", organization_id);
+		model.addAttribute("token", token);
+		return new ModelAndView("org_info", model);
+	}
+
 	@GetMapping("brand_mgr")
 	public ModelAndView brandMgrPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
 		model.addAttribute("token", token);
@@ -144,11 +153,9 @@ public class DirtyDashboardController {
 	public ModelAndView fileUploadPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
 		BaseUserEntity user = securityService.getCurrentUser();
 		Boolean isNasnavAdmin = securityService.userHasRole(user, Roles.NASNAV_ADMIN);
-		Boolean isOrgAdmin = securityService.userHasRole(user, Roles.ORGANIZATION_ADMIN);
 		Long organization_id = securityService.getCurrentUserOrganizationId();
 
 		model.addAttribute("isNasnavAdmin", isNasnavAdmin);
-		model.addAttribute("isOrgAdmin", isOrgAdmin);
 		model.addAttribute("organization_id", organization_id);
 		model.addAttribute("token", token);
 		return new ModelAndView("file_upload", model);

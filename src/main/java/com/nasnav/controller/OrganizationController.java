@@ -53,7 +53,7 @@ public class OrganizationController {
     })
     @PostMapping(value = "info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
     public ResponseEntity updateOrganizationData(@RequestHeader (value = "User-Token") String userToken,
-                                                 @RequestPart String jsonString,
+                                                 @RequestPart("properties") String jsonString,
                                                  @RequestPart(value = "logo", required = false) @Valid MultipartFile file) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         OrganizationDTO.OrganizationModificationDTO json = mapper.readValue(jsonString, OrganizationDTO.OrganizationModificationDTO.class);

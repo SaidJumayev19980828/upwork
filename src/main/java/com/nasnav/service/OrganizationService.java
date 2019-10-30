@@ -181,36 +181,29 @@ public class OrganizationService {
         }
         //logo
         OrganizationThemeEntity orgTheme = null;
-        if (json.logo != null || file != null) {
+        if (file != null) {
             orgTheme = organizationThemeRepository.findOneByOrganizationEntity_Id(json.organizationId);
             if (orgTheme == null) {
                 orgTheme = new OrganizationThemeEntity();
                 orgTheme.setCreatedAt(new Date());
                 orgTheme.setOrganizationEntity(organization);
             }
-            if (json.logoEncoding == null) {
-                throw new BusinessException("Missing_PARAM: logo_encoding", "Provided logo_encoding is Missing", HttpStatus.NOT_ACCEPTABLE);
-            }
-            else if (json.logoEncoding.equals("form-data")) {
-                String mimeType = file.getContentType();
-                if(!mimeType.startsWith("image"))
-                    throw new BusinessException("INVALID PARAM:image",
-                            "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!", HttpStatus.NOT_ACCEPTABLE);
-                orgTheme.setLogo(fileService.saveFile(file, json.organizationId));
-                orgTheme.setUpdatedAt(new Date());
-            } else if (json.logoEncoding.equals("base64")){
-                orgTheme.setLogo(json.logo);
-                orgTheme.setUpdatedAt(new Date());
-            } else {
-                throw new BusinessException("INVALID_PARAM: logo_encoding", "Provided logo_encoding is Invalid", HttpStatus.NOT_ACCEPTABLE);
-            }
+            String mimeType = file.getContentType();
+            if(!mimeType.startsWith("image"))
+                throw new BusinessException("INVALID PARAM:image",
+                        "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!", HttpStatus.NOT_ACCEPTABLE);
+
+            orgTheme.setLogo(fileService.saveFile(file, json.organizationId));
+            orgTheme.setUpdatedAt(new Date());
         }
-        String [] result = helper.addSocialLinks(json, organization);
-        if (result[0].equals("1"))
-            throw new BusinessException(result[1], result[2], HttpStatus.NOT_ACCEPTABLE);
-        if (!orgTheme.getLogo().equals(null)) {
+        SocialEntity socialEntity = helper.addSocialLinks(json, organization);
+
+        if (socialEntity != null)
+            socialRepository.save(socialEntity);
+
+        if (orgTheme != null)
             organizationThemeRepository.save(orgTheme);
-        }
+
         organization.setUpdatedAt(new Date());
         organizationRepository.save(organization);
         return new OrganizationResponse();
