@@ -1,5 +1,6 @@
 package com.nasnav.persistence;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -8,6 +9,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrganizationRepresentationObject;
@@ -37,10 +41,12 @@ public class OrganizationEntity implements BaseEntity {
     private String pname;
     
     @Column(name = "created_at")
-    private Date createdAt;
+    @CreationTimestamp
+    private LocalDateTime createdAt;
     
     @Column(name = "updated_at")
-    private Date updatedAt = new Date();
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     public OrganizationEntity() {
         id = null;

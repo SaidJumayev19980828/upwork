@@ -25,8 +25,12 @@
     </div>
     <form class="main-form" id="cat-form">
         <div>
+            <select id="category_selector"> Operation
+                <option value="create">create</option>
+                <option value="update">update</option>
+            </select>
+            <input id="cat_id" type="text" name="id" placeholder="Category ID"  />
             <input type="text" name="name" placeholder="Category Name" required />
-            <input style="display: none;" type="text" name="operation" value="create" />
             Logo<input id="logo" type="file" name="logo" required/>
         </div>
     </form>
