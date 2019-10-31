@@ -33,5 +33,8 @@ public interface IntegrationService {
 	void importOrganizationProducts(Long orgId, Runnable onComplete, Runnable onError);
 	
 	
+	/**
+	 * return the stock of a product in the external system.
+	 * */
 	BigDecimal getExternalStock(Long localStockId, Runnable onComplete, Runnable onError);
 }
