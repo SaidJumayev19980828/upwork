@@ -598,10 +598,10 @@ public class OrderServiceImpl implements OrderService {
 				statusId = (OrderStatus.findEnum(status)).getValue();
 			}
 		}
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		UserEntity user = userRepository.getByEmail(auth.getName());
-		if (user == null){ // EmployeeUser
-			EmployeeUserEntity empUser = employeeUserRepository.getOneByEmail(auth.getName());
+		
+		BaseUserEntity user = securityService.getCurrentUser();
+		if (user instanceof EmployeeUserEntity){ // EmployeeUser
+			EmployeeUserEntity empUser = (EmployeeUserEntity)user;
 			List<String> employeeUserRoles = employeeUserServiceHelper.getEmployeeUserRoles(empUser.getId());
 			if (employeeUserRoles.contains("STORE_ADMIN") || employeeUserRoles.contains("STORE_MANAGER") || employeeUserRoles.contains("STORE_EMPLOYEE")){
 				storeId = empUser.getShopId();

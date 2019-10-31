@@ -1,17 +1,12 @@
 package com.nasnav.dao;
 
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.Role;
-import com.nasnav.persistence.UserEntity;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import com.nasnav.persistence.UserEntity;
 
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	/**
@@ -33,7 +28,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	 */
 	UserEntity getByEmailAndOrganizationId(String email, Long orgId);
 
-	UserEntity getByEmail(String email);
 
 	/**
 	 * Check if the passed resetPasswordToken already exist before or not.
@@ -78,6 +72,4 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	Optional<UserEntity> findByAuthenticationToken(String authToken);
 
 	UserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
-
-	UserEntity getByEmailIgnoreCase(String email);
 }
