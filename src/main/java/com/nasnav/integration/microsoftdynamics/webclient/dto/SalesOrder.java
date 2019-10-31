@@ -1,5 +1,6 @@
 package com.nasnav.integration.microsoftdynamics.webclient.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -14,7 +15,8 @@ public class SalesOrder {
     private BigDecimal totalOrderDiscount;
     private BigDecimal total;
     private BigDecimal shippingFees;
-    private BigDecimal codFee;
+    @JsonProperty("COD_Fee")
+    private BigDecimal cashOnDeliveryFee;
     private BigDecimal Subtotal;
     private String inventSite;
     private String store;

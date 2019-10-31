@@ -1,5 +1,8 @@
 package com.nasnav.integration.microsoftdynamics.webclient.dto;
 
+import lombok.Data;
+
+@Data
 public class Address {
     private String street;
     private String city;

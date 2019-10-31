@@ -6,9 +6,9 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-public class ReturnSalesOrderItem {
-    private String salesId;
-    private String item;
-    @JsonProperty("qty")
-    private BigDecimal quantity;
+public class Stocks {
+
+    @JsonProperty("STORE_CODE")
+    private String storeCode;
+    private BigDecimal value;
 }
