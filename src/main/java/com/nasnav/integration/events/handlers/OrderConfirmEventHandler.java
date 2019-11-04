@@ -1,12 +1,13 @@
 package com.nasnav.integration.events.handlers;
 
+import java.time.LocalDateTime;
+
 import com.nasnav.integration.IntegrationEventHandler;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.OrderConfirmEvent;
 import com.nasnav.integration.events.data.OrderData;
-import com.nasnav.integration.events.results.OrderConfirmEventResult;
 
-public class OrderConfirmEventHandler extends IntegrationEventHandler<OrderConfirmEvent, OrderConfirmEventResult, OrderData, String> {
+public class OrderConfirmEventHandler extends IntegrationEventHandler<OrderConfirmEvent, OrderData, String> {
 
 	
 	
@@ -20,8 +21,7 @@ public class OrderConfirmEventHandler extends IntegrationEventHandler<OrderConfi
 	
 
 	@Override
-	public OrderConfirmEventResult handleError(OrderConfirmEvent event) {
-		// TODO Auto-generated method stub
+	public OrderConfirmEvent handleError(OrderConfirmEvent event) {		
 		return null;
 	}
 	
@@ -30,8 +30,10 @@ public class OrderConfirmEventHandler extends IntegrationEventHandler<OrderConfi
 	
 
 	@Override
-	public OrderConfirmEventResult handleEvent(OrderConfirmEvent event) {
-		return new OrderConfirmEventResult(event, "AXOB1234");
+	public OrderConfirmEvent handleEvent(OrderConfirmEvent event) {
+		event.setResultRecievedTime( LocalDateTime.now() );
+		event.setEventResult( "PASSED!!" );
+		return event;
 	}
 
 }

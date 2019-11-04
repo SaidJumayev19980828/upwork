@@ -4,22 +4,23 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import javax.annotation.PostConstruct;
 
+import org.jboss.logging.Logger;
 import org.springframework.stereotype.Service;
 
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
-import com.nasnav.integration.events.EventResult;
 import com.nasnav.integration.model.IntegratedShop;
 
 
 @Service
 public class IntegrationServiceImpl implements IntegrationService {
-
-	private Map<Long, ? extends IntegrationModule> modules;
+	Logger logger = Logger.getLogger(getClass());
+	private Map<Long, IntegrationModule> modules;
 	
 	
 	
@@ -54,8 +55,14 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	@Override
 	public void loadIntegrationModules() {
-		// TODO Auto-generated method stub
-
+		
+		try {
+			Class<IntegrationModule> moduleClass = (Class<IntegrationModule>) this.getClass().getClassLoader().loadClass("com.nasnav.integration.events.handlers.DoNothingModule");
+			modules.put(99001L, moduleClass.newInstance() );
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
 	}
 	
 	
@@ -138,9 +145,29 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 
 	@Override
-	public <T, R> void pushIntegrationEvent(Event<T> event, Consumer<EventResult<T, R>> callback) {
-		// TODO Auto-generated method stub
+	public <T, R> void pushIntegrationEvent(Event<T,R> event, Consumer<Event<T, R>> callback, BiConsumer<Event<T, R>, Throwable> errorCallback) {
+		try {
+			validateEvent(event);
+			
+			IntegrationModule mod = modules.get(event.getOrganizationId());
+			Event<T, R> res =  mod.getEventHandler(event).handleEvent(event);
+			
+			callback.accept(res);
+		}catch(Exception e) {
+			logger.error(e);
+			errorCallback.accept(event,e);
+		}
+		
+	}
 
+
+
+	
+
+	private <T,R> void validateEvent(Event<T,R> event) {
+		if(event == null || event.getOrganizationId() == null) {
+			
+		}
 	}
 
 }

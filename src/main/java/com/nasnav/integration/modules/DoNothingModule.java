@@ -23,7 +23,7 @@ public class DoNothingModule extends IntegrationModule{
 	protected void initIntegrationHandlers(IntegrationService integrationService) {
 		OrderConfirmEventHandler orderEventHandler = new OrderConfirmEventHandler( integrationService );
 		
-		this.eventHandlers.put(OrderConfirmEvent.class, orderEventHandler);
+		this.putEventHandler(OrderConfirmEvent.class, orderEventHandler);
 	}
 	
 }

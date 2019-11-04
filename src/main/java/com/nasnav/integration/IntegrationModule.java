@@ -4,13 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.nasnav.integration.events.Event;
-import com.nasnav.integration.events.EventResult;
 
 import lombok.Data;
 
 @Data
 public abstract class IntegrationModule {
-	protected Map< Class<? extends Event >, IntegrationEventHandler > eventHandlers;
+	@SuppressWarnings("rawtypes")
+	private Map< Class<Event>, IntegrationEventHandler > eventHandlers;
 	protected IntegrationService integrationService;
 	
 	
@@ -28,11 +28,16 @@ public abstract class IntegrationModule {
 
 
 
-	<E extends Event<T>, T,R> IntegrationEventHandler<E, ? extends EventResult<T,R>, T,R> getEventHandler(E event) {
-		return eventHandlers.get(event.getClass());		
+	@SuppressWarnings("unchecked")
+	<E extends Event<T,R>, T,R> IntegrationEventHandler<E,T,R> getEventHandler(E event) {
+		return (IntegrationEventHandler<E, T,R>)eventHandlers.get(event.getClass());		
 	}
 	
 	
 	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	protected <E extends Event<T,R>, T,R> void putEventHandler(Class<E> eventClass , IntegrationEventHandler<E,T,R> handler){
+		eventHandlers.put((Class<Event>)eventClass, handler);
+	}
 	
 }

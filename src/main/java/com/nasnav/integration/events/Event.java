@@ -5,13 +5,17 @@ import java.time.LocalDateTime;
 import lombok.Data;
 
 @Data
-public abstract class Event<D> {
+public abstract class Event<D, R> {
 	protected D eventData;
-	protected LocalDateTime timestamp;
+	protected R eventResult;
+	protected LocalDateTime creationTime;
+	protected LocalDateTime resultRecievedTime;
 	protected Long organizationId;
+	
+	
 	
 	public Event(Long organizationId, D eventData) {
 		this.eventData = eventData;
-		this.timestamp = LocalDateTime.now();
+		this.creationTime = LocalDateTime.now();
 	}
 }

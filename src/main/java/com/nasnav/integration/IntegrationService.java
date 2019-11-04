@@ -2,11 +2,11 @@ package com.nasnav.integration;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
-import com.nasnav.integration.events.EventResult;
 import com.nasnav.integration.model.IntegratedShop;
 
 
@@ -46,5 +46,5 @@ public interface IntegrationService {
 	 * push an event to the Integration service, which queues and run the proper event handler for the event
 	 * based on the organization and the event type.
 	 * */
-	<T,R> void pushIntegrationEvent(Event<T> event, Consumer<EventResult<T,R>> callback);
+	<T,R> void pushIntegrationEvent(Event<T,R> event, Consumer<Event<T,R>> callback, BiConsumer<Event<T,R>, Throwable> errorCallback);
 }
