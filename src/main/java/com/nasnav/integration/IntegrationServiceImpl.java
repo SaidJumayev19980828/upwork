@@ -145,19 +145,18 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 
 	@Override
-	public <T, R> void pushIntegrationEvent(Event<T,R> event, Consumer<Event<T, R>> callback, BiConsumer<Event<T, R>, Throwable> errorCallback) {
+	public <T, R> void pushIntegrationEvent(Event<T,R> event, Consumer<Event<T, R>> onComplete, BiConsumer<Event<T, R>, Throwable> onError) {
 		try {
 			validateEvent(event);
 			
 			IntegrationModule mod = modules.get(event.getOrganizationId());
 			Event<T, R> res =  mod.getEventHandler(event).handleEvent(event);
 			
-			callback.accept(res);
+			onComplete.accept(res);
 		}catch(Exception e) {
 			logger.error(e);
-			errorCallback.accept(event,e);
-		}
-		
+			onError.accept(event,e);
+		}		
 	}
 
 
