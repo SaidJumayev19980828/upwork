@@ -1,12 +1,15 @@
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -21,15 +24,53 @@ import net.jcip.annotations.NotThreadSafe;
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
 @NotThreadSafe
-@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Integration_Service_Test_Data_Insert.sql"})
+@DirtiesContext
+@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql", "/sql/Integration_Service_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class IntegrationServiceTest {
 	
 	private static final Long ORG_ID = 99001L;
 	
+	private static final String INTEGRATION_PARAM_PREPARE_QUERY = 
+			"INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001, 'organization_1', now(), now());" + 
+			"INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());" + 
+			"INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(1, 'INTEGRATION_MODULE', TRUE);" + 
+			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)" + 
+			"VALUES(1, 1, 99001, 'com.nasnav.test.integration.modules.TestIntegrationModule', now(), now());" ;
+
+	private static final String CLEAN_QUERY = 
+			"DELETE FROM public.integration_mapping where organization_id BETWEEN 99000 AND 99999;\n" + 
+			"DELETE FROM public.integration_param where  organization_id BETWEEN 99000 AND 99999;\n" + 
+			"DELETE FROM public.integration_mapping_type;\n" + 
+			"DELETE FROM public.integration_param_type;\n"+
+			"DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;"; 
+			
 	
 	@Autowired
 	IntegrationService integration;
+	
+	
+	
+	/**
+	 * The the loading of the Integration modules actually runs when spring context is 
+	 * initialized. Which happens before @Sql annotations are executed, and
+	 * so, we need to add the Integration parameters before the whole test 
+	 * class is loaded.
+	 * */
+	@BeforeClass
+	public static void initIntegrationParameters() {
+		TestCommons.getJdbi().useHandle( h-> h.execute(INTEGRATION_PARAM_PREPARE_QUERY));
+	}
+	
+	
+	
+	
+	
+	@AfterClass
+	public static void cleanTables() {
+		TestCommons.getJdbi().useHandle( h-> h.execute(CLEAN_QUERY));
+	}
+	
 	
 	
 	

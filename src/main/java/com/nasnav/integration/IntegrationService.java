@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
 import com.nasnav.integration.model.IntegratedShop;
@@ -17,7 +18,7 @@ public interface IntegrationService {
 		
 	void setIntegrationModule(Long orgId, String classFullName);
 	IntegrationModule getIntegrationModule(Long orgId);
-	void loadIntegrationModules();
+	void loadIntegrationModules() throws BusinessException;
 	
 	void addMappedValue(Long orgId, MappingType type, String localValue, String remoteValue);
 	String getExternalMappedValue(Long orgId, MappingType type, String localValue);
