@@ -2,7 +2,6 @@ package com.nasnav.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dao.OrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dto.OrderSessionResponse;
@@ -38,8 +37,6 @@ public class QnbPaymentController {
     
     private final PaymentService paymentService;
 
-    private final OrderRepository orderRepository;
-
     private final OrdersRepository ordersRepository;
 
     private final PaymentsRepository paymentsRepository;
@@ -49,13 +46,10 @@ public class QnbPaymentController {
     @Autowired
     public QnbPaymentController(
             PaymentService paymentService,
-            OrderRepository orderRepository,
             OrdersRepository ordersRepository,
             PaymentsRepository paymentsRepository,
             Session session) {
-//        this.activeSessions = activeSessions;
         this.paymentService = paymentService;
-        this.orderRepository = orderRepository;
         this.ordersRepository = ordersRepository;
         this.paymentsRepository = paymentsRepository;
         this.session = session;
@@ -78,7 +72,7 @@ public class QnbPaymentController {
     @ApiIgnore
     @GetMapping(value = "/test/upglightbox",produces=MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<?> testMezza(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
-        Optional<OrdersEntity> orderOpt = orderRepository.findById(orderId);
+        Optional<OrdersEntity> orderOpt = ordersRepository.findById(orderId);
         if(!orderOpt.isPresent()) {
             throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
         }
@@ -88,6 +82,17 @@ public class QnbPaymentController {
 
 //        String initResult = initPayment(orderId).getBody().toString();
         return new ResponseEntity<>(testPage, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/upg/init")
+    public ResponseEntity<?> upgGetData(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
+        Optional<OrdersEntity> orderOpt = ordersRepository.findById(orderId);
+        if(!orderOpt.isPresent()) {
+            throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
+        }
+        UpgLightbox lightbox = new UpgLightbox();
+        JSONObject data = lightbox.getJsonConfig(orderOpt.get());
+        return new ResponseEntity<>(data.toString(), HttpStatus.OK);
     }
 
     @PostMapping(value = "/upg/callback")
@@ -112,7 +117,7 @@ public class QnbPaymentController {
             qnbLogger.error("Unable to retrieve order ID from the reference: {}", ref);
             return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to process Order ID\"}", HttpStatus.BAD_GATEWAY);
         }
-        Optional<OrdersEntity> oo = orderRepository.findById(orderId);
+        Optional<OrdersEntity> oo = ordersRepository.findById(orderId);
         if (!oo.isPresent()) {
             qnbLogger.error("Order: {} does not exist", orderId);
             return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to find applicable order\"}", HttpStatus.BAD_REQUEST);
@@ -178,7 +183,7 @@ public class QnbPaymentController {
 
     @PostMapping(value = "/initialize")
     public ResponseEntity<?> initPayment(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
-        Optional<OrdersEntity> orderOpt = orderRepository.findById(orderId);
+        Optional<OrdersEntity> orderOpt = ordersRepository.findById(orderId);
         if(!orderOpt.isPresent()) {
             throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
         }
