@@ -1,11 +1,11 @@
 
 import ch.qos.logback.core.net.server.Client;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.integration.microsoftdynamics.webclient.dto.Address;
-import com.nasnav.integration.microsoftdynamics.webclient.dto.Customer;
+import com.nasnav.integration.microsoftdynamics.webclient.dto.*;
 import com.nasnav.integration.microsoftdynamics.webclient.FortuneWebClient;
-import com.nasnav.integration.microsoftdynamics.webclient.dto.CustomerRepObj;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,6 +29,7 @@ import reactor.core.publisher.Mono;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
@@ -117,5 +118,156 @@ public class MicrosoftDynamicsIntegration {
         client.createCustomer(customer, res);
 
         Thread.sleep(1000);
+    }
+
+
+    @Test
+    public void getStores() throws InterruptedException {
+
+        Consumer<String> stores = s -> {
+            JSONArray c = new JSONObject(s).getJSONArray("results").getJSONObject(0).getJSONArray("shops");
+            List<Store> x = null;
+            try {
+                x = Arrays.asList(new ObjectMapper().readValue(c.toString(), Store[].class));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            for (Object b : x)
+                System.out.println(b.toString());
+        };
+
+        Consumer<ClientResponse> response = res -> {
+            System.out.println(res.statusCode());
+            if (res.statusCode().value() == 200)
+                res.bodyToMono(String.class).subscribe(stores);
+        };
+
+        client.getStores(response);
+
+        Thread.sleep(2000);
+    }
+
+    @Test
+    public void getProducts() throws InterruptedException {
+        Consumer<ProductsResponse> products = s -> System.out.println(s);
+
+        Consumer<ClientResponse> response = res -> {
+            System.out.println(res.statusCode());
+            if (res.statusCode().value() == 200)
+                res.bodyToMono(ProductsResponse.class).subscribe(products);
+        };
+
+        client.getProducts(2, 1,response);
+        Thread.sleep(2000);
+    }
+
+
+    @Test
+    public void createSalesOrder() throws InterruptedException, IOException {
+
+        String jsonOrder = "{\"CountryID\":\"EGY\", \"CustomerID\":\"un5005009\", \"Address\":\"NasrCity\", \"City_Code\":\"\", \"Total_Order_Discount\":0.0," +
+                            "\"Total\":0.0, \"Shipping_fees\":10.0000000000000000, \"InventSite\":\"OCTOBER1\", \"Store\":\"116\"," +
+                            "\"PaymentMethod\":\"Credit_CHE\", \"CodCode\":\"Non\", \"CODFeeAmount\":10.0000000000000000, \"ShippingfeesCode\":\"Non\", " +
+                            "\"Items\":[  {\"Item\":\"011APF-74202\", \"InventSiteID\":\"OCTOBER1\", \"Store\":\"116\"," +
+                                          "\"Qty\":10.0000000000000000, \"SalesPrice\":10.0000000000000000, \"DiscountAmount\":0.0000000000000000, "+
+                                          "\"NetPrice\":10.0000000000000000, \"Totals\":0.0 } ]" +
+                            "}";
+
+        SalesOrder order = new ObjectMapper().readValue(jsonOrder, SalesOrder.class);
+
+        Consumer<String> str = response -> System.out.println("order id : " + response);
+
+        Consumer<ClientResponse> res = response -> {
+            Assert.assertTrue(response.statusCode() == HttpStatus.OK);
+            response.bodyToMono(String.class).subscribe(str);
+        };
+
+        client.createSalesOrder(order, res);
+
+        Thread.sleep(4000);
+    }
+
+    @Test
+    public void createReturnSalesOrder() throws InterruptedException, IOException {
+
+        String jsonOrder = "{\"SalesId\":\"UNT18-008133\", \"Items\": [{\"SalesId\":\"UNT18-008133\",\"Item\":\"011APF-74202\", "+
+                             "\"Qty\":1}]}";
+
+        ReturnSalesOrder order = new ObjectMapper().readValue(jsonOrder, ReturnSalesOrder.class);
+
+        Consumer<String> str = response -> System.out.println("return order id : " + response);
+
+        Consumer<ClientResponse> res = response -> {
+            System.out.println(response.statusCode());
+            Assert.assertTrue(response.statusCode().value() == 200);
+            response.bodyToMono(String.class).subscribe(str);
+        };
+
+        client.createReturnSalesOrder(order, res);
+
+        Thread.sleep(5000);
+    }
+
+    @Test
+    public void cancelSalesOrder() throws InterruptedException, IOException {
+
+        /*String jsonOrder = "{\"SalesId\":\"UNT18-008133\", \"Items\": [{\"SalesId\":\"UNT18-008133\",\"Item\":\"011APF-74202\", "+
+                "\"Qty\":1}]}";
+
+        ReturnSalesOrder order = new ObjectMapper().readValue(jsonOrder, ReturnSalesOrder.class);
+
+        Consumer<String> str = response -> System.out.println("return order id : " + response);
+
+        Consumer<ClientResponse> res = response -> {
+            System.out.println(response.statusCode());
+            Assert.assertTrue(response.statusCode().value() == 200);
+            response.bodyToMono(String.class).subscribe(str);
+        };
+
+        client.cancelSalesOrder(order, res);
+
+        Thread.sleep(5000);*/
+    }
+
+    @Test
+    public void createPayment() throws InterruptedException, IOException {
+
+        String jsonPayment = "{\"SalesId\":\"UNT18-008133\", \"PaymDet\":[{\"SalesId\":\"UNT18-008133\",\"Amount\":2," +
+                            "\"PaymentMethod\":\"Credit_CHE\"}]}";
+
+        Payment payment = new ObjectMapper().readValue(jsonPayment, Payment.class);
+
+        Consumer<String> str = response -> System.out.println(" id : " + response);
+
+        Consumer<ClientResponse> res = response -> {
+            System.out.println(response.statusCode());
+            Assert.assertTrue(response.statusCode().value() == 200);
+            response.bodyToMono(String.class).subscribe(str);
+        };
+
+        client.createPayment(payment, res);
+
+        Thread.sleep(5000);
+    }
+
+    @Test
+    public void createReversePayment() throws InterruptedException, IOException {
+
+        String jsonPayment = "{\"SalesId\":\"UNT18-008133\", \"PaymDet\":[{\"SalesId\":\"UNT18-008133\",\"Amount\":2," +
+                "\"PaymentMethod\":\"Credit_CHE\"}]}";
+
+        Payment payment = new ObjectMapper().readValue(jsonPayment, Payment.class);
+
+        Consumer<String> str = response -> System.out.println(" id : " + response);
+
+        Consumer<ClientResponse> res = response -> {
+            System.out.println(response.statusCode());
+            Assert.assertTrue(response.statusCode().value() == 200);
+            response.bodyToMono(String.class).subscribe(str);
+        };
+
+        client.createReversePayment(payment, res);
+
+        Thread.sleep(5000);
     }
 }

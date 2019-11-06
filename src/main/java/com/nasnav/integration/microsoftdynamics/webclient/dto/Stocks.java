@@ -10,5 +10,6 @@ public class Stocks {
 
     @JsonProperty("STORE_CODE")
     private String storeCode;
+    @JsonProperty("Value")
     private BigDecimal value;
 }

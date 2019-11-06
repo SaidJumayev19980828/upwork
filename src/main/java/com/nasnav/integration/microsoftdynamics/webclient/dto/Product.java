@@ -1,11 +1,14 @@
 package com.nasnav.integration.microsoftdynamics.webclient.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.List;
 
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @Data
 public class Product {
 
@@ -13,8 +16,11 @@ public class Product {
     private String axId;
     @JsonProperty("ItemDesc")
     private String itemDescription;
+    @JsonProperty("ItemGroup")
     private String itemGroup;
+    @JsonProperty("Name")
     private String name;
+    @JsonProperty("OriginalPrice")
     private BigDecimal originalPrice;
     @JsonProperty("Qty")
     private List<Stocks> stocks;

@@ -7,8 +7,10 @@ import java.math.BigDecimal;
 
 @Data
 public class ReturnSalesOrderItem {
+    @JsonProperty("SalesId")
     private String salesId;
+    @JsonProperty("Item")
     private String item;
-    @JsonProperty("qty")
+    @JsonProperty("Qty")
     private BigDecimal quantity;
 }
