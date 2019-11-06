@@ -15,6 +15,7 @@ public abstract class Event<D, R> {
 	
 	
 	public Event(Long organizationId, D eventData) {
+		this.organizationId = organizationId;
 		this.eventData = eventData;
 		this.creationTime = LocalDateTime.now();
 	}

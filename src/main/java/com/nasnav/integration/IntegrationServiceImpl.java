@@ -309,12 +309,12 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 
 	@Override
-	public <T, R> void pushIntegrationEvent(Event<T,R> event, Consumer<Event<T, R>> onComplete, BiConsumer<Event<T, R>, Throwable> onError) {
+	public <E extends Event<T,R>, T, R> void pushIntegrationEvent(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError) {
 		try {
 			validateEvent(event);
 			
 			IntegrationModule mod = orgIntegration.get(event.getOrganizationId()).getIntegrationModule();
-			Event<T, R> res =  mod.getEventHandler(event).handleEvent(event);
+			E res =  mod.getEventHandler(event).handleEvent(event, onComplete, onError);
 			
 			onComplete.accept(res);
 		}catch(Exception e) {

@@ -1,5 +1,9 @@
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -16,6 +20,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
 import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.events.Event;
+import com.nasnav.test.integration.event.TestEvent;
+import com.nasnav.test.integration.event.handler.TestEventHandler;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -24,12 +31,13 @@ import net.jcip.annotations.NotThreadSafe;
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
 @NotThreadSafe
-@DirtiesContext
-@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql", "/sql/Integration_Service_Test_Data_Insert.sql"})
-@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+//@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Integration_Service_Test_Data_Insert.sql"})
+//@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class IntegrationServiceTest {
 	
 	private static final Long ORG_ID = 99001L;
+	public static final Long HANDLE_DELAY_MS = 1000L;
+	
 	
 	private static final String INTEGRATION_PARAM_PREPARE_QUERY = 
 			"INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001, 'organization_1', now(), now());" + 
@@ -54,7 +62,7 @@ public class IntegrationServiceTest {
 	/**
 	 * The the loading of the Integration modules actually runs when spring context is 
 	 * initialized. Which happens before @Sql annotations are executed, and
-	 * so, we need to add the Integration parameters before the whole test 
+	 * so, we need to add the Integration parameters in the database before the whole test 
 	 * class is loaded.
 	 * */
 	@BeforeClass
@@ -76,7 +84,63 @@ public class IntegrationServiceTest {
 	
 	@Test
 	public void moduleLoadingTest() {
-		assertTrue("Modules are loaded after spring loads IntegrationService into the context, if it fails the applicaiton won't start!",true);
+		assertTrue("Modules are loaded after spring loads IntegrationService into the context, if it fails the application won't start!",true);
 		assertNotNull( integration.getIntegrationModule(ORG_ID));
+	}
+	
+	
+	
+	//push event with data
+	//assert data is delivered to the correct event handler
+	//assert event is processed asynchronously
+	//assert several events are delivered in the given MAX rate 
+	//test retry logic
+	//test error handling after retry fails
+	@Test
+	public void pushEventTest() {		
+		TestEventHandler.onHandle = this::onEventHandle;
+		TestEvent event = new TestEvent(ORG_ID, TestEventHandler.EXPECTED_DATA);
+		
+		integration.pushIntegrationEvent(event, this::assertEventComplete , this::onPushEventError);
+		
+		Duration pushDuration = Duration.between(event.getCreationTime(), LocalDateTime.now());
+		System.out.println("Push Duration in Mills: " +  pushDuration.toMillis());
+		
+		assertTrue("event push is asynchronous ,it should be done fast, and must return before handling the event!"
+				  , pushDuration.toMillis() < HANDLE_DELAY_MS);
+	}
+	
+
+	
+	
+	
+	private void onEventHandle(TestEvent event) {
+		try {
+			Thread.sleep(HANDLE_DELAY_MS);
+		} catch (InterruptedException e) {
+			assertTrue(false);
+		}
+		assertEquals( TestEventHandler.EXPECTED_DATA, event.getEventData());
+	}
+	
+	
+	
+	
+	
+	
+	private void assertEventComplete(TestEvent event){
+		assertEquals(TestEventHandler.EXPECTED_RESULT, event.getEventResult());
+		
+		Duration eventHandlingDuration = Duration.between(event.getCreationTime(), event.getResultRecievedTime());
+		System.out.println("Handle Duration in Mills: " +  eventHandlingDuration.toMillis());
+		
+		assertTrue(eventHandlingDuration.toMillis() >= HANDLE_DELAY_MS);
+	}
+	
+	
+	
+	private void onPushEventError(TestEvent event, Throwable t) {
+		assertTrue("integration error happended!", false);
+		t.printStackTrace();
 	}
 }

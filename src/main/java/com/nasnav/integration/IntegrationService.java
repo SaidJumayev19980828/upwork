@@ -47,5 +47,5 @@ public interface IntegrationService {
 	 * push an event to the Integration service, which queues and run the proper event handler for the event
 	 * based on the organization and the event type.
 	 * */
-	<T,R> void pushIntegrationEvent(Event<T,R> event, Consumer<Event<T,R>> onComplete, BiConsumer<Event<T,R>, Throwable> onError);
+	<E extends Event<T,R>, T, R> void pushIntegrationEvent(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError);
 }

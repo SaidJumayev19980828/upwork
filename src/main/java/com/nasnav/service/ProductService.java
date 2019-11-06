@@ -181,11 +181,10 @@ public class ProductService {
 		ProductDetailsDTO productDTO = null;
 		try {
 			productDTO = toProductDetailsDTO(product);
-		productDTO.setVariants(variantsDTOList);
-		if (variantsDTOList != null && variantsDTOList.size() > 1)
-			productDTO.setMultipleVariants(true);
-		productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
-		productDTO.setBundleItems( getBundleItems(product));
+			productDTO.setVariants(variantsDTOList);
+			productDTO.setMultipleVariants( hasVariants(variantsDTOList) );				
+			productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
+			productDTO.setBundleItems( getBundleItems(product));
 			productDTO.setImages( getProductImages(product.getId() ) );
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e );
@@ -196,6 +195,13 @@ public class ProductService {
 		}
 
 		return productDTO;
+	}
+
+
+
+
+	private boolean hasVariants(List<VariantDTO> variantsDTOList) {
+		return variantsDTOList != null && variantsDTOList.size() > 1;
 	}
 
 
