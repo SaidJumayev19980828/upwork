@@ -24,13 +24,6 @@ public class PaymentService {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(is));
 			htmlPage = reader.lines().collect(Collectors.joining(System.lineSeparator()));
 
-//			File file = ResourceUtils.getFile("classpath:static/session.html");
-//			htmlPage = new Scanner(getClass().getResourceAsStream("classpath:static/session.html"), "UTF-8").useDelimiter("\\A").next();
-//			htmlPage = readInputStream(new FileInputStream(file));
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//			throw new BusinessException(e.getMessage(), null, HttpStatus.INTERNAL_SERVER_ERROR);
-//		}
 		String modified = htmlPage.replace("$rawJSON", jsonResult);
 		try {
 			Account merchant = new Account();
@@ -46,7 +39,6 @@ public class PaymentService {
 //			if (data.getJSONObject("session") != null) {
 //				modified = modified.replace("$session_id", data.getJSONObject("session").getString("id"));
 //			}
-
 			if (data.has("seller")) {
 				modified = modified.replace("$seller_name", data.getJSONObject("seller").getString("organization_name"));
 				modified = modified.replace("$seller_address_1", data.getJSONObject("seller").getString("address_line1"));
@@ -57,7 +49,6 @@ public class PaymentService {
 				modified = modified.replace("$seller_address_1", "Address 1");
 				modified = modified.replace("$seller_address_2", "Address 2");
 				modified = modified.replace("$seller_logo",  "http://nasnav.com/logo.png");
-
 			}
 
 		} catch (Exception ex) {
@@ -66,6 +57,7 @@ public class PaymentService {
 		return modified;
 	}
 
+/*
 	private StringBuilder readInputStream(InputStream stream) throws IOException {
 		int charsRead;
 		byte[] byteArray = new byte[1024];
@@ -76,4 +68,5 @@ public class PaymentService {
 		}
 		return sb;
 	}
+*/
 }

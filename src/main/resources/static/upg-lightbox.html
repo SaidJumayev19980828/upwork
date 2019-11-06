@@ -1,0 +1,34 @@
+<html><head></head><body>
+
+<script src="https://upgstaging.egyptianbanks.com:3006/js/Lightbox.js"></script>
+<script type="text/javascript">
+
+    function callPaySky() {
+
+        Lightbox.Checkout.configure = {
+/*TRNDATA*/
+            completeCallback: function(data) {
+                console.log('completed');
+                console.log(data);
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", "/*CALLBACK*/", true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.onload = function() {
+                    alert(xhr.responseText);
+                };
+                xhr.send(JSON.stringify( data ));
+            },
+            errorCallback: function(error) {
+                console.log(error);
+            },
+            cancelCallback: function() {
+                console.log('cancel');
+            }
+        };
+        Lightbox.Checkout.showLightbox();
+    }
+</script>
+JSON: $rawJSON <br/>
+<button class="payBtn btn btn-primary" onclick="callPaySky()">PAY NOW</button>
+
+</body></html>
