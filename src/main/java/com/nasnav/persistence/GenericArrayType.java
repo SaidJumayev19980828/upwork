@@ -64,7 +64,7 @@ public class GenericArrayType<T extends Serializable> implements UserType {
         } else {
             @SuppressWarnings("unchecked")
             T castObject = (T) value;
-            Array array = connection.createArrayOf("integer", (Object[]) castObject);
+            Array array = connection.createArrayOf("varchar", (Object[]) castObject);
             statement.setArray(index, array);
         }
     }

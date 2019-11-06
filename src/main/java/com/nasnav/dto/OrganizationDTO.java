@@ -31,14 +31,6 @@ public class OrganizationDTO {
         @JsonProperty("description")
         public String description;
 
-        @ApiModelProperty(value = "Organization logo", example = "/org/11/logo/a3f1433.jpg")
-        @JsonProperty("logo")
-        public String logo;
-
-        @ApiModelProperty(value = "logo encoding type (form-data or base64)", example = "base64")
-        @JsonProperty("logo_encoding")
-        public String logoEncoding;
-
         @ApiModelProperty(value = "URL to twitter account", example = "https://www.twitter.com/fortunestores")
         @JsonProperty("social_twitter")
         public String socialTwitter;

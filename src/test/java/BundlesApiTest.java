@@ -259,7 +259,7 @@ public class BundlesApiTest {
 		
 		JSONObject bundle = createNewDummyProduct();
 		
-		HttpEntity request =  TestCommons.getHttpEntity(bundle.toString() , 0L, "non-existing-token");
+		HttpEntity request =  TestCommons.getHttpEntity(bundle.toString(), "non-existing-token");
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/bundles"
@@ -318,7 +318,7 @@ public class BundlesApiTest {
 	private ResponseEntity<ProductUpdateResponse> postProductData(BaseUserEntity user, JSONObject productJson)
 			throws JsonProcessingException {
 		
-		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<ProductUpdateResponse> response = 
 				template.exchange("/product/bundle"
@@ -394,7 +394,7 @@ public class BundlesApiTest {
 
 
 	private ResponseEntity<ProductUpdateResponse> deleteBundle(Long bundleId, BaseUserEntity user) {
-		HttpEntity request =  TestCommons.getHttpEntity("" , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity("" ,user.getAuthenticationToken());
 		ResponseEntity<ProductUpdateResponse> response = 
 				template.exchange("/product/bundle?product_id=" + bundleId
 						, HttpMethod.DELETE
@@ -406,7 +406,7 @@ public class BundlesApiTest {
 	
 	
 	private ResponseEntity<String> deleteBundleStrReponse(Long bundleId, BaseUserEntity user) {
-		HttpEntity request =  TestCommons.getHttpEntity("" , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
 				template.exchange("/product/bundle?product_id=" + bundleId
 						, HttpMethod.DELETE
@@ -521,7 +521,7 @@ public class BundlesApiTest {
 		
 		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN); 
 		
-		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
 				template.exchange("/product/bundle/element"
 						, HttpMethod.POST
@@ -553,7 +553,7 @@ public class BundlesApiTest {
 		reqJson.put("stock_id", stockId);
 		
 		
-		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , 0L, "NOT EXISTING");
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , "NOT EXISTING");
 		ResponseEntity<String> response = 
 				template.exchange("/product/bundle/element"
 						, HttpMethod.POST
@@ -582,7 +582,7 @@ public class BundlesApiTest {
 		
 		BaseUserEntity user = empUserRepo.getById(NOT_ORG_ADMIN);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
 				template.exchange("/product/bundle/element"
 						, HttpMethod.POST
@@ -610,7 +610,7 @@ public class BundlesApiTest {
 		
 		BaseUserEntity user = empUserRepo.getById(OTHER_ORG_ADMIN); 
 		
-		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
 				template.exchange("/product/bundle/element"
 						, HttpMethod.POST
@@ -638,7 +638,7 @@ public class BundlesApiTest {
 		
 		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN); 
 		
-		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
 				template.exchange("/product/bundle/element"
 						, HttpMethod.POST
@@ -663,7 +663,7 @@ public class BundlesApiTest {
 		
 		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN); 
 		
-		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
 				template.exchange("/product/bundle/element"
 						, HttpMethod.POST
@@ -688,7 +688,7 @@ public class BundlesApiTest {
 		
 		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN); 
 		
-		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
 				template.exchange("/product/bundle/element"
 						, HttpMethod.POST
@@ -716,7 +716,7 @@ public class BundlesApiTest {
 		
 		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
 				template.exchange("/product/bundle/element"
 						, HttpMethod.POST
@@ -745,7 +745,7 @@ public class BundlesApiTest {
 		
 		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
 				template.exchange("/product/bundle/element"
 						, HttpMethod.POST
@@ -776,7 +776,7 @@ public class BundlesApiTest {
 		
 		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
 				template.exchange("/product/bundle/element"
 						, HttpMethod.POST
@@ -808,7 +808,7 @@ public class BundlesApiTest {
 		
 		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
 				template.exchange("/product/bundle/element"
 						, HttpMethod.POST
@@ -844,7 +844,7 @@ public class BundlesApiTest {
 		
 		BaseUserEntity user = empUserRepo.getById(VALID_ORG_AMDIN); 
 		
-		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(reqJson.toString() , user.getAuthenticationToken());
 		ResponseEntity<String> response = 
 				template.exchange("/product/bundle/element"
 						, HttpMethod.POST

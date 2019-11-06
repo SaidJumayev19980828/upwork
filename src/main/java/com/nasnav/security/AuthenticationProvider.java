@@ -1,5 +1,8 @@
 package com.nasnav.security;
 
+import com.nasnav.dao.CommonUserRepository;
+import com.nasnav.dao.UserRepository;
+import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.service.SecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,11 +19,26 @@ public class AuthenticationProvider extends AbstractUserDetailsAuthenticationPro
 
  @Autowired
  SecurityService securityService;
+ 
+ 
+ @Autowired
+ private CommonUserRepository  userRepo;
+ 
 
  @Override
  protected void additionalAuthenticationChecks(UserDetails userDetails, UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken) throws AuthenticationException {
-  //
+	 Object token = usernamePasswordAuthenticationToken.getCredentials();
+	 BaseUserEntity userEntity =  Optional
+									   .ofNullable(token)
+									   .map(String::valueOf)
+									   .flatMap(userRepo::findByAuthenticationToken)
+									   .orElseThrow(() -> new UsernameNotFoundException("Cannot find user with authentication token=" + token));
+	 
+	 usernamePasswordAuthenticationToken.setDetails(userEntity); 
  }
+ 
+ 
+ 
  
  
 

@@ -21,7 +21,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.OrderRepository;
+import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.ProductRepository;
@@ -61,7 +61,7 @@ public class QnbHostedSessionPayment {
     private WebTestClient webClient;
 
     @Autowired
-    private OrderRepository orderRepository;
+    private OrdersRepository orderRepository;
 
     @Autowired
     private BasketRepository basketRepository;
@@ -74,9 +74,6 @@ public class QnbHostedSessionPayment {
 
     @Autowired
     private ProductRepository productRepository;
-
-    @Autowired
-    private PaymentsRepository paymentsRepository;
 
     @Autowired
     private OrganizationRepository organizationRepository;

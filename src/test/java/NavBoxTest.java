@@ -97,7 +97,7 @@ public class NavBoxTest {
 
         Assert.assertEquals("MazooTestBrand", json.get("name"));
         Assert.assertEquals("mtb", json.get("p_name"));
-        Assert.assertEquals("/bright/logo/image.png", json.get("logo"));
+        Assert.assertEquals("/bright/logo/image.png", json.get("logo_url"));
         Assert.assertEquals("/some/banner/image.png", json.get("banner"));
 
         // test non-existent brand_id
@@ -113,7 +113,6 @@ public class NavBoxTest {
         // TODO: no support for opening times yet
         ShopsEntity shop = new ShopsEntity();
         OrganizationEntity org  = new OrganizationEntity();
-        org.setCreatedAt(new Date());
         organizationRepository.save(org);
         long orgId = org.getId();
         shop.setOrganizationEntity(org);

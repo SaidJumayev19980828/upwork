@@ -4,7 +4,8 @@ import java.net.Authenticator;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedList;
 
 import com.nasnav.payments.qnb.UpgLightbox;
 import org.json.JSONObject;
@@ -20,6 +21,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.gargoylesoftware.htmlunit.CookieManager;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
@@ -28,7 +30,7 @@ import com.gargoylesoftware.htmlunit.WebWindow;
 import com.nasnav.NavBox;
 import com.nasnav.controller.QnbPaymentController;
 import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.OrderRepository;
+import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.payments.qnb.PaymentService;
@@ -38,7 +40,6 @@ import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.StocksEntity;
 
 import net.jcip.annotations.NotThreadSafe;
-import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -60,7 +61,7 @@ public class PaymentControllerTest {
 	int randomServerPort;
 
 	@Autowired
-	private OrderRepository orderRepository;
+	private OrdersRepository orderRepository;
 
 	@Autowired
 	private BasketRepository basketRepository;

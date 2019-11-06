@@ -3,9 +3,11 @@ package com.nasnav.service;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.nasnav.persistence.OrganizationEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -24,11 +26,12 @@ import com.nasnav.dao.CommonUserRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dto.UserDTOs.UserLoginObject;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
@@ -50,8 +53,8 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	@Autowired
 	private OrganizationRepository orgRepo;
-	
-	
+
+
 	@Override
 	public Optional<UserDetails> findUserByAuthToken(String token){
 		return Optional.ofNullable(token)
@@ -205,12 +208,12 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	@Override
-	public EmployeeUserEntity getCurrentUser() {
+	public BaseUserEntity getCurrentUser() {
 		return Optional.ofNullable( SecurityContextHolder.getContext() )
-						.map(c -> c.getAuthentication())
-						.map(Authentication::getName)
-						.map(empRepo::getOneByEmail)
-						.orElseThrow(()-> new IllegalStateException("Could not retrieve current user!"));
+				.map(c -> c.getAuthentication())
+				.map(Authentication::getDetails)
+				.map(BaseUserEntity.class::cast)
+				.orElseThrow(()-> new IllegalStateException("Could not retrieve current user!"));
 	}
 
 
@@ -220,7 +223,7 @@ public class SecurityServiceImpl implements SecurityService {
 	@Override
 	public Long getCurrentUserOrganizationId() {
 		return Optional.ofNullable( getCurrentUser() )
-						.map(EmployeeUserEntity::getOrganizationId)
+						.map(BaseUserEntity::getOrganizationId)
 						.orElseThrow(() -> new IllegalStateException("Current User has no organization!"));
 	}
 
@@ -231,10 +234,33 @@ public class SecurityServiceImpl implements SecurityService {
 	@Override
 	public OrganizationEntity getCurrentUserOrganization() {
 		return Optional.ofNullable( getCurrentUser() )
-						.map(EmployeeUserEntity::getOrganizationId)
+						.map(BaseUserEntity::getOrganizationId)
 						.flatMap(orgRepo::findById)
 						.orElseThrow(() -> new IllegalStateException("Current User has no organization!"));
-	}	
+	}
+
+
+
+
+
+	@Override
+	public Boolean userHasRole(BaseUserEntity user, Roles role) {
+		List<GrantedAuthority> roles = getUserRoles(user);
+		return roles.stream()
+					.map(GrantedAuthority::getAuthority)
+					.filter(Objects::nonNull)
+					.anyMatch(auth -> Objects.equals( auth, role.getValue()));
+	}
+
+
+
+
+
+	@Override
+	public Boolean currentUserHasRole(Roles role) {
+		BaseUserEntity user = getCurrentUser();
+		return userHasRole(user, role);
+	}
 	
 }
 

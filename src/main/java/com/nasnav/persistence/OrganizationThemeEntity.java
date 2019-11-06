@@ -1,13 +1,25 @@
 package com.nasnav.persistence;
 
+import java.time.LocalDateTime;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrganizationThemesRepresentationObject;
-import lombok.Data;
-import org.hibernate.annotations.Type;
 
-import javax.persistence.*;
-import java.util.Date;
+import lombok.Data;
 
 @Entity
 @Table(name = "organization_themes")
@@ -55,12 +67,15 @@ public class OrganizationThemeEntity implements BaseEntity {
     private String[] sliderImages;
     
     @Column(name = "created_at")
-    private Date createdAt;
+    @CreationTimestamp
+    private LocalDateTime createdAt;
     
     @Column(name = "updated_at")
-    private Date updatedAt;
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    
+    @ManyToOne
     @JoinColumn(name = "organization_id", referencedColumnName = "id")
     @JsonIgnore
     private OrganizationEntity organizationEntity;

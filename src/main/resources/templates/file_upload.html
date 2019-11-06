@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="/js/jquery-3.4.1.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.serializejson.js"></script>
+    <script th:inline="javascript">
+            /*<![CDATA[*/
+    
+            var token = /*[[${token}]]*/ 'default';
+            var organization_id = [[${organization_id}]]
+            var isNasnavAdmin = [[${isNasnavAdmin}]]
+
+            /*]]>*/
+        </script>
+    <script type="text/javascript" src="/js/utils.js"></script>
+    <script src="/js/file_upload.js"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/form_style.css">
+    <meta charset="UTF-8">
+    <title>NasNav</title>
+</head>
+
+<body>
+    <div class="title">
+        <h1>Upload New File</h1>
+    </div>
+    <form class="main-form" id="file-form">
+
+        <div  th:if="${isNasnavAdmin}">
+            <input id="nasnav_org_id" type="text" name="org_id" placeholder="Organization ID" />
+        </div>
+
+        <div>
+            File<input id="file" type="file" name="file" />
+        </div>
+    </form>
+    <form class="main-form">
+        <input type="button" id="submit-form-btn" onclick="createFormData()" value="Submit"></input>
+    </form>
+    <div class="main-form">
+	   	<button onclick="openPage('/dirty_dashboard/dashboard')" style="background-color: red">Back</button>
+	</div>
+    <div id="error-container" style="border: black">
+        <div id="error-desc">
+
+            </div>
+        <div id="error-msg">
+
+        </div>
+        <div id="errors">
+
+        </div>
+    </div>
+    
+</body>
+
+</html>

@@ -57,5 +57,8 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     @ApiModelProperty(value = "Website theme to use to display organization web pages")
     @JsonProperty("themes")
     private OrganizationThemesRepresentationObject themes;
+
+    @ApiModelProperty(value = "All the images related to the organization")
+    private List<OrganizationImagesRepresentationObject> images;
 }
 

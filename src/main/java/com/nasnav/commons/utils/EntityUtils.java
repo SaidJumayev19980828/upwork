@@ -2,6 +2,7 @@ package com.nasnav.commons.utils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +66,20 @@ public class EntityUtils {
 	@SafeVarargs
 	public static <T> Set<T> setOf(T...elements){
 		return new HashSet<>( Arrays.asList(elements));
+	}
+	
+	
+	
+	
+	public static boolean isNullOrEmpty(Collection collection) {
+		return collection == null || collection.isEmpty();
+	}
+	
+	
+	
+	
+	public static boolean isNullOrZero(Long n) {
+		return n == null || n == 0L;
 	}
 	
 }

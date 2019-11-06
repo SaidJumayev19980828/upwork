@@ -26,6 +26,10 @@ INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentic
     VALUES (89, 'user2@nasnav.com',now(), now(), 'user2','456', 99002);
 INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id)
     VALUES (90, 'user3@nasnav.com',now(), now(), 'user3','789', 99003);
+INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id)
+	VALUES (91, 'user4@nasnav.com',now(), now(), 'user4','011', 99003);--inserting users
+INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id)
+    VALUES (88001, 'user1@nasnav.com',now(), now(), 'user1','88657aser', 99003);
 
 
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
@@ -97,9 +101,34 @@ INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 --inserting orders
 INSERT INTO public.orders
 (id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status)
-VALUES(33,'', '', '', 0, 88, now(), now(), now(), 99001, 1, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 0.0, 0);
+VALUES(330002,'', '', '', 0, 88, now(), now(), now(), 99001, 1, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 600.00, 0);
 
 
-INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(33, 601, 14, 600.0, 1);
+INSERT INTO public.orders
+(id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status)
+VALUES(330003,'', '', '', 0, 88, now(), now(), now(), 99001, 0, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 300.00, 0);
+
+
+INSERT INTO public.orders
+(id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status)
+VALUES(330004,'', '', '', 0, 89, now(), now()+ interval '1 day', now(), 99002, 0, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 200.00, 0);
+
+INSERT INTO public.orders
+(id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status)
+VALUES(330005,'', '', '', 0, 89, now(), now(), now(), 99002, 0, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 50.00, 0);
+
+
+INSERT INTO public.orders
+(id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status)
+VALUES(330006,'', '', '', 0, 90, now(), now(), now(), 99003, 1, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 100.00, 0);
+
+
+
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330002, 601, 14, 600.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330003, 601, 7, 300.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330004, 601, 5, 200.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330005, 601, 1, 50.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330006, 601, 3, 100.0, 1);
+
 
 

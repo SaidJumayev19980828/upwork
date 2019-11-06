@@ -73,7 +73,7 @@ public class ProductApiTest {
 		
 		JSONObject productJson = createNewDummyProduct();		
 		
-		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/info"
@@ -134,7 +134,7 @@ public class ProductApiTest {
 		product.put("name","updated product");
 		product.put("brand_id", JSONObject.NULL);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(product.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(product.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<ProductUpdateResponse> response = 
 				template.exchange("/product/info"
@@ -167,7 +167,7 @@ public class ProductApiTest {
 	private ResponseEntity<ProductUpdateResponse> postProductData(BaseUserEntity user, JSONObject productJson)
 			throws JsonProcessingException {
 		
-		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<ProductUpdateResponse> response = 
 				template.exchange("/product/info"
@@ -404,7 +404,7 @@ public class ProductApiTest {
 	private ResponseEntity<String> postInvalidProductData(BaseUserEntity user, JSONObject productJson)
 			throws JsonProcessingException {				
 		
-		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/info"
@@ -488,7 +488,7 @@ public class ProductApiTest {
 		
 		assertTrue(productRepository.existsById(productId)); //assert product exists before delete
 		
-		HttpEntity request =  TestCommons.getHttpEntity("" , 4444, "InvalidToken");
+		HttpEntity request =  TestCommons.getHttpEntity("" ,"InvalidToken");
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product?product_id=" + productId
@@ -539,7 +539,7 @@ public class ProductApiTest {
 
 
 	private ResponseEntity<String> deleteProduct(BaseUserEntity user, Long productId) {
-		HttpEntity request =  TestCommons.getHttpEntity("" , user.getId(), user.getAuthenticationToken());
+		HttpEntity request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product?product_id=" + productId

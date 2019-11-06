@@ -2,8 +2,10 @@ package com.nasnav.persistence;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -15,7 +17,9 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Type;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
@@ -63,9 +67,11 @@ public class OrdersEntity implements BaseEntity{
 	}
 
 	@Column(name = "created_at", nullable = false, length = 29)
+	@CreationTimestamp
 	private LocalDateTime creationDate;
 
 	@Column(name = "updated_at", nullable = false, length = 29)
+	@UpdateTimestamp
 	private LocalDateTime updateDate;
 
 	@Column(name = "date_delivery", nullable = false, length = 29)
@@ -92,7 +98,7 @@ public class OrdersEntity implements BaseEntity{
 	@JoinColumn(name = "organization_id", nullable = false)
 	private OrganizationEntity organizationEntity;
 
-	@OneToMany(mappedBy = "ordersEntity")
+	@OneToMany(mappedBy = "ordersEntity", cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
     private Set<BasketsEntity> basketsEntity;
 
 	@Override
@@ -112,5 +118,22 @@ public class OrdersEntity implements BaseEntity{
 	public OrdersEntity() {
 		this.paymentStatus = PaymentStatus.UNPAID.getValue();
 		this.creationDate = LocalDateTime.now();
+		basketsEntity = new HashSet<>();
+	}
+	
+	
+	
+	
+	
+	public void addBasketItem(BasketsEntity item) {
+		item.setOrdersEntity(this);
+		basketsEntity.add(item);
+	}
+
+	
+	
+	public void removeBasketItem(BasketsEntity item) {
+		item.setOrdersEntity(null);
+		basketsEntity.remove(item);
 	}
 }

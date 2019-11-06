@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="/js/jquery-3.4.1.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.serializejson.js"></script>
+    <script th:inline="javascript">
+            /*<![CDATA[*/
+    
+            var token = /*[[${token}]]*/ 'default';
+    
+            /*]]>*/
+        </script>
+    <script type="text/javascript" src="/js/utils.js"></script>
+    <script src="/js/product_features.js"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/form_style.css">
+    <meta charset="UTF-8">
+    <title>NasNav</title>
+</head>
+
+<body>
+    <div class="title">
+        <h1>Add New Product Feature</h1>
+    </div>
+    <form class="main-form" id="products_feature">
+        <div>
+            <input type="text" name="description" placeholder="Features Description" />
+            <input type="text" name="name" placeholder="Features Name" required />
+            <input type="text" name="p_name" placeholder="Features PName"  />
+            <input style="display: none;" type="text" name="operation" value="create" required />
+        </div>
+    </form>
+    <form class="main-form">
+        <input type="button" id="submit-form-btn" onclick="postProductFeatureData('products_feature')" value="Submit"></input>
+    </form>
+    <div class="main-form">
+	   	<button onclick="openPage('/dirty_dashboard/dashboard')" style="background-color: red">Back</button>
+	</div>
+    <div id="error-container" style="border: black">
+        <div id="error-desc">
+
+            </div>
+        <div id="error-msg">
+
+        </div>
+        <div id="errors">
+
+        </div>
+    </div>
+    
+</body>
+
+</html>

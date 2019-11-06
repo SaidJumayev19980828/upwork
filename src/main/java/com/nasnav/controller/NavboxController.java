@@ -51,16 +51,10 @@ public class NavboxController {
 
 		Organization_BrandRepresentationObject brandRepresentationObject = brandService.getBrandById(brandId);
 
-		if (brandRepresentationObject == null) {
+		if (brandRepresentationObject == null)
 			throw new BusinessException("Brand not found", null, HttpStatus.NOT_FOUND);
-		}
-		JSONObject response = new JSONObject();
-		response.put("name", brandRepresentationObject.getName());
-		response.put("p_name", brandRepresentationObject.getPname());
-		response.put("logo", brandRepresentationObject.getLogoUrl());
-		response.put("banner", brandRepresentationObject.getBannerImage());
 
-		return new ResponseEntity<>(response.toString(), HttpStatus.OK);
+		return new ResponseEntity<>(brandRepresentationObject, HttpStatus.OK);
 	}
 
 	@ResponseStatus(value = HttpStatus.OK)

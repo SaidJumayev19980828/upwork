@@ -36,15 +36,9 @@ public class ShopsController {
             @io.swagger.annotations.ApiResponse(code = 401, message = "INSUFFICIENT RIGHTS or UNAUTHENTICATED"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @PostMapping(value = "/update", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity updateShop(@RequestHeader(name = "User-ID") Long loggedUserId,
-                                      @RequestHeader(name = "User-Token") String userToken,
-                                      @RequestBody ShopJsonDTO shopJson) throws BusinessException {
-        ShopResponse response;
-        if (shopJson.getId() == null){
-            response = shopService.createShop(loggedUserId, shopJson);
-        } else {
-            response = shopService.updateShop(loggedUserId, shopJson);
-        }
+    public ResponseEntity updateShop(@RequestHeader(name = "User-Token") String userToken,
+                                     @RequestBody ShopJsonDTO shopJson) throws BusinessException {
+        ShopResponse response =  shopService.shopModification(shopJson);
         return new ResponseEntity(response, response.getHttpStatus());
     }
     

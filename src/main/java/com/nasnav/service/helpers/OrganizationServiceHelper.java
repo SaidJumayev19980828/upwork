@@ -3,9 +3,11 @@ package com.nasnav.service.helpers;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.SocialRepository;
 import com.nasnav.dto.OrganizationDTO;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.SocialEntity;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -20,28 +22,30 @@ public class OrganizationServiceHelper  {
         this.socialRepository = socialRepository;
     }
 
-    public String[] addSocialLinks(OrganizationDTO.OrganizationModificationDTO json, OrganizationEntity organization){
+    public SocialEntity addSocialLinks(OrganizationDTO.OrganizationModificationDTO json, OrganizationEntity organization) throws BusinessException {
         if (json.socialInstagram == null && json.socialTwitter == null && json.socialFacebook == null)
-            return new String[]{"0","",""};
+            return null;
 
         SocialEntity socialEntity = socialRepository.findOneByOrganizationEntity_Id(json.organizationId);
         if (socialEntity == null){
             socialEntity = new SocialEntity();
             socialEntity.setCreatedAt(new Date());
+            socialEntity.setOrganizationEntity(organization);
         }
-        socialEntity.setOrganizationEntity(organization);
         if (json.socialTwitter != null) {
-            if (StringUtils.validateUrl(json.socialTwitter, "((https?://)?(www\\.)?twitter\\.com/)?(@|#!/)?([A-Za-z0-9_]{1,15})(/([-a-z]{1,20}))?")) {
+            if (StringUtils.validateUrl(json.socialTwitter,
+                    "((https?://)?(www\\.)?twitter\\.com/)(@|#!/)?([A-Za-z0-9_]{1,15})(/([-a-z]{1,20}))?")) {
                 socialEntity.setTwitter(json.socialTwitter);
             } else {
-                return new String[]{"1", "INVALID_PARAM: social_twitter", "the URL is malformed"};
+                throw new BusinessException("INVALID_PARAM: social_twitter", "the URL is malformed", HttpStatus.NOT_ACCEPTABLE);
             }
         }
         if (json.socialFacebook != null) {
-            if (StringUtils.validateUrl(json.socialFacebook, "http(s)?:\\/\\/(www\\.)?(facebook|fb)\\.com\\/[A-z0-9_\\-\\.]+\\/?")) {
+            if (StringUtils.validateUrl(json.socialFacebook,
+                    "http(s)?:\\/\\/(www\\.)?(facebook|fb)\\.com\\/[A-z0-9_\\-\\.]+\\/?")) {
                 socialEntity.setFacebook(json.socialFacebook);
             } else {
-                return new String[]{"1", "INVALID_PARAM: social_facebook", "the URL is malformed"};
+                throw new BusinessException("INVALID_PARAM: social_facebook", "the URL is malformed", HttpStatus.NOT_ACCEPTABLE);
             }
         }
         if (json.socialInstagram != null) {
@@ -49,11 +53,10 @@ public class OrganizationServiceHelper  {
                     "https?:\\/\\/(www\\.)?instagram\\.com\\/([A-Za-z0-9_](?:(?:[A-Za-z0-9_]|(?:\\.(?!\\.))){0,28}(?:[A-Za-z0-9_]))?)")) {
                 socialEntity.setInstagram(json.socialInstagram);
             } else {
-                return new String[]{"1", "INVALID_PARAM: social_instagram", "the URL is malformed"};
+                throw new BusinessException("INVALID_PARAM: social_instagram", "the URL is malformed", HttpStatus.NOT_ACCEPTABLE);
             }
         }
         socialEntity.setUpdatedAt(new Date());
-        socialRepository.save(socialEntity);
-        return new String[]{"0","",""};
+        return socialEntity;
     }
 }

@@ -2,13 +2,8 @@ package com.nasnav.dto;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -123,8 +118,16 @@ public abstract class BaseJsonDTO {
 					, getPropertiesRequiredFor(Required.FOR_UPDATE).stream())
 				.collect(Collectors.toSet());
 	}
-	
-	
+
+	@JsonIgnore
+	public Set<String> getRequiredPropertyNamesForDataUpdate() {
+		Set propertyNames = getRequiredPropertiesAlways().stream()
+				.map(value -> value.getName()).collect(Collectors.toSet());
+		propertyNames.addAll(getPropertiesRequiredFor(Required.FOR_UPDATE).stream()
+				.map(value -> value.getName()).collect(Collectors.toSet()));
+		return propertyNames;
+	}
+
 	@JsonIgnore
 	public Set<PropertyDescriptor> getRequiredPropertiesAlways() {
 		return getPropertiesRequiredFor(Required.ALWAYS);

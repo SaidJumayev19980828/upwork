@@ -11,15 +11,10 @@ import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.SocialRepository;
 import com.nasnav.dao.ExtraAttributesRepository;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.OrganizationThemeEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.SocialEntity;
-import com.nasnav.persistence.ExtraAttributesEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
+import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.service.helpers.OrganizationServiceHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,11 +24,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -54,6 +45,11 @@ public class OrganizationService {
     private final FileService fileService;
     private final EmployeeUserRepository employeeUserRepository;
 
+    private final OrganizationImagesRepository organizationImagesRepository;
+
+    @Autowired
+    private ShopsRepository shopsRepository;
+
     @Autowired
 	private ProductFeaturesRepository featureRepo;
     
@@ -68,7 +64,8 @@ public class OrganizationService {
     @Autowired
     public OrganizationService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository, SocialRepository socialRepository,
                                OrganizationThemeRepository organizationThemeRepository,ExtraAttributesRepository extraAttributesRepository,
-                               OrganizationServiceHelper helper, FileService fileService, EmployeeUserRepository employeeUserRepository) {
+                               OrganizationServiceHelper helper, FileService fileService, EmployeeUserRepository employeeUserRepository,
+                               OrganizationImagesRepository organizationImagesRepository) {
         this.organizationRepository = organizationRepository;
         this.socialRepository = socialRepository;
         this.organizationThemeRepository = organizationThemeRepository;
@@ -77,74 +74,55 @@ public class OrganizationService {
         this.helper = helper;
         this.fileService = fileService;
         this.employeeUserRepository = employeeUserRepository;
+        this.organizationImagesRepository = organizationImagesRepository;
     }
 
-   public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
-
+    public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
         OrganizationEntity organizationEntity = organizationRepository.findByPname(organizationName);
-        if (organizationEntity == null) {
+        if (organizationEntity == null)
             organizationEntity = organizationRepository.findOneByNameIgnoreCase(organizationName);
-        }
+
         if (organizationEntity == null)
             throw new BusinessException("Organization not found", null, HttpStatus.NOT_FOUND);
 
-        OrganizationRepresentationObject organizationRepresentationObject = ((OrganizationRepresentationObject) organizationEntity.getRepresentation());
-
-        //TODO add brandRepresentationObjects from other repository
-        SocialEntity socialEntity = socialRepository.findOneByOrganizationEntity_Id(organizationRepresentationObject.getId());
-
-        if (socialEntity != null) {
-            organizationRepresentationObject.setSocial((SocialRepresentationObject) socialEntity.getRepresentation());
-        }
-
-        OrganizationThemeEntity organizationThemeEntity = organizationThemeRepository.findOneByOrganizationEntity_Id(organizationRepresentationObject.getId());
-
-        if (organizationThemeEntity != null) {
-            organizationRepresentationObject.setThemes((OrganizationThemesRepresentationObject) organizationThemeEntity.getRepresentation());
-        }
-
-        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_Id(organizationRepresentationObject.getId());
-
-        if (brandsEntityList != null && !brandsEntityList.isEmpty()) {
-
-            List<Organization_BrandRepresentationObject> repList = brandsEntityList.stream().map(rep -> ((Organization_BrandRepresentationObject) rep.getRepresentation())).collect(Collectors.toList());
-            organizationRepresentationObject.setBrands(repList);
-        }
-        return organizationRepresentationObject;
+        return getOrganizationAdditionalData(organizationEntity);
     }
 
     public OrganizationRepresentationObject getOrganizationById(Long organizationId) throws BusinessException {
-
         OrganizationEntity organizationEntity = organizationRepository.findOneById(organizationId);
 
         if (organizationEntity == null)
             throw new BusinessException("Organization not found", null, HttpStatus.NOT_FOUND);
 
-        OrganizationRepresentationObject organizationRepresentationObject = ((OrganizationRepresentationObject) organizationEntity.getRepresentation());
-
-        //TODO add brandRepresentationObjects from other repository
-        SocialEntity socialEntity = socialRepository.findOneByOrganizationEntity_Id(organizationRepresentationObject.getId());
-
-        if (socialEntity != null) {
-            organizationRepresentationObject.setSocial((SocialRepresentationObject) socialEntity.getRepresentation());
-        }
-
-        OrganizationThemeEntity organizationThemeEntity = organizationThemeRepository.findOneByOrganizationEntity_Id(organizationRepresentationObject.getId());
-
-        if (organizationThemeEntity != null) {
-            organizationRepresentationObject.setThemes((OrganizationThemesRepresentationObject) organizationThemeEntity.getRepresentation());
-        }
-
-        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_Id(organizationRepresentationObject.getId());
-
-        if (brandsEntityList != null && !brandsEntityList.isEmpty()) {
-
-            List<Organization_BrandRepresentationObject> repList = brandsEntityList.stream().map(rep -> ((Organization_BrandRepresentationObject) rep.getRepresentation())).collect(Collectors.toList());
-            organizationRepresentationObject.setBrands(repList);
-        }
-        return organizationRepresentationObject;
+        return getOrganizationAdditionalData(organizationEntity);
     }
 
+    private OrganizationRepresentationObject getOrganizationAdditionalData(OrganizationEntity entity) {
+        OrganizationRepresentationObject orgRepObj = ((OrganizationRepresentationObject) entity.getRepresentation());
+
+        //TODO add brandRepresentationObjects from other repository
+        SocialEntity socialEntity = socialRepository.findOneByOrganizationEntity_Id(orgRepObj.getId());
+        if (socialEntity != null)
+            orgRepObj.setSocial((SocialRepresentationObject) socialEntity.getRepresentation());
+
+        OrganizationThemeEntity organizationThemeEntity = organizationThemeRepository.findOneByOrganizationEntity_Id(orgRepObj.getId());
+        if (organizationThemeEntity != null)
+            orgRepObj.setThemes((OrganizationThemesRepresentationObject) organizationThemeEntity.getRepresentation());
+
+        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_Id(orgRepObj.getId());
+        if (brandsEntityList != null && !brandsEntityList.isEmpty()) {
+            List<Organization_BrandRepresentationObject> repList = brandsEntityList.stream().map(rep -> ((Organization_BrandRepresentationObject) rep.getRepresentation())).collect(Collectors.toList());
+            orgRepObj.setBrands(repList);
+        }
+
+        List <OrganizationImagesEntity> orgImgEntities = organizationImagesRepository.findByOrganizationEntityId(orgRepObj.getId());
+        if (orgImgEntities != null && !orgImgEntities.isEmpty()) {
+            List<OrganizationImagesRepresentationObject> imagesList = orgImgEntities.stream().map(rep -> ((OrganizationImagesRepresentationObject) rep.getRepresentation())).collect(Collectors.toList());
+            orgRepObj.setImages(imagesList);
+        }
+
+        return orgRepObj;
+    }
 
     public List<ExtraAttributesRepresentationObject> getOrganizationExtraAttributesById(Long organizationId){
         List<ExtraAttributesEntity> extraAttributes = null;
@@ -180,8 +158,6 @@ public class OrganizationService {
         OrganizationEntity newOrg = new OrganizationEntity();
         newOrg.setName(json.name);
         newOrg.setPname(json.pname);
-        newOrg.setCreatedAt(new Date());
-        newOrg.setCreatedAt(new Date());
         organizationRepository.save(newOrg);
         return new OrganizationResponse(newOrg.getId(), 0);
     }
@@ -203,37 +179,27 @@ public class OrganizationService {
         }
         //logo
         OrganizationThemeEntity orgTheme = null;
-        if (json.logo != null || file != null) {
+        if (file != null) {
             orgTheme = organizationThemeRepository.findOneByOrganizationEntity_Id(json.organizationId);
             if (orgTheme == null) {
                 orgTheme = new OrganizationThemeEntity();
-                orgTheme.setCreatedAt(new Date());
                 orgTheme.setOrganizationEntity(organization);
             }
-            if (json.logoEncoding == null) {
-                throw new BusinessException("Missing_PARAM: logo_encoding", "Provided logo_encoding is Missing", HttpStatus.NOT_ACCEPTABLE);
-            }
-            else if (json.logoEncoding.equals("form-data")) {
-                String mimeType = file.getContentType();
-                if(!mimeType.startsWith("image"))
-                    throw new BusinessException("INVALID PARAM:image",
-                            "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!", HttpStatus.NOT_ACCEPTABLE);
-                orgTheme.setLogo(fileService.saveFile(file, json.organizationId));
-                orgTheme.setUpdatedAt(new Date());
-            } else if (json.logoEncoding.equals("base64")){
-                orgTheme.setLogo(json.logo);
-                orgTheme.setUpdatedAt(new Date());
-            } else {
-                throw new BusinessException("INVALID_PARAM: logo_encoding", "Provided logo_encoding is Invalid", HttpStatus.NOT_ACCEPTABLE);
-            }
+            String mimeType = file.getContentType();
+            if(!mimeType.startsWith("image"))
+                throw new BusinessException("INVALID PARAM:image",
+                        "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!", HttpStatus.NOT_ACCEPTABLE);
+
+            orgTheme.setLogo(fileService.saveFile(file, json.organizationId));
         }
-        String [] result = helper.addSocialLinks(json, organization);
-        if (result[0].equals("1"))
-            throw new BusinessException(result[1], result[2], HttpStatus.NOT_ACCEPTABLE);
-        if (!orgTheme.getLogo().equals(null)) {
+        SocialEntity socialEntity = helper.addSocialLinks(json, organization);
+
+        if (socialEntity != null)
+            socialRepository.save(socialEntity);
+
+        if (orgTheme != null)
             organizationThemeRepository.save(orgTheme);
-        }
-        organization.setUpdatedAt(new Date());
+
         organizationRepository.save(organization);
         return new OrganizationResponse();
     }
@@ -520,5 +486,136 @@ public class OrganizationService {
 					, HttpStatus.NOT_ACCEPTABLE);
 		}
 	}
+
+
+
+	public ProductImageUpdateResponse updateOrganizationImage(MultipartFile file, OrganizationImageUpdateDTO imgMetaData) throws BusinessException {
+        if(imgMetaData == null)
+            throw new BusinessException("No Metadata provided for organization image!", "INVALID PARAM", HttpStatus.NOT_ACCEPTABLE);
+
+        if(!imgMetaData.isRequiredPropertyProvided("operation"))
+            throw new BusinessException("No operation provided!", "MISSING PARAM:operation", HttpStatus.NOT_ACCEPTABLE);
+
+
+        ProductImageUpdateResponse response;
+
+        if (imgMetaData.getOperation().equals( Operation.CREATE )) {
+            response = createNewOrganizationImg(file, imgMetaData);
+        } else {
+            response = UpdatedOrganizationImg(file, imgMetaData);
+        }
+        return response;
+    }
+
+    private void validateOrganizationImageUpdateData(OrganizationImageUpdateDTO imgMetaData) throws BusinessException {
+        Optional<OrganizationEntity> org = organizationRepository.findById(imgMetaData.getOrganizationId());
+        if (!org.isPresent())
+            throw new BusinessException("INVAILD PARAM: org_id","provided org_id doesn't have corresponding organization",
+                    HttpStatus.NOT_ACCEPTABLE);
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+        if (!user.getOrganizationId().equals(imgMetaData.getOrganizationId()))
+            throw new BusinessException("INSUFFICIENT RIGHTS","User doesn't belong to organization",
+                    HttpStatus.FORBIDDEN);
+    }
+
+    private ProductImageUpdateResponse createNewOrganizationImg(MultipartFile file, OrganizationImageUpdateDTO imgMetaData) throws BusinessException {
+        if(!imgMetaData.areRequiredForCreatePropertiesProvided()) {
+            throw new BusinessException(
+                    String.format("Missing required parameters! required parameters for adding new image are: %s", imgMetaData.getRequiredPropertiesForDataCreate())
+                    , "MISSING PARAM", HttpStatus.NOT_ACCEPTABLE);
+        }
+
+        validateOrganizationImageUpdateData(imgMetaData);
+
+        if(file == null || file.isEmpty() || file.getContentType() == null)
+            throw new BusinessException("No image file provided!", "MISSIG PARAM:image", HttpStatus.NOT_ACCEPTABLE);
+
+        String mimeType = file.getContentType();
+        if(!mimeType.startsWith("image"))
+            throw new BusinessException(String.format("Invalid file type[%]! only MIME 'image' types are accepted!", mimeType)
+                    , "MISSIG PARAM:image"
+                    , HttpStatus.NOT_ACCEPTABLE);
+        String url = fileService.saveFile(file, imgMetaData.getOrganizationId());
+
+        Optional<OrganizationEntity> organizationEntity = orgRepo.findById( imgMetaData.getOrganizationId());
+
+        OrganizationImagesEntity entity = new OrganizationImagesEntity();
+        entity.setOrganizationEntity(organizationEntity.get());
+        entity.setType(imgMetaData.getType());
+        entity.setUri(url);
+        if  (imgMetaData.getShopId() != null) {
+            Optional<ShopsEntity> shop = shopsRepository.findById(imgMetaData.getShopId());
+            if(!shop.isPresent())
+                throw new BusinessException("INVALID PARAM: shop_id", "Provided shop_id doesn't match any existing shop", HttpStatus.NOT_ACCEPTABLE);
+
+            else if (!shop.get().getOrganizationEntity().getId().equals(imgMetaData.getOrganizationId()))
+                throw new BusinessException("INVALID PARAM: shop_id", "Provided shop_id doesn't belong to organization #"
+                        + imgMetaData.getOrganizationId(), HttpStatus.NOT_ACCEPTABLE);
+
+            entity.setShopsEntity(shopsRepository.findById(imgMetaData.getShopId()).get());
+        }
+
+        entity = organizationImagesRepository.save(entity);
+
+        return new ProductImageUpdateResponse(entity.getId(), url);
+    }
+
+
+    private ProductImageUpdateResponse UpdatedOrganizationImg(MultipartFile file, OrganizationImageUpdateDTO imgMetaData) throws BusinessException {
+        if(!imgMetaData.areRequiredForUpdatePropertiesProvided())
+            throw new BusinessException(String.format("Missing required parameters! required parameters for updating existing image are: %s",
+                    imgMetaData.getRequiredPropertyNamesForDataUpdate()), "MISSING PARAM", HttpStatus.NOT_ACCEPTABLE);
+
+        validateOrganizationImageUpdateData(imgMetaData);
+
+        Long imgId = imgMetaData.getImageId();
+
+        if( !organizationImagesRepository.existsById(imgId))
+            throw new BusinessException(
+                    String.format("No organization image exists with id: %d !", imgId), "INVALID PARAM:image_id", HttpStatus.NOT_ACCEPTABLE);
+
+        if(file != null) {
+            String mimeType = file.getContentType();
+            if (!mimeType.startsWith("image"))
+                throw new BusinessException(String.format("Invalid file type[%]! only MIME 'image' types are accepted!", mimeType)
+                        , "MISSIG PARAM:image", HttpStatus.NOT_ACCEPTABLE);
+        }
+
+        OrganizationImagesEntity entity = organizationImagesRepository.findById(imgId).get();
+
+        String url = null;
+        String oldUrl = null;
+        if(file != null && !file.isEmpty()) {
+            url = fileService.saveFile(file, imgMetaData.getOrganizationId());
+            oldUrl = entity.getUri();
+        }
+
+        //to update a value , it should be already present in the JSON
+        if(imgMetaData.isUpdated("type"))
+            entity.setType( imgMetaData.getType() );
+
+        if(imgMetaData.isUpdated("shopId")) {
+            Long shopId = imgMetaData.getShopId();
+            Optional<ShopsEntity> shopEntity = shopsRepository.findById( shopId );
+            if (!shopEntity.isPresent())
+                throw new BusinessException(String.format("No shop exists with id: %d !", shopId), "INVALID PARAM: shop_id", HttpStatus.NOT_ACCEPTABLE);
+            if (!shopEntity.get().getOrganizationEntity().getId().equals(imgMetaData.getOrganizationId()))
+                throw new BusinessException("shop_id doesn't match current organization", "INVALID PARAM: shop_id", HttpStatus.NOT_ACCEPTABLE);
+            entity.setShopsEntity(shopEntity.get());
+        }
+
+        if(url != null)
+            entity.setUri(url);
+
+        entity = organizationImagesRepository.save(entity);
+
+        if(url != null && oldUrl != null) {
+            fileService.deleteFileByUrl(oldUrl);
+        }
+
+        return new ProductImageUpdateResponse(entity.getId(), url);
+    }
 
 }
