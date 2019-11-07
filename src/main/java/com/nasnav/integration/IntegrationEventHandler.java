@@ -1,5 +1,6 @@
 package com.nasnav.integration;
 
+import java.time.LocalDateTime;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -17,14 +18,46 @@ public abstract class IntegrationEventHandler<E extends Event<T,R>, T, R> {
 		this.integrationService = integrationService;
 	}	
 	
+	
+	
+	
+	public void pushEvent(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError) {
+		Consumer<E> onCompleteWrapper = wrapOnCompleteCallback(event, onComplete);
+		BiConsumer<E,Throwable> onErrorWrapper = wrapOnErrorCallback(event, onError);						
+				
+		handleEventAsync(event, onCompleteWrapper, onErrorWrapper);
+	}
+	
+	
+	
+	
+	
+	private Consumer<E> wrapOnCompleteCallback(E event, Consumer<E> onComplete){
+		return e ->{
+					onComplete.accept(event);
+					event.setResultRecievedTime(LocalDateTime.now());
+				};
+	}
+	
+	
+	
+	
+	
+	private BiConsumer<E,Throwable> wrapOnErrorCallback(E event, BiConsumer<E, Throwable> onError){
+		return (e,t)-> {
+					this.handleError(e, t);
+					onError.accept(e, t);
+				}; 
+	}
 
+	
 	
 	
 	/**
 	 * @param event Event to be handled
 	 * @return after being handled successfully, return the event with the result saved inside it. 
 	 * */
-	public abstract E handleEvent(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError);	
+	protected abstract void handleEventAsync(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError);	
 	
 	
 	
@@ -36,5 +69,5 @@ public abstract class IntegrationEventHandler<E extends Event<T,R>, T, R> {
 	 * @param event Event that caused an error
 	 * @return after handling the event return the event with the result saved inside it. 
 	 * */
-	public abstract E handleError(E event, Throwable t);	
+	protected abstract E handleError(E event, Throwable t);	
 }

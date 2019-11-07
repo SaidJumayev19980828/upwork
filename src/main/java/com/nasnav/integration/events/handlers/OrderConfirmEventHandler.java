@@ -1,6 +1,7 @@
 package com.nasnav.integration.events.handlers;
 
-import java.time.LocalDateTime;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import com.nasnav.integration.IntegrationEventHandler;
 import com.nasnav.integration.IntegrationService;
@@ -21,7 +22,7 @@ public class OrderConfirmEventHandler extends IntegrationEventHandler<OrderConfi
 	
 
 	@Override
-	public OrderConfirmEvent handleError(OrderConfirmEvent event) {		
+	public OrderConfirmEvent handleError(OrderConfirmEvent event, Throwable t) {		
 		return null;
 	}
 	
@@ -30,10 +31,10 @@ public class OrderConfirmEventHandler extends IntegrationEventHandler<OrderConfi
 	
 
 	@Override
-	public OrderConfirmEvent handleEvent(OrderConfirmEvent event) {
-		event.setResultRecievedTime( LocalDateTime.now() );
+	public void handleEventAsync(OrderConfirmEvent event, Consumer<OrderConfirmEvent> onComplete,
+			BiConsumer<OrderConfirmEvent, Throwable> onError) {
 		event.setEventResult( "PASSED!!" );
-		return event;
 	}
+
 
 }

@@ -34,6 +34,15 @@ import com.nasnav.integration.model.OrganizationIntegrationInfo;
 import com.nasnav.persistence.IntegrationParamEntity;
 import com.nasnav.persistence.IntegrationParamTypeEntity;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import reactor.core.publisher.ConnectableFlux;
+import reactor.core.publisher.EmitterProcessor;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
+
 @Service
 public class IntegrationServiceImpl implements IntegrationService {
 	Logger logger = Logger.getLogger(getClass());
@@ -50,6 +59,9 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	private Set<IntegrationParamTypeEntity> mandatoryIntegrationParams;
 	
+	private FluxSink<EventHandling> eventFluxSink;
+	private Flux<EventHandling> eventFlux;
+	
 	
 	
 	@PostConstruct
@@ -57,11 +69,33 @@ public class IntegrationServiceImpl implements IntegrationService {
 		orgIntegration = new HashMap<>();
 		mandatoryIntegrationParams = getMandatoryParams();
 		loadIntegrationModules();
+		initEventFlux();
 	}
 	
 	
 	
 	
+
+	
+	private void initEventFlux() {
+		Scheduler scheduler = Schedulers.boundedElastic(); 
+		EmitterProcessor<EventHandling> emitterProcessor = EmitterProcessor.create();
+		eventFlux = emitterProcessor							
+//						.sample(Duration.ofMillis(100L))
+						.publishOn(scheduler)
+						.subscribeOn(scheduler)
+						.publish()
+						.autoConnect();		
+		
+		eventFluxSink = emitterProcessor.sink();
+		eventFlux.subscribe(this::handle);
+	}
+
+
+	
+	
+
+
 	private Set<IntegrationParamTypeEntity> getMandatoryParams() {		
 		return paramTypeRepo.findByIsMandatory(true);
 	}
@@ -165,6 +199,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 												.orElseThrow(() -> getIntegrationInitException(ERR_NO_INTEGRATION_MODULE));
 		return integrationModuleClass;
 	}
+	
+	
 
 
 
@@ -312,15 +348,23 @@ public class IntegrationServiceImpl implements IntegrationService {
 	public <E extends Event<T,R>, T, R> void pushIntegrationEvent(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError) {
 		try {
 			validateEvent(event);
-			
-			IntegrationModule mod = orgIntegration.get(event.getOrganizationId()).getIntegrationModule();
-			E res =  mod.getEventHandler(event).handleEvent(event, onComplete, onError);
-			
-			onComplete.accept(res);
+			eventFluxSink.next( EventHandling.of(event, onComplete, onError) );			
 		}catch(Exception e) {
 			logger.error(e);
 			onError.accept(event,e);
 		}		
+	}
+	
+	
+	
+	
+	
+	
+	private <E extends Event<T,R>, T, R> void handle(EventHandling<E,T,R> handling) {
+		E event = handling.getEvent();
+		IntegrationModule module = orgIntegration.get(event.getOrganizationId()).getIntegrationModule();
+		IntegrationEventHandler<E, T, R> eventHandler = module.getEventHandler(event);
+		eventHandler.pushEvent(event, handling.onComplete, handling.onError);
 	}
 
 
@@ -333,4 +377,19 @@ public class IntegrationServiceImpl implements IntegrationService {
 		}
 	}
 
+}
+
+
+
+@Data
+@AllArgsConstructor
+class EventHandling<E extends Event<T,R>, T, R>{
+	E event;
+	Consumer<E> onComplete;
+	BiConsumer<E, Throwable> onError;
+	
+	
+	public static <E extends Event<T,R>, T, R> EventHandling<E,T,R> of(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError){
+		return new EventHandling<E,T,R>(event, onComplete, onError);
+	} 
 }

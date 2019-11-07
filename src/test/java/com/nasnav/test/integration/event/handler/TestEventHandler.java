@@ -1,6 +1,7 @@
 package com.nasnav.test.integration.event.handler;
 
 import java.time.LocalDateTime;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.nasnav.integration.IntegrationEventHandler;
@@ -25,14 +26,11 @@ public class TestEventHandler extends IntegrationEventHandler<TestEvent, String,
 	
 	
 	@Override
-	public TestEvent handleEvent(TestEvent event) {
-		
-		onHandle.accept(event);
-		
+	protected void handleEventAsync(TestEvent event, Consumer<TestEvent> onComplete, BiConsumer<TestEvent, Throwable> onError) {
+		System.out.println("Hanlding Test Event! @ "+ LocalDateTime.now() );	
 		event.setEventResult(EXPECTED_RESULT);
-		event.setResultRecievedTime(LocalDateTime.now());		
-		
-		return event;
+		onHandle.accept(event);	
+		onComplete.accept(event);
 	}
 
 	
@@ -40,9 +38,10 @@ public class TestEventHandler extends IntegrationEventHandler<TestEvent, String,
 	
 	
 	@Override
-	public TestEvent handleError(TestEvent event) {	
+	protected TestEvent handleError(TestEvent event, Throwable t) {	
 		onError.accept(event);
 		return event;
 	}
+
 
 }

@@ -91,13 +91,15 @@ public class IntegrationServiceTest {
 	
 	
 	//push event with data
+	//push invalid null event
+	//push event with null data
 	//assert data is delivered to the correct event handler
 	//assert event is processed asynchronously
 	//assert several events are delivered in the given MAX rate 
 	//test retry logic
 	//test error handling after retry fails
 	@Test
-	public void pushEventTest() {		
+	public void pushEventTest() throws InterruptedException {		
 		TestEventHandler.onHandle = this::onEventHandle;
 		TestEvent event = new TestEvent(ORG_ID, TestEventHandler.EXPECTED_DATA);
 		
@@ -107,7 +109,9 @@ public class IntegrationServiceTest {
 		System.out.println("Push Duration in Mills: " +  pushDuration.toMillis());
 		
 		assertTrue("event push is asynchronous ,it should be done fast, and must return before handling the event!"
-				  , pushDuration.toMillis() < HANDLE_DELAY_MS);
+				  , pushDuration.toMillis() < HANDLE_DELAY_MS);	
+		
+		Thread.sleep(HANDLE_DELAY_MS + 500);
 	}
 	
 
@@ -120,6 +124,8 @@ public class IntegrationServiceTest {
 		} catch (InterruptedException e) {
 			assertTrue(false);
 		}
+		
+		System.out.println("Event Is Handled! result = "+  event.getEventResult() );
 		assertEquals( TestEventHandler.EXPECTED_DATA, event.getEventData());
 	}
 	
