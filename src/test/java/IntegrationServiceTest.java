@@ -1,11 +1,16 @@
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,18 +18,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
+import com.nasnav.dao.IntegrationEventFailureRepository;
 import com.nasnav.integration.IntegrationService;
-import com.nasnav.integration.events.Event;
+import com.nasnav.persistence.IntegrationEventFailureEntity;
 import com.nasnav.test.integration.event.TestEvent;
 import com.nasnav.test.integration.event.handler.TestEventHandler;
 
 import net.jcip.annotations.NotThreadSafe;
+import net.jodah.concurrentunit.Waiter;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -59,6 +63,10 @@ public class IntegrationServiceTest {
 	
 	
 	
+	@Autowired
+	IntegrationEventFailureRepository eventFailureRepo;
+	
+	
 	/**
 	 * The the loading of the Integration modules actually runs when spring context is 
 	 * initialized. Which happens before @Sql annotations are executed, and
@@ -82,6 +90,14 @@ public class IntegrationServiceTest {
 	
 	
 	
+	@Before
+	public void clearEventHandler() {
+		TestEventHandler.onHandle = null;
+	}
+	
+	
+	
+	
 	@Test
 	public void moduleLoadingTest() {
 		assertTrue("Modules are loaded after spring loads IntegrationService into the context, if it fails the application won't start!",true);
@@ -90,34 +106,169 @@ public class IntegrationServiceTest {
 	
 	
 	
-	//push event with data
-	//push invalid null event
-	//push event with null data
+	//push event with data [DONE]
+	//push invalid null event [DONE]
+	//push event with null org [DONE]
+	//push event with null data 
+	//on complete action fails 
+	//push event to organization with no module
+	//organization with integration info but null integration module? 
+	//event with no handler
 	//assert data is delivered to the correct event handler
 	//assert event is processed asynchronously
 	//assert several events are delivered in the given MAX rate 
 	//test retry logic
 	//test error handling after retry fails
 	@Test
-	public void pushEventTest() throws InterruptedException {		
-		TestEventHandler.onHandle = this::onEventHandle;
+	public void pushEventTest() throws InterruptedException, TimeoutException {		
+		
+		Waiter waiter = new Waiter();
+		Consumer<TestEvent> onComplete = getEventCompleteAction(waiter);
+		TestEventHandler.onHandle = e -> {
+								this.onEventHandle(e); 
+								waiter.resume(); //notify the test thread that the event was handled
+							};
+		
+							
 		TestEvent event = new TestEvent(ORG_ID, TestEventHandler.EXPECTED_DATA);
+		integration.pushIntegrationEvent(event, onComplete , this::onPushEventError);
 		
-		integration.pushIntegrationEvent(event, this::assertEventComplete , this::onPushEventError);
+		assertAsyncEventPush(event);
 		
+		//wait until the event is handled in another thread until timeout
+		waiter.await((long)(HANDLE_DELAY_MS*1.5), TimeUnit.MILLISECONDS);
+	}
+
+
+
+
+
+	private void assertAsyncEventPush(TestEvent event) {
 		Duration pushDuration = Duration.between(event.getCreationTime(), LocalDateTime.now());
 		System.out.println("Push Duration in Mills: " +  pushDuration.toMillis());
 		
 		assertTrue("event push is asynchronous ,it should be done fast, and must return before handling the event!"
-				  , pushDuration.toMillis() < HANDLE_DELAY_MS);	
-		
-		Thread.sleep(HANDLE_DELAY_MS + 500);
+				  , pushDuration.toMillis() < HANDLE_DELAY_MS);
 	}
+	
+	
+	
+	
+	
+	
+	@Test(expected = RuntimeException.class)
+	public void testNullEvent() throws TimeoutException, InterruptedException {
+		Waiter waiter = new Waiter();
+		Consumer<TestEvent> onComplete = getEventCompleteAction(waiter);
+		TestEventHandler.onHandle = e -> {
+								this.onEventHandle(e); 
+								waiter.resume(); //notify the test thread that the event was handled
+							};
+							
+							
+		TestEvent event = null;
+		integration.pushIntegrationEvent(event, onComplete , this::expectedInvalidEventAction);
+		
+		//wait until the event is handled in another thread until timeout
+		waiter.await((long)(HANDLE_DELAY_MS*1.5), TimeUnit.MILLISECONDS);
+	}
+	
+	
+	
+	
+	
+	
+	@Test(expected = RuntimeException.class)
+	public void testNullOrgEvent() throws TimeoutException, InterruptedException {
+		Waiter waiter = new Waiter();
+		Consumer<TestEvent> onComplete = getEventCompleteAction(waiter);
+		TestEventHandler.onHandle = e -> {
+								this.onEventHandle(e); 
+								waiter.resume(); //notify the test thread that the event was handled
+							};
+							
+							
+		TestEvent event =  new TestEvent(null, TestEventHandler.EXPECTED_DATA);
+		integration.pushIntegrationEvent(event, onComplete , this::expectedInvalidEventAction);
+		
+		
+		//wait until the event is handled in another thread until timeout
+		waiter.await((long)(HANDLE_DELAY_MS*1.5), TimeUnit.MILLISECONDS);
+	}
+	
+	
+	
+	
+	@Test(expected = RuntimeException.class)
+	public void testOnCompleteFailure() throws TimeoutException, InterruptedException {
+		Long countBefore = eventFailureRepo.count();
+		
+		Waiter waiter = new Waiter();
+		Consumer<TestEvent> onComplete = getFailingOnCompleteAction(waiter);
+		TestEventHandler.onHandle = e -> {
+								this.onEventHandle(e); 
+								waiter.resume(); //notify the test thread that the event was handled
+							};
+		//--------------------------------------------------------------							
+							
+		TestEvent event =  new TestEvent(ORG_ID, TestEventHandler.EXPECTED_DATA);
+		integration.pushIntegrationEvent(event, onComplete , this::fallbackActionThrowException);
+		//--------------------------------------------------------------
+		
+		//wait until the event is handled in another thread until timeout
+		waiter.await((long)(HANDLE_DELAY_MS*1.5), TimeUnit.MILLISECONDS);		
+		//--------------------------------------------------------------
+		Long countAfter = eventFailureRepo.count();
+		
+		assertEquals(0L, countBefore.longValue());
+		assertNotEquals(1L, countAfter.longValue());
+		
+		IntegrationEventFailureEntity eventFailure = eventFailureRepo.findAll().get(0);
+		
+		assertEquals(event.getOrganizationId(), eventFailure.getOrganizationId());
+		assertNotNull(eventFailure.getEventData());
+		assertNotNull(eventFailure.getHandleException());
+		assertNotNull(eventFailure.getFallbackException());
+		assertNotNull(eventFailure.getCreatedAt());
+	}
+	
 	
 
 	
 	
 	
+	private Consumer<TestEvent> getEventCompleteAction(Waiter waiter) {		
+		return 
+				event ->{
+					waiter.assertEquals(TestEventHandler.EXPECTED_RESULT, event.getEventResult());
+					
+					Duration eventHandlingDuration = Duration.between(event.getCreationTime(), event.getResultRecievedTime());
+					System.out.println("Handle Duration in Mills: " +  eventHandlingDuration.toMillis());
+					
+					waiter.assertTrue(eventHandlingDuration.toMillis() >= HANDLE_DELAY_MS);
+					waiter.resume();
+				};
+	}
+	
+	
+	
+	
+	
+	
+	private Consumer<TestEvent> getFailingOnCompleteAction(Waiter waiter) {		
+		return 
+				event ->{
+					System.out.println("On Complete was called!");
+					waiter.assertTrue(true);
+					throw new RuntimeException();
+				};
+	}
+
+
+
+
+
+
 	private void onEventHandle(TestEvent event) {
 		try {
 			Thread.sleep(HANDLE_DELAY_MS);
@@ -134,19 +285,30 @@ public class IntegrationServiceTest {
 	
 	
 	
-	private void assertEventComplete(TestEvent event){
-		assertEquals(TestEventHandler.EXPECTED_RESULT, event.getEventResult());
-		
-		Duration eventHandlingDuration = Duration.between(event.getCreationTime(), event.getResultRecievedTime());
-		System.out.println("Handle Duration in Mills: " +  eventHandlingDuration.toMillis());
-		
-		assertTrue(eventHandlingDuration.toMillis() >= HANDLE_DELAY_MS);
+	private void onPushEventError(TestEvent event, Throwable t) {
+		assertTrue("integration error happended!", false);
+		t.printStackTrace();
+		throw new RuntimeException("Error happened during Event handling!");
 	}
 	
 	
 	
-	private void onPushEventError(TestEvent event, Throwable t) {
-		assertTrue("integration error happended!", false);
+	
+	
+	private void expectedInvalidEventAction(TestEvent event, Throwable t) {
+		System.out.println("Running on Error callback!");
+		assertTrue("integration error happended!", true);
 		t.printStackTrace();
+		throw new RuntimeException("Error happened during Event handling!");
+	}
+	
+	
+	
+	
+	private void fallbackActionThrowException(TestEvent event, Throwable t) {
+		System.out.println("Running on Error callback!");
+		assertTrue("integration error happended!", true);
+		t.printStackTrace();
+		throw new RuntimeException("Error happened during Event handling!");
 	}
 }

@@ -19,4 +19,5 @@ public class TestIntegrationModule extends IntegrationModule {
 		this.putEventHandler(TestEvent.class, new TestEventHandler(integrationService));
 	}
 
+
 }

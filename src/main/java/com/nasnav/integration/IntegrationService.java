@@ -48,4 +48,23 @@ public interface IntegrationService {
 	 * based on the organization and the event type.
 	 * */
 	<E extends Event<T,R>, T, R> void pushIntegrationEvent(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError);
+	
+	
+	
+	/**
+	 * called when the event handler fallback logic fails.
+	 * i.e: fallback of the fallback
+	 * */
+	<E extends Event<T,R>, T, R> void runGeneralErrorFallback(E event, Throwable handlingException, Throwable fallbackException);
+	
+	
+	
+	/**
+	 * save an event handling failure to the database.
+	 * @param event the integration event
+	 * @param handlingException the exception that was thrown when the event was being handled.
+	 * @param fallbackException the exception that was thrown when the handling fallback logic was running.
+	 * */
+	public <E extends Event<T, R> ,T,R> void saveEventFailureToDB(E event, Throwable handlingException,
+			Throwable fallbackException);
 }

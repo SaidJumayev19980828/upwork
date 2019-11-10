@@ -1,5 +1,6 @@
 package com.nasnav.integration;
 
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_EVENT_HANDLE_GENERAL_ERROR;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INTEGRATION_MODULE_LOAD_FAILED;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_LOADING_INTEGRATION_MODULE_CLASS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_MISSING_MANDATORY_PARAMS;
@@ -23,6 +24,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.dao.IntegrationEventFailureRepository;
 import com.nasnav.dao.IntegrationParamRepository;
 import com.nasnav.dao.IntegrationParamTypeRepostory;
 import com.nasnav.exceptions.BusinessException;
@@ -31,12 +35,12 @@ import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
 import com.nasnav.integration.model.IntegratedShop;
 import com.nasnav.integration.model.OrganizationIntegrationInfo;
+import com.nasnav.persistence.IntegrationEventFailureEntity;
 import com.nasnav.persistence.IntegrationParamEntity;
 import com.nasnav.persistence.IntegrationParamTypeEntity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
@@ -62,6 +66,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 	private FluxSink<EventHandling> eventFluxSink;
 	private Flux<EventHandling> eventFlux;
 	
+	@Autowired
+	private IntegrationEventFailureRepository eventFailureRepo;
 	
 	
 	@PostConstruct
@@ -156,15 +162,11 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	
 	private OrganizationIntegrationInfo getOrganizationIntegrationInfo(Long orgId) throws BusinessException {
-		OrganizationIntegrationInfo info = new OrganizationIntegrationInfo();
-				
+						
 		List<IntegrationParamEntity> params = getOrgInegrationParams(orgId);
 		IntegrationModule integrationModule = loadIntegrationModule(orgId, params);
 		
-		info.setIntegrationModule(integrationModule );
-		info.setParameters(params);
-		
-		return info;
+		return new OrganizationIntegrationInfo(integrationModule, params);
 	}
 
 
@@ -349,7 +351,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		try {
 			validateEvent(event);
 			eventFluxSink.next( EventHandling.of(event, onComplete, onError) );			
-		}catch(Exception e) {
+		}catch(Throwable e) {
 			logger.error(e);
 			onError.accept(event,e);
 		}		
@@ -362,19 +364,64 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	private <E extends Event<T,R>, T, R> void handle(EventHandling<E,T,R> handling) {
 		E event = handling.getEvent();
-		IntegrationModule module = orgIntegration.get(event.getOrganizationId()).getIntegrationModule();
-		IntegrationEventHandler<E, T, R> eventHandler = module.getEventHandler(event);
-		eventHandler.pushEvent(event, handling.onComplete, handling.onError);
+		OrganizationIntegrationInfo integration =  orgIntegration.get(event.getOrganizationId());
+		if(integration == null) {			
+			return; 	//ignore events if its organization has no integration info. loaded.
+		}
+		
+		integration.getIntegrationModule()
+					.pushEvent(handling);		
 	}
 
 
 
 	
 
-	private <T,R> void validateEvent(Event<T,R> event) {
-		if(event == null || event.getOrganizationId() == null) {
-			
+	private <T,R> void validateEvent(Event<T,R> event) throws BusinessException {
+		if(event == null || event.getOrganizationId() == null ) {
+			throw new BusinessException(
+					String.format("Invalid event [%s]", event)
+					, "INVALID INTEGRATION EVENT"
+					, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+	}
+
+
+
+
+
+
+	@Override
+	public <E extends Event<T, R>, T, R> void runGeneralErrorFallback(E event, Throwable handlingException, Throwable fallbackException) {
+		logger.error(String.format(ERR_EVENT_HANDLE_GENERAL_ERROR
+											, event
+											, handlingException.getCause()
+											, fallbackException.getCause())	);
+		
+		saveEventFailureToDB(event, handlingException, fallbackException);
+	}
+
+
+
+
+
+
+	public <E extends Event<T, R> ,T,R> void saveEventFailureToDB(E event, Throwable handlingException,
+			Throwable fallbackException) {
+						
+		ObjectMapper mapper = new ObjectMapper();
+		String eventData;
+		try {
+			eventData = mapper.writeValueAsString(event);
+		} catch (JsonProcessingException e) {
+			eventData = event.toString();
+		}
+		
+		IntegrationEventFailureEntity eventFailure = new IntegrationEventFailureEntity();
+		eventFailure.setEventData(eventData);
+		eventFailure.setHandleException( handlingException.getStackTrace().toString() );
+		eventFailure.setFallbackException(fallbackException.getStackTrace().toString() );
+		eventFailureRepo.save(eventFailure);
 	}
 
 }

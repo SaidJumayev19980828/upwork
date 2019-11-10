@@ -193,7 +193,13 @@
             <version>${spring.boot.version}</version>
             <scope>test</scope>
         </dependency>
-		
+		<dependency>
+		    <groupId>net.jodah</groupId>
+		    <artifactId>concurrentunit</artifactId>
+		    <version>0.4.6</version>
+		    <scope>test</scope>
+		</dependency>
+				
 		
 
 
