@@ -58,7 +58,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/product/**"					,HttpMethod.DELETE	, setOf(Roles.ORGANIZATION_ADMIN)),
 						patternOf( "/admin/**"	   	 									, setOf(Roles.NASNAV_ADMIN) ),
 						patternOf( "/files/**"),
-						patternOf( "/organization/info"									, setOf(Roles.ORGANIZATION_ADMIN)),
+						patternOf( "/organization/info"								, setOf(Roles.ORGANIZATION_ADMIN)),
 						patternOf( "/organization/brand"								, setOf(Roles.ORGANIZATION_ADMIN)),
 						patternOf( "/organization/image"								, setOf(Roles.ORGANIZATION_ADMIN)),
 						patternOf( "/organization/products_feature"	,HttpMethod.POST	, setOf(Roles.ORGANIZATION_ADMIN)),

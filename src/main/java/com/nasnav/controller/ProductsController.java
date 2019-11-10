@@ -1,21 +1,19 @@
 package com.nasnav.controller;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
+import com.nasnav.service.DataImportService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.dto.BundleElementUpdateDTO;
@@ -47,7 +45,9 @@ public class ProductsController {
 	
 	@Autowired
 	ProductImageService productImgService;
-	
+
+    @Autowired
+    DataImportService dataImportService;
 	
 	@ApiOperation(value = "Create or update a product", nickname = "product update", code = 201)
     @ApiResponses(value = {
@@ -243,6 +243,14 @@ public class ProductsController {
 
 		return  productImgService.updateProductImageBulk(zip, csv, metaData);
     }
-	
-	
+
+    @GetMapping(value = "/image/bulk/template")
+    @ResponseBody
+    public ResponseEntity<String> generateCsvTemplate(@RequestHeader("User-Token") String token) throws IOException {
+        ByteArrayOutputStream s = dataImportService.generateImagesCsvTemplate();
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Csv_Template.csv")
+                .body(s.toString());
+    }
 }
