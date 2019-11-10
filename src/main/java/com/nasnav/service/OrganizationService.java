@@ -618,4 +618,31 @@ public class OrganizationService {
         return new ProductImageUpdateResponse(entity.getId(), url);
     }
 
+
+    public boolean deleteImage(Long imgId) throws BusinessException {
+        OrganizationImagesEntity img = organizationImagesRepository.findById(imgId)
+                        .orElseThrow(()-> new BusinessException("No Image exists with id ["+ imgId+"] !",
+                                "INVALID PARAM:image_id", HttpStatus.NOT_ACCEPTABLE));
+
+        validateImgToDelete(img);
+
+        organizationImagesRepository.deleteById(imgId);
+
+        fileService.deleteFileByUrl(img.getUri());
+
+        return true;
+    }
+
+    private void validateImgToDelete(OrganizationImagesEntity img) throws BusinessException {
+        Long orgId = img.getOrganizationEntity().getId();
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+
+        if(!user.getOrganizationId().equals(orgId)) {
+            throw new BusinessException(
+                    String.format("User from organization of id[%d] have no rights to delete product image of id[%d]",orgId, img.getId())
+                    , "UNAUTHRORIZED", HttpStatus.FORBIDDEN);
+        }
+    }
 }
