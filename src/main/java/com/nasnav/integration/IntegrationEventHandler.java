@@ -63,8 +63,8 @@ public abstract class IntegrationEventHandler<E extends Event<T,R>, T, R> {
 	
 	private Consumer<E> wrapOnCompleteCallback(E event, Consumer<E> onComplete){
 		return e ->{
-					onComplete.accept(event);
 					event.setResultRecievedTime(LocalDateTime.now());
+					onComplete.accept(event);					
 				};
 	}
 	

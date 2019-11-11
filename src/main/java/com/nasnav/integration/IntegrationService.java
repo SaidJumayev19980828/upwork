@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
+import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.integration.model.IntegratedShop;
 
 
@@ -46,8 +47,9 @@ public interface IntegrationService {
 	/**
 	 * push an event to the Integration service, which queues and run the proper event handler for the event
 	 * based on the organization and the event type.
+	 * @throws InvalidIntegrationEventException 
 	 * */
-	<E extends Event<T,R>, T, R> void pushIntegrationEvent(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError);
+	<E extends Event<T,R>, T, R> void pushIntegrationEvent(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError) throws InvalidIntegrationEventException;
 	
 	
 	

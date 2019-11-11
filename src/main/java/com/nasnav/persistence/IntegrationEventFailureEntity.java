@@ -24,6 +24,9 @@ public class IntegrationEventFailureEntity {
 	@Column(name="organization_id")
 	private Long organizationId;
 	
+	@Column(name="event_type")
+	private String eventType;
+	
 	@Column(name="event_data")
 	private String eventData;
 	

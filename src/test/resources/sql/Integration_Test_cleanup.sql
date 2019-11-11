@@ -1,0 +1,1 @@
+delete from public.integration_event_failure where organization_id BETWEEN 99000 AND 99999;

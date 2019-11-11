@@ -7,6 +7,8 @@ import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.E
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_MODULE;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_PARAMS;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +21,6 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.tomcat.util.ExceptionUtils;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -34,6 +35,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.IntegrationParam;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
+import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.integration.model.IntegratedShop;
 import com.nasnav.integration.model.OrganizationIntegrationInfo;
 import com.nasnav.persistence.IntegrationEventFailureEntity;
@@ -348,13 +350,26 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 
 	@Override
-	public <E extends Event<T,R>, T, R> void pushIntegrationEvent(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError) {
-		try {
-			validateEvent(event);
+	public <E extends Event<T,R>, T, R> void pushIntegrationEvent(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError) throws InvalidIntegrationEventException {
+		validateEvent(event);
+		try {			
 			eventFluxSink.next( EventHandling.of(event, onComplete, onError) );			
 		}catch(Throwable e) {
 			logger.error(e);
-			onError.accept(event,e);
+			runErrorCallback(event, e, onError);
+		}		
+	}
+	
+	
+	
+	
+	
+	private <E extends Event<T,R>, T, R> void runErrorCallback(E event, Throwable handlingException, BiConsumer<E, Throwable> callback){
+		try {
+			callback.accept(event, handlingException);
+		}catch(Throwable t) {
+			logger.error(t);
+			runGeneralErrorFallback(event, handlingException, t);
 		}		
 	}
 	
@@ -378,9 +393,9 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	
 
-	private <T,R> void validateEvent(Event<T,R> event) throws BusinessException {
+	private <T,R> void validateEvent(Event<T,R> event) throws InvalidIntegrationEventException {
 		if(event == null || event.getOrganizationId() == null ) {
-			throw new BusinessException(
+			throw new InvalidIntegrationEventException(
 					String.format("Invalid event [%s]", event)
 					, "INVALID INTEGRATION EVENT"
 					, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -417,12 +432,25 @@ public class IntegrationServiceImpl implements IntegrationService {
 		} catch (JsonProcessingException e) {
 			eventData = event.toString();
 		}
-		ExceptionUtils.
+		
 		IntegrationEventFailureEntity eventFailure = new IntegrationEventFailureEntity();
+		eventFailure.setEventType( event.getClass().getName() );
 		eventFailure.setEventData(eventData);
-		eventFailure.setHandleException( handlingException.);
-		eventFailure.setFallbackException(fallbackException.getStackTrace().toString() );
+		eventFailure.setOrganizationId( event.getOrganizationId() );
+		eventFailure.setHandleException( stackTraceToString(handlingException) );
+		eventFailure.setFallbackException( stackTraceToString(fallbackException) );
 		eventFailureRepo.save(eventFailure);
+	}
+	
+	
+	
+	
+	private String stackTraceToString(Throwable t) {
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		t.printStackTrace(pw);
+		
+		return sw.toString(); 
 	}
 
 }
