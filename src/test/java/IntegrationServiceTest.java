@@ -128,13 +128,13 @@ public class IntegrationServiceTest {
 								this.onEventHandle(e); 
 								waiter.resume(); //notify the test thread that the event was handled
 							};
-		
+		//--------------------------------------------------------------		
 							
 		TestEvent event = new TestEvent(ORG_ID, TestEventHandler.EXPECTED_DATA);
 		integration.pushIntegrationEvent(event, onComplete , this::onPushEventError);
-		
+		//--------------------------------------------------------------
 		assertAsyncEventPush(event);
-		
+		//--------------------------------------------------------------
 		//wait until the event is handled in another thread until timeout
 		waiter.await((long)(HANDLE_DELAY_MS*1.5), TimeUnit.MILLISECONDS);
 	}
@@ -165,10 +165,11 @@ public class IntegrationServiceTest {
 								waiter.resume(); //notify the test thread that the event was handled
 							};
 							
-							
+		//--------------------------------------------------------------
 		TestEvent event = null;
 		integration.pushIntegrationEvent(event, onComplete , this::expectedInvalidEventAction);
 		
+		//--------------------------------------------------------------
 		//wait until the event is handled in another thread until timeout
 		waiter.await((long)(HANDLE_DELAY_MS*1.5), TimeUnit.MILLISECONDS);
 	}
@@ -187,11 +188,12 @@ public class IntegrationServiceTest {
 								waiter.resume(); //notify the test thread that the event was handled
 							};
 							
-							
+		//--------------------------------------------------------------					
 		TestEvent event =  new TestEvent(null, TestEventHandler.EXPECTED_DATA);
 		integration.pushIntegrationEvent(event, onComplete , this::expectedInvalidEventAction);
 		
 		
+		//--------------------------------------------------------------
 		//wait until the event is handled in another thread until timeout
 		waiter.await((long)(HANDLE_DELAY_MS*1.5), TimeUnit.MILLISECONDS);
 	}
@@ -218,6 +220,14 @@ public class IntegrationServiceTest {
 		//wait until the event is handled in another thread until timeout
 		waiter.await((long)(HANDLE_DELAY_MS*1.5), TimeUnit.MILLISECONDS);		
 		//--------------------------------------------------------------
+		assertEventFailureSavedToDB(countBefore, event);
+	}
+
+
+
+
+
+	private void assertEventFailureSavedToDB(Long countBefore, TestEvent event) {
 		Long countAfter = eventFailureRepo.count();
 		
 		assertEquals(0L, countBefore.longValue());
@@ -260,7 +270,7 @@ public class IntegrationServiceTest {
 				event ->{
 					System.out.println("On Complete was called!");
 					waiter.assertTrue(true);
-					throw new RuntimeException();
+					throw new RuntimeException("Event Complete callback is throwing an Exception!!");
 				};
 	}
 

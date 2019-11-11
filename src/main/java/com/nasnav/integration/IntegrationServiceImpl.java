@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.tomcat.util.ExceptionUtils;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -395,8 +396,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 	public <E extends Event<T, R>, T, R> void runGeneralErrorFallback(E event, Throwable handlingException, Throwable fallbackException) {
 		logger.error(String.format(ERR_EVENT_HANDLE_GENERAL_ERROR
 											, event
-											, handlingException.getCause()
-											, fallbackException.getCause())	);
+											, handlingException.getClass()
+											, fallbackException.getClass())	);
 		
 		saveEventFailureToDB(event, handlingException, fallbackException);
 	}
@@ -416,10 +417,10 @@ public class IntegrationServiceImpl implements IntegrationService {
 		} catch (JsonProcessingException e) {
 			eventData = event.toString();
 		}
-		
+		ExceptionUtils.
 		IntegrationEventFailureEntity eventFailure = new IntegrationEventFailureEntity();
 		eventFailure.setEventData(eventData);
-		eventFailure.setHandleException( handlingException.getStackTrace().toString() );
+		eventFailure.setHandleException( handlingException.);
 		eventFailure.setFallbackException(fallbackException.getStackTrace().toString() );
 		eventFailureRepo.save(eventFailure);
 	}

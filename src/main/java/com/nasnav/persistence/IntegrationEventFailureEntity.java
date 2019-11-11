@@ -7,6 +7,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -14,6 +15,7 @@ import lombok.Data;
 
 @Entity
 @Data
+@Table(name = "INTEGRATION_EVENT_FAILURE")
 public class IntegrationEventFailureEntity {
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
