@@ -623,11 +623,18 @@ public class DataImportServiceImpl implements DataImportService{
 					, HttpStatus.NOT_ACCEPTABLE);
 		}
 	}
+	
+	
+	
+	
 
 	private CsvWriterSettings createWritingSettings() {
 		CsvWriterSettings settings = new CsvWriterSettings();
 		return settings;
 	}
+	
+	
+	
 
 	private ByteArrayOutputStream writeCsvHeaders(List<String> headers) throws IOException {
 		ByteArrayOutputStream csvResult = new ByteArrayOutputStream();
@@ -646,13 +653,19 @@ public class DataImportServiceImpl implements DataImportService{
 	public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException{
 		Long orgId = security.getCurrentUserOrganizationId();
 		List<String> features = prodcutFeaturesRepo.findByOrganizationId(orgId)
-													.stream().map(feature -> feature.getName()).collect(Collectors.toList());
-		Collections.sort(features);
+													.stream()
+													.map(ProductFeaturesEntity::getName)
+													.sorted()
+													.collect(Collectors.toList());
+		
 		List<String> baseHeaders = new ArrayList<>(csvBaseHeaders);
 		baseHeaders.addAll(features);
 
 		return writeCsvHeaders(baseHeaders);
 	}
+	
+	
+	
 
 	@Override
 	public ByteArrayOutputStream generateImagesCsvTemplate() throws IOException{

@@ -10,15 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -144,11 +136,6 @@ public class OrganizationController {
     }
 
 
-
-
-
-
-
     @ApiOperation(value = "add/update organization images", nickname = "PostOrgImg", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -164,5 +151,20 @@ public class OrganizationController {
         ObjectMapper mapper = new ObjectMapper();
         OrganizationImageUpdateDTO imgMetaData = mapper.readValue(jsonString, OrganizationImageUpdateDTO.class);
         return orgService.updateOrganizationImage(file, imgMetaData);
+    }
+
+
+    @ApiOperation(value = "delete image for organization", nickname = "organization image delete")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Organization image deleted"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insufficient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @ResponseStatus(HttpStatus.OK)
+    @DeleteMapping(value = "image", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public boolean deleteProductImage(@RequestHeader("User-Token") String token,
+                                      @RequestParam("image_id") @Valid Long imageId) throws BusinessException {
+        return  orgService.deleteImage(imageId);
     }
 }

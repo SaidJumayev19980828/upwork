@@ -596,29 +596,49 @@ public class DataImportApiTest {
 		res = template.exchange("/product/image/bulk/template", HttpMethod.GET, request ,String.class);
 		Assert.assertTrue(res.getStatusCodeValue() == 403);
 	}
+	
+	
+	
 
 	@Test
 	public void getProductsCsvTemplate() {
 		String[] expectedProductHeaders = {"product_name","barcode","category","brand","price",
-													   "quantity","description","color","size\r\n"};
+													   "quantity","description","color"
+													   ,"size"};
 		HttpEntity<Object> request = TestCommons.getHttpEntity("","131415");
 		ResponseEntity<String> res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
+		
 		Assert.assertTrue(res.getStatusCodeValue() == 200);
-		String[] headers = res.getBody().split(",");
+		
+		String[] headers = res.getBody()
+							.replace(System.lineSeparator(), "")
+							.split(",");
 		for(int i=0;i<headers.length;i++){
 			Assert.assertTrue(headers[i].equals(expectedProductHeaders[i]));
 		}
 
-		String[] expectedImageHeaders = {"barcode","image_file\r\n"};
-		res = template.exchange("/product/image/bulk/template", HttpMethod.GET, request ,String.class);
+		
+	}
+	
+	
+	
+	
+	@Test
+	public void getImageUploadCsvTemplate() {
+		String[] expectedImageHeaders = {"barcode","image_file"};
+		
+		HttpEntity<Object> request = TestCommons.getHttpEntity("","131415");
+		ResponseEntity<String> res = template.exchange("/product/image/bulk/template", HttpMethod.GET, request ,String.class);
+		
+		String[] headers = res.getBody()
+								.replace(System.lineSeparator(), "")
+								.split(",");
+		
 		Assert.assertTrue(res.getStatusCodeValue() == 200);
-		headers = res.getBody().split(",");
 		for(int i=0;i<headers.length;i++){
 			Assert.assertTrue(headers[i].equals(expectedImageHeaders[i]));
 		}
 	}
-
-
 
 
 	private void assertProductUpdatedDataSavedWithStock() {
