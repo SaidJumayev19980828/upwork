@@ -87,12 +87,12 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	
 	private void initEventFlux() {
-		Scheduler scheduler = Schedulers.boundedElastic(); 
+		Scheduler scheduler = Schedulers.newBoundedElastic(Schedulers.DEFAULT_BOUNDED_ELASTIC_SIZE, Schedulers.DEFAULT_BOUNDED_ELASTIC_QUEUESIZE, "Integration-Event-Queue-Pool"); 
 		EmitterProcessor<EventHandling> emitterProcessor = EmitterProcessor.create();
 		eventFlux = emitterProcessor							
 //						.sample(Duration.ofMillis(100L))
 						.publishOn(scheduler)
-						.subscribeOn(scheduler)
+//						.subscribeOn(scheduler)
 						.publish()
 						.autoConnect();		
 		

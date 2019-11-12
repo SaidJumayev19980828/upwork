@@ -140,7 +140,7 @@ public class IntegrationServiceTest {
 		
 		TestEventHandler.onHandle = getEventHandlerWithDelay() ;
 		TestEvent event1 = new TestEvent(ORG_ID, TestEventHandler.EXPECTED_DATA);		
-		AtomicReference<Boolean> isCallbackExecuted = pushEvent(event1, waiter ,TestEventHandler.EXPECTED_RESULT);
+		AtomicReference<Boolean> isCallbackExecuted = pushEvent(event1, waiter ,TestEventHandler.EXPECTED_RESULT, true);
 		
 		
 		//--------------------------------------------------------------
@@ -247,12 +247,12 @@ public class IntegrationServiceTest {
 		
 		TestEventHandler.onHandle = getEventHandlerWithDelay() ;
 		TestEvent event1 = new TestEvent(ORG_ID, TestEventHandler.EXPECTED_DATA);		
-		AtomicReference<Boolean> callBackIsCalled1 = pushEvent(event1, waiter ,TestEventHandler.EXPECTED_RESULT);
+		AtomicReference<Boolean> callBackIsCalled1 = pushEvent(event1, waiter ,TestEventHandler.EXPECTED_RESULT, false);
 		
 		
 		TestEvent2Handler.onHandle = getEventHandlerWithDelay() ;
 		TestEvent2 event2 = new TestEvent2(ORG_ID, TestEvent2Handler.EXPECTED_DATA);		
-		AtomicReference<Boolean> callBackIsCalled2 = pushEvent(event2, waiter, TestEvent2Handler.EXPECTED_RESULT);
+		AtomicReference<Boolean> callBackIsCalled2 = pushEvent(event2, waiter, TestEvent2Handler.EXPECTED_RESULT, true);
 		
 		
 		//--------------------------------------------------------------
@@ -260,7 +260,7 @@ public class IntegrationServiceTest {
 		waiter.await((long)(HANDLE_DELAY_MS*3), TimeUnit.MILLISECONDS);
 		
 		//--------------------------------------------------------------
-        assertTrue("onComplete callback should be called and completed with no errors"
+        assertTrue("onComplete callback should be called and completed with no errors for both events"
         				, callBackIsCalled1.get() && callBackIsCalled2.get() );
 				
 	}
@@ -269,12 +269,12 @@ public class IntegrationServiceTest {
 
 
 
-	private <E extends Event<T, R>, T,R> AtomicReference<Boolean> pushEvent(E event, Waiter waiter, Object expectedResult) throws InvalidIntegrationEventException, TimeoutException, InterruptedException {
+	private <E extends Event<T, R>, T,R> AtomicReference<Boolean> pushEvent(E event, Waiter waiter, Object expectedResult, boolean resumeTestAfterThis) throws InvalidIntegrationEventException, TimeoutException, InterruptedException {
 		
 		AtomicReference<Boolean> isCalled = new AtomicReference<Boolean>();
 		isCalled.set(false);
 				
-		Consumer<E> onComplete = getEventCompleteAction(waiter, isCalled, expectedResult);
+		Consumer<E> onComplete = getEventCompleteAction(waiter, isCalled, expectedResult, resumeTestAfterThis);
 		BiConsumer<E, Throwable> onError = getUnexpectedErrorCallback(waiter);		
 		//--------------------------------------------------------------		
 							
@@ -423,19 +423,24 @@ public class IntegrationServiceTest {
 	
 	
 	
-	private <E extends Event> Consumer<E> getEventCompleteAction(Waiter waiter, AtomicReference<Boolean> isCalled, Object ExpectedResult) {		
+	private <E extends Event> Consumer<E> getEventCompleteAction(Waiter waiter, AtomicReference<Boolean> isCalled, Object ExpectedResult, boolean resumeTestAfterThis) {		
 		return 
 				event ->{
-					System.out.println( String.format("On Complete was called for event of type[%s]!", event.getClass()));
+					System.out.println( String.format(">>> On Complete was called for event of type[%s]!", event.getClass()));
 					waiter.assertEquals(ExpectedResult, event.getEventResult());
 					
 					Duration eventHandlingDuration = Duration.between(event.getCreationTime(), event.getResultRecievedTime());
 					System.out.println(
-							String.format("HandleDuration in Mills[%d] for event of type[%s]" ,eventHandlingDuration.toMillis() ,event.getClass()) );
+							String.format(">>> HandleDuration in Mills[%d] for event of type[%s]" ,eventHandlingDuration.toMillis() ,event.getClass()) );
+					System.out.println(
+							String.format(">>> Running on thread [%s]" , Thread.currentThread()) );
 					
 					waiter.assertTrue(eventHandlingDuration.toMillis() >= HANDLE_DELAY_MS);
 					isCalled.set(true);
-					waiter.resume();
+					if(resumeTestAfterThis)
+					{	
+						waiter.resume();
+					}					
 				};
 	}
 	
