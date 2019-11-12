@@ -92,7 +92,7 @@ public class ProductServiceTest {
 	
 	private final String PRODUCT_NAME = "LIPSTICK";
 	private final String PRODUCT_P_NAME = "LIPSTICK PRODUCT";
-	private final Long CATEGORY_ID = 1l;
+	private final Long CATEGORY_ID = 201l;
 	private final String PRODUCT_PRODUCT_BARCODE = "BBE3343222DDF";
 	private final String PRODUCT_VARIANT_BARCODE = "11124988483838";
 	private final String PRODUCT_VARIANT_NAME = "color";

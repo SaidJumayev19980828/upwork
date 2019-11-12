@@ -1,20 +1,23 @@
 package com.nasnav.controller;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.websocket.server.PathParam;
 
+import com.univocity.parsers.csv.Csv;
+import com.univocity.parsers.csv.CsvWriter;
+import com.univocity.parsers.csv.CsvWriterSettings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -28,6 +31,9 @@ import com.nasnav.service.SecurityService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponses;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 
 
 @RestController
@@ -58,4 +64,17 @@ public class DataImportContoller {
 		return  importService.importProductListFromCSV(file, importMetaData);
     }
 	
+	
+	
+
+    @GetMapping(value = "/productlist/template")
+	@ResponseBody
+	public ResponseEntity<String> generateCsvTemplate(@RequestHeader("User-Token") String token) throws IOException {
+		ByteArrayOutputStream s = importService.generateProductsCsvTemplate();
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType("text/csv"))
+				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Csv_Template.csv")
+				.body(s.toString());
+	}
+
 }

@@ -3,6 +3,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -14,6 +16,7 @@ import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +24,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockPart;
 import org.springframework.test.context.jdbc.Sql;
@@ -102,7 +109,9 @@ public class DataImportApiTest {
 	
 	@Autowired
 	private TestHelper helper;
-	
+
+	@Autowired
+	private TestRestTemplate template;
 	
 	
 	
@@ -569,9 +578,73 @@ public class DataImportApiTest {
 	}
 
 
+	
+	
+	@Test
+	public void getProductsCsvTemplateInvalidAuthentication() {
+		HttpEntity<Object> request = TestCommons.getHttpEntity("","456");
+		ResponseEntity res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
+		Assert.assertTrue(res.getStatusCodeValue() == 401);
 
+		res = template.exchange("/product/image/bulk/template", HttpMethod.GET, request ,String.class);
+		Assert.assertTrue(res.getStatusCodeValue() == 401);
+	}
 
+	@Test
+	public void getProductsCsvTemplateInvalidAuthorization() {
+		HttpEntity<Object> request = TestCommons.getHttpEntity("","101112");
+		ResponseEntity res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
+		Assert.assertTrue(res.getStatusCodeValue() == 403);
 
+		res = template.exchange("/product/image/bulk/template", HttpMethod.GET, request ,String.class);
+		Assert.assertTrue(res.getStatusCodeValue() == 403);
+	}
+	
+	
+	
+
+	@Test
+	public void getProductsCsvTemplate() {
+		String[] expectedProductHeaders = {"product_name","barcode","category","brand","price"
+											 ,"quantity","description","color","size"};
+		HttpEntity<Object> request = TestCommons.getHttpEntity("","131415");
+		ResponseEntity<String> res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
+		
+		Assert.assertTrue(res.getStatusCodeValue() == 200);
+		
+		String[] headers = res.getBody()
+							.replace(System.lineSeparator(), "")
+							.split(",");
+		for(int i=0;i<headers.length;i++){
+			Assert.assertTrue(headers[i].equals(expectedProductHeaders[i]));
+		}
+
+		
+	}
+	
+	
+	
+	
+	@Test
+	public void getImageUploadCsvTemplate() {
+		String[] expectedImageHeaders = {"barcode","image_file"};
+		
+		HttpEntity<Object> request = TestCommons.getHttpEntity("","131415");
+		ResponseEntity<String> res = template.exchange("/product/image/bulk/template", HttpMethod.GET, request ,String.class);
+		
+		String[] headers = res.getBody()
+								.replace(System.lineSeparator(), "")
+								.split(",");
+		
+		Assert.assertTrue(res.getStatusCodeValue() == 200);
+		for(int i=0;i<headers.length;i++){
+			Assert.assertTrue(headers[i].equals(expectedImageHeaders[i]));
+		}
+	}
+
+	
+	
+	
 
 	private void assertProductUpdatedDataSavedWithStock() {
 		ProductVariantsEntity updatedVariant = helper.getVariantFullData(TEST_VARIANT_UPDATED);

@@ -26,7 +26,11 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper=false)
 public class ProductVariantsEntity {
 
-
+	public ProductVariantsEntity() {
+		removed = 0;
+	}
+	
+	
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
@@ -44,7 +48,11 @@ public class ProductVariantsEntity {
     private String description;
 
     @Column(name="barcode")
-    private String barcode;
+    private String barcode;    
+    
+    @Column(name="removed")
+    private Integer removed;
+    
 
     @ManyToOne(cascade = CascadeType.DETACH, fetch = FetchType.EAGER)
     @JoinColumn(name = "product_id", referencedColumnName = "id")

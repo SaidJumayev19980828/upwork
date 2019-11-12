@@ -25,12 +25,32 @@ public class Account {
             safeApiUsername = apiUsername;
             safeApiPassword = apiPassword;
             safeApiVersion = apiVersion;
+            safeUpgMerchantId = upgMerchantId;
+            safeUpgTerminalId = upgTerminalId;
+            safeUpgSecureKey = upgSecureKey;
+            safeUpgCallbackUrl = upgCallbackUrl;
         }
     }
 
     @Value("${qnb.merchant_id}")
     private String merchantId;
     private static String safeMerchantId;
+
+    @Value("${qnb.upg.mid}")
+    private String upgMerchantId;
+    private static String safeUpgMerchantId;
+
+    @Value("${qnb.upg.tid}")
+    private String upgTerminalId;
+    private static String safeUpgTerminalId;
+
+    @Value("${qnb.upg.key}")
+    private String upgSecureKey;
+    private static String safeUpgSecureKey;
+
+    @Value("${qnb.upg.callback}")
+    private String upgCallbackUrl;
+    private static String safeUpgCallbackUrl;
 
     @Value("${qnb.api_version}")
     private String apiVersion;
@@ -48,7 +68,7 @@ public class Account {
     private String apiUrl;
     private static String safeApiUrl;
 
-    public String getMerchantId() {
+        public String getMerchantId() {
         return safeMerchantId;
     }
 
@@ -68,4 +88,11 @@ public class Account {
         return safeApiVersion;
     }
 
+    public String getUpgMerchantId() { return safeUpgMerchantId; }
+
+    public String getUpgTerminalId() { return safeUpgTerminalId; }
+
+    public String getUpgSecureKey() { return safeUpgSecureKey; }
+
+    public String getUpgCallbackUrl() { return safeUpgCallbackUrl; }
 }

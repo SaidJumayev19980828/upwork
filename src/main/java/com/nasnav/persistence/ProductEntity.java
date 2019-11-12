@@ -35,6 +35,10 @@ import lombok.ToString;
 @Data
 @EqualsAndHashCode(callSuper=false)
 public class ProductEntity {
+	
+	public ProductEntity() {
+		removed = 0;
+	}
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -76,6 +80,10 @@ public class ProductEntity {
 
     @Column(name="product_type")
     private Integer productType = ProductTypes.DEFAULT;
+    
+    
+    @Column(name="removed")
+    private Integer removed;
     
 
     //TODO : we only need this until the Column PRODUCTS.PRODUCT_TYPE is set as non-null

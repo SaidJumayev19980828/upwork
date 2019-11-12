@@ -52,8 +52,6 @@ values (400002, 100001,310002, 20 , 122, now() , now(), 99001);
 insert into public.stocks(id, shop_id , variant_id , quantity , price, created_at, updated_at, organization_id, currency)
 values (400003, 100004,310003, 30, 15, now() , now(), 99001, 2);
 
-
-
 --insering users
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
 VALUES (68, now(), now(), 'testuser1@nasnav.com', 99001, '101112',  100001);

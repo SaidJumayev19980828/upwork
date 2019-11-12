@@ -25,7 +25,7 @@ public class ExtraAttributesEntity implements BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     @Column(name = "key_name")
     private String name;

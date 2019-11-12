@@ -3,14 +3,22 @@ package com.nasnav.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dto.OrderSessionResponse;
+import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.qnb.Account;
 import com.nasnav.payments.qnb.PaymentService;
 import com.nasnav.payments.qnb.Session;
+import com.nasnav.payments.qnb.UpgLightbox;
 import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.PaymentEntity;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -25,35 +33,104 @@ import java.util.Optional;
 @RequestMapping("/payment/qnb")
 public class QnbPaymentController {
 
-//    private final ActiveSessions activeSessions;
+    private static final Logger qnbLogger = LogManager.getLogger("Payment:QNB");
     
     private final PaymentService paymentService;
 
-    private final OrdersRepository orderRepository;
+    private final OrdersRepository ordersRepository;
+
+    private final PaymentsRepository paymentsRepository;
 
     private final Session session;
 
     @Autowired
-    public QnbPaymentController(PaymentService paymentService, OrdersRepository orderRepository, Session session) {
-//        this.activeSessions = activeSessions;
+    public QnbPaymentController(
+            PaymentService paymentService,
+            OrdersRepository ordersRepository,
+            PaymentsRepository paymentsRepository,
+            Session session) {
         this.paymentService = paymentService;
-        this.orderRepository = orderRepository;
+        this.ordersRepository = ordersRepository;
+        this.paymentsRepository = paymentsRepository;
         this.session = session;
     }
 
-
 	@ApiIgnore
-    @RequestMapping(value = "/test/payment",produces=MediaType.TEXT_HTML_VALUE)
+    @GetMapping(value = "/test/payment",produces=MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<?> testPayment(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
         String initResult = initPayment(orderId).getBody().toString();
         return new ResponseEntity<>(paymentService.getConfiguredHtml(initResult, "static/session.html"), HttpStatus.OK);
     }
 
     @ApiIgnore
-    @RequestMapping(value = "/test/lightbox",produces=MediaType.TEXT_HTML_VALUE)
+    @GetMapping(value = "/test/lightbox",produces=MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<?> testLightbox(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
         String initResult = initPayment(orderId).getBody().toString();
         return new ResponseEntity<>(paymentService.getConfiguredHtml(initResult, "static/lightbox.html"), HttpStatus.OK);
+    }
+
+    @ApiIgnore
+    @GetMapping(value = "/test/upglightbox",produces=MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<?> testMezza(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
+        Optional<OrdersEntity> orderOpt = ordersRepository.findById(orderId);
+        if(!orderOpt.isPresent()) {
+            throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
+        }
+        UpgLightbox lightbox = new UpgLightbox();
+        JSONObject data = lightbox.getJsonConfig(orderOpt.get());
+        String testPage = lightbox.getConfiguredHtml(data,"static/upg-lightbox.html");
+
+//        String initResult = initPayment(orderId).getBody().toString();
+        return new ResponseEntity<>(testPage, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/upg/init")
+    public ResponseEntity<?> upgGetData(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
+        Optional<OrdersEntity> orderOpt = ordersRepository.findById(orderId);
+        if(!orderOpt.isPresent()) {
+            throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
+        }
+        UpgLightbox lightbox = new UpgLightbox();
+        JSONObject data = lightbox.getJsonConfig(orderOpt.get());
+        return new ResponseEntity<>(data.toString(), HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/upg/callback")
+    public ResponseEntity<?> upgCallback(@RequestBody String content) {
+//        System.out.println(content);
+        qnbLogger.info("Received payment confirmation: {}", content);
+        long orderId = -1;
+        JSONObject jsonObject = null;
+        try {
+            jsonObject = new JSONObject(content);
+        } catch (JSONException ex) { ; }
+        if (jsonObject == null) {
+            qnbLogger.error("Unable to parse the response: {}", content);
+            return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to process the response received from the gateway\"}", HttpStatus.BAD_GATEWAY);
+        }
+        // get the order id from merchant reference
+        String ref = jsonObject.getString("MerchantReference");
+        try {
+            orderId = Long.parseLong(ref.substring(0, ref.indexOf('-')));
+        } catch (Exception ex) { ; }
+        if (orderId < 0) {
+            qnbLogger.error("Unable to retrieve order ID from the reference: {}", ref);
+            return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to process Order ID\"}", HttpStatus.BAD_GATEWAY);
+        }
+        Optional<OrdersEntity> oo = ordersRepository.findById(orderId);
+        if (!oo.isPresent()) {
+            qnbLogger.error("Order: {} does not exist", orderId);
+            return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to find applicable order\"}", HttpStatus.BAD_REQUEST);
+        }
+
+        PaymentEntity payment = UpgLightbox.verifyPayment(jsonObject, oo.get());
+        if (payment != null) {
+            paymentsRepository.saveAndFlush(payment);
+            ordersRepository.setPaymentStatusForOrder(orderId, PaymentStatus.PAID.getValue(), payment.getExecuted());
+            return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to verify payment confirmation\"}", HttpStatus.BAD_REQUEST);
+        }
     }
 
     @ApiOperation(value = "Execute the payment after setup and user's data collection", nickname = "qnbExecute")
@@ -103,9 +180,10 @@ public class QnbPaymentController {
             @io.swagger.annotations.ApiResponse(code = 402, message = "Payment attempted but failed (refused by the gateway)"),
             @io.swagger.annotations.ApiResponse(code = 502, message = "Unable to communicate with the payment gateway"),
     })
+
     @PostMapping(value = "/initialize")
     public ResponseEntity<?> initPayment(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
-        Optional<OrdersEntity> orderOpt = orderRepository.findById(orderId);
+        Optional<OrdersEntity> orderOpt = ordersRepository.findById(orderId);
         if(!orderOpt.isPresent()) {
             throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
         }

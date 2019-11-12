@@ -11,6 +11,10 @@ INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organiza
 INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (102, 201, 'brand_2', now(), now(), 99001);
 INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (103, 202, 'brand_3', now(), now(), 99001);
 
+--inserting categories
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (201, 'category_1', now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (202, 'category_2', now(), now());
+
 --inserting shops
 INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (501, 'shop_1', 102, now(), now(), 99002);
 INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (502, 'shop_2', 101, now(), now(), 99001);
@@ -40,11 +44,11 @@ INSERT INTO public.employee_users(id, created_at, updated_at, email, organizatio
 	VALUES (158, now(), now(), 'testuser3@nasnav.com', 99002, '222324',  506);
 
 --inserting Roles
-insert into roles(id, name, created_at, updated_at, organization_id) values(1, 'NASNAV_ADMIN', now(), now(), 99001);
-insert into roles(id, name, created_at, updated_at, organization_id) values(2, 'ORGANIZATION_ADMIN', now(), now(), 99001);
-insert into roles(id, name, created_at, updated_at, organization_id) values(4, 'ORGANIZATION_EMPLOYEE', now(), now(), 99001);
-insert into roles(id, name, created_at, updated_at, organization_id) values(5, 'STORE_EMPLOYEE', now(), now(), 99001);
-insert into roles(id, name, created_at, updated_at, organization_id) values(3, 'CUSTOMER', now(), now(), 99001);
+insert into public.roles(id, name, created_at, updated_at, organization_id) values(1, 'NASNAV_ADMIN', now(), now(), 99001);
+insert into public.roles(id, name, created_at, updated_at, organization_id) values(2, 'ORGANIZATION_ADMIN', now(), now(), 99001);
+insert into public.roles(id, name, created_at, updated_at, organization_id) values(4, 'ORGANIZATION_EMPLOYEE', now(), now(), 99001);
+insert into public.roles(id, name, created_at, updated_at, organization_id) values(5, 'STORE_EMPLOYEE', now(), now(), 99001);
+insert into public.roles(id, name, created_at, updated_at, organization_id) values(3, 'CUSTOMER', now(), now(), 99001);
 
 --inserting Roles EmployeeUsers relations
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (20, 68, 1, now(), now());
@@ -53,22 +57,22 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (23, 71, 5, now(), now());
 
 --inserting orders
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(33, 88, now(), now(), 99001, 0, 502);
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(37, 88, now(), now(), 99002, 0, 501);
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(38, 90, now(), now(), 99002, 1, 501);
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(39, 88, now(), now(), 99001, 1, 501);
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(40, 88, now(), now(), 99001, 0, 503);
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(41, 90, now(), now(), 99001, 1, 502);
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(42, 88, now(), now(), 99001, 1, 502);
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(43, 88, now(), now(), 99002, 0, 502);
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(34, 89, now(), now(), 99003, 0, 504);
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(35, 89, now(), now(), 99002, 0, 501);
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(36, 90, now(), now(), 99003, 1, 505);
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(44, 89, now(), now(), 99003, 1, 505);
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(45, 89, now(), now(), 99001, 0, 502);
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(46, 90, now(), now(), 99002, 1, 502);
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(47, 89, now(), now(), 99001, 1, 502);
-insert into orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(48, 89, now(), now(), 99002, 0, 502);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(33, 88, now(), now(), 99001, 0, 502);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(37, 88, now(), now(), 99002, 0, 501);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(38, 90, now(), now(), 99002, 1, 501);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(39, 88, now(), now(), 99001, 1, 501);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(40, 88, now(), now(), 99001, 0, 503);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(41, 90, now(), now(), 99001, 1, 502);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(42, 88, now(), now(), 99001, 1, 502);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(43, 88, now(), now(), 99002, 0, 502);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(34, 89, now(), now(), 99003, 0, 504);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(35, 89, now(), now(), 99002, 0, 501);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(36, 90, now(), now(), 99003, 1, 505);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(44, 89, now(), now(), 99003, 1, 505);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(45, 89, now(), now(), 99001, 0, 502);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(46, 90, now(), now(), 99002, 1, 502);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(47, 89, now(), now(), 99001, 1, 502);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(48, 89, now(), now(), 99002, 0, 502);
 
 
 

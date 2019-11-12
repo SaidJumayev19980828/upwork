@@ -14,8 +14,7 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_SHOP_ID_N
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_CHANGE_OTHER_ORG_SHOP;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PREPARE_PRODUCT_DTO_DATA;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,6 +27,7 @@ import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 
+import com.univocity.parsers.csv.*;
 import org.apache.commons.beanutils.BeanMap;
 import org.apache.commons.beanutils.BeanUtils;
 import org.jboss.logging.Logger;
@@ -74,8 +74,6 @@ import com.univocity.parsers.common.ParsingContext;
 import com.univocity.parsers.common.RowProcessorErrorHandler;
 import com.univocity.parsers.common.fields.ColumnMapping;
 import com.univocity.parsers.common.processor.BeanListProcessor;
-import com.univocity.parsers.csv.CsvParser;
-import com.univocity.parsers.csv.CsvParserSettings;
 
 import lombok.Data;
 
@@ -118,10 +116,15 @@ public class DataImportServiceImpl implements DataImportService{
 	
 	@Autowired
 	private ProductRepository prodcutRepo;
+
+	@Autowired
+	private ProductFeaturesRepository prodcutFeaturesRepo;
 	
 	
 	private Logger logger = Logger.getLogger(getClass());
-	
+
+	private final List<String> csvBaseHeaders = Arrays.asList(new String[]{"product_name","barcode","category","brand","price","quantity","description"});
+
 	@Transactional(rollbackFor = Throwable.class)
 	public ProductListImportResponse importProductListFromCSV(@Valid MultipartFile file,
 			@Valid ProductListImportDTO importMetaData) throws BusinessException {
@@ -453,8 +456,6 @@ public class DataImportServiceImpl implements DataImportService{
 
 
 
-
-
 	private BeanListProcessor<ProductImportCsvRowData> createRowProcessor(ProductListImportDTO metaData, List<ProductFeaturesEntity> features) {
 		ColumnMapping mapper = createAttrToColMapping(metaData);
 		
@@ -622,7 +623,56 @@ public class DataImportServiceImpl implements DataImportService{
 					, HttpStatus.NOT_ACCEPTABLE);
 		}
 	}
+	
+	
+	
+	
 
+	private CsvWriterSettings createWritingSettings() {
+		CsvWriterSettings settings = new CsvWriterSettings();
+		return settings;
+	}
+	
+	
+	
+
+	private ByteArrayOutputStream writeCsvHeaders(List<String> headers) throws IOException {
+		ByteArrayOutputStream csvResult = new ByteArrayOutputStream();
+		Writer outputWriter = new OutputStreamWriter(csvResult);
+
+		CsvWriter writer = new CsvWriter(outputWriter, createWritingSettings());
+
+		writer.writeHeaders(headers);
+		writer.close();
+		csvResult.close();
+
+		return csvResult;
+	}
+
+	@Override
+	public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException{
+		Long orgId = security.getCurrentUserOrganizationId();
+		List<String> features = prodcutFeaturesRepo.findByOrganizationId(orgId)
+													.stream()
+													.map(ProductFeaturesEntity::getName)
+													.sorted()
+													.collect(Collectors.toList());
+		
+		List<String> baseHeaders = new ArrayList<>(csvBaseHeaders);
+		baseHeaders.addAll(features);
+
+		return writeCsvHeaders(baseHeaders);
+	}
+	
+	
+	
+
+	@Override
+	public ByteArrayOutputStream generateImagesCsvTemplate() throws IOException{
+		List<String> headers = Arrays.asList(new String[]{"barcode","image_file"});
+
+		return writeCsvHeaders(headers);
+	}
 }
 
 
