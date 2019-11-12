@@ -1,6 +1,13 @@
 INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001, 'organization_1', now(), now());
 INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());
 
+-- insert image types
+INSERT INTO public.organization_image_types (id, "name") VALUES(0, 'None');
+INSERT INTO public.organization_image_types (id, "name") VALUES(1, 'type1');
+
+
+
+
 INSERT INTO public.files(id, organization_id, url, location, mimetype, orig_filename)
     VALUES(901,99002, '99002/nasnav--test-photo.png', '99002/nasnav--test-photo.png', 'image/png', 'nasnav--Test_Photo.png');
 
@@ -23,8 +30,8 @@ INSERT INTO public.employee_users(id, created_at, updated_at, email, organizatio
 VALUES (70, now(), now(), 'testuser3@nasnav.com', 99001, '789',  502);
 
 --inserting Roles
-insert into roles(id, name, created_at, updated_at, organization_id) values(1, 'NASNAV_ADMIN', now(), now(), 99001);
-insert into roles(id, name, created_at, updated_at, organization_id) values(2, 'ORGANIZATION_ADMIN', now(), now(), 99001);
+insert into public.roles(id, name, created_at, updated_at, organization_id) values(1, 'NASNAV_ADMIN', now(), now(), 99001);
+insert into public.roles(id, name, created_at, updated_at, organization_id) values(2, 'ORGANIZATION_ADMIN', now(), now(), 99001);
 
 --inserting Roles EmployeeUsers relations
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (20, 68, 1, now(), now());

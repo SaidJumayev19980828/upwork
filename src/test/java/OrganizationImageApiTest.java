@@ -1,23 +1,10 @@
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import com.nasnav.dao.*;
-import com.nasnav.dto.OrganizationImagesRepresentationObject;
-import com.nasnav.dto.OrganizationRepresentationObject;
-import com.nasnav.response.OrganizationResponse;
-import com.nasnav.response.ProductImageUpdateResponse;
+import javax.sql.DataSource;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,19 +22,17 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-
-import com.nasnav.NavBox;
-
-import net.jcip.annotations.NotThreadSafe;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import javax.sql.DataSource;
+import com.nasnav.NavBox;
+import com.nasnav.dao.FilesRepository;
+import com.nasnav.dao.OrganizationImagesRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dto.OrganizationImagesRepresentationObject;
+import com.nasnav.dto.OrganizationRepresentationObject;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -61,6 +46,7 @@ public class OrganizationImageApiTest {
 
     @Value("classpath:sql/Organizations_image_API_Test_Data_Insert.sql")
     private Resource organizationsDataInsert;
+    
     @Value("classpath:sql/database_cleanup.sql")
     private Resource databaseCleanup;
 
@@ -73,39 +59,23 @@ public class OrganizationImageApiTest {
     @Autowired
     private TestRestTemplate template;
 
-    private Path basePath;
-
-    @Autowired
-    private FilesRepository filesRepo;
-    @Autowired
-    private OrganizationRepository orgRepo;
-    @Autowired
-    private OrganizationImagesRepository imgRepo;
-    @Autowired
-    private MockMvc mockMvc;
-
-    /*@Before
-    public void setup() throws IOException {
-        this.basePath = Paths.get(basePathStr);
-        System.out.println("Test Files Base Path  >>>> " + basePath.toAbsolutePath());
-        //The base directory must exists for all tests
-        assertTrue(Files.exists(basePath));
-        //assert an empty temp directory was created for the test
-        try(Stream<Path> files = Files.list(basePath)){
-            assertEquals(0L, files.count());
-        }
-    }*/
-
+    
+    
     @Before
     public void setup(){
         performSqlScript(databaseCleanup);
         performSqlScript(organizationsDataInsert);
     }
+    
+    
+    
 
     @After
     public void cleanup(){
         performSqlScript(databaseCleanup);
     }
+    
+    
 
     void performSqlScript(Resource resource) {
         try (Connection con = datasource.getConnection()) {
@@ -114,6 +84,9 @@ public class OrganizationImageApiTest {
             e.printStackTrace();
         }
     }
+    
+    
+    
 
     @Test
     public void organizationImageMissingImageIdTest() {
@@ -150,6 +123,9 @@ public class OrganizationImageApiTest {
         ResponseEntity<Object> response = template.postForEntity("/organization/image", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
+    
+    
+    
 
     @Test
     public void organizationImageMissingOrganizationIdTest() {
@@ -162,6 +138,8 @@ public class OrganizationImageApiTest {
         Assert.assertEquals(406, response.getStatusCode().value());
         Assert.assertTrue(response.getBody().toString().contains("MISSING PARAM"));
     }
+    
+    
 
     @Test
     public void organizationImageNullOrganizationTest() {
@@ -175,6 +153,9 @@ public class OrganizationImageApiTest {
         Assert.assertEquals(406, response.getStatusCode().value());
         Assert.assertTrue(response.getBody().toString().contains("MISSING PARAM"));
     }
+    
+    
+    
 
     @Test
     public void organizationImageNonExistingOrganizationIdTest() {
@@ -188,6 +169,9 @@ public class OrganizationImageApiTest {
         Assert.assertEquals(406, response.getStatusCode().value());
         Assert.assertTrue(response.getBody().toString().contains("MISSING PARAM"));
     }
+    
+    
+    
 
     @Test
     public void organizationImageOrganizationIdFromAnotherOrgTest() {
@@ -200,6 +184,8 @@ public class OrganizationImageApiTest {
         ResponseEntity<Object> response = template.postForEntity("/organization/image", json, Object.class);
         Assert.assertEquals(403, response.getStatusCode().value());
     }
+    
+    
 
     @Test
     public void organizationImageMissingOperationTest() {
@@ -213,6 +199,8 @@ public class OrganizationImageApiTest {
         Assert.assertEquals(406, response.getStatusCode().value());
         Assert.assertTrue(response.getBody().toString().contains("MISSING PARAM"));
     }
+    
+    
 
     @Test
     public void organizationNewImageUploadTest() {
@@ -224,6 +212,8 @@ public class OrganizationImageApiTest {
         ResponseEntity<Object> response = template.postForEntity("/organization/image", json, Object.class);
         Assert.assertEquals(200, response.getStatusCode().value());
     }
+    
+    
 
     @Test
     public void organizationUpdateImageUploadTest() {
@@ -235,6 +225,8 @@ public class OrganizationImageApiTest {
         ResponseEntity<Object> response = template.postForEntity("/organization/image", json, Object.class);
         Assert.assertEquals(200, response.getStatusCode().value());
     }
+    
+    
 
     @Test
     public void getOrganizationImagesTest() {
@@ -266,6 +258,9 @@ public class OrganizationImageApiTest {
             }
         }
     }
+    
+    
+    
 
     @Test
     public void getShopImagesTest() {

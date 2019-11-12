@@ -6,6 +6,10 @@ INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001
 INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());
 INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99003, 'organization_2', now(), now());
 
+--inserting categories
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (201, 'category_1', now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (202, 'category_2', now(), now());
+
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (101, 202, 'brand_1', now(), now(), 99002);
