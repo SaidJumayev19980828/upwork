@@ -47,6 +47,7 @@ import lombok.Data;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
@@ -67,7 +68,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	private Set<IntegrationParamTypeEntity> mandatoryIntegrationParams;
 	
 	private FluxSink<EventHandling> eventFluxSink;
-	private Flux<EventHandling> eventFlux;
+	private Flux<Mono<EventHandling>> eventFlux;
 	
 	@Autowired
 	private IntegrationEventFailureRepository eventFailureRepo;
@@ -87,17 +88,21 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	
 	private void initEventFlux() {
-		Scheduler scheduler = Schedulers.newBoundedElastic(Schedulers.DEFAULT_BOUNDED_ELASTIC_SIZE, Schedulers.DEFAULT_BOUNDED_ELASTIC_QUEUESIZE, "Integration-Event-Queue-Pool"); 
+		Scheduler scheduler = Schedulers.boundedElastic(); 
 		EmitterProcessor<EventHandling> emitterProcessor = EmitterProcessor.create();
-		eventFlux = emitterProcessor							
+		eventFlux =
+				emitterProcessor							
 //						.sample(Duration.ofMillis(100L))
 						.publishOn(scheduler)
+						.map(Mono::just)						
 //						.subscribeOn(scheduler)
 						.publish()
-						.autoConnect();		
+						.autoConnect();						
+							
 		
 		eventFluxSink = emitterProcessor.sink();
-		eventFlux.subscribe(this::handle);
+		eventFlux.subscribe(m -> m.subscribeOn(scheduler)
+									.subscribe(this::handle));
 	}
 
 
