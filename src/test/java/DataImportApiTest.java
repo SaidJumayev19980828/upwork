@@ -114,6 +114,7 @@ public class DataImportApiTest {
 	private TestRestTemplate template;
 	
 	
+	
 	@Test
     public void uploadProductsCSVNoAuthNTest() throws IOException, Exception {
        
@@ -577,6 +578,8 @@ public class DataImportApiTest {
 	}
 
 
+	
+	
 	@Test
 	public void getProductsCsvTemplateInvalidAuthentication() {
 		HttpEntity<Object> request = TestCommons.getHttpEntity("","456");
@@ -602,9 +605,8 @@ public class DataImportApiTest {
 
 	@Test
 	public void getProductsCsvTemplate() {
-		String[] expectedProductHeaders = {"product_name","barcode","category","brand","price",
-													   "quantity","description","color"
-													   ,"size"};
+		String[] expectedProductHeaders = {"product_name","barcode","category","brand","price"
+											 ,"quantity","description","color","size"};
 		HttpEntity<Object> request = TestCommons.getHttpEntity("","131415");
 		ResponseEntity<String> res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
 		
@@ -640,6 +642,9 @@ public class DataImportApiTest {
 		}
 	}
 
+	
+	
+	
 
 	private void assertProductUpdatedDataSavedWithStock() {
 		ProductVariantsEntity updatedVariant = helper.getVariantFullData(TEST_VARIANT_UPDATED);
