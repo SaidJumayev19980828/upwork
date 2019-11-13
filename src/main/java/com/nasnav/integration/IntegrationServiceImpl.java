@@ -93,8 +93,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 		EmitterProcessor<EventHandling> emitterProcessor = EmitterProcessor.create();
 		eventFlux =
 				emitterProcessor									
-						.publishOn(scheduler)
-						.sample(Duration.ofMillis(100L))
+						.publishOn(scheduler) 
+						.delayElements(Duration.ofMillis(100L) )
 						.map(Mono::just)						
 						.publish()
 						.autoConnect();						
