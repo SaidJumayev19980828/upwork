@@ -10,6 +10,7 @@ import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.E
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,11 +92,10 @@ public class IntegrationServiceImpl implements IntegrationService {
 		Scheduler scheduler = Schedulers.boundedElastic(); 
 		EmitterProcessor<EventHandling> emitterProcessor = EmitterProcessor.create();
 		eventFlux =
-				emitterProcessor							
-//						.sample(Duration.ofMillis(100L))
+				emitterProcessor									
 						.publishOn(scheduler)
+						.sample(Duration.ofMillis(100L))
 						.map(Mono::just)						
-//						.subscribeOn(scheduler)
 						.publish()
 						.autoConnect();						
 							

@@ -1,14 +1,20 @@
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -19,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.data.util.Pair;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -29,9 +36,12 @@ import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.Event;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.IntegrationEventFailureEntity;
+import com.nasnav.test.integration.event.HandlingInfo;
 import com.nasnav.test.integration.event.TestEvent;
 import com.nasnav.test.integration.event.TestEvent2;
+import com.nasnav.test.integration.event.TestEventWithHandlerInfo;
 import com.nasnav.test.integration.event.TestEventWithNoHandler;
+import com.nasnav.test.integration.event.handler.HandlingInfoSaver;
 import com.nasnav.test.integration.event.handler.TestEvent2Handler;
 import com.nasnav.test.integration.event.handler.TestEventHandler;
 
@@ -57,8 +67,11 @@ public class IntegrationServiceTest {
 			"INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001, 'organization_1', now(), now());" + 
 			"INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());" + 
 			"INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(1, 'INTEGRATION_MODULE', TRUE);" + 
+			"INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(2, 'MAX_REQUESTS_PER_SECOND', TRUE);" + 
 			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)" + 
-			"VALUES(1, 1, 99001, 'com.nasnav.test.integration.modules.TestIntegrationModule', now(), now());" ;
+			"VALUES(1, 1, 99001, 'com.nasnav.test.integration.modules.TestIntegrationModule', now(), now());\n" +
+			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)" + 
+			"VALUES(2, 2, 99001, 'com.nasnav.test.integration.modules.TestIntegrationModule', now(), now());" ;
 
 	private static final String CLEAN_QUERY = 
 			"DELETE FROM public.integration_event_failure where organization_id BETWEEN 99000 AND 99999;\n"+
@@ -129,7 +142,7 @@ public class IntegrationServiceTest {
 	//push event to organization with no module [DONE]
 	//organization with integration info but null integration module? [SHOULD FAIL ON APP STARTUP]
 	//event with no handler [DONE]
-	//assert data is delivered to the correct event handler
+	//assert data is delivered to the correct event handler [DONE*]
 	//assert event is processed asynchronously [DONE]
 	//assert several events are delivered in the given MAX rate 
 	//test retry logic
@@ -283,8 +296,7 @@ public class IntegrationServiceTest {
 		assertAsyncEventPush(event);
 		
 		//--------------------------------------------------------------
-		return isCalled;
-		
+		return isCalled;		
 	}
 	
 	
@@ -424,27 +436,61 @@ public class IntegrationServiceTest {
 	
 	
 	private <E extends Event> Consumer<E> getEventCompleteAction(Waiter waiter, AtomicReference<Boolean> isCalled, Object ExpectedResult, boolean resumeTestAfterThis) {		
+		Consumer<E> commonCompleteAction = getEventCompleteAction(waiter, isCalled, resumeTestAfterThis, HANDLE_DELAY_MS);
 		return 
 				event ->{
-					System.out.println( String.format(">>> On Complete was called for event of type[%s]!", event.getClass()));
-					waiter.assertEquals(ExpectedResult, event.getEventResult());
-					
-					Duration eventHandlingDuration = Duration.between(event.getCreationTime(), event.getResultRecievedTime());
-					System.out.println(
-							String.format(">>> HandleDuration in Mills[%d] for event of type[%s]" ,eventHandlingDuration.toMillis() ,event.getClass()) );
-					System.out.println(
-							String.format(">>> Running on thread [%s]" , Thread.currentThread()) );
-					
-					waiter.assertTrue(eventHandlingDuration.toMillis() >= HANDLE_DELAY_MS);
-					isCalled.set(true);
-					if(resumeTestAfterThis)
-					{	
-						waiter.resume();
-					}					
+					waiter.assertEquals(ExpectedResult, event.getEventResult());					
+					commonCompleteAction.accept(event);					
 				};
 	}
 	
 	
+	
+	
+	
+	
+	private <E extends Event> Consumer<E> getEventCompleteAction(Waiter waiter, AtomicReference<Boolean> isCalled, boolean resumeTestAfterThis, Long minHandleDelayMillis) {		
+		return 
+				event ->{
+					isCalled.set(true);					
+					Long duration = getDurationMillis(event);					
+					printEventCallbackInfo(event, duration);					
+					waiter.assertTrue( duration >= minHandleDelayMillis);									
+					
+					if(resumeTestAfterThis)
+					{	
+						waiter.resume();
+					}
+				};
+	}
+
+
+
+
+
+	private <E extends Event> void printEventCallbackInfo(E event, Long duration) {
+		System.out.println( String.format(">>> On Complete was called for event of type[%s]!", event.getClass()));
+		System.out.println(
+				String.format(">>> HandleDuration in Mills[%d] for event of type[%s]" , duration ,event.getClass()) );
+		System.out.println(
+				String.format(">>> Running on thread [%s]" , Thread.currentThread()) );
+	}
+
+
+
+
+
+	private <E extends Event> Duration getDuration(E event) {
+		return Duration.between(event.getCreationTime(), event.getResultRecievedTime());
+	}
+	
+	
+	
+	
+	
+	private <E extends Event> Long getDurationMillis(E event) {
+		return Duration.between(event.getCreationTime(), event.getResultRecievedTime()).toMillis();
+	}
 	
 	
 	
@@ -489,5 +535,161 @@ public class IntegrationServiceTest {
 		System.out.println("Running on Error callback!");
 		t.printStackTrace();
 		throw new RuntimeException("Error happened during Event error fallback!");
+	}
+	
+	
+	
+	
+	
+	//assert several events are delivered in the given MAX rate
+	/**
+	 * - set rate parameter in the database
+	 * Set<thread>
+	 * List<isCalledflage>
+	 * Set<event> afterhandling
+	 * loop
+	 * 	- create on complete action
+	 * 		- save handling start time to (event)
+	 * 		- have some delay
+	 * 		- show message to sys out
+	 * 		- show current thread
+	 * 		- save (thread, is called)
+	 * 		- save event
+	 * 		- last on complete calls waiter.resume
+	 * 	- push event
+	 * 
+	 * - wait the actions to finish
+	 * - assert:
+	 * 		- diff between every handling start time >= sampling time
+	 * 		- set of threads size > 1 (the events where handled on multiple threads)
+	 * 		- all on complete actions were called 
+	 * 		- no error callback were called
+	 * 		- event_failure table is empty
+	 * @throws InvalidIntegrationEventException 
+	 * @throws InterruptedException 
+	 * @throws TimeoutException 
+	 * */
+	
+	@Test
+	public void testHandlingEventWithRate() throws InvalidIntegrationEventException, TimeoutException, InterruptedException {
+		Waiter waiter = new Waiter();
+		Integer eventsNum = 100;
+		Integer expectedEventRate = 10;
+		Long samplePeriod = (long) ((1.0/expectedEventRate)*1000);
+		List<TestEventWithHandlerInfo> events = new ArrayList<>();
+		
+		for(int i = 0; i < eventsNum ; i++) {
+			pushSingleEventWithIndex(i, waiter, eventsNum, events);			
+		}
+		
+		//--------------------------------------------------------------
+		waiter.await(HandlingInfoSaver.HANDLING_TIME*15L );
+		
+		//--------------------------------------------------------------
+		assertEventsSampledAndHandled(samplePeriod, events);
+											
+	}
+
+
+
+
+
+	private void pushSingleEventWithIndex(int i, Waiter waiter, Integer eventsNum,
+			List<TestEventWithHandlerInfo> events) throws InvalidIntegrationEventException {
+		TestEventWithHandlerInfo event = new TestEventWithHandlerInfo(ORG_ID, i);
+		AtomicReference<Boolean> isCalled = new AtomicReference<>(false);
+		boolean resumeAfterThis = (i == eventsNum -1);
+		
+		Consumer<TestEventWithHandlerInfo> onComplete = getEventCompleteAction(waiter, isCalled, resumeAfterThis, HandlingInfoSaver.HANDLING_TIME);
+		Consumer<TestEventWithHandlerInfo> onCompleteWrapper = 
+				e ->{						
+					e.getEventResult().setCallBackExecuted(true);
+					events.add(e);
+					onComplete.accept(e);
+				};
+				
+		BiConsumer<TestEventWithHandlerInfo, Throwable> onError = getUnexpectedErrorCallback(waiter);		
+		//--------------------------		
+							
+		integration.pushIntegrationEvent(event, onCompleteWrapper , onError);
+		//--------------------------
+		assertAsyncEventPush(event);
+	}
+
+
+
+
+
+	private void assertEventsSampledAndHandled(Long samplePeriod, List<TestEventWithHandlerInfo> events) {
+		List<HandlingInfo> handlingInfo = getEventsHandlingInfo(events);
+		
+		Boolean allEventsHandled = areAllEventsHandled(handlingInfo);		
+		Long threadsUsedNum = getDistinctThreadCount(handlingInfo);		
+		Long failureEvents = eventFailureRepo.count();		
+		Boolean eventsAreSampled = areEventsSampledWithPeriod(handlingInfo, samplePeriod);
+		
+		System.out.println(">>> Number of used threads : " + threadsUsedNum);
+		
+		assertTrue(allEventsHandled);
+		assertNotEquals(1L, threadsUsedNum.longValue());
+		assertEquals(0L, failureEvents.longValue());
+		assertTrue("if events are sampled, they will not be emitted and handled at the same time, "
+				+ "but each events is emitted after sometime from emitting of the last event"
+				, eventsAreSampled);
+	}
+
+
+
+
+
+	private List<HandlingInfo> getEventsHandlingInfo(List<TestEventWithHandlerInfo> events) {
+		List<HandlingInfo> handlingInfo = events.stream()
+												.map(TestEventWithHandlerInfo::getEventResult)
+												.collect(Collectors.toList());
+		return handlingInfo;
+	}
+
+
+
+
+
+	private Boolean areAllEventsHandled(List<HandlingInfo> handlingInfo) {
+		Boolean allEventsHandled = handlingInfo.stream().allMatch(HandlingInfo::getCallBackExecuted);
+		return allEventsHandled;
+	}
+
+
+
+
+
+	private Long getDistinctThreadCount(List<HandlingInfo> handlingInfo) {
+		Long threadsUsedNum = handlingInfo.stream()
+											.map(HandlingInfo::getThread)
+											.distinct()
+											.count();
+		return threadsUsedNum;
+	}
+
+
+
+
+
+	private Boolean areEventsSampledWithPeriod(List<HandlingInfo> handlingInfo, Long samplePeriod) {
+		Boolean eventsAreSampled = IntStream.range(1, handlingInfo.size())
+											.mapToObj(i -> Pair.of(handlingInfo.get(i-1), handlingInfo.get(i)))
+											.map(this::durationBetweenHandlingStartTime)
+											.map(Duration::toMillis)
+											.allMatch(duration -> duration >= samplePeriod);
+		return eventsAreSampled;
+	}
+	
+	
+	
+	
+	
+	private Duration durationBetweenHandlingStartTime(Pair<HandlingInfo, HandlingInfo> pair) {
+		HandlingInfo event = pair.getFirst();
+		HandlingInfo nextEvent = pair.getSecond();
+		return Duration.between(event.getHandlingStartTime() , nextEvent.getHandlingStartTime());
 	}
 }
