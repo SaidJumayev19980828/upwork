@@ -23,11 +23,11 @@ import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.E
 
 
 
-public abstract class IntegrationEventHandler<E extends Event<T,R>, T, R> {
+public abstract class IntegrationEventListener<E extends Event<T,R>, T, R> {
 	protected Logger logger;
 	protected IntegrationService integrationService; 
 	
-	public IntegrationEventHandler(@Nonnull IntegrationService integrationService) {
+	public IntegrationEventListener(@Nonnull IntegrationService integrationService) {
 		this.integrationService = integrationService;
 		logger = Logger.getLogger(this.getClass().getName());
 	}	

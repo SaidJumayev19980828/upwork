@@ -15,5 +15,6 @@ import lombok.Data;
 public class OrganizationIntegrationInfo {
 	@Nonnull
 	private IntegrationModule integrationModule;
+	private Long requestMinDelayMillis;
 	private List<IntegrationParamEntity> parameters;
 }

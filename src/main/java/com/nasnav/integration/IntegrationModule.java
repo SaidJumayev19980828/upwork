@@ -11,12 +11,12 @@ import lombok.Data;
 @Data
 public abstract class IntegrationModule {
 	@SuppressWarnings("rawtypes")
-	private Map< Class<? extends Event>, IntegrationEventHandler > eventHandlers;
+	private Map< Class<? extends Event>, IntegrationEventListener > eventListeners;
 	protected IntegrationService integrationService;
 	
 	
 	public IntegrationModule(IntegrationService integrationService) {
-		eventHandlers = new HashMap<>();
+		eventListeners = new HashMap<>();
 		
 		this.integrationService = integrationService;		
 		initIntegrationHandlers(integrationService);
@@ -30,16 +30,16 @@ public abstract class IntegrationModule {
 
 
 	@SuppressWarnings("unchecked")
-	<E extends Event<T,R>, T,R> IntegrationEventHandler<E,T,R> getEventHandler(E event) {
-		return (IntegrationEventHandler<E, T,R>)eventHandlers.get(event.getClass());		
+	<E extends Event<T,R>, T,R> IntegrationEventListener<E,T,R> getEventListiner(E event) {
+		return (IntegrationEventListener<E, T,R>)eventListeners.get(event.getClass());		
 	}
 	
 	
 	
 	
 	
-	protected <E extends Event<T,R>, T,R> void putEventHandler(Class<E> eventClass , IntegrationEventHandler<E,T,R> handler){
-		eventHandlers.put(eventClass, handler);
+	protected <E extends Event<T,R>, T,R> void putEventHandler(Class<E> eventClass , IntegrationEventListener<E,T,R> handler){
+		eventListeners.put(eventClass, handler);
 	}
 
 
@@ -47,12 +47,12 @@ public abstract class IntegrationModule {
 	
 
 	public <E extends Event<T,R>, T,R>  void pushEvent(EventHandling<E,T,R> handling) {
-		IntegrationEventHandler<E,T,R> handler = this.getEventHandler(handling.event);
-		if(handler == null) {
-			return; 	//ignore events with no handlers for this organization
+		IntegrationEventListener<E,T,R> listerner = this.getEventListiner(handling.getEvent());
+		if(listerner == null) {
+			return; 	//ignore events with no listners
 		}
 		
-		handler.pushEvent(handling.getEvent(), handling.getOnComplete(), handling.getOnError());
+		listerner.pushEvent(handling.getEvent(), handling.getOnComplete(), handling.getOnError());
 	};
 	
 }

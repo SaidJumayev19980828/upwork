@@ -3,12 +3,12 @@ package com.nasnav.integration.events.handlers;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import com.nasnav.integration.IntegrationEventHandler;
+import com.nasnav.integration.IntegrationEventListener;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.OrderConfirmEvent;
 import com.nasnav.integration.events.data.OrderData;
 
-public class OrderConfirmEventHandler extends IntegrationEventHandler<OrderConfirmEvent, OrderData, String> {
+public class OrderConfirmEventHandler extends IntegrationEventListener<OrderConfirmEvent, OrderData, String> {
 
 	
 	

@@ -7,6 +7,9 @@ import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.E
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_MODULE;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_PARAMS;
 
+
+import static com.nasnav.commons.utils.EntityUtils.failSafeFunction;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.math.BigDecimal;
@@ -15,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -29,6 +33,7 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.IntegrationEventFailureRepository;
 import com.nasnav.dao.IntegrationParamRepository;
 import com.nasnav.dao.IntegrationParamTypeRepostory;
@@ -48,14 +53,15 @@ import lombok.Data;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.GroupedFlux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 @Service
 public class IntegrationServiceImpl implements IntegrationService {
-	Logger logger = Logger.getLogger(getClass());
-	
+	private static final Long MAX_REQUEST_ID_PARAM = 2L;
+	private final Logger logger = Logger.getLogger(getClass());
 	
 	@Autowired
 	IntegrationParamRepository paramRepo;
@@ -69,7 +75,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	private Set<IntegrationParamTypeEntity> mandatoryIntegrationParams;
 	
 	private FluxSink<EventHandling> eventFluxSink;
-	private Flux<Mono<EventHandling>> eventFlux;
+	private Flux<EventHandling> eventFlux;
 	
 	@Autowired
 	private IntegrationEventFailureRepository eventFailureRepo;
@@ -91,18 +97,29 @@ public class IntegrationServiceImpl implements IntegrationService {
 	private void initEventFlux() {
 		Scheduler scheduler = Schedulers.boundedElastic(); 
 		EmitterProcessor<EventHandling> emitterProcessor = EmitterProcessor.create();
-		eventFlux =
-				emitterProcessor									
-						.publishOn(scheduler) 
-						.delayElements(Duration.ofMillis(100L) )
-						.map(Mono::just)						
+		eventFlux =	emitterProcessor									
+						.publishOn(scheduler) 																			
 						.publish()
-						.autoConnect();						
+						.autoConnect();								
 							
+		eventFlux.groupBy(e -> e.getEvent().getOrganizationId())
+				.subscribe(this::initOrganizationEventFlux);
 		
-		eventFluxSink = emitterProcessor.sink();
-		eventFlux.subscribe(m -> m.subscribeOn(scheduler)
-									.subscribe(this::handle));
+		eventFluxSink = emitterProcessor.sink();		
+	}
+	
+	
+	
+	private void initOrganizationEventFlux(GroupedFlux<Long, EventHandling> orgFlux) {
+		Long orgId = orgFlux.key(); 
+		Long eventDelay = Optional.ofNullable( orgIntegration.get(orgId) )
+									.map(OrganizationIntegrationInfo::getRequestMinDelayMillis)
+									.orElse(0L);
+		
+		orgFlux.delayElements(Duration.ofMillis(eventDelay) )
+				.map(Mono::just)
+				.subscribe(m -> m.subscribeOn( Schedulers.boundedElastic() )
+						.subscribe(this::handle));
 	}
 
 
@@ -173,11 +190,37 @@ public class IntegrationServiceImpl implements IntegrationService {
 						
 		List<IntegrationParamEntity> params = getOrgInegrationParams(orgId);
 		IntegrationModule integrationModule = loadIntegrationModule(orgId, params);
+		Long minRequestDelay = getOrgMinRequestDelay(params);
 		
-		return new OrganizationIntegrationInfo(integrationModule, params);
+		return new OrganizationIntegrationInfo(integrationModule, minRequestDelay, params);
 	}
 
 
+
+
+	private Long getOrgMinRequestDelay(List<IntegrationParamEntity> params) {
+		
+		return params.stream()
+					.filter( param -> Objects.equals( param.getType().getTypeName() , IntegrationParam.MAX_REQUEST_RATE.getValue()))
+					.map( IntegrationParamEntity::getParamValue )
+					.map( failSafeFunction(Long::valueOf) )
+					.filter( Objects::nonNull )
+					.map( this::calcMinRequestDelayMillis )
+					.findFirst()
+					.orElse(0L);
+	}
+
+
+
+
+	private Long calcMinRequestDelayMillis(Long requestRatePerSec) {
+		if(requestRatePerSec == null || requestRatePerSec == 0) 
+			return 0L;
+		else
+			return (long) ((1.0/requestRatePerSec)*1000);
+	}
+	
+	
 
 
 	private IntegrationModule loadIntegrationModule(Long orgId, List<IntegrationParamEntity> params)
@@ -465,9 +508,9 @@ public class IntegrationServiceImpl implements IntegrationService {
 @Data
 @AllArgsConstructor
 class EventHandling<E extends Event<T,R>, T, R>{
-	E event;
-	Consumer<E> onComplete;
-	BiConsumer<E, Throwable> onError;
+	private E event;
+	private Consumer<E> onComplete;
+	private BiConsumer<E, Throwable> onError;
 	
 	
 	public static <E extends Event<T,R>, T, R> EventHandling<E,T,R> of(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError){

@@ -4,13 +4,13 @@ import java.time.LocalDateTime;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import com.nasnav.integration.IntegrationEventHandler;
+import com.nasnav.integration.IntegrationEventListener;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.test.integration.event.HandlingInfo;
 import com.nasnav.test.integration.event.TestEvent2;
 import com.nasnav.test.integration.event.TestEventWithHandlerInfo;
 
-public class HandlingInfoSaver extends IntegrationEventHandler<TestEventWithHandlerInfo, Integer, HandlingInfo> {
+public class HandlingInfoSaver extends IntegrationEventListener<TestEventWithHandlerInfo, Integer, HandlingInfo> {
 
 	public static long HANDLING_TIME = 1000;
 	public static Consumer<TestEventWithHandlerInfo> onHandle = e -> {};

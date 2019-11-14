@@ -4,11 +4,11 @@ import java.time.LocalDateTime;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import com.nasnav.integration.IntegrationEventHandler;
+import com.nasnav.integration.IntegrationEventListener;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.test.integration.event.TestEvent;
 
-public class TestEventHandler extends IntegrationEventHandler<TestEvent, String, String> {
+public class TestEventHandler extends IntegrationEventListener<TestEvent, String, String> {
 	
 	public static final String EXPECTED_DATA = "Hi Event!";
 	public static final String EXPECTED_RESULT = "Bye Event";

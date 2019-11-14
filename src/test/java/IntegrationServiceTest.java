@@ -3,7 +3,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -60,18 +59,24 @@ public class IntegrationServiceTest {
 	
 	private static final Long ORG_ID = 99001L;
 	private static final Long NO_INTEGRATION_ORG_ID = 99002L;
+	private static final Long ANOTHER_ORG_ID = 99003L;
 	public static final Long HANDLE_DELAY_MS = 1000L;
 	
 	
 	private static final String INTEGRATION_PARAM_PREPARE_QUERY = 
 			"INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001, 'organization_1', now(), now());" + 
 			"INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());" + 
+			"INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99003, 'organization_3', now(), now());" +
 			"INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(1, 'INTEGRATION_MODULE', TRUE);" + 
 			"INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(2, 'MAX_REQUESTS_PER_SECOND', TRUE);" + 
 			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)" + 
 			"VALUES(1, 1, 99001, 'com.nasnav.test.integration.modules.TestIntegrationModule', now(), now());\n" +
 			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)" + 
-			"VALUES(2, 2, 99001, 'com.nasnav.test.integration.modules.TestIntegrationModule', now(), now());" ;
+			"VALUES(2, 2, 99001, '10', now(), now());" +
+			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)" + 
+			"VALUES(3, 1, 99003, 'com.nasnav.test.integration.modules.TestIntegrationModule', now(), now());\n" +
+			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)" + 
+			"VALUES(4, 2, 99003, '5', now(), now());" ;
 
 	private static final String CLEAN_QUERY = 
 			"DELETE FROM public.integration_event_failure where organization_id BETWEEN 99000 AND 99999;\n"+
@@ -80,6 +85,7 @@ public class IntegrationServiceTest {
 			"DELETE FROM public.integration_mapping_type;\n" + 
 			"DELETE FROM public.integration_param_type;\n" +
 			"DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;";
+	
 	
 	
 	 
@@ -574,29 +580,59 @@ public class IntegrationServiceTest {
 	public void testHandlingEventWithRate() throws InvalidIntegrationEventException, TimeoutException, InterruptedException {
 		Waiter waiter = new Waiter();
 		Integer eventsNum = 100;
-		Integer expectedEventRate = 10;
-		Long samplePeriod = (long) ((1.0/expectedEventRate)*1000);
-		List<TestEventWithHandlerInfo> events = new ArrayList<>();
+		Long expectedEventRate = 10L;			
+		Long orgId = ORG_ID;
 		
-		for(int i = 0; i < eventsNum ; i++) {
-			pushSingleEventWithIndex(i, waiter, eventsNum, events);			
-		}
+		pushEventsWithExpectedRate(waiter, eventsNum, orgId, expectedEventRate);											
+	}
+	
+	
+	
+	
+	@Test
+	public void testHandlingMultipleOrgEventWithRate() throws InvalidIntegrationEventException, TimeoutException, InterruptedException {
+		Waiter waiter = new Waiter();
+		Integer eventsNum1 = 100;
+		Long expectedEventRate1 = 10L;			
+		Long orgId1 = ORG_ID;
 		
-		//--------------------------------------------------------------
-		waiter.await(HandlingInfoSaver.HANDLING_TIME*15L );
+		pushEventsWithExpectedRate(waiter, eventsNum1, orgId1, expectedEventRate1);
 		
-		//--------------------------------------------------------------
-		assertEventsSampledAndHandled(samplePeriod, events);
-											
+		
+		Integer eventsNum2 = 50;
+		Long expectedEventRate2 = 5L;			
+		Long orgId2 = ANOTHER_ORG_ID;
+		
+		pushEventsWithExpectedRate(waiter, eventsNum2, orgId2, expectedEventRate2);
 	}
 
 
 
 
 
-	private void pushSingleEventWithIndex(int i, Waiter waiter, Integer eventsNum,
+	private void pushEventsWithExpectedRate(Waiter waiter, Integer eventsNum, Long orgId, Long expectedEventRate)
+			throws InvalidIntegrationEventException, TimeoutException, InterruptedException {
+		List<TestEventWithHandlerInfo> events = new ArrayList<>();
+		
+		for(int i = 0; i < eventsNum ; i++) {
+			pushSingleEventWithIndex(i, eventsNum, orgId, waiter, events);			
+		}
+		
+		//--------------------------------------------------------------
+		Long awaitTime = (long) (HandlingInfoSaver.HANDLING_TIME*(eventsNum/expectedEventRate)*1.5);
+		waiter.await( awaitTime );
+		
+		//--------------------------------------------------------------
+		assertEventsSampledAndHandled(expectedEventRate, events);
+	}
+
+
+
+
+
+	private void pushSingleEventWithIndex(int i, Integer eventsNum , Long orgId, Waiter waiter,
 			List<TestEventWithHandlerInfo> events) throws InvalidIntegrationEventException {
-		TestEventWithHandlerInfo event = new TestEventWithHandlerInfo(ORG_ID, i);
+		TestEventWithHandlerInfo event = new TestEventWithHandlerInfo(orgId, i);
 		AtomicReference<Boolean> isCalled = new AtomicReference<>(false);
 		boolean resumeAfterThis = (i == eventsNum -1);
 		
@@ -620,8 +656,14 @@ public class IntegrationServiceTest {
 
 
 
-	private void assertEventsSampledAndHandled(Long samplePeriod, List<TestEventWithHandlerInfo> events) {
+	private void assertEventsSampledAndHandled(Long expectedEventRate, List<TestEventWithHandlerInfo> events) {
+		Long samplePeriod = (long) ((1.0/expectedEventRate)*1000);	
 		List<HandlingInfo> handlingInfo = getEventsHandlingInfo(events);
+		
+		IntStream.range(1, handlingInfo.size())
+				.mapToObj(i -> Pair.of(handlingInfo.get(i-1), handlingInfo.get(i)))
+				.map(this::durationBetweenHandlingStartTime)
+				.forEach(d -> System.out.println(">> Duration between startHandling : " + d));
 		
 		Boolean allEventsHandled = areAllEventsHandled(handlingInfo);		
 		Long threadsUsedNum = getDistinctThreadCount(handlingInfo);		
@@ -675,11 +717,11 @@ public class IntegrationServiceTest {
 
 
 	private Boolean areEventsSampledWithPeriod(List<HandlingInfo> handlingInfo, Long samplePeriod) {
+		Duration samplePeriodDur = Duration.ofMillis(samplePeriod);
 		Boolean eventsAreSampled = IntStream.range(1, handlingInfo.size())
 											.mapToObj(i -> Pair.of(handlingInfo.get(i-1), handlingInfo.get(i)))
 											.map(this::durationBetweenHandlingStartTime)
-											.map(Duration::toMillis)
-											.allMatch(duration -> duration >= samplePeriod);
+											.allMatch(duration -> isGreaterThanDurationWithinMargin(duration, samplePeriodDur, 1L));
 		return eventsAreSampled;
 	}
 	
@@ -691,5 +733,11 @@ public class IntegrationServiceTest {
 		HandlingInfo event = pair.getFirst();
 		HandlingInfo nextEvent = pair.getSecond();
 		return Duration.between(event.getHandlingStartTime() , nextEvent.getHandlingStartTime());
+	}
+	
+	
+	
+	private Boolean isGreaterThanDurationWithinMargin(Duration duration, Duration expected, Long marginMillis) {
+		return duration.compareTo(expected.minusMillis(marginMillis)) >= 0;
 	}
 }

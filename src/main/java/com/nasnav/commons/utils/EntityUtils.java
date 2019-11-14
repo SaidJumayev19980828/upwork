@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.apache.commons.beanutils.PropertyUtils;
 
@@ -82,4 +83,31 @@ public class EntityUtils {
 		return n == null || n == 0L;
 	}
 	
+	
+	
+	
+	public static <T,R>  R calcValueOrElseReturn(Function<T,R> function, T arg , R elseValue) {
+		try {
+			return function.apply(arg);
+		}catch(Throwable t) {
+			return elseValue;
+		}
+	} 
+	
+	
+	/**
+	 * @return the given Function after being wrapped in a try-catch block.
+	 * The returned Function will return null, if the original function has thrown an exception. 
+	 * */
+	public static <T,R>  Function<T,R> failSafeFunction(Function<T,R> function){
+		return 
+			arg -> {
+				try {
+					return function.apply(arg);
+				}catch(Throwable t) {
+					return null;
+				}
+			};
+		
+	}
 }
