@@ -4,6 +4,7 @@ import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.CategoryDTO;
 import com.nasnav.dto.CategoryRepresentationObject;
+import com.nasnav.dto.OrganizationTagsRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.CategoriesEntity;
@@ -166,4 +167,10 @@ public class CategoryService {
         categoryRepository.delete(categoriesEntity);
         return new ResponseEntity(new CategoryResponse(categoriesEntity.getId()),HttpStatus.OK);
     }
+
+   /* public OrganizationTagsRepresentationObject getTags() {
+
+    }*/
+
+
 }

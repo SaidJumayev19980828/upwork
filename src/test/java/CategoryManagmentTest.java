@@ -3,6 +3,7 @@ import com.nasnav.NavBox;
 import com.nasnav.controller.AdminController;
 import com.nasnav.dao.CategoryRepository;
 import com.nasnav.response.CategoryResponse;
+import org.jgrapht.alg.cycle.CycleDetector;
 import com.nasnav.test.commons.TestCommons;
 
 import org.json.JSONArray;
@@ -13,7 +14,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.skyscreamer.jsonassert.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -33,16 +33,22 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Objects;
+import java.util.Iterator;
+import java.util.Set;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+
+import org.jgrapht.*;
+import org.jgrapht.graph.*;
+import org.jgrapht.traverse.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
 public class CategoryManagmentTest {
+
     private MockMvc mockMvc;
     @Mock
     private AdminController adminController;
@@ -81,36 +87,36 @@ public class CategoryManagmentTest {
     }
 
     @Test
-    public void getCategoryListDifferentFiltersTest(){
+    public void getCategoryListDifferentFiltersTest() {
         // with no filters
-        ResponseEntity<String> response =  template.getForEntity("/navbox/categories", String.class);
+        ResponseEntity<String> response = template.getForEntity("/navbox/categories", String.class);
         JSONArray json = new JSONArray(response.getBody());
-        assertEquals("there are 4 Categories in total",4 , json.length());
+        assertEquals("there are 4 Categories in total", 4, json.length());
 
         // with organization_id = 99001
-        response =  template.getForEntity("/navbox/categories?org_id=99001", String.class);
+        response = template.getForEntity("/navbox/categories?org_id=99001", String.class);
         json = new JSONArray(response.getBody());
-        assertEquals("there are 3 Categories used by org 99001",3 , json.length());
+        assertEquals("there are 3 Categories used by org 99001", 3, json.length());
 
         // with organization_id = 99002
-        response =  template.getForEntity("/navbox/categories?org_id=99002", String.class);
+        response = template.getForEntity("/navbox/categories?org_id=99002", String.class);
         json = new JSONArray(response.getBody());
-        assertEquals("there are 2 Categories used by org 99002",2 , json.length());
+        assertEquals("there are 2 Categories used by org 99002", 2, json.length());
 
         // with category_id = 201
-        response =  template.getForEntity("/navbox/categories?category_id=201", String.class);
+        response = template.getForEntity("/navbox/categories?category_id=201", String.class);
         json = new JSONArray(response.getBody());
-        assertEquals("category 201 has 2 children .. 3 total Categories",3 , json.length());
+        assertEquals("category 201 has 2 children .. 3 total Categories", 3, json.length());
 
         // with category_id = 202
-        response =  template.getForEntity("/navbox/categories?category_id=202", String.class);
+        response = template.getForEntity("/navbox/categories?category_id=202", String.class);
         json = new JSONArray(response.getBody());
-        assertEquals("category 202 has 1 children .. 2 total Categories",2 , json.length());
+        assertEquals("category 202 has 1 children .. 2 total Categories", 2, json.length());
 
         // with category_id = 203
-        response =  template.getForEntity("/navbox/categories?category_id=203", String.class);
+        response = template.getForEntity("/navbox/categories?category_id=203", String.class);
         json = new JSONArray(response.getBody());
-        assertEquals("category 203 has no children .. 1 total Category",1 , json.length());
+        assertEquals("category 203 has no children .. 1 total Category", 1, json.length());
         //checking returned json properties
         assertTrue(response.getBody().contains("\"id\":203"));
         assertTrue(response.getBody().contains("\"name\":\"category_3\""));
@@ -121,94 +127,94 @@ public class CategoryManagmentTest {
 
     //createCategory
     @Test
-    public void createCategorySuccessTest(){
+    public void createCategorySuccessTest() {
         String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 202}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"abcdefg");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
         categoryRepository.deleteById(response.getBody().getCategoryId());
         Assert.assertTrue(200 == response.getStatusCode().value());
     }
 
     @Test
-    public void createCategoryMissingNameTest(){
+    public void createCategoryMissingNameTest() {
         String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\", \"operation\": \"create\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"abcdefg");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
     }
 
     @Test
-    public void createCategoryInvalidNameTest(){
+    public void createCategoryInvalidNameTest() {
         String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes\", \"operation\": \"create\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"abcdefg");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
     }
 
     @Test
-    public void createCategoryNonExistingParentTest(){
+    public void createCategoryNonExistingParentTest() {
         String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 200}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"abcdefg");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
     }
 
     @Test
-    public void updateCategorySuccessTest(){
+    public void updateCategorySuccessTest() {
         String body = "{\"id\":201,\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"abcdefg");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(200 == response.getStatusCode().value());
     }
 
     @Test
-    public void updateCategoryNoIdTest(){
+    public void updateCategoryNoIdTest() {
         String body = "{\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"abcdefg");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
     }
 
     @Test
-    public void updateCategoryNoEntityTest(){
+    public void updateCategoryNoEntityTest() {
         String body = "{\"id\":2000009,\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"abcdefg");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
     }
 
     @Test
-    public void updateCategoryInvalidNameTest(){
+    public void updateCategoryInvalidNameTest() {
         String body = "{\"id\":202,\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes\", \"operation\": \"update\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"abcdefg");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
     }
 
     @Test
-    public void updateCategoryNonExistingParentTest(){
+    public void updateCategoryNonExistingParentTest() {
         String body = "{\"id\":202,\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 200}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"abcdefg");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
     }
 
     @Test
-    public void deleteCategorySuccessTest(){
+    public void deleteCategorySuccessTest() {
         //create a category
         String body = "{\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 202}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"abcdefg");
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
         Assert.assertTrue(200 == response.getStatusCode().value());
         //delete created category
         HttpHeaders header = TestCommons.getHeaders("abcdefg");
-        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id="+response.getBody().getCategoryId(),
+        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=" + response.getBody().getCategoryId(),
                 HttpMethod.DELETE, new HttpEntity<>(header), String.class);
         Assert.assertTrue(200 == deleteResponse.getStatusCode().value());
     }
 
     @Test
-    public void deleteCategoryMissingIdTest(){
+    public void deleteCategoryMissingIdTest() {
         HttpHeaders header = TestCommons.getHeaders("abcdefg");
         ResponseEntity<String> deleteResponse = template.exchange("/admin/category",
                 HttpMethod.DELETE, new HttpEntity<>(header), String.class);
@@ -216,7 +222,7 @@ public class CategoryManagmentTest {
     }
 
     @Test
-    public void deleteCategoryMissingCategoryTest(){
+    public void deleteCategoryMissingCategoryTest() {
         HttpHeaders header = TestCommons.getHeaders("abcdefg");
         ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=206",
                 HttpMethod.DELETE, new HttpEntity<>(header), String.class);
@@ -224,10 +230,78 @@ public class CategoryManagmentTest {
     }
 
     @Test
-    public void deleteCategoryUsedCategoryTest(){
+    public void deleteCategoryUsedCategoryTest() {
         HttpHeaders header = TestCommons.getHeaders("abcdefg");
         ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=204",
                 HttpMethod.DELETE, new HttpEntity<>(header), String.class);
         Assert.assertTrue(409 == deleteResponse.getStatusCode().value());
     }
+
+
+    @Test
+    public void categoriesDAGCycles() throws Exception {
+        DirectedAcyclicGraph graph = createGraph();
+
+        CycleDetector<String, DefaultEdge> cycleDetector = new CycleDetector<String, DefaultEdge>(graph);
+        Set<String> cycleVertices = cycleDetector.findCycles();
+
+        assertTrue(!cycleDetector.detectCycles());
+        assertTrue(cycleVertices.size() == 0);
+
+
+        Iterator<String> iterator = new DepthFirstIterator<>(graph, "Tag#1");
+        while (iterator.hasNext()) {
+            String uri = iterator.next();
+            //System.out.println(uri);
+        }
+    }
+
+    @Test
+    public void categoriesDAGCreateCycleError() throws Exception {
+        DirectedAcyclicGraph graph = createGraph();
+        try {
+            graph.addEdge("Tag#2.2", "Tag#2.1");
+            graph.addEdge("Tag#2.1", "Tag#2");
+        } catch (Exception e) {
+            assertTrue(e instanceof IllegalArgumentException);
+        }
+
+    }
+
+    private JSONArray getChildren(JSONObject k, Graph g, String parent) {
+        JSONArray l = new JSONArray();
+        for (Object p : Graphs.successorListOf(g, parent)) {
+            if (Graphs.successorListOf(g, p.toString()).isEmpty()) {
+                l.put(p.toString());
+            } else {
+                JSONObject o = new JSONObject();
+                o.put(p.toString(), getChildren(k, g, p.toString()));
+                l.put(o);
+                k.put(parent, l);
+            }
+        }
+        return l;
+    }
+
+    private DirectedAcyclicGraph createGraph() {
+        DirectedAcyclicGraph<String, DefaultEdge> graph = new DirectedAcyclicGraph<>(DefaultEdge.class);
+        graph.addVertex("Tag#1");
+        graph.addVertex("Tag#2");
+        graph.addVertex("Tag#1.1");
+        graph.addVertex("Tag#1.2");
+        graph.addVertex("Tag#2.1");
+        graph.addVertex("Tag#2.2");
+        graph.addVertex("Tag#1.1.1");
+
+        graph.addEdge("Tag#1", "Tag#1.1");
+        graph.addEdge("Tag#1", "Tag#1.2");
+        graph.addEdge("Tag#1", "Tag#2.1");
+        graph.addEdge("Tag#1.1", "Tag#1.1.1");
+        graph.addEdge("Tag#2", "Tag#2.1");
+        graph.addEdge("Tag#2", "Tag#2.2");
+        graph.addEdge("Tag#2", "Tag#1.2");
+
+        return graph;
+    }
+
 }
