@@ -150,7 +150,7 @@ public class IntegrationServiceTest {
 	//event with no handler [DONE]
 	//assert data is delivered to the correct event handler [DONE*]
 	//assert event is processed asynchronously [DONE]
-	//assert several events are delivered in the given MAX rate 
+	//assert several events are delivered in the given MAX rate [DONE]
 	//test retry logic
 	//test error handling after retry fails
 	@Test
@@ -583,7 +583,13 @@ public class IntegrationServiceTest {
 		Long expectedEventRate = 10L;			
 		Long orgId = ORG_ID;
 		
-		pushEventsWithExpectedRate(waiter, eventsNum, orgId, expectedEventRate);											
+		List<TestEventWithHandlerInfo> orgEvents = pushEventsWithExpectedRate(waiter, eventsNum, orgId, expectedEventRate, true);
+		//--------------------------------------------------------------
+		Long awaitTime = (long) (HandlingInfoSaver.HANDLING_TIME*(eventsNum/expectedEventRate)*1.5);
+		waiter.await( awaitTime );
+		
+		//--------------------------------------------------------------
+		assertEventsSampledAndHandled(expectedEventRate, orgEvents);
 	}
 	
 	
@@ -596,34 +602,39 @@ public class IntegrationServiceTest {
 		Long expectedEventRate1 = 10L;			
 		Long orgId1 = ORG_ID;
 		
-		pushEventsWithExpectedRate(waiter, eventsNum1, orgId1, expectedEventRate1);
+		List<TestEventWithHandlerInfo> org1Events = pushEventsWithExpectedRate(waiter, eventsNum1, orgId1, expectedEventRate1, false);
 		
 		
 		Integer eventsNum2 = 50;
 		Long expectedEventRate2 = 5L;			
 		Long orgId2 = ANOTHER_ORG_ID;
 		
-		pushEventsWithExpectedRate(waiter, eventsNum2, orgId2, expectedEventRate2);
+		List<TestEventWithHandlerInfo> org2Events = pushEventsWithExpectedRate(waiter, eventsNum2, orgId2, expectedEventRate2, true);
+		
+		//--------------------------------------------------------------
+		Integer eventsNum = eventsNum1 + eventsNum2;
+		Long expectedEventRate = Math.min(expectedEventRate1, expectedEventRate2);
+		Long awaitTime = (long) (HandlingInfoSaver.HANDLING_TIME*(eventsNum/expectedEventRate)*1.7);
+		waiter.await( awaitTime );
+		
+		//--------------------------------------------------------------
+		assertEventsSampledAndHandled(expectedEventRate1, org1Events);
+		assertEventsSampledAndHandled(expectedEventRate2, org2Events);
 	}
 
 
 
 
 
-	private void pushEventsWithExpectedRate(Waiter waiter, Integer eventsNum, Long orgId, Long expectedEventRate)
+	private List<TestEventWithHandlerInfo> pushEventsWithExpectedRate(Waiter waiter, Integer eventsNum, Long orgId, Long expectedEventRate, Boolean resumeTestThread)
 			throws InvalidIntegrationEventException, TimeoutException, InterruptedException {
 		List<TestEventWithHandlerInfo> events = new ArrayList<>();
 		
 		for(int i = 0; i < eventsNum ; i++) {
-			pushSingleEventWithIndex(i, eventsNum, orgId, waiter, events);			
+			pushSingleEventWithIndex(i, eventsNum, orgId, waiter, events, resumeTestThread);			
 		}
 		
-		//--------------------------------------------------------------
-		Long awaitTime = (long) (HandlingInfoSaver.HANDLING_TIME*(eventsNum/expectedEventRate)*1.5);
-		waiter.await( awaitTime );
-		
-		//--------------------------------------------------------------
-		assertEventsSampledAndHandled(expectedEventRate, events);
+		return events;
 	}
 
 
@@ -631,16 +642,17 @@ public class IntegrationServiceTest {
 
 
 	private void pushSingleEventWithIndex(int i, Integer eventsNum , Long orgId, Waiter waiter,
-			List<TestEventWithHandlerInfo> events) throws InvalidIntegrationEventException {
+			List<TestEventWithHandlerInfo> events, Boolean resumeTestThread) throws InvalidIntegrationEventException {
 		TestEventWithHandlerInfo event = new TestEventWithHandlerInfo(orgId, i);
 		AtomicReference<Boolean> isCalled = new AtomicReference<>(false);
-		boolean resumeAfterThis = (i == eventsNum -1);
+		boolean resumeAfterThis = resumeTestThread && (i == eventsNum -1);
 		
 		Consumer<TestEventWithHandlerInfo> onComplete = getEventCompleteAction(waiter, isCalled, resumeAfterThis, HandlingInfoSaver.HANDLING_TIME);
 		Consumer<TestEventWithHandlerInfo> onCompleteWrapper = 
 				e ->{						
 					e.getEventResult().setCallBackExecuted(true);
 					events.add(e);
+					System.out.println( String.format("Event#%d for org[%d] was handled!", event.getEventData(), event.getOrganizationId()));
 					onComplete.accept(e);
 				};
 				
@@ -657,7 +669,7 @@ public class IntegrationServiceTest {
 
 
 	private void assertEventsSampledAndHandled(Long expectedEventRate, List<TestEventWithHandlerInfo> events) {
-		Long samplePeriod = (long) ((1.0/expectedEventRate)*1000);	
+		Long delay = (long) ((1.0/expectedEventRate)*1000);	
 		List<HandlingInfo> handlingInfo = getEventsHandlingInfo(events);
 		
 		IntStream.range(1, handlingInfo.size())
@@ -668,15 +680,16 @@ public class IntegrationServiceTest {
 		Boolean allEventsHandled = areAllEventsHandled(handlingInfo);		
 		Long threadsUsedNum = getDistinctThreadCount(handlingInfo);		
 		Long failureEvents = eventFailureRepo.count();		
-		Boolean eventsAreSampled = areEventsSampledWithPeriod(handlingInfo, samplePeriod);
+		Boolean eventsAreSampled = areEventsSampledWithPeriod(handlingInfo, delay);
 		
 		System.out.println(">>> Number of used threads : " + threadsUsedNum);
 		
 		assertTrue(allEventsHandled);
 		assertNotEquals(1L, threadsUsedNum.longValue());
 		assertEquals(0L, failureEvents.longValue());
-		assertTrue("if events are sampled, they will not be emitted and handled at the same time, "
-				+ "but each events is emitted after sometime from emitting of the last event"
+		assertTrue("events are not delayed by["+ delay +"]!"
+				+ ", if events are delayed, they will not be emitted and handled at the same time, "
+				+ "but each event is emitted after sometime from emitting of the last event"
 				, eventsAreSampled);
 	}
 
@@ -721,7 +734,7 @@ public class IntegrationServiceTest {
 		Boolean eventsAreSampled = IntStream.range(1, handlingInfo.size())
 											.mapToObj(i -> Pair.of(handlingInfo.get(i-1), handlingInfo.get(i)))
 											.map(this::durationBetweenHandlingStartTime)
-											.allMatch(duration -> isGreaterThanDurationWithinMargin(duration, samplePeriodDur, 1L));
+											.allMatch(duration -> isEqualToDurationWithinMargin(duration, samplePeriodDur, 10L));
 		return eventsAreSampled;
 	}
 	
@@ -737,7 +750,11 @@ public class IntegrationServiceTest {
 	
 	
 	
-	private Boolean isGreaterThanDurationWithinMargin(Duration duration, Duration expected, Long marginMillis) {
-		return duration.compareTo(expected.minusMillis(marginMillis)) >= 0;
+	
+	
+	private Boolean isEqualToDurationWithinMargin(Duration duration, Duration expected, Long marginMillis) {
+		
+		return duration.compareTo(expected.minusMillis(marginMillis)) >= 0
+				 && duration.compareTo(expected.plusMillis(marginMillis)) < 0;
 	}
 }

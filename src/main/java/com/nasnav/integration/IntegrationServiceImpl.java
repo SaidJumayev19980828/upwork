@@ -1,14 +1,12 @@
 package com.nasnav.integration;
 
+import static com.nasnav.commons.utils.EntityUtils.failSafeFunction;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_EVENT_HANDLE_GENERAL_ERROR;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INTEGRATION_MODULE_LOAD_FAILED;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_LOADING_INTEGRATION_MODULE_CLASS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_MISSING_MANDATORY_PARAMS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_MODULE;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_PARAMS;
-
-
-import static com.nasnav.commons.utils.EntityUtils.failSafeFunction;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -33,7 +31,6 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.IntegrationEventFailureRepository;
 import com.nasnav.dao.IntegrationParamRepository;
 import com.nasnav.dao.IntegrationParamTypeRepostory;
@@ -60,7 +57,6 @@ import reactor.core.scheduler.Schedulers;
 
 @Service
 public class IntegrationServiceImpl implements IntegrationService {
-	private static final Long MAX_REQUEST_ID_PARAM = 2L;
 	private final Logger logger = Logger.getLogger(getClass());
 	
 	@Autowired
@@ -79,6 +75,9 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	@Autowired
 	private IntegrationEventFailureRepository eventFailureRepo;
+	
+	
+	
 	
 	
 	@PostConstruct
