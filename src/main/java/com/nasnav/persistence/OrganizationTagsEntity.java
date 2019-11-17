@@ -2,7 +2,9 @@ package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.dto.OrganizationTagsRepresentationObject;
 import lombok.Data;
+import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import javax.persistence.*;
 
@@ -10,7 +12,7 @@ import javax.persistence.*;
 @Table(name = "organization_tags")
 @Entity
 @Data
-public class OrganizationTagsEntity implements BaseEntity{
+public class OrganizationTagsEntity extends AbstractPersistable<Long> implements BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,8 +42,14 @@ public class OrganizationTagsEntity implements BaseEntity{
 
     @Override
     public BaseRepresentationObject getRepresentation() {
-        // TODO Auto-generated method stub
-        return null;
+        OrganizationTagsRepresentationObject obj = new OrganizationTagsRepresentationObject();
+        obj.setId(getId());
+        obj.setAlias(getAlias());
+        obj.setPname(getPname());
+        obj.setLogo(getLogo());
+        obj.setBanner(getBanner());
+
+        return obj;
     }
 
 }

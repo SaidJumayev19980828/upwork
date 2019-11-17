@@ -8,8 +8,13 @@ import com.nasnav.dto.OrganizationTagsRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.CategoriesEntity;
+import com.nasnav.persistence.OrganizationTagsEntity;
+import com.nasnav.persistence.TagGraphEdgesEntity;
 import com.nasnav.response.CategoryResponse;
 import com.nasnav.response.ResponseStatus;
+import org.jgrapht.Graphs;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.DirectedAcyclicGraph;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +23,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,6 +38,12 @@ public class CategoryService {
 
     @Autowired
     private final ProductRepository productRepository;
+
+    @Autowired
+    private OrganizationTagsRepository orgTagsRepo;
+
+    @Autowired
+    private TagGraphEdgesRepository tagEdgesRepo;
 
     @Autowired
     public CategoryService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository,
@@ -168,9 +181,25 @@ public class CategoryService {
         return new ResponseEntity(new CategoryResponse(categoriesEntity.getId()),HttpStatus.OK);
     }
 
-   /* public OrganizationTagsRepresentationObject getTags() {
+    public OrganizationTagsRepresentationObject getOrganizationTags(Long orgId) {
+       /* List<OrganizationTagsEntity> orgTags = orgTagsRepo.findByOrganizationEntity_Id(orgId);
+        //List<TagGraphEdgesEntity> tagsEdges = tagEdgesRepo.findByOrganizationEntity_Id(orgId);
 
-    }*/
+        DirectedAcyclicGraph<OrganizationTagsRepresentationObject, DefaultEdge> tagsGraph =
+                new DirectedAcyclicGraph<>(DefaultEdge.class);
+
+        for(OrganizationTagsEntity i : orgTags)
+            tagsGraph.addVertex( (OrganizationTagsRepresentationObject) i.getRepresentation());
+
+        for(TagGraphEdgesEntity i : tagsEdges)
+            tagsGraph.addEdge(i , i.getId());
+
+        for(OrganizationTagsEntity i : orgTags)
+            i.setChildren(Graphs.successorListOf(tagsGraph, i.getRepresentation()));
+*/
+
+        return null;
+    }
 
 
 }
