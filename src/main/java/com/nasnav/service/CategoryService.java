@@ -21,10 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -182,21 +179,27 @@ public class CategoryService {
     }
 
     public OrganizationTagsRepresentationObject getOrganizationTags(Long orgId) {
-       /* List<OrganizationTagsEntity> orgTags = orgTagsRepo.findByOrganizationEntity_Id(orgId);
-        //List<TagGraphEdgesEntity> tagsEdges = tagEdgesRepo.findByOrganizationEntity_Id(orgId);
+        List<OrganizationTagsRepresentationObject> orgTags = orgTagsRepo.findByOrganizationEntity_Id(orgId)
+                                                          .stream()
+                                                          .map(tag -> (OrganizationTagsRepresentationObject) tag.getRepresentation())
+                                                          .collect(Collectors.toList());
+        List<TagGraphEdgesEntity> tagsEdges = tagEdgesRepo.findByOrganizationEntity_Id(orgId);
+
+        Map<Long,OrganizationTagsRepresentationObject> tagsMap = new HashMap<>();
+
+        orgTags.stream().map(tag -> tagsMap.put(tag.getId(), tag));
 
         DirectedAcyclicGraph<OrganizationTagsRepresentationObject, DefaultEdge> tagsGraph =
                 new DirectedAcyclicGraph<>(DefaultEdge.class);
 
-        for(OrganizationTagsEntity i : orgTags)
-            tagsGraph.addVertex( (OrganizationTagsRepresentationObject) i.getRepresentation());
+        for(OrganizationTagsRepresentationObject i : orgTags)
+            tagsGraph.addVertex(i);
 
         for(TagGraphEdgesEntity i : tagsEdges)
-            tagsGraph.addEdge(i , i.getId());
+            tagsGraph.addEdge(tagsMap.get(i.getId()), tagsMap.get(i.getParentId()));
 
-        for(OrganizationTagsEntity i : orgTags)
-            i.setChildren(Graphs.successorListOf(tagsGraph, i.getRepresentation()));
-*/
+        for(OrganizationTagsRepresentationObject i : orgTags)
+            i.setChildren(Graphs.successorListOf(tagsGraph, i));
 
         return null;
     }
