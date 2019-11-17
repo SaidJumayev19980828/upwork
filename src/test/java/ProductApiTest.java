@@ -444,6 +444,52 @@ public class ProductApiTest {
 	
 	
 	
+	
+	
+	
+	
+	@Test
+	public void softDeleteProductTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(69L);
+		
+		Long productId = 1008L; 
+		
+		assertFalse( productIsRemoved(productId) );
+		assertTrue(productRepository.existsById(productId)); //assert product exists before delete
+		assertNotEquals("product had images", 0, imgRepo.findByProductEntity_Id(productId).size());
+		
+		ResponseEntity<String> response = deleteProduct(user, productId);		
+		
+		ObjectMapper mapper = new ObjectMapper();
+		ProductUpdateResponse body = mapper.readValue(response.getBody(), ProductUpdateResponse.class);
+		
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertTrue(body.isSuccess());
+		assertEquals(productId, body.getProductId());
+		assertFalse(productRepository.existsById(productId));
+		assertEquals(1L , countProductWithId(productId).longValue());
+		assertTrue( productIsRemoved(productId) );
+		assertEquals("product images was deleted", 0, imgRepo.findByProductEntity_Id(productId).size());
+	}
+	
+	
+	
+	
+	
+	private Boolean productIsRemoved(Long productId) {
+		Integer removed = jdbc.queryForObject("select removed from public.products where id = " + productId, Integer.class);
+		return removed != 0;
+	}
+	
+	
+	
+	
+	private Long countProductWithId(Long productId) {
+		return jdbc.queryForObject("select count(*) from public.products where id = " + productId, Long.class);
+	}
+	
+	
+	
 	@Test
 	public void deleteProductInvalidUserRoleTest() {
 		BaseUserEntity user = empUserRepo.getById(68L); //this user has NASNAV_ADMIN Role
