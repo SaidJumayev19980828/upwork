@@ -2,6 +2,9 @@ package com.nasnav.service;
 
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_BUNDLE_ITEM;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_BY_OTHER_ORG_USER;
+import static java.lang.String.format;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -138,8 +141,8 @@ public class ProductService {
 	@Autowired
 	private ProductServiceTransactions transactions;
 
-//	@Autowired
-//	private SecurityService securityService;
+	@Autowired
+	private SecurityService securityService;
 
 	@Autowired
 	private ProductImageService imgService;
@@ -1054,24 +1057,47 @@ public class ProductService {
 
 
 	private void validateProductToDelete(Long productId) throws BusinessException {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
-		Long userOrgId = user.getOrganizationId();
+		validateUserCanDeleteProduct(productId);
+		
+		validateProductIsNotInBundle(productId);
+	}
+
+
+
+
+	private void validateUserCanDeleteProduct(Long productId) throws BusinessException {
+		Long userOrgId = securityService.getCurrentUserOrganizationId();
 
 		productRepository.findById(productId)
 				.filter(p -> p.getOrganizationId().equals(userOrgId) )
-				.orElseThrow(() -> new BusinessException(
-						"Product of ID["+productId+"] cannot be deleted by a user from oraganization of id ["+ userOrgId + "]"
-						, "INSUFFICIENT_RIGHTS"
-						, HttpStatus.FORBIDDEN));
+				.orElseThrow(() -> getUserCannotDeleteProductException(productId, userOrgId));
+	}
 
 
-		Boolean exitsInOrders = basketRepo.countByProductId(productId) > 0;
-		if(exitsInOrders) {
+
+
+	private BusinessException getUserCannotDeleteProductException(Long productId, Long userOrgId) {
+		return new BusinessException(
+				format(ERR_CANNOT_DELETE_PRODUCT_BY_OTHER_ORG_USER, productId, userOrgId)
+				, "INSUFFICIENT_RIGHTS"
+				, HttpStatus.FORBIDDEN);
+	}
+
+
+
+
+	private void validateProductIsNotInBundle(Long productId) throws BusinessException {
+		List<BundleEntity> bundles = bundleRepository.getBundlesHavingItemsWithProductId(productId);
+		if(bundles.size() != 0) {
+			String bundleIds = bundles.stream()
+								.map(BundleEntity::getId)
+								.map(String::valueOf)
+								.collect(Collectors.joining(","));
+			
 			throw new BusinessException(
-					String.format("Can't delete product with id[%d] ! The Product already exits in some orders!", productId)
+					String.format(ERR_CANNOT_DELETE_BUNDLE_ITEM, productId, bundleIds)
 					, "INVALID PARAM:product_id"
-					, HttpStatus.FORBIDDEN);
+					, HttpStatus.NOT_ACCEPTABLE);
 		}
 	}
 

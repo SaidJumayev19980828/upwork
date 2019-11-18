@@ -46,7 +46,7 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1006, 'product_6',102, 201, 99002, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1007, 'product_7',101, 202, 99002, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1008, 'product_8',102, 202, 99002, now(), now());
-
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1012, 'product_12',101, 202, 99002, now(), now());
 
 
 -- variants for each product
@@ -58,6 +58,7 @@ insert into public.product_variants(id, "name" , product_id ) values(310005, 'va
 insert into public.product_variants(id, "name" , product_id ) values(310006, 'var' 	, 1006);
 insert into public.product_variants(id, "name" , product_id ) values(310007, 'var' 	, 1007);
 insert into public.product_variants(id, "name" , product_id ) values(310008, 'var' 	, 1008);
+insert into public.product_variants(id, "name" , product_id ) values(310012, 'var' 	, 1012);
 
 
 --inserting stocks
@@ -67,6 +68,7 @@ insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organiz
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(604, 502, 6, now(), now(), 99001, 700.0, 310004);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(605, 502, 6, now(), now(), 99001, 700.0, 310005);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(606, 502, 6, now(), now(), 99001, 700.0, 310006);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(612, 502, 6, now(), now(), 99001, 700.0, 310012);
 
 
 --insert bundle 
@@ -74,9 +76,22 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 insert into public.product_variants(id, "name" , product_id ) values(310009, 'var' 	, 1009);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(607, 502, 6, now(), now(), 99002, 600.0, 310009);
 
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, product_type) VALUES (1010, 'bundle_to_delete',102, 202, 99002, now(), now(),1);
+insert into public.product_variants(id, "name" , product_id ) values(310010, 'var' 	, 1010);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(608, 502, 6, now(), now(), 99002, 600.0, 310010);
+
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, product_type, removed) VALUES (1011, 'deleted_bundle',102, 202, 99002, now(), now(),1, 1);
+insert into public.product_variants(id, "name" , product_id ) values(310011, 'var' 	, 1011);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(609, 502, 6, now(), now(), 99002, 600.0, 310011);
+
+
 -- set child bundle items
 insert into public.product_bundles(product_id, bundle_stock_id)
 values(1009 , 603);
+insert into public.product_bundles(product_id, bundle_stock_id)
+values(1010 , 603);
+insert into public.product_bundles(product_id, bundle_stock_id)
+values(1011 , 612);
 
 
 -- insert image for products  which should be deleted in tests
@@ -84,9 +99,14 @@ INSERT INTO public.files(organization_id, url, location)
 VALUES(99001, 'img1.jpg', 'img1.jpg');
 INSERT INTO public.files(organization_id, url, location)
 VALUES(99001, 'img2.jpg', 'img2.jpg');
+INSERT INTO public.files(organization_id, url, location)
+VALUES(99001, 'img3.jpg', 'img3.jpg');
+
 INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 VALUES(1008, null, 0, 1, 'img1.jpg');
 INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 VALUES(1003, null, 0, 1, 'img2.jpg');
+INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
+VALUES(1010, null, 0, 1, 'img3.jpg');
 
 
