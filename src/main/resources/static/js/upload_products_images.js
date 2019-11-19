@@ -30,16 +30,16 @@ function postFormData(formData) {
     }); //End of Ajax
 }
 
-function createFormData(Properties) {
-    var data = {
-        properties: JSON.stringify($("#" + Properties).serializeJSON()),
-        imgs_barcode_csv: document.getElementById('csv').files[0],
-        imgs_zip: document.getElementById('zip').files[0]
-    }
+function createFormData(properties) {   
     var formData = new FormData();
-    $.each(data, function(key, value){
-        formData.append(key, value);
-    })
+    formData.append('properties'
+                        , new Blob( 
+                                [JSON.stringify( $("#" + properties).serializeJSON()) ]
+                                , { type: "application/json" })
+                    );
+    formData.append('imgs_barcode_csv', document.getElementById('csv').files[0]);
+    formData.append('imgs_zip' , document.getElementById('zip').files[0]);
+   
     return formData;
 }
 
