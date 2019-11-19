@@ -16,6 +16,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -184,11 +185,12 @@ public class ProductService {
 		ProductDetailsDTO productDTO = null;
 		try {
 			productDTO = toProductDetailsDTO(product);
-		productDTO.setVariants(variantsDTOList);
-		if (variantsDTOList != null && variantsDTOList.size() > 1)
-			productDTO.setMultipleVariants(true);
-		productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
-		productDTO.setBundleItems( getBundleItems(product));
+			productDTO.setVariants(variantsDTOList);
+			if (variantsDTOList != null && variantsDTOList.size() > 1) {
+				productDTO.setMultipleVariants(true);
+			}			
+			productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
+			productDTO.setBundleItems( getBundleItems(product));
 			productDTO.setImages( getProductImages(product.getId() ) );
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e );
@@ -327,14 +329,14 @@ public class ProductService {
 		return variant.getFeatureSpec() != null && !variant.getFeatureSpec().isEmpty();
 	}
 
-	private List<ProductImgDTO> getProductImages(Long productId) {
+	private Set<ProductImgDTO> getProductImages(Long productId) {
 
 		List<ProductImagesEntity> productImages = productImagesRepository.findByProductEntity_IdOrderByPriority(productId);
 
 		if (productImages != null && !productImages.isEmpty()) {
 			return productImages.stream()
 					.map(ProductImgDTO::new)
-					.collect(Collectors.toList());
+					.collect(Collectors.toSet());
 		}
 		return null;
 	}
