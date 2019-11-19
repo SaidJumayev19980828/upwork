@@ -735,6 +735,24 @@ public class ProductServiceTest {
 		assertEquals("The product have only 2 variant features", 2, variantFeatures.length());
 		assertTrue(variantFeatures.similar(expectedVariantFeatures));
 	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void getProductWithMultipleIndenticalImagesTest() {
+		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=1001", String.class);
+
+		JSONObject product = new JSONObject(response.getBody());
+		JSONArray images = product.getJSONArray("images");
+
+		assertEquals("product 1001 and its variant both share the same image, it shoudn't be duplicated in images array"
+						, 1, images.length());
+	}
 
 
 
