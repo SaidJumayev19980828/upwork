@@ -37,6 +37,7 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductImagesRepository;
@@ -492,7 +493,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
 		List<ImportedImage> imgs = new ArrayList<>();		
 		List<String> errors = new ArrayList<>();		
-		Map<String,String> fileBarcodeMap = createFileBarcodeMap(csv);
+		Map<String,List<String>> fileBarcodeMap = createFileBarcodeMap(csv);
 		
 		try(ZipInputStream stream = new ZipInputStream(zip.getInputStream())){	
 			
@@ -518,7 +519,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 
 	private List<ImportedImage> readZipStream(ZipInputStream stream, ProductImageBulkUpdateDTO metaData,
-			Map<String, String> fileBarcodeMap, List<String> errors) throws IOException {
+			Map<String, List<String>> fileBarcodeMap, List<String> errors) throws IOException {
 		
 		List<ImportedImage> imgs = new ArrayList<>();
 		
@@ -547,7 +548,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	 * as a single barcode can belong to both a product and a product variant.
 	 * */
 	private List<ImportedImage> readImgsFromZipEntry(ZipEntry zipEntry, ZipInputStream stream,
-			ProductImageBulkUpdateDTO metaData, Map<String, String> fileBarcodeMap, List<String> errors) {
+			ProductImageBulkUpdateDTO metaData, Map<String, List<String>> fileBarcodeMap, List<String> errors) {
 		List<ImportedImage> imgsFromEntry = new ArrayList<>();
 		
 		if(zipEntry.isDirectory() ) {
@@ -606,9 +607,24 @@ public class ProductImageServiceImpl implements ProductImageService {
 	 * - barcode exists for variant only
 	 * - barcode exists for both a product and a variant
 	 * */
-	private List<ProductImageUpdateDTO> createImportedImagesMetaData(ZipEntry zipEntry,Map<String,String> fileBarcodeMap, ProductImageBulkUpdateDTO metaData) throws BusinessException{
+	private List<ProductImageUpdateDTO> createImportedImagesMetaData(ZipEntry zipEntry,Map<String,List<String>> fileBarcodeMap, ProductImageBulkUpdateDTO metaData) throws BusinessException{
 		
-		String barcode = getBarcodeOfImportedImg(zipEntry, fileBarcodeMap);		
+		List<String> barcodes = getBarcodeOfImportedImg(zipEntry, fileBarcodeMap);
+		
+		List<List<ProductImageUpdateDTO>> metaDataLists = new ArrayList<>();
+		for(String barcode: barcodes) {
+			metaDataLists.add(createImportedImagesMetaData(metaData, barcode));
+		}
+		
+		return metaDataLists.stream()
+					.flatMap(List::stream)
+					.collect(Collectors.toList());
+	}
+
+
+
+	private List<ProductImageUpdateDTO> createImportedImagesMetaData(ProductImageBulkUpdateDTO metaData, String barcode)
+			throws BusinessException {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		
 		
@@ -640,13 +656,15 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 
 
-	private String getBarcodeOfImportedImg(ZipEntry zipEntry, Map<String, String> fileBarcodeMap) {
+	private List<String> getBarcodeOfImportedImg(ZipEntry zipEntry, Map<String, List<String>> fileBarcodeMap) {
 		String fileName = zipEntry.getName();
-		String barcode = fileBarcodeMap.get(fileName);
-		if(barcode == null) {
-			barcode =  getBarcodeFromImgName(fileName);
+		List<String> barcodes = fileBarcodeMap.get(fileName);
+		
+		if(barcodes == null) {
+			String barcode =  getBarcodeFromImgName(fileName);
+			barcodes = Arrays.asList( barcode);
 		}
-		return barcode;
+		return barcodes;
 	}
 	
 	
@@ -726,7 +744,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	
 
-	private Map<String, String> createFileBarcodeMap(MultipartFile csv) throws BusinessException {
+	private Map<String, List<String>> createFileBarcodeMap(MultipartFile csv) throws BusinessException {
 		if(csv == null ||csv.isEmpty())
 			return new HashMap<>();		
 		
@@ -734,7 +752,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 					.stream()
 					.collect(Collectors.toMap(
 											rec -> normalizeZipPath( rec.getString(1) )
-											, rec ->rec.getString(0)));
+											, rec -> Arrays.asList( rec.getString(0))
+											, EntityUtils::concateLists)); // resolve duplicated paths in the csv
 	}
 
 

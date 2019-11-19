@@ -67,6 +67,7 @@ public class ProductImgaeBulkUploadTest {
 	private static final String TEST_ZIP = "img_bulk_upload.zip";
 	private static final String TEST_ZIP_NON_EXISTING_BARCODE ="img_bulk_upload_non_exisiting_barcode.zip";
 	private static final String TEST_CSV = "img_bulk_barcode.csv";
+	private static final String TEST_CSV_MULTI_BARCODE_PER_PATH = "img_bulk_multi_barcode_same_path.csv";
 	private static final String TEST_ZIP_DIR = "src/test/resources/img_bulk_zip";
 
 	private static final String TEST_ZIP_INVALID = "img_bulk_upload_invalid.zip";
@@ -320,6 +321,26 @@ public class ProductImgaeBulkUploadTest {
 		
 		String response = 
 				performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(200))
+	             .andReturn()
+	             .getResponse()
+	             .getContentAsString();
+
+		assertImgsImported(response);
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkWithCSVAndMultipleBarcodeForSamePathTest() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		String response = 
+				performFileUpload(TEST_ZIP, TEST_CSV_MULTI_BARCODE_PER_PATH, jsonBytes, USER_TOKEN)
 	             .andExpect(status().is(200))
 	             .andReturn()
 	             .getResponse()
