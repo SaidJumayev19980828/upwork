@@ -1028,6 +1028,10 @@ public class ProductService {
 
 
 	public ProductUpdateResponse deleteProduct(Long productId) throws BusinessException {
+		if(!productRepository.existsById(productId)) {
+			return new ProductUpdateResponse(true, productId); //if the product doesn't exists, then..mission accomplished!
+		}
+		
 		validateProductToDelete(productId);
 
 		List<ProductImagesEntity> imgs = productImagesRepository.findByProductEntity_Id(productId) ;

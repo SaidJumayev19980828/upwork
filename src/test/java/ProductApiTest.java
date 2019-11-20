@@ -455,6 +455,23 @@ public class ProductApiTest {
 	
 	
 	
+	@Test
+	public void deleteNonExistingProductTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(69L);
+		
+		Long productId = 77771008L; 		
+		
+		assertFalse(productRepository.existsById(productId)); //assert product doesn't exists before delete
+		
+		ResponseEntity<String> response = deleteProduct(user, productId);		
+		
+		assertExpectedResponse(productId, response);
+	}
+	
+	
+	
+	
+	
 	
 	
 	
