@@ -346,7 +346,7 @@ public class ProductImgaeBulkUploadTest {
 	             .getResponse()
 	             .getContentAsString();
 
-		assertImgsImported(response);
+		assertSameImgImportedForProductAndVariants(response);
 	}
 	
 	
@@ -477,6 +477,38 @@ public class ProductImgaeBulkUploadTest {
 				.mapToObj(responseJson::getJSONObject)
 				.forEach(this::assertImageUploaded);
 	}
+	
+	
+	
+	
+	
+	
+	private void assertSameImgImportedForProductAndVariants(String response) {
+		JSONArray responseJson = new JSONArray(response);
+		assertEquals(
+				"import 2 images, one of them have a barcode that is used by both a product and a variant, so the 2 images are imported as 3 records"
+				, 3 
+				, responseJson.length());				
+		
+		assertEquals( 3L, imgRepo.count());		
+		
+		IntStream.range(0, responseJson.length())
+				.mapToObj(responseJson::getJSONObject)
+				.forEach(this::assertImageUploaded);
+		
+		
+		long urlCount = IntStream.range(0, responseJson.length())
+				.mapToObj(responseJson::getJSONObject)
+				.map(obj -> obj.getString("image_url"))
+				.distinct()
+				.count();
+
+		assertEquals("a single image was imported for the product and its variants, so they all should reference the same url"
+						, 1L, urlCount);
+	}
+	
+
+	
 	
 	
 	

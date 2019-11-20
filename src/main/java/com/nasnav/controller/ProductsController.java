@@ -243,6 +243,10 @@ public class ProductsController {
 
 		return  productImgService.updateProductImageBulk(zip, csv, metaData);
     }
+	
+	
+	
+	
 
     @GetMapping(value = "/image/bulk/template")
     @ResponseBody
