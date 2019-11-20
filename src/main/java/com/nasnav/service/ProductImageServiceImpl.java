@@ -6,6 +6,8 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUCT_EXISTS_WITH_BARCODE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMG_BULK_IMPORT;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_READ_ZIP;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_IMG_DATA_PROVIDED;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_IMG_IMPORT_RESPONSE;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -40,6 +42,7 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
@@ -88,7 +91,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 	@Autowired
 	private SecurityService securityService;
 	
-	
+	@Autowired
+	private FilesRepository fileRepo;
 	
 	
 
@@ -98,7 +102,10 @@ public class ProductImageServiceImpl implements ProductImageService {
 		
 		return saveProductImg(file, imgMetaData);
 	}
-
+	
+	
+	
+	
 
 
 	/**
@@ -172,13 +179,57 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private ProductImageUpdateResponse saveNewProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData)
 			throws BusinessException {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		List<ProductImageUpdateDTO> metaDataList = Arrays.asList(imgMetaData);
 		
-		String url = fileService.saveFile(file, user.getOrganizationId());
+		return saveNewProductImgsUsingSameUrl(file, metaDataList)
+					.stream()
+					.findFirst()
+					.orElseThrow(() -> new BusinessException(ERR_NO_IMG_IMPORT_RESPONSE, ERR_NO_IMG_IMPORT_RESPONSE, HttpStatus.INTERNAL_SERVER_ERROR));
+	}
+	
+	
+	
+	
+	
+	
+	private List<ProductImageUpdateResponse> saveNewProductImgsUsingSameUrl(MultipartFile file, List<ProductImageUpdateDTO> imgMetaDataList)
+			throws BusinessException {
+		if(imgMetaDataList == null || imgMetaDataList.isEmpty()) {
+			throw new BusinessException(ERR_NO_IMG_DATA_PROVIDED, ERR_NO_IMG_DATA_PROVIDED, HttpStatus.NOT_ACCEPTABLE);
+		}
 		
-		Long imgId = saveProductImgToDB(imgMetaData, url);
+		for(ProductImageUpdateDTO metaData: imgMetaDataList) {
+			validateProductImg(file, metaData);
+		}
 		
+		String url = saveFile(file);
+		
+		List<ProductImageUpdateResponse> responses = new ArrayList<>();
+		for(ProductImageUpdateDTO metaData: imgMetaDataList) {
+			responses.add( saveNewProductImgMetaData(metaData, url) );
+		}
+		
+		return responses;
+	}
+	
+
+
+	
+	
+
+	private String saveFile(MultipartFile file) throws BusinessException {
+		Long userOrgId =  securityService.getCurrentUserOrganizationId();		
+		return fileService.saveFile(file, userOrgId);
+	}
+	
+	
+	
+	
+	
+	
+	private ProductImageUpdateResponse saveNewProductImgMetaData(ProductImageUpdateDTO imgMetaData, String url)
+			throws BusinessException {		
+		Long imgId = saveProductImgToDB(imgMetaData, url);		
 		return new ProductImageUpdateResponse(imgId, url);
 	}
 
@@ -377,11 +428,23 @@ public class ProductImageServiceImpl implements ProductImageService {
 		
 		validateImgToDelete(img);		
 		
+		Long cnt = productImagesRepository.countByUri(img.getUri());
 		productImagesRepository.deleteById(imgId);
 		
-		fileService.deleteFileByUrl(img.getUri());
+		deleteImgFileIfNotUsed(img,cnt);		
 		
 		return new ProductImageDeleteResponse(productId);
+	}
+
+
+
+
+
+
+	private void deleteImgFileIfNotUsed(ProductImagesEntity img, Long cnt) throws BusinessException {
+		if(cnt <= 1) {
+			fileService.deleteFileByUrl(img.getUri());
+		}
 	}
 
 
@@ -424,19 +487,14 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private List<ProductImageUpdateResponse> saveImgsBulk(@Valid MultipartFile zip, @Valid MultipartFile csv,
-			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
-		List<ImportedImage> importedImgs = extractImgsToImport(zip, csv, metaData);
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {		
 		List<String> errors = new ArrayList<>();
-		List<ProductImageUpdateResponse> responses = new ArrayList<>(); 
+		List<ProductImageUpdateResponse> responses = new ArrayList<>();
 		
-		for(ImportedImage img : importedImgs) {
-			try {
-				responses.add( updateProductImage(img.getImage(), img.getImgMetaData()) );
-			}catch(Exception e) {
-				logger.log(Level.SEVERE, e.getMessage(), e);				
-				
-				errors.add( createImgImportErrMsg(img, e) );
-			}
+		Map<String, List<ImportedImage>> imgsGroupedByFile = getFileToImgsMetatDataMap(zip, csv, metaData);
+		
+		for(String fileName : imgsGroupedByFile.keySet()) {
+			saveSingleImgToAllItsVariants(fileName, imgsGroupedByFile, errors, responses);
 		}
 		
 		if(!errors.isEmpty()) {
@@ -445,6 +503,66 @@ public class ProductImageServiceImpl implements ProductImageService {
 		}
 		
 		return responses;
+	}
+
+
+
+
+
+
+	private Map<String, List<ImportedImage>> getFileToImgsMetatDataMap(MultipartFile zip, MultipartFile csv,
+			ProductImageBulkUpdateDTO metaData) throws BusinessException {
+		List<ImportedImage> allImportedImgs = extractImgsToImport(zip, csv, metaData);
+		Map<String, List<ImportedImage>> groupedByFile = allImportedImgs.stream()
+																	.collect(Collectors.groupingBy(ImportedImage::getZipFileName));
+		return groupedByFile;
+	}
+
+
+
+
+
+
+	private void saveSingleImgToAllItsVariants(String fileName, Map<String, List<ImportedImage>> fileImgMetadataMap,
+			List<String> errors, List<ProductImageUpdateResponse> responses) {
+		MultipartFile file = getMulitpartFile(fileImgMetadataMap, fileName);			
+		List<ProductImageUpdateDTO> imgMetaDataList = getImgsMetaDataList(fileImgMetadataMap, fileName);
+		
+		try {
+			responses.addAll( saveNewProductImgsUsingSameUrl(file, imgMetaDataList) );
+		}catch(Exception e) {
+			logger.log(Level.SEVERE, e.getMessage(), e);						
+			fileImgMetadataMap.get(fileName)
+						.forEach(img -> errors.add( createImgImportErrMsg(img, e) ));
+		}
+	}
+
+
+
+
+
+
+	private List<ProductImageUpdateDTO> getImgsMetaDataList(Map<String, List<ImportedImage>> groupedByFile,
+			String fileName) {
+		List<ProductImageUpdateDTO> imgMetaDataList = groupedByFile.get(fileName)
+																	.stream()
+																	.map(ImportedImage::getImgMetaData)
+																	.collect(Collectors.toList());
+		return imgMetaDataList;
+	}
+
+
+
+
+
+
+	private MultipartFile getMulitpartFile(Map<String, List<ImportedImage>> groupedByFile, String fileName) {
+		MultipartFile file = groupedByFile.get(fileName)
+										.stream()
+										.map(ImportedImage::getImage)
+										.findFirst()
+										.orElse(null);
+		return file;
 	}
 
 
@@ -560,7 +678,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 			List<ProductImageUpdateDTO> imgsMetaData = createImportedImagesMetaData(zipEntry, fileBarcodeMap, metaData);				  
 			
 			imgsFromEntry = imgsMetaData.stream()
-									.map( meta -> new ImportedImage(imgMultipartFile, meta))
+									.map( meta -> new ImportedImage(imgMultipartFile, meta, zipEntry.getName()))
 									.collect(Collectors.toList());
 									
 		}catch(Exception e) {
