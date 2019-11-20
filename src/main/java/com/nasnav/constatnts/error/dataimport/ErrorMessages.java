@@ -20,8 +20,10 @@ public class ErrorMessages {
 	public static final String ERR_READ_ZIP = "Failed to read zip file!";
 	public static final String ERR_NO_IMG_DATA_PROVIDED = "No images to import!";
 	public static final String ERR_NO_PRODUCT_EXISTS_WITH_BARCODE = "There is no product nor a product variant that carries the barcode[%s] for organization with id[%d]";
+	public static final String ERR_NO_PRODUCT_EXISTS_WITH_ID = "There is no product exists with id[%d]";
 	public static final String ERR_IMPORTING_IMG_FILE = " Importing image file[%s] caused the error[%s]";
 	public static final String ERR_IMPORTING_IMGS = "Error importing images";
 	public static final String ERR_PREPARE_PRODUCT_DTO_DATA = "Failed to prepare product data for save/update! product data: [%s]";
 	public static final String ERR_NO_IMG_IMPORT_RESPONSE = "No Import reposponse was returned!";
+	public static final String ERR_USER_CANNOT_MODIFY_PRODUCT ="User with email [%s] have no rights to modify products from organization of id[%d]!";
 }

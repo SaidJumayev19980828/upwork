@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.dto.ProductImageBulkUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateDTO;
+import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
@@ -24,5 +25,7 @@ public interface ProductImageService {
 			,@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException;
 
 	String getProductCoverImage(Long productId);
+
+	public List<ProductImgDetailsDTO> getProductImgs(Long productId) throws BusinessException;
 	
 }

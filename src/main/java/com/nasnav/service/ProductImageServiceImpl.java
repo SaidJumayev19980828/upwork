@@ -3,11 +3,14 @@ package com.nasnav.service;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CSV_PARSE_FAILURE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING_IMGS;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING_IMG_FILE;
-import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUCT_EXISTS_WITH_BARCODE;
-import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMG_BULK_IMPORT;
-import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_READ_ZIP;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_IMG_DATA_PROVIDED;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_IMG_IMPORT_RESPONSE;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUCT_EXISTS_WITH_BARCODE;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUCT_EXISTS_WITH_ID;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMG_BULK_IMPORT;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_READ_ZIP;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_MODIFY_PRODUCT;
+import static java.lang.String.format;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -48,6 +51,7 @@ import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dto.ProductImageBulkUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateDTO;
+import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.ProductEntity;
@@ -372,16 +376,27 @@ public class ProductImageServiceImpl implements ProductImageService {
 	 * product must follow the organization of the user 
 	 * */
 	private void validateUserCanModifyProduct(Optional<ProductEntity> product) throws BusinessException {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
-		Long userOrg = user.getOrganizationId();
-		Long productOrg = product.get().getOrganizationId();
+		BaseUserEntity user = securityService.getCurrentUser();
+		Long productOrg = product.map(p -> p.getOrganizationId()).orElse(null);
 		
-		if(!Objects.equals(userOrg, productOrg))
+		if(!Objects.equals( user.getOrganizationId() , productOrg))
 			throw new BusinessException(
-					String.format("User with email [%s] have no rights to modify products from organization of id[%d]!", user.getEmail(), productOrg)
+					format(ERR_USER_CANNOT_MODIFY_PRODUCT, user.getEmail(), productOrg)
 					, "INSUFFICIENT RIGHTS"
 					, HttpStatus.FORBIDDEN);
+	}
+	
+	
+	
+	
+	
+	
+	/**
+	 * product must follow the organization of the user 
+	 * */
+	private void validateUserCanModifyProduct(Long productId) throws BusinessException {
+		Optional<ProductEntity> product = productRepository.findById(productId);
+		validateUserCanModifyProduct(product);
 	}
 
 
@@ -973,6 +988,54 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	private Integer compareByProductImageId(ProductImagesEntity img1, ProductImagesEntity img2) {
 		return Long.compare(img1.getId(), img2.getId());
+	}
+
+
+
+
+
+
+	@Override
+	public List<ProductImgDetailsDTO> getProductImgs(Long productId) throws BusinessException {
+		validateProductToFetchItsImgs(productId);
+		
+		return productImagesRepository.findByProductEntity_Id(productId)
+									.stream()
+									.map(this::toProductImgDetailsDTO)
+									.collect(Collectors.toList());
+	}
+	
+	
+	
+	
+	
+	private void validateProductToFetchItsImgs(Long productId) throws BusinessException{
+		if(!productRepository.existsById(productId)) {
+			throw new BusinessException("INVALID PARAM: product_id", ERR_NO_PRODUCT_EXISTS_WITH_ID, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		validateUserCanModifyProduct(productId);
+	}
+
+
+
+
+
+
+	private ProductImgDetailsDTO toProductImgDetailsDTO(ProductImagesEntity entity) {
+		Long variantId = Optional.ofNullable(entity.getProductVariantsEntity())
+				.map(ProductVariantsEntity::getId)
+				.orElse(null);
+		
+		ProductImgDetailsDTO dto = new ProductImgDetailsDTO();
+		dto.setImageId(entity.getId());
+		dto.setPriority(entity.getPriority());
+		dto.setProductId(entity.getProductEntity().getId());
+		dto.setType(entity.getType());
+		dto.setUri(entity.getUri());		
+		dto.setVariantId(variantId);		
+		
+		return dto;
 	}
 
 

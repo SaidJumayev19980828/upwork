@@ -11,10 +11,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import org.assertj.core.util.Arrays;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,8 +27,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockPart;
 import org.springframework.test.annotation.DirtiesContext;
@@ -38,13 +46,20 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dto.ProductImgDetailsDTO;
+import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.FileEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ProductEntity;
@@ -110,6 +125,14 @@ public class ProductImageApiTest {
 	
 	@Autowired
 	private ProductImageService imgService;
+	
+	
+	@Autowired
+	private TestRestTemplate template;
+
+	
+	@Autowired 
+	private EmployeeUserRepository empUserRepo;
 	
 	
 	@Before
@@ -784,6 +807,124 @@ public class ProductImageApiTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getProductCoverImageTest() {
 		assertEquals(EXPECTED_COVER_IMG_URL, imgService.getProductCoverImage(1001L));
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void getProductImagesTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(69L);
+		Long productId = 1008L;
+		Set<ProductImgDetailsDTO> expectedData = getExpectedProductImgs(productId);
+		
+		HttpEntity request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
+		
+		ResponseEntity<String> response = 
+				template.exchange("/product/images?product_id=" + productId
+						, HttpMethod.GET
+						, request
+						, String.class);
+		
+		ObjectMapper mapper = new ObjectMapper();
+		Set<ProductImgDetailsDTO> fetched = mapper.readValue(response.getBody(), new TypeReference<Set<ProductImgDetailsDTO>>(){});
+		
+		assertEquals(2L, fetched.size());
+		assertEquals(expectedData, fetched);
+	}
+
+
+
+
+
+	private Set<ProductImgDetailsDTO> getExpectedProductImgs(Long productId) {
+		Set<ProductImgDetailsDTO> expected = new HashSet<>();
+		
+		ProductImgDetailsDTO img1 = new ProductImgDetailsDTO(45001L, productId, null, "cool_img.png", 7, 0);
+		ProductImgDetailsDTO img2 = new ProductImgDetailsDTO(45002L, productId, 310008L, "cool_img.png", 7, 0);
+		expected.add(img1);
+		expected.add(img2);
+		
+		return expected;
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void getProductImagesNoAuthZTest() throws JsonParseException, JsonMappingException, IOException {
+		Long productId = 1008L;
+		
+		HttpEntity request =  TestCommons.getHttpEntity("" , "NOT-EXISTING_TOKEN");
+		
+		ResponseEntity<String> response = 
+				template.exchange("/product/images?product_id=" + productId
+						, HttpMethod.GET
+						, request
+						, String.class);
+		
+		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void getProductImagesNoAuthNTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(70L);
+		Long productId = 1008L;
+		
+		HttpEntity request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
+		
+		ResponseEntity<String> response = 
+				template.exchange("/product/images?product_id=" + productId
+						, HttpMethod.GET
+						, request
+						, String.class);
+		
+		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void getProductImagesAnotherOrgAdminTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(68L);
+		Long productId = 1008L;
+		
+		HttpEntity request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
+		
+		ResponseEntity<String> response = 
+				template.exchange("/product/images?product_id=" + productId
+						, HttpMethod.GET
+						, request
+						, String.class);
+		
+		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	public void getProductImagesNonExistingProductTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(68L);
+		Long productId = 105487845408L;
+		
+		HttpEntity request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
+		
+		ResponseEntity<String> response = 
+				template.exchange("/product/images?product_id=" + productId
+						, HttpMethod.GET
+						, request
+						, String.class);
+		
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
 	}
 	
 }

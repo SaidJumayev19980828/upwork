@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.nasnav.dto.BundleElementUpdateDTO;
 import com.nasnav.dto.ProductImageBulkUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateDTO;
+import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.BundleSearchParam;
@@ -104,6 +105,25 @@ public class ProductsController {
             		throws BusinessException {
 
 		return  productImgService.updateProductImage(file, imgMetaData);
+    }
+    
+    
+    
+    
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Product images fetched"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+	@ResponseStatus(HttpStatus.OK)
+	@GetMapping(value = "images",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public List<ProductImgDetailsDTO> getProductImages(
+    		@RequestHeader (value = "User-Token") String userToken, @RequestParam("product_id") Long productId)
+            throws BusinessException {
+
+		return  productImgService.getProductImgs(productId);
     }
     
     

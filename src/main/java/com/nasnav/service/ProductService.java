@@ -4,6 +4,8 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PR
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_BUNDLE_ITEM;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_BY_OTHER_ORG_USER;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_DELETE_FAILED;
 import static java.lang.String.format;
 
 import java.io.IOException;
@@ -1025,9 +1027,13 @@ public class ProductService {
 		}
 	}
 
+	
+	
+	
 
 
 	public ProductUpdateResponse deleteProduct(Long productId) throws BusinessException {
+		
 		if(!productRepository.existsById(productId)) {
 			return new ProductUpdateResponse(true, productId); //if the product doesn't exists, then..mission accomplished!
 		}
@@ -1039,18 +1045,11 @@ public class ProductService {
 			transactions.deleteProduct(productId);
 		}catch(DataIntegrityViolationException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e);
-			throw new BusinessException(
-					String.format("Failed to delete product with id[%d]! Product is still used in the system (stocks, orders, bundles, ...)!", productId)
-					, "INVAILID PARAM:product_id"
-					, HttpStatus.FORBIDDEN);
+			throw new BusinessException( format(ERR_PRODUCT_STILL_USED, productId), "INVAILID PARAM:product_id", HttpStatus.NOT_ACCEPTABLE);
 		}catch(Throwable e) {
 			logger.log(Level.SEVERE, e.getMessage(), e);
-			throw new BusinessException(
-					String.format("Failed to delete product with id[%d]!", productId)
-					, "INVAILID PARAM:product_id"
-					, HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new BusinessException( format(ERR_PRODUCT_DELETE_FAILED , productId), "INVAILID PARAM:product_id", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-
 
 		for(ProductImagesEntity img : imgs) {
 			fileService.deleteFileByUrl(img.getUri());
