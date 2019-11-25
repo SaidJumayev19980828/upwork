@@ -19,7 +19,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -38,6 +37,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.IntegrationParam;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
+import com.nasnav.integration.events.EventResult;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.integration.model.IntegratedShop;
 import com.nasnav.integration.model.OrganizationIntegrationInfo;
@@ -397,14 +397,16 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 
 	@Override
-	public <E extends Event<T,R>, T, R> void pushIntegrationEvent(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError) throws InvalidIntegrationEventException {
+	public <E extends Event<T,R>, T, R> Mono<EventResult<T, R>> pushIntegrationEvent(E event, BiConsumer<E, Throwable> onError) throws InvalidIntegrationEventException {
 		validateEvent(event);
 		try {			
-			eventFluxSink.next( EventHandling.of(event, onComplete, onError) );			
+			eventFluxSink.next( EventHandling.of(event, onError) );	
+			return event.getEventResult();
 		}catch(Throwable e) {
 			logger.error(e);
 			runErrorCallback(event, e, onError);
-		}		
+			return event.getEventResult();
+		}	
 	}
 	
 	
@@ -508,11 +510,10 @@ public class IntegrationServiceImpl implements IntegrationService {
 @AllArgsConstructor
 class EventHandling<E extends Event<T,R>, T, R>{
 	private E event;
-	private Consumer<E> onComplete;
 	private BiConsumer<E, Throwable> onError;
 	
 	
-	public static <E extends Event<T,R>, T, R> EventHandling<E,T,R> of(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError){
-		return new EventHandling<E,T,R>(event, onComplete, onError);
+	public static <E extends Event<T,R>, T, R> EventHandling<E,T,R> of(E event, BiConsumer<E, Throwable> onError){
+		return new EventHandling<E,T,R>(event, onError);
 	} 
 }

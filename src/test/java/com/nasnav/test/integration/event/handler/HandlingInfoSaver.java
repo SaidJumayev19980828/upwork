@@ -1,14 +1,15 @@
 package com.nasnav.test.integration.event.handler;
 
 import java.time.LocalDateTime;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.nasnav.integration.IntegrationEventListener;
 import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.events.EventInfo;
 import com.nasnav.test.integration.event.HandlingInfo;
-import com.nasnav.test.integration.event.TestEvent2;
 import com.nasnav.test.integration.event.TestEventWithHandlerInfo;
+
+import reactor.core.publisher.Mono;
 
 public class HandlingInfoSaver extends IntegrationEventListener<TestEventWithHandlerInfo, Integer, HandlingInfo> {
 
@@ -26,13 +27,10 @@ public class HandlingInfoSaver extends IntegrationEventListener<TestEventWithHan
 	
 
 	@Override
-	protected void handleEventAsync(TestEventWithHandlerInfo event, Consumer<TestEventWithHandlerInfo> onComplete,
-			BiConsumer<TestEventWithHandlerInfo, Throwable> onError) {
+	protected Mono<HandlingInfo> handleEventAsync(EventInfo<Integer> event) {
 		HandlingInfo info = new HandlingInfo();
 		info.setHandlingStartTime( LocalDateTime.now() );
 		info.setThread( Thread.currentThread() );
-		
-		event.setEventResult(info);		
 		
 		try {
 			Thread.sleep(HANDLING_TIME);
@@ -40,8 +38,7 @@ public class HandlingInfoSaver extends IntegrationEventListener<TestEventWithHan
 			e.printStackTrace();
 		}
 		
-		
-		onComplete.accept(event);
+		return Mono.just(info);
 	}
 	
 	

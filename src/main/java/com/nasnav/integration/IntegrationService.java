@@ -8,8 +8,11 @@ import java.util.function.Consumer;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
+import com.nasnav.integration.events.EventResult;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.integration.model.IntegratedShop;
+
+import reactor.core.publisher.Mono;
 
 
 
@@ -47,9 +50,14 @@ public interface IntegrationService {
 	/**
 	 * push an event to the Integration service, which queues and run the proper event handler for the event
 	 * based on the organization and the event type.
+	 * @return a Mono of the event result, which will run the onSuccess callback provided to the event, or can
+	 *  be used to block the calling thread until the result is returned.
 	 * @throws InvalidIntegrationEventException 
 	 * */
-	<E extends Event<T,R>, T, R> void pushIntegrationEvent(E event, Consumer<E> onComplete, BiConsumer<E, Throwable> onError) throws InvalidIntegrationEventException;
+	<E extends Event<T,R>, T, R> Mono<EventResult<T,R>> pushIntegrationEvent(E event, BiConsumer<E, Throwable> onError) throws InvalidIntegrationEventException;
+	
+	
+	
 	
 	
 	

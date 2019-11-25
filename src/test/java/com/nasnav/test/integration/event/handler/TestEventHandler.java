@@ -1,19 +1,21 @@
 package com.nasnav.test.integration.event.handler;
 
 import java.time.LocalDateTime;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.nasnav.integration.IntegrationEventListener;
 import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.events.EventInfo;
 import com.nasnav.test.integration.event.TestEvent;
+
+import reactor.core.publisher.Mono;
 
 public class TestEventHandler extends IntegrationEventListener<TestEvent, String, String> {
 	
 	public static final String EXPECTED_DATA = "Hi Event!";
 	public static final String EXPECTED_RESULT = "Bye Event";
 	
-	public static Consumer<TestEvent> onHandle = e -> {};
+	public static Consumer<EventInfo<String>> onHandle = e -> {};
 	public static Consumer<TestEvent> onError = e -> {};
 	
 	
@@ -26,11 +28,10 @@ public class TestEventHandler extends IntegrationEventListener<TestEvent, String
 	
 	
 	@Override
-	protected void handleEventAsync(TestEvent event, Consumer<TestEvent> onComplete, BiConsumer<TestEvent, Throwable> onError) {
+	protected Mono<String> handleEventAsync(EventInfo<String> event) {
 		System.out.println("Hanlding Test Event! @ "+ LocalDateTime.now() );	
-		event.setEventResult(EXPECTED_RESULT);
-		onHandle.accept(event);	
-		onComplete.accept(event);
+		onHandle.accept(event);
+		return Mono.just(EXPECTED_RESULT);
 	}
 
 	

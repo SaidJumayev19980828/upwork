@@ -52,7 +52,7 @@ public abstract class IntegrationModule {
 			return; 	//ignore events with no listners
 		}
 		
-		listerner.pushEvent(handling.getEvent(), handling.getOnComplete(), handling.getOnError());
+		listerner.pushEvent(handling.getEvent(), handling.getOnError());
 	};
 	
 }
