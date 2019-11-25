@@ -1,5 +1,6 @@
 package com.nasnav.integration.events;
 
+import java.time.LocalDateTime;
 import java.util.function.Consumer;
 
 import lombok.Data;
@@ -43,5 +44,11 @@ public abstract class Event<T, R> {
 	
 	public Long getOrganizationId() {
 		return eventInfo.getOrganizationId();
+	}
+	
+	
+	
+	public LocalDateTime getCreationTime() {
+		return eventInfo.getCreationTime();
 	}
 }

@@ -3,6 +3,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.GenericTypeResolver;
 import org.springframework.data.util.Pair;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
@@ -33,6 +35,8 @@ import com.nasnav.NavBox;
 import com.nasnav.dao.IntegrationEventFailureRepository;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.Event;
+import com.nasnav.integration.events.EventInfo;
+import com.nasnav.integration.events.EventResult;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.IntegrationEventFailureEntity;
 import com.nasnav.test.integration.event.HandlingInfo;
@@ -154,12 +158,11 @@ public class IntegrationServiceTest {
 	//test retry logic
 	//test error handling after retry fails
 	@Test
-	public void pushEventTest() throws InterruptedException, TimeoutException, InvalidIntegrationEventException {		
+	public void pushEventTest() throws Throwable{		
 		Waiter waiter = new Waiter();
 		
 		TestEventHandler.onHandle = getEventHandlerWithDelay() ;
-		TestEvent event1 = new TestEvent(ORG_ID, TestEventHandler.EXPECTED_DATA);		
-		AtomicReference<Boolean> isCallbackExecuted = pushEvent(event1, waiter ,TestEventHandler.EXPECTED_RESULT, true);
+		AtomicReference<Boolean> isCallbackExecuted = pushEvent(TestEvent.class, ORG_ID, TestEventHandler.EXPECTED_DATA, waiter ,TestEventHandler.EXPECTED_RESULT, true);
 		
 		
 		//--------------------------------------------------------------
@@ -181,7 +184,18 @@ public class IntegrationServiceTest {
 	
 	
 	
-	private <E extends Event> Consumer<E> getUnexpectedCallback(Waiter waiter, Class<E> eventClass) {
+	private <T,R> Consumer<EventResult<T,R>> getUnexpectedCallback(Waiter waiter) {
+		return (e) -> {
+			waiter.assertFalse(true);
+			waiter.resume();
+		};
+	}
+	
+	
+	
+	
+	
+	private <T> Consumer<EventInfo<T>> getUnexpectedEventConsumer(Waiter waiter) {
 		return (e) -> {
 			waiter.assertFalse(true);
 			waiter.resume();
@@ -193,7 +207,7 @@ public class IntegrationServiceTest {
 
 
 	private <E extends Event> void assertAsyncEventPush(E event) {
-		Duration pushDuration = Duration.between(event.getCreationTime(), LocalDateTime.now());
+		Duration pushDuration = Duration.between(event.getCreationTime() , LocalDateTime.now());
 		System.out.println("Push Duration in Mills: " +  pushDuration.toMillis());
 		
 		assertTrue("event push is asynchronous ,it should be done fast, and must return before handling the event!"
@@ -214,14 +228,14 @@ public class IntegrationServiceTest {
 		
 		//the callbacks should never be called, and exception will be thrown on validating the event
 		Waiter waiter = new Waiter();
-		Consumer<TestEvent> onComplete = getUnexpectedCallback(waiter, TestEvent.class);
+		Consumer<EventResult<String, String>> onComplete = getUnexpectedCallback(waiter);
 		BiConsumer<TestEvent, Throwable> onError = (e,t) -> waiter.assertTrue(false);
-		TestEventHandler.onHandle = getUnexpectedCallback(waiter, TestEvent.class);
+		TestEventHandler.onHandle = getUnexpectedEventConsumer(waiter);
 		
 		//--------------------------------------------------------------		
 							
-		TestEvent event = new TestEvent(NO_INTEGRATION_ORG_ID, TestEventHandler.EXPECTED_DATA);
-		integration.pushIntegrationEvent(event, onComplete , onError);
+		TestEvent event = new TestEvent(NO_INTEGRATION_ORG_ID, TestEventHandler.EXPECTED_DATA, onComplete);
+		integration.pushIntegrationEvent(event, onError);
 	
 		//--------------------------------------------------------------
 		//wait until timeout, because none of the callbacks was called
@@ -242,14 +256,14 @@ public class IntegrationServiceTest {
 		
 		//the callbacks should never be called, and exception will be thrown on validating the event
 		Waiter waiter = new Waiter();
-		Consumer<TestEventWithNoHandler> onComplete = getUnexpectedCallback(waiter, TestEventWithNoHandler.class);
+		Consumer<EventResult<String, String>> onComplete = getUnexpectedCallback(waiter);
 		BiConsumer<TestEventWithNoHandler, Throwable> onError = (e,t) -> waiter.assertTrue(false);
-		TestEventHandler.onHandle = getUnexpectedCallback(waiter, TestEvent.class);
+		TestEventHandler.onHandle = getUnexpectedEventConsumer(waiter);
 		
 		//--------------------------------------------------------------		
 							
-		TestEventWithNoHandler event = new TestEventWithNoHandler(ORG_ID, TestEventHandler.EXPECTED_DATA);
-		integration.pushIntegrationEvent(event, onComplete , onError);
+		TestEventWithNoHandler event = new TestEventWithNoHandler(ORG_ID, TestEventHandler.EXPECTED_DATA, onComplete);
+		integration.pushIntegrationEvent(event, onError);
 	
 		//--------------------------------------------------------------
 		//wait until timeout, because none of the callbacks was called
@@ -261,17 +275,15 @@ public class IntegrationServiceTest {
 	
 	
 	@Test
-	public void pushMultipleDifferentEventsTest() throws InterruptedException, TimeoutException, InvalidIntegrationEventException {		
+	public void pushMultipleDifferentEventsTest() throws Throwable{		
 		Waiter waiter = new Waiter();
 		
 		TestEventHandler.onHandle = getEventHandlerWithDelay() ;
-		TestEvent event1 = new TestEvent(ORG_ID, TestEventHandler.EXPECTED_DATA);		
-		AtomicReference<Boolean> callBackIsCalled1 = pushEvent(event1, waiter ,TestEventHandler.EXPECTED_RESULT, false);
+		AtomicReference<Boolean> callBackIsCalled1 = pushEvent(TestEvent.class, ORG_ID, TestEventHandler.EXPECTED_DATA, waiter ,TestEventHandler.EXPECTED_RESULT, false);
 		
 		
 		TestEvent2Handler.onHandle = getEventHandlerWithDelay() ;
-		TestEvent2 event2 = new TestEvent2(ORG_ID, TestEvent2Handler.EXPECTED_DATA);		
-		AtomicReference<Boolean> callBackIsCalled2 = pushEvent(event2, waiter, TestEvent2Handler.EXPECTED_RESULT, true);
+		AtomicReference<Boolean> callBackIsCalled2 = pushEvent(TestEvent2.class, ORG_ID, TestEvent2Handler.EXPECTED_DATA, waiter, TestEvent2Handler.EXPECTED_RESULT, true);
 		
 		
 		//--------------------------------------------------------------
@@ -288,16 +300,19 @@ public class IntegrationServiceTest {
 
 
 
-	private <E extends Event<T, R>, T,R> AtomicReference<Boolean> pushEvent(E event, Waiter waiter, Object expectedResult, boolean resumeTestAfterThis) throws InvalidIntegrationEventException, TimeoutException, InterruptedException {
+	private <E extends Event<T, R>, T,R> AtomicReference<Boolean> pushEvent(Class<E> eventClass, Long orgId, T eventData, Waiter waiter, Object expectedResult, boolean resumeTestAfterThis) throws InvalidIntegrationEventException, TimeoutException, InterruptedException, Exception, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 		
 		AtomicReference<Boolean> isCalled = new AtomicReference<Boolean>();
 		isCalled.set(false);
 				
-		Consumer<E> onComplete = getEventCompleteAction(waiter, isCalled, expectedResult, resumeTestAfterThis);
+		Consumer<EventResult<T,R>> onComplete = getEventCompleteAction(waiter, isCalled, expectedResult, resumeTestAfterThis);
+		E event = eventClass.getConstructor(Long.class, (Class<T>)Object.class
+									,(Class<Consumer<EventResult<T,R>>>) GenericTypeResolver.resolveTypeArgument(onComplete.getClass(), Consumer.class))							
+							.newInstance(orgId, eventData, onComplete);
 		BiConsumer<E, Throwable> onError = getUnexpectedErrorCallback(waiter);		
 		//--------------------------------------------------------------		
 							
-		integration.pushIntegrationEvent(event, onComplete , onError);
+		integration.pushIntegrationEvent(event , onError);
 		//--------------------------------------------------------------
 		assertAsyncEventPush(event);
 		
@@ -325,7 +340,7 @@ public class IntegrationServiceTest {
 							
 		//--------------------------------------------------------------
 		TestEvent event = null;
-		integration.pushIntegrationEvent(event, onComplete , onError);
+		integration.pushIntegrationEvent(event, onError);
 		
 		//--------------------------------------------------------------
 		//wait until the event is handled in another thread until timeout
@@ -343,7 +358,7 @@ public class IntegrationServiceTest {
 		
 		Waiter waiter = new Waiter();		
 		//the callbacks should never be called, and exception will be thrown on validating the event
-		Consumer<TestEvent> onComplete = e -> waiter.assertTrue(false);
+		Consumer<EventResult<String, String>> onComplete = e -> waiter.assertTrue(false);
 		BiConsumer<TestEvent, Throwable> onError = (e,t) -> waiter.assertTrue(false);
 		TestEventHandler.onHandle = e -> {
 								waiter.assertTrue(false);
@@ -351,8 +366,8 @@ public class IntegrationServiceTest {
 							};
 							
 		//--------------------------------------------------------------					
-		TestEvent event =  new TestEvent(null, TestEventHandler.EXPECTED_DATA);
-		integration.pushIntegrationEvent(event, onComplete , onError);		
+		TestEvent event =  new TestEvent(null, TestEventHandler.EXPECTED_DATA, onComplete);
+		integration.pushIntegrationEvent(event , onError);		
 		
 		//--------------------------------------------------------------
 		//wait until the event is handled in another thread until timeout
@@ -368,14 +383,14 @@ public class IntegrationServiceTest {
 		Long countBefore = eventFailureRepo.count();
 		
 		Waiter waiter = new Waiter();
-		Consumer<TestEvent> onComplete = getFailingOnCompleteAction(waiter);
+		Consumer<EventResult<String, String>> onComplete = getFailingOnCompleteAction(waiter);
 		TestEventHandler.onHandle = e -> {
 								this.onEventHandle(e); 
 							};
 		//--------------------------------------------------------------							
 							
-		TestEvent event =  new TestEvent(ORG_ID, TestEventHandler.EXPECTED_DATA);
-		integration.pushIntegrationEvent(event, onComplete , this::fallbackActionThrowException);
+		TestEvent event =  new TestEvent(ORG_ID, TestEventHandler.EXPECTED_DATA, onComplete);
+		integration.pushIntegrationEvent(event, this::fallbackActionThrowException);
 		//--------------------------------------------------------------
 		
 		//wait until the event is handled in another thread until timeout
@@ -415,7 +430,7 @@ public class IntegrationServiceTest {
 		isCalled.set(false);
 		
 		Waiter waiter = new Waiter();
-		Consumer<TestEvent> onComplete = getFailingOnCompleteAction(waiter);
+		Consumer<EventResult<String,String>> onComplete = getFailingOnCompleteAction(waiter);
 		BiConsumer<TestEvent, Throwable> onError = (e,t) -> {
 														System.out.println("Running Error callback!");
 														isCalled.set(true);
@@ -426,8 +441,8 @@ public class IntegrationServiceTest {
 							};
 		//--------------------------------------------------------------		
 							
-		TestEvent event = new TestEvent(ORG_ID, TestEventHandler.EXPECTED_DATA);
-		integration.pushIntegrationEvent(event, onComplete , onError);
+		TestEvent event = new TestEvent(ORG_ID, TestEventHandler.EXPECTED_DATA, onComplete);
+		integration.pushIntegrationEvent(event, onError);
 		//--------------------------------------------------------------
 		//wait until the event is handled in another thread until timeout
 		waiter.await((long)(HANDLE_DELAY_MS*1.5), TimeUnit.MILLISECONDS);
@@ -441,12 +456,12 @@ public class IntegrationServiceTest {
 	
 	
 	
-	private <E extends Event> Consumer<E> getEventCompleteAction(Waiter waiter, AtomicReference<Boolean> isCalled, Object ExpectedResult, boolean resumeTestAfterThis) {		
-		Consumer<E> commonCompleteAction = getEventCompleteAction(waiter, isCalled, resumeTestAfterThis, HANDLE_DELAY_MS);
+	private <T,R> Consumer<EventResult<T, R>> getEventCompleteAction(Waiter waiter, AtomicReference<Boolean> isCalled, Object ExpectedResult, boolean resumeTestAfterThis) {		
+		Consumer<EventResult<T, R>> commonCompleteAction = getEventCompleteAction(waiter, isCalled, resumeTestAfterThis, HANDLE_DELAY_MS);
 		return 
-				event ->{
-					waiter.assertEquals(ExpectedResult, event.getEventResult());					
-					commonCompleteAction.accept(event);					
+				res ->{
+					waiter.assertEquals(ExpectedResult, res.getReturnedData());					
+					commonCompleteAction.accept(res);					
 				};
 	}
 	
@@ -455,12 +470,12 @@ public class IntegrationServiceTest {
 	
 	
 	
-	private <E extends Event> Consumer<E> getEventCompleteAction(Waiter waiter, AtomicReference<Boolean> isCalled, boolean resumeTestAfterThis, Long minHandleDelayMillis) {		
+	private <T,R> Consumer<EventResult<T,R>> getEventCompleteAction(Waiter waiter, AtomicReference<Boolean> isCalled, boolean resumeTestAfterThis, Long minHandleDelayMillis) {		
 		return 
-				event ->{
+				res ->{
 					isCalled.set(true);					
-					Long duration = getDurationMillis(event);					
-					printEventCallbackInfo(event, duration);					
+					Long duration = getDurationMillis(res);					
+					printEventCallbackInfo(res, duration);					
 					waiter.assertTrue( duration >= minHandleDelayMillis);									
 					
 					if(resumeTestAfterThis)
@@ -474,36 +489,28 @@ public class IntegrationServiceTest {
 
 
 
-	private <E extends Event> void printEventCallbackInfo(E event, Long duration) {
-		System.out.println( String.format(">>> On Complete was called for event of type[%s]!", event.getClass()));
+	private <T,R> void printEventCallbackInfo(EventResult<T,R> res, Long duration) {
+		System.out.println( String.format(">>> On Complete was called for event of type[%s]!", res.getEventInfo().getClass()));
 		System.out.println(
-				String.format(">>> HandleDuration in Mills[%d] for event of type[%s]" , duration ,event.getClass()) );
+				String.format(">>> HandleDuration in Mills[%d] for event of type[%s]" , duration ,res.getEventInfo().getClass()) );
 		System.out.println(
 				String.format(">>> Running on thread [%s]" , Thread.currentThread()) );
 	}
 
 
 
-
-
-	private <E extends Event> Duration getDuration(E event) {
-		return Duration.between(event.getCreationTime(), event.getResultRecievedTime());
+	
+	
+	private <T,R> Long getDurationMillis(EventResult<T,R> result) {
+		return Duration.between(result.getEventInfo().getCreationTime(), result.getResultRecievedTime()).toMillis();
 	}
 	
 	
 	
 	
-	
-	private <E extends Event> Long getDurationMillis(E event) {
-		return Duration.between(event.getCreationTime(), event.getResultRecievedTime()).toMillis();
-	}
-	
-	
-	
-	
-	private Consumer<TestEvent> getFailingOnCompleteAction(Waiter waiter) {		
+	private Consumer<EventResult<String, String>> getFailingOnCompleteAction(Waiter waiter) {		
 		return 
-				event ->{
+				res ->{
 					System.out.println("On Complete was called!");
 					throw new RuntimeException("Event Complete callback is throwing an Exception!!");
 				};
@@ -514,14 +521,14 @@ public class IntegrationServiceTest {
 
 
 
-	private <E extends Event> void onEventHandle(E event) {
+	private  void onEventHandle(EventInfo event) {
 		getEventHandlerWithDelay().accept(event);
 	}
 	
 	
 	
 	
-	private <E extends Event> Consumer<E> getEventHandlerWithDelay(){
+	private <T> Consumer<EventInfo<T>> getEventHandlerWithDelay(){
 		return event -> {
 			try {
 				Thread.sleep(HANDLE_DELAY_MS);
@@ -530,7 +537,7 @@ public class IntegrationServiceTest {
 			}
 			
 			System.out.println(
-					String.format("Event Is Handled for event of type[%s]! result = %s", event.getClass().getName() , event.getEventResult() ) );
+					String.format("Event Is Handled for event of type[%s]!", event.getClass().getName() ) );
 		};
 	}
 	
@@ -583,7 +590,7 @@ public class IntegrationServiceTest {
 		Long expectedEventRate = 10L;			
 		Long orgId = ORG_ID;
 		
-		List<TestEventWithHandlerInfo> orgEvents = pushEventsWithExpectedRate(waiter, eventsNum, orgId, expectedEventRate, true);
+		List<HandlingInfo> orgEvents = pushEventsWithExpectedRate(waiter, eventsNum, orgId, expectedEventRate, true);
 		//--------------------------------------------------------------
 		Long awaitTime = (long) (HandlingInfoSaver.HANDLING_TIME*(eventsNum/expectedEventRate)*1.5);
 		waiter.await( awaitTime );
@@ -602,14 +609,14 @@ public class IntegrationServiceTest {
 		Long expectedEventRate1 = 10L;			
 		Long orgId1 = ORG_ID;
 		
-		List<TestEventWithHandlerInfo> org1Events = pushEventsWithExpectedRate(waiter, eventsNum1, orgId1, expectedEventRate1, false);
+		List<HandlingInfo> org1Events = pushEventsWithExpectedRate(waiter, eventsNum1, orgId1, expectedEventRate1, false);
 		
 		
 		Integer eventsNum2 = 50;
 		Long expectedEventRate2 = 5L;			
 		Long orgId2 = ANOTHER_ORG_ID;
 		
-		List<TestEventWithHandlerInfo> org2Events = pushEventsWithExpectedRate(waiter, eventsNum2, orgId2, expectedEventRate2, true);
+		List<HandlingInfo> org2Events = pushEventsWithExpectedRate(waiter, eventsNum2, orgId2, expectedEventRate2, true);
 		
 		//--------------------------------------------------------------
 		Integer eventsNum = eventsNum1 + eventsNum2;
@@ -626,9 +633,9 @@ public class IntegrationServiceTest {
 
 
 
-	private List<TestEventWithHandlerInfo> pushEventsWithExpectedRate(Waiter waiter, Integer eventsNum, Long orgId, Long expectedEventRate, Boolean resumeTestThread)
+	private List<HandlingInfo> pushEventsWithExpectedRate(Waiter waiter, Integer eventsNum, Long orgId, Long expectedEventRate, Boolean resumeTestThread)
 			throws InvalidIntegrationEventException, TimeoutException, InterruptedException {
-		List<TestEventWithHandlerInfo> events = new ArrayList<>();
+		List<HandlingInfo> events = new ArrayList<>();
 		
 		for(int i = 0; i < eventsNum ; i++) {
 			pushSingleEventWithIndex(i, eventsNum, orgId, waiter, events, resumeTestThread);			
@@ -642,24 +649,26 @@ public class IntegrationServiceTest {
 
 
 	private void pushSingleEventWithIndex(int i, Integer eventsNum , Long orgId, Waiter waiter,
-			List<TestEventWithHandlerInfo> events, Boolean resumeTestThread) throws InvalidIntegrationEventException {
-		TestEventWithHandlerInfo event = new TestEventWithHandlerInfo(orgId, i);
+			List<HandlingInfo> events, Boolean resumeTestThread) throws InvalidIntegrationEventException {
+		
 		AtomicReference<Boolean> isCalled = new AtomicReference<>(false);
 		boolean resumeAfterThis = resumeTestThread && (i == eventsNum -1);
 		
-		Consumer<TestEventWithHandlerInfo> onComplete = getEventCompleteAction(waiter, isCalled, resumeAfterThis, HandlingInfoSaver.HANDLING_TIME);
-		Consumer<TestEventWithHandlerInfo> onCompleteWrapper = 
-				e ->{						
-					e.getEventResult().setCallBackExecuted(true);
-					events.add(e);
-					System.out.println( String.format("Event#%d for org[%d] was handled!", event.getEventData(), event.getOrganizationId()));
-					onComplete.accept(e);
+		Consumer<EventResult<Integer,HandlingInfo>> onComplete = getEventCompleteAction(waiter, isCalled, resumeAfterThis, HandlingInfoSaver.HANDLING_TIME);
+		
+		Consumer<EventResult<Integer,HandlingInfo>> onCompleteWrapper = 
+				res ->{						
+					res.getReturnedData().setCallBackExecuted(true);
+					events.add(res.getReturnedData());
+					System.out.println( String.format("Event#%d for org[%d] was handled!", res.getEventInfo().getEventData(), res.getEventInfo().getOrganizationId()));
+					onComplete.accept(res);
 				};
 				
 		BiConsumer<TestEventWithHandlerInfo, Throwable> onError = getUnexpectedErrorCallback(waiter);		
+		TestEventWithHandlerInfo event = new TestEventWithHandlerInfo(orgId, i, onCompleteWrapper);
 		//--------------------------		
 							
-		integration.pushIntegrationEvent(event, onCompleteWrapper , onError);
+		integration.pushIntegrationEvent(event, onError);
 		//--------------------------
 		assertAsyncEventPush(event);
 	}
@@ -668,9 +677,8 @@ public class IntegrationServiceTest {
 
 
 
-	private void assertEventsSampledAndHandled(Long expectedEventRate, List<TestEventWithHandlerInfo> events) {
+	private void assertEventsSampledAndHandled(Long expectedEventRate, List<HandlingInfo> handlingInfo) {
 		Long delay = (long) ((1.0/expectedEventRate)*1000);	
-		List<HandlingInfo> handlingInfo = getEventsHandlingInfo(events);
 		
 		IntStream.range(1, handlingInfo.size())
 				.mapToObj(i -> Pair.of(handlingInfo.get(i-1), handlingInfo.get(i)))
@@ -691,17 +699,6 @@ public class IntegrationServiceTest {
 				+ ", if events are delayed, they will not be emitted and handled at the same time, "
 				+ "but each event is emitted after sometime from emitting of the last event"
 				, eventsAreSampled);
-	}
-
-
-
-
-
-	private List<HandlingInfo> getEventsHandlingInfo(List<TestEventWithHandlerInfo> events) {
-		List<HandlingInfo> handlingInfo = events.stream()
-												.map(TestEventWithHandlerInfo::getEventResult)
-												.collect(Collectors.toList());
-		return handlingInfo;
 	}
 
 
