@@ -24,8 +24,8 @@ public abstract class Event<T, R> {
 		eventResult = emitterProcessor
 							.publish()
 							.autoConnect()
-							.next();	
-		
+							.next();			
+		eventResult.subscribe(onSuccess);
 		eventResultFluxSink = emitterProcessor.sink();
 	}
 	

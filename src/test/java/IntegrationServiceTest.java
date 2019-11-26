@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -306,8 +307,8 @@ public class IntegrationServiceTest {
 		isCalled.set(false);
 				
 		Consumer<EventResult<T,R>> onComplete = getEventCompleteAction(waiter, isCalled, expectedResult, resumeTestAfterThis);
-		E event = eventClass.getConstructor(Long.class, (Class<T>)Object.class
-									,(Class<Consumer<EventResult<T,R>>>) GenericTypeResolver.resolveTypeArgument(onComplete.getClass(), Consumer.class))							
+				
+		E event = eventClass.getConstructor(Long.class, eventData.getClass(), Consumer.class)							
 							.newInstance(orgId, eventData, onComplete);
 		BiConsumer<E, Throwable> onError = getUnexpectedErrorCallback(waiter);		
 		//--------------------------------------------------------------		
@@ -384,9 +385,7 @@ public class IntegrationServiceTest {
 		
 		Waiter waiter = new Waiter();
 		Consumer<EventResult<String, String>> onComplete = getFailingOnCompleteAction(waiter);
-		TestEventHandler.onHandle = e -> {
-								this.onEventHandle(e); 
-							};
+		TestEventHandler.onHandle = e -> {	this.onEventHandle(e);	};
 		//--------------------------------------------------------------							
 							
 		TestEvent event =  new TestEvent(ORG_ID, TestEventHandler.EXPECTED_DATA, onComplete);
