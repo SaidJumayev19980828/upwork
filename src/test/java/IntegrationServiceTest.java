@@ -589,13 +589,13 @@ public class IntegrationServiceTest {
 		Long expectedEventRate = 10L;			
 		Long orgId = ORG_ID;
 		
-		List<HandlingInfo> orgEvents = pushEventsWithExpectedRate(waiter, eventsNum, orgId, expectedEventRate, true);
+		List<HandlingInfo> orgEvents = pushBulkOfEvents(waiter, eventsNum, orgId, true);
 		//--------------------------------------------------------------
 		Long awaitTime = (long) (HandlingInfoSaver.HANDLING_TIME*(eventsNum/expectedEventRate)*1.5);
 		waiter.await( awaitTime );
 		
 		//--------------------------------------------------------------
-		assertEventsSampledAndHandled(expectedEventRate, orgEvents);
+		assertEventsAreHandledWithRate(expectedEventRate, orgEvents);
 	}
 	
 	
@@ -608,14 +608,14 @@ public class IntegrationServiceTest {
 		Long expectedEventRate1 = 10L;			
 		Long orgId1 = ORG_ID;
 		
-		List<HandlingInfo> org1Events = pushEventsWithExpectedRate(waiter, eventsNum1, orgId1, expectedEventRate1, false);
+		List<HandlingInfo> org1Events = pushBulkOfEvents(waiter, eventsNum1, orgId1, false);
 		
 		
 		Integer eventsNum2 = 50;
 		Long expectedEventRate2 = 5L;			
 		Long orgId2 = ANOTHER_ORG_ID;
 		
-		List<HandlingInfo> org2Events = pushEventsWithExpectedRate(waiter, eventsNum2, orgId2, expectedEventRate2, true);
+		List<HandlingInfo> org2Events = pushBulkOfEvents(waiter, eventsNum2, orgId2, true);
 		
 		//--------------------------------------------------------------
 		Integer eventsNum = eventsNum1 + eventsNum2;
@@ -624,15 +624,15 @@ public class IntegrationServiceTest {
 		waiter.await( awaitTime );
 		
 		//--------------------------------------------------------------
-		assertEventsSampledAndHandled(expectedEventRate1, org1Events);
-		assertEventsSampledAndHandled(expectedEventRate2, org2Events);
+		assertEventsAreHandledWithRate(expectedEventRate1, org1Events);
+		assertEventsAreHandledWithRate(expectedEventRate2, org2Events);
 	}
 
 
 
 
 
-	private List<HandlingInfo> pushEventsWithExpectedRate(Waiter waiter, Integer eventsNum, Long orgId, Long expectedEventRate, Boolean resumeTestThread)
+	private List<HandlingInfo> pushBulkOfEvents(Waiter waiter, Integer eventsNum, Long orgId, Boolean resumeTestThread)
 			throws InvalidIntegrationEventException, TimeoutException, InterruptedException {
 		List<HandlingInfo> events = new ArrayList<>();
 		
@@ -676,7 +676,7 @@ public class IntegrationServiceTest {
 
 
 
-	private void assertEventsSampledAndHandled(Long expectedEventRate, List<HandlingInfo> handlingInfo) {
+	private void assertEventsAreHandledWithRate(Long expectedEventRate, List<HandlingInfo> handlingInfo) {
 		Long delay = (long) ((1.0/expectedEventRate)*1000);	
 		
 		IntStream.range(1, handlingInfo.size())
