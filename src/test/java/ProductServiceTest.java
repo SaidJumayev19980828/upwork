@@ -2,11 +2,14 @@ import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import com.nasnav.dto.ProductRepresentationObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -33,6 +36,8 @@ import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
+import com.nasnav.dto.ProductRepresentationObject;
+import com.nasnav.dto.ProductsResponse;
 import com.nasnav.persistence.FileEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ProductEntity;
@@ -634,9 +639,75 @@ public class ProductServiceTest {
 	public void testProductResponse(){
 		performTestProductResponseByFilters();
 		productBarcodeTest();
-		productMinPriceTest();
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void testProductWithMultipVariantResponse(){
+		// product #1002 with 2 variants .. return multiple_variants = true
+		ResponseEntity<ProductsResponse> response = template.getForEntity("/navbox/products?shop_id=501", ProductsResponse.class);
+		
+		Boolean isMultipleVariants = getProductFromResponse(response, 1002L).isMultipleVariants();
+				
+		Assert.assertTrue(isMultipleVariants);
 	}
 
+
+
+
+	private ProductRepresentationObject getProductFromResponse(ResponseEntity<ProductsResponse> response, Long productId) {
+		return response.getBody()
+					.getProducts()
+					.stream()
+					.filter(p -> Objects.equals(p.getId().longValue(), 1002L))
+					.findAny()
+					.get();
+	}
+	
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void testProductWithNoVariantIsHidden(){
+		// product #1004 with no variants .. return hidden = true and no price info
+		ResponseEntity<ProductsResponse> response = 
+				template.getForEntity("/navbox/products?org_id=99001&category_id=201&brand_id=102", ProductsResponse.class);
+		
+		Boolean isHidden = 	getProductFromResponse(response, 1004L).isHidden();
+		
+		Assert.assertTrue(isHidden);
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void testProductWithSingleVariantReturnedMinimumPrice(){
+		// product #1001 with 1 variant and two stocks .. one with price 600 and the other 400 .. return lowest price info
+		ResponseEntity<ProductsResponse> response = 
+				template.getForEntity("/navbox/products?org_id=99001&category_id=201&brand_id=101", ProductsResponse.class);
+		
+		ProductRepresentationObject product = getProductFromResponse(response, 1001L);
+		
+		Assert.assertEquals(product.getPrice(), new BigDecimal("400"));
+		Assert.assertFalse(product.isMultipleVariants());
+	}
+	
+	
+
+	
 
 	private void performTestProductResponseByFilters() {
 		//// testing brand_id filter ////
@@ -699,25 +770,7 @@ public class ProductServiceTest {
 	}
 
 
-	public void productMinPriceTest() {
-		// product #1001 with 1 variant and two stocks .. one with price 600 and the other 400 .. return lowest price info
-		ResponseEntity<Object> response = template.getForEntity("/navbox/products?org_id=99001&category_id=201" +
-				"&brand_id=101&minprice=true", Object.class);
-		Assert.assertTrue(response.getBody().toString().contains("price=400"));
-		Assert.assertTrue(response.getBody().toString().contains("multiple_variants=false"));
-
-		// product #1004 with no variants .. return hidden = true and no price info
-		response = template.getForEntity("/navbox/products?org_id=99001&category_id=201" +
-				"&brand_id=102&minprice=true", Object.class);
-		Assert.assertTrue(response.getBody().toString().contains("hidden=true"));
-
-		// product #1002 with 2 variants .. return multiple_variants = true
-		response = template.getForEntity("/navbox/products?shop_id=501&minprice=true", Object.class);
-		Assert.assertTrue(response.getBody().toString().contains("multiple_variants=true"));
-	}
-
-
-
+	
 
 
 	@Test
