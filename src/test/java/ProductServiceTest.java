@@ -622,7 +622,7 @@ public class ProductServiceTest {
 
 
 		assertEquals("only the total of actual products should be counted, bundles and services are not counted"
-						,51L , total);
+						,4L , total);
 	}
 	
 	
@@ -644,24 +644,24 @@ public class ProductServiceTest {
 		System.out.println(response.getBody());
 		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		long total = json.getLong("total");
-		assertEquals("there are total 21 products with with org_id = 99001 and no brand_id filter"
-				,21 , total);
+		assertEquals("there are total 4 products with with org_id = 99001 and no brand_id filter"
+				,4 , total);
 
 
 		response = template.getForEntity("/navbox/products?org_id=99001&brand_id=101", String.class);
 		System.out.println(response.getBody());
 		json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		total = json.getLong("total");
-		assertEquals("there are 15 products with brand_id = 101"
-				,15 , total);
+		assertEquals("there are 2 products with brand_id = 101"
+				,2 , total);
 
 
 		response = template.getForEntity("/navbox/products?org_id=99001&brand_id=102", String.class);
 		System.out.println(response.getBody());
 		json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		total = json.getLong("total");
-		assertEquals("there are 6 products with brand_id = 102"
-				,6 , total);
+		assertEquals("there are 2 products with brand_id = 102"
+				,2 , total);
 		//// finish test
 
 		//// test fields existance in both "product" and "products" apis

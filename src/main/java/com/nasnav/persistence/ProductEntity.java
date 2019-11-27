@@ -3,28 +3,35 @@ package com.nasnav.persistence;
 import java.time.LocalDateTime;
 import java.util.Set;
 
-import javax.persistence.Column;
-import javax.persistence.DiscriminatorColumn;
-import javax.persistence.DiscriminatorType;
-import javax.persistence.DiscriminatorValue;
+import javax.persistence.*;
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.OneToMany;
+import javax.persistence.NamedNativeQuery;
 import javax.persistence.Table;
 
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.DiscriminatorFormula;
-import org.hibernate.annotations.UpdateTimestamp;
+import com.nasnav.dto.Pair;
+import org.hibernate.annotations.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+
+
+@SqlResultSetMapping(
+        name = "Pair",
+        classes = @ConstructorResult(
+                targetClass = Pair.class,
+                columns = {
+                        @ColumnResult(name = "product_id", type = long.class),
+                        @ColumnResult(name = "tag_id", type = long.class)
+                }))
+@NamedNativeQuery(
+        name = "ProductEntity.getProductTags",
+        query = "SELECT t.product_id, t.tag_id FROM Product_tags t WHERE t.product_id in :productsIds and t.tag_id in :tagsIds",
+        resultSetMapping = "Pair"
+)
 
 @Entity
 @Table(name = "products")
@@ -92,6 +99,20 @@ public class ProductEntity {
     private Set<ProductVariantsEntity> productVariants;
 
 
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JoinTable(name = "product_tags"
+            ,joinColumns = {@JoinColumn(name="product_id")}
+            ,inverseJoinColumns = {@JoinColumn(name="tag_id")})
+    private Set<OrganizationTagsEntity> tags;
 
+    public void insertProductTag(OrganizationTagsEntity tag) {
+        this.tags.add(tag);
+    }
 
+    public void removeProductTag(OrganizationTagsEntity tag) {
+        this.tags.remove(tag);
+    }
 }

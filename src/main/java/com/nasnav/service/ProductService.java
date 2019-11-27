@@ -5,25 +5,17 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PR
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Order;
-import javax.persistence.criteria.Path;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import javax.persistence.criteria.*;
 
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
+import com.nasnav.persistence.*;
+import com.nasnav.request.ProductSearchParam;
 import org.apache.commons.beanutils.BeanUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -45,40 +37,7 @@ import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
-import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.BundleRepository;
-import com.nasnav.dao.CategoriesRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ProductImagesRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dto.BundleDTO;
-import com.nasnav.dto.BundleElementUpdateDTO;
-import com.nasnav.dto.ProductBaseInfo;
-import com.nasnav.dto.ProductDetailsDTO;
-import com.nasnav.dto.ProductImageUpdateDTO;
-import com.nasnav.dto.ProductImgDTO;
-import com.nasnav.dto.ProductRepresentationObject;
-import com.nasnav.dto.ProductSortOptions;
-import com.nasnav.dto.ProductUpdateDTO;
-import com.nasnav.dto.ProductsResponse;
-import com.nasnav.dto.StockDTO;
-import com.nasnav.dto.VariantDTO;
-import com.nasnav.dto.VariantFeatureDTO;
-import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.BundleEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ProductImagesEntity;
-import com.nasnav.persistence.ProductTypes;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.StocksEntity;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.response.BundleResponse;
 import com.nasnav.response.ProductImageDeleteResponse;
@@ -86,6 +45,7 @@ import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.VariantUpdateResponse;
 import com.sun.istack.logging.Logger;
+import reactor.util.function.Tuple2;
 
 @Service
 public class ProductService {
@@ -145,6 +105,9 @@ public class ProductService {
 	private ProductImageService imgService;
 
 	@Autowired
+	private OrganizationTagsRepository orgTagRepo;
+
+	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
 	                      ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
 	                      ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
@@ -181,11 +144,11 @@ public class ProductService {
 		ProductDetailsDTO productDTO = null;
 		try {
 			productDTO = toProductDetailsDTO(product);
-		productDTO.setVariants(variantsDTOList);
-		if (variantsDTOList != null && variantsDTOList.size() > 1)
-			productDTO.setMultipleVariants(true);
-		productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
-		productDTO.setBundleItems( getBundleItems(product));
+			productDTO.setVariants(variantsDTOList);
+			if (variantsDTOList != null && variantsDTOList.size() > 1)
+				productDTO.setMultipleVariants(true);
+			productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
+			productDTO.setBundleItems( getBundleItems(product));
 			productDTO.setImages( getProductImages(product.getId() ) );
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e );
@@ -216,7 +179,8 @@ public class ProductService {
 
 		List<Long> bundleProductsIdList = bundleRepository.getBundleItemsProductIds(product.getId());
 		List<ProductEntity> bundleProducts = this.getProductsByIds(bundleProductsIdList , "asc", "name");
-		ProductsResponse response = this.getProductsResponse(bundleProducts,"asc" , "name" , 0, Integer.MAX_VALUE, false, null );
+		ProductsResponse response = this.getProductsResponse(bundleProducts,"asc" , "name" , 0,
+				Integer.MAX_VALUE, false, null, (long)bundleProducts.size() );
 		List<ProductRepresentationObject> productRepList = response == null? new ArrayList<>() : response.getProducts();
 		return productRepList;
 	}
@@ -366,215 +330,123 @@ public class ProductService {
 	}
 
 
+	public ProductsResponse getProducts(ProductSearchParam params) throws BusinessException {
+		if (params.sort != null && ProductSortOptions.getProductSortOptions(params.sort.getValue()) == null)
+			throw new BusinessException("Sort is limited to id, name, pname, price", null, HttpStatus.BAD_REQUEST);
 
+		if (params.order != null && !params.order.getValue().equals("asc") && !params.order.getValue().equals("desc"))
+			throw new BusinessException("Order is limited to asc and desc only", null, HttpStatus.BAD_REQUEST);
 
+		if (params.start != null && params.start < 0)
+			throw new BusinessException("Start can be zero or more", null, HttpStatus.BAD_REQUEST);
 
-	public ProductsResponse getProductsResponseByShopId(Long shopId, Long categoryId, Long brandId, Integer start,
-	                                                    Integer count, String sort, String order, String searchName, boolean minPrice) {
+		if (params.count != null && params.count < 1)
+			throw new BusinessException("Count can be One or more", null, HttpStatus.BAD_REQUEST);
 
-		if (start == null)
-			start = defaultStart;
-		if (count == null)
-			count = defaultCount;
+		if (params.org_id == null && params.shop_id == null)
+			throw new BusinessException("Shop Id or Organization Id shall be provided", null, HttpStatus.BAD_REQUEST);
 
-		if (sort == null)
-			sort = defaultSortAttribute;
+		if (params.start == null)
+			params.start = defaultStart;
 
-		if (order == null)
-			order = defaultOrder;
+		if (params.count == null)
+			params.count = defaultCount;
 
-		List<StocksEntity> stocks = stockRepository.findByShopsEntity_Id(shopId);
-		List<ProductEntity> products = null;
+		if (params.sort == null)
+			params.setSort(defaultSortAttribute);
 
-		if (stocks != null && !stocks.isEmpty()) {
-
-			List<Long> productsIds = stocks.stream()
-					.filter(stock -> stock.getProductVariantsEntity() != null)
-					.map(stock -> stock.getProductVariantsEntity() )
-					.filter(var -> var != null)
-					.map(var -> var.getProductEntity())
-					.filter(prod -> prod != null)
-					.map(prod -> prod.getId())
-					.collect(Collectors.toList());
-
-			if (categoryId == null && brandId == null) {
-				products = getProductsByIds(productsIds, order, sort);
-			} else if (categoryId != null && brandId == null){
-				products = getProductsByIdsAndCategoryId(productsIds, categoryId, order, sort);
-			} else if (categoryId == null && brandId != null){
-				products = getProductsByIdsAndBrandId(productsIds, brandId, order, sort);
-			} else {
-				products = getProductsByIdsAndCategoryIdAndBrandId(productsIds, categoryId, brandId, order, sort);
-			}
-
-			if (searchName != null) {
-				products = products.stream().filter(product -> product.getName().toLowerCase().contains(searchName.toLowerCase())).collect(Collectors.toList());
-			}
-		}
-		return getProductsResponse(products, order, sort, start, count, minPrice,shopId);
-
-	}
-
-	public ProductsResponse getProductsResponseByOrganizationId(Long organizationId, Long categoryId, Long brandId,
-	                                                            Integer start, Integer count, String sort, String order,
-	                                                            String searchName, boolean minPrice) {
-		if (start == null)
-			start = defaultStart;
-		if (count == null)
-			count = defaultCount;
-		if (sort == null)
-			sort = defaultSortAttribute;
-		if (order == null)
-			order = defaultOrder;
+		if (params.order == null)
+			params.setOrder(defaultOrder);
 
 		List<ProductEntity> products = null;
-		if (categoryId == null && brandId == null) {
-			products = getProductsForOrganizationId(organizationId, order, sort);
-		} else if (categoryId != null && brandId == null){
-			products = getProductsForOrganizationIdAndCategoryId(organizationId, categoryId, order, sort);
-		} else if (categoryId == null && brandId != null){
-			products = getProductsForOrganizationIdAndBrandId(organizationId, brandId, order, sort);
-		} else {
-			products = getProductsForOrganizationIdAndCategoryIdAndBrandId(organizationId, categoryId, brandId, order, sort);
+		Long productsCount = null;
+
+		CriteriaBuilder builder = em.getCriteriaBuilder();
+		CriteriaQuery<ProductEntity> query = builder.createQuery(ProductEntity.class);
+		Root<ProductEntity> root = query.from(ProductEntity.class);
+
+		Predicate[] predicatesArr = getProductQueryPredicates(params, builder, root);
+		Order orderBy = getProductQueryOrderBy(params, builder, root);
+
+		if (predicatesArr != null) {
+			query.where(predicatesArr);
+			if (orderBy != null)
+				query.orderBy(orderBy);
+			productsCount = (long) em.createQuery(query).getResultList().size();
+			products =  em.createQuery(query).setMaxResults(params.count).setFirstResult(params.start).getResultList();
+
 		}
 
-		if (searchName != null) {
-			products = products.stream().filter(product -> product.getName().toLowerCase().contains(searchName.toLowerCase())).collect(Collectors.toList());
-		}
 
-		return getProductsResponse(products, order, sort, start, count, minPrice, null);
+		if(params.shop_id != null && params.org_id == null)
+			return getProductsResponse(products, params.order.getValue(), params.sort.toString(), params.start, params.count,
+					params.minprice, params.shop_id, productsCount);
+
+		return getProductsResponse(products, params.order.getValue(), params.sort.toString(), params.start, params.count,
+				params.minprice, null, productsCount);
 	}
 
-	private List<ProductEntity> getProductsForOrganizationId(Long organizationId, String order, String sort) {
 
-		List<ProductEntity> products = null;
 
-		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.ID) {
-			if (order.equals("asc")) {
-				products = productRepository.findByOrganizationIdOrderByIdAsc(organizationId);
-			} else {
-				products = productRepository.findByOrganizationIdOrderByIdDesc(organizationId);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.NAME) {
 
-			if (order.equals("asc")) {
-				products = productRepository.findByOrganizationIdOrderByNameAsc(organizationId);
-			} else {
-				products = productRepository.findByOrganizationIdOrderByNameDesc(organizationId);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.P_NAME) {
-			if (order.equals("asc")) {
-				products = productRepository.findByOrganizationIdOrderByPnameAsc(organizationId);
-			} else {
-				products = productRepository.findByOrganizationIdOrderByPnameDesc(organizationId);
-			}
-		} else {
-			products = productRepository.findByOrganizationId(organizationId);
+	private Predicate[] getProductQueryPredicates(ProductSearchParam params, CriteriaBuilder builder, Root<ProductEntity> root) {
+		List<Predicate> predicates = new ArrayList<>();
+
+		if(params.org_id != null)
+			predicates.add( builder.equal(root.get("organizationId"), params.org_id) );
+
+		if(params.category_id != null)
+			predicates.add( builder.equal(root.get("categoryId"), params.category_id) );
+
+		if(params.brand_id != null)
+			predicates.add( builder.equal(root.get("brandId"), params.brand_id) );
+
+		if(params.name != null)
+			predicates.add(  builder.like( builder.lower(root.get("name") ), params.name.toLowerCase() ) );
+
+		if(params.tags != null) {
+			List<Long> productIds = productRepository.getProductIdsByTagsList(params.tags);
+			if (productIds == null || productIds.isEmpty())
+				return null;
+			Expression<String> parentExpression = root.get("id");
+			predicates.add(parentExpression.in(productIds) );
 		}
-		return products;
+
+		if(params.shop_id != null && params.org_id == null) {
+			List<StocksEntity> stocks = stockRepository.findByShopsEntity_Id(params.shop_id);
+
+			if (stocks != null && !stocks.isEmpty()) {
+
+				List<Long> productsIds = stocks.stream()
+						.filter(stock -> stock.getProductVariantsEntity() != null)
+						.map(stock -> stock.getProductVariantsEntity())
+						.filter(var -> var != null)
+						.map(var -> var.getProductEntity())
+						.filter(prod -> prod != null)
+						.map(prod -> prod.getId())
+						.collect(Collectors.toList());
+
+				Expression<String> parentExpression = root.get("id");
+				predicates.add(parentExpression.in(productsIds) );
+ 			} else
+ 				return null;
+		}
+
+		Predicate[] predicatesArr = predicates.stream().toArray( Predicate[]::new);
+		return predicatesArr;
 	}
 
-	private List<ProductEntity> getProductsForOrganizationIdAndCategoryId(Long organizationId, Long categoryId,
-	                                                                      String order, String sort) {
-		List<ProductEntity> products = null;
-
-		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.ID) {
-			if (order.equals("asc")) {
-				products = productRepository.findByOrganizationIdAndCategoryIdOrderByIdAsc(organizationId, categoryId);
-			} else {
-				products = productRepository.findByOrganizationIdAndCategoryIdOrderByIdDesc(organizationId, categoryId);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.NAME) {
-
-			if (order.equals("asc")) {
-				products = productRepository.findByOrganizationIdAndCategoryIdOrderByNameAsc(organizationId,
-						categoryId);
-			} else {
-				products = productRepository.findByOrganizationIdAndCategoryIdOrderByNameDesc(organizationId,
-						categoryId);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.P_NAME) {
-			if (order.equals("asc")) {
-				products = productRepository.findByOrganizationIdAndCategoryIdOrderByPnameAsc(organizationId,
-						categoryId);
-			} else {
-				products = productRepository.findByOrganizationIdAndCategoryIdOrderByPnameDesc(organizationId,
-						categoryId);
-			}
-		} else {
-			products = productRepository.findByOrganizationIdAndCategoryId(organizationId, categoryId);
+	private Order getProductQueryOrderBy(ProductSearchParam params, CriteriaBuilder builder, Root<ProductEntity> root) {
+		if (!params.sort.getValue().equals("price")) {
+			Path orderByAttr = root.get(params.sort.getValue());
+			Order orderBy = builder.asc(orderByAttr);
+			if (params.order.equals(SortOrder.DESC))
+				orderBy = builder.desc(orderByAttr);
+			return orderBy;
 		}
-		return products;
+		return null;
 	}
 
-	private List<ProductEntity> getProductsForOrganizationIdAndBrandId(Long organizationId, Long brandId,
-	                                                                   String order, String sort) {
-		List<ProductEntity> products = null;
-
-		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.ID) {
-			if (order.equals("asc")) {
-				products = productRepository.findByOrganizationIdAndBrandIdOrderByIdAsc(organizationId, brandId);
-			} else {
-				products = productRepository.findByOrganizationIdAndBrandIdOrderByIdDesc(organizationId, brandId);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.NAME) {
-
-			if (order.equals("asc")) {
-				products = productRepository.findByOrganizationIdAndBrandIdOrderByNameAsc(organizationId,
-						brandId);
-			} else {
-				products = productRepository.findByOrganizationIdAndBrandIdOrderByNameDesc(organizationId,
-						brandId);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.P_NAME) {
-			if (order.equals("asc")) {
-				products = productRepository.findByOrganizationIdAndBrandIdOrderByPnameAsc(organizationId,
-						brandId);
-			} else {
-				products = productRepository.findByOrganizationIdAndBrandIdOrderByPnameDesc(organizationId,
-						brandId);
-			}
-		} else {
-			products = productRepository.findByOrganizationIdAndBrandId(organizationId, brandId);
-		}
-		return products;
-	}
-
-	private List<ProductEntity> getProductsForOrganizationIdAndCategoryIdAndBrandId(Long organizationId,
-	                                                                                Long categoryId, Long brandId, String order, String sort) {
-		List<ProductEntity> products = null;
-
-		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.ID) {
-			if (order.equals("asc")) {
-				products = productRepository.findByOrganizationIdAndCategoryIdAndBrandIdOrderByIdAsc(organizationId,
-						categoryId, brandId);
-			} else {
-				products = productRepository.findByOrganizationIdAndCategoryIdAndBrandIdOrderByIdDesc(organizationId,
-						categoryId, brandId);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.NAME) {
-
-			if (order.equals("asc")) {
-				products = productRepository.findByOrganizationIdAndCategoryIdAndBrandIdOrderByNameAsc(organizationId,
-						categoryId, brandId);
-			} else {
-				products = productRepository.findByOrganizationIdAndCategoryIdAndBrandIdOrderByNameDesc(organizationId,
-						categoryId, brandId);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.P_NAME) {
-			if (order.equals("asc")) {
-				products = productRepository.findByOrganizationIdAndCategoryIdAndBrandIdOrderByPnameAsc(organizationId,
-						categoryId, brandId);
-			} else {
-				products = productRepository.findByOrganizationIdAndCategoryIdAndBrandIdOrderByPnameDesc(organizationId,
-						categoryId, brandId);
-			}
-		} else {
-			products = productRepository.findByOrganizationIdAndCategoryIdAndBrandId(organizationId, categoryId,
-					brandId);
-		}
-		return products;
-	}
 
 	private List<ProductEntity> getProductsByIds(List<Long> productsIds, String order, String sort) {
 
@@ -604,98 +476,9 @@ public class ProductService {
 		return products;
 	}
 
-	private List<ProductEntity> getProductsByIdsAndCategoryId(List<Long> productsIds, Long categoryId, String order,
-	                                                          String sort) {
-		List<ProductEntity> products = null;
-
-		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.ID) {
-			if (order.equals("asc")) {
-				products = productRepository.findByIdInAndCategoryIdOrderByIdAsc(productsIds, categoryId);
-			} else {
-				products = productRepository.findByIdInAndCategoryIdOrderByIdDesc(productsIds, categoryId);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.NAME) {
-			if (order.equals("asc")) {
-				products = productRepository.findByIdInAndCategoryIdOrderByNameAsc(productsIds, categoryId);
-			} else {
-				products = productRepository.findByIdInAndCategoryIdOrderByNameDesc(productsIds, categoryId);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.P_NAME) {
-			if (order.equals("asc")) {
-				products = productRepository.findByIdInAndCategoryIdOrderByPnameAsc(productsIds, categoryId);
-			} else {
-				products = productRepository.findByIdInAndCategoryIdOrderByPnameDesc(productsIds, categoryId);
-			}
-		} else {
-			products = productRepository.findByIdInAndCategoryId(productsIds, categoryId);
-		}
-		return products;
-	}
-
-	private List<ProductEntity> getProductsByIdsAndBrandId(List<Long> productsIds, Long brandId, String order,
-	                                                       String sort) {
-		List<ProductEntity> products = null;
-
-		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.ID) {
-			if (order.equals("asc")) {
-				products = productRepository.findByIdInAndBrandIdOrderByIdAsc(productsIds, brandId);
-			} else {
-				products = productRepository.findByIdInAndBrandIdOrderByIdDesc(productsIds, brandId);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.NAME) {
-			if (order.equals("asc")) {
-				products = productRepository.findByIdInAndBrandIdOrderByNameAsc(productsIds, brandId);
-			} else {
-				products = productRepository.findByIdInAndBrandIdOrderByNameDesc(productsIds, brandId);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.P_NAME) {
-			if (order.equals("asc")) {
-				products = productRepository.findByIdInAndBrandIdOrderByPnameAsc(productsIds, brandId);
-			} else {
-				products = productRepository.findByIdInAndBrandIdOrderByPnameDesc(productsIds, brandId);
-			}
-		} else {
-			products = productRepository.findByIdInAndBrandId(productsIds, brandId);
-		}
-		return products;
-	}
-
-	private List<ProductEntity> getProductsByIdsAndCategoryIdAndBrandId(List<Long> productsIds, Long categoryId,
-	                                                                    Long brandId, String order, String sort) {
-		List<ProductEntity> products = null;
-
-		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.ID) {
-			if (order.equals("asc")) {
-				products = productRepository.findByIdInAndCategoryIdAndBrandIdOrderByIdAsc(productsIds, categoryId, brandId);
-			} else {
-				products = productRepository.findByIdInAndCategoryIdAndBrandIdOrderByIdDesc(productsIds, categoryId, brandId);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.NAME) {
-			if (order.equals("asc")) {
-				products = productRepository.findByIdInAndCategoryIdAndBrandIdOrderByNameAsc(productsIds, categoryId,
-						brandId);
-			} else {
-				products = productRepository.findByIdInAndCategoryIdAndBrandIdOrderByNameDesc(productsIds, categoryId,
-						brandId);
-			}
-		} else if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.P_NAME) {
-			if (order.equals("asc")) {
-				products = productRepository.findByIdInAndCategoryIdAndBrandIdOrderByPnameAsc(productsIds, categoryId,
-						brandId);
-			} else {
-				products = productRepository.findByIdInAndCategoryIdAndBrandIdOrderByPnameDesc(productsIds, categoryId,
-						brandId);
-			}
-		} else {
-			products = productRepository.findByIdInAndCategoryIdAndBrandId(productsIds, categoryId, brandId);
-		}
-		return products;
-	}
-
-
 
 	private ProductsResponse getProductsResponse(List<ProductEntity> products, String order, String sort, Integer start,
-	                                             Integer count, boolean minPrice, Long shopId) {
+	                                             Integer count, boolean minPrice, Long shopId, Long productsCount) {
 		ProductsResponse productsResponse = null;
 		if (products != null) {
 			productsResponse = new ProductsResponse();
@@ -715,9 +498,9 @@ public class ProductService {
 			else
 				productsRep.forEach(pRep -> setProductAvailabilityAndPrice(stocks, pRep));
 
-			if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE) {
+			if (sort.equals(ProductSortOptions.PRICE.name())) {
 
-				if (order.equals("desc")) {
+				if (order.equals("asc")) {
 
 					Collections.sort(productsRep, new Comparator<ProductRepresentationObject>() {
 						@Override
@@ -744,17 +527,9 @@ public class ProductService {
 					});
 				}
 			}
-			int lastProductIndex = productsRep.size() - 1;
-			if (start > lastProductIndex) {
-				// TODO proper start handling(maybe default) or error massage
-				return null;
-			}
-			int toIndex = start + count;
-			if (toIndex > lastProductIndex)
-				toIndex = productsRep.size();
 
-			productsResponse.setProducts(productsRep.subList(start, toIndex));
-			productsResponse.setTotal(stockService.getStockItemsQuantitySum(stocks));
+			productsResponse.setProducts(productsRep);
+			productsResponse.setTotal(productsCount);
 		}
 
 		return productsResponse;
@@ -1983,5 +1758,73 @@ public class ProductService {
 		dto.setProductType( product.getProductType() );
 
 		return dto;
+	}
+
+	public boolean updateProductTags(ProductTagDTO productTagDTO) throws BusinessException {
+		validateProductTagDTO(productTagDTO);
+
+		Map<Long, ProductEntity> productsMap = validateAndGetProductMap(productTagDTO.getProductIds());
+		Map<Long, OrganizationTagsEntity> tagsMap = validateAndGetTagMap(productTagDTO.getTagIds());
+
+		List<Pair> productTagsList = productRepository.getProductTags(productTagDTO.getProductIds(), productTagDTO.getTagIds());
+
+		for(Long productId : productTagDTO.getProductIds()) {
+			for(Long tagId : productTagDTO.getTagIds()) {
+				if( !productTagsList.contains(new Pair(productId, tagId))) {
+					productsMap.get(productId).insertProductTag(tagsMap.get(tagId));
+				}
+			}
+			productRepository.save(productsMap.get(productId));
+		}
+		return true;
+	}
+
+	public boolean deleteProductTags(ProductTagDTO productTagDTO) throws BusinessException {
+		validateProductTagDTO(productTagDTO);
+
+		Map<Long, ProductEntity> productsMap = validateAndGetProductMap(productTagDTO.getProductIds());
+		Map<Long, OrganizationTagsEntity> tagsMap = validateAndGetTagMap(productTagDTO.getTagIds());
+
+		List<Pair> productTagsList = productRepository.getProductTags(productTagDTO.getProductIds(), productTagDTO.getTagIds());
+
+		for(Long productId : productTagDTO.getProductIds()) {
+			for(Long tagId : productTagDTO.getTagIds()) {
+				if( productTagsList.contains(new Pair(productId, tagId))) {
+					productsMap.get(productId).removeProductTag(tagsMap.get(tagId));
+				}
+			}
+			productRepository.save(productsMap.get(productId));
+		}
+		return true;
+	}
+
+	private void validateProductTagDTO(ProductTagDTO productTagDTO) throws BusinessException {
+		if(productTagDTO.getProductIds() == null)
+			throw new BusinessException("Provided products_ids can't be empty", "MISSING PARAM:products_ids", HttpStatus.NOT_ACCEPTABLE);
+
+		if(productTagDTO.getTagIds() == null)
+			throw new BusinessException("Provided tags_ids can't be empty", "MISSING PARAM:tags_ids", HttpStatus.NOT_ACCEPTABLE);
+	}
+
+	private Map validateAndGetProductMap(List<Long> productIds) throws BusinessException {
+		Map<Long, ProductEntity> productsMap = new HashMap<>();
+		for(ProductEntity entity : productRepository.findByIdIn(productIds)) productsMap.put(entity.getId(), entity);
+		for(Long productId : productIds)
+			if(productsMap.get(productId) == null)
+				throw new BusinessException("Provided product_id("+productId+") does't match any existing product",
+						"INVALID PARAM:product_id", HttpStatus.NOT_ACCEPTABLE);
+
+		return productsMap;
+	}
+
+	private Map validateAndGetTagMap(List<Long> tagIds) throws BusinessException {
+		Map<Long, OrganizationTagsEntity> tagsMap = new HashMap<>();
+		for(OrganizationTagsEntity entity : orgTagRepo.findByIdIn(tagIds)) tagsMap.put(entity.getId(), entity);
+		for(Long tagId : tagIds)
+			if(tagsMap.get(tagId) == null)
+				throw new BusinessException("Provided tag_id("+tagId+") does't match any existing tag",
+						"INVALID PARAM:tag_id", HttpStatus.NOT_ACCEPTABLE);
+
+		return tagsMap;
 	}
 }

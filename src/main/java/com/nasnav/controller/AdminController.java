@@ -1,7 +1,10 @@
 package com.nasnav.controller;
 
 import com.nasnav.dto.CategoryDTO;
+import com.nasnav.dto.TagsDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.TagsEntity;
+import com.nasnav.response.TagResponse;
 import com.nasnav.service.CategoryService;
 import com.nasnav.dto.OrganizationDTO;
 import com.nasnav.response.OrganizationResponse;
@@ -14,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/admin")
@@ -72,4 +77,18 @@ public class AdminController {
 		}
 		return categoryService.deleteCategory(categoryId);
 	}
+
+    @ApiOperation(value = "Create Nasnav tag", nickname = "nasnavTagCreation", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "tag", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity createCategory(@RequestHeader (value = "User-Token") String userToken,
+                                         @RequestBody TagsDTO tagsDTO) throws BusinessException {
+        TagsEntity tag = categoryService.createTag(tagsDTO);
+        return new ResponseEntity(new TagResponse(tag.getId()),HttpStatus.OK);
+    }
+
 }

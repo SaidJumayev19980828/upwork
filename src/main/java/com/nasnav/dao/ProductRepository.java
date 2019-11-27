@@ -3,6 +3,7 @@ package com.nasnav.dao;
 import java.util.List;
 import java.util.Optional;
 
+import com.nasnav.dto.Pair;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -86,7 +87,7 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     List<ProductEntity> findByIdInAndCategoryIdAndBrandIdOrderByPnameAsc(List<Long> ids, Long categoryId, Long brandId);
     List<ProductEntity> findByIdInAndCategoryIdAndBrandIdOrderByPnameDesc(List<Long> ids, Long categoryId,
                                                                           Long brandId);
-//    List<ProductEntity> findByIdInAndCategoryIdOrderByPriceeAsc(List<Long> ids,Long categoryId);
+//    List<ProductEntity> findByIdInAndCategoryIdOrderByPriceAsc(List<Long> ids,Long categoryId);
 //    List<ProductEntity> findByIdInAndCategoryIdOrderByPriceDesc(List<Long> ids,Long categoryId);
 
     @Query("SELECT distinct products.categoryId FROM ProductEntity products WHERE products.organizationId = :organizationId AND products.categoryId IS NOT NULL")
@@ -97,6 +98,14 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	
 	Optional<ProductEntity> findByBarcodeAndOrganizationId(String barcode, Long orgId);
 	Optional<ProductEntity> findByName(String name);
+
+
+    @Query(value = "SELECT t.product_id FROM Product_tags t WHERE t.tag_id in :tagsIds", nativeQuery = true)
+    List<Long> getProductIdsByTagsList(@Param("tagsIds") List<Long> tagsIds);
+
+
+    @Query(nativeQuery = true)
+    List<Pair> getProductTags(@Param("productsIds") List<Long> productsIds, @Param("tagsIds") List<Long> tagsIds);
 }
 
 
