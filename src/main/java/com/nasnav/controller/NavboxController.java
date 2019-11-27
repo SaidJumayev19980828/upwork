@@ -127,10 +127,10 @@ public class NavboxController {
 		ProductsResponse productsResponse = null;
 		if (organizationId != null) {
 			productsResponse = productService.getProductsResponseByOrganizationId(organizationId, categoryId, brandId,
-					start, count, sort, order, name, minPrice);
+					start, count, sort, order, name);
 		} else if (shopId != null) {
 			productsResponse = productService.getProductsResponseByShopId(shopId, categoryId, brandId, start, count,
-					sort, order,  name, minPrice);
+					sort, order,  name);
 		} else {
 			throw new BusinessException("Shop Id or Organization Id shall be provided", null, HttpStatus.BAD_REQUEST);
 		}

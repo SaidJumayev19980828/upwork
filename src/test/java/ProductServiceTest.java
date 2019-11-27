@@ -664,7 +664,7 @@ public class ProductServiceTest {
 		return response.getBody()
 					.getProducts()
 					.stream()
-					.filter(p -> Objects.equals(p.getId().longValue(), 1002L))
+					.filter(p -> Objects.equals(p.getId().longValue(), productId))
 					.findAny()
 					.get();
 	}
@@ -701,7 +701,7 @@ public class ProductServiceTest {
 		
 		ProductRepresentationObject product = getProductFromResponse(response, 1001L);
 		
-		Assert.assertEquals(product.getPrice(), new BigDecimal("400"));
+		Assert.assertEquals( new BigDecimal("400"), product.getPrice());
 		Assert.assertFalse(product.isMultipleVariants());
 	}
 	

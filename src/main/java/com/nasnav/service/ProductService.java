@@ -1,11 +1,15 @@
 package com.nasnav.service;
 
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_BUNDLE_ITEM;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_BY_OTHER_ORG_USER;
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_DELETE_FAILED;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_DEFAULT_STOCK;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
+import static java.util.Comparator.comparing;
 import static java.lang.String.format;
 
 import java.io.IOException;
@@ -15,8 +19,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -46,7 +52,6 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Objects;
 import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
@@ -223,7 +228,7 @@ public class ProductService {
 
 		List<Long> bundleProductsIdList = bundleRepository.getBundleItemsProductIds(product.getId());
 		List<ProductEntity> bundleProducts = this.getProductsByIds(bundleProductsIdList , "asc", "name");
-		ProductsResponse response = this.getProductsResponse(bundleProducts,"asc" , "name" , 0, Integer.MAX_VALUE, false, null );
+		ProductsResponse response = this.getProductsResponse(bundleProducts,"asc" , "name" , 0, Integer.MAX_VALUE, null );
 		List<ProductRepresentationObject> productRepList = response == null? new ArrayList<>() : response.getProducts();
 		return productRepList;
 	}
@@ -377,7 +382,7 @@ public class ProductService {
 
 
 	public ProductsResponse getProductsResponseByShopId(Long shopId, Long categoryId, Long brandId, Integer start,
-	                                                    Integer count, String sort, String order, String searchName, boolean minPrice) {
+	                                                    Integer count, String sort, String order, String searchName) {
 
 		if (start == null)
 			start = defaultStart;
@@ -396,13 +401,12 @@ public class ProductService {
 		if (stocks != null && !stocks.isEmpty()) {
 
 			List<Long> productsIds = stocks.stream()
-					.filter(stock -> stock.getProductVariantsEntity() != null)
-					.map(stock -> stock.getProductVariantsEntity() )
-					.filter(var -> var != null)
-					.map(var -> var.getProductEntity())
-					.filter(prod -> prod != null)
-					.map(prod -> prod.getId())
-					.collect(Collectors.toList());
+											.map(StocksEntity::getProductVariantsEntity )
+											.filter(Objects::nonNull)
+											.map(ProductVariantsEntity::getProductEntity)
+											.filter(Objects::nonNull)
+											.map(ProductEntity::getId)
+											.collect(Collectors.toList());
 
 			if (categoryId == null && brandId == null) {
 				products = getProductsByIds(productsIds, order, sort);
@@ -418,13 +422,18 @@ public class ProductService {
 				products = products.stream().filter(product -> product.getName().toLowerCase().contains(searchName.toLowerCase())).collect(Collectors.toList());
 			}
 		}
-		return getProductsResponse(products, order, sort, start, count, minPrice,shopId);
-
+		
+		return getProductsResponse(products, order, sort, start, count,shopId);
 	}
 
+	
+	
+	
+	
+	
 	public ProductsResponse getProductsResponseByOrganizationId(Long organizationId, Long categoryId, Long brandId,
 	                                                            Integer start, Integer count, String sort, String order,
-	                                                            String searchName, boolean minPrice) {
+	                                                            String searchName) {
 		if (start == null)
 			start = defaultStart;
 		if (count == null)
@@ -449,9 +458,14 @@ public class ProductService {
 			products = products.stream().filter(product -> product.getName().toLowerCase().contains(searchName.toLowerCase())).collect(Collectors.toList());
 		}
 
-		return getProductsResponse(products, order, sort, start, count, minPrice, null);
+		return getProductsResponse(products, order, sort, start, count, null);
 	}
 
+	
+	
+	
+	
+	
 	private List<ProductEntity> getProductsForOrganizationId(Long organizationId, String order, String sort) {
 
 		List<ProductEntity> products = null;
@@ -481,6 +495,11 @@ public class ProductService {
 		return products;
 	}
 
+	
+	
+	
+	
+	
 	private List<ProductEntity> getProductsForOrganizationIdAndCategoryId(Long organizationId, Long categoryId,
 	                                                                      String order, String sort) {
 		List<ProductEntity> products = null;
@@ -514,6 +533,11 @@ public class ProductService {
 		return products;
 	}
 
+	
+	
+	
+	
+	
 	private List<ProductEntity> getProductsForOrganizationIdAndBrandId(Long organizationId, Long brandId,
 	                                                                   String order, String sort) {
 		List<ProductEntity> products = null;
@@ -547,6 +571,12 @@ public class ProductService {
 		return products;
 	}
 
+	
+	
+	
+	
+	
+	
 	private List<ProductEntity> getProductsForOrganizationIdAndCategoryIdAndBrandId(Long organizationId,
 	                                                                                Long categoryId, Long brandId, String order, String sort) {
 		List<ProductEntity> products = null;
@@ -583,6 +613,15 @@ public class ProductService {
 		return products;
 	}
 
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	private List<ProductEntity> getProductsByIds(List<Long> productsIds, String order, String sort) {
 
 		List<ProductEntity> products = null;
@@ -611,6 +650,17 @@ public class ProductService {
 		return products;
 	}
 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	private List<ProductEntity> getProductsByIdsAndCategoryId(List<Long> productsIds, Long categoryId, String order,
 	                                                          String sort) {
 		List<ProductEntity> products = null;
@@ -639,6 +689,13 @@ public class ProductService {
 		return products;
 	}
 
+	
+	
+	
+	
+	
+	
+	
 	private List<ProductEntity> getProductsByIdsAndBrandId(List<Long> productsIds, Long brandId, String order,
 	                                                       String sort) {
 		List<ProductEntity> products = null;
@@ -667,6 +724,13 @@ public class ProductService {
 		return products;
 	}
 
+	
+	
+	
+	
+	
+	
+	
 	private List<ProductEntity> getProductsByIdsAndCategoryIdAndBrandId(List<Long> productsIds, Long categoryId,
 	                                                                    Long brandId, String order, String sort) {
 		List<ProductEntity> products = null;
@@ -700,74 +764,123 @@ public class ProductService {
 	}
 
 
+	
+	
+	
+	
+	
 
 	private ProductsResponse getProductsResponse(List<ProductEntity> products, String order, String sort, Integer start,
-	                                             Integer count, boolean minPrice, Long shopId) {
-		ProductsResponse productsResponse = null;
-		if (products != null) {
-			productsResponse = new ProductsResponse();
-			List<Long> productIdList = products.stream().map(product -> product.getId()).collect(Collectors.toList());
-
-			List<StocksEntity> stocks = new ArrayList<>();
-			if(!productIdList.isEmpty()) {
-				stocks.addAll(stockRepository.findByProductIdIn(productIdList));
-			}
-
-			List<ProductRepresentationObject> productsRep = products.stream()
-					.map(this::getProductRepresentation)
-					.collect(Collectors.toList());
-			if (minPrice) {
-				productsRep = getProductsMinPrices(productsRep, productIdList, shopId);
-			}
-			else
-				productsRep.forEach(pRep -> setProductAvailabilityAndPrice(stocks, pRep));
-
-			if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE) {
-
-				if (order.equals("desc")) {
-
-					Collections.sort(productsRep, new Comparator<ProductRepresentationObject>() {
-						@Override
-						public int compare(ProductRepresentationObject p1, ProductRepresentationObject p2) {
-							if (p1.getPrice() == null)
-								return -1;
-							if (p2.getPrice() == null)
-								return 1;
-							return Double.compare(p1.getPrice().doubleValue(), p2.getPrice().doubleValue());
-						}
-					});
-
-				} else {
-
-					Collections.sort(productsRep, new Comparator<ProductRepresentationObject>() {
-						@Override
-						public int compare(ProductRepresentationObject p1, ProductRepresentationObject p2) {
-							if (p1.getPrice() == null)
-								return 1;
-							if (p2.getPrice() == null)
-								return -1;
-							return Double.compare(p2.getPrice().doubleValue(), p1.getPrice().doubleValue());
-						}
-					});
-				}
-			}
-			int lastProductIndex = productsRep.size() - 1;
-			if (start > lastProductIndex) {
-				// TODO proper start handling(maybe default) or error massage
-				return null;
-			}
-			int toIndex = start + count;
-			if (toIndex > lastProductIndex)
-				toIndex = productsRep.size();
-
-			productsResponse.setProducts(productsRep.subList(start, toIndex));
-			productsResponse.setTotal(stockService.getStockItemsQuantitySum(stocks));
+	                                             Integer count, Long shopId) {		
+		if(products == null) {
+			return new ProductsResponse();
 		}
+		
+		List<Long> productIdList = products.stream()
+											.map(ProductEntity::getId)
+											.collect(Collectors.toList());
+		
+		List<ProductEntity> productsFullData = new ArrayList<>();  		
+		List<StocksEntity> stocks = new ArrayList<>();
+		if(!productIdList.isEmpty()) {
+			productsFullData.addAll( productRepository.findFullDataByIdIn(productIdList) );
+			stocks.addAll(stockRepository.findByProductIdIn(productIdList));
+		}
+		
+		Map<Long, StocksEntity> productDefaultStocks = 
+				stocks.stream()
+						.collect(groupingBy( s -> s.getProductVariantsEntity().getProductEntity().getId()))
+						.entrySet()
+						.stream()
+						.collect(toMap(Map.Entry::getKey, this::getDefaultProductStock));		
+
+		List<ProductRepresentationObject> productsRep = 
+				products.stream()
+						.map(this::getProductRepresentation)
+						.map(prod -> setAdditionalInfo(prod, productDefaultStocks))
+						.collect(Collectors.toList());
+
+		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE) {			
+			sortByPrice(productsRep, order);
+		}
+		
+		return createProductResposneObj(start, count, productsRep);
+	}
+
+
+	
+
+
+	private void sortByPrice(List<ProductRepresentationObject> productsRep, String order) {
+		if (order.equals("desc")) {
+			Collections.sort(productsRep, comparing(ProductRepresentationObject::getPrice).reversed() );				
+		} else {
+			Collections.sort(productsRep, comparing(ProductRepresentationObject::getPrice));
+		}
+	}
+
+
+
+
+	
+	private ProductsResponse createProductResposneObj(Integer start, Integer count,
+			List<ProductRepresentationObject> productsRep) {
+		ProductsResponse productsResponse = new ProductsResponse();
+		int lastProductIndex = productsRep.size() - 1;
+		if (start > lastProductIndex) {
+			// TODO proper start handling(maybe default) or error massage
+			return null;
+		}
+		int toIndex = start + count;
+		if (toIndex > lastProductIndex)
+			toIndex = productsRep.size();
+
+		productsResponse.setProducts(productsRep.subList(start, toIndex));
+		productsResponse.setTotal((long) productsRep.size());
 
 		return productsResponse;
 	}
 
+	
+	
+	
+	
+	
+	private ProductRepresentationObject setAdditionalInfo(ProductRepresentationObject product, Map<Long, StocksEntity> productsDefaultStocks) {
+		StocksEntity defaultStock = productsDefaultStocks.get(product.getId());
+		Boolean stockExists = defaultStock != null;
+		
+		if(stockExists) {			
+			product.setPrice( defaultStock.getPrice() );
+			product.setDiscount( defaultStock.getDiscount() );
+			product.setStockId( defaultStock.getId());
+			if (defaultStock.getCurrency() != null) {
+				product.setCurrency( defaultStock.getCurrency().ordinal() );
+			}			
+		}
+		product.setAvailable(stockExists);
+		product.setHidden(!stockExists);
+		
+		return product;
+	}
 
+	
+	
+	
+	
+	private StocksEntity getDefaultProductStock(Map.Entry<Long,List<StocksEntity>> productStocks){
+		return productStocks.getValue()
+							.stream()
+							.min( comparing(StocksEntity::getPrice))
+							.orElseThrow(() -> new IllegalStateException(format(ERR_PRODUCT_HAS_NO_DEFAULT_STOCK, productStocks)));
+	}
+	
+	
+	
+	
+	
+	
+	
 	private List getProductsMinPrices(List<ProductRepresentationObject> productsRep, List<Long> productIdList, Long shopId) {
 		List<ProductVariantsEntity> productsVariants = productVariantsRepository.findByProductEntity_IdIn(productIdList);
 		for (ProductRepresentationObject obj : productsRep) {
@@ -803,28 +916,39 @@ public class ProductService {
 	}
 
 
-	private void setProductAvailabilityAndPrice(List<StocksEntity> stocks, ProductRepresentationObject productRep) {
-		Optional<StocksEntity> optionalStock = stocks.stream()
-				.filter(stock -> stock != null)
-				.filter(stock -> Objects.equal( getStockProductId(stock),  productRep.getId()))
-				.findFirst();
-
-		if (optionalStock != null && optionalStock.isPresent()) {
-			productRep.setAvailable(true);
-			//productRep.setPrice(optionalStock.get().getPrice());
-		} else {
-			productRep.setAvailable(false);
-		}
+	
+	
+	
+	
+	
+	
+	
+	
+	private void setProductAvailability(List<StocksEntity> stocks, ProductRepresentationObject productRep) {
+		stocks.stream()
+				.filter(Objects::nonNull)
+				.filter(stock -> Objects.equals( getStockProductId(stock),  productRep.getId()))
+				.findFirst()
+				.ifPresent(s -> productRep.setAvailable(true));
 	}
+	
+	
+	
+	
 
 	private Long getStockProductId(StocksEntity stock) {
 		return Optional.ofNullable(stock)
-				.map(StocksEntity::getProductVariantsEntity)
-				.map(ProductVariantsEntity::getProductEntity)
-				.map(ProductEntity::getId)
-				.orElse(0L);
+						.map(StocksEntity::getProductVariantsEntity)
+						.map(ProductVariantsEntity::getProductEntity)
+						.map(ProductEntity::getId)
+						.orElse(0L);
 	}
 
+	
+	
+	
+	
+	
 
 	public ProductUpdateResponse updateProduct(String productJson, Boolean isBundle) throws BusinessException {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -849,6 +973,10 @@ public class ProductService {
 
 
 
+	
+	
+	
+	
 
 	private ProductEntity prepareProdcutEntity(JsonNode productJsonNode, BaseUserEntity user, Boolean isBundle)
 			throws BusinessException {
@@ -875,6 +1003,10 @@ public class ProductService {
 	}
 
 
+	
+	
+	
+	
 
 
 	private void updateProductEntityFromJson(ProductEntity entity, JsonNode productJsonNode, BaseUserEntity user)
@@ -903,6 +1035,10 @@ public class ProductService {
 	}
 
 
+	
+	
+	
+	
 
 
 	private void validateProductDto(JsonNode productJsonNode, BaseUserEntity user) throws BusinessException {
@@ -925,6 +1061,9 @@ public class ProductService {
 
 
 
+	
+	
+	
 
 	private ObjectMapper createObjectMapper() {
 		ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -932,6 +1071,8 @@ public class ProductService {
 	}
 
 
+	
+	
 
 
 	private void validateProductDtoToCreate(JsonNode productJson, BaseUserEntity user ) throws BusinessException {
@@ -944,6 +1085,8 @@ public class ProductService {
 		validateBrandId(user, brandId);
 	}
 
+	
+	
 
 
 
@@ -967,6 +1110,8 @@ public class ProductService {
 	}
 
 
+	
+	
 
 
 	private void checkCreateProuctReqParams(JsonNode productJson)
@@ -1383,7 +1528,7 @@ public class ProductService {
 		Long userOrg = user.getOrganizationId();
 		Long productOrg = product.get().getOrganizationId();
 
-		if(!Objects.equal(userOrg, productOrg))
+		if(!Objects.equals(userOrg, productOrg))
 			throw new BusinessException(
 					String.format("User with email [%s] have no rights to modify products from organization of id[%d]!", user.getEmail(), productOrg)
 					, "INSUFFICIENT RIGHTS"
@@ -1860,7 +2005,7 @@ public class ProductService {
 	private boolean isInvalidFeatureKey(Long userOrgId, Optional<ProductFeaturesEntity> opt) {
 		return !opt.isPresent()
 				|| opt.get().getOrganization() == null
-				|| !Objects.equal(opt.get().getOrganization().getId(), userOrgId);
+				|| !Objects.equals(opt.get().getOrganization().getId(), userOrgId);
 	}
 
 
