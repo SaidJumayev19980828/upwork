@@ -2144,6 +2144,7 @@ public class ProductService {
 	  productRep.setBarcode( product.getBarcode());
 	  productRep.setMultipleVariants( product.getProductVariants().size() > 1);      
 	  
+	  
 	  Optional<StocksEntity> defaultStockOpt = getDefaultProductStock(product);
 	  Boolean stockExists = defaultStockOpt.isPresent();
 	
@@ -2152,6 +2153,7 @@ public class ProductService {
 		productRep.setPrice( defaultStock.getPrice() );
 		productRep.setDiscount( defaultStock.getDiscount() );
 		productRep.setStockId( defaultStock.getId());
+		productRep.setDefaultVariantFeatures( defaultStock.getProductVariantsEntity().getFeatureSpec());
 		if (defaultStock.getCurrency() != null) {
 			productRep.setCurrency( defaultStock.getCurrency().ordinal() );
 		}			

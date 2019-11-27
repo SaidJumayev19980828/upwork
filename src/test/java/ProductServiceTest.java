@@ -1,6 +1,7 @@
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +28,9 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.OrganizationRepository;
@@ -634,7 +638,7 @@ public class ProductServiceTest {
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
 	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
-	public void testProductResponse(){
+	public void testProductResponse() throws Throwable{
 		performTestProductResponseByFilters();
 		productBarcodeTest();
 	}
@@ -661,6 +665,21 @@ public class ProductServiceTest {
 	private ProductRepresentationObject getProductFromResponse(ResponseEntity<ProductsResponse> response, Long productId) {
 		return response.getBody()
 					.getProducts()
+					.stream()
+					.filter(p -> Objects.equals(p.getId().longValue(), productId))
+					.findAny()
+					.get();
+	}
+	
+	
+	
+	
+	
+	
+	private ProductRepresentationObject getProductFromStringResponse(ResponseEntity<String> response, Long productId) throws Throwable{
+		ObjectMapper mapper = new ObjectMapper();
+		ProductsResponse body = mapper.readValue(response.getBody(), ProductsResponse.class);
+		return body.getProducts()
 					.stream()
 					.filter(p -> Objects.equals(p.getId().longValue(), productId))
 					.findAny()
@@ -707,7 +726,7 @@ public class ProductServiceTest {
 
 	
 
-	private void performTestProductResponseByFilters() {
+	private void performTestProductResponseByFilters() throws Throwable {
 		//// testing brand_id filter ////
 		ResponseEntity<String> response = template.getForEntity("/navbox/products?org_id=99001", String.class);
 		System.out.println(response.getBody());
@@ -734,11 +753,16 @@ public class ProductServiceTest {
 		response = template.getForEntity("/navbox/products?org_id=99001", String.class);
 
 		assertJsonFieldExists(response);
+		ProductRepresentationObject product = getProductFromStringResponse(response, 1005L);
 
 		response = template.getForEntity("/navbox/product?product_id=1001", String.class);
 		System.out.println("response JSON >>>  "+ response.getBody().toString());
 		assertTrue(response.getBody().toString().contains("brand_id"));
 		assertTrue(response.getBody().toString().contains("category_id"));
+		
+		
+		
+		
 		//// finish test
 	}
 
@@ -752,6 +776,7 @@ public class ProductServiceTest {
 		assertTrue(response.getBody().toString().contains("category_id"));
 		assertTrue(response.getBody().toString().contains("p_name"));
 		assertTrue(response.getBody().toString().contains("image_url"));
+		assertTrue(response.getBody().toString().contains("default_variant_features"));
 	}
 	
 	

@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @EqualsAndHashCode(callSuper=true)
@@ -25,4 +24,5 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private Long stockId;
     private boolean multipleVariants;
     private boolean hidden;
+    private String defaultVariantFeatures;
 }

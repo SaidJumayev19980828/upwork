@@ -58,6 +58,10 @@ insert into public.product_variants(id, "name" , product_id ) values(310006, 'va
 insert into public.product_variants(id, "name" , product_id ) values(310007, 'var' 	, 1007);
 insert into public.product_variants(id, "name" , product_id ) values(310008, 'var' 	, 1008);
 
+update public.product_variants 
+set feature_spec = '{"7001":"Blue", "7002":"XL"}'
+where id = 310005;
+
 -- mulitple variant for product #1002
 insert into public.product_variants(id, "name" , product_id ) values(3100022, 'var' 	, 1002);
 

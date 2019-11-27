@@ -940,7 +940,7 @@ public class ProductImageApiTest {
 	public void getProductsCoverImgsTest() {
 		List<Long> productIds = Arrays.asList(1001L, 1002L, 1003L);
 		Map<Long, String> coverImgs = imgService.getProductsCoverImages(productIds);
-		Set<String> expectedUris = new HashSet<>( Arrays.asList("99001/cover_img.jpg", "99001/cover_img3.jpg"));
+		Set<String> expectedUris = new HashSet<>( Arrays.asList("99001/cover_img.jpg", "99001/cover_img3.jpg", "no_img_found.jpg"));
 		
 		assertEquals("Only products 1001, 1002 have images, but 1003 should have the fallback image url", 3, coverImgs.keySet().size());
 		assertEquals("expected cover images uri's" , expectedUris, new HashSet<>(coverImgs.values()) );
