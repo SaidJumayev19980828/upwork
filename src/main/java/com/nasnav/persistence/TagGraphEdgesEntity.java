@@ -10,14 +10,18 @@ import javax.persistence.*;
 @Data
 public class TagGraphEdgesEntity {
 
-    @Column(name="from")
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="to")
+    @Column(name="to_node")
+    private Long childId;
+
+    @Column(name="from_node")
     private Long parentId;
 
     @OneToOne
-    @JoinColumn(name = "org_id", referencedColumnName = "id")
+    @JoinColumn(name = "organization_id", referencedColumnName = "id")
     @JsonIgnore
     private OrganizationEntity organizationEntity;
 }

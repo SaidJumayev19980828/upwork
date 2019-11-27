@@ -4,15 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
-public class OrganizationTagsDTO {
+public class TagsDTO {
 
     private Long id;
-    @JsonProperty(value = "tag_id")
-    private Long tagId;
-    private String alias;
-    private String logo;
-    private String banner;
+    private String name;
     @JsonProperty(required = true)
     private String operation;
-
 }

@@ -2,7 +2,11 @@ import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
 import com.nasnav.controller.AdminController;
 import com.nasnav.dao.CategoryRepository;
+import com.nasnav.dao.OrganizationTagsRepository;
+import com.nasnav.dto.OrganizationTagsRepresentationObject;
 import com.nasnav.response.CategoryResponse;
+import com.nasnav.service.CategoryService;
+import io.micrometer.core.instrument.internal.DefaultGauge;
 import org.jgrapht.alg.cycle.CycleDetector;
 import com.nasnav.test.commons.TestCommons;
 
@@ -33,7 +37,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import static junit.framework.TestCase.assertEquals;
@@ -64,6 +70,9 @@ public class CategoryManagmentTest {
     private Resource databaseCleanup;
     @Autowired
     private DataSource datasource;
+
+    @Autowired
+    private CategoryService service;
 
     @Before
     public void setup() {
@@ -265,7 +274,12 @@ public class CategoryManagmentTest {
         } catch (Exception e) {
             assertTrue(e instanceof IllegalArgumentException);
         }
+    }
 
+    @Test
+    public void getTags() throws Exception {
+        List<OrganizationTagsRepresentationObject> tgs = service.getOrganizationTags(99001L);
+        System.out.println(tgs.toString());
     }
 
     private JSONArray getChildren(JSONObject k, Graph g, String parent) {

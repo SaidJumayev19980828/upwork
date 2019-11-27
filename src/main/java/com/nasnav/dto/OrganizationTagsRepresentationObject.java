@@ -3,11 +3,14 @@ package com.nasnav.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
+@EqualsAndHashCode(callSuper=true)
 public class OrganizationTagsRepresentationObject extends BaseRepresentationObject {
 
     private Long id;
@@ -16,5 +19,10 @@ public class OrganizationTagsRepresentationObject extends BaseRepresentationObje
     private String banner;
     @JsonProperty("p_name")
     private String pname;
-    private List<OrganizationTagsRepresentationObject> children;
+    public List<OrganizationTagsRepresentationObject> children;
+
+    public OrganizationTagsRepresentationObject() {
+        children = new ArrayList<>();
+    }
+
 }

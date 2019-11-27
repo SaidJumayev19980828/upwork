@@ -4,14 +4,25 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrganizationTagsRepresentationObject;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.Loader;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import javax.persistence.*;
-
+import java.util.HashSet;
+import java.util.Set;
 
 @Table(name = "organization_tags")
 @Entity
 @Data
+@DiscriminatorValue("1")
+@SQLDelete(sql = "UPDATE organization_tags SET removed = 1 WHERE id = ?")
+@Loader(namedQuery = "findTagById")
+@NamedQuery(name = "findTagById", query = "SELECT p FROM OrganizationTagsEntity p WHERE p.id=?1 AND p.removed = 0")
+@Where(clause = "removed = 0")
+@EqualsAndHashCode(callSuper=false)
 public class OrganizationTagsEntity extends AbstractPersistable<Long> implements BaseEntity{
 
     @Id
@@ -30,15 +41,22 @@ public class OrganizationTagsEntity extends AbstractPersistable<Long> implements
     @Column(name = "banner")
     private String banner;
 
+    @Column
+    private int removed;
+
     @OneToOne
     @JoinColumn(name = "tag_id", referencedColumnName = "id")
     @JsonIgnore
     private TagsEntity tagsEntity;
 
     @OneToOne
-    @JoinColumn(name = "org_id", referencedColumnName = "id")
+    @JoinColumn(name = "organization_id", referencedColumnName = "id")
     @JsonIgnore
     private OrganizationEntity organizationEntity;
+
+    @ManyToMany(mappedBy = "tags")
+    @JsonIgnore
+    private Set<ProductEntity> products;
 
     @Override
     public BaseRepresentationObject getRepresentation() {

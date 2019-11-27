@@ -3,6 +3,9 @@ package com.nasnav.dao;
 import com.nasnav.persistence.TagsEntity;
 import org.springframework.data.repository.CrudRepository;
 
-public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
+import java.util.List;
 
+public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
+    List<TagsEntity> findAll();
+    TagsEntity findByNameIgnoreCase(String name);
 }
