@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.validation.Valid;
 
@@ -27,5 +28,7 @@ public interface ProductImageService {
 	String getProductCoverImage(Long productId);
 
 	public List<ProductImgDetailsDTO> getProductImgs(Long productId) throws BusinessException;
+
+	Map<Long,String> getProductsCoverImages(List<Long> productIds);
 	
 }

@@ -11,13 +11,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import org.assertj.core.util.Arrays;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -927,4 +929,20 @@ public class ProductImageApiTest {
 		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
 	}
 	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_Cover_Image_Test_Data_Insert.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getProductsCoverImgsTest() {
+		List<Long> productIds = Arrays.asList(1001L, 1002L, 1003L);
+		Map<Long, String> coverImgs = imgService.getProductsCoverImages(productIds);
+		Set<String> expectedUris = new HashSet<>( Arrays.asList("99001/cover_img.jpg", "99001/cover_img3.jpg"));
+		
+		assertEquals("Only products 1001, 1002 have images, but 1003 should have the fallback image url", 3, coverImgs.keySet().size());
+		assertEquals("expected cover images uri's" , expectedUris, new HashSet<>(coverImgs.values()) );
+	}
 }

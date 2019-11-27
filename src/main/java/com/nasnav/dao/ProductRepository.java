@@ -101,8 +101,9 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	
 	
 	@Query("SELECT products FROM ProductEntity products "
-			+ " LEFT JOIN ProductVariantsEntity variants "
-			+ " LEFT JOIN StocksEntity stocks"
+			+ " LEFT JOIN FETCH products.productVariants variants "
+			+ " LEFT JOIN FETCH variants.stocks stocks"
+			+ " LEFT JOIN FETCH stocks.organizationEntity"
 			+ " WHERE products.id in :productIdList")
 	Set<ProductEntity> findFullDataByIdIn(@Param("productIdList") List<Long> productIdList);
 }

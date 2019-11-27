@@ -11,9 +11,12 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_I
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_READ_ZIP;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_MODIFY_PRODUCT;
 import static java.lang.String.format;
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.groupingBy;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -968,10 +971,47 @@ public class ProductImageServiceImpl implements ProductImageService {
 							.stream()
 							.filter(Objects::nonNull)
 							.filter(this::isProductCoverImage)
-							.sorted(this::compareByProductImageId)
+							.sorted( comparing(ProductImagesEntity::getId))
 							.findFirst()
 							.map(img-> img.getUri())
 							.orElse(NO_IMG_FOUND_URL);
+	}
+	
+	
+	
+	
+	@Override
+	public Map<Long,String> getProductsCoverImages(List<Long> productIds) {
+		Map<Long,String> productImgs = productImagesRepository
+											.findByProductEntity_IdInOrderByPriority(productIds)
+											.stream()
+											.filter(Objects::nonNull)
+											.filter(this::isProductCoverImage)
+											.collect( groupingBy(img -> img.getProductEntity().getId()))
+											.entrySet()
+											.stream()
+											.map(this::getProductCoverImageUrlMapEntry)
+											.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));	
+		productIds.stream()
+				.filter(id -> !productImgs.keySet().contains(id))
+				.forEach(id -> productImgs.put(id, NO_IMG_FOUND_URL));
+		
+		return productImgs;
+	}
+	
+
+	
+	
+	
+	private Map.Entry<Long, String> getProductCoverImageUrlMapEntry(Map.Entry<Long, List<ProductImagesEntity>> mapEntry){
+		String uri = Optional.ofNullable(mapEntry.getValue())
+							.map(List::stream)
+							.map(s -> s.sorted( comparing(ProductImagesEntity::getId)))
+							.flatMap(s -> s.findFirst())
+							.map(ProductImagesEntity::getUri)
+							.orElse(NO_IMG_FOUND_URL);
+				
+		return new AbstractMap.SimpleEntry<>(mapEntry.getKey(), uri);
 	}
 	
 	
@@ -983,13 +1023,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 	}
 	
 	
-	
-	
-	
-	private Integer compareByProductImageId(ProductImagesEntity img1, ProductImagesEntity img2) {
-		return Long.compare(img1.getId(), img2.getId());
-	}
-
 
 
 

@@ -3,14 +3,12 @@ package com.nasnav.service;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_BUNDLE_ITEM;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_BY_OTHER_ORG_USER;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_DELETE_FAILED;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_DEFAULT_STOCK;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_DEFAULT_STOCK;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toMap;
-import static java.util.Comparator.comparing;
 import static java.lang.String.format;
+import static java.util.Comparator.comparing;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -18,7 +16,6 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -780,25 +777,19 @@ public class ProductService {
 											.map(ProductEntity::getId)
 											.collect(Collectors.toList());
 		
-		List<ProductEntity> productsFullData = new ArrayList<>();  		
-		List<StocksEntity> stocks = new ArrayList<>();
+		List<ProductEntity> productsFullData = new ArrayList<>();
+		Map<Long, String> productCoverImages = new HashMap<>();
 		if(!productIdList.isEmpty()) {
 			productsFullData.addAll( productRepository.findFullDataByIdIn(productIdList) );
-			stocks.addAll(stockRepository.findByProductIdIn(productIdList));
+			Map<Long, String> x = imgService.getProductsCoverImages(productIdList);
+			productCoverImages.putAll( x );
 		}
-		
-		Map<Long, StocksEntity> productDefaultStocks = 
-				stocks.stream()
-						.collect(groupingBy( s -> s.getProductVariantsEntity().getProductEntity().getId()))
-						.entrySet()
-						.stream()
-						.collect(toMap(Map.Entry::getKey, this::getDefaultProductStock));		
 
 		List<ProductRepresentationObject> productsRep = 
-				products.stream()
-						.map(this::getProductRepresentation)
-						.map(prod -> setAdditionalInfo(prod, productDefaultStocks))
-						.collect(Collectors.toList());
+				productsFullData.stream()
+								.map(this::getProductRepresentation)
+								.map(prod -> setAdditionalInfo(prod, productCoverImages))
+								.collect(Collectors.toList());
 
 		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE) {			
 			sortByPrice(productsRep, order);
@@ -810,6 +801,7 @@ public class ProductService {
 
 	
 
+	
 
 	private void sortByPrice(List<ProductRepresentationObject> productsRep, String order) {
 		if (order.equals("desc")) {
@@ -846,20 +838,9 @@ public class ProductService {
 	
 	
 	
-	private ProductRepresentationObject setAdditionalInfo(ProductRepresentationObject product, Map<Long, StocksEntity> productsDefaultStocks) {
-		StocksEntity defaultStock = productsDefaultStocks.get(product.getId());
-		Boolean stockExists = defaultStock != null;
-		
-		if(stockExists) {			
-			product.setPrice( defaultStock.getPrice() );
-			product.setDiscount( defaultStock.getDiscount() );
-			product.setStockId( defaultStock.getId());
-			if (defaultStock.getCurrency() != null) {
-				product.setCurrency( defaultStock.getCurrency().ordinal() );
-			}			
-		}
-		product.setAvailable(stockExists);
-		product.setHidden(!stockExists);
+	private ProductRepresentationObject setAdditionalInfo(ProductRepresentationObject product, Map<Long, String> productCoverImgs) {
+		String imgUrl = productCoverImgs.get(product.getId());
+		product.setImageUrl(imgUrl);
 		
 		return product;
 	}
@@ -872,7 +853,19 @@ public class ProductService {
 		return productStocks.getValue()
 							.stream()
 							.min( comparing(StocksEntity::getPrice))
-							.orElseThrow(() -> new IllegalStateException(format(ERR_PRODUCT_HAS_NO_DEFAULT_STOCK, productStocks)));
+							.orElseThrow(() -> new IllegalStateException(format(ERR_PRODUCT_HAS_NO_DEFAULT_STOCK, productStocks.getKey())));
+	}
+	
+	
+	
+	
+	private Optional<StocksEntity> getDefaultProductStock(ProductEntity product) {
+		return Optional.ofNullable(product)
+						.map(ProductEntity::getProductVariants)
+						.map(Set::stream)
+						.map(s -> s.filter(var -> !var.getStocks().isEmpty()))
+						.map(s -> s.flatMap( variant -> variant.getStocks().stream()))
+						.flatMap(s -> s.min( comparing(StocksEntity::getPrice)));
 	}
 	
 	
@@ -2135,17 +2128,38 @@ public class ProductService {
 		}
 		return true;
 	}
+	
+	
+	
+	
+	
 
   private ProductRepresentationObject getProductRepresentation(ProductEntity product) {
-      ProductRepresentationObject productRepresentationObject = new ProductRepresentationObject();
-      productRepresentationObject.setId( product.getId());
-      productRepresentationObject.setImageUrl( imgService.getProductCoverImage(product.getId()) );
-      productRepresentationObject.setName(product.getName());
-      productRepresentationObject.setPname( product.getPname());
-      productRepresentationObject.setCategoryId( product.getCategoryId());
-      productRepresentationObject.setBrandId( product.getBrandId());
-      productRepresentationObject.setBarcode( product.getBarcode());
-      return productRepresentationObject;
+	  ProductRepresentationObject productRep = new ProductRepresentationObject();
+	  productRep.setId( product.getId());
+	  productRep.setName(product.getName());
+	  productRep.setPname( product.getPname());
+	  productRep.setCategoryId( product.getCategoryId());
+	  productRep.setBrandId( product.getBrandId());
+	  productRep.setBarcode( product.getBarcode());
+	  productRep.setMultipleVariants( product.getProductVariants().size() > 1);      
+	  
+	  Optional<StocksEntity> defaultStockOpt = getDefaultProductStock(product);
+	  Boolean stockExists = defaultStockOpt.isPresent();
+	
+	  if(stockExists) {
+		StocksEntity defaultStock = defaultStockOpt.get();
+		productRep.setPrice( defaultStock.getPrice() );
+		productRep.setDiscount( defaultStock.getDiscount() );
+		productRep.setStockId( defaultStock.getId());
+		if (defaultStock.getCurrency() != null) {
+			productRep.setCurrency( defaultStock.getCurrency().ordinal() );
+		}			
+	  }
+	productRep.setAvailable(stockExists);
+	productRep.setHidden(!stockExists);  
+  
+	return productRep;
   }
 
 
@@ -2157,6 +2171,7 @@ public class ProductService {
 		BeanUtils.copyProperties( dto , representationObj);
 		dto.setDescription( product.getDescription() );
 		dto.setProductType( product.getProductType() );
+		dto.setImageUrl(imgService.getProductCoverImage( product.getId() ));
 
 		return dto;
 	}
