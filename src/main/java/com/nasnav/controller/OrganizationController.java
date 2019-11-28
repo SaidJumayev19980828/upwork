@@ -195,7 +195,7 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @PostMapping(value = "tag/Link", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "tag/link", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity createTagChildren(@RequestHeader (value = "User-Token") String userToken,
                                             @RequestBody TagsLinkDTO tagsLinks) throws BusinessException {
         categoryService.createTagEdges(tagsLinks);
@@ -209,7 +209,7 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @DeleteMapping(value = "tag/Link", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @DeleteMapping(value = "tag/link", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity deleteTagChildren(@RequestHeader (value = "User-Token") String userToken,
                                             @RequestBody TagsLinkDTO tagsLinks) throws BusinessException {
         categoryService.deleteTagLink(tagsLinks);

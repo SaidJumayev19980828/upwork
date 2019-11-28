@@ -56,7 +56,6 @@ insert into organization_Tags(id, alias, tag_id, organization_id) values(5003,'t
 insert into organization_Tags(id, alias, tag_id, organization_id) values(5004,'tag_4', 5004, 99001);
 insert into organization_Tags(id, alias, tag_id, organization_id) values(5005,'tag_5', 5005, 99001);
 insert into organization_Tags(id, alias, tag_id, organization_id) values(5006,'tag_6', 5006, 99001);
-insert into organization_Tags(id, alias, tag_id, organization_id) values(5007,'tag_7', 5007, 99001);
 
 insert into tag_graph_edges(id, from_node, to_node, organization_id) values(5001, 5001, 5002, 99001);
 insert into tag_graph_edges(id, from_node, to_node, organization_id) values(5002, 5001, 5003, 99001);

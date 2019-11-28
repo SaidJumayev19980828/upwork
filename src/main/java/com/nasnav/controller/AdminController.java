@@ -85,7 +85,7 @@ public class AdminController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "tag", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity createCategory(@RequestHeader (value = "User-Token") String userToken,
+    public ResponseEntity<TagResponse> createCategory(@RequestHeader (value = "User-Token") String userToken,
                                          @RequestBody TagsDTO tagsDTO) throws BusinessException {
         TagsEntity tag = categoryService.createTag(tagsDTO);
         return new ResponseEntity(new TagResponse(tag.getId()),HttpStatus.OK);
