@@ -776,19 +776,17 @@ public class ProductService {
 		List<Long> productIdList = products.stream()
 											.map(ProductEntity::getId)
 											.collect(Collectors.toList());
-		
+				
 		List<ProductEntity> productsFullData = new ArrayList<>();
-		Map<Long, String> productCoverImages = new HashMap<>();
 		if(!productIdList.isEmpty()) {
 			productsFullData.addAll( productRepository.findFullDataByIdIn(productIdList) );
-			Map<Long, String> x = imgService.getProductsCoverImages(productIdList);
-			productCoverImages.putAll( x );
 		}
+		
+		Map<Long, String> productCoverImages = imgService.getProductsCoverImages(productIdList);
 
 		List<ProductRepresentationObject> productsRep = 
 				productsFullData.stream()
-								.map(this::getProductRepresentation)
-								.map(prod -> setAdditionalInfo(prod, productCoverImages))
+								.map(prod -> getProductRepresentation(prod, productCoverImages))
 								.collect(Collectors.toList());
 
 		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE) {			
@@ -1705,12 +1703,13 @@ public class ProductService {
 				.ifPresent(dto::setPrice);
 
 		List<Long> productIdList = bundleRepository.getBundleItemsProductIds(entity.getId());
+		
+		Map<Long, String> 	productCoverImages = imgService.getProductsCoverImages(productIdList);
 		List<ProductBaseInfo> productlist = productRepository.findByIdInOrderByNameAsc(productIdList)
-				.stream()
-				.map(this::getProductRepresentation)
-				.map(this::toProductBaseInfo)
-				.collect(Collectors.toList());
-
+															.stream()
+															.map(prod -> getProductRepresentation(prod, productCoverImages))
+															.map(this::toProductBaseInfo)
+															.collect(Collectors.toList());
 		dto.setProducts( productlist );
 
 		return dto;
@@ -2163,6 +2162,18 @@ public class ProductService {
   
 	return productRep;
   }
+  
+  
+  
+  
+  
+  
+  private ProductRepresentationObject getProductRepresentation(ProductEntity product, Map<Long, String> productCoverImgs) {
+	  ProductRepresentationObject rep = getProductRepresentation(product);
+	  setAdditionalInfo(rep, productCoverImgs);
+	  return rep;
+  }
+  
 
 
 

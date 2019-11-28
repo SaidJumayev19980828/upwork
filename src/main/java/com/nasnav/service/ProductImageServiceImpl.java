@@ -982,6 +982,10 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	@Override
 	public Map<Long,String> getProductsCoverImages(List<Long> productIds) {
+		if(productIds == null || productIds.isEmpty()) {
+			return new HashMap<>();
+		}
+		
 		Map<Long,String> productImgs = productImagesRepository
 											.findByProductEntity_IdInOrderByPriority(productIds)
 											.stream()
