@@ -72,6 +72,9 @@ public class CategoryManagmentTest {
     @Autowired
     private CategoryService service;
 
+    @Autowired
+    private OrganizationTagsRepository orgTagsRepo;
+
     @Before
     public void setup() {
         config.mailDryRun = true;
@@ -254,13 +257,12 @@ public class CategoryManagmentTest {
 
         assertTrue(!cycleDetector.detectCycles());
         assertTrue(cycleVertices.size() == 0);
-
-
+        /*
         Iterator<String> iterator = new DepthFirstIterator<>(graph, "Tag#1");
         while (iterator.hasNext()) {
             String uri = iterator.next();
             //System.out.println(uri);
-        }
+        }*/
     }
 
     @Test
@@ -275,9 +277,116 @@ public class CategoryManagmentTest {
     }
 
     @Test
-    public void getTags() throws Exception {
+    public void getTags() {
         List<OrganizationTagsRepresentationObject> tgs = service.getOrganizationTags(99001L);
         System.out.println(tgs.toString());
+    }
+
+    @Test
+    public void createOrgTagsSuccess() {
+        String body = "{\"operation\":\"create\",  \"tag_id\":5007, \"alias\":\"org1_tag_7\"}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
+
+        JSONObject result = new JSONObject(response.getBody());
+        orgTagsRepo.delete(orgTagsRepo.findById(result.getLong("tag_id")).get());
+
+        Assert.assertTrue(result.getBoolean("success") == true);
+        Assert.assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void createOrgTagMissingOperation() {
+        String body = "{\"tag_id\":5001, \"alias\":\"org1_tag_1\"}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void createOrgTagInvalidOperation() {
+        String body = "{\"operation\":\"invalid operation\",  \"tag_id\":5001, \"alias\":\"org1_tag_1\"}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void createOrgTagMissingTagId() {
+        String body = "{\"operation\":\"create\", \"alias\":\"org1_tag_1\"}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void createOrgTagInvalidTagId() {
+        String body = "{\"operation\":\"create\", \"tag_id\":5008, \"alias\":\"org1_tag_1\"}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void updateOrgTagsSuccess() {
+        String body = "{\"operation\":\"update\",  \"id\":5001, \"alias\":\"org1_tag_1\"}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
+
+        JSONObject result = new JSONObject(response.getBody());
+
+        Assert.assertTrue(result.getBoolean("success") == true);
+        Assert.assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void updateOrgTagsMissingId() {
+        String body = "{\"operation\":\"update\", \"alias\":\"org1_tag_1\"}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void updateOrgTagsInvalidId() {
+        String body = "{\"operation\":\"update\", \"id\":5008, \"alias\":\"org1_tag_1\"}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void createTagsLinkSuccess() {
+        String body = "{\"parent_id\":5003, \"children_ids\":[5006, 5007]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag/link", json, String.class);
+
+        Assert.assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteTagsLinkSuccess() {
+        String body = "{\"parent_id\":5001, \"children_ids\":[5002]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.exchange("/organization/tag/link", HttpMethod.DELETE, json, String.class);
+
+        Assert.assertEquals(200, response.getStatusCode().value());
     }
 
     private JSONArray getChildren(JSONObject k, Graph g, String parent) {

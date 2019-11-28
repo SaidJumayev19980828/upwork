@@ -237,11 +237,15 @@ public class CategoryService {
         if(tagDTO.getOperation() == null)
             throw new BusinessException("MISSING PARAM: operation", "", HttpStatus.NOT_ACCEPTABLE);
         else if (tagDTO.getOperation().equals("create")) {
+            if (tagDTO.getName() == null)
+                throw new BusinessException("MISSING PARAM: name", "Required name mustn't be null", HttpStatus.NOT_ACCEPTABLE);
             if (tagsRepo.findByNameIgnoreCase(tagDTO.getName()) != null)
                 throw new BusinessException("INVALID PARAM: name", "Another tag exists with the same name", HttpStatus.NOT_ACCEPTABLE);
             tag = new TagsEntity();
             tag.setName(tagDTO.getName());
         } else if(tagDTO.getOperation().equals("update")) {
+            if (tagDTO.getId() == null)
+                throw new BusinessException("MISSING PARAM: id", "Required id mustn't be null", HttpStatus.NOT_ACCEPTABLE);
             if (!tagsRepo.findById(tagDTO.getId()).isPresent())
                 throw new BusinessException("INVALID PARAM: id", "No tag exists with provided id", HttpStatus.NOT_ACCEPTABLE);
             if (tagsRepo.findByNameIgnoreCase(tagDTO.getName()) != null)
@@ -283,6 +287,7 @@ public class CategoryService {
             throw new BusinessException("INVALID PARAM: operation", "unsupported operation" + tagDTO.getOperation(), HttpStatus.NOT_ACCEPTABLE);
         }
         BeanUtils.copyProperties(tagDTO, entity, new String[]{"operation"});
+        if (tagDTO.getAlias() == null) tagDTO.setAlias(tagsRepo.findById(tagDTO.getTagId()).get().getName());
         if (tagDTO.getAlias() != null)
             entity.setPname(StringUtils.encodeUrl(tagDTO.getAlias()));
 
