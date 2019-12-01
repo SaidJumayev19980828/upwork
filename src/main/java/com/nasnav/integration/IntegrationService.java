@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
@@ -77,4 +78,12 @@ public interface IntegrationService {
 	 * */
 	public <E extends Event<T, R> ,T,R> void saveEventFailureToDB(E event, Throwable handlingException,
 			Throwable fallbackException);
+	
+	/**
+	 * register an integration module to a certain organization.
+	 * The integration module will be loaded by the classloader and MUST exist in the classpath prior the
+	 * register. 
+	 * @throws BusinessException 
+	 * */
+	void registerIntegrationModule(OrganizationIntegrationInfoDTO integrationInfo) throws BusinessException;
 }

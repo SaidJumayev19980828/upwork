@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -10,4 +11,5 @@ public interface IntegrationParamRepository extends JpaRepository<IntegrationPar
 	
 	List<IntegrationParamEntity> findByOrganizationId(Long id);
 	List<IntegrationParamEntity> findByType_typeName(String typeName);
+	Optional<IntegrationParamEntity> findByOrganizationIdAndType_typeName(Long orgId, String typeName);
 }

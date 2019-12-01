@@ -7,6 +7,9 @@ import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.E
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_MISSING_MANDATORY_PARAMS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_MODULE;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_PARAMS;
+import static java.lang.String.format;
+import static com.nasnav.integration.enums.IntegrationParam.INTEGRATION_MODULE;
+import static com.nasnav.integration.enums.IntegrationParam.MAX_REQUEST_RATE;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -33,6 +36,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.IntegrationEventFailureRepository;
 import com.nasnav.dao.IntegrationParamRepository;
 import com.nasnav.dao.IntegrationParamTypeRepostory;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.IntegrationParam;
 import com.nasnav.integration.enums.MappingType;
@@ -64,6 +69,9 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	@Autowired
 	IntegrationParamTypeRepostory paramTypeRepo;
+	
+	@Autowired
+	OrganizationRepository orgRepo;
 	
 	
 	private Map<Long, OrganizationIntegrationInfo> orgIntegration;
@@ -224,8 +232,19 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	private IntegrationModule loadIntegrationModule(Long orgId, List<IntegrationParamEntity> params)
 			throws BusinessException {
-		IntegrationModule integrationModule = null;
 		String integrationModuleClass = getIntegrationModuleClassName(params);
+		
+		return loadIntegrationModuleClass(orgId, integrationModuleClass);
+	}
+
+
+
+
+
+
+	private IntegrationModule loadIntegrationModuleClass(Long orgId, String integrationModuleClass
+			) throws BusinessException {
+		IntegrationModule integrationModule = null;
 		
 		try {
 			@SuppressWarnings("unchecked")
@@ -235,6 +254,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 			logger.error(e,e);
 			throwIntegrationInitException(ERR_LOADING_INTEGRATION_MODULE_CLASS, integrationModuleClass, orgId);
 		}
+		
 		return integrationModule;
 	}
 
@@ -500,6 +520,124 @@ public class IntegrationServiceImpl implements IntegrationService {
 		t.printStackTrace(pw);
 		
 		return sw.toString(); 
+	}
+
+
+
+
+
+
+	@Override
+	public void registerIntegrationModule(OrganizationIntegrationInfoDTO info) throws BusinessException {
+		validateIntegrationInfo(info);
+		
+		Long orgId = info.getOrganizationId();
+		
+		saveIntegrationParam(orgId, INTEGRATION_MODULE.getValue(), info.getIntegrationModule());
+		saveIntegrationParam(orgId, MAX_REQUEST_RATE.getValue(), String.valueOf(info.getMaxRequestRate()) );
+		
+		info.getIntegrationParameters()
+			.forEach((name, val) -> saveIntegrationParam(orgId, name, val));
+		
+		
+	}
+
+
+
+
+
+
+	private void saveIntegrationParam(Long orgId, String typeName, String paramValue) {
+		IntegrationParamTypeEntity type = getIntegrationParamType(typeName);
+		
+		IntegrationParamEntity param = paramRepo.findByOrganizationIdAndType_typeName(orgId, typeName)
+												.orElseGet(IntegrationParamEntity::new);		
+		if(param.getType() == null) {
+			param.setType(type);
+		}
+		
+		param.setOrganizationId(orgId);
+		param.setParamValue(paramValue);
+		
+		paramRepo.save(param);
+	}
+
+
+
+
+
+
+	private IntegrationParamTypeEntity getIntegrationParamType(String typeName) {
+		IntegrationParamTypeEntity type = paramTypeRepo.findByTypeName(typeName)
+														.orElseGet(IntegrationParamTypeEntity::new);		
+		if(type.getId() == null) {
+			type = createIntegrationParamType(typeName, false);
+		}
+		return type;
+	}
+
+
+
+
+
+
+	private IntegrationParamTypeEntity createIntegrationParamType(String typeName, boolean isMandatory) {
+		IntegrationParamTypeEntity type = new IntegrationParamTypeEntity();
+		type.setTypeName(typeName.toUpperCase());
+		type.setMandatory(isMandatory);
+		return paramTypeRepo.save(type);
+	}
+
+
+
+
+
+
+	private void validateIntegrationInfo(OrganizationIntegrationInfoDTO info) throws BusinessException {
+		Long orgId  = info.getOrganizationId();
+		
+		verifyOrgIntegrationFields(info, orgId);		
+		verifyModuleClassExistsInClasspath(info, orgId);
+	}
+
+
+
+
+
+
+	private void verifyOrgIntegrationFields(OrganizationIntegrationInfoDTO info, Long orgId) throws BusinessException {
+		if(info.getIntegrationModule() == null) {
+			throw new BusinessException("No integration Module provided!"
+									, "INVALID_PARAM:integration_module"
+									, HttpStatus.NOT_ACCEPTABLE);
+		}else if(orgId == null ) {
+			throw new BusinessException("No organization id provided!"
+									, "INVALID_PARAM:organization_id"
+									, HttpStatus.NOT_ACCEPTABLE);
+		}else if(!orgRepo.existsById(orgId)) {
+			throw new BusinessException(format("No organization exists with id[%d]!", orgId)
+									, "INVALID_PARAM:organization_id"
+									, HttpStatus.NOT_ACCEPTABLE);
+		}else if(info.getMaxRequestRate() < 1) {
+			throw new BusinessException("Invalid max request per second provided!"
+									, "INVALID_PARAM:max_request_rate"
+									, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+
+
+
+
+
+	private void verifyModuleClassExistsInClasspath(OrganizationIntegrationInfoDTO info, Long orgId) throws BusinessException {
+		try {
+			loadIntegrationModuleClass(orgId, info.getIntegrationModule());
+		}catch(Exception e) {
+			throw new BusinessException("Invalid Integration Module provided!"
+									, "INVALID_PARAM:integration_module"
+									, HttpStatus.NOT_ACCEPTABLE);
+		}		
 	}
 
 }
