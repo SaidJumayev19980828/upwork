@@ -824,7 +824,14 @@ public class IntegrationServiceImpl implements IntegrationService {
 		OrganizationIntegrationInfoDTO dto = new OrganizationIntegrationInfoDTO();
 		Long orgId = infoEntry.getKey();
 		OrganizationIntegrationInfo info = infoEntry.getValue();
-		
+		Map<String,String> params = info.getParameters()
+										.stream()
+										.collect(Collectors.toMap(IntegrationParamEntity::getParameterTypeName
+																, IntegrationParamEntity::getParamValue));		
+		dto.setOrganizationId(orgId);
+		dto.setIntegrationModule(info.getIntegrationModule().getClass().getName());
+		dto.setMaxRequestRate(1000/info.getRequestMinDelayMillis().intValue());
+		dto.setIntegrationParameters(params);
 		
 		return dto;
 	}

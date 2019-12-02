@@ -6,11 +6,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.time.Duration;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.json.JSONObject;
@@ -31,16 +35,22 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.IntegrationParamRepository;
 import com.nasnav.dao.IntegrationParamTypeRepostory;
+import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.EventResult;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.IntegrationParamEntity;
 import com.nasnav.persistence.IntegrationParamTypeEntity;
 import com.nasnav.test.integration.event.TestEvent;
+import com.nasnav.test.integration.modules.TestIntegrationModule;
 
 import net.jcip.annotations.NotThreadSafe;
 import reactor.core.publisher.Mono;
@@ -55,6 +65,7 @@ import reactor.core.publisher.Mono;
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class IntegrationApiTest {
 	
+	private static final int MAX_REQ_RATE_VAL = 2;
 	private static final String NEW_INTEGRATION_PARAM = "NEW_INTEGRATION_PARAM";
 	private static final String DUMMY_VAL = "dummy_val";
 	private static final String NASNAV_ADMIN_TOKEN = "abcdefg";
@@ -157,7 +168,7 @@ public class IntegrationApiTest {
 		JSONObject request = new JSONObject();
 		request.put("organization_id", ORG_ID);
 		request.put("integration_module", "com.nasnav.test.integration.modules.TestIntegrationModule");
-		request.put("max_request_rate", 2);
+		request.put("max_request_rate", MAX_REQ_RATE_VAL);
 		
 		Map<String,String> params = new HashMap<>();
 		params.put("DUMmY_paRam", DUMMY_VAL);
@@ -775,7 +786,8 @@ public class IntegrationApiTest {
 	
 	
 	
-	
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Integration_Api_Test_Data_Existing_params.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	@Test
 	public void testUpdateExistingParam(){
 		JSONObject json = createIntegrationParamJson();		
@@ -890,7 +902,8 @@ public class IntegrationApiTest {
 	
 	
 
-	
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Integration_Api_Test_Data_Existing_params.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	@Test
 	public void testDeleteParam(){
 		JSONObject json = createIntegrationParamDeleteJson();		
@@ -1052,7 +1065,52 @@ public class IntegrationApiTest {
 						, String.class);
 		//----------------------------------------------------------------	
 		
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(HttpStatus.OK, response.getStatusCode());				
+		assertValidIntegrationInfoData(response);			
+		assertIntegrationParamsFetched(response);		
+	}
+
+
+	
+	
+
+
+	private void assertValidIntegrationInfoData(ResponseEntity<String> response) throws Exception {
+		List<OrganizationIntegrationInfoDTO> integrationInfoList = readGetIntegrationModulesResponse(response);		
+		OrganizationIntegrationInfoDTO info = integrationInfoList.get(0);
+		
+		assertEquals(1, integrationInfoList.size());
+		assertEquals(TestIntegrationModule.class.getName(), info.getIntegrationModule());
+		assertEquals(MAX_REQ_RATE_VAL, info.getMaxRequestRate().intValue());
+		assertEquals(ORG_ID, info.getOrganizationId());
+	}
+
+
+	
+	
+	
+
+
+	private void assertIntegrationParamsFetched(ResponseEntity<String> response) throws Exception {
+		List<OrganizationIntegrationInfoDTO> integrationInfoList = readGetIntegrationModulesResponse(response);		
+		OrganizationIntegrationInfoDTO info = integrationInfoList.get(0);
+		Map<String,String> params = info.getIntegrationParameters();
+		
+		Set<String> expectedParamNames = new HashSet<>(Arrays.asList("DUMMY_PARAM", MAX_REQUEST_RATE.getValue(), INTEGRATION_MODULE.getValue()));
+		assertEquals(3, params.keySet().size());		
+		assertEquals(expectedParamNames, params.keySet());
+	}
+
+
+
+
+	private List<OrganizationIntegrationInfoDTO> readGetIntegrationModulesResponse(ResponseEntity<String> response)
+			throws IOException, JsonParseException, JsonMappingException {
+		ObjectMapper mapper = new ObjectMapper();
+		TypeReference<List<OrganizationIntegrationInfoDTO>> typeRef = 
+				new TypeReference<List<OrganizationIntegrationInfoDTO>>() {};
+		List<OrganizationIntegrationInfoDTO> integrationInfoList = mapper.readValue(response.getBody(), typeRef);
+		return integrationInfoList;
 	}
 	
 	

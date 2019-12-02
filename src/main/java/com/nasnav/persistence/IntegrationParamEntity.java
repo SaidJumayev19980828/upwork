@@ -1,6 +1,7 @@
 package com.nasnav.persistence;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -43,4 +44,11 @@ public class IntegrationParamEntity {
 	@UpdateTimestamp
 	@Column(name= "updated_at")
 	private LocalDateTime updatedAt;
+	
+	
+	public String getParameterTypeName() {
+		return Optional.ofNullable(type)
+						.map(IntegrationParamTypeEntity::getTypeName)
+						.orElse(null);
+	}
 }
