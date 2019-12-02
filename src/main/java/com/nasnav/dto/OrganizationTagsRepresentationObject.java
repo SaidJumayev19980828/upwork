@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,8 +16,7 @@ public class OrganizationTagsRepresentationObject extends BaseRepresentationObje
 
     private Long id;
     private String alias;
-    private String logo;
-    private String banner;
+    private String metadata;
     @JsonProperty("p_name")
     private String pname;
     public List<OrganizationTagsRepresentationObject> children;

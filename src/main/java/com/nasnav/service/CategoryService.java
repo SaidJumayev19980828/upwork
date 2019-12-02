@@ -48,6 +48,9 @@ public class CategoryService {
     private SecurityService securityService;
 
     @Autowired
+    private OrganizationRepository orgRepo;
+
+    @Autowired
     public CategoryService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository,
                            SocialRepository socialRepository, OrganizationThemeRepository organizationThemeRepository,
                            CategoryRepository categoryRepository, ProductRepository productRepository) {
@@ -196,17 +199,16 @@ public class CategoryService {
 
     public List<OrganizationTagsRepresentationObject> getOrganizationTagsTree(Long orgId) {
 
-        List<TagGraphEdgesEntity> edges = tagEdgesRepo.findByOrganizationEntity_IdOrderByIdAsc(orgId);
-
-        List<OrganizationTagsRepresentationObject> orgTags = orgTagsRepo.findByIdIn(
-                    edges.stream().map(edge -> edge.getChildId()).collect(Collectors.toList()))
+        List<OrganizationTagsRepresentationObject> orgTags = orgTagsRepo.getTagsByOrgId(orgRepo.getOne(orgId))
                 .stream().map(tag ->(OrganizationTagsRepresentationObject) tag.getRepresentation())
-                .collect(Collectors.toList());
+                .collect(Collectors.toList());;
+
+        List<TagGraphEdgesEntity> edges = tagEdgesRepo.findByChildIdIn(orgTags.stream().map(tag -> tag.getId()).collect(Collectors.toSet()));
 
         List <OrganizationTagsRepresentationObject> removedChildren = new ArrayList<>();
 
         for(OrganizationTagsRepresentationObject entity : orgTags){
-            if(tagEdgesRepo.findByParentIdNotNullAndChildIdAndOrganizationEntity_Id(entity.getId(), orgId) != null) {
+            if(!tagEdgesRepo.findByParentIdIsNotNullAndChildId(entity.getId()).isEmpty()) {
 
                 List<OrganizationTagsRepresentationObject> parents = getOrgTagsSubList(orgTags, getTagsEdgesSubList(edges, entity.getId()));
 
@@ -305,17 +307,18 @@ public class CategoryService {
 
             OrganizationEntity org = securityService.getCurrentUserOrganization();
             List<OrganizationTagsEntity> orgTags = orgTagsRepo.findByOrganizationEntity_Id(org.getId());
-            List<TagGraphEdgesEntity> tagsEdges = tagEdgesRepo.findByOrganizationEntity_IdOrderByIdAsc(org.getId());
 
             Map<Long, OrganizationTagsEntity> tagsMap = new HashMap<>();
             for (OrganizationTagsEntity tag : orgTags) tagsMap.put(tag.getId(), tag);
 
+            List<Pair> tagsEdges = tagEdgesRepo.getTagsLinks(tagsMap.keySet());
+
             DirectedAcyclicGraph<OrganizationTagsEntity, DefaultEdge> tagsGraph = new DirectedAcyclicGraph<>(DefaultEdge.class);
             for (OrganizationTagsEntity i : orgTags) tagsGraph.addVertex(i);
 
-            for (TagGraphEdgesEntity i : tagsEdges)
-                if (tagsMap.get(i.getParentId()) != null)
-                    tagsGraph.addEdge(tagsMap.get(i.getChildId()), tagsMap.get(i.getParentId()));
+            for (Pair i : tagsEdges)
+                if (tagsMap.get(i.getFirst()) != null)
+                    tagsGraph.addEdge(tagsMap.get(i.getSecond()), tagsMap.get(i.getFirst()));
 
 
             for (Long childId : childrenIds) {
@@ -324,7 +327,7 @@ public class CategoryService {
                         throw new BusinessException("INVALID PARAM: child_id",
                                 "Provided child_id(" + childId + ") doesn't match any existing tag", HttpStatus.NOT_ACCEPTABLE);
 
-                    if (tagEdgesRepo.findByParentIdAndChildIdAndOrganizationEntity_Id(parentId, childId, org.getId()) != null)
+                    if (tagsEdges.contains(new Pair(parentId, childId)))
                         throw new BusinessException("INVALID PARAM",
                                 "Tag link with parent_id "+ parentId +" and child_id "+ childId+" already exist!", HttpStatus.NOT_ACCEPTABLE);
 
@@ -332,7 +335,6 @@ public class CategoryService {
                     TagGraphEdgesEntity edge = new TagGraphEdgesEntity();
                     edge.setChildId(childId);
                     edge.setParentId(parentId);
-                    edge.setOrganizationEntity(org);
                     tagEdgesRepo.save(edge);
                 } catch (IllegalArgumentException e) {
                     throw new BusinessException("Cycle Deteted !",
@@ -344,40 +346,71 @@ public class CategoryService {
     }
 
     public boolean deleteTagLink(TagsLinkDTO tagsLinks) throws BusinessException {
-        validateTagLinkDTO(tagsLinks);
+        if (tagsLinks.isUpdated("parentId") && tagsLinks.getParentId() == null)
+            return deleteTopLevelTagLink(tagsLinks);
+        else {
+            validateTagLinkDTO(tagsLinks);
 
-        Long orgId = securityService.getCurrentUserOrganizationId();
-        Long parentId = tagsLinks.getParentId();
+            Long orgId = securityService.getCurrentUserOrganizationId();
+            Long parentId = tagsLinks.getParentId();
+            List<Long> childrenIds = tagsLinks.getChildrenIds();
+            TagGraphEdgesEntity edge;
+
+            for (Long childId : childrenIds) {
+                edge = tagEdgesRepo.findByParentIdAndChildId(parentId, childId);
+                if (edge != null)
+                    tagEdgesRepo.delete(edge);
+                else
+                    throw new BusinessException("INVALID PARAM", "Tag link with parent_id " + parentId + " and child_id " + childId + " doesn't exist!", HttpStatus.NOT_ACCEPTABLE);
+            }
+            return true;
+        }
+    }
+
+    public boolean deleteTopLevelTagLink (TagsLinkDTO tagsLinks) throws BusinessException {
+        if (tagsLinks.getChildrenIds() == null)
+            throw new BusinessException("MISSING PARAM: children_ids", "Required children_ids are missing", HttpStatus.NOT_ACCEPTABLE);
         List<Long> childrenIds = tagsLinks.getChildrenIds();
         TagGraphEdgesEntity edge;
+        for (Long childId : childrenIds) {
+            edge = tagEdgesRepo.findByParentIdIsNullAndChildId(childId);
+            if (edge == null)
+                throw new BusinessException("INVALID PARAM: tag_id", "Top level tag link with id " + childId + " doesn't exist!", HttpStatus.NOT_ACCEPTABLE);
 
-        for(Long childId : childrenIds){
-            edge = tagEdgesRepo.findByParentIdAndChildIdAndOrganizationEntity_Id(parentId, childId, orgId);
-            if (edge != null)
-                tagEdgesRepo.delete(edge);
-            else
-                throw new BusinessException("INVALID PARAM", "Tag link with parent_id "+ parentId +" and child_id "+ childId+" doesn't exist!", HttpStatus.NOT_ACCEPTABLE);
+            tagEdgesRepo.delete(edge);
         }
         return true;
     }
 
     private boolean createTopLevelTagLinks(TagsLinkDTO tagsLinks) throws BusinessException {
         OrganizationEntity org = securityService.getCurrentUserOrganization();
+
+        List<OrganizationTagsEntity> orgTags = orgTagsRepo.findByIdInAndOrganizationEntity_Id(tagsLinks.getChildrenIds(), org.getId());
+
+        Map<Long, OrganizationTagsEntity> tagsMap = new HashMap<>();
+        for(OrganizationTagsEntity entity : orgTags) tagsMap.put(entity.getId(), entity);
+
+        List<TagGraphEdgesEntity> tagEdges = tagEdgesRepo.findByParentIdNullAndChildIdIn(tagsMap.keySet());
+
+        Map<Long, TagGraphEdgesEntity> tagEdgesMap = new HashMap<>();
+        for(TagGraphEdgesEntity entity : tagEdges) tagEdgesMap.put(entity.getChildId(), entity);
+
         TagGraphEdgesEntity edge;
         for(Long childId : tagsLinks.getChildrenIds()){
-            if (orgTagsRepo.findByIdAndOrganizationEntity_Id(childId, org.getId()) == null)
+            if (tagsMap.get(childId) == null)
                 throw new BusinessException("INVALID PARAM: child_id", "provided child_id "+ childId +" doesn't match any existing tag!", HttpStatus.NOT_ACCEPTABLE);
 
-            if (tagEdgesRepo.findByParentIdNotNullAndChildIdAndOrganizationEntity_Id(childId, org.getId()) != null)
-                throw new BusinessException("", "Provided Tag "+ childId +" has a parent and can't be a top level tag!", HttpStatus.NOT_ACCEPTABLE);
+            if (tagEdgesMap.get(childId) != null)
+                throw new BusinessException("INVALID PARAM: child_id", "Provided Tag "+ childId +" has a parent and can't be a top level tag!", HttpStatus.NOT_ACCEPTABLE);
 
             edge = new TagGraphEdgesEntity();
             edge.setChildId(childId);
-            edge.setOrganizationEntity(org);
             tagEdgesRepo.save(edge);
         }
         return true;
     }
+
+
     private void validateTagLinkDTO(TagsLinkDTO tagsLinks) throws BusinessException {
         if (tagsLinks.getParentId() == null)
             throw new BusinessException("MISSING PARAM: parent_id", "Required parent_id is missing", HttpStatus.NOT_ACCEPTABLE);

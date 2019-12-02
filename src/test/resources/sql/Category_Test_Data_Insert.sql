@@ -50,17 +50,17 @@ insert into Tags(id, name) values(5005, 'tag_5');
 insert into Tags(id, name) values(5006, 'tag_6');
 insert into Tags(id, name) values(5007, 'tag_7');
 
-insert into organization_Tags(id, alias, tag_id, organization_id) values(5001,'tag_1', 5001, 99001);
-insert into organization_Tags(id, alias, tag_id, organization_id) values(5002,'tag_2', 5002, 99001);
-insert into organization_Tags(id, alias, tag_id, organization_id) values(5003,'tag_3', 5003, 99001);
-insert into organization_Tags(id, alias, tag_id, organization_id) values(5004,'tag_4', 5004, 99001);
-insert into organization_Tags(id, alias, tag_id, organization_id) values(5005,'tag_5', 5005, 99001);
-insert into organization_Tags(id, alias, tag_id, organization_id) values(5006,'tag_6', 5006, 99001);
+insert into organization_Tags(id, alias, tag_id, organization_id, metadata) values(5001,'tag_1', 5001, 99001, '');
+insert into organization_Tags(id, alias, tag_id, organization_id, metadata) values(5002,'tag_2', 5002, 99001, '');
+insert into organization_Tags(id, alias, tag_id, organization_id, metadata) values(5003,'tag_3', 5003, 99001, '');
+insert into organization_Tags(id, alias, tag_id, organization_id, metadata) values(5004,'tag_4', 5004, 99001, '');
+insert into organization_Tags(id, alias, tag_id, organization_id, metadata) values(5005,'tag_5', 5005, 99001, '');
+insert into organization_Tags(id, alias, tag_id, organization_id, metadata) values(5006,'tag_6', 5006, 99001, '');
 
-insert into tag_graph_edges(id, from_node, to_node, organization_id) values(5001, 5001, 5002, 99001);
-insert into tag_graph_edges(id, from_node, to_node, organization_id) values(5002, 5001, 5003, 99001);
-insert into tag_graph_edges(id, from_node, to_node, organization_id) values(5006, 5001, 5006, 99001);
+insert into tag_graph_edges(id, parent_id, child_id) values(5001, null, 5001);
+insert into tag_graph_edges(id, parent_id, child_id) values(5002, 5001, 5002);
+insert into tag_graph_edges(id, parent_id, child_id) values(5003, 5001, 5003);
+insert into tag_graph_edges(id, parent_id, child_id) values(5004, 5001, 5006);
 
-insert into tag_graph_edges(id, from_node, to_node, organization_id) values(5003, 5002, 5004, 99001);
-insert into tag_graph_edges(id, from_node, to_node, organization_id) values(5004, 5005, 5006, 99001);
-insert into tag_graph_edges(id, from_node, to_node, organization_id) values(5007, 5005, 5003, 99001);
+insert into product_tags(product_id, tag_id) values(1006, 5006);
+

@@ -587,7 +587,7 @@ public class OrganizationService {
             String mimeType = file.getContentType();
             if (!mimeType.startsWith("image"))
                 throw new BusinessException(String.format("Invalid file type[%]! only MIME 'image' types are accepted!", mimeType)
-                        , "MISSIG PARAM:image", HttpStatus.NOT_ACCEPTABLE);
+                        , "MISSING PARAM:image", HttpStatus.NOT_ACCEPTABLE);
         }
 
         OrganizationImagesEntity entity = organizationImagesRepository.findById(imgId).get();
