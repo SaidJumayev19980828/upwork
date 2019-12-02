@@ -7,7 +7,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.Loader;
 import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Type;
 import org.hibernate.annotations.Where;
+import org.json.JSONObject;
 import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import javax.persistence.*;
@@ -35,13 +37,10 @@ public class OrganizationTagsEntity extends AbstractPersistable<Long> implements
     @Column(name = "p_name")
     private String pname;
 
-    @Column(name = "logo")
-    private String logo;
+    @Column(name = "metadata")
+    private String metadata;
 
-    @Column(name = "banner")
-    private String banner;
-
-    @Column
+    @Column(name = "removed")
     private int removed;
 
     @OneToOne
@@ -64,8 +63,7 @@ public class OrganizationTagsEntity extends AbstractPersistable<Long> implements
         obj.setId(getId());
         obj.setAlias(getAlias());
         obj.setPname(getPname());
-        obj.setLogo(getLogo());
-        obj.setBanner(getBanner());
+        obj.setMetadata(getMetadata());
 
         return obj;
     }

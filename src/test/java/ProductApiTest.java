@@ -5,8 +5,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.Arrays;
 
+import com.nasnav.dto.ProductsResponse;
+import com.nasnav.request.ProductSearchParam;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -580,4 +584,37 @@ public class ProductApiTest {
 				, newProduct.getId() > maxProductId);
 	}
 
+
+	@Test
+	public void testGetProductsFilters() {
+		/* try to get products by different filters */
+
+		// get by org_id only
+		ProductSearchParam param = new ProductSearchParam();
+		param.org_id = 99001L;
+
+		ResponseEntity<ProductsResponse> response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		JSONObject res = new JSONObject(response.getBody());
+		Assert.assertEquals(3, res.getInt("total"));
+
+		// filter by name
+		param.name = "product_1";
+		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		res = new JSONObject(response.getBody());
+		Assert.assertEquals(1, res.getInt("total"));
+
+		// filter by brand_id
+		param.name = null;
+		param.brand_id = 101L;
+		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		res = new JSONObject(response.getBody());
+		Assert.assertEquals(1, res.getInt("total"));
+
+		// filter by brand_id
+		param.brand_id = null;
+		param.tags = Arrays.asList(new Long[]{5001L});
+		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		res = new JSONObject(response.getBody());
+		Assert.assertEquals(2, res.getInt("total"));
+	}
 }

@@ -35,8 +35,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -45,7 +43,6 @@ import static junit.framework.TestCase.assertTrue;
 
 import org.jgrapht.*;
 import org.jgrapht.graph.*;
-import org.jgrapht.traverse.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -371,12 +368,32 @@ public class CategoryManagmentTest {
 
     @Test
     public void createTagsLinkSuccess() {
-        String body = "{\"parent_id\":5003, \"children_ids\":[5006, 5007]}";
+        String body = "{\"parent_id\":5001, \"children_ids\":[5004, 5005]}";
 
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag/link", json, String.class);
 
         Assert.assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void createTagsLinkMissingChildId() {
+        String body = "{\"parent_id\":5003}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag/link", json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void createTagsLinkInvalidChildId() {
+        String body = "{\"parent_id\":5003, \"children_ids\":[5007]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag/link", json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
     }
 
     @Test
@@ -388,6 +405,157 @@ public class CategoryManagmentTest {
 
         Assert.assertEquals(200, response.getStatusCode().value());
     }
+
+    @Test
+    public void deleteTopLevelTagsLinkSuccess() {
+        String body = "{\"parent_id\":null, \"children_ids\":[5001]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.exchange("/organization/tag/link", HttpMethod.DELETE, json, String.class);
+
+        Assert.assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteTopLevelTagsLinkMissingId() {
+        String body = "{\"parent_id\":null, \"children_ids\":null}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.exchange("/organization/tag/link", HttpMethod.DELETE, json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteTopLevelTagsLinkInvalidId() {
+        String body = "{\"parent_id\":null, \"children_ids\":[5002]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.exchange("/organization/tag/link", HttpMethod.DELETE, json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteTagsLinkMissingChildId() {
+        String body = "{\"parent_id\":5001}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.exchange("/organization/tag/link", HttpMethod.DELETE, json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteTagsLinkInvalidChildId() {
+        String body = "{\"parent_id\":5001, \"children_ids\":[5008]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.exchange("/organization/tag/link", HttpMethod.DELETE, json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteTagsLinkNonExistingLink() {
+        String body = "{\"parent_id\":5001, \"children_ids\":[5004]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.exchange("/organization/tag/link", HttpMethod.DELETE, json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void addProductTagsSuccess() {
+        String body = "{\"products_ids\":[1001, 1002], \"tags_ids\":[5004, 5006]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/product/tag", json, String.class);
+
+        Assert.assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void addProductTagsMissingProducts() {
+        String body = "{\"tags_ids\":[5004, 5006]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/product/tag", json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void addProductTagsMissingTags() {
+        String body = "{\"products_ids\":[1001, 1002]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/product/tag", json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void addProductTagsInvalidProduct() {
+        String body = "{\"products_ids\":[1009], \"tags_ids\":[5004, 5006]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/product/tag", json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void addProductTagsInvalidTag() {
+        String body = "{\"products_ids\":[1002], \"tags_ids\":[5009, 5006]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/product/tag", json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteProductTagsSuccess() {
+        String body = "{\"products_ids\":[1006], \"tags_ids\":[5006]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.exchange("/product/tag", HttpMethod.DELETE, json, String.class);
+
+        Assert.assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteProductTagsNonExistingLink() {
+        String body = "{\"products_ids\":[1005], \"tags_ids\":[5006]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.exchange("/product/tag", HttpMethod.DELETE, json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteProductTagsMissingProductId() {
+        String body = "{\"tags_ids\":[5006]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.exchange("/product/tag", HttpMethod.DELETE, json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteProductTagsMissingTagId() {
+        String body = "{\"products_ids\":[1005], \"tags_ids\":[5006]}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.exchange("/product/tag", HttpMethod.DELETE, json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
 
     private JSONArray getChildren(JSONObject k, Graph g, String parent) {
         JSONArray l = new JSONArray();

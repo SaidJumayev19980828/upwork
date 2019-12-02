@@ -1789,9 +1789,10 @@ public class ProductService {
 
 		for(Long productId : productTagDTO.getProductIds()) {
 			for(Long tagId : productTagDTO.getTagIds()) {
-				if( productTagsList.contains(new Pair(productId, tagId))) {
+				if( productTagsList.contains(new Pair(productId, tagId)))
 					productsMap.get(productId).removeProductTag(tagsMap.get(tagId));
-				}
+				else
+					throw new BusinessException("INVALID PARAM", "Link between product "+ productId +" and tag "+ tagId +" doesn't exist!", HttpStatus.NOT_ACCEPTABLE);
 			}
 			productRepository.save(productsMap.get(productId));
 		}

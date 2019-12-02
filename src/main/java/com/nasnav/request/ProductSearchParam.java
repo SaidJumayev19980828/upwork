@@ -34,4 +34,44 @@ public class ProductSearchParam {
     public void setOrder(String order) {
         this.order = SortOrder.valueOf(order.toUpperCase());
     }
+
+    @Override
+    public String toString() {
+        String result = "";
+        if (this.org_id != null)
+            result += "&org_id="+this.org_id;
+
+        if (this.shop_id != null)
+            result += "&shop_id="+this.shop_id;
+
+        if (this.category_id != null)
+            result += "&category_id="+this.category_id;
+
+        if (this.brand_id != null)
+            result += "&brand_id="+this.brand_id;
+
+        if (this.name != null)
+            result += "&name="+this.name;
+
+        if (this.start != null)
+            result += "&start="+this.start;
+
+        if (this.count != null)
+            result += "&count="+this.count;
+
+        if (this.sort != null)
+            result += "&sort="+this.sort;
+
+        if (this.order != null)
+            result += "&order="+this.order;
+
+        if (this.tags != null)
+            for(Long tagId: tags)
+                result += "&tags="+tagId;
+
+        result += "&minprice="+this.minprice;
+
+        return result.substring(1);
+
+    }
 }

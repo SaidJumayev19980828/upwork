@@ -90,3 +90,10 @@ INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 VALUES(1003, null, 0, 1, 'img2.jpg');
 
 
+insert into Tags(id, name) values(5001, 'tag_1');
+
+insert into organization_Tags(id, alias, tag_id, organization_id, metadata) values(5001,'tag_1', 5001, 99001, '');
+
+
+insert into product_tags(product_id, tag_id) values(1001, 5001);
+insert into product_tags(product_id, tag_id) values(1005, 5001);

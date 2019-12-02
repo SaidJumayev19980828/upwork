@@ -223,10 +223,10 @@ public class OrganizationService {
             throw new BusinessException("INVALID_PARAM: name", "Required Brand name is invalid", HttpStatus.NOT_ACCEPTABLE);
         brand.setName(json.name);
         if (json.pname != null) {
-            if (!StringUtils.encodeUrl(json.pname).equals(json.pname)) {
+            if (!StringUtils.encodeUrl(json.pname).equals(json.pname))
                 throw new BusinessException("INVALID_PARAM: p_name", "Required Organization p_name is invalid",
                         HttpStatus.NOT_ACCEPTABLE);
-            }
+            brand.setPname(json.pname);
         } else {
             brand.setPname(StringUtils.encodeUrl(json.name));
         }
@@ -580,7 +580,7 @@ public class OrganizationService {
             String mimeType = file.getContentType();
             if (!mimeType.startsWith("image"))
                 throw new BusinessException(String.format("Invalid file type[%]! only MIME 'image' types are accepted!", mimeType)
-                        , "MISSIG PARAM:image", HttpStatus.NOT_ACCEPTABLE);
+                        , "MISSING PARAM:image", HttpStatus.NOT_ACCEPTABLE);
         }
 
         OrganizationImagesEntity entity = organizationImagesRepository.findById(imgId).get();

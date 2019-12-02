@@ -10,8 +10,7 @@ public class OrganizationTagsDTO {
     @JsonProperty(value = "tag_id")
     private Long tagId;
     private String alias;
-    private String logo;
-    private String banner;
+    private String metadata;
     @JsonProperty(required = true)
     private String operation;
 
