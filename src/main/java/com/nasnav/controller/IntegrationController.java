@@ -1,5 +1,7 @@
 package com.nasnav.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -75,9 +77,8 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @GetMapping(value = "module/all", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public void getAllIntegrationModules(@RequestHeader (value = "User-Token") String userToken,
-    										@RequestParam("organization_id") Long organizationId)  throws BusinessException {
-		integrationSrv.removeIntegrationModule(organizationId);
+    public List<OrganizationIntegrationInfoDTO> getAllIntegrationModules(@RequestHeader (value = "User-Token") String userToken)  throws BusinessException {
+		return integrationSrv.getAllIntegrationModules();
     }
 	
 	
