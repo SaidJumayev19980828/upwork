@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import com.nasnav.dto.IntegrationParamDTO;
+import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.MappingType;
@@ -82,8 +84,54 @@ public interface IntegrationService {
 	/**
 	 * register an integration module to a certain organization.
 	 * The integration module will be loaded by the classloader and MUST exist in the classpath prior the
-	 * register. 
+	 * registeration. 
 	 * @throws BusinessException 
 	 * */
 	void registerIntegrationModule(OrganizationIntegrationInfoDTO integrationInfo) throws BusinessException;
+	
+	
+	/**
+	 * disable integration module of an organization, it will remain loaded, but the organization events will be
+	 * discarded.
+	 * @throws BusinessException 
+	 * */
+	void disableIntegrationModule(Long organizationId) throws BusinessException;
+	
+	
+	/**
+	 * enables an already disabled integration module of an organization.
+	 * @throws BusinessException 
+	 * */
+	void enableIntegrationModule(Long organizationId) throws BusinessException;
+	
+	
+	/**
+	 * Mainly used for tests.
+	 * */
+	void clearAllIntegrationModules();
+	
+	
+	/**
+	 * remove the integration module for the organization permanently.
+	 * */
+	void removeIntegrationModule(Long organizationId);
+	
+	
+	/**
+	 * add/update an integration parameter.
+	 * If no parameter type exists with the given name, a new parameter type is created.
+	 * */
+	void addIntegrationParam(IntegrationParamDTO param) throws BusinessException;
+	
+	
+	
+	/**
+	 * delete integration parameter for organization.
+	 * If no parameter exists with the given oraganization id and parameter name, the method will just return.
+	 * */
+	void deleteIntegrationParam(IntegrationParamDeleteDTO param) throws BusinessException;
+	
+	
+	
+	List<OrganizationIntegrationInfoDTO> getAllIntegrationModules();
 }

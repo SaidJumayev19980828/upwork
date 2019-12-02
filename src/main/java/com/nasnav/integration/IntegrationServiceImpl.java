@@ -3,18 +3,22 @@ package com.nasnav.integration;
 import static com.nasnav.commons.utils.EntityUtils.failSafeFunction;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_EVENT_HANDLE_GENERAL_ERROR;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INTEGRATION_MODULE_LOAD_FAILED;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INVALID_PARAM_NAME;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_LOADING_INTEGRATION_MODULE_CLASS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_MISSING_MANDATORY_PARAMS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_MODULE;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_PARAMS;
-import static java.lang.String.format;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_ORG_NOT_EXISTS;
+import static com.nasnav.integration.enums.IntegrationParam.DISABLED;
 import static com.nasnav.integration.enums.IntegrationParam.INTEGRATION_MODULE;
 import static com.nasnav.integration.enums.IntegrationParam.MAX_REQUEST_RATE;
+import static java.lang.String.format;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +34,7 @@ import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,6 +42,8 @@ import com.nasnav.dao.IntegrationEventFailureRepository;
 import com.nasnav.dao.IntegrationParamRepository;
 import com.nasnav.dao.IntegrationParamTypeRepostory;
 import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dto.IntegrationParamDTO;
+import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.IntegrationParam;
@@ -208,7 +215,24 @@ public class IntegrationServiceImpl implements IntegrationService {
 		IntegrationModule integrationModule = loadIntegrationModule(orgId, params);
 		Long minRequestDelay = getOrgMinRequestDelay(params);
 		
-		return new OrganizationIntegrationInfo(integrationModule, minRequestDelay, params);
+		OrganizationIntegrationInfo info = new OrganizationIntegrationInfo(integrationModule, minRequestDelay, params);
+		info.setDisabled( isModuleDisabled(params));
+		
+		return info;
+	}
+
+
+
+
+
+
+	private boolean isModuleDisabled(List<IntegrationParamEntity> params) {
+		return Optional.ofNullable(params)
+					.orElseGet(ArrayList::new)
+					.stream()
+					.map(IntegrationParamEntity::getType)
+					.map(IntegrationParamTypeEntity::getTypeName)
+					.anyMatch( name -> Objects.equals(name, DISABLED.getValue()) );
 	}
 
 
@@ -241,7 +265,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	private IntegrationModule loadIntegrationModule(Long orgId, List<IntegrationParamEntity> params)
 			throws BusinessException {
-		String integrationModuleClass = getIntegrationModuleClassName(params);
+		String integrationModuleClass = getIntegrationModuleClassName(orgId,params);
 		
 		return loadIntegrationModuleClass(orgId, integrationModuleClass);
 	}
@@ -272,12 +296,12 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	
 	
-	private String getIntegrationModuleClassName(List<IntegrationParamEntity> params) throws BusinessException {
+	private String getIntegrationModuleClassName(Long orgId, List<IntegrationParamEntity> params) throws BusinessException {
 		String integrationModuleClass = params.stream()
 												.filter(this::isIntegrationModuleNameParam)
 												.map(IntegrationParamEntity::getParamValue)
 												.findFirst()
-												.orElseThrow(() -> getIntegrationInitException(ERR_NO_INTEGRATION_MODULE));
+												.orElseThrow(() -> getIntegrationInitException(ERR_NO_INTEGRATION_MODULE, orgId));
 		return integrationModuleClass;
 	}
 	
@@ -459,8 +483,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 	private <E extends Event<T,R>, T, R> void handle(EventHandling<E,T,R> handling) {
 		E event = handling.getEvent();
 		OrganizationIntegrationInfo integration =  orgIntegration.get(event.getOrganizationId());
-		if(integration == null) {			
-			return; 	//ignore events if its organization has no integration info. loaded.
+		if(integration == null || integration.isDisabled()) {			
+			return; 	//ignore events if its organization has no integration info. loaded or is disabled.
 		}
 		
 		integration.getIntegrationModule()
@@ -647,6 +671,162 @@ public class IntegrationServiceImpl implements IntegrationService {
 									, "INVALID_PARAM:integration_module"
 									, HttpStatus.NOT_ACCEPTABLE);
 		}		
+	}
+
+
+
+
+
+
+	@Override
+	public void disableIntegrationModule(Long organizationId) throws BusinessException {
+		if(organizationId == null 
+				|| !orgRepo.existsById(organizationId)
+				|| !orgIntegration.containsKey(organizationId) ) {
+			return;
+		}
+		saveIntegrationParam(organizationId, DISABLED.getValue(), "TRUE");
+		loadOrganizationIntegrationModule(organizationId);
+	}
+
+
+
+
+
+
+	@Override
+	@Transactional
+	public void enableIntegrationModule(Long organizationId) throws BusinessException {
+		if(organizationId == null || !orgIntegration.containsKey(organizationId) ) {
+			throw new BusinessException(
+					format(ERR_NO_INTEGRATION_MODULE, organizationId) 
+					, "INVALID_PARAM:organization_id"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+		
+		deleteIntegrationParam(organizationId, DISABLED.getValue());
+		loadOrganizationIntegrationModule(organizationId);
+	}
+
+
+
+
+
+
+	private void deleteIntegrationParam(Long orgId, String paramTypeName) {
+		paramRepo.deleteByOrganizationIdAndType_typeName(orgId, paramTypeName);
+	}
+
+
+
+
+
+
+	@Override
+	public void clearAllIntegrationModules() {
+		orgIntegration.clear();
+	}
+
+
+
+
+
+
+	@Override
+	@Transactional
+	public void removeIntegrationModule(Long organizationId) {
+		paramRepo.deleteByOrganizationId(organizationId);		
+		orgIntegration.remove(organizationId);
+	}
+
+
+
+
+
+
+	@Override
+	public void addIntegrationParam(IntegrationParamDTO param) throws BusinessException {
+		validateIntegrationParam(param);
+		saveIntegrationParam(param.getOrganizationId(), param.getParamName(), param.getParamValue());
+	}
+
+
+
+
+
+
+	private void validateIntegrationParam(IntegrationParamDTO param) throws BusinessException {
+		validateOrganizationExists(param.getOrganizationId());		
+		validateIntegrationParamName( param.getParamName() );
+	}
+
+
+
+
+
+
+	private void validateIntegrationParamName(String name) throws BusinessException {
+		if(name == null || !name.matches("^[A-Z0-9_]+")) {
+			throw new BusinessException(
+					format(ERR_INVALID_PARAM_NAME, name)
+					, "INVALID_PARAM: param_name"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+
+
+
+
+
+	private void validateOrganizationExists(Long orgId) throws BusinessException {
+		if(orgId == null || !orgRepo.existsById(orgId)) {
+			throw new BusinessException(
+					format(ERR_ORG_NOT_EXISTS, orgId)
+					, "INVALID_PARAM: organization_id"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+
+
+
+
+
+	@Override
+	@Transactional
+	public void deleteIntegrationParam(IntegrationParamDeleteDTO param) throws BusinessException {
+		if(param.getOrganizationId() == null || param.getParamName() == null) {
+			return;
+		}
+		
+		deleteIntegrationParam(param.getOrganizationId(), param.getParamName());		
+	}
+
+
+
+
+
+
+	@Override
+	public List<OrganizationIntegrationInfoDTO> getAllIntegrationModules() {
+		return orgIntegration.entrySet()
+							.stream()
+							.map(this::toOrganizationIntegrationInfoDTO)
+							.collect(Collectors.toList());					
+	}
+	
+	
+	
+	
+	
+	private OrganizationIntegrationInfoDTO toOrganizationIntegrationInfoDTO(Map.Entry<Long, OrganizationIntegrationInfo> infoEntry) {
+		OrganizationIntegrationInfoDTO dto = new OrganizationIntegrationInfoDTO();
+		Long orgId = infoEntry.getKey();
+		OrganizationIntegrationInfo info = infoEntry.getValue();
+		
+		
+		return dto;
 	}
 
 }

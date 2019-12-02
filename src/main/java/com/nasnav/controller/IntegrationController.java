@@ -3,12 +3,17 @@ package com.nasnav.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nasnav.dto.IntegrationParamDTO;
+import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
@@ -38,5 +43,107 @@ public class IntegrationController {
     public void registerIntegrationModule(@RequestHeader (value = "User-Token") String userToken,
                                              @RequestBody OrganizationIntegrationInfoDTO integrationInfo)  throws BusinessException {
 		integrationSrv.registerIntegrationModule(integrationInfo);
+    }
+	
+	
+	
+	
+	
+	
+	@ApiOperation(value = "Remove integration module for an organization", nickname = "IntegrationModuleRegister", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @DeleteMapping(value = "module", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public void removeIntegrationModule(@RequestHeader (value = "User-Token") String userToken,
+    										@RequestParam("organization_id") Long organizationId)  throws BusinessException {
+		integrationSrv.removeIntegrationModule(organizationId);
+    }
+	
+	
+	
+	
+	
+	
+	
+	@ApiOperation(value = "list integration modules for all organizations", nickname = "IntegrationModuleAllGet", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "module/all", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public void getAllIntegrationModules(@RequestHeader (value = "User-Token") String userToken,
+    										@RequestParam("organization_id") Long organizationId)  throws BusinessException {
+		integrationSrv.removeIntegrationModule(organizationId);
+    }
+	
+	
+	
+	
+	
+	
+	@ApiOperation(value = "Disable integration module for an organization", nickname = "IntegrationModuleDisable", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "module/disable")
+    public void disableIntegrationModule(@RequestHeader (value = "User-Token") String userToken,
+                                             @RequestParam("organization_id") Long organizationId)  throws BusinessException {
+		integrationSrv.disableIntegrationModule(organizationId);
+    }
+	
+	
+	
+	
+	
+	@ApiOperation(value = "Enable an already disabled integration module for an organization", nickname = "IntegrationModuleEnable", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "module/enable")
+    public void enableIntegrationModule(@RequestHeader (value = "User-Token") String userToken,
+                                             @RequestParam("organization_id") Long organizationId)  throws BusinessException {
+		integrationSrv.enableIntegrationModule(organizationId);
+    }
+	
+	
+	
+	
+	
+	
+	@ApiOperation(value = "Add/update an integration parameter for an organization", nickname = "IntegrationParamAdd", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "param", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public void saveIntegrationParamModule(@RequestHeader (value = "User-Token") String userToken,
+                                             @RequestBody IntegrationParamDTO param)  throws BusinessException {
+		integrationSrv.addIntegrationParam(param);
+    }
+	
+	
+	
+	
+	
+	
+	@ApiOperation(value = "Delete an integration parameter for an organization", nickname = "IntegrationParamAdd", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @DeleteMapping(value = "param", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public void deleteIntegrationParam(@RequestHeader (value = "User-Token") String userToken,
+                                             @RequestBody IntegrationParamDeleteDTO param)  throws BusinessException {
+		integrationSrv.deleteIntegrationParam(param);
     }
 }

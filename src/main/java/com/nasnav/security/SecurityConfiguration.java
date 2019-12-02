@@ -29,6 +29,7 @@ import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import com.nasnav.enumerations.Roles;
+import static com.nasnav.enumerations.Roles.*;
 
 @Configuration
 @EnableWebSecurity
@@ -47,25 +48,29 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     //- to created a pattern use one of the overloads of "patternOf" method, each adds
     //	more fine grained control of the permission (by HttpMethod, by roles) 
 	private  List<AuthPattern> permissions = Arrays.asList(
-						
+						//url pattern	-------------------------	Method	------------	Roles
 					    patternOf( "/order/**"),
 						patternOf( "/stock/**"	 										, getNonCustomersRoles() ),
-						patternOf( "/shop/**"											, setOf(Roles.ORGANIZATION_MANAGER, Roles.STORE_MANAGER) ),
+						patternOf( "/shop/**"											, setOf(ORGANIZATION_MANAGER, STORE_MANAGER) ),
 						patternOf( "/user/list"),
-						patternOf( "/user/create"										, setOf(Roles.NASNAV_ADMIN, Roles.ORGANIZATION_ADMIN, Roles.STORE_ADMIN) ),
+						patternOf( "/user/create"										, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN, STORE_ADMIN) ),
 						patternOf( "/user/update"										, getAllRoles() ),
-						patternOf( "/product/**"					,HttpMethod.POST	, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/product/**"					,HttpMethod.DELETE	, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/product/image/bulk/template"						, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/admin/**"	   	 									, setOf(Roles.NASNAV_ADMIN) ),
+						patternOf( "/product/**"					,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/product/**"					,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/product/image/bulk/template"						, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/admin/**"	   	 									, setOf(NASNAV_ADMIN) ),
 						patternOf( "/files/**"),
-						patternOf( "/organization/info"									, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/organization/brand"								, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/organization/image"			,HttpMethod.POST	, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/organization/image"			,HttpMethod.DELETE	, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/organization/products_feature"	,HttpMethod.POST	, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/upload/**"											, setOf(Roles.ORGANIZATION_ADMIN)),
-						patternOf( "/integration/module"								, setOf(Roles.NASNAV_ADMIN)),
+						patternOf( "/organization/info"									, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/organization/brand"								, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/organization/image"			,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/organization/image"			,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/organization/products_feature"	,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/upload/**"											, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/integration/module/disable"						, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+						patternOf( "/integration/module/enable"							, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+						patternOf( "/integration/module/**"								, setOf(NASNAV_ADMIN)),
+						patternOf( "/integration/param/**"								, setOf(NASNAV_ADMIN)),
+						patternOf( "/integration/**"									, setOf(NASNAV_ADMIN)),
 						patternOf( "/**")
 						);
 

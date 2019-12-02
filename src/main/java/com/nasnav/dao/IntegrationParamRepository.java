@@ -12,4 +12,6 @@ public interface IntegrationParamRepository extends JpaRepository<IntegrationPar
 	List<IntegrationParamEntity> findByOrganizationId(Long id);
 	List<IntegrationParamEntity> findByType_typeName(String typeName);
 	Optional<IntegrationParamEntity> findByOrganizationIdAndType_typeName(Long orgId, String typeName);
+	void deleteByOrganizationIdAndType_typeName(Long orgId, String paramTypeName);
+	void deleteByOrganizationId(Long organizationId);
 }
