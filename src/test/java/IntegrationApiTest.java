@@ -211,6 +211,29 @@ public class IntegrationApiTest {
 	
 	
 	
+	
+	@Test
+	public void testRegisterModuleInvalidModule(){
+		String url = "/integration/module";
+		
+		JSONObject json = getIntegrationModuleRequestJson();
+		json.put("integration_module", "com.nasnav.test.integration.modules.InvalidIntegrationModule");
+		
+		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		
+		ResponseEntity<String> response = 
+				template.exchange(url
+						, HttpMethod.POST
+						, request
+						, String.class);
+		
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
 	@Test
 	public void testRegisterModuleInvalidMaxRequestRate(){
 		String url = "/integration/module";

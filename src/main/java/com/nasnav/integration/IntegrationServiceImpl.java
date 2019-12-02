@@ -165,8 +165,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		List<Long> integratedOrgs = getIntegratedOrganizations();
 		for(Long orgId: integratedOrgs) {
 			try {
-				OrganizationIntegrationInfo integration = getOrganizationIntegrationInfo(orgId);
-				this.orgIntegration.put(orgId, integration);
+				loadOrganizationIntegrationModule(orgId);
 			}
 			catch(Exception e) {
 				String msg = String.format(ERR_INTEGRATION_MODULE_LOAD_FAILED, orgId);
@@ -174,6 +173,16 @@ public class IntegrationServiceImpl implements IntegrationService {
 				throwIntegrationInitException(msg);
 			}
 		}
+	}
+
+
+
+
+
+
+	private void loadOrganizationIntegrationModule(Long orgId) throws BusinessException {
+		OrganizationIntegrationInfo integration = getOrganizationIntegrationInfo(orgId);
+		this.orgIntegration.put(orgId, integration);
 	}
 
 
@@ -250,7 +259,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 			@SuppressWarnings("unchecked")
 			Class<IntegrationModule> moduleClass = (Class<IntegrationModule>) this.getClass().getClassLoader().loadClass(integrationModuleClass);
 			integrationModule = moduleClass.getDeclaredConstructor(IntegrationService.class).newInstance(this);						
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			logger.error(e,e);
 			throwIntegrationInitException(ERR_LOADING_INTEGRATION_MODULE_CLASS, integrationModuleClass, orgId);
 		}
@@ -539,7 +548,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		info.getIntegrationParameters()
 			.forEach((name, val) -> saveIntegrationParam(orgId, name, val));
 		
-		
+		loadOrganizationIntegrationModule(orgId);
 	}
 
 
