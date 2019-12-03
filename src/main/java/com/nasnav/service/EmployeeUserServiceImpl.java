@@ -6,6 +6,7 @@ import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserDTOs.PasswordResetObject;
 import com.nasnav.dto.UserRepresentationObject;
@@ -36,6 +37,12 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	
 	@Autowired
 	private SecurityService securityService;
+
+	@Autowired
+	private EmployeeUserServiceHelper empUserSvcHelper;
+
+	@Autowired
+	private UserRepository userRepo;
 
 	@Autowired
 	public EmployeeUserServiceImpl(EmployeeUserServiceHelper helper, EmployeeUserRepository employeeUserRepository,
@@ -331,6 +338,28 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 			obj.setRoles(new HashSet<>(helper.getEmployeeUserRoles(obj.getId())));
 
 		return userRepObjs;
+	}
+
+	@Override
+	public UserRepresentationObject getUserData(String token, Long id) throws BusinessException {
+		Optional<EmployeeUserEntity> empUser = employeeUserRepository.findByAuthenticationToken(token);
+		if (!empUser.isPresent())
+			throw new BusinessException("INVALID TOKEN", "provided request token is invalid!", HttpStatus.UNAUTHORIZED);
+
+		if (id != null) {
+			List<String> userRoles = empUserSvcHelper.getEmployeeUserRoles(empUser.get().getId());
+			if (!userRoles.contains("NASNAV_ADMIN"))
+				throw new BusinessException("UNAUTHORIZED", "Logged user doesn't have the right to view other users data", HttpStatus.UNAUTHORIZED);
+			empUser = employeeUserRepository.findById(id);
+			if (!empUser.isPresent()) {
+				Optional<UserEntity> user = userRepo.findById(id);
+				if (!user.isPresent())
+					throw new BusinessException("INVALID PARAM: id", "Provided id doesn't match any existing user id", HttpStatus.NOT_ACCEPTABLE);
+				return user.get().getRepresentation();
+			}
+			return empUser.get().getRepresentation();
+		}
+		return empUser.get().getRepresentation();
 	}
 
 }

@@ -52,18 +52,18 @@ public class UserEntity extends BaseUserEntity{
     
     
 
-    public static UserRepresentationObject getRepresentation(UserEntity userEntity) {
+    public UserRepresentationObject getRepresentation() {
         UserRepresentationObject obj = new UserRepresentationObject();
-        obj.id = userEntity.getId();
-        obj.name = userEntity.getName();
-        obj.email = userEntity.getEmail();
-        obj.phoneNumber = userEntity.getPhoneNumber();
-        obj.image = userEntity.getImage();
+        obj.id = this.getId();
+        obj.name = this.getName();
+        obj.email = this.getEmail();
+        obj.phoneNumber = this.getPhoneNumber();
+        obj.image = this.getImage();
         //TODO set mobile, image after including in in DB
         Address address = new Address();
-        address.setCountry(userEntity.getAddressCountry());
-        address.setCity(userEntity.getAddressCity());
-        address.setStreet(userEntity.getAddress());
+        address.setCountry(this.getAddressCountry());
+        address.setCity(this.getAddressCity());
+        address.setStreet(this.getAddress());
         obj.address = address;
         return obj;
     }
