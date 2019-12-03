@@ -14,4 +14,5 @@ public class IntegrationServiceErrors {
 	public static final String ERR_INVALID_PARAM_NAME = "Integration Parameter name[%s] is not a valid parameter name! Parameter names are expected to only have"
 															+ " uppercase characters and '_'.";
 	public static final String ERR_ORG_NOT_EXISTS = "Organization of id[%d] doesn't exists!";
+	public static final String ERR_MAPPING_TYPE_NOT_EXISTS = "No Integration Mapping type exists with name [%s]";
 }

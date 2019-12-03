@@ -9,6 +9,7 @@ import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.E
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_MODULE;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_PARAMS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_ORG_NOT_EXISTS;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_MAPPING_TYPE_NOT_EXISTS;
 import static com.nasnav.integration.enums.IntegrationParam.DISABLED;
 import static com.nasnav.integration.enums.IntegrationParam.INTEGRATION_MODULE;
 import static com.nasnav.integration.enums.IntegrationParam.MAX_REQUEST_RATE;
@@ -39,6 +40,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.IntegrationEventFailureRepository;
+import com.nasnav.dao.IntegrationMappingRepository;
+import com.nasnav.dao.IntegrationMappingTypeRepository;
 import com.nasnav.dao.IntegrationParamRepository;
 import com.nasnav.dao.IntegrationParamTypeRepostory;
 import com.nasnav.dao.OrganizationRepository;
@@ -54,6 +57,8 @@ import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.integration.model.IntegratedShop;
 import com.nasnav.integration.model.OrganizationIntegrationInfo;
 import com.nasnav.persistence.IntegrationEventFailureEntity;
+import com.nasnav.persistence.IntegrationMappingEntity;
+import com.nasnav.persistence.IntegrationMappingTypeEntity;
 import com.nasnav.persistence.IntegrationParamEntity;
 import com.nasnav.persistence.IntegrationParamTypeEntity;
 
@@ -80,12 +85,19 @@ public class IntegrationServiceImpl implements IntegrationService {
 	@Autowired
 	OrganizationRepository orgRepo;
 	
+	@Autowired
+	IntegrationMappingRepository mappingRepo;
+	
+	@Autowired
+	IntegrationMappingTypeRepository mappingTypeRepo;
+	
 	
 	private Map<Long, OrganizationIntegrationInfo> orgIntegration;
 	
 	private Set<IntegrationParamTypeEntity> mandatoryIntegrationParams;
 	
 	private FluxSink<EventHandling> eventFluxSink;
+	
 	private Flux<EventHandling> eventFlux;
 	
 	@Autowired
@@ -375,19 +387,47 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 	@Override
-	public void addMappedValue(Long orgId, MappingType type, String localValue, String remoteValue) {
-		// TODO Auto-generated method stub
+	@Transactional
+	public void addMappedValue(Long orgId, MappingType type, String localValue, String remoteValue) throws BusinessException {
+		String typeName = type.getValue();				
+		
+		deleteExistingMappingOfLocalAndRemoteValues(orgId, typeName, localValue, remoteValue);		
+		saveIntegrationMapping(orgId, typeName, localValue, remoteValue);		
+	}
 
+
+
+
+
+
+	private void saveIntegrationMapping(Long orgId, String typeName, String localValue, String remoteValue)
+			throws BusinessException {
+		IntegrationMappingTypeEntity mappingType = mappingTypeRepo.findByTypeName(typeName)
+																.orElseThrow(() -> getNonExistingMappingTypeException(typeName) );
+		IntegrationMappingEntity mapping = new IntegrationMappingEntity(orgId, mappingType, localValue, remoteValue);
+		mappingRepo.save(mapping);
 	}
 	
 	
 	
 	
 
+	private void deleteExistingMappingOfLocalAndRemoteValues(Long orgId, String typeName, String localValue, String remoteValue) {
+		IntegrationMappingTypeEntity type = mappingTypeRepo.findByTypeName(typeName).orElse(null);
+		mappingRepo.deleteByLocalValue(orgId, type, localValue);
+		mappingRepo.deleteByRemoteValue(orgId, type, remoteValue);
+	}
+
+
+
+
+
+
 	@Override
-	public String getExternalMappedValue(Long orgId, MappingType type, String localValue) {
-		// TODO Auto-generated method stub
-		return null;
+	public String getRemoteMappedValue(Long orgId, MappingType type, String localValue) {
+		return mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(orgId, type.getValue(), localValue)
+							.map(IntegrationMappingEntity::getRemoteValue)
+							.orElse(null);
 	}
 	
 	
@@ -396,9 +436,10 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 
 	@Override
-	public String getLocalMappedValue(Long orgId, MappingType type, String externalValue) {
-		// TODO Auto-generated method stub
-		return null;
+	public String getLocalMappedValue(Long orgId, MappingType type, String remoteValue) {
+		return mappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(orgId, type.getValue(), remoteValue)
+							.map(IntegrationMappingEntity::getLocalValue)
+							.orElse(null);
 	}
 	
 	
@@ -461,6 +502,18 @@ public class IntegrationServiceImpl implements IntegrationService {
 			return event.getEventResult();
 		}	
 	}
+	
+	
+	
+	
+	
+	private BusinessException getNonExistingMappingTypeException(String typeName) {
+		return new BusinessException(format(
+				ERR_MAPPING_TYPE_NOT_EXISTS, typeName)
+				, "INTEGRATION MAPPING FAILED"
+				, HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+	
 	
 	
 	
@@ -834,6 +887,47 @@ public class IntegrationServiceImpl implements IntegrationService {
 		dto.setIntegrationParameters(params);
 		
 		return dto;
+	}
+
+
+
+
+
+
+	@Override
+	@Transactional
+	public void deleteMappingByLocalValue(Long orgId, MappingType type, String mappingLocalVal) {
+		IntegrationMappingTypeEntity typeEntity = mappingTypeRepo.findByTypeName(type.getValue()).orElse(null);
+		mappingRepo.deleteByLocalValue(orgId, typeEntity, mappingLocalVal);
+	}
+
+
+
+
+
+
+	@Override
+	@Transactional
+	public void deleteMappingByRemoteValue(Long orgId, MappingType type, String mappingRemoteVal) {
+		IntegrationMappingTypeEntity typeEntity = mappingTypeRepo.findByTypeName(type.getValue()).orElse(null);
+		mappingRepo.deleteByRemoteValue(orgId, typeEntity, mappingRemoteVal);
+	}
+
+
+
+
+
+
+	@Override
+	public String getIntegrationParamValue(Long orgId, String paramName) {
+		return Optional.ofNullable(orgIntegration.get(orgId))
+						.map(OrganizationIntegrationInfo::getParameters)
+						.orElse(new ArrayList<>())
+						.stream()
+						.filter( p -> Objects.equals(p.getParameterTypeName(), paramName))
+						.map(IntegrationParamEntity::getParamValue)
+						.findFirst()
+						.orElse(null);
 	}
 
 }

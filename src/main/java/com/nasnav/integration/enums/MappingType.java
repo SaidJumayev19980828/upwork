@@ -3,13 +3,13 @@ package com.nasnav.integration.enums;
 import lombok.Getter;
 
 public enum MappingType {
-	PRODUCT(0), SHOP(1), ORDER(3), CUSTOMER(4), PAYMENT(5);
+	PRODUCT("PRODUCT"), SHOP("SHOP"), ORDER("ORDER"), CUSTOMER("CUSTOMER"), PAYMENT("PAYMENT");
 	
 	
 	@Getter
-	private Integer value;
+	private String value;
 
-	MappingType(Integer value) {
+	MappingType(String value) {
 		this.value = value;
 	}
 }

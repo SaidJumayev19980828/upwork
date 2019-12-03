@@ -1,20 +1,24 @@
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+
+
+import static com.nasnav.integration.enums.MappingType.PRODUCT;
 
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.junit.AfterClass;
@@ -26,7 +30,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.GenericTypeResolver;
 import org.springframework.data.util.Pair;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
@@ -34,12 +37,16 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.IntegrationEventFailureRepository;
+import com.nasnav.dao.IntegrationMappingRepository;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
 import com.nasnav.integration.events.EventInfo;
 import com.nasnav.integration.events.EventResult;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.IntegrationEventFailureEntity;
+import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.test.integration.event.HandlingInfo;
 import com.nasnav.test.integration.event.TestEvent;
 import com.nasnav.test.integration.event.TestEvent2;
@@ -57,11 +64,10 @@ import net.jodah.concurrentunit.Waiter;
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
 @NotThreadSafe
-//@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Integration_Service_Test_Data_Insert.sql"})
-//@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/Integration_Test_cleanup.sql"})
 public class IntegrationServiceTest {
 	
+	private static final String MAPPING_REMOTE_VAL = "REMOTE_VAL";
+	private static final String MAPPING_LOCAL_VAL = "LOCAL_VAL";
 	private static final Long ORG_ID = 99001L;
 	private static final Long NO_INTEGRATION_ORG_ID = 99002L;
 	private static final Long ANOTHER_ORG_ID = 99003L;
@@ -73,7 +79,8 @@ public class IntegrationServiceTest {
 			"INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());" + 
 			"INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99003, 'organization_3', now(), now());" +
 			"INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(1, 'INTEGRATION_MODULE', TRUE);" + 
-			"INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(2, 'MAX_REQUESTS_PER_SECOND', TRUE);" + 
+			"INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(2, 'MAX_REQUESTS_PER_SECOND', TRUE);" +
+			"INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(3, 'EXISTING_PARAM', FALSE);"+
 			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)" + 
 			"VALUES(1, 1, 99001, 'com.nasnav.test.integration.modules.TestIntegrationModule', now(), now());\n" +
 			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)" + 
@@ -81,7 +88,9 @@ public class IntegrationServiceTest {
 			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)" + 
 			"VALUES(3, 1, 99003, 'com.nasnav.test.integration.modules.TestIntegrationModule', now(), now());\n" +
 			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)" + 
-			"VALUES(4, 2, 99003, '5', now(), now());" ;
+			"VALUES(4, 2, 99003, '5', now(), now());" +
+			"insert into public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)\n" + 
+			"values(55001, 3, 99001, 'old_val', now(), now());";
 
 	private static final String CLEAN_QUERY = 
 			"DELETE FROM public.integration_event_failure where organization_id BETWEEN 99000 AND 99999;\n"+
@@ -91,9 +100,7 @@ public class IntegrationServiceTest {
 			"DELETE FROM public.integration_param_type;\n" +
 			"DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;";
 	
-	
-	
-	 
+		 
 			
 	
 	@Autowired
@@ -103,6 +110,10 @@ public class IntegrationServiceTest {
 	
 	@Autowired
 	IntegrationEventFailureRepository eventFailureRepo;
+	
+	
+	@Autowired
+	IntegrationMappingRepository mappingRepo;
 	
 	
 	/**
@@ -144,20 +155,8 @@ public class IntegrationServiceTest {
 	
 	
 	
-	//push event with data [DONE]
-	//push invalid null event [DONE]
-	//push event with null org [DONE]
-	//push event with null data 
-	//on complete action fails [DONE]
-	//both on complete and error callback fail [DONE]
-	//push event to organization with no module [DONE]
-	//organization with integration info but null integration module? [SHOULD FAIL ON APP STARTUP]
-	//event with no handler [DONE]
-	//assert data is delivered to the correct event handler [DONE*]
-	//assert event is processed asynchronously [DONE]
-	//assert several events are delivered in the given MAX rate [DONE]
-	//test retry logic
-	//test error handling after retry fails
+
+	
 	@Test
 	public void pushEventTest() throws Throwable{		
 		Waiter waiter = new Waiter();
@@ -753,4 +752,172 @@ public class IntegrationServiceTest {
 		return duration.compareTo(expected.minusMillis(marginMillis)) >= 0
 				 && duration.compareTo(expected.plusMillis(marginMillis)) < 0;
 	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Integration_Service_Test_Mapping.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/Integration_Test_cleanup.sql"})
+	public void testAddIntegrationMapping() throws BusinessException {
+		assertMappingsExist();
+		
+		//-----------------------------------------------------------
+		integration.addMappedValue(ORG_ID, MappingType.PRODUCT, MAPPING_LOCAL_VAL, MAPPING_REMOTE_VAL);
+		
+		//-----------------------------------------------------------
+		assertMappingSaved();
+		
+		assertEquals("the previous mappings of the remote and local values should be delete, and only the new mapping should"
+				+ "exists"
+				, 1L
+				, mappingRepo.count());
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Integration_Service_Test_Mapping.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/Integration_Test_cleanup.sql"})
+	public void testDeleteIntegrationMapping() throws BusinessException {
+		assertMappingsExist();
+		
+		//-----------------------------------------------------------
+		integration.deleteMappingByLocalValue(ORG_ID, MappingType.PRODUCT, MAPPING_LOCAL_VAL);
+		assertEquals(1 , mappingRepo.count());
+		
+		integration.deleteMappingByRemoteValue(ORG_ID, MappingType.PRODUCT, MAPPING_REMOTE_VAL);
+		assertEquals(0 , mappingRepo.count());		
+	}
+	
+	
+	
+	
+	
+	
+	
+	@Test
+	public void testGetIntegrationParam() throws BusinessException {
+		String paramName = "EXISTING_PARAM";
+		String paramValue = integration.getIntegrationParamValue(ORG_ID, paramName);
+		
+		assertEquals("old_val", paramValue);
+	}
+	
+	
+	
+	
+	@Test
+	public void testGetIntegrationParamNonExistingParam() throws BusinessException {
+		String paramName = "NON_EXISTING_PARAM";
+		String paramValue = integration.getIntegrationParamValue(ORG_ID, paramName);
+		
+		assertNull(paramValue);
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void testGetIntegrationParamOrgWithNoIntegration() throws BusinessException {
+		String paramName = "EXISTING_PARAM";
+		String paramValue = integration.getIntegrationParamValue(99002L, paramName);
+		
+		assertNull(paramValue);
+	}
+	
+	
+
+
+
+
+
+	private void assertMappingSaved() {
+		Optional<IntegrationMappingEntity> mapping = mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, MappingType.PRODUCT.getValue(), MAPPING_LOCAL_VAL);
+		
+		assertTrue(mapping.isPresent());
+		assertEquals(MAPPING_LOCAL_VAL, mapping.get().getLocalValue());
+		assertEquals(MAPPING_REMOTE_VAL, mapping.get().getRemoteValue());
+		assertNotNull( mapping.get().getCreatedAt() );
+		assertNotNull( mapping.get().getUpdatedAt() );
+	}
+
+
+
+
+
+	private void assertMappingsExist() {		
+		boolean localValueMappingExists = mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(
+															ORG_ID, MappingType.PRODUCT.getValue(), MAPPING_LOCAL_VAL)
+													 .isPresent();		
+		boolean remoteValueMappingExists = mappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(
+															ORG_ID, MappingType.PRODUCT.getValue(), MAPPING_REMOTE_VAL)
+													  .isPresent();		
+		assertTrue("Only one local value can exists for the same org and mapping type."
+					+ " a mapping is already inserted for test values."
+					, localValueMappingExists);
+		
+		assertTrue("Only one remote value can exists for the same org and mapping type."
+					+ " a mapping is already inserted for test values."
+					, remoteValueMappingExists);
+		
+		assertEquals("only two mapping exists at the beginning of the test", 2L, mappingRepo.count());
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Integration_Service_Test_Mapping.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/Integration_Test_cleanup.sql"})
+	public void testGetRemoteMappedValue() {
+		String remoteVal = integration.getRemoteMappedValue(ORG_ID, PRODUCT, MAPPING_LOCAL_VAL);		
+		assertEquals("OLD_REMOTE_VAL" , remoteVal);
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Integration_Service_Test_Mapping.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/Integration_Test_cleanup.sql"})
+	public void testGetRemoteMappedValueNonExisting() {
+		String remoteVal = integration.getRemoteMappedValue(ORG_ID, PRODUCT, "NON_EXISTING_VAL");		
+		assertNull("OLD_REMOTE_VAL" , remoteVal);
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Integration_Service_Test_Mapping.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/Integration_Test_cleanup.sql"})
+	public void testGetLocalMappedValue() {
+		String localVal = integration.getLocalMappedValue(ORG_ID, PRODUCT, MAPPING_REMOTE_VAL);		
+		assertEquals("OLD_LOCAL_VAL" , localVal);
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Integration_Service_Test_Mapping.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/Integration_Test_cleanup.sql"})
+	public void testGetLocalMappedValueNonExisting() {
+		String localVal = integration.getLocalMappedValue(ORG_ID, PRODUCT, "NON_EXISTING_VAL");		
+		assertNull(localVal);
+	}
+	
 }

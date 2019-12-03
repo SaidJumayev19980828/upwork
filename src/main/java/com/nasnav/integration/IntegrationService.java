@@ -27,8 +27,8 @@ public interface IntegrationService {
 	IntegrationModule getIntegrationModule(Long orgId);
 	void loadIntegrationModules() throws BusinessException;
 	
-	void addMappedValue(Long orgId, MappingType type, String localValue, String remoteValue);
-	String getExternalMappedValue(Long orgId, MappingType type, String localValue);
+	void addMappedValue(Long orgId, MappingType type, String localValue, String remoteValue) throws BusinessException;
+	String getRemoteMappedValue(Long orgId, MappingType type, String localValue);
 	String getLocalMappedValue(Long orgId, MappingType type, String externalValue);
 	
 	/**
@@ -134,4 +134,16 @@ public interface IntegrationService {
 	
 	
 	List<OrganizationIntegrationInfoDTO> getAllIntegrationModules();
+	
+	
+	void deleteMappingByLocalValue(Long orgId, MappingType product, String mappingLocalVal);
+	
+	void deleteMappingByRemoteValue(Long orgId, MappingType product, String mappingRemoteVal);
+	
+	
+	/**
+	 * @return the parameter value for the given organization and parameter type name.
+	 * if the organization has no integration module or has no parameter with the given name, return null.
+	 * */
+	String getIntegrationParamValue(Long orgId, String paramName);
 }
