@@ -9,9 +9,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.Arrays;
+import java.util.List;
 
+import com.nasnav.dto.ProductRepresentationObject;
+import com.nasnav.dto.ProductSortOptions;
 import com.nasnav.dto.ProductsResponse;
 import com.nasnav.request.ProductSearchParam;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -937,4 +941,92 @@ public class ProductApiTest {
 		Assert.assertEquals(3, res.getInt("total"));
 		Assert.assertEquals(1, res.getJSONArray("products").length());
 	}
+
+    @Test
+    public void testGetProductsSortingFilters() {
+        ProductSearchParam param = new ProductSearchParam();
+        param.shop_id = 502L;
+
+        // sorting by id ASC
+        param.sort = ProductSortOptions.ID;
+        param.setOrder("ASC");
+        ResponseEntity<ProductsResponse> response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+        ProductsResponse productsRes = response.getBody();
+
+        List<ProductRepresentationObject> productRepObj = productsRes.getProducts();
+        for(int i=0;i<productRepObj.size()-1;i++)
+            Assert.assertTrue(productRepObj.get(i).getId() < productRepObj.get(i+1).getId());
+
+        // sorting by name ASC
+        param.sort = ProductSortOptions.NAME;
+        response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+        productsRes = response.getBody();
+
+        productRepObj = productsRes.getProducts();
+        for(int i=0;i<productRepObj.size()-1;i++)
+            Assert.assertTrue(productRepObj.get(i).getName().compareTo(productRepObj.get(i+1).getName()) <= 0);
+
+		// sorting by p_name ASC
+		param.sort = ProductSortOptions.P_NAME;
+		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		productsRes = response.getBody();
+
+		productRepObj = productsRes.getProducts();
+		for(int i=0;i<productRepObj.size()-1;i++)
+			if (productRepObj.get(i).getPname() != null && productRepObj.get(i+1).getPname() != null)
+				Assert.assertTrue(productRepObj.get(i).getPname().compareTo(productRepObj.get(i+1).getPname()) <= 0);
+
+
+		// sorting by price ASC
+		param.sort = ProductSortOptions.PRICE;
+		param.minprice = true;
+		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		productsRes = response.getBody();
+
+		productRepObj = productsRes.getProducts();
+		for(int i=0;i<productRepObj.size()-1;i++)
+			Assert.assertTrue(productRepObj.get(i).getPrice().compareTo(productRepObj.get(i+1).getPrice()) <= 0);
+
+
+
+
+		param.sort = ProductSortOptions.ID;
+		param.setOrder("DESC");
+		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		productsRes = response.getBody();
+
+		productRepObj = productsRes.getProducts();
+		for(int i=0;i<productRepObj.size()-1;i++)
+			Assert.assertTrue(productRepObj.get(i).getId() > productRepObj.get(i+1).getId());
+
+		// sorting by name ASC
+		param.sort = ProductSortOptions.NAME;
+		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		productsRes = response.getBody();
+
+		productRepObj = productsRes.getProducts();
+		for(int i=0;i<productRepObj.size()-1;i++)
+			Assert.assertTrue(productRepObj.get(i).getName().compareTo(productRepObj.get(i+1).getName()) >= 0);
+
+		// sorting by p_name ASC
+		param.sort = ProductSortOptions.P_NAME;
+		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		productsRes = response.getBody();
+
+		productRepObj = productsRes.getProducts();
+		for(int i=0;i<productRepObj.size()-1;i++)
+			if (productRepObj.get(i).getPname() != null && productRepObj.get(i+1).getPname() != null)
+				Assert.assertTrue(productRepObj.get(i).getPname().compareTo(productRepObj.get(i+1).getPname()) >= 0);
+
+
+		// sorting by price ASC
+		param.sort = ProductSortOptions.PRICE;
+		param.minprice = true;
+		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		productsRes = response.getBody();
+
+		productRepObj = productsRes.getProducts();
+		for(int i=0;i<productRepObj.size()-1;i++)
+			Assert.assertTrue(productRepObj.get(i).getPrice().compareTo(productRepObj.get(i+1).getPrice()) >= 0);
+    }
 }
