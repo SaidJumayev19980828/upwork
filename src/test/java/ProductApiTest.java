@@ -914,11 +914,27 @@ public class ProductApiTest {
 		res = new JSONObject(response.getBody());
 		Assert.assertEquals(1, res.getInt("total"));
 
-		// filter by brand_id
+		// filter by tag
 		param.brand_id = null;
 		param.tags = Arrays.asList(new Long[]{5001L});
 		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
 		res = new JSONObject(response.getBody());
 		Assert.assertEquals(2, res.getInt("total"));
+
+		// filter by start
+		param.tags = null;
+		param.start = 2;
+		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		res = new JSONObject(response.getBody());
+		Assert.assertEquals(3, res.getInt("total"));
+		Assert.assertEquals(1, res.getJSONArray("products").length());
+
+		// filter by count
+		param.start = null;
+		param.count = 1;
+		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
+		res = new JSONObject(response.getBody());
+		Assert.assertEquals(3, res.getInt("total"));
+		Assert.assertEquals(1, res.getJSONArray("products").length());
 	}
 }
