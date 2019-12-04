@@ -177,6 +177,11 @@ public class OrganizationService {
         if (json.description != null) {
             organization.setDescription(json.description);
         }
+
+        if (json.themeId != null) {
+            organization.setThemeId(json.themeId);
+        }
+
         //logo
         OrganizationThemeEntity orgTheme = null;
         if (file != null) {
