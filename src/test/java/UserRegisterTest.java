@@ -121,7 +121,8 @@ public class UserRegisterTest {
 		OrganizationEntity org = new OrganizationEntity();
 		org.setId(getNewDummyOrgId());
 		org.setName("Test Organization");
-		org.setDescription("Test Organization Description");		
+		org.setDescription("Test Organization Description");	
+		org.setThemeId(0);
 
 		OrganizationEntity organization = organizationRepository.saveAndFlush(org);
 		return organization;

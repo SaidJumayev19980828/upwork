@@ -44,7 +44,7 @@ public class OrganizationEntity implements BaseEntity {
     private LocalDateTime updatedAt;
 
     @Column(name = "theme_id")
-    private Long themeId;
+    private Integer themeId;
 
     public OrganizationEntity() {
         id = null;

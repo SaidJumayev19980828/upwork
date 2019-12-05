@@ -28,6 +28,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -108,13 +110,18 @@ public class NavBoxTest {
     }
 
 
+    
+    
+    
+    
     @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/ExtraAttributes_Test_Data_Insert.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
     public void testShops() {
         // TODO: no support for opening times yet
         ShopsEntity shop = new ShopsEntity();
-        OrganizationEntity org  = new OrganizationEntity();
-        organizationRepository.save(org);
-        long orgId = org.getId();
+        long orgId = 99001L;
+        OrganizationEntity org  = organizationRepository.findOneById(orgId);
         shop.setOrganizationEntity(org);
         shop.setName("SomeTestShop");
         shop.setPname("sts");
@@ -167,6 +174,9 @@ public class NavBoxTest {
                 "/navbox/shop?shop_id=" + 1243124312341243L,
                 HttpMethod.GET, new HttpEntity<>(headers), String.class);
     }
+    
+    
+    
 
     @Test
     public void testExtraAttributes() {
@@ -174,6 +184,9 @@ public class NavBoxTest {
         performExtraAttributesResponseTest();
         RemoveExtraAttributesTestData();
     }
+    
+    
+    
 
     @Test
     public void testGetOrgByName() {

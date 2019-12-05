@@ -33,7 +33,7 @@ public class OrganizationDTO {
 
         @ApiModelProperty(value = "theme id used in the organization", example = "123")
         @JsonProperty("theme_id")
-        public Long themeId;
+        public Integer themeId;
 
         @ApiModelProperty(value = "URL to twitter account", example = "https://www.twitter.com/fortunestores")
         @JsonProperty("social_twitter")
