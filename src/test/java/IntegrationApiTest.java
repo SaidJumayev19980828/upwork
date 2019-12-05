@@ -49,6 +49,7 @@ import com.nasnav.integration.events.EventResult;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.IntegrationParamEntity;
 import com.nasnav.persistence.IntegrationParamTypeEntity;
+import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.integration.event.TestEvent;
 import com.nasnav.test.integration.modules.TestIntegrationModule;
 

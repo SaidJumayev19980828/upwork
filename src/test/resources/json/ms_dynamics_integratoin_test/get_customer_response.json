@@ -1,0 +1,160 @@
+{
+  "results": [
+    {
+      "shops": [
+        {
+          "shop_id": "601",
+          "shop_name": "Delsey"
+        },
+        {
+          "shop_id": "602",
+          "shop_name": "Materials Store-Furtune"
+        },
+        {
+          "shop_id": "611",
+          "shop_name": "Dim & Collection"
+        },
+        {
+          "shop_id": "620",
+          "shop_name": "Carton Defects-Dim@ Collection"
+        },
+        {
+          "shop_id": "691",
+          "shop_name": "Transaction"
+        },
+        {
+          "shop_id": "701",
+          "shop_name": "Delsey Defect"
+        },
+        {
+          "shop_id": "702",
+          "shop_name": "Damages Store - Delsay"
+        },
+        {
+          "shop_id": "704",
+          "shop_name": "Defect in Materials -Dim & Collection"
+        },
+        {
+          "shop_id": "900",
+          "shop_name": "Fragrance"
+        },
+        {
+          "shop_id": "COnilecity",
+          "shop_name": "Collection Nile City"
+        },
+        {
+          "shop_id": "Cust Trans",
+          "shop_name": "Trans From Customer To Customer"
+        },
+        {
+          "shop_id": "Damage",
+          "shop_name": "Damage Store (Delsey)"
+        },
+        {
+          "shop_id": "DLalmaza",
+          "shop_name": "Delsey Almaza"
+        },
+        {
+          "shop_id": "DLarabia",
+          "shop_name": "Delsey Mall of Arabia"
+        },
+        {
+          "shop_id": "DLccenter",
+          "shop_name": "Delsey City Center Alex"
+        },
+        {
+          "shop_id": "DLcitystar",
+          "shop_name": "Delsey City Stars"
+        },
+        {
+          "shop_id": "DLegypt",
+          "shop_name": "Delsey Mall of Egypt"
+        },
+        {
+          "shop_id": "DLnilecity",
+          "shop_name": "Delsey Nile City"
+        },
+        {
+          "shop_id": "DMarabia",
+          "shop_name": "Dim Mall of Arabia"
+        },
+        {
+          "shop_id": "FOarabia",
+          "shop_name": "Fortune Mall of Arabia"
+        },
+        {
+          "shop_id": "FOcelena",
+          "shop_name": "Fortune Celena"
+        },
+        {
+          "shop_id": "FOcitystar",
+          "shop_name": "Fortune City Stars"
+        },
+        {
+          "shop_id": "FOedara",
+          "shop_name": "Fortune Edara"
+        },
+        {
+          "shop_id": "FOegypt",
+          "shop_name": "Fortune Mall of Egypt"
+        },
+        {
+          "shop_id": "FOexpress",
+          "shop_name": "Fortune Express"
+        },
+        {
+          "shop_id": "FOexpress2",
+          "shop_name": "Fortune Express II"
+        },
+        {
+          "shop_id": "FOfestival",
+          "shop_name": "Fortune Cairo Festival"
+        },
+        {
+          "shop_id": "FOlebanon",
+          "shop_name": "Fortune Lebanon"
+        },
+        {
+          "shop_id": "FOmarket",
+          "shop_name": "Fortune Marketing"
+        },
+        {
+          "shop_id": "FOmaxim",
+          "shop_name": "Fortune Maxim"
+        },
+        {
+          "shop_id": "FOnilecity",
+          "shop_name": "Fortune Nile City"
+        },
+        {
+          "shop_id": "FOoscar",
+          "shop_name": "Fortune Oscar"
+        },
+        {
+          "shop_id": "FOsenzo",
+          "shop_name": "Fortune Senzo"
+        },
+        {
+          "shop_id": "FOstefano",
+          "shop_name": "Fortune San Stefano"
+        },
+        {
+          "shop_id": "FOsuncity",
+          "shop_name": "Fortune Sun CITY"
+        },
+        {
+          "shop_id": "INclarins",
+          "shop_name": "Institute Clarins"
+        },
+        {
+          "shop_id": "LOitem",
+          "shop_name": "Local Item"
+        },
+        {
+          "shop_id": "Transit",
+          "shop_name": "Transit"
+        }
+      ]
+    }
+  ]
+}

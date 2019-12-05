@@ -47,6 +47,7 @@ import com.nasnav.integration.events.EventResult;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.IntegrationEventFailureEntity;
 import com.nasnav.persistence.IntegrationMappingEntity;
+import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.integration.event.HandlingInfo;
 import com.nasnav.test.integration.event.TestEvent;
 import com.nasnav.test.integration.event.TestEvent2;

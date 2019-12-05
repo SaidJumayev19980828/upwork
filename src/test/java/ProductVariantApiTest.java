@@ -25,6 +25,7 @@ import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.test.commons.TestCommons;
 
 import net.jcip.annotations.NotThreadSafe;
 

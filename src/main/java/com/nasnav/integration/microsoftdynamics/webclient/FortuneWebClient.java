@@ -1,7 +1,5 @@
 package com.nasnav.integration.microsoftdynamics.webclient;
 
-import java.util.function.Consumer;
-
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -19,7 +17,7 @@ public class FortuneWebClient {
     
     public FortuneWebClient(String baseUrl) {
     	client = WebClient.builder()
-						.baseUrl(baseUrl)
+						.baseUrl(baseUrl)						
 						.build();  
     }
     
@@ -94,10 +92,9 @@ public class FortuneWebClient {
     
     
     
-    public Mono<ClientResponse> cancelSalesOrder(SalesOrder order) {
+    public Mono<ClientResponse> cancelSalesOrder(String orderId) {
         return client.post()
-                .uri("/api/SalesOrder")
-                .syncBody(order)
+                .uri("/api/SalesOrder/"+orderId)
                 .exchange();
     }
     

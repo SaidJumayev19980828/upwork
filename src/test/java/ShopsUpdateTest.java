@@ -29,6 +29,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.nasnav.NavBox;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.test.commons.TestCommons;
 
 import net.jcip.annotations.NotThreadSafe;
 @RunWith(SpringRunner.class)

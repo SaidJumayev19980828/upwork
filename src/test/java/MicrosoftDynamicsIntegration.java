@@ -1,7 +1,12 @@
 
+import static com.nasnav.test.commons.TestCommons.json;
+import static com.nasnav.test.commons.TestCommons.jsonArray;
+import static org.mockserver.integration.ClientAndServer.startClientAndServer;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
+
 import java.io.IOException;
 import java.nio.file.Files;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,13 +15,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockserver.junit.MockServerRule;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,9 +32,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.reactive.function.client.ClientResponse;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.integration.microsoftdynamics.webclient.FortuneWebClient;
@@ -40,7 +44,6 @@ import com.nasnav.integration.microsoftdynamics.webclient.dto.ProductsResponse;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.ReturnSalesOrder;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.SalesOrder;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.Store;
-import com.nasnav.test.utils.JsonBuilder;
 
 import net.jodah.concurrentunit.Waiter;
 
@@ -52,31 +55,251 @@ import net.jodah.concurrentunit.Waiter;
 
 public class MicrosoftDynamicsIntegration {
 
-    private FortuneWebClient client = new FortuneWebClient("http://41.39.128.74");
+	private static final String msServerUrl = "http://41.39.128.74";
+	private static final String mockServerUrl = "http://127.0.0.1";
+    private FortuneWebClient client;
 
     
     @Value("classpath:/json/ms_dynamics_integratoin_test/order_reuqest.json")
 	private Resource orderRequest;
     
     
-    @Test
-    public void getCustomer() throws InterruptedException {
+    @Value("classpath:/json/ms_dynamics_integratoin_test/get_products_response.json")
+	private Resource productsJson;
+    
+    
+    @Value("classpath:/json/ms_dynamics_integratoin_test/get_product_by_sku_response.json")
+	private Resource singleProductJson;
+    
+    
+    @Value("classpath:/json/ms_dynamics_integratoin_test/get_customer_response.json")
+	private Resource singleCustomerJson;
+    
+    
+    @Value("classpath:/json/ms_dynamics_integratoin_test/get_stores_response.json")
+	private Resource getStoresJson;
+    
+    
+    
+    
+    @Rule
+    public MockServerRule mockServerRule = new MockServerRule(this);
+    
+    
+    
+    @Before
+    public void init() throws Exception {    	
+    	int port = 1080;
+    	
+    	 prepareMockRequests();    	 
+    	 
+    	 port = mockServerRule.getPort();
+     	String serverUrl  = mockServerUrl + ":"+ port;
+     	client = new FortuneWebClient(serverUrl);
+     	 
+    }
 
-        Consumer<Customer> customers = customer -> {
+
+
+
+	private void prepareMockRequests() throws Exception {
+		 mockPaymentRequest();
+		 mockCreateCustomerRequest(); 
+		 mockUpdateCustomerRequest();
+		 mockReversePaymentRequest();
+		 mockCancelOrderRequest();
+		 mockCreateOrderRequest();
+		 mockReturnOrderRequest();
+		 mockGetProductsRequest();
+		 mockGetProductBySKURequest();
+		 mockGetCustomerByPhoneRequest();
+		 mockGetStoresRequest();
+	}
+
+
+
+
+	private void mockGetStoresRequest() throws Exception {
+		String storesResponse = new String( Files.readAllBytes(getStoresJson.getFile().toPath()) );
+   	 	mockServerRule.getClient()
+			.when(
+				request().withMethod("GET")
+						.withPath("/api/stores"))
+			.respond(
+					response().withBody(storesResponse) 
+							  .withStatusCode(200))
+				;
+	}
+
+
+
+
+	private void mockGetProductBySKURequest() throws IOException {
+		String productBySkuResponse = new String( Files.readAllBytes(singleProductJson.getFile().toPath()) );
+    	 mockServerRule.getClient()
+			.when(
+				request().withMethod("GET")
+						.withPath("/api/products/6221105441060"))
+			.respond(
+					response().withBody(productBySkuResponse) 
+							  .withStatusCode(200))
+				;
+	}
+	
+	
+	
+	
+	
+	private void mockGetCustomerByPhoneRequest() throws IOException {
+		String customerResponse = new String( Files.readAllBytes(singleCustomerJson.getFile().toPath()) );
+    	 mockServerRule.getClient()
+			.when(
+				request().withMethod("GET")
+						.withPath("/apiCust/customer/GetCustByPhone/.*"))
+			.respond(
+					response().withBody(customerResponse) 
+							  .withStatusCode(200))
+				;
+	}
+	
+	
+
+
+
+
+	private void mockGetProductsRequest() throws IOException {
+		String productsResponse = new String( Files.readAllBytes(productsJson.getFile().toPath()) );
+    	 mockServerRule.getClient()
+			.when(
+				request().withMethod("GET")
+						.withPath("/api/products/.*"))
+			.respond(
+					response().withBody(productsResponse) 
+							  .withStatusCode(200))
+				;
+	}
+
+
+
+
+	private void mockReturnOrderRequest() {
+		mockServerRule.getClient()
+			.when(
+				request().withMethod("PUT")
+						.withPath("/api/ReturnOrder"))
+			.respond(
+					response().withBody("UNR88-066000") 
+							  .withStatusCode(200))
+				;
+	}
+
+
+
+
+	private void mockCreateOrderRequest() {
+		mockServerRule.getClient()
+			.when(
+				request().withMethod("PUT")
+						.withPath("/api/salesorder"))
+			.respond(
+					response().withBody("UNR19-050000") 
+							  .withStatusCode(200))
+				;
+	}
+
+
+
+
+	private void mockCancelOrderRequest() {
+		mockServerRule.getClient()
+			.when(
+				request().withMethod("POST")
+						.withPath("/api/SalesOrder/.*"))
+			.respond(
+					response().withBody("UNR19-051580") 
+							  .withStatusCode(200))
+				;
+	}
+
+
+
+
+	private void mockReversePaymentRequest() {
+		mockServerRule.getClient()
+			.when(
+				request().withMethod("PUT")
+						.withPath("/api/ReversePayment"))
+			.respond(
+					response().withBody("UNR19-051580") 
+							  .withStatusCode(200))
+				;
+	}
+
+
+
+
+	private void mockUpdateCustomerRequest() {
+		mockServerRule.getClient()
+			.when(
+				request().withMethod("POST")
+						.withPath("/api/customer"))
+			.respond(
+					response().withBody("UNR-023517") 
+							  .withStatusCode(200))
+				;
+	}
+
+
+
+
+	private void mockCreateCustomerRequest() {
+		mockServerRule.getClient()
+			.when(
+				request().withMethod("PUT")
+						.withPath("/api/customer"))
+			.respond(
+					response().withBody("UNR-023517") 
+							  .withStatusCode(200))
+				;
+	}
+
+
+
+
+	private void mockPaymentRequest() {
+		mockServerRule.getClient()
+				.when(
+					request().withMethod("PUT")
+							.withPath("/api/Payment"))
+				.respond(
+						response().withBody("UNR19-000000") 
+								  .withStatusCode(200))
+					;
+	}
+    
+    
+    
+    
+    @Test
+    public void getCustomer() throws InterruptedException, Exception {
+    	Waiter waiter = new Waiter();
+    	
+        Consumer<Customer> printCustomers = customer -> {
             for(CustomerRepObj i : customer.getObj())
                 System.out.println(i.toString());
         };
 
         Consumer<ClientResponse> response = res -> {
             System.out.println(res.statusCode());
-            if (res.statusCode().value() == 200)
-                res.bodyToFlux(Customer.class).subscribe(customers);
+            waiter.assertEquals(HttpStatus.OK, res.statusCode());
+            res.bodyToFlux(Customer.class).subscribe(printCustomers);
+            waiter.resume();
         };
 
         client.getCustomer("0123456720")
         	.subscribe(response);
 
-        Thread.sleep(1000);
+        waiter.await(4000, TimeUnit.MILLISECONDS);
     }
 
     
@@ -84,26 +307,23 @@ public class MicrosoftDynamicsIntegration {
     
     
     @Test
-    public void updateCustomer() throws InterruptedException {
-
-        Customer customer = new Customer();
-        customer.setAccountNumber("UNR-021675");
-        customer.setFirstName("Kira");
-        customer.setMiddleName("Lawllet");
-        customer.setLastName("Z");
-        customer.setEmail("KK@KK.com");
-        customer.setBirthDate(LocalDate.of(1995, 02, 02));
-
-        Address d = createCustomerAddress();
-        List<Address> addresses = new ArrayList<>();
-        addresses.add(d);
-        customer.setAddresses(addresses);
-
-        Consumer<ClientResponse> res = response -> Assert.assertTrue(response.statusCode() == HttpStatus.OK);
+    public void updateCustomer() throws InterruptedException, Exception {
+    	Waiter waiter = new Waiter();
+    	
+    	Customer customer = getCustomerData();  
+    	customer.setAccountNumber("UNR-021675");
+    	
+        Consumer<ClientResponse> res = 
+        		response -> { 
+        			waiter.assertEquals(HttpStatus.OK, response.statusCode()); 
+        			response.bodyToMono(String.class).subscribe(id -> System.out.println("Customer-id: " + id));
+        			waiter.resume();
+        		};        		
 
         client.updateCustomer(customer)
         	  .subscribe(res);
-        Thread.sleep(1000);
+        
+        waiter.await(4000, TimeUnit.MILLISECONDS);
     }
 
     
@@ -254,30 +474,15 @@ public class MicrosoftDynamicsIntegration {
     public void createReturnSalesOrder() throws InterruptedException, IOException, Exception {
     	Waiter waiter = new Waiter();
     	
-        String jsonOrder = JsonBuilder.root()
-        							.put("SalesId", "UNT18-008133")
-        							.putArray("Items")
-        								.addJson()
-	        								.put("SalesId", "UNT18-008133")
-	        								.put("Item", "011APF-74202")
-	        							.parentArray()
-	        						.close()
-	        						.getJson();
-        JSONObject obj = new JSONObject()
-        						.put("SalesId", "UNT18-008133")
-        						.put("Items", 
-        								new JSONArray().put(
-        											new JSONObject()
-		        											.put("SalesId", "UNT18-008133")
-		            										.put("Item", "011APF-74202")
-        										)
-        						 );
-        						
-        		
-//        		"{\"SalesId\":\"UNT18-008133\", \"Items\": [{\"SalesId\":\"UNT18-008133\",\"Item\":\"011APF-74202\", "+
-//                             "\"Qty\":1}]}";
-        System.out.println("JSON order : " + jsonOrder);
-        ReturnSalesOrder order = new ObjectMapper().readValue(jsonOrder, ReturnSalesOrder.class);
+        JSONObject jsonOrder = json().put("SalesId", "UNT18-008133")
+		    						.put("Items"
+	    									, jsonArray()
+	    										.put(json()
+		    											.put("SalesId", "UNT18-008133")
+		        										.put("Item", "011APF-74202")
+		        										.put("Qty", 1) ));
+        System.out.println("JSON order : " + jsonOrder.toString());
+        ReturnSalesOrder order = new ObjectMapper().readValue(jsonOrder.toString(), ReturnSalesOrder.class);
         
         Consumer<ClientResponse> response = 
         		res -> {
@@ -297,24 +502,21 @@ public class MicrosoftDynamicsIntegration {
     
     
     @Test
-    public void cancelSalesOrder() throws InterruptedException, IOException {
+    public void cancelSalesOrder() throws InterruptedException, IOException, Exception {
 
-        /*String jsonOrder = "{\"SalesId\":\"UNT18-008133\", \"Items\": [{\"SalesId\":\"UNT18-008133\",\"Item\":\"011APF-74202\", "+
-                "\"Qty\":1}]}";
+        String order = "UNR19-051580";
+    	Waiter waiter = new Waiter();
+        Consumer<ClientResponse> response = 
+        		res -> {
+        			waiter.assertEquals(HttpStatus.OK, res.statusCode());
+        			res.bodyToMono(String.class).subscribe(id -> System.out.println("cancelled order id : " + id));		            
+		            waiter.resume();	
+		        };
 
-        ReturnSalesOrder order = new ObjectMapper().readValue(jsonOrder, ReturnSalesOrder.class);
+        client.cancelSalesOrder(order)
+        	.subscribe(response);
 
-        Consumer<String> str = response -> System.out.println("return order id : " + response);
-
-        Consumer<ClientResponse> res = response -> {
-            System.out.println(response.statusCode());
-            Assert.assertTrue(response.statusCode().value() == 200);
-            response.bodyToMono(String.class).subscribe(str);
-        };
-
-        client.cancelSalesOrder(order, res);
-
-        Thread.sleep(5000);*/
+        waiter.await(2000, TimeUnit.MILLISECONDS);
     }
     
     
@@ -325,10 +527,13 @@ public class MicrosoftDynamicsIntegration {
     public void createPayment() throws InterruptedException, IOException, Exception {
     	Waiter waiter = new Waiter();
     	
-        String jsonPayment = "{\"SalesId\":\"UNT18-008133\", \"PaymDet\":[{\"SalesId\":\"UNT18-008133\",\"Amount\":2," +
-                            "\"PaymentMethod\":\"Credit_CHE\"}]}";
-
-        Payment payment = new ObjectMapper().readValue(jsonPayment, Payment.class);
+        JSONObject jsonPayment = json().put("SalesId", "UNT18-008133")
+        								.put("PaymDet", jsonArray()
+        													.put(json().put("SalesId","UNT18-008133")
+        																.put("Amount", 2)
+        																.put("PaymentMethod", "Credit_CHE")));
+        System.out.println("Payment JSON: " + jsonPayment.toString());
+        Payment payment = new ObjectMapper().readValue(jsonPayment.toString(), Payment.class);
         
         Consumer<ClientResponse> response = 
         		res -> {
