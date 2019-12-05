@@ -1,20 +1,45 @@
 package com.nasnav.integration.microsoftdynamics.webclient.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.Date;
+import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 public class Customer {
     @JsonProperty("AX_ID")
-    private Long id; //customer account
+    private String accountNumber; //customer account
+    @JsonProperty("first_name")
     private String firstName;
+    @JsonProperty("middle_name")
     private String middleName;
+    @JsonProperty("last_name")
     private String lastName;
+    @JsonProperty("Email")
     private String email;
+
     @JsonProperty(value = "dob")
-    private Date birthDate; //date of birth;
-    private boolean gender; //male = true
-    private Address address;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate birthDate; //date of birth;
+    @JsonProperty("Gender")
+    private int gender; //male = 1
+    private List<Address> addresses;
+    @JsonProperty(value = "Customer")
+    private List<CustomerRepObj> obj; // for getting customers only !
+
+/*
+    public String getBirthDate() {
+        return this.birthDate.toString();
+    }
+
+    public void setBirthDate(String date){
+        this.birthDate = LocalDate.parse(date);
+    }*/
 }
