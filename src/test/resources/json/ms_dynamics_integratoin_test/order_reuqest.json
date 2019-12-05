@@ -1,0 +1,27 @@
+{
+    "CountryID": "EGY",
+    "CustomerID": "un5005009",
+    "Address": "NasrCity",
+    "City_Code": "",
+    "Total_Order_Discount": 0.0,
+    "Total": 0.0,
+    "Shipping_fees": 10.0000000000000000,
+    "InventSite": "OCTOBER1",
+    "Store": "116",
+    "PaymentMethod": "Credit_CHE",
+    "CodCode": "Non",
+    "CODFeeAmount": 10.0000000000000000,
+    "ShippingfeesCode": "Non",
+    "Items": [
+        {
+            "Item": "011APF-74202",
+            "InventSiteID": "OCTOBER1",
+            "Store": "116",
+            "Qty": 10.0000000000000000,
+            "SalesPrice": 10.0000000000000000,
+            "DiscountAmount": 0.0000000000000000,
+            "NetPrice": 10.0000000000000000,
+            "Totals": 0.0
+        }
+    ]
+}

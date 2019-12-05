@@ -16,21 +16,28 @@ import java.util.List;
 public class Customer {
     @JsonProperty("AX_ID")
     private String accountNumber; //customer account
+    
     @JsonProperty("first_name")
     private String firstName;
+    
     @JsonProperty("middle_name")
     private String middleName;
+    
     @JsonProperty("last_name")
     private String lastName;
+    
     @JsonProperty("Email")
     private String email;
 
     @JsonProperty(value = "dob")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate birthDate; //date of birth;
+    
     @JsonProperty("Gender")
     private int gender; //male = 1
+    
     private List<Address> addresses;
+    
     @JsonProperty(value = "Customer")
     private List<CustomerRepObj> obj; // for getting customers only !
 

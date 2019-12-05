@@ -164,6 +164,11 @@
 	        <version>3.3.0.RELEASE</version>
 	        <scope>compile</scope>
 	      </dependency>
+	      
+	       <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
 
 
 
@@ -190,12 +195,7 @@
             <version>${spring.boot.version}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
-            <version>${spring.boot.version}</version>
-            <scope>test</scope>
-        </dependency>
+       
 	<dependency>
 	    <groupId>net.jodah</groupId>
 	    <artifactId>concurrentunit</artifactId>

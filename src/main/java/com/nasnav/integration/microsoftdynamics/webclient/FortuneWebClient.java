@@ -1,104 +1,136 @@
 package com.nasnav.integration.microsoftdynamics.webclient;
 
+import java.util.function.Consumer;
+
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.WebClient;
+
 import com.nasnav.integration.microsoftdynamics.webclient.dto.Customer;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.Payment;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.ReturnSalesOrder;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.SalesOrder;
-import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.ClientResponse;
-import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.function.Consumer;
+import reactor.core.publisher.Mono;
 
-@Service
-public class FortuneWebClient {
 
-    public final WebClient client = WebClient.builder().baseUrl("http://41.39.128.74").build();
+public class FortuneWebClient {	
 
-    public void getCustomer(String phoneNumber, Consumer<ClientResponse> response) {
-
-         client.get()
-                .uri("/apiCust/customer/GetCustByPhone/"+phoneNumber)
-                .exchange()
-                .subscribe(response);
+    public final WebClient client ;    
+    
+    public FortuneWebClient(String baseUrl) {
+    	client = WebClient.builder()
+						.baseUrl(baseUrl)
+						.build();  
+    }
+    
+    
+    
+    public Mono<ClientResponse> getCustomer(String phoneNumber) {
+         return client.get()
+	                .uri("/apiCust/customer/GetCustByPhone/"+phoneNumber)
+	                .exchange();
     }
 
+    
+    
 
-    public void createCustomer(Customer customer, Consumer<ClientResponse> response) {
-         client.put()
+    public Mono<ClientResponse> createCustomer(Customer customer) {
+         return client.put()
                 .uri("/api/customer")
                 .syncBody(customer)
-                .exchange()
-                .subscribe(response);
+                .exchange();
     }
+    
+    
+    
 
 
-    public void updateCustomer(Customer customer, Consumer<ClientResponse> response) {
-         client.post()
+    public Mono<ClientResponse> updateCustomer(Customer customer) {
+         return client.post()
                 .uri("/api/customer")
                 .syncBody(customer)
-                .exchange()
-                .subscribe(response);
+                .exchange();
     }
 
-    public void getStores(Consumer<ClientResponse> response) {
-        client.get()
+    
+    
+    
+    public Mono<ClientResponse> getStores() {
+        return client.get()
                 .uri("/api/stores")
-                .exchange()
-                .subscribe(response);
+                .exchange();
     }
+    
+    
+    
 
-    public void getProductsByBarcode(String barcode, Consumer<ClientResponse> response) {
-        client.get()
-                .uri("/api/products/"+barcode)
-                .exchange()
-                .subscribe(response);
+    public Mono<ClientResponse> getProductsBySKU(String sku) {
+        return client.get()
+                .uri("/api/products/"+sku)
+                .exchange();
     }
+    
+    
+    
 
-    public void getProducts(int topRows, int pageNumber, Consumer<ClientResponse> response) {
-        client.get()
+    public Mono<ClientResponse> getProducts(int topRows, int pageNumber) {
+        return client.get()
                 .uri("/api/products/"+topRows+"/"+pageNumber)
-                .exchange()
-                .subscribe(response);
+                .exchange();
     }
+    
+    
+    
+    
 
-    public void createSalesOrder(SalesOrder order, Consumer<ClientResponse> response) {
-        client.put()
+    public Mono<ClientResponse> createSalesOrder(SalesOrder order) {
+        return client.put()
                 .uri("/api/salesorder")
                 .syncBody(order)
-                .exchange()
-                .subscribe(response);
+                .exchange();
     }
 
-    public void cancelSalesOrder(SalesOrder order, Consumer<ClientResponse> response) {
-        client.post()
+    
+    
+    
+    
+    public Mono<ClientResponse> cancelSalesOrder(SalesOrder order) {
+        return client.post()
                 .uri("/api/SalesOrder")
                 .syncBody(order)
-                .exchange()
-                .subscribe(response);
+                .exchange();
     }
+    
+    
+    
+    
 
-    public void createReturnSalesOrder(ReturnSalesOrder order, Consumer<ClientResponse> response) {
-        client.put()
+    public Mono<ClientResponse> createReturnSalesOrder(ReturnSalesOrder order) {
+        return client.put()
                 .uri("/api/ReturnOrder")
                 .syncBody(order)
-                .exchange()
-                .subscribe(response);
+                .exchange();
     }
+    
+    
+    
+    
 
-    public void createPayment(Payment payment, Consumer<ClientResponse> response) {
-        client.put()
+    public Mono<ClientResponse> createPayment(Payment payment) {
+        return client.put()
                 .uri("/api/Payment")
                 .syncBody(payment)
-                .exchange()
-                .subscribe(response);
+                .exchange();
     }
+    
+    
+    
+    
 
-    public void createReversePayment(Payment payment, Consumer<ClientResponse> response) {
-        client.put()
+    public Mono<ClientResponse> createReversePayment(Payment payment) {
+        return client.put()
                 .uri("/api/ReversePayment")
                 .syncBody(payment)
-                .exchange()
-                .subscribe(response);
+                .exchange();
     }
 }

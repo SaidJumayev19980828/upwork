@@ -1,39 +1,48 @@
 
-import ch.qos.logback.core.net.server.Client;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.NavBox;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.integration.microsoftdynamics.webclient.dto.*;
-import com.nasnav.integration.microsoftdynamics.webclient.FortuneWebClient;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
+
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ReactiveHttpInputMessage;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.web.reactive.function.BodyExtractor;
-import org.springframework.web.reactive.function.BodyExtractors;
 import org.springframework.web.reactive.function.client.ClientResponse;
-import reactor.core.Disposable;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.NavBox;
+import com.nasnav.integration.microsoftdynamics.webclient.FortuneWebClient;
+import com.nasnav.integration.microsoftdynamics.webclient.dto.Address;
+import com.nasnav.integration.microsoftdynamics.webclient.dto.Customer;
+import com.nasnav.integration.microsoftdynamics.webclient.dto.CustomerRepObj;
+import com.nasnav.integration.microsoftdynamics.webclient.dto.Payment;
+import com.nasnav.integration.microsoftdynamics.webclient.dto.ProductsResponse;
+import com.nasnav.integration.microsoftdynamics.webclient.dto.ReturnSalesOrder;
+import com.nasnav.integration.microsoftdynamics.webclient.dto.SalesOrder;
+import com.nasnav.integration.microsoftdynamics.webclient.dto.Store;
+import com.nasnav.test.utils.JsonBuilder;
+
+import net.jodah.concurrentunit.Waiter;
 
 
 @RunWith(SpringRunner.class)
@@ -43,9 +52,13 @@ import java.util.stream.Collectors;
 
 public class MicrosoftDynamicsIntegration {
 
-    @Autowired
-    private FortuneWebClient client;
+    private FortuneWebClient client = new FortuneWebClient("http://41.39.128.74");
 
+    
+    @Value("classpath:/json/ms_dynamics_integratoin_test/order_reuqest.json")
+	private Resource orderRequest;
+    
+    
     @Test
     public void getCustomer() throws InterruptedException {
 
@@ -60,11 +73,16 @@ public class MicrosoftDynamicsIntegration {
                 res.bodyToFlux(Customer.class).subscribe(customers);
         };
 
-        client.getCustomer("0123456720", response);
+        client.getCustomer("0123456720")
+        	.subscribe(response);
 
         Thread.sleep(1000);
     }
 
+    
+    
+    
+    
     @Test
     public void updateCustomer() throws InterruptedException {
 
@@ -76,138 +94,208 @@ public class MicrosoftDynamicsIntegration {
         customer.setEmail("KK@KK.com");
         customer.setBirthDate(LocalDate.of(1995, 02, 02));
 
-        Address d = new Address();
-        d.setStreet("q");
-        d.setCity("Cairo");
-        d.setCountry("Egy");
-        d.setState("Cairo");
-        d.setZipCode("12345");
-        d.setPhoneNumber("0123456720");
+        Address d = createCustomerAddress();
         List<Address> addresses = new ArrayList<>();
         addresses.add(d);
         customer.setAddresses(addresses);
 
         Consumer<ClientResponse> res = response -> Assert.assertTrue(response.statusCode() == HttpStatus.OK);
 
-        client.updateCustomer(customer, res);
+        client.updateCustomer(customer)
+        	  .subscribe(res);
         Thread.sleep(1000);
     }
 
+    
+    
+    
     @Test
-    public void createCustomer() throws InterruptedException {
+    public void createCustomer() throws InterruptedException, Exception {
+    	Waiter waiter = new Waiter();
+    	
+        Customer customer = getCustomerData();        
+        Consumer<ClientResponse> res = 
+        		response -> { 
+        			waiter.assertEquals(HttpStatus.OK, response.statusCode()); 
+        			response.bodyToMono(String.class).subscribe(id -> System.out.println("Customer-id: " + id));
+        			waiter.resume();
+        		};
+        		
+        client.createCustomer(customer)
+        	 .subscribe(res);
 
-        Customer customer = new Customer();
+        waiter.await(4000, TimeUnit.MILLISECONDS);
+    }
+
+
+
+
+
+	private Customer getCustomerData() {
+		Customer customer = new Customer();
         customer.setFirstName("Hussien");
         customer.setMiddleName("Ahmad");
         customer.setLastName("Bishoy");
         customer.setEmail("KKK@KKK.com");
         customer.setBirthDate(LocalDate.of(1995, 02, 02));
 
-        Address d = new Address();
+        List<Address> addresses = Arrays.asList( createCustomerAddress() );
+        customer.setAddresses(addresses);
+        
+		return customer;
+	}
+
+
+
+
+
+	private Address createCustomerAddress() {
+		Address d = new Address();
         d.setStreet("q");
         d.setCity("Cairo");
         d.setCountry("Egy");
         d.setState("Cairo");
         d.setZipCode("12345");
         d.setPhoneNumber("0123456720");
-        List<Address> addresses = new ArrayList<>();
-        addresses.add(d);
-        customer.setAddresses(addresses);
+		return d;
+	}
 
-        Consumer<ClientResponse> res = response -> Assert.assertTrue(response.statusCode() == HttpStatus.OK);
-        client.createCustomer(customer, res);
-
-        Thread.sleep(1000);
-    }
-
+    
+    
+    
 
     @Test
-    public void getStores() throws InterruptedException {
+    public void getStores() throws InterruptedException, Exception {
+    	Waiter waiter = new Waiter();
 
-        Consumer<String> stores = s -> {
-            JSONArray c = new JSONObject(s).getJSONArray("results").getJSONObject(0).getJSONArray("shops");
-            List<Store> x = null;
-            try {
-                x = Arrays.asList(new ObjectMapper().readValue(c.toString(), Store[].class));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            for (Object b : x)
-                System.out.println(b.toString());
-        };
+        Consumer<ClientResponse> response = 
+        		res -> {
+        			waiter.assertEquals(HttpStatus.OK, res.statusCode());
+		            res.bodyToMono(String.class).subscribe(this::printStoresData);
+		            waiter.resume();	
+		        };
 
-        Consumer<ClientResponse> response = res -> {
-            System.out.println(res.statusCode());
-            if (res.statusCode().value() == 200)
-                res.bodyToMono(String.class).subscribe(stores);
-        };
+        client.getStores().subscribe(response);
 
-        client.getStores(response);
-
-        Thread.sleep(2000);
+        waiter.await(2000, TimeUnit.MILLISECONDS);
     }
 
+    
+    
+    
+    private void printStoresData(String bodyJson) {
+    	JSONArray shopsJson = new JSONObject(bodyJson)
+		    							.getJSONArray("results")
+		    							.getJSONObject(0)
+		    							.getJSONArray("shops");
+    	
+    	ObjectMapper mapper = new ObjectMapper();
+    	
+        List<Store> stores;
+		try {
+			stores = mapper.readValue(shopsJson.toString(), new TypeReference<List<Store>>(){});
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException();
+		}
+		
+        stores.forEach(System.out::println);
+    }
+    
+    
+    
+    
     @Test
-    public void getProducts() throws InterruptedException {
-        Consumer<ProductsResponse> products = s -> System.out.println(s);
+    public void getProducts() throws InterruptedException, Exception {
+    	Waiter waiter = new Waiter();    	
 
-        Consumer<ClientResponse> response = res -> {
-            System.out.println(res.statusCode());
-            if (res.statusCode().value() == 200)
-                res.bodyToMono(ProductsResponse.class).subscribe(products);
-        };
+        Consumer<ClientResponse> response = 
+        		res -> {
+        			waiter.assertEquals(HttpStatus.OK, res.statusCode());
+		            res.bodyToMono(ProductsResponse.class).subscribe(System.out::println);		            
+		            waiter.resume();	
+		        };
 
-        client.getProducts(2, 1,response);
-        Thread.sleep(2000);
+        client.getProducts(2, 1)
+        	.subscribe(response);
+        
+        waiter.await(2000, TimeUnit.MILLISECONDS);
     }
 
+    
+    
+    
 
     @Test
-    public void createSalesOrder() throws InterruptedException, IOException {
-
-        String jsonOrder = "{\"CountryID\":\"EGY\", \"CustomerID\":\"un5005009\", \"Address\":\"NasrCity\", \"City_Code\":\"\", \"Total_Order_Discount\":0.0," +
-                            "\"Total\":0.0, \"Shipping_fees\":10.0000000000000000, \"InventSite\":\"OCTOBER1\", \"Store\":\"116\"," +
-                            "\"PaymentMethod\":\"Credit_CHE\", \"CodCode\":\"Non\", \"CODFeeAmount\":10.0000000000000000, \"ShippingfeesCode\":\"Non\", " +
-                            "\"Items\":[  {\"Item\":\"011APF-74202\", \"InventSiteID\":\"OCTOBER1\", \"Store\":\"116\"," +
-                                          "\"Qty\":10.0000000000000000, \"SalesPrice\":10.0000000000000000, \"DiscountAmount\":0.0000000000000000, "+
-                                          "\"NetPrice\":10.0000000000000000, \"Totals\":0.0 } ]" +
-                            "}";
+    public void createSalesOrder() throws InterruptedException, IOException, Exception {
+    	Waiter waiter = new Waiter();
+    	
+        String jsonOrder = new String( Files.readAllBytes(orderRequest.getFile().toPath()) );
 
         SalesOrder order = new ObjectMapper().readValue(jsonOrder, SalesOrder.class);
+        Consumer<ClientResponse> response = 
+        		res -> {
+        			waiter.assertEquals(HttpStatus.OK, res.statusCode());
+        			res.bodyToMono(String.class).subscribe(id -> System.out.println("order id : " + id));		            
+		            waiter.resume();	
+		        };
 
-        Consumer<String> str = response -> System.out.println("order id : " + response);
+        client.createSalesOrder(order)
+        	.subscribe(response);
 
-        Consumer<ClientResponse> res = response -> {
-            Assert.assertTrue(response.statusCode() == HttpStatus.OK);
-            response.bodyToMono(String.class).subscribe(str);
-        };
-
-        client.createSalesOrder(order, res);
-
-        Thread.sleep(4000);
+        waiter.await(2000, TimeUnit.MILLISECONDS);
     }
 
+    
+    
+    
+    
     @Test
-    public void createReturnSalesOrder() throws InterruptedException, IOException {
-
-        String jsonOrder = "{\"SalesId\":\"UNT18-008133\", \"Items\": [{\"SalesId\":\"UNT18-008133\",\"Item\":\"011APF-74202\", "+
-                             "\"Qty\":1}]}";
-
+    public void createReturnSalesOrder() throws InterruptedException, IOException, Exception {
+    	Waiter waiter = new Waiter();
+    	
+        String jsonOrder = JsonBuilder.root()
+        							.put("SalesId", "UNT18-008133")
+        							.putArray("Items")
+        								.addJson()
+	        								.put("SalesId", "UNT18-008133")
+	        								.put("Item", "011APF-74202")
+	        							.parentArray()
+	        						.close()
+	        						.getJson();
+        JSONObject obj = new JSONObject()
+        						.put("SalesId", "UNT18-008133")
+        						.put("Items", 
+        								new JSONArray().put(
+        											new JSONObject()
+		        											.put("SalesId", "UNT18-008133")
+		            										.put("Item", "011APF-74202")
+        										)
+        						 );
+        						
+        		
+//        		"{\"SalesId\":\"UNT18-008133\", \"Items\": [{\"SalesId\":\"UNT18-008133\",\"Item\":\"011APF-74202\", "+
+//                             "\"Qty\":1}]}";
+        System.out.println("JSON order : " + jsonOrder);
         ReturnSalesOrder order = new ObjectMapper().readValue(jsonOrder, ReturnSalesOrder.class);
+        
+        Consumer<ClientResponse> response = 
+        		res -> {
+        			waiter.assertEquals(HttpStatus.OK, res.statusCode());
+        			res.bodyToMono(String.class).subscribe(id -> System.out.println("return order id : " + id));		            
+		            waiter.resume();	
+		        };
 
-        Consumer<String> str = response -> System.out.println("return order id : " + response);
+        client.createReturnSalesOrder(order)
+        	.subscribe(response);
 
-        Consumer<ClientResponse> res = response -> {
-            System.out.println(response.statusCode());
-            Assert.assertTrue(response.statusCode().value() == 200);
-            response.bodyToMono(String.class).subscribe(str);
-        };
-
-        client.createReturnSalesOrder(order, res);
-
-        Thread.sleep(5000);
+        waiter.await(2000, TimeUnit.MILLISECONDS);
     }
 
+    
+    
+    
+    
     @Test
     public void cancelSalesOrder() throws InterruptedException, IOException {
 
@@ -228,46 +316,54 @@ public class MicrosoftDynamicsIntegration {
 
         Thread.sleep(5000);*/
     }
+    
+    
+    
+    
 
     @Test
-    public void createPayment() throws InterruptedException, IOException {
-
+    public void createPayment() throws InterruptedException, IOException, Exception {
+    	Waiter waiter = new Waiter();
+    	
         String jsonPayment = "{\"SalesId\":\"UNT18-008133\", \"PaymDet\":[{\"SalesId\":\"UNT18-008133\",\"Amount\":2," +
                             "\"PaymentMethod\":\"Credit_CHE\"}]}";
 
         Payment payment = new ObjectMapper().readValue(jsonPayment, Payment.class);
+        
+        Consumer<ClientResponse> response = 
+        		res -> {
+        			waiter.assertEquals(HttpStatus.OK, res.statusCode());
+        			res.bodyToMono(String.class).subscribe(id -> System.out.println("payment id : " + id));		            
+		            waiter.resume();	
+		        };
 
-        Consumer<String> str = response -> System.out.println(" id : " + response);
+        client.createPayment(payment).subscribe(response);
 
-        Consumer<ClientResponse> res = response -> {
-            System.out.println(response.statusCode());
-            Assert.assertTrue(response.statusCode().value() == 200);
-            response.bodyToMono(String.class).subscribe(str);
-        };
-
-        client.createPayment(payment, res);
-
-        Thread.sleep(5000);
+        waiter.await(2000, TimeUnit.MILLISECONDS);
     }
+    
+    
+    
+    
 
     @Test
-    public void createReversePayment() throws InterruptedException, IOException {
-
+    public void createReversePayment() throws InterruptedException, IOException, Exception {
+    	Waiter waiter = new Waiter();
+    	
         String jsonPayment = "{\"SalesId\":\"UNT18-008133\", \"PaymDet\":[{\"SalesId\":\"UNT18-008133\",\"Amount\":2," +
                 "\"PaymentMethod\":\"Credit_CHE\"}]}";
 
         Payment payment = new ObjectMapper().readValue(jsonPayment, Payment.class);
+                
+        Consumer<ClientResponse> response = 
+        		res -> {
+        			waiter.assertEquals(HttpStatus.OK, res.statusCode());
+        			res.bodyToMono(String.class).subscribe(id -> System.out.println("reverse payment id : " + id));		            
+		            waiter.resume();	
+		        };
 
-        Consumer<String> str = response -> System.out.println(" id : " + response);
+        client.createReversePayment(payment).subscribe(response);
 
-        Consumer<ClientResponse> res = response -> {
-            System.out.println(response.statusCode());
-            Assert.assertTrue(response.statusCode().value() == 200);
-            response.bodyToMono(String.class).subscribe(str);
-        };
-
-        client.createReversePayment(payment, res);
-
-        Thread.sleep(5000);
+        waiter.await(2000, TimeUnit.MILLISECONDS);
     }
 }

@@ -81,10 +81,6 @@ public class IntegrationApiTest {
 	
 	
 	@Autowired
-	private EmployeeUserRepository empUserRepo;
-	
-	
-	@Autowired
 	private IntegrationParamRepository paramRepo;
 	
 	
