@@ -19,12 +19,12 @@ public abstract class IntegrationModule {
 		eventListeners = new HashMap<>();
 		
 		this.integrationService = integrationService;		
-		initIntegrationHandlers(integrationService);
+		initEventListeners(integrationService);
 	}
 	
 	
 	
-	protected abstract void initIntegrationHandlers(IntegrationService integrationService2);
+	protected abstract void initEventListeners(IntegrationService integrationService2);
 
 
 
@@ -38,8 +38,8 @@ public abstract class IntegrationModule {
 	
 	
 	
-	protected <E extends Event<T,R>, T,R> void putEventHandler(Class<E> eventClass , IntegrationEventListener<E,T,R> handler){
-		eventListeners.put(eventClass, handler);
+	protected <E extends Event<T,R>, T,R> void addEventListener(Class<E> eventClass , IntegrationEventListener<E,T,R> listener){
+		eventListeners.put(eventClass, listener);
 	}
 
 

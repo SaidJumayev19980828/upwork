@@ -1,3 +1,4 @@
+package com.nasnav.test.integration.msdynamics;
 
 import static com.nasnav.test.commons.TestCommons.json;
 import static com.nasnav.test.commons.TestCommons.jsonArray;
@@ -53,10 +54,11 @@ import net.jodah.concurrentunit.Waiter;
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
 
-public class MicrosoftDynamicsIntegration {
+public class MicrosoftDynamicsIntegrationWebClientsTest {
 
 	private static final String msServerUrl = "http://41.39.128.74";
 	private static final String mockServerUrl = "http://127.0.0.1";
+	
     private FortuneWebClient client;
 
     

@@ -21,10 +21,10 @@ public class DoNothingModule extends IntegrationModule{
 	
 
 	@Override
-	protected void initIntegrationHandlers(IntegrationService integrationService) {
+	protected void initEventListeners(IntegrationService integrationService) {
 		OrderConfirmEventHandler orderEventHandler = new OrderConfirmEventHandler( integrationService );
 		
-		this.putEventHandler(OrderConfirmEvent.class, orderEventHandler);
+		this.addEventListener(OrderConfirmEvent.class, orderEventHandler);
 	}
 
 }

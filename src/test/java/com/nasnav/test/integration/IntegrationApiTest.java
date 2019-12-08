@@ -1,3 +1,4 @@
+package com.nasnav.test.integration;
 import static com.nasnav.integration.enums.IntegrationParam.DISABLED;
 import static com.nasnav.integration.enums.IntegrationParam.INTEGRATION_MODULE;
 import static com.nasnav.integration.enums.IntegrationParam.MAX_REQUEST_RATE;

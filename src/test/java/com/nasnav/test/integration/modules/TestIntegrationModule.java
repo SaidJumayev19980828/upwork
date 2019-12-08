@@ -19,10 +19,10 @@ public class TestIntegrationModule extends IntegrationModule {
 	
 
 	@Override
-	protected void initIntegrationHandlers(IntegrationService integrationService) {
-		this.putEventHandler(TestEvent.class, new TestEventHandler(integrationService));
-		this.putEventHandler(TestEvent2.class, new TestEvent2Handler(integrationService));
-		this.putEventHandler(TestEventWithHandlerInfo.class, new HandlingInfoSaver(integrationService));
+	protected void initEventListeners(IntegrationService integrationService) {
+		this.addEventListener(TestEvent.class, new TestEventHandler(integrationService));
+		this.addEventListener(TestEvent2.class, new TestEvent2Handler(integrationService));
+		this.addEventListener(TestEventWithHandlerInfo.class, new HandlingInfoSaver(integrationService));
 	}
 
 
