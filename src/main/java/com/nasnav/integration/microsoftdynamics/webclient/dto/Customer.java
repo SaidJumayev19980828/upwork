@@ -38,15 +38,10 @@ public class Customer {
     
     private List<Address> addresses;
     
+    
+    @JsonProperty("Phone Number")
+    private String phoneNumber;
+    
     @JsonProperty(value = "Customer")
     private List<CustomerRepObj> obj; // for getting customers only !
-
-/*
-    public String getBirthDate() {
-        return this.birthDate.toString();
-    }
-
-    public void setBirthDate(String date){
-        this.birthDate = LocalDate.parse(date);
-    }*/
 }

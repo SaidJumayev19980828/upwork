@@ -1,5 +1,8 @@
 package com.nasnav.integration.microsoftdynamics;
 
+import static java.util.Optional.ofNullable;
+
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +32,7 @@ public class CustomerCreateEventListener extends IntegrationEventListener<Custom
 	public CustomerCreateEventListener(IntegrationService integrationService) {
 		super(integrationService);
 		
-		String serverUrl = this.integrationService.getIntegrationParamValue(ORG_ID, SERVER_URL_PARAM_NAME);
+		String serverUrl = integrationService.getIntegrationParamValue(ORG_ID, SERVER_URL_PARAM_NAME);
 		client = new FortuneWebClient(serverUrl);
 	}
 	
@@ -43,8 +46,7 @@ public class CustomerCreateEventListener extends IntegrationEventListener<Custom
 		return client.createCustomer(customer)
 					.filter( res -> res.statusCode() == HttpStatus.OK)
 					.doOnSuccess(this::throwExceptionIfNotOk)
-					.flatMap(res -> res.bodyToMono(String.class));
-		
+					.flatMap(res -> res.bodyToMono(String.class));		
 	}
 	
 	
@@ -63,14 +65,21 @@ public class CustomerCreateEventListener extends IntegrationEventListener<Custom
 	private Customer toMsDynamicsCustomer(CustomerData dat) {
 		List<Address> addresses = toMsDynamicsAddressList(dat);
 		
+		String phone = ofNullable( dat.getPhone() ).orElse("");
+		int gender = ofNullable( dat.getGender() ).orElse(1);
+		String firstName = ofNullable( dat.getFirstName() ).orElse("");
+		String lastName = ofNullable( dat.getLastName() ).orElse("");
+		LocalDate birthDate = ofNullable( dat.getBirthDate() ).orElse(LocalDate.of(1990, 1, 1));
+		
 		Customer customer = new Customer();		
-		customer.setBirthDate(dat.getBirthDate());
+		customer.setBirthDate(birthDate);
+		customer.setGender(gender);
 		customer.setEmail(dat.getEmail());
-		customer.setFirstName(dat.getFirstName());
-		customer.setGender(dat.getGender());
-		customer.setLastName(dat.getLastName());
-		customer.setMiddleName("");		
-		customer.setAddresses(addresses);
+		customer.setFirstName( firstName );		
+		customer.setLastName( lastName );		
+		customer.setPhoneNumber( phone );
+		customer.setAddresses( addresses );
+		customer.setMiddleName("");
 		
 		return customer;
 	}
@@ -86,14 +95,22 @@ public class CustomerCreateEventListener extends IntegrationEventListener<Custom
 			return new ArrayList<>();
 		}
 		
-		Address address = new Address();		
-		address.setCity(addressDat.getCity());
-		address.setCountry(addressDat.getCountry());
-		address.setPhoneNumber(dat.getPhone());
-		address.setStreet(addressDat.getAddress());
-		List<Address> addresses = Arrays.asList(address);
+		Address address = new Address();
+		String city = ofNullable( addressDat.getCity() ).orElse("") ;
+		String country = ofNullable( addressDat.getCountry() ).orElse("Egypt");
+		String phone = ofNullable( dat.getPhone() ).orElse("");
+		String street = ofNullable( addressDat.getAddress() ).orElse("");
+		String state = city;
+		String zip = ofNullable("").orElse("");
 		
-		return addresses;
+		address.setCity( city );
+		address.setCountry( country);
+		address.setPhoneNumber(phone);
+		address.setStreet( street);
+		address.setState(state);
+		address.setZipCode(zip);
+		
+		return Arrays.asList(address);
 	}
 	
 	

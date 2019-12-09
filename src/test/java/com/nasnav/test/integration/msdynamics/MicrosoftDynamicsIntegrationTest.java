@@ -1,6 +1,7 @@
 package com.nasnav.test.integration.msdynamics;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
 
 import java.util.HashMap;
@@ -30,7 +31,6 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.UserEntity;
-import com.nasnav.service.UserService;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -40,9 +40,12 @@ import com.nasnav.service.UserService;
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class MicrosoftDynamicsIntegrationTest {
 	
-	private static final String msServerUrl = "http://41.39.128.74";
-	private static final String mockServerUrl = "http://127.0.0.1";
-	private static final String serverUrl = mockServerUrl;
+	private static final String MS_SERVER_URL = "http://41.39.128.74";
+	private static final String MOCK_SERVER_URL = "http://127.0.0.1";
+	private static final String SERVER_URL = MOCK_SERVER_URL;
+//	private static final String SERVER_URL = MS_SERVER_URL;
+	private static final boolean usingMockServer = MOCK_SERVER_URL == SERVER_URL;
+	
 	
 	private static final Long ORG_ID = 99001L;
 	private static final String USER_MAPPING = "CUSTOMER";
@@ -53,10 +56,6 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	@Autowired
 	private IntegrationTestCommon testCommons;
-	
-	
-	@Autowired
-	private UserService userSrv;
 	
 	
 	@Autowired
@@ -74,8 +73,13 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	@Before
 	public void init() throws Exception {			
-		testCommons.initFortuneMockServer(mockServerRule);
-		registerIntegrationModule();
+		String serverFullUrl = SERVER_URL;
+		if(usingMockServer) {
+			serverFullUrl = testCommons.initFortuneMockServer(mockServerRule);
+		}
+		
+		serverFullUrl = "sdfdsds";
+		registerIntegrationModule(serverFullUrl);
 	}
 	
 	
@@ -84,7 +88,7 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	
 	@Test
-	public void createCustomerIntegrationTest() {
+	public void createCustomerIntegrationTest() throws InterruptedException {
 		
 		assertEquals("no users should exists", 0L, userRepo.count());
 		
@@ -99,20 +103,28 @@ public class MicrosoftDynamicsIntegrationTest {
 		assertEquals( email, user.getEmail());
 		//------------------------------------------------
 		
+		Thread.sleep(5000);
+		
+		//------------------------------------------------
 		//test the mock api was called
-		mockServerRule.getClient().verify(
-			      request()
-			        .withMethod("PUT")
-			        .withPath("/api/customer"),
-			      VerificationTimes.exactly(1)
-			    );
+		if(usingMockServer) {
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("PUT")
+				        .withPath("/api/customer"),
+				      VerificationTimes.exactly(1)
+				    );
+		}
 		//------------------------------------------------
 		//test the integration mapping was created
 		Optional<IntegrationMappingEntity> mapping = 
 				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(
 													ORG_ID, USER_MAPPING, user.getId().toString());
 		
-		assertEquals(testCommons.getDummyCustomerExtId(), mapping.get().getRemoteValue());
+		assertTrue(mapping.isPresent());
+		if(usingMockServer) {
+			assertEquals(testCommons.getDummyCustomerExtId(), mapping.get().getRemoteValue());
+		}
 	}
 
 
@@ -127,7 +139,14 @@ public class MicrosoftDynamicsIntegrationTest {
 		regObj.name = "Nasnav";
 		regObj.orgId = ORG_ID;
 		
-		userSrv.registerUser(regObj);
+		
+		UserEntity user = UserEntity.registerUser(regObj);
+		user.setPhoneNumber("000111444");
+//		user.setAddress("nasnav st.");
+//		user.setAddressCity("Cairo");
+//		user.setAddressCountry("Egypt");
+		userRepo.save(user);
+		
 		return email;
 	}
 	
@@ -135,9 +154,9 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	
 
-	private void registerIntegrationModule() throws BusinessException {
+	private void registerIntegrationModule(String serverFullUrl) throws BusinessException {
 		Map<String,String> params = new HashMap<>();
-		params.put("SERVER_URL", serverUrl);
+		params.put("SERVER_URL", serverFullUrl);
 		
 		OrganizationIntegrationInfoDTO integrationInfo = new OrganizationIntegrationInfoDTO();
 		integrationInfo.setIntegrationModule("com.nasnav.integration.microsoftdynamics.MsDynamicsIntegrationModule");

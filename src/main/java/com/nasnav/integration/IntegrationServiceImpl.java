@@ -717,8 +717,9 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 	private void verifyModuleClassExistsInClasspath(OrganizationIntegrationInfoDTO info, Long orgId) throws BusinessException {
+		String integrationModuleClass = info.getIntegrationModule();
 		try {
-			loadIntegrationModuleClass(orgId, info.getIntegrationModule());
+			this.getClass().getClassLoader().loadClass(integrationModuleClass);
 		}catch(Exception e) {
 			throw new BusinessException("Invalid Integration Module provided!"
 									, "INVALID_PARAM:integration_module"
@@ -920,14 +921,33 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	@Override
 	public String getIntegrationParamValue(Long orgId, String paramName) {
+		return getParamFromDB(orgId, paramName);
+	}
+
+
+
+
+
+
+	private String getParamFromDB(Long orgId, String paramName) {
+		return paramRepo.findByOrganizationIdAndType_typeName(orgId, paramName)
+								.map(IntegrationParamEntity::getParamValue)
+							    .orElse(null);
+	}
+
+
+
+
+
+
+	private Optional<String> getParamCachedValue(Long orgId, String paramName) {
 		return Optional.ofNullable(orgIntegration.get(orgId))
 						.map(OrganizationIntegrationInfo::getParameters)
 						.orElse(new ArrayList<>())
 						.stream()
 						.filter( p -> Objects.equals(p.getParameterTypeName(), paramName))
 						.map(IntegrationParamEntity::getParamValue)
-						.findFirst()
-						.orElse(null);
+						.findFirst();
 	}
 
 }

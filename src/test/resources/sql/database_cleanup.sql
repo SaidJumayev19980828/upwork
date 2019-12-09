@@ -1,6 +1,7 @@
 
 DELETE FROM public.integration_mapping where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.integration_param where  organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.integration_event_failure where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.integration_mapping_type;
 DELETE FROM public.integration_param_type;
 DELETE FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999;
