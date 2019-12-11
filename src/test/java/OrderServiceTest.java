@@ -1,4 +1,5 @@
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
+import static com.nasnav.enumerations.OrderStatus.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -57,6 +58,7 @@ import com.nasnav.test.helpers.TestHelper;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -132,10 +134,10 @@ public class OrderServiceTest {
 	
 	@Test
 	public void updateOrderSuccessTest() {
-		StocksEntity stock = createStock();
-		
-		// create a new order, then take it's oder id and try to make an update using it
-		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stock.getId(), stock.getQuantity()));
+		// create a new order, then take it's order id and try to make an update using it
+		StocksEntity stock = createStock();		
+				
+		JSONObject request = createOrderRequestWithBasketItems(NEW, item(stock.getId(), stock.getQuantity()));
 		ResponseEntity<OrderResponse> response = 
 				template.postForEntity("/order/update"
 										, TestCommons.getHttpEntity(request.toString(), "123")
@@ -150,7 +152,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------
 		// make an update request using the created order
-		JSONObject updateRequest = createOrderRequestWithBasketItems(OrderStatus.CLIENT_CONFIRMED);
+		JSONObject updateRequest = createOrderRequestWithBasketItems(CLIENT_CONFIRMED);
 		updateRequest.put("order_id", orderId);
 		
 		ResponseEntity<OrderResponse> updateResponse = 
@@ -935,6 +937,112 @@ public class OrderServiceTest {
 		item.setThumb(EXPECTED_COVER_IMG_URL);
 		return Arrays.asList(item);
 	}
+	
+	
+	
+	
+	
+	@Test
+	public void userUpdateOrderForAnotherUser() {
+		Long otherUserOrderId = 330033L;
+		String userToken = "456"; 
+		
+		//---------------------------------------------------------------
+		// make an update request using the created order
+		JSONObject updateRequest = createOrderRequestWithBasketItems(CLIENT_CONFIRMED);
+		updateRequest.put("order_id", otherUserOrderId);
+		
+		ResponseEntity<OrderResponse> updateResponse = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity(updateRequest.toString(), userToken)
+										, OrderResponse.class);
+		System.out.println("----------response-----------------" + updateResponse);
+		
+		//---------------------------------------------------------------
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, updateResponse.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	public void userUpdateBasketAfterConfrim() {
+		Long otherUserOrderId = 330033L;
+		String userToken = "123"; 
+		//---------------------------------------------------------------
+		// make an update request using the created order
+		JSONObject updateRequest = createOrderRequestWithBasketItems(CLIENT_CONFIRMED);
+		updateRequest.put("order_id", otherUserOrderId);
+		
+		ResponseEntity<OrderResponse> updateResponse = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity(updateRequest.toString(), userToken)
+										, OrderResponse.class);
+		System.out.println("----------response-----------------" + updateResponse);
+		
+		//---------------------------------------------------------------
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, updateResponse.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	public void storeManagerUpdateOrderForAnotherStore() {
+		throw new NotImplementedException();
+	}
+	
+	
+	
+	@Test
+	public void  userUpdateOrderFromNewToDelievered() {
+		throw new NotImplementedException();
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void userUpadateOrderFromConfirmedToCancelled() {
+		throw new NotImplementedException();
+	}
+	
+	
+	
+	
+	
+
+	@Test
+	public void userUpadateOrderFromStoreConfirmedToCancelled() {
+		throw new NotImplementedException();
+	}
+	
+	
+	
+	
+	@Test
+	public void storeManagerUpadateOrderClientConfirmedToDelivered() {
+		throw new NotImplementedException();
+	}
+	
+	
+	
+	
+	@Test
+	public void orgManagerUpadateOrderForAntherShop() {
+		throw new NotImplementedException();
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void orgManagerUpadateOrderForAntherOrg() {
+		throw new NotImplementedException();
+	}
+	
 }
 
 

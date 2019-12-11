@@ -2,6 +2,8 @@ package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
+import static com.nasnav.commons.utils.EntityUtils.setOf;
+import static com.nasnav.commons.utils.MapBuilder.buildMap;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_CALC_ORDER_FAILED;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ITEM_QUANTITY;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ORDER_STATUS;
@@ -13,22 +15,33 @@ import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_N
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NULL_ITEM;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_EXISTS;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_UPDATED_ORDER_WITH_NO_ID;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NO_CURRENT_ORDER;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_STATUS_NOT_ALLOWED_FOR_ROLE;
+
+import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
+import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
+import static com.nasnav.enumerations.OrderStatus.NEW;
+import static com.nasnav.enumerations.OrderStatus.*;
+import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
+import static java.util.Collections.emptySet;
+import static java.util.Optional.ofNullable;
+import static java.lang.String.format;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +58,7 @@ import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.ShippingAddress;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BaseUserEntity;
@@ -84,6 +98,10 @@ public class OrderServiceImpl implements OrderService {
 	
 	@Autowired
 	private SecurityService securityService;
+
+	private Map<OrderStatus, Set<OrderStatus>> nextOrderStatusSet;
+	private Set<OrderStatus> orderStatusForCustomers;
+	private Set<OrderStatus> orderStatusForManagers;
 	
 
 	@Autowired
@@ -98,6 +116,44 @@ public class OrderServiceImpl implements OrderService {
 		this.userRepository = userRepository;
 		this.employeeUserServiceHelper = employeeUserServiceHelper;
 		this.employeeUserRepository = employeeUserRepository;
+		
+		
+		setOrderStatusPermissions();
+		
+		buildOrderStatusTransitionMap();
+	}
+
+
+
+
+
+	private void setOrderStatusPermissions() {
+		orderStatusForCustomers = setOf(NEW, CLIENT_CONFIRMED, CLIENT_CANCELLED);		
+		orderStatusForManagers = getManagerPermittedOrderStatuses();
+	}
+
+
+
+
+
+	private Set<OrderStatus> getManagerPermittedOrderStatuses() {
+		Set<OrderStatus> orderStatusForMgr = setOf(OrderStatus.values());
+		orderStatusForMgr.removeAll(orderStatusForCustomers);
+		return orderStatusForMgr;
+	}
+
+
+
+
+
+	private void buildOrderStatusTransitionMap() {
+		nextOrderStatusSet = new HashMap<>();
+		buildMap(nextOrderStatusSet)
+			.put(NEW, setOf(CLIENT_CONFIRMED, CLIENT_CANCELLED))
+			.put(CLIENT_CONFIRMED, setOf(CLIENT_CANCELLED, STORE_CONFIRMED, STORE_CANCELLED))
+			.put(STORE_CONFIRMED, setOf(STORE_PREPARED, STORE_CANCELLED))
+			.put(STORE_PREPARED, setOf(DISPATCHED, STORE_CANCELLED))
+			.put(DISPATCHED, setOf(DELIVERED, STORE_CANCELLED));
 	}
 	
 	
@@ -164,10 +220,8 @@ public class OrderServiceImpl implements OrderService {
 		}
 		
 		if( !isNullOrZero(order.getId()) ) {
-			Optional<OrdersEntity> orderEntity = ordersRepository.findById(order.getId());
-			if(!orderEntity.isPresent()) {
-				throwInvalidOrderException(ERR_ORDER_NOT_EXISTS);
-			}
+			ordersRepository.findById(order.getId())
+							.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS));
 		}
 		
 		List<BasketItemDTO> basket = order.getBasket();
@@ -363,13 +417,11 @@ public class OrderServiceImpl implements OrderService {
 										.map(OrderStatus::findEnum)
 										.orElse(OrderStatus.NEW);
 
-		Optional<OrdersEntity> optional = ordersRepository.findById( orderJsonDto.getId() );
-		if(!optional.isPresent()) {
-			throwInvalidOrderException(ERR_ORDER_NOT_EXISTS);
-		}
-		OrdersEntity orderEntity = optional.get();	
+		OrdersEntity orderEntity =  ordersRepository.findById( orderJsonDto.getId() )
+													.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS));
 
 		OrderResponse orderResponse = updateCurrentOrderStatus(orderJsonDto, orderEntity, newStatus);
+		
 		if ( newStatus.equals( OrderStatus.NEW )) {
 			orderResponse = updateOrderBasket(orderJsonDto, orderEntity);
 		}
@@ -400,9 +452,7 @@ public class OrderServiceImpl implements OrderService {
 												   OrderStatus newStatus) throws BusinessException {
 
 		OrderStatus currentOrderStatus = OrderStatus.findEnum(orderEntity.getStatus());		
-		if ((newStatus.getValue() < currentOrderStatus.getValue()) ) {
-			throwInvalidOrderException(ERR_INVALID_ORDER_STATUS_UPDATE);
-		}
+		validateNewOrderStatus(newStatus, currentOrderStatus);
 		
 		if (newStatus == OrderStatus.CLIENT_CONFIRMED) {
 			//TODO: WHY ???
@@ -413,9 +463,70 @@ public class OrderServiceImpl implements OrderService {
 		
 		return new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
 	}
+
+
+
+
+
+	private void validateNewOrderStatus(OrderStatus newStatus, OrderStatus currentStatus) throws BusinessException {	
+		
+		if(newStatus == null || !canOrderStatusChangeTo(currentStatus, newStatus)) {
+			throwInvalidOrderException(ERR_INVALID_ORDER_STATUS_UPDATE);
+		};		
+		
+		
+		boolean isCustomer = securityService.currentUserHasRole(Roles.CUSTOMER);
+		if(!isCustomer) {
+			validateManagerCanSetStatus(newStatus); 
+		}else {
+			validateCustomerCanSetStatus(newStatus);
+		}
+	}
+
+
+
+
+
+	private boolean canOrderStatusChangeTo(OrderStatus currentStatus, OrderStatus newStatus) {
+		return ofNullable(nextOrderStatusSet.get(currentStatus))
+										.orElse(emptySet())
+										.contains(newStatus);
+	}
 	
 	
 	
+
+	private void validateManagerCanSetStatus(OrderStatus newStatus) {
+		boolean isOrgManager = securityService.currentUserHasRole(Roles.ORGANIZATION_MANAGER);
+		boolean isStoreManager = securityService.currentUserHasRole(Roles.STORE_MANAGER);
+		
+		
+	}
+
+
+
+
+
+	private void validateCustomerCanSetStatus(OrderStatus newStatus) throws BusinessException {
+		if( !canCustomerSetOrderStatusTo(newStatus)) {
+			throw new BusinessException(
+					format(ERR_ORDER_STATUS_NOT_ALLOWED_FOR_ROLE, newStatus.name(), Roles.CUSTOMER.name())
+					,"INVALID_PARAM: status"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+
+
+
+
+	private boolean canCustomerSetOrderStatusTo(OrderStatus newStatus) {
+		return orderStatusForCustomers.contains(newStatus);
+	}
+
+
+
+
 
 	private void addItemsToBasket(OrderJsonDto orderJsonDto, OrdersEntity orderEntity) throws BusinessException {
 		List<BasketItemDTO> basketItems = orderJsonDto.getBasket();
