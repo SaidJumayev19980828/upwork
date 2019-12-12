@@ -24,7 +24,8 @@ public interface OrderService {
 
 	public OrderValue getOrderValue(OrdersEntity orderEntity);
 
-	public List<DetailedOrderRepObject> getOrdersList(String userToken, Long userId, Long storeId, Long orgId, String status);
+	public List<DetailedOrderRepObject> getOrdersList(String userToken, Long userId, Long storeId, Long orgId,
+													  String status, boolean details) throws BusinessException;
 
 	public DetailedOrderRepObject getCurrentOrder() throws BusinessException;
 

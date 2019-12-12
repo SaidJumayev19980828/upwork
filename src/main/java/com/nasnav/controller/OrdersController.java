@@ -84,9 +84,10 @@ public class OrdersController {
 											@RequestParam(name = "user_id", required = false) Long userId,  //search parameter
 											@RequestParam(name = "store_id", required = false) Long storeId,
 											@RequestParam(name = "org_id", required = false) Long orgId,
-											@RequestParam(name = "status", required = false) String status) throws BusinessException {
+											@RequestParam(name = "status", required = false) String status,
+											@RequestParam(name = "details", required = false) boolean details) throws BusinessException {
 		
-		return  this.orderService.getOrdersList(userToken, userId, storeId, orgId, status);
+		return  this.orderService.getOrdersList(userToken, userId, storeId, orgId, status, details);
 	}
 	
 	

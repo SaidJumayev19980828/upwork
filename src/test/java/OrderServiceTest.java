@@ -555,11 +555,8 @@ public class OrderServiceTest {
 		// by status
 		response = template.exchange("/order/list?status=invalid_status", HttpMethod.GET,
 				new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
-		body = new JSONArray(response.getBody());
-		count = body.length();
 
-		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("get all orders if status parameter is invalid",16,count);
+		assertTrue(400 == response.getStatusCode().value());
 	}
 	
 	
