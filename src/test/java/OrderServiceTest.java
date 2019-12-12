@@ -1,5 +1,9 @@
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
-import static com.nasnav.enumerations.OrderStatus.*;
+import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
+import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
+import static com.nasnav.enumerations.OrderStatus.NEW;
+import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
+import static com.nasnav.enumerations.OrderStatus.DELIVERED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -38,6 +42,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nasnav.NavBox;
 import com.nasnav.controller.OrdersController;
+import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
@@ -95,6 +100,10 @@ public class OrderServiceTest {
 
 	@Autowired
 	private TestHelper helper;
+	
+	
+	@Autowired
+	private BasketRepository basketRepository;
 	
 	
 	@Test
@@ -274,9 +283,10 @@ public class OrderServiceTest {
 		Long orderId = ordersEntity.getId(); 
 		
 		//---------------------------------------------------------------
-		// try updating with a non-existing order number
+		// try updating with a existing order number
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stocksEntity.getId(), quantity));
 		request.put("order_id", orderId);
+		
 		ResponseEntity<OrderResponse> response = 
 					template.postForEntity("/order/update"
 								, TestCommons.getHttpEntity(request.toString(), persistentUser.getAuthenticationToken())
@@ -917,6 +927,9 @@ public class OrderServiceTest {
 		
 		return order;
 	}
+	
+	
+	
 
 	private ShippingAddress createExpectedShippingAddr() {
 		ShippingAddress addr = new ShippingAddress();
@@ -948,7 +961,7 @@ public class OrderServiceTest {
 		String userToken = "456"; 
 		
 		//---------------------------------------------------------------
-		// make an update request using the created order
+
 		JSONObject updateRequest = createOrderRequestWithBasketItems(CLIENT_CONFIRMED);
 		updateRequest.put("order_id", otherUserOrderId);
 		
@@ -956,23 +969,26 @@ public class OrderServiceTest {
 				template.postForEntity("/order/update"
 										, TestCommons.getHttpEntity(updateRequest.toString(), userToken)
 										, OrderResponse.class);
-		System.out.println("----------response-----------------" + updateResponse);
+		System.out.println("----------response-----------------\n" + updateResponse);
 		
 		//---------------------------------------------------------------
 		assertEquals(HttpStatus.NOT_ACCEPTABLE, updateResponse.getStatusCode());
 	}
+	
 	
 	
 	
 	
 	@Test
 	public void userUpdateBasketAfterConfrim() {
-		Long otherUserOrderId = 330033L;
+		Long orderId = 330033L;
 		String userToken = "123"; 
+		
+		List<Long> basketItemsBefore = getBasketItemsIdList(orderId);
 		//---------------------------------------------------------------
-		// make an update request using the created order
-		JSONObject updateRequest = createOrderRequestWithBasketItems(CLIENT_CONFIRMED);
-		updateRequest.put("order_id", otherUserOrderId);
+		
+		JSONObject updateRequest = createOrderRequestWithBasketItems(CLIENT_CONFIRMED, item(602L, 14));
+		updateRequest.put("order_id", orderId);
 		
 		ResponseEntity<OrderResponse> updateResponse = 
 				template.postForEntity("/order/update"
@@ -981,22 +997,71 @@ public class OrderServiceTest {
 		System.out.println("----------response-----------------" + updateResponse);
 		
 		//---------------------------------------------------------------
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, updateResponse.getStatusCode());
+		List<Long> basketItemsAfter = getBasketItemsIdList(orderId);
+		
+		assertEquals(HttpStatus.OK, updateResponse.getStatusCode());
+		assertEquals("any changes to the basket items are ignored if the order new status is not NEW"
+						, basketItemsBefore
+						, basketItemsAfter);
+	}
+
+
+
+
+
+
+	private List<Long> getBasketItemsIdList(Long orderId) {
+		List<Long> basketItemsBefore = basketRepository.findByOrdersEntity_Id(orderId)
+														.stream()
+														.map(BasketsEntity::getId)
+														.collect(Collectors.toList());
+		return basketItemsBefore;
 	}
 	
 	
 	
 	
+	
 	@Test
-	public void storeManagerUpdateOrderForAnotherStore() {
-		throw new NotImplementedException();
+	public void storeManagerUpdateOrderForAnotherStore() {		
+		Long orderId = 330036L;
+		String userToken = "sdfe47"; 
+		
+		//---------------------------------------------------------------
+
+		JSONObject updateRequest = createOrderRequestWithBasketItems(STORE_CANCELLED);
+		updateRequest.put("order_id", orderId);
+		
+		ResponseEntity<String> updateResponse = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity(updateRequest.toString(), userToken)
+										, String.class);
+		System.out.println("----------response-----------------\n" + updateResponse);
+		
+		//---------------------------------------------------------------
+		assertEquals(HttpStatus.FORBIDDEN, updateResponse.getStatusCode());
 	}
 	
 	
 	
 	@Test
 	public void  userUpdateOrderFromNewToDelievered() {
-		throw new NotImplementedException();
+		Long otherUserOrderId = 330033L;
+		String userToken = "123"; 
+		
+		//---------------------------------------------------------------
+
+		JSONObject updateRequest = createOrderRequestWithBasketItems(DELIVERED);
+		updateRequest.put("order_id", otherUserOrderId);
+		
+		ResponseEntity<String> updateResponse = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity(updateRequest.toString(), userToken)
+										, String.class);
+		System.out.println("----------response-----------------\n" + updateResponse);
+		
+		//---------------------------------------------------------------
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, updateResponse.getStatusCode());
 	}
 	
 	
@@ -1005,7 +1070,22 @@ public class OrderServiceTest {
 	
 	@Test
 	public void userUpadateOrderFromConfirmedToCancelled() {
-		throw new NotImplementedException();
+		Long otherUserOrderId = 330040L;
+		String userToken = "123"; 
+		
+		//---------------------------------------------------------------
+
+		JSONObject updateRequest = createOrderRequestWithBasketItems(OrderStatus.CLIENT_CANCELLED);
+		updateRequest.put("order_id", otherUserOrderId);
+		
+		ResponseEntity<String> updateResponse = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity(updateRequest.toString(), userToken)
+										, String.class);
+		System.out.println("----------response-----------------\n" + updateResponse);
+		
+		//---------------------------------------------------------------
+		assertEquals(HttpStatus.OK, updateResponse.getStatusCode());
 	}
 	
 	
@@ -1015,23 +1095,70 @@ public class OrderServiceTest {
 
 	@Test
 	public void userUpadateOrderFromStoreConfirmedToCancelled() {
-		throw new NotImplementedException();
+		Long otherUserOrderId = 330042L;
+		String userToken = "123"; 
+		
+		//---------------------------------------------------------------
+
+		JSONObject updateRequest = createOrderRequestWithBasketItems(OrderStatus.CLIENT_CANCELLED);
+		updateRequest.put("order_id", otherUserOrderId);
+		
+		ResponseEntity<String> updateResponse = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity(updateRequest.toString(), userToken)
+										, String.class);
+		System.out.println("----------response-----------------\n" + updateResponse);
+		
+		//---------------------------------------------------------------
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, updateResponse.getStatusCode());
 	}
+	
 	
 	
 	
 	
 	@Test
-	public void storeManagerUpadateOrderClientConfirmedToDelivered() {
-		throw new NotImplementedException();
+	public void storeManagerUpadateOrderClientConfirmedToClientCancelled() {
+		Long otherUserOrderId = 330046L;
+		String userToken = "sdfe47"; 
+		
+		//---------------------------------------------------------------
+
+		JSONObject updateRequest = createOrderRequestWithBasketItems(OrderStatus.CLIENT_CANCELLED);
+		updateRequest.put("order_id", otherUserOrderId);
+		
+		ResponseEntity<String> updateResponse = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity(updateRequest.toString(), userToken)
+										, String.class);
+		System.out.println("----------response-----------------\n" + updateResponse);
+		
+		//---------------------------------------------------------------
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, updateResponse.getStatusCode());
 	}
+	
 	
 	
 	
 	
 	@Test
 	public void orgManagerUpadateOrderForAntherShop() {
-		throw new NotImplementedException();
+		Long orderId = 330043L;
+		String userToken = "131415"; 
+		
+		//---------------------------------------------------------------
+
+		JSONObject updateRequest = createOrderRequestWithBasketItems(STORE_CANCELLED);
+		updateRequest.put("order_id", orderId);
+		
+		ResponseEntity<String> updateResponse = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity(updateRequest.toString(), userToken)
+										, String.class);
+		System.out.println("----------response-----------------\n" + updateResponse);
+		
+		//---------------------------------------------------------------
+		assertEquals(HttpStatus.OK, updateResponse.getStatusCode());
 	}
 	
 	
@@ -1040,7 +1167,67 @@ public class OrderServiceTest {
 	
 	@Test
 	public void orgManagerUpadateOrderForAntherOrg() {
-		throw new NotImplementedException();
+		Long orderId = 330039L;
+		String userToken = "131415"; 
+		
+		//---------------------------------------------------------------
+
+		JSONObject updateRequest = createOrderRequestWithBasketItems(STORE_CANCELLED);
+		updateRequest.put("order_id", orderId);
+		
+		ResponseEntity<String> updateResponse = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity(updateRequest.toString(), userToken)
+										, String.class);
+		System.out.println("----------response-----------------\n" + updateResponse);
+		
+		//---------------------------------------------------------------
+		assertEquals(HttpStatus.FORBIDDEN, updateResponse.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	public void userUpadateOrderAsConfirmedWithEmptyCart() {
+		Long orderId = 330037L;
+		String userToken = "123"; 
+		
+		//---------------------------------------------------------------
+
+		JSONObject updateRequest = createOrderRequestWithBasketItems(CLIENT_CONFIRMED);
+		updateRequest.put("order_id", orderId);
+		
+		ResponseEntity<String> updateResponse = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity(updateRequest.toString(), userToken)
+										, String.class);
+		System.out.println("----------response-----------------\n" + updateResponse);
+		
+		//---------------------------------------------------------------
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, updateResponse.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void managerCreatesNewOrder() {
+		String userToken = "101112"; 
+		
+		//---------------------------------------------------------------
+
+		JSONObject updateRequest = createOrderRequestWithBasketItems(NEW);
+		
+		ResponseEntity<String> updateResponse = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity(updateRequest.toString(), userToken)
+										, String.class);
+		System.out.println("----------response-----------------\n" + updateResponse);
+		
+		//---------------------------------------------------------------
+		assertEquals(HttpStatus.FORBIDDEN, updateResponse.getStatusCode());
 	}
 	
 }

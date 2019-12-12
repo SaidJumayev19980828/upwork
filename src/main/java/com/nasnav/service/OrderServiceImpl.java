@@ -16,6 +16,12 @@ import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_N
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_EXISTS;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_UPDATED_ORDER_WITH_NO_ID;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_STATUS_NOT_ALLOWED_FOR_ROLE;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_OWNED_BY_USER;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_MANAGER_CANNOT_CREATE_ORDERS;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_CONFIRMED_WITH_EMPTY_BASKET;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_OWNED_BY_ADMIN;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NOT_EMP_ACCOUNT;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_OWNED_BY_SHOP_MANAGER;
 
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
@@ -23,6 +29,7 @@ import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
+import static com.nasnav.enumerations.Roles.*;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.lang.String.format;
@@ -31,7 +38,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -201,27 +207,23 @@ public class OrderServiceImpl implements OrderService {
 	
 
 	private void validateOrder(OrderJsonDto order) throws BusinessException {
+		Long orderId = order.getId();
 		
 		List<String> possibleStatusList = getPossibleOrderStatus();
 		if(!possibleStatusList.contains( order.getStatus() )) {
 			throwInvalidOrderException(ERR_INVALID_ORDER_STATUS);
-		}
+		}		
 		
-		if(!isNewOrder(order)
-				&& isNullOrZero(order.getId()) ) {
+		if( !isNewOrder(order) && isNullOrZero(order.getId()) ) {
 			throwInvalidOrderException(ERR_UPDATED_ORDER_WITH_NO_ID);
-		}
+		}		
+
+		if (isNewOrderToBeCreated(order)) {
+			validateOrderCreation(order);			
+		}		
 		
-		
-		//TODO: can be removed, there is no reason for not-accepting empty baskets at the first place
-		//it can be handled at confirmation
-		if (isNewOrderToBeCreated(order) && isNullOrEmpty(order.getBasket()) ) {
-			throwInvalidOrderException(ERR_NEW_ORDER_WITH_EMPTY_BASKET);
-		}
-		
-		if( !isNullOrZero(order.getId()) ) {
-			ordersRepository.findById(order.getId())
-							.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS));
+		if( !isNullOrZero(orderId) ) {
+			validateOrderUpdate(order);			 			
 		}
 		
 		List<BasketItemDTO> basket = order.getBasket();
@@ -229,6 +231,164 @@ public class OrderServiceImpl implements OrderService {
 		if(basket!= null &&  isNewOrder(order)){
 			validateBasketItems(order);			
 		}		
+	}
+
+
+
+
+
+	private void validateOrderUpdate(OrderJsonDto order) throws BusinessException {		
+		if(isCustomerUser()) {
+			validateOrderUpdateForUser(order);
+		}else {
+			validateOrderUpdateForManager(order.getId());
+		}
+	}
+
+
+
+
+
+	private void validateOrderUpdateForUser(OrderJsonDto order)
+			throws BusinessException {
+		Long userId = securityService.getCurrentUser().getId();
+		Long orderId = order.getId();
+		OrdersEntity orderEntity = ordersRepository.findById(orderId)
+											.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS, orderId));		
+
+		
+		if( !Objects.equals(userId, orderEntity.getUserId()) ) {
+			throwInvalidOrderException(ERR_ORDER_NOT_OWNED_BY_USER, userId, orderId);
+		}
+		
+		if( isCheckedOutOrder(order)) {
+			validateConfirmendOrder(orderId);
+		}
+	}
+
+
+
+
+
+	private void validateOrderUpdateForManager(Long orderId) throws BusinessException {
+		BaseUserEntity user = securityService.getCurrentUser();
+		OrdersEntity orderEntity = ordersRepository.findById(orderId)
+												.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS));	
+		
+		if( !isSameOrgForOrderAndManager(orderEntity) ){
+			throwForbiddenOrderException(ERR_ORDER_NOT_OWNED_BY_ADMIN, orderId, user.getId());
+		}
+		
+		
+		if(isStoreManager() && !isOrgManager()) {
+			if( !isSameShopForOrderAndManager(orderEntity) ){
+				throwForbiddenOrderException(ERR_ORDER_NOT_OWNED_BY_SHOP_MANAGER, orderId, user.getId());
+			}
+		}
+	}
+
+
+
+
+
+	private boolean isSameOrgForOrderAndManager(OrdersEntity orderEntity) {
+		Long userOrgId = securityService.getCurrentUserOrganizationId();
+		return Objects.equals(userOrgId, getOrderOrgId(orderEntity));
+	}
+
+
+
+
+
+	private boolean isSameShopForOrderAndManager(OrdersEntity orderEntity) throws BusinessException {
+		BaseUserEntity user = securityService.getCurrentUser();
+		
+		if(!(user instanceof EmployeeUserEntity)) {
+			throwForbiddenOrderException(ERR_NOT_EMP_ACCOUNT, user.getId());
+		}
+		
+		EmployeeUserEntity manager = (EmployeeUserEntity)user;
+		return Objects.equals(manager.getShopId(), getOrderShopId(orderEntity));
+	}
+
+
+
+
+
+	private Object getOrderShopId(OrdersEntity orderEntity) {
+		return ofNullable(orderEntity)
+					.map(OrdersEntity::getShopsEntity)
+					.map(ShopsEntity::getId)
+					.orElse(-1L);
+	}
+
+
+
+
+
+	private Long getOrderOrgId(OrdersEntity orderEntity) {
+		return ofNullable(orderEntity)
+						.map(OrdersEntity::getOrganizationEntity)
+						.map(OrganizationEntity::getId)
+						.orElse(-1L);
+	}
+
+
+
+
+
+	private Boolean isStoreManager() {
+		return securityService.currentUserHasRole(STORE_MANAGER);
+	}
+	
+	
+	
+	private Boolean isOrgManager() {
+		return securityService.currentUserHasRole(ORGANIZATION_MANAGER);
+	}
+
+
+
+
+
+	private void validateConfirmendOrder(Long orderId) throws BusinessException {
+		Integer basketCount = basketRepository.findByOrdersEntity_Id( orderId ).size();
+		if(Objects.equals(basketCount, 0)) {
+			throwInvalidOrderException(ERR_ORDER_CONFIRMED_WITH_EMPTY_BASKET, orderId);
+		}
+	}
+
+
+
+
+
+	private boolean isCheckedOutOrder(OrderJsonDto order) {
+		return Objects.equals( CLIENT_CONFIRMED.toString(), order.getStatus());
+	}
+
+
+
+
+
+	private Boolean isCustomerUser() {
+		return securityService.currentUserHasRole(CUSTOMER);
+	}
+
+
+
+
+
+	private void validateOrderCreation(OrderJsonDto order) throws BusinessException {
+		if( !isCustomerUser()) {
+			BaseUserEntity user = securityService.getCurrentUser();
+			throwForbiddenOrderException(ERR_MANAGER_CANNOT_CREATE_ORDERS, user.getId());
+		}
+		
+		//TODO: can be removed, there is no reason for not-accepting empty baskets at the first place
+		//it can be handled at confirmation
+		if ( isNullOrEmpty(order.getBasket()) ) {
+			throwInvalidOrderException(ERR_NEW_ORDER_WITH_EMPTY_BASKET);
+		}
 	}
 
 
@@ -344,17 +504,32 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
-	private void throwInvalidOrderException(String msg) throws BusinessException {
-		throw getInvalidOrderException(msg);
+	private void throwInvalidOrderException(String msg, Object... msgParams) throws BusinessException {
+		throw getInvalidOrderException(msg, msgParams);
 	}
 	
 	
 	
 	
 	
-	private BusinessException getInvalidOrderException(String msg) {
+	private BusinessException getInvalidOrderException(String msg, Object... msgParams) {
 		String error = OrderFailedStatus.INVALID_ORDER.toString();
-		return new BusinessException( msg, error, HttpStatus.NOT_ACCEPTABLE);
+		return new BusinessException( format(msg, msgParams), error, HttpStatus.NOT_ACCEPTABLE);
+	}
+	
+	
+	
+	
+	
+	private void throwForbiddenOrderException(String msg, Object... msgParams) throws BusinessException {
+		throw getForbiddenOrderException(msg, msgParams);
+	}
+	
+	
+	
+	private BusinessException getForbiddenOrderException(String msg, Object... msgParams) {
+		String error = OrderFailedStatus.INVALID_ORDER.toString();
+		return new BusinessException( format(msg, msgParams), error, HttpStatus.FORBIDDEN);
 	}
 	
 	
@@ -471,9 +646,8 @@ public class OrderServiceImpl implements OrderService {
 	private void validateNewOrderStatus(OrderStatus newStatus, OrderStatus currentStatus) throws BusinessException {	
 		
 		if(newStatus == null || !canOrderStatusChangeTo(currentStatus, newStatus)) {
-			throwInvalidOrderException(ERR_INVALID_ORDER_STATUS_UPDATE);
+			throwInvalidOrderException(ERR_INVALID_ORDER_STATUS_UPDATE, currentStatus.name(), newStatus.name());
 		};		
-		
 		
 		boolean isCustomer = securityService.currentUserHasRole(Roles.CUSTOMER);
 		if(!isCustomer) {
@@ -496,11 +670,21 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 
-	private void validateManagerCanSetStatus(OrderStatus newStatus) {
-		boolean isOrgManager = securityService.currentUserHasRole(Roles.ORGANIZATION_MANAGER);
-		boolean isStoreManager = securityService.currentUserHasRole(Roles.STORE_MANAGER);
-		
-		
+	private void validateManagerCanSetStatus(OrderStatus newStatus) throws BusinessException {
+		if( !canManagerSetOrderStatusTo(newStatus)) {
+			throw new BusinessException(
+					format(ERR_ORDER_STATUS_NOT_ALLOWED_FOR_ROLE, newStatus.name(), "*MANAGER")
+					,"INVALID_PARAM: status"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
+	}
+
+
+
+
+
+	private boolean canManagerSetOrderStatusTo(OrderStatus newStatus) {
+		return orderStatusForManagers.contains(newStatus);
 	}
 
 
