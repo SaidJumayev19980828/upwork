@@ -56,7 +56,7 @@ public class StocksEntity {
 	private BigDecimal discount;
 
 	
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne
 	@JoinColumn(name = "organization_id", nullable = false)
 	@JsonIgnore
 	private OrganizationEntity organizationEntity;

@@ -1,6 +1,7 @@
 package com.nasnav.commons.utils;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -82,6 +83,21 @@ public class EntityUtils {
 	public static boolean isNullOrZero(Long n) {
 		return n == null || n == 0L;
 	}
+	
+	
+	
+	public static <T> List<T> concateLists(List<T> list1, List<T> list2){
+		if(list1 == null)
+			return list2;
+		
+		if(list2 == null)
+			return list1;
+		
+		List<T> concate = new ArrayList<>(list1);
+		concate.addAll(list2);
+		return concate;
+	}
+	
 	
 	
 	

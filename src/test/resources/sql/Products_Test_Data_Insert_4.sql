@@ -58,10 +58,6 @@ insert into public.product_variants(id, "name" , product_id ) values(310006, 'va
 insert into public.product_variants(id, "name" , product_id ) values(310007, 'var' 	, 1007);
 insert into public.product_variants(id, "name" , product_id ) values(310008, 'var' 	, 1008);
 
-update public.product_variants 
-set feature_spec = '{"7001":"Blue", "7002":"XL"}'
-where id = 310005;
-
 -- mulitple variant for product #1002
 insert into public.product_variants(id, "name" , product_id ) values(3100022, 'var' 	, 1002);
 
@@ -74,4 +70,11 @@ insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organiz
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(606, 501, 6, now(), now(), 99002, 600.0, 310002);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(607, 501, 1, now(), now(), 99002, 600.0, 3100022);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(608, 502, 8, now(), now(), 99002, 1200.0, 310007);
+
+
+-- insert product images
+INSERT INTO public.files (organization_id, url, "location", mimetype, orig_filename) VALUES(99001, 'cool_img.png', 'cool_img.png', 'image/png', 'cool_img.png');
+
+INSERT INTO public.product_images (product_id, variant_id, "type", priority, uri) VALUES(1001, null, 7, 0, 'cool_img.png');
+INSERT INTO public.product_images (product_id, variant_id, "type", priority, uri) VALUES(1001, 310001, 7, 0, 'cool_img.png');
 

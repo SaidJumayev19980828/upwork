@@ -130,11 +130,10 @@ public class UserController {
             @io.swagger.annotations.ApiResponse(code = 404, message = "User not found"),
     })
     @GetMapping(value = "info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity sendEmailRecovery(@RequestHeader (value = "User-ID") Long loggedUserId,
-                                            @RequestHeader (value = "User-Token") String userToken,
-                                            @RequestParam (value = "id", required = false) Long id) throws BusinessException{
+    public ResponseEntity getUserData(@RequestHeader (value = "User-Token") String userToken,
+                                      @RequestParam (value = "id", required = false) Long id) throws BusinessException{
 
-        return new ResponseEntity(userService.getUserData(loggedUserId, id), HttpStatus.OK);
+        return new ResponseEntity(userService.getUserData(userToken, id), HttpStatus.OK);
     }
 
     @ApiOperation(value = "Get employee users list", nickname = "employeesInfo")
@@ -143,11 +142,10 @@ public class UserController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "Customers doesn't have access to view Employee users data"),
     })
     @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity sendEmailRecovery(@RequestHeader (value = "User-ID") Long loggedUserId,
-                                            @RequestHeader (value = "User-Token") String userToken,
-                                            @RequestParam (value = "org_id", required = false) Long orgId,
-                                            @RequestParam (value = "store_id", required = false) Long storeId,
-                                            @RequestParam (value = "role", required = false) String role) throws BusinessException{
+    public ResponseEntity getUserList(@RequestHeader (value = "User-Token") String userToken,
+                                      @RequestParam (value = "org_id", required = false) Long orgId,
+                                      @RequestParam (value = "store_id", required = false) Long storeId,
+                                      @RequestParam (value = "role", required = false) String role) throws BusinessException{
         return new ResponseEntity(employeeUserService.getUserList(userToken, orgId, storeId, role), HttpStatus.OK);
     }
 }

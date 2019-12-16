@@ -1,12 +1,16 @@
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import com.nasnav.dto.ProductRepresentationObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -24,6 +28,9 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.OrganizationRepository;
@@ -33,6 +40,8 @@ import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
+import com.nasnav.dto.ProductRepresentationObject;
+import com.nasnav.dto.ProductsResponse;
 import com.nasnav.persistence.FileEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ProductEntity;
@@ -493,8 +502,7 @@ public class ProductServiceTest {
 	
 
 	private void assertProductDetailsRetrieved(ResponseEntity<String> response, JSONObject product) {
-		Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
-		
+		assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());		
 		assertEquals(PRODUCT_NAME, product.getString("name"));
 		assertEquals(PRODUCT_P_NAME, product.getString("p_name"));
 		assertEquals(CATEGORY_ID.longValue(), product.getLong("category_id"));
@@ -621,8 +629,7 @@ public class ProductServiceTest {
 		long total = json.getLong("total");
 
 
-		assertEquals("only the total of actual products should be counted, bundles and services are not counted"
-						,51L , total);
+		assertEquals("all products are counted including bundles and services" ,4L , total);
 	}
 	
 	
@@ -631,51 +638,137 @@ public class ProductServiceTest {
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
 	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
-	public void testProductResponse(){
+	public void testProductResponse() throws Throwable{
 		performTestProductResponseByFilters();
 		productBarcodeTest();
-		productMinPriceTest();
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void testProductWithMultipVariantResponse(){
+		// product #1002 with 2 variants .. return multiple_variants = true
+		ResponseEntity<ProductsResponse> response = template.getForEntity("/navbox/products?shop_id=501", ProductsResponse.class);
+		
+		Boolean isMultipleVariants = getProductFromResponse(response, 1002L).isMultipleVariants();
+				
+		Assert.assertTrue(isMultipleVariants);
 	}
 
 
-	private void performTestProductResponseByFilters() {
+
+
+	private ProductRepresentationObject getProductFromResponse(ResponseEntity<ProductsResponse> response, Long productId) {
+		return response.getBody()
+					.getProducts()
+					.stream()
+					.filter(p -> Objects.equals(p.getId().longValue(), productId))
+					.findAny()
+					.get();
+	}
+	
+	
+	
+	
+	
+	
+	private ProductRepresentationObject getProductFromStringResponse(ResponseEntity<String> response, Long productId) throws Throwable{
+		ObjectMapper mapper = new ObjectMapper();
+		ProductsResponse body = mapper.readValue(response.getBody(), ProductsResponse.class);
+		return body.getProducts()
+					.stream()
+					.filter(p -> Objects.equals(p.getId().longValue(), productId))
+					.findAny()
+					.get();
+	}
+	
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void testProductWithNoVariantIsHidden(){
+		// product #1004 with no variants .. return hidden = true and no price info
+		ResponseEntity<ProductsResponse> response = 
+				template.getForEntity("/navbox/products?org_id=99001&category_id=201&brand_id=102", ProductsResponse.class);
+		
+		Boolean isHidden = 	getProductFromResponse(response, 1004L).isHidden();
+		
+		Assert.assertTrue(isHidden);
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void testProductWithSingleVariantReturnedMinimumPrice(){
+		// product #1001 with 1 variant and two stocks .. one with price 600 and the other 400 .. return lowest price info
+		ResponseEntity<ProductsResponse> response = 
+				template.getForEntity("/navbox/products?org_id=99001&category_id=201&brand_id=101", ProductsResponse.class);
+		
+		ProductRepresentationObject product = getProductFromResponse(response, 1001L);
+		
+		Assert.assertEquals( new BigDecimal("400.00"), product.getPrice());
+		Assert.assertFalse(product.isMultipleVariants());
+	}
+	
+	
+
+	
+
+	private void performTestProductResponseByFilters() throws Throwable {
 		//// testing brand_id filter ////
 		ResponseEntity<String> response = template.getForEntity("/navbox/products?org_id=99001", String.class);
 		System.out.println(response.getBody());
 		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		long total = json.getLong("total");
-		assertEquals("there are total 21 products with with org_id = 99001 and no brand_id filter"
-				,21 , total);
+		assertEquals("there are total 4 products with with org_id = 99001 and no brand_id filter",4 , total);
 
 
 		response = template.getForEntity("/navbox/products?org_id=99001&brand_id=101", String.class);
 		System.out.println(response.getBody());
 		json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		total = json.getLong("total");
-		assertEquals("there are 15 products with brand_id = 101"
-				,15 , total);
+		assertEquals("there are 2 products with brand_id = 101", 2, total);
 
 
 		response = template.getForEntity("/navbox/products?org_id=99001&brand_id=102", String.class);
 		System.out.println(response.getBody());
 		json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		total = json.getLong("total");
-		assertEquals("there are 6 products with brand_id = 102"
-				,6 , total);
+		assertEquals("there are 2 products with brand_id = 102", 2, total);
 		//// finish test
 
 		//// test fields existance in both "product" and "products" apis
 		response = template.getForEntity("/navbox/products?org_id=99001", String.class);
 
 		assertJsonFieldExists(response);
+		ProductRepresentationObject product = getProductFromStringResponse(response, 1005L);
 
 		response = template.getForEntity("/navbox/product?product_id=1001", String.class);
 		System.out.println("response JSON >>>  "+ response.getBody().toString());
 		assertTrue(response.getBody().toString().contains("brand_id"));
 		assertTrue(response.getBody().toString().contains("category_id"));
+		
+		
+		
+		
 		//// finish test
 	}
 
+	
+	
+	
 
 	private void assertJsonFieldExists(ResponseEntity<String> response) {
 		System.out.println("response JSON >>>  "+ response.getBody().toString());
@@ -683,7 +776,10 @@ public class ProductServiceTest {
 		assertTrue(response.getBody().toString().contains("category_id"));
 		assertTrue(response.getBody().toString().contains("p_name"));
 		assertTrue(response.getBody().toString().contains("image_url"));
+		assertTrue(response.getBody().toString().contains("default_variant_features"));
 	}
+	
+	
 
 
 	public void productBarcodeTest() {
@@ -699,25 +795,7 @@ public class ProductServiceTest {
 	}
 
 
-	public void productMinPriceTest() {
-		// product #1001 with 1 variant and two stocks .. one with price 600 and the other 400 .. return lowest price info
-		ResponseEntity<Object> response = template.getForEntity("/navbox/products?org_id=99001&category_id=201" +
-				"&brand_id=101&minprice=true", Object.class);
-		Assert.assertTrue(response.getBody().toString().contains("price=400"));
-		Assert.assertTrue(response.getBody().toString().contains("multiple_variants=false"));
-
-		// product #1004 with no variants .. return hidden = true and no price info
-		response = template.getForEntity("/navbox/products?org_id=99001&category_id=201" +
-				"&brand_id=102&minprice=true", Object.class);
-		Assert.assertTrue(response.getBody().toString().contains("hidden=true"));
-
-		// product #1002 with 2 variants .. return multiple_variants = true
-		response = template.getForEntity("/navbox/products?shop_id=501&minprice=true", Object.class);
-		Assert.assertTrue(response.getBody().toString().contains("multiple_variants=true"));
-	}
-
-
-
+	
 
 
 	@Test
@@ -734,6 +812,24 @@ public class ProductServiceTest {
 		assertEquals("Product 1001 has 5 variants, only the 4 with stock records will be returned" , 4, variants.length());
 		assertEquals("The product have only 2 variant features", 2, variantFeatures.length());
 		assertTrue(variantFeatures.similar(expectedVariantFeatures));
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void getProductWithMultipleIndenticalImagesTest() {
+		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=1001", String.class);
+
+		JSONObject product = new JSONObject(response.getBody());
+		JSONArray images = product.getJSONArray("images");
+
+		assertEquals("product 1001 and its variant both share the same image, it shoudn't be duplicated in images array"
+						, 1, images.length());
 	}
 
 

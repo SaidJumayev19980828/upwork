@@ -11,8 +11,13 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+
+import org.hibernate.annotations.Loader;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -24,6 +29,10 @@ import lombok.ToString;
 @Table(name="product_variants")
 @Data
 @EqualsAndHashCode(callSuper=false)
+@SQLDelete(sql = "UPDATE PRODUCT_VARIANTS SET removed = 1 WHERE id = ?")
+@Loader(namedQuery = "findVariantById")
+@NamedQuery(name = "findVariantById", query = "SELECT v FROM ProductVariantsEntity v WHERE v.id=?1 AND v.removed = 0")
+@Where(clause = "removed = 0")
 public class ProductVariantsEntity {
 
 	public ProductVariantsEntity() {

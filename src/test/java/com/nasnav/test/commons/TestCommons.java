@@ -32,6 +32,12 @@ public class TestCommons {
         return new HttpEntity<>(json, headers);
     }
 
+    public static HttpEntity<Object> getHttpEntity(String authToken) {
+        HttpHeaders headers = getHeaders(authToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return new HttpEntity<>(headers);
+    }
+
     public static HttpEntity<Object> getHttpEntity(MultiValueMap<String, String> parameters, String authToken) {
         HttpHeaders headers = getHeaders(authToken);
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);

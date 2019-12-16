@@ -24,7 +24,7 @@ public class ShopJsonDTO {
     private Long id;
 
     @ApiModelProperty(value = "Shop Name", example = "Eventure")
-    @JsonProperty("shop_name")
+    @JsonProperty("name")
     private String name;
 
     @ApiModelProperty(value = "Shop Address Country", example = "Egypt")

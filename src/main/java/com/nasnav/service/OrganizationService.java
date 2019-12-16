@@ -158,6 +158,7 @@ public class OrganizationService {
         OrganizationEntity newOrg = new OrganizationEntity();
         newOrg.setName(json.name);
         newOrg.setPname(json.pname);
+        newOrg.setThemeId(0);
         organizationRepository.save(newOrg);
         return new OrganizationResponse(newOrg.getId(), 0);
     }
@@ -177,6 +178,11 @@ public class OrganizationService {
         if (json.description != null) {
             organization.setDescription(json.description);
         }
+
+        if (json.themeId != null) {
+            organization.setThemeId(json.themeId);
+        }
+
         //logo
         OrganizationThemeEntity orgTheme = null;
         if (file != null) {

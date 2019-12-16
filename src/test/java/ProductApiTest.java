@@ -5,6 +5,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.json.JSONObject;
 import org.junit.Test;
@@ -32,9 +35,13 @@ import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.StockRepository;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.test.commons.TestCommons;
 
@@ -58,6 +65,14 @@ public class ProductApiTest {
 	
 	@Autowired
 	private ProductRepository productRepository;
+	
+	
+	@Autowired
+	private ProductVariantsRepository variantRepo;
+	
+	
+	@Autowired
+	private StockRepository stockRepo;
 	
 	
 	@Autowired
@@ -432,16 +447,226 @@ public class ProductApiTest {
 		
 		ResponseEntity<String> response = deleteProduct(user, productId);		
 		
+		assertExpectedResponse(productId, response);
+		assertFalse(productRepository.existsById(productId));
+		assertEquals("product images was deleted", 0, imgRepo.findByProductEntity_Id(productId).size());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void deleteNonExistingProductTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(69L);
+		
+		Long productId = 77771008L; 		
+		
+		assertFalse(productRepository.existsById(productId)); //assert product doesn't exists before delete
+		
+		ResponseEntity<String> response = deleteProduct(user, productId);		
+		
+		assertExpectedResponse(productId, response);
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	@Test
+	public void softDeleteProductTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(69L);
+		
+		Long productId = 1008L;
+		List<Long> variantIds = getVariantsIdList(productId);
+		
+		preDeleteAssertions(productId, variantIds);
+		//---------------------------------------------------------------------------------------
+		ResponseEntity<String> response = deleteProduct(user, productId);		
+				
+		//---------------------------------------------------------------------------------------
+		postDeleteAssertions(productId, variantIds, response);
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void softDeleteBundleTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(69L);
+		
+		Long productId = 1010L;
+		List<Long> variantIds = getVariantsIdList(productId);
+		
+		preDeleteAssertions(productId, variantIds);
+		//---------------------------------------------------------------------------------------
+		ResponseEntity<String> response = deleteBundle(user, productId);		
+				
+		//---------------------------------------------------------------------------------------
+		postDeleteAssertions(productId, variantIds, response);
+	}
+
+	
+	
+	
+	
+	
+	private ResponseEntity<String> deleteBundle(BaseUserEntity user, Long bundleId) {
+		HttpEntity request =  TestCommons.getHttpEntity("" ,user.getAuthenticationToken());
+		ResponseEntity<String> response = 
+				template.exchange("/product/bundle?product_id=" + bundleId
+						, HttpMethod.DELETE
+						, request
+						, String.class);
+		return response;
+	}
+
+	
+	
+
+
+	private void preDeleteAssertions(Long productId, List<Long> variantIds) {
+		assertProductExists(productId);		
+		assertProductImagesExists(productId);		
+		assertVariantsExists(variantIds);
+	}
+
+
+
+
+	private void assertProductImagesExists(Long productId) {
+		assertNotEquals("assert product had images before delete", 0, imgRepo.findByProductEntity_Id(productId).size());
+	}
+
+
+
+
+	private void assertProductExists(Long productId) {
+		assertFalse( productHasRemovedFlag(productId) );
+		assertTrue(productRepository.existsById(productId)); //assert product exists before delete
+	}
+
+
+
+
+	private void assertVariantsExists(List<Long> variantIds) {
+		boolean allNotRemoved = variantIds.stream().allMatch(id -> !variantsHasRemovedFlag(id));
+		assertNotEquals(0L, variantIds.stream().count());
+		assertTrue(allNotRemoved);
+	}
+
+
+
+
+	private void postDeleteAssertions(Long productId, List<Long> variantIds, ResponseEntity<String> response)
+			throws IOException, JsonParseException, JsonMappingException {
+		assertExpectedResponse(productId, response);	
+		
+		assertProductEntityIgnoredByHibernate(productId);
+		
+		assertProductHasRemovedFlag(productId);
+		
+		assertVariantsHaveRemovedFlags(variantIds);
+		
+		assertProductImagesDeleted(productId);
+	}
+
+
+
+
+	private void assertProductImagesDeleted(Long productId) {
+		assertEquals("product images were deleted", 0, imgRepo.findByProductEntity_Id(productId).size());
+	}
+
+
+
+
+	private void assertExpectedResponse(Long productId, ResponseEntity<String> response)
+			throws IOException, JsonParseException, JsonMappingException {
 		ObjectMapper mapper = new ObjectMapper();
 		ProductUpdateResponse body = mapper.readValue(response.getBody(), ProductUpdateResponse.class);
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertTrue(body.isSuccess());
 		assertEquals(productId, body.getProductId());
+	}
+
+
+
+
+	private void assertVariantsHaveRemovedFlags(List<Long> variantIds) {
+		boolean allRemoved = variantIds.stream().allMatch(this::variantsHasRemovedFlag);
+		assertTrue(allRemoved);
+	}
+
+
+
+
+	private void assertProductHasRemovedFlag(Long productId) {
+		assertEquals(1L , countProductWithId(productId).longValue());
+		assertTrue( productHasRemovedFlag(productId) );
+	}
+
+
+
+
+	private void assertProductEntityIgnoredByHibernate(Long productId) {
 		assertFalse(productRepository.existsById(productId));
-		assertEquals("product images was deleted", 0, imgRepo.findByProductEntity_Id(productId).size());
+		assertFalse(productRepository.findById(productId).isPresent());
+		Boolean exists = isProductReturnedByFindAll(productId);
+		assertFalse(exists);
+	}
+
+
+
+
+	private List<Long> getVariantsIdList(Long productId) {
+		List<Long> variantIds = variantRepo.findByProductEntity_Id(productId)
+										.stream()
+										.map(ProductVariantsEntity::getId)
+										.collect(Collectors.toList());
+		return variantIds;
+	}
+
+
+
+
+	private Boolean isProductReturnedByFindAll(Long productId) {
+		List<ProductEntity> products = (List<ProductEntity>) productRepository.findAll();
+		Boolean exists = products.stream()
+								.map(ProductEntity::getId)
+								.anyMatch(id -> Objects.equals(id, productId));
+		return exists;
 	}
 	
+	
+	
+	
+	
+	private Boolean productHasRemovedFlag(Long productId) {
+		Integer removed = jdbc.queryForObject("select removed from public.products where id = " + productId, Integer.class);
+		return removed != 0;
+	}
+	
+	
+	
+	
+	private Boolean variantsHasRemovedFlag(Long variantId) {
+		Integer removed = jdbc.queryForObject("select removed from public.product_variants where id = " + variantId, Integer.class);
+		return removed != 0;
+	}
+	
+	
+	
+	
+	private Long countProductWithId(Long productId) {
+		return jdbc.queryForObject("select count(*) from public.products where id = " + productId, Long.class);
+	}
 	
 	
 	
@@ -508,14 +733,18 @@ public class ProductApiTest {
 	public void deleteProductHasStocksTest() throws JsonParseException, JsonMappingException, IOException {
 		BaseUserEntity user = empUserRepo.getById(69L);
 		
-		Long productId = 1006L; 
+		Long productId = 1006L; 		
+		List<StocksEntity> stocks = stockRepo.findByProductIdAndShopsId(productId, 502L);
 		
-		assertTrue("assert product exists before delete", productRepository.existsById(productId)); //
-		
+		assertNotEquals("assert product had stocks", 0L, stocks.size());
+		assertTrue("assert product exists before delete", productRepository.existsById(productId));
+		//---------------------------------------------------------------------
 		ResponseEntity<String> response = deleteProduct(user, productId);		
-		
-		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-		assertTrue("assert product still exists after delete", productRepository.existsById(productId));		
+
+		//---------------------------------------------------------------------
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertFalse("assert product was soft deleted", productRepository.existsById(productId));		
+		assertNotEquals("assert stocks were not deleted", 0L, stocks.size());
 	}
 	
 	
@@ -526,14 +755,34 @@ public class ProductApiTest {
 		
 		Long productId = 1003L; 
 		
-		assertTrue("assert product exists before delete", productRepository.existsById(productId)); //
-		assertNotEquals("product had images", 0, imgRepo.findByProductEntity_Id(productId).size());
-		
+		assertTrue("assert product exists before delete", productRepository.existsById(productId)); 		
+		//---------------------------------------------------------------------
 		ResponseEntity<String> response = deleteProduct(user, productId);		
 		
-		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-		assertTrue("assert product still exists after delete", productRepository.existsById(productId));
-		assertNotEquals("product images was NOT deleted", 0, imgRepo.findByProductEntity_Id(productId).size());
+		//---------------------------------------------------------------------
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertTrue("assert product was NOT deleted", productRepository.existsById(productId));
+	}
+	
+	
+	
+	
+	
+	
+	
+	@Test
+	public void deleteProductInRemovedBundleTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(69L);
+		
+		Long productId = 1012L; 
+		
+		assertTrue("assert product exists before delete", productRepository.existsById(productId)); 		
+		//---------------------------------------------------------------------
+		ResponseEntity<String> response = deleteProduct(user, productId);		
+		
+		//---------------------------------------------------------------------
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertFalse("assert product was deleted", productRepository.existsById(productId));
 	}
 
 

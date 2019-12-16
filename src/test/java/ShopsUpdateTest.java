@@ -193,7 +193,7 @@ public class ShopsUpdateTest {
         body = "{\"org_id\":99001,\n" +
                 "\"id\":" + oldShop.getId() +",\n" +
                 "  \"brand_id\": 102,\n" +
-                "  \"shop_name\": \"Different Shop\"\n" + "}";
+                "  \"name\": \"Different Shop\"\n" + "}";
         json = TestCommons.getHttpEntity(body,"161718");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());

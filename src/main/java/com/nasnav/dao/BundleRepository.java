@@ -19,6 +19,14 @@ public interface BundleRepository extends JpaRepository<BundleEntity, Long> {
     List<Long> getBundleItemsProductIds(@Param("id") Long id);
     
     
+    @Query("select b FROM BundleEntity b  "
+    		+ " JOIN b.items item "
+    		+ " JOIN item.productVariantsEntity var "
+    		+ " JOIN var.productEntity prod" +
+            " where prod.id = :id")
+    List<BundleEntity> getBundlesHavingItemsWithProductId(@Param("id") Long itemProductId);
+    
+    
     BundleEntity findFirstByOrderByNameDesc();
 
 	Long countByOrganizationId(Long orgId);

@@ -8,6 +8,8 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -56,7 +58,7 @@ import net.jcip.annotations.NotThreadSafe;
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD) //creates a new context with new temp dir for each test method
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_bulk_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-public class ProductImgaeBulkUploadTest {
+public class ProductImageBulkUploadTest {
 	private static final String PRODUCT_IMG_BULK_URL = "/product/image/bulk";
 
 	private static final String USER_TOKEN = "101112";
@@ -67,6 +69,7 @@ public class ProductImgaeBulkUploadTest {
 	private static final String TEST_ZIP = "img_bulk_upload.zip";
 	private static final String TEST_ZIP_NON_EXISTING_BARCODE ="img_bulk_upload_non_exisiting_barcode.zip";
 	private static final String TEST_CSV = "img_bulk_barcode.csv";
+	private static final String TEST_CSV_MULTI_BARCODE_PER_PATH = "img_bulk_multi_barcode_same_path.csv";
 	private static final String TEST_ZIP_DIR = "src/test/resources/img_bulk_zip";
 
 	private static final String TEST_ZIP_INVALID = "img_bulk_upload_invalid.zip";
@@ -82,6 +85,10 @@ public class ProductImgaeBulkUploadTest {
 	private static final String TEST_CSV_INTERNAL_STRUCT = "img_bulk_barcode_internal_struct.csv";
 
 	private static final String TEST_ZIP_INTERNAL_STRUCT_WITH_BARCODE = "img_bulk_upload_internal_structure_with_barcode.zip";
+	
+	private static final String TEST_ZIP_UPLOADED_WITH_CSV = "img_bulk_upload_with_csv.zip";
+	
+	private static final String TEST_ZIP_MULTI_BARCODE_SAME_FILE = "img_bulk_upload_multi_barcode_same_file.zip";
 
 	@Value("${files.basepath}")
 	private String basePathStr;
@@ -319,13 +326,33 @@ public class ProductImgaeBulkUploadTest {
 		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
 		
 		String response = 
-				performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, USER_TOKEN)
+				performFileUpload(TEST_ZIP_UPLOADED_WITH_CSV, TEST_CSV, jsonBytes, USER_TOKEN)
 	             .andExpect(status().is(200))
 	             .andReturn()
 	             .getResponse()
 	             .getContentAsString();
 
 		assertImgsImported(response);
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkWithCSVAndMultipleBarcodeForSamePathTest() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		
+		String response = 
+				performFileUpload(TEST_ZIP_MULTI_BARCODE_SAME_FILE, TEST_CSV_MULTI_BARCODE_PER_PATH, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(200))
+	             .andReturn()
+	             .getResponse()
+	             .getContentAsString();
+
+		assertSameImgImportedForProductAndVariants(response);
 	}
 	
 	
@@ -456,6 +483,36 @@ public class ProductImgaeBulkUploadTest {
 				.mapToObj(responseJson::getJSONObject)
 				.forEach(this::assertImageUploaded);
 	}
+	
+	
+	
+	
+	
+	
+	private void assertSameImgImportedForProductAndVariants(String response) {
+		JSONArray responseJson = new JSONArray(response);
+		assertEquals(
+				"import 2 images, one of them have a barcode that is used by both a product and a variant, so the 2 images are imported as 3 records"
+				, 3 
+				, responseJson.length());				
+		
+		assertEquals( 3L, imgRepo.count());		
+		
+		IntStream.range(0, responseJson.length())
+				.mapToObj(responseJson::getJSONObject)
+				.forEach(this::assertImageUploaded);
+		
+		List<String> urls = IntStream.range(0, responseJson.length())
+									.mapToObj(responseJson::getJSONObject)
+									.map(obj -> obj.getString("image_url"))
+									.distinct()
+									.collect(Collectors.toList());
+		assertEquals("a single image was imported for the product and its variants, so they all should reference the same url"
+						, 1, urls.size());
+	}
+	
+
+	
 	
 	
 	

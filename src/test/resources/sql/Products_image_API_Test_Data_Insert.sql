@@ -21,6 +21,8 @@ INSERT INTO public.employee_users(id, created_at, updated_at, email, organizatio
 VALUES (68, now(), now(), 'testuser1@nasnav.com', 99001, '101112',  502);
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
 VALUES (69, now(), now(), 'testuser2@nasnav.com', 99002, '131415',  501);
+INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+VALUES (70, now(), now(), 'testuser3@nasnav.com', 99002, 'TTREE215',  501);
 
 
 --inserting Roles
@@ -35,6 +37,7 @@ insert into roles(id, name, created_at, updated_at, organization_id) values(3, '
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (20, 68, 1, now(), now());
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (21, 68, 2, now(), now());
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (22, 69, 2, now(), now());
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (23, 70, 5, now(), now());
 
 
 --inserting products
@@ -66,4 +69,12 @@ insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organiz
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(602, 501, 8, now(), now(), 99001, 1200.0, 310002);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(603, 501, 4, now(), now(), 99002, 200.00, 310003);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(604, 502, 6, now(), now(), 99001, 700.00, 310004);
+
+
+
+-- insert product images
+INSERT INTO public.files (organization_id, url, "location", mimetype, orig_filename) VALUES(99001, 'cool_img.png', 'cool_img.png', 'image/png', 'cool_img.png');
+
+INSERT INTO public.product_images (id, product_id, variant_id, "type", priority, uri) VALUES(45001, 1008, null, 7, 0, 'cool_img.png');
+INSERT INTO public.product_images (id, product_id, variant_id, "type", priority, uri) VALUES(45002, 1008, 310008, 7, 0, 'cool_img.png');
 

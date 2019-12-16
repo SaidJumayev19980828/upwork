@@ -67,9 +67,9 @@ public class OrganizationManagmentTest {
     @Test
     public void updateOrganizationDataSuccessTest() {
         String body = "{\"org_id\":99001, \"description\":\"this company is old and unique\"," +
-                       "\"social_twitter\": \"https://www.twitter.com/fortunestores\"," +
+                       "\"social_twitter\": \"https://www.twitter.com/fortunestores/\"," +
                        "\"social_facebook\": \"https://www.facebook.com/fortune.stores11/\"," +
-                       "\"social_instagram\": \"https://instagram.com/fortunestores\"}";
+                       "\"social_instagram\": \"https://www.instagram.com/islamify/\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("logo", file);

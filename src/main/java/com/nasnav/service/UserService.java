@@ -19,5 +19,5 @@ public interface UserService extends CommonUserServiceInterface{
 
     public UserApiResponse updateUser(Long userId, String userToken, UserDTOs.EmployeeUserUpdatingObject userJson);
 
-    public UserRepresentationObject getUserData(Long loggedUserId, Long id) throws BusinessException;
+    public UserRepresentationObject getUserData(String token, Long id) throws BusinessException;
 }

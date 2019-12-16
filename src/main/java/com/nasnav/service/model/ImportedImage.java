@@ -14,4 +14,5 @@ import lombok.NoArgsConstructor;
 public class ImportedImage {
 	private MultipartFile image;
 	private ProductImageUpdateDTO imgMetaData;
+	private String zipFileName;
 }

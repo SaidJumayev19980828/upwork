@@ -2,6 +2,7 @@ package com.nasnav.dao;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -97,6 +98,14 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	
 	Optional<ProductEntity> findByBarcodeAndOrganizationId(String barcode, Long orgId);
 	Optional<ProductEntity> findByName(String name);
+	
+	
+	@Query("SELECT products FROM ProductEntity products "
+			+ " LEFT JOIN FETCH products.productVariants variants "
+			+ " LEFT JOIN FETCH variants.stocks stocks"
+			+ " LEFT JOIN FETCH stocks.organizationEntity"
+			+ " WHERE products.id in :productIdList")
+	Set<ProductEntity> findFullDataByIdIn(@Param("productIdList") List<Long> productIdList);
 }
 
 

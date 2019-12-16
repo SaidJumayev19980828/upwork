@@ -3,12 +3,7 @@ package com.nasnav.persistence;
 import java.time.LocalDateTime;
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -48,6 +43,9 @@ public class OrganizationEntity implements BaseEntity {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @Column(name = "theme_id")
+    private Integer themeId;
+
     public OrganizationEntity() {
         id = null;
     }
@@ -86,6 +84,8 @@ public class OrganizationEntity implements BaseEntity {
         organizationRepresentationObject.setName(getName());
         organizationRepresentationObject.setPname(getPname());
         organizationRepresentationObject.setType(getType()!=null?getType().name():null);
+        organizationRepresentationObject.setThemeId(getThemeId());
+
         return organizationRepresentationObject;
     }
 

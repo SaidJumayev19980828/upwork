@@ -13,12 +13,16 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.DiscriminatorFormula;
+import org.hibernate.annotations.Loader;
+import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.Where;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -34,6 +38,10 @@ import lombok.ToString;
 @DiscriminatorFormula("COALESCE(product_type,0)")        //TODO: we only need this until the Column PRODUCTS.PRODUCT_TYPE is set as non-null
 @Data
 @EqualsAndHashCode(callSuper=false)
+@SQLDelete(sql = "UPDATE PRODUCTS SET removed = 1 WHERE id = ?")
+@Loader(namedQuery = "findProductById")
+@NamedQuery(name = "findProductById", query = "SELECT p FROM ProductEntity p WHERE p.id=?1 AND p.removed = 0")
+@Where(clause = "removed = 0")
 public class ProductEntity {
 	
 	public ProductEntity() {

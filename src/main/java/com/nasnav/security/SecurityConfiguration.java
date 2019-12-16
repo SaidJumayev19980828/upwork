@@ -57,6 +57,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/user/update"										, getAllRoles() ),
 						patternOf( "/product/**"					,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/product/**"					,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/product/images"				,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/product/image/bulk/template"						, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/admin/**"	   	 									, setOf(NASNAV_ADMIN) ),
 						patternOf( "/files/**"),
@@ -82,6 +83,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/user/recover")
                         , patternOf("/user/login")
                         , patternOf("/user/register")
+						, patternOf("/user/info")
                         , patternOf("/payment/**")
                         , patternOf("/product/bundles"					, HttpMethod.GET)
                         , patternOf("/product/info"						, HttpMethod.GET)

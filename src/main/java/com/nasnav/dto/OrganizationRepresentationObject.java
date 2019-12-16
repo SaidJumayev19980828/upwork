@@ -46,6 +46,10 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     @JsonProperty("type")
     private String type;
 
+    @ApiModelProperty(value = "theme id used in the organization")
+    @JsonProperty("theme_id")
+    private Integer themeId;
+
     @ApiModelProperty(value = "Brands carried by the organization")
     @JsonProperty("brands")
     private List<Organization_BrandRepresentationObject> brands = null;

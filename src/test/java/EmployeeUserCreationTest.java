@@ -498,7 +498,7 @@ public class EmployeeUserCreationTest {
 
 	@Test
 	public void getUserOwnData() {
-		HttpEntity<Object> header = getHttpEntity(null, "123", "88");
+		HttpEntity<Object> header = TestCommons.getHttpEntity("123");
 		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info", HttpMethod.GET,
 				                                        header, UserRepresentationObject.class);
 		System.out.println(response.toString());
@@ -508,14 +508,14 @@ public class EmployeeUserCreationTest {
 	@Test
 	public void getUserDataDifferentUsers() {
 		// logged user is NASNAV_ADMIN so he can view all other users data
-		HttpEntity<Object> header = getHttpEntity(null, "abcdefg", "68");
+		HttpEntity<Object> header = TestCommons.getHttpEntity("abcdefg");
 		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?id=88", HttpMethod.GET,
 				header, UserRepresentationObject.class);
 		System.out.println(response.toString());
 		Assert.assertEquals(response.getStatusCodeValue(), 200);
 
 		// logged user is ORGANIZATION_ADMIN so he can't view any other users data
-		header = getHttpEntity(null, "hijkllm", "69");
+		header = TestCommons.getHttpEntity("hijkllm");
 		response = template.exchange("/user/info?id=88", HttpMethod.GET,
 				header, UserRepresentationObject.class);
 		System.out.println(response.toString());
@@ -524,7 +524,7 @@ public class EmployeeUserCreationTest {
 
 	@Test
 	public void getNonExistUserData() {
-		HttpEntity<Object> header = getHttpEntity(null, "abcdefg", "68");
+		HttpEntity<Object> header = TestCommons.getHttpEntity("abcdefg");
 		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?id=526523", HttpMethod.GET,
 				header, UserRepresentationObject.class);
 		System.out.println(response.toString());
@@ -534,7 +534,7 @@ public class EmployeeUserCreationTest {
 	// with NASNAV_ADIMN ACCOUNT
 	@Test
 	public void listEmpUsersDifferentFilters() {
-		HttpEntity<Object> header = getHttpEntity(null, "abcdefg", "68");
+		HttpEntity<Object> header = TestCommons.getHttpEntity( "abcdefg");
 
 		// no filter
 		ResponseEntity<List> response = template.exchange("/user/list", HttpMethod.GET,header, java.util.List.class);
@@ -607,7 +607,7 @@ public class EmployeeUserCreationTest {
 	@Test
 	public void listEmpUsersDifferentPrelivges() {
 		// ORGANIZATION_ADMIN account with org_id = 99001
-		HttpEntity<Object> header = getHttpEntity(null, "hijkllm", "69");
+		HttpEntity<Object> header = TestCommons.getHttpEntity("hijkllm");
 		ResponseEntity<List> response = template.exchange("/user/list", HttpMethod.GET, header, java.util.List.class);
 		//returning EmpUsers within the same organization only
 		System.out.println(response.getBody());
@@ -636,7 +636,7 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(response.getBody().size(), 0);
 
 		// ORGANIZATION_MANAGER account
-		header = getHttpEntity(null, "123", "70");
+		header = TestCommons.getHttpEntity("123");
 		response = template.exchange("/user/list", HttpMethod.GET, header, java.util.List.class);
 		//returning EmpUsers within the same organization and roles below ORGANIZATION_MANAGER
 		System.out.println(response.getBody());
@@ -644,7 +644,7 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(response.getBody().size(), 4);
 
 		// ORGANIZATION_EMPLOYEE account
-		header = getHttpEntity(null, "456", "71");
+		header = TestCommons.getHttpEntity("456");
 		response = template.exchange("/user/list", HttpMethod.GET, header, java.util.List.class);
 		//returning EmpUsers within the same organization and roles below ORGANIZATION_EMPLOYEE
 		System.out.println(response.getBody());
