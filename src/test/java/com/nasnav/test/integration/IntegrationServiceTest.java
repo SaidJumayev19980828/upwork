@@ -169,7 +169,7 @@ public class IntegrationServiceTest {
 		
 		//--------------------------------------------------------------
 		//wait until the event is handled in another thread until timeout
-		waiter.await((long)(HANDLE_DELAY_MS*1.5), TimeUnit.MILLISECONDS);
+		waiter.await((long)(HANDLE_DELAY_MS*20), TimeUnit.MILLISECONDS);
 		
 		//--------------------------------------------------------------
         assertTrue("onComplete callback should be called and completed with no errors", isCallbackExecuted.get());
@@ -241,7 +241,7 @@ public class IntegrationServiceTest {
 	
 		//--------------------------------------------------------------
 		//wait until timeout, because none of the callbacks was called
-		waiter.await((long)(HANDLE_DELAY_MS*1.5), TimeUnit.MILLISECONDS);
+		waiter.await((long)(HANDLE_DELAY_MS*10), TimeUnit.MILLISECONDS);
 	}
 	
 	
@@ -269,7 +269,7 @@ public class IntegrationServiceTest {
 	
 		//--------------------------------------------------------------
 		//wait until timeout, because none of the callbacks was called
-		waiter.await((long)(HANDLE_DELAY_MS*1.5), TimeUnit.MILLISECONDS);
+		waiter.await((long)(HANDLE_DELAY_MS*10), TimeUnit.MILLISECONDS);
 	}
 	
 	
@@ -289,8 +289,8 @@ public class IntegrationServiceTest {
 		
 		
 		//--------------------------------------------------------------
-		//wait until the event is handled in another thread until timeout
-		waiter.await((long)(HANDLE_DELAY_MS*3), TimeUnit.MILLISECONDS);
+		//wait until the event is handled in another thread or until timeout
+		waiter.await((long)(HANDLE_DELAY_MS*20), TimeUnit.MILLISECONDS);
 		
 		//--------------------------------------------------------------
         assertTrue("onComplete callback should be called and completed with no errors for both events"
@@ -346,7 +346,7 @@ public class IntegrationServiceTest {
 		
 		//--------------------------------------------------------------
 		//wait until the event is handled in another thread until timeout
-		waiter.await((long)(HANDLE_DELAY_MS*1.5), TimeUnit.MILLISECONDS);
+		waiter.await((long)(HANDLE_DELAY_MS*10), TimeUnit.MILLISECONDS);
 	}
 	
 	
@@ -373,7 +373,7 @@ public class IntegrationServiceTest {
 		
 		//--------------------------------------------------------------
 		//wait until the event is handled in another thread until timeout
-		waiter.await((long)(HANDLE_DELAY_MS*1.5), TimeUnit.MILLISECONDS);
+		waiter.await((long)(HANDLE_DELAY_MS*10), TimeUnit.MILLISECONDS);
 	}
 	
 	
@@ -394,7 +394,7 @@ public class IntegrationServiceTest {
 		//--------------------------------------------------------------
 		
 		//wait until the event is handled in another thread until timeout
-		Thread.sleep((long) (HANDLE_DELAY_MS*1.5));		
+		Thread.sleep((long) (HANDLE_DELAY_MS*20));		
 		//--------------------------------------------------------------
 		assertEventFailureSavedToDB(countBefore, event);
 	}
@@ -445,7 +445,7 @@ public class IntegrationServiceTest {
 		integration.pushIntegrationEvent(event, onError);
 		//--------------------------------------------------------------
 		//wait until the event is handled in another thread until timeout
-		waiter.await((long)(HANDLE_DELAY_MS*1.5), TimeUnit.MILLISECONDS);
+		waiter.await((long)(HANDLE_DELAY_MS*20), TimeUnit.MILLISECONDS);
 		
 		//--------------------------------------------------------------
 		assertTrue(isCalled.get());		
@@ -592,7 +592,7 @@ public class IntegrationServiceTest {
 		
 		List<HandlingInfo> orgEvents = pushBulkOfEvents(waiter, eventsNum, orgId, true);
 		//--------------------------------------------------------------
-		Long awaitTime = (long) (HandlingInfoSaver.HANDLING_TIME*(eventsNum/expectedEventRate)*1.5);
+		Long awaitTime = (long) (HandlingInfoSaver.HANDLING_TIME*(eventsNum/expectedEventRate)*10);
 		waiter.await( awaitTime );
 		
 		//--------------------------------------------------------------
@@ -621,7 +621,7 @@ public class IntegrationServiceTest {
 		//--------------------------------------------------------------
 		Integer eventsNum = eventsNum1 + eventsNum2;
 		Long expectedEventRate = Math.min(expectedEventRate1, expectedEventRate2);
-		Long awaitTime = (long) (HandlingInfoSaver.HANDLING_TIME*(eventsNum/expectedEventRate)*1.7);
+		Long awaitTime = (long) (HandlingInfoSaver.HANDLING_TIME*(eventsNum/expectedEventRate)*20);
 		waiter.await( awaitTime );
 		
 		//--------------------------------------------------------------

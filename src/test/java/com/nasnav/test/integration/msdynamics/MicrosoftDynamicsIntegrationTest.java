@@ -78,7 +78,6 @@ public class MicrosoftDynamicsIntegrationTest {
 			serverFullUrl = testCommons.initFortuneMockServer(mockServerRule);
 		}
 		
-		serverFullUrl = "sdfdsds";
 		registerIntegrationModule(serverFullUrl);
 	}
 	
@@ -103,7 +102,7 @@ public class MicrosoftDynamicsIntegrationTest {
 		assertEquals( email, user.getEmail());
 		//------------------------------------------------
 		
-		Thread.sleep(5000);
+		Thread.sleep(7000);
 		
 		//------------------------------------------------
 		//test the mock api was called
@@ -145,7 +144,7 @@ public class MicrosoftDynamicsIntegrationTest {
 //		user.setAddress("nasnav st.");
 //		user.setAddressCity("Cairo");
 //		user.setAddressCountry("Egypt");
-		userRepo.save(user);
+		userRepo.saveAndFlush(user);
 		
 		return email;
 	}

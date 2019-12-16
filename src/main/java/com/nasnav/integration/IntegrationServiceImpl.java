@@ -625,7 +625,14 @@ public class IntegrationServiceImpl implements IntegrationService {
 		info.getIntegrationParameters()
 			.forEach((name, val) -> saveIntegrationParam(orgId, name, val));
 		
-		loadOrganizationIntegrationModule(orgId);
+		try {
+			loadOrganizationIntegrationModule(orgId);
+		}catch(BusinessException e) {
+			throw new BusinessException( 
+					format(ERR_INTEGRATION_MODULE_LOAD_FAILED, orgId)
+					,"INVALID INTEGRATION INFO"
+					, HttpStatus.NOT_ACCEPTABLE);
+		}
 	}
 
 
