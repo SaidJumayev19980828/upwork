@@ -106,6 +106,7 @@ public class OrderServiceTest {
 	private BasketRepository basketRepository;
 	
 	
+	
 	@Test
 	public void unregisteredUser() {
 		StocksEntity stock = createStock();
@@ -508,8 +509,9 @@ public class OrderServiceTest {
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
+		long org99002Orders = orderRepository.countByOrganizationEntity_id(99002L);
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("user#69 is Organization admin in org#99002 so he can view all orderes within org#99002", 6, count);
+		assertEquals("user#69 is Organization admin in org#99002 so he can view all orderes within org#99002", org99002Orders, count);
 
 		header = TestCommons.getHeaders("192021");
 		response = template.exchange("/order/list", HttpMethod.GET, new HttpEntity<>(header), String.class);
