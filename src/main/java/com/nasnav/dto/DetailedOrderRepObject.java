@@ -22,8 +22,14 @@ import lombok.EqualsAndHashCode;
 public class DetailedOrderRepObject extends BaseRepresentationObject{
     @JsonProperty("user_id")
     private long userId;
-    @JsonProperty("store_id")
+    @JsonProperty("user_name")
+    private String userName;
+    @JsonProperty("shop_id")
     private long shopId;
+    @JsonProperty("shop_name")
+    private String shopName;
+    @JsonProperty("shop_address")
+    private String shopAddress;
     @JsonProperty("order_id")
     private long orderId;
     @JsonProperty("subtotal")
@@ -41,7 +47,9 @@ public class DetailedOrderRepObject extends BaseRepresentationObject{
     @JsonProperty("status")
     private String status;
     @JsonProperty("total_quantity")
-    private int totalQuantity;
+    private Integer totalQuantity;
+    @JsonProperty("payment_status")
+    private String paymentStatus;
 
     @JsonProperty("shipping_address")
     private ShippingAddress shippingAddress;

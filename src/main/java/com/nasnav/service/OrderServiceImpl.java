@@ -476,15 +476,15 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
-	public DetailedOrderRepObject getOrderInfo(Long orderId) throws BusinessException {
+	public DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel) throws BusinessException {
 		
 		BaseUserEntity user = securityService.getCurrentUser();
 		
 		if (user instanceof UserEntity 
 				&& ordersRepository.existsByIdAndUserId(orderId, user.getId())) {
-			return getDetailedOrderInfo(orderId, true);
+			return getDetailedOrderInfo(orderId, detailsLevel);
 		} else if (ordersRepository.existsById(orderId)) {
-			return getDetailedOrderInfo(orderId, true);
+			return getDetailedOrderInfo(orderId, detailsLevel);
 		}			
 
 		throwInvalidOrderException( OrderFailedStatus.INVALID_ORDER.toString() );
@@ -498,26 +498,34 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	//TODO: doesn't support getting shipment fees
-	private DetailedOrderRepObject getDetailedOrderInfo(Long orderId, boolean getItems) {
+	private DetailedOrderRepObject getDetailedOrderInfo(Long orderId, Integer detailsLevel) {
+		if (detailsLevel == null)
+			detailsLevel = 0;
+
 		OrdersEntity entity = ordersRepository.findById(orderId).get();
-		
 		DetailedOrderRepObject obj = new DetailedOrderRepObject();
+
 		obj.setOrderId(entity.getId() );
 		obj.setUserId(entity.getUserId());
 		obj.setShopId(entity.getShopsEntity().getId());
 		obj.setCreatedAt(entity.getCreationDate());
-		obj.setDeliveryDate(entity.getDeliveryDate());		
-		obj.setSubtotal( entity.getAmount() );
-		obj.setShipping(new BigDecimal(0));
-		obj.setTotal(obj.getShipping().add(obj.getSubtotal()));
-		obj.setStatus(OrderStatus.findEnum(entity.getStatus()).name());
+        obj.setStatus(OrderStatus.findEnum(entity.getStatus()).name());
+        obj.setPaymentStatus(entity.getPaymentStatus().toString());
+		obj.setTotal(entity.getAmount());
 
-		//TODO set shipping address, shipping price
-		ShippingAddress address = new ShippingAddress();
-		address.setDetails(entity.getAddress());
-        obj.setShippingAddress(address);
+        //TODO set shipping address, shipping price
+        if (detailsLevel >= 1) {
+            obj.setDeliveryDate(entity.getDeliveryDate());
+            obj.setSubtotal(entity.getAmount());
+            obj.setShipping(new BigDecimal(0));
+            obj.setTotal(obj.getShipping().add(obj.getSubtotal()));
 
-		if (getItems) {
+            ShippingAddress address = new ShippingAddress();
+            address.setDetails(entity.getAddress());
+            obj.setShippingAddress(address);
+        }
+
+		if (detailsLevel == 2) {
 			List<BasketItem> itemsList = getBasketItems(orderId);
 			obj.setItems(itemsList);
 			if (itemsList.size() > 0) {
@@ -579,7 +587,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	@Override
 	public List<DetailedOrderRepObject> getOrdersList(String userToken, Long userId, Long storeId, Long orgId,
-													  String status, boolean details) throws BusinessException {
+													  String status, Integer detailsLevel) throws BusinessException {
 		Integer statusId = null;
 
 		if (status != null) {
@@ -615,7 +623,7 @@ public class OrderServiceImpl implements OrderService {
 
 		List<DetailedOrderRepObject> ordersRep = new ArrayList<>();
 		for(OrdersEntity orders: ordersEntityList)
-			ordersRep.add(getDetailedOrderInfo(orders.getId(), details));
+			ordersRep.add(getDetailedOrderInfo(orders.getId(), detailsLevel));
 
 		return ordersRep;
 	}
@@ -643,13 +651,13 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
-	public DetailedOrderRepObject getCurrentOrder() throws BusinessException {
+	public DetailedOrderRepObject getCurrentOrder(Integer detailsLevel) throws BusinessException {
 		BaseUserEntity user = securityService.getCurrentUser();
 		
 		OrdersEntity entity = ordersRepository.findFirstByUserIdAndStatusOrderByUpdateDateDesc( user.getId(), OrderStatus.NEW.getValue() )
 											 .orElseThrow(() -> getNoCurrentOrderFoundException() );
 		
-		return getDetailedOrderInfo(entity.getId(), true);
+		return getDetailedOrderInfo(entity.getId(), detailsLevel);
 	}
 
 

@@ -20,14 +20,14 @@ public interface OrderService {
 
 	public OrderResponse handleOrder(OrderJsonDto orderJson) throws BusinessException;
 
-	public DetailedOrderRepObject getOrderInfo(Long orderId)  throws BusinessException;
+	public DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
 
 	public OrderValue getOrderValue(OrdersEntity orderEntity);
 
 	public List<DetailedOrderRepObject> getOrdersList(String userToken, Long userId, Long storeId, Long orgId,
-													  String status, boolean details) throws BusinessException;
+													  String status, Integer details) throws BusinessException;
 
-	public DetailedOrderRepObject getCurrentOrder() throws BusinessException;
+	public DetailedOrderRepObject getCurrentOrder(Integer detailsLevel) throws BusinessException;
 
 	public void deleteCurrentOrders();
 }

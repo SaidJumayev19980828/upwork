@@ -62,9 +62,10 @@ public class OrdersController {
     @GetMapping(value = "/info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
     public DetailedOrderRepObject getOrderInfo(
             @RequestHeader(name = "User-Token") String userToken,
-            @RequestParam(name = "order_id") Long orderId) throws BusinessException {
+            @RequestParam(name = "order_id") Long orderId,
+			@RequestParam(name = "details_level", required = false) Integer detailsLevel) throws BusinessException {
 		
-    	return this.orderService.getOrderInfo(orderId);    	
+    	return this.orderService.getOrderInfo(orderId, detailsLevel);
     }
 	
 	
@@ -85,9 +86,9 @@ public class OrdersController {
 											@RequestParam(name = "store_id", required = false) Long storeId,
 											@RequestParam(name = "org_id", required = false) Long orgId,
 											@RequestParam(name = "status", required = false) String status,
-											@RequestParam(name = "details", required = false) boolean details) throws BusinessException {
+											@RequestParam(name = "details_level", required = false) Integer detailsLevel) throws BusinessException {
 		
-		return  this.orderService.getOrdersList(userToken, userId, storeId, orgId, status, details);
+		return  this.orderService.getOrdersList(userToken, userId, storeId, orgId, status, detailsLevel);
 	}
 	
 	
@@ -99,9 +100,10 @@ public class OrdersController {
 						   @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
     @GetMapping(value = "/current", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
     public DetailedOrderRepObject getCurrentNewOrder(
-            @RequestHeader(name = "User-Token") String userToken) throws BusinessException {
+            @RequestHeader(name = "User-Token") String userToken,
+			@RequestParam(name = "details_level", required = false) Integer detailsLevel) throws BusinessException {
 		
-    	return this.orderService.getCurrentOrder();    	
+    	return this.orderService.getCurrentOrder(detailsLevel);
     }
 	
 	
