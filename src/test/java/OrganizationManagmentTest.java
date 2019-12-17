@@ -1,6 +1,8 @@
 import com.nasnav.NavBox;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.response.OrganizationResponse;
+import com.nasnav.test.commons.TestCommons;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

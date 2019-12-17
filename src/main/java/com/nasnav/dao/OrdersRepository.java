@@ -49,5 +49,7 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 
 	void deleteByStatusAndUserId(Integer value, Long id);
 
-	Long countByOrganizationEntity_id(long l);
+	Long countByOrganizationEntity_id(long orgId);
+
+	Long countByShopsEntity_id(Long shopId);
 }

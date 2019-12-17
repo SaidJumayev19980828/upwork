@@ -49,6 +49,7 @@ import com.nasnav.persistence.ProductTypes;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.BundleResponse;
 import com.nasnav.response.ProductUpdateResponse;
+import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
 
 import net.jcip.annotations.NotThreadSafe;

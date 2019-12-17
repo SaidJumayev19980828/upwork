@@ -43,6 +43,7 @@ import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.ProductUpdateResponse;
+import com.nasnav.test.commons.TestCommons;
 
 import net.jcip.annotations.NotThreadSafe;
 

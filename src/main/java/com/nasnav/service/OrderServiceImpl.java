@@ -46,38 +46,24 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
+import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.UserRepository;
-import com.nasnav.dto.BasketItem;
-import com.nasnav.dto.BasketItemDTO;
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.OrderJsonDto;
-import com.nasnav.dto.ShippingAddress;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BasketsEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
+
+import javax.persistence.EntityManager;
+import javax.persistence.criteria.*;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -96,8 +82,9 @@ public class OrderServiceImpl implements OrderService {
 	
 	private final UserRepository userRepository;
 
-	
-	
+	@Autowired
+	private EntityManager em;
+
 	@Autowired
 	private ProductImageService imgService;
 	
@@ -784,15 +771,15 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
-	public DetailedOrderRepObject getOrderInfo(Long orderId) throws BusinessException {
+	public DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel) throws BusinessException {
 		
 		BaseUserEntity user = securityService.getCurrentUser();
 		
 		if (user instanceof UserEntity 
 				&& ordersRepository.existsByIdAndUserId(orderId, user.getId())) {
-			return getDetailedOrderInfo(orderId, true);
+			return getDetailedOrderInfo(orderId, detailsLevel);
 		} else if (ordersRepository.existsById(orderId)) {
-			return getDetailedOrderInfo(orderId, true);
+			return getDetailedOrderInfo(orderId, detailsLevel);
 		}			
 
 		throwInvalidOrderException( OrderFailedStatus.INVALID_ORDER.toString() );
@@ -806,33 +793,44 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	//TODO: doesn't support getting shipment fees
-	private DetailedOrderRepObject getDetailedOrderInfo(Long orderId, boolean getItems) {
+	private DetailedOrderRepObject getDetailedOrderInfo(Long orderId, Integer detailsLevel) {
+		if (detailsLevel == null)
+			detailsLevel = 0;
+
 		OrdersEntity entity = ordersRepository.findById(orderId).get();
-		List<BasketItem> itemsList = getBasketItems(orderId);
-		
 		DetailedOrderRepObject obj = new DetailedOrderRepObject();
+
 		obj.setOrderId(entity.getId() );
 		obj.setUserId(entity.getUserId());
 		obj.setShopId(entity.getShopsEntity().getId());
 		obj.setCreatedAt(entity.getCreationDate());
-		obj.setDeliveryDate(entity.getDeliveryDate());		
-		obj.setSubtotal( entity.getAmount() );
-		obj.setShipping(new BigDecimal(0));
-		obj.setTotal(obj.getShipping().add(obj.getSubtotal()));
-		obj.setStatus(OrderStatus.findEnum(entity.getStatus()).name());
-		if (itemsList.size() > 0) {
-			obj.setCurrency(itemsList.get(0).getCurrency());
-			Integer totalQuantity = itemsList.stream()
-											.map(BasketItem::getQuantity)
-											.reduce(0, Integer::sum);										
-			obj.setTotalQuantity( totalQuantity);
-		}
-		//TODO set shipping address, shipping price
-		ShippingAddress address = new ShippingAddress();
-		address.setDetails(entity.getAddress());
-        obj.setShippingAddress(address);
-		if (getItems)
+        obj.setStatus(OrderStatus.findEnum(entity.getStatus()).name());
+        obj.setPaymentStatus(entity.getPaymentStatus().toString());
+		obj.setTotal(entity.getAmount());
+
+        //TODO set shipping address, shipping price
+        if (detailsLevel >= 1) {
+            obj.setDeliveryDate(entity.getDeliveryDate());
+            obj.setSubtotal(entity.getAmount());
+            obj.setShipping(new BigDecimal(0));
+            obj.setTotal(obj.getShipping().add(obj.getSubtotal()));
+
+            ShippingAddress address = new ShippingAddress();
+            address.setDetails(entity.getAddress());
+            obj.setShippingAddress(address);
+        }
+
+		if (detailsLevel == 2) {
+			List<BasketItem> itemsList = getBasketItems(orderId);
 			obj.setItems(itemsList);
+			if (itemsList.size() > 0) {
+				obj.setCurrency(itemsList.get(0).getCurrency());
+				Integer totalQuantity = itemsList.stream()
+						.map(BasketItem::getQuantity)
+						.reduce(0, Integer::sum);
+				obj.setTotalQuantity( totalQuantity);
+			}
+		}
 		return obj;
 	}
 	
@@ -841,7 +839,8 @@ public class OrderServiceImpl implements OrderService {
 	
 
 	private List<BasketItem> getBasketItems(Long orderId) {
-		List<BasketsEntity> itemsEntityList = basketRepository.findByOrdersEntity_Id(orderId);
+
+		List<BasketData> itemsEntityList = em.createNamedQuery("Basket").setParameter("orderId", orderId).getResultList();
 		return itemsEntityList.stream()
 							.map(this::toBasketItem)
 							.collect(Collectors.toList());
@@ -851,19 +850,17 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 
-	private BasketItem toBasketItem(BasketsEntity entityItem) {
-		StocksEntity stock = entityItem.getStocksEntity();
-		ProductEntity product = stock.getProductVariantsEntity().getProductEntity();
-		
+	private BasketItem toBasketItem(BasketData entityItem) {
+
 		BasketItem item = new BasketItem();
-		item.setProductId(product.getId());
-		item.setName(product.getName());
-		item.setPname(product.getPname());
-		item.setStockId(stock.getId());
+		item.setProductId(entityItem.getProductId());
+		item.setName(entityItem.getProductName());
+		item.setPname(entityItem.getProductPname());
+		item.setStockId(entityItem.getStockId());
 		item.setQuantity(entityItem.getQuantity().intValue());
 		//TODO set item unit //
 		item.setTotalPrice(entityItem.getPrice());
-		item.setThumb( imgService.getProductCoverImage( product.getId() ));
+		item.setThumb( entityItem.getProductCoverImage() );
 		item.setCurrency(TransactionCurrency.getTransactionCurrency(entityItem.getCurrency()).name());
 		
 		return item;
@@ -884,97 +881,82 @@ public class OrderServiceImpl implements OrderService {
 		
 	
 	@Override
-	public List<DetailedOrderRepObject> getOrdersList(String userToken, Long userId, Long storeId, Long orgId, String status){
-		List<OrdersEntity> ordersEntityList;
-		List<DetailedOrderRepObject> ordersRep = new ArrayList<>();
-		Integer statusId = -1;
-		if (status != null){
-			if ((OrderStatus.findEnum(status)) != null) {
-				statusId = (OrderStatus.findEnum(status)).getValue();
+	public List<DetailedOrderRepObject> getOrdersList(String userToken, Long userId, Long storeId, Long orgId,
+													  String status, Integer detailsLevel) throws BusinessException {
+		Integer statusId = null;
+
+		if (status != null) {
+			if ((OrderStatus.findEnum(status)) == null)
+				throw new BusinessException("Provided status" + status + " doesn't match any existing status!","INVALID PARAM: status",HttpStatus.BAD_REQUEST);
+			statusId = (OrderStatus.findEnum(status)).getValue();
+		}
+
+		BaseUserEntity user = securityService.getCurrentUser();
+		if (user instanceof UserEntity) { // User
+			userId = user.getId();
+			orgId = null;
+			storeId = null;
+		} else { // EmployeeUser
+			EmployeeUserEntity empUser = (EmployeeUserEntity)user;
+			List<String> employeeUserRoles = employeeUserServiceHelper.getEmployeeUserRoles(empUser.getId());
+			if (employeeUserRoles.contains("ORGANIZATION_ADMIN") || employeeUserRoles.contains("ORGANIZATION_MANAGER") || employeeUserRoles.contains("ORGANIZATION_EMPLOYEE")){
+				orgId = empUser.getOrganizationId();				
+			} else if (employeeUserRoles.contains("STORE_ADMIN") || employeeUserRoles.contains("STORE_MANAGER") || employeeUserRoles.contains("STORE_EMPLOYEE")) {
+				storeId = empUser.getShopId();
 			}
 		}
 		
-		BaseUserEntity user = securityService.getCurrentUser();
-		if (user instanceof EmployeeUserEntity){ // EmployeeUser
-			EmployeeUserEntity empUser = (EmployeeUserEntity)user;
-			List<String> employeeUserRoles = employeeUserServiceHelper.getEmployeeUserRoles(empUser.getId());
-			if (employeeUserRoles.contains("STORE_ADMIN") || employeeUserRoles.contains("STORE_MANAGER") || employeeUserRoles.contains("STORE_EMPLOYEE")){
-				storeId = empUser.getShopId();
-			} else if (employeeUserRoles.contains("ORGANIZATION_ADMIN") || employeeUserRoles.contains("ORGANIZATION_MANAGER") || employeeUserRoles.contains("ORGANIZATION_EMPLOYEE")) {
-				orgId = empUser.getOrganizationId();
-			}
-			if (statusId != -1){
-				if (orgId != null){
-					if (userId != null && storeId != null)
-						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatusAndUserIdAndOrganizationEntityId(storeId, statusId, userId, orgId);
-					else if (userId != null)
-						ordersEntityList = ordersRepository.findByOrganizationEntityIdAndStatusAndUserId(orgId, statusId, userId);
-					else if (storeId != null)
-						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatusAndOrganizationEntityId(storeId, statusId, orgId);
-					else
-						ordersEntityList = ordersRepository.findByOrganizationEntityIdAndStatus(orgId, statusId);
+		CriteriaBuilder builder = em.getCriteriaBuilder();
+		CriteriaQuery<OrdersEntity> query = builder.createQuery(OrdersEntity.class);
+		Root<OrdersEntity> root = query.from(OrdersEntity.class);
 
-				} else {
-					if (userId != null && storeId != null)
-						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatusAndUserId(storeId, statusId, userId);
-					else if (userId != null)
-						ordersEntityList = ordersRepository.findByUserIdAndStatus(userId, statusId);
-					else if (storeId != null)
-						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndStatus(storeId, statusId);
-					else
-						ordersEntityList = ordersRepository.findByStatus(statusId);
+		Predicate[] predicatesArr = getOrderQueryPredicates(userId, storeId, orgId, statusId, builder, root);
 
-				}
-			} else {
-				if (orgId != null){
-					if (userId != null && storeId != null) {
-						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndUserIdAndOrganizationEntityId(storeId, userId, orgId);
-					} else if (userId != null) {
-						ordersEntityList = ordersRepository.findByOrganizationEntityIdAndUserId(orgId, userId);
-					} else if (storeId != null){
-						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndOrganizationEntityId(storeId, orgId);
-					} else {
-						ordersEntityList = ordersRepository.findByOrganizationEntityId(orgId);
-					}
-				} else {
-					if (userId != null && storeId != null) {
-						ordersEntityList = ordersRepository.getOrdersEntityByShopsEntityIdAndUserId(storeId, userId);
-					} else if (userId != null) {
-						ordersEntityList = ordersRepository.findByUserId(userId);
-					} else if (storeId != null){
-						ordersEntityList = ordersRepository.findByShopsEntityId(storeId);
-					} else {
-						ordersEntityList = ordersRepository.findAll();
-					}
-				}
-			}
-		} else { // User
-			if (statusId != -1){
-				ordersEntityList = ordersRepository.findByUserIdAndStatus(user.getId(), statusId);
-			} else {
-				ordersEntityList = ordersRepository.findByUserId(user.getId());
-			}
-		}
-		for(OrdersEntity orders: ordersEntityList) {
-			ordersRep.add(getDetailedOrderInfo(orders.getId(), false));
-			//ordersEntityList.stream().map(order -> (OrderRepresentationObject) order.getRepresentation())
-			//.collect(Collectors.toList());
-		}
+		query.where(predicatesArr);
+
+		List<OrdersEntity> ordersEntityList = em.createQuery(query).getResultList();
+
+		List<DetailedOrderRepObject> ordersRep = new ArrayList<>();
+		for(OrdersEntity orders: ordersEntityList)
+			ordersRep.add(getDetailedOrderInfo(orders.getId(), detailsLevel));
+
 		return ordersRep;
+	}
+	
+	
+	
+	
+
+	private Predicate[] getOrderQueryPredicates(Long userId, Long storeId, Long orgId, Integer statusId,
+												CriteriaBuilder builder, Root<OrdersEntity> root) {
+		List<Predicate> predicates = new ArrayList<>();
+
+		if(userId != null)
+			predicates.add( builder.equal(root.get("userId"), userId) );
+
+		if(orgId != null)
+			predicates.add( builder.equal(root.get("organizationEntity").get("id"), orgId) );
+
+		if(storeId != null)
+			predicates.add( builder.equal(root.get("shopsEntity").get("id"), storeId) );
+
+		if(statusId != null)
+			predicates.add( builder.equal(root.get("status"), statusId) );
+
+		return predicates.stream().toArray( Predicate[]::new) ;
 	}
 
 
 
 
-
 	@Override
-	public DetailedOrderRepObject getCurrentOrder() throws BusinessException {
+	public DetailedOrderRepObject getCurrentOrder(Integer detailsLevel) throws BusinessException {
 		BaseUserEntity user = securityService.getCurrentUser();
 		
 		OrdersEntity entity = ordersRepository.findFirstByUserIdAndStatusOrderByUpdateDateDesc( user.getId(), OrderStatus.NEW.getValue() )
 											 .orElseThrow(() -> getNoCurrentOrderFoundException() );
 		
-		return getDetailedOrderInfo(entity.getId(), true);
+		return getDetailedOrderInfo(entity.getId(), detailsLevel);
 	}
 
 

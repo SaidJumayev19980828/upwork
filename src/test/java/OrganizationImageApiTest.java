@@ -33,6 +33,7 @@ import com.nasnav.dao.OrganizationImagesRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dto.OrganizationImagesRepresentationObject;
 import com.nasnav.dto.OrganizationRepresentationObject;
+import com.nasnav.test.commons.TestCommons;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

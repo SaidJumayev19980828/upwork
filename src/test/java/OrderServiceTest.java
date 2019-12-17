@@ -9,6 +9,9 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static java.lang.String.format;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -43,6 +46,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nasnav.NavBox;
 import com.nasnav.controller.OrdersController;
 import com.nasnav.dao.BasketRepository;
+import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
@@ -51,6 +55,7 @@ import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.ShippingAddress;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ShopsEntity;
@@ -58,6 +63,7 @@ import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.UserService;
+import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
 
 import lombok.AllArgsConstructor;
@@ -83,6 +89,10 @@ public class OrderServiceTest {
 
 	@Autowired
 	private UserRepository userRepository;
+	
+	
+	@Autowired
+	private EmployeeUserRepository empRepository;
 
 	@Autowired
 	private OrdersRepository orderRepository;
@@ -400,9 +410,12 @@ public class OrderServiceTest {
 
 	@Test // Nasnav_Admin diffterent filters test
 	public void ordersListNasnavAdminDifferentFiltersTest() {
-		HttpHeaders header = TestCommons.getHeaders("101112");
+		HttpEntity httpEntity = getHttpEntity("101112");
 		// no filters
-		ResponseEntity<String> response = template.exchange("/order/list", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		ResponseEntity<String> response = template.exchange("/order/list?details_level=2"
+															, HttpMethod.GET
+															, httpEntity
+															, String.class);
 
 		JSONArray body = new JSONArray(response.getBody());
 		long count = body.length();
@@ -410,61 +423,93 @@ public class OrderServiceTest {
 		assertTrue(200 == response.getStatusCode().value());
 		assertEquals("all orders ",16,count);
 
+		//---------------------------------------------------------------------
 		// by org_id
-		response = template.exchange("/order/list?org_id=99001", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		response = template.exchange("/order/list?org_id=99001&details_level=2"
+										, HttpMethod.GET
+										, httpEntity
+										, String.class);		
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
 		assertEquals("7 orders with org_id = 99001",7,count);
 
+		//---------------------------------------------------------------------
 		// by store_id
-		response = template.exchange("/order/list?store_id=501", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		response = template.exchange("/order/list?store_id=501&details_level=2"
+											, HttpMethod.GET
+											, httpEntity
+											, String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
 		assertEquals("4 orders with store_id = 501",4,count);
 
+		//---------------------------------------------------------------------
 		// by user_id
-		response = template.exchange("/order/list?user_id=88", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		response = template.exchange("/order/list?user_id=88&details_level=2"
+												, HttpMethod.GET
+												, httpEntity
+												, String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
 		assertEquals("6 orders with user_id = 88",6,count);
 
+		//---------------------------------------------------------------------
 		// by status
-		response = template.exchange("/order/list?status=NEW", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		response = template.exchange("/order/list?status=NEW&details_level=2"
+											, HttpMethod.GET
+											, httpEntity
+											, String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("8 orders with status = NEW",8,count);
+		assertEquals("8 orders with status = NEW", 6,count);
 
+		//---------------------------------------------------------------------
 		// by org_id and status
-		response = template.exchange("/order/list?org_id=99001&status=NEW", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		response = template.exchange("/order/list?org_id=99001&status=NEW&details_level=2"
+											, HttpMethod.GET
+											, httpEntity
+											, String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("3 orders with org_id = 99001 and status = NEW",3,count);
+		assertEquals("3 orders with org_id = 99001 and status = NEW",2 ,count);
 
+		//---------------------------------------------------------------------
 		// by org_id and store_id
-		response = template.exchange("/order/list?org_id=99001&store_id=503", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		response = template.exchange("/order/list?org_id=99001&store_id=503&details_level=2"
+										, HttpMethod.GET
+										, httpEntity
+										, String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
+		//---------------------------------------------------------------------
 		// by org_id and user_id
-		response = template.exchange("/order/list?org_id=99002&user_id=90", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		response = template.exchange("/order/list?org_id=99002&user_id=90&details_level=2"
+										, HttpMethod.GET
+										, httpEntity
+										, String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("2 order with org_id = 99002 and user_id = 90",2,count);
+		assertEquals("1 order with org_id = 99002 and user_id = 90", 1,count);
 
+		//---------------------------------------------------------------------
 		// by store_id and status
-		response = template.exchange("/order/list?store_id=501&status=NEW", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		response = template.exchange("/order/list?store_id=501&status=NEW&details_level=2"
+										, HttpMethod.GET
+										, httpEntity
+										, String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
@@ -472,17 +517,25 @@ public class OrderServiceTest {
 		assertEquals("2 orders with order_id = 501 and status = NEW",2,count);
 
 
+		//---------------------------------------------------------------------
 		// by user_id and status
-		response = template.exchange("/order/list?user_id=88&status=NEW", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		response = template.exchange("/order/list?user_id=88&status=NEW&details_level=2"
+										, HttpMethod.GET
+										, httpEntity
+										, String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("4 orders with user_id = 88 and status = NEW",4,count);
+		assertEquals("2 orders with user_id = 88 and status = NEW", 2,count);
 
 
+		//---------------------------------------------------------------------
 		// by user_id, store_id and status
-		response = template.exchange("/order/list?user_id=88&store_id=501&status=NEW", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		response = template.exchange("/order/list?user_id=88&store_id=501&status=NEW&details_level=2"
+										, HttpMethod.GET
+										, httpEntity
+										, String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
@@ -497,16 +550,21 @@ public class OrderServiceTest {
 
 	@Test // Organization roles diffterent filters test
 	public void ordersListOrganizationDifferentFiltersTest() {
-		HttpHeaders header = TestCommons.getHeaders("161718");
-		ResponseEntity<String> response = template.exchange("/order/list", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		ResponseEntity<String> response = template.exchange("/order/list?details_level=2"
+																, HttpMethod.GET
+																, getHttpEntity("161718")
+																, String.class);
 		JSONArray body = new JSONArray(response.getBody());
 		long count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
 		assertEquals("user#70 is Organization employee in org#99003 so he can view all orderes within org#99003", 7, count);
-
-		header = TestCommons.getHeaders("131415");
-		response = template.exchange("/order/list", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		//-------------------------------------------------------------------------
+		
+		response = template.exchange("/order/list?details_level=2"
+										, HttpMethod.GET
+										, getHttpEntity("131415")
+										, String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
@@ -514,13 +572,23 @@ public class OrderServiceTest {
 		assertTrue(200 == response.getStatusCode().value());
 		assertEquals("user#69 is Organization admin in org#99002 so he can view all orderes within org#99002", org99002Orders, count);
 
-		header = TestCommons.getHeaders("192021");
-		response = template.exchange("/order/list", HttpMethod.GET, new HttpEntity<>(header), String.class);
+		//-------------------------------------------------------------------------
+		response = template.exchange("/order/list?details_level=2"
+										, HttpMethod.GET
+										, getHttpEntity("192021")
+										, String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
+		Long shopEmpId = 71L;
+		Long shopId = empRepository.findById(shopEmpId)
+									.map(EmployeeUserEntity::getShopId)
+									.get();
+		long shopOrdersCount = orderRepository.countByShopsEntity_id( shopId );
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("user#71 is store employee in store#802 so he can view all orderes within store#802", 1, count);
+		assertEquals( 	format( "user#%d is store employee in store#%d so he can view all orderes within the store", shopEmpId, shopId)
+						, shopOrdersCount
+						, count);
 	}
 	
 	
@@ -544,7 +612,7 @@ public class OrderServiceTest {
 	@Test
 	public void ordersListInvalidfiltersTest() {
 		// by store_id only
-		ResponseEntity<String> response = template.exchange("/order/list?store_id=550", HttpMethod.GET,
+		ResponseEntity<String> response = template.exchange("/order/list?store_id=550&details_level=2", HttpMethod.GET,
 				new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
 		JSONArray body = new JSONArray(response.getBody());
 		long count = body.length();
@@ -552,7 +620,7 @@ public class OrderServiceTest {
 		assertEquals("No orders with store_id = 550 ", 0, count);
 
 		// by user_id
-		response = template.exchange("/order/list?user_id=99", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
+		response = template.exchange("/order/list?user_id=99&details_level=2", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
@@ -560,7 +628,7 @@ public class OrderServiceTest {
 		assertEquals("no orders with user_id = 99",0,count);
 
 		// by org_id
-		response = template.exchange("/order/list?org_id=999999", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
+		response = template.exchange("/order/list?org_id=999999&details_level=2", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
@@ -568,13 +636,10 @@ public class OrderServiceTest {
 		assertEquals("no orders with org_id = 999999",0,count);
 
 		// by status
-		response = template.exchange("/order/list?status=invalid_status", HttpMethod.GET,
+		response = template.exchange("/order/list?status=invalid_status&details_level=2", HttpMethod.GET,
 				new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
-		body = new JSONArray(response.getBody());
-		count = body.length();
 
-		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("get all orders if status parameter is invalid",16,count);
+		assertTrue(400 == response.getStatusCode().value());
 	}
 	
 	
@@ -599,7 +664,7 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getOrderInfoTest() throws JsonParseException, JsonMappingException, IOException {
 			
-		ResponseEntity<String> response = template.exchange("/order/info?order_id=330002"
+		ResponseEntity<String> response = template.exchange("/order/info?order_id=330002&details_level=2"
 														, HttpMethod.GET
 														,new HttpEntity<>(TestCommons.getHeaders("101112"))
 														, String.class);
@@ -696,7 +761,7 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getCurrentOrderTest() throws JsonParseException, JsonMappingException, IOException {
 			
-		ResponseEntity<String> response = template.exchange("/order/current"
+		ResponseEntity<String> response = template.exchange("/order/current?details_level=2"
 														, HttpMethod.GET
 														, new HttpEntity<>(TestCommons.getHeaders("123"))
 														, String.class);
@@ -735,7 +800,7 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getCurrentOrderNotFoundTest() throws JsonParseException, JsonMappingException, IOException {
 			
-		ResponseEntity<String> response = template.exchange("/order/current"
+		ResponseEntity<String> response = template.exchange("/order/current?details_level=2"
 														, HttpMethod.GET
 														, new HttpEntity<>(TestCommons.getHeaders("789"))
 														, String.class);
@@ -756,7 +821,7 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getCurrentOrderUserHasNoOrdersTest() throws JsonParseException, JsonMappingException, IOException {
 			
-		ResponseEntity<String> response = template.exchange("/order/current"
+		ResponseEntity<String> response = template.exchange("/order/current?details_level=2"
 														, HttpMethod.GET
 														, new HttpEntity<>(TestCommons.getHeaders("011"))
 														, String.class);
@@ -776,7 +841,7 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getCurrentOrderUserHasMultipleNewOrdersTest() throws JsonParseException, JsonMappingException, IOException {
 			
-		ResponseEntity<String> response = template.exchange("/order/current"
+		ResponseEntity<String> response = template.exchange("/order/current?details_level=2"
 														, HttpMethod.GET
 														, new HttpEntity<>(TestCommons.getHeaders("456"))
 														, String.class);		
@@ -927,6 +992,7 @@ public class OrderServiceTest {
 		order.setTotal( price);		
 		order.setItems( createExpectedItems(price, quantity));
 		order.setTotalQuantity(quantity);
+		order.setPaymentStatus(entity.getPaymentStatus().toString());
 		
 		return order;
 	}

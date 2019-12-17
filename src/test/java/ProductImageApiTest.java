@@ -69,6 +69,7 @@ import com.nasnav.persistence.ProductImagesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.security.AuthenticationFilter;
 import com.nasnav.service.ProductImageService;
+import com.nasnav.test.commons.TestCommons;
 
 import net.jcip.annotations.NotThreadSafe;
 
