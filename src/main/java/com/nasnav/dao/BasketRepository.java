@@ -24,4 +24,13 @@ public interface BasketRepository extends JpaRepository<BasketsEntity, Long> {
 
     @Transactional
     void deleteByOrdersEntity_Id(Long orderId);
+
+    @Query("select count(e) from BasketsEntity e "
+    		+ " join e.ordersEntity o"
+    		+ " join e.stocksEntity s "
+    		+ " join s.productVariantsEntity v "
+    		+ " join v.productEntity p "
+    		+ " where p.id= :productId "
+    		+ " and o.status = :status ")
+	Long countByProductIdAndOrderEntity_status(Long productId, Integer status);
 }

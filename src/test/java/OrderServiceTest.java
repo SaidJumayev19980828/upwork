@@ -227,50 +227,76 @@ public class OrderServiceTest {
 
 
 	@Test
-	public void createnewOrder() throws JsonParseException, Exception, Exception {
+	public void createNewOrder() throws JsonParseException, Exception, Exception {
 		UserEntity persistentUser = userRepository.getByEmailAndOrganizationId("user1@nasnav.com", 99001L);
-		Integer quantity = 5;
-		BigDecimal itemPrice = new BigDecimal(500).setScale(2);
-
-		// testing different combinations of price/quantity
-		// scope == 1: both price and quantity available in the table
-		for (int scope = 1; scope < 3; scope++) {			
-
-			StocksEntity stocksEntity = stockRepository.findById(601L).get();
-			if (scope < 3) {
-				stocksEntity.setPrice(itemPrice);
-			} else {
-				stocksEntity.setPrice(new BigDecimal(0));
-			}
-			if (scope != 2) {
-				stocksEntity.setQuantity(quantity);
-			} else {
-				stocksEntity.setQuantity(0);
-			}
-			stocksEntity = stockRepository.save(stocksEntity);
-			//---------------------------------------------------------------
-			JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stocksEntity.getId(), quantity));
-			ResponseEntity<String> response = 
-					template.postForEntity("/order/update"
-											, TestCommons.getHttpEntity( request.toString(), persistentUser.getAuthenticationToken())
-											, String.class);
-			
-			//---------------------------------------------------------------
-			if (scope != 2) {
-				ObjectMapper mapper = new ObjectMapper();
-				OrderResponse body = mapper.readValue(response.getBody(), OrderResponse.class);
-				
-				assertEquals(HttpStatus.OK, response.getStatusCode());
-				assertEquals(itemPrice.multiply(new BigDecimal(quantity)), body.getPrice());
-				assertNotNull(body.getOrderId());
-			} else {
-				JSONObject body = new JSONObject(response.getBody());
-				// with quantity = 0, order shall not be placed
-				assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-				assertEquals(INVALID_ORDER.toString(), body.get("error"));
-			}
-		}
 		
+		Long stockId = 601L;
+		Integer orderQuantity = 5;
+		Integer stockQuantity = orderQuantity;				
+		BigDecimal itemPrice = new BigDecimal(500).setScale(2);	
+		
+		StocksEntity stocksEntity = prepareStockForTest(stockId, stockQuantity, itemPrice);
+		//---------------------------------------------------------------
+		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stocksEntity.getId(), orderQuantity));
+		ResponseEntity<String> response = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity( request.toString(), persistentUser.getAuthenticationToken())
+										, String.class);
+		
+		System.out.println("--------response------\n" + response.getBody());
+		//---------------------------------------------------------------
+		ObjectMapper mapper = new ObjectMapper();
+		OrderResponse body = mapper.readValue(response.getBody(), OrderResponse.class);
+		
+		
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(itemPrice.multiply(new BigDecimal(orderQuantity)), body.getPrice());
+		assertNotNull(body.getOrderId());
+		
+		OrdersEntity order = orderRepository.findById(body.getOrderId()).get();
+		assertEquals("user1", order.getName());
+		assertNotNull(order.getAddress());		
+	}
+
+
+
+
+
+
+	private StocksEntity prepareStockForTest(Long stockId, Integer stockQuantity, BigDecimal itemPrice) {
+		StocksEntity stocksEntity = stockRepository.findById(stockId).get();
+		stocksEntity.setPrice(itemPrice);
+		stocksEntity.setQuantity(stockQuantity);
+		stocksEntity = stockRepository.save(stocksEntity);
+		return stocksEntity;
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void createNewOrderWithZeroStock() throws JsonParseException, Exception, Exception {
+		UserEntity persistentUser = userRepository.getByEmailAndOrganizationId("user1@nasnav.com", 99001L);
+		
+		Long stockId = 601L;
+		Integer orderQuantity = 5;
+		Integer stockQuantity = 0;				
+		BigDecimal itemPrice = new BigDecimal(500).setScale(2);	
+		
+		prepareStockForTest(stockId, stockQuantity, itemPrice);		
+		//---------------------------------------------------------------
+		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stockId , orderQuantity));
+		ResponseEntity<String> response = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity( request.toString(), persistentUser.getAuthenticationToken())
+										, String.class);
+		
+		//---------------------------------------------------------------
+		JSONObject body = new JSONObject(response.getBody());
+		assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+		assertEquals(INVALID_ORDER.toString(), body.get("error"));		
 	}
 
 	

@@ -33,6 +33,7 @@ import static com.nasnav.enumerations.Roles.*;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.lang.String.format;
+import static com.nasnav.commons.utils.StringUtils.nullSafe;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -545,12 +546,16 @@ public class OrderServiceImpl implements OrderService {
 		ShopsEntity shop = getOrderShop(order);
 
 		OrdersEntity orderEntity = new OrdersEntity();
-		orderEntity.setAddress(order.getAddress());
+		
+		String address = ofNullable(order.getAddress())
+								.orElse( getUserAddressAsStr());
+		orderEntity.setAddress(address);
 		orderEntity.setAmount( calculateOrderTotalValue(order) );
 		// TODO ordersEntity.setPayment_type(payment_type);
 		orderEntity.setShopsEntity(shop);
 		orderEntity.setStatus( OrderStatus.NEW.getValue() );
 		orderEntity.setUserId( user.getId() );
+		orderEntity.setName(user.getName());
 		orderEntity.setOrganizationEntity( org );
 		return orderEntity;
 	}
@@ -558,6 +563,29 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
+
+	private String getUserAddressAsStr() {
+		BaseUserEntity baseUser = securityService.getCurrentUser();
+		String address = null;
+		
+		if(baseUser instanceof UserEntity) {			
+			UserEntity user = (UserEntity)baseUser;
+			
+			address = format("%s, %s, %s "
+								, nullSafe(user.getAddress())
+								, nullSafe(user.getAddressCity())
+								, nullSafe(user.getAddressCountry()));
+		}
+		
+		return address;
+	}
+
+	
+	
+	
+
+
+
 
 	private ShopsEntity getOrderShop(OrderJsonDto order) {
 		List<StocksEntity> stocksEntites = getBasketStocks( order.getBasket() );

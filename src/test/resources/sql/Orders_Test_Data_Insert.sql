@@ -24,8 +24,8 @@ INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organizatio
 INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (506, 'shop_6', 102, now(), now(), 99002);
 
 --inserting users
-INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id)
-    VALUES (88, 'user1@nasnav.com',now(), now(), 'user1','123', 99001);
+INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id,country,city ,address)
+    VALUES (88, 'user1@nasnav.com',now(), now(), 'user1','123', 99001, 'Egypt', 'Cairo', '12 Abbas el-Akkad, Nasr City');
 INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id)
     VALUES (89, 'user2@nasnav.com',now(), now(), 'user2','456', 99002);
 INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id)
