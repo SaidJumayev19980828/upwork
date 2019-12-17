@@ -280,7 +280,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------
 		
-		OrdersEntity ordersEntity = createOrderInDB(stocksEntity);
+		OrdersEntity ordersEntity = createOrderInDB(stocksEntity, persistentUser.getId());
 		Long orderId = ordersEntity.getId(); 
 		
 		//---------------------------------------------------------------
@@ -309,7 +309,7 @@ public class OrderServiceTest {
 
 
 
-	private OrdersEntity createOrderInDB(StocksEntity stocksEntity) {
+	private OrdersEntity createOrderInDB(StocksEntity stocksEntity, Long userId) {
 		BigDecimal amount = new BigDecimal(500.25);		
 		ShopsEntity shopsEntity = stocksEntity.getShopsEntity();
 		OrganizationEntity organizationEntity = stocksEntity.getOrganizationEntity();
@@ -321,6 +321,7 @@ public class OrderServiceTest {
 		ordersEntity.setCreationDate( LocalDateTime.now()  );
 		ordersEntity.setUpdateDate( LocalDateTime.now()  );
 		ordersEntity.setOrganizationEntity(organizationEntity);
+		ordersEntity.setUserId(userId);
 		ordersEntity = orderRepository.save(ordersEntity);
 		return ordersEntity;
 	}
