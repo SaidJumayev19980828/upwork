@@ -1263,24 +1263,6 @@ public class ProductService {
 	public ProductUpdateResponse deleteBundle(Long bundleId) throws BusinessException {
 		validateBundleToDelete(bundleId);
 
-		List<StocksEntity> bundleStocks = stockRepository.findByProductIdIn(Arrays.asList(bundleId));
-		try {
-			bundleStocks.forEach(stockRepository::delete);
-		}catch(DataIntegrityViolationException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			throw new BusinessException(
-					String.format("Failed to delete bundle with id[%d]! bundle is still used in the system (stocks, orders, bundles, ...)!", bundleId)
-					, "INVAILID PARAM:product_id"
-					, HttpStatus.FORBIDDEN);
-		}catch(Throwable e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			throw new BusinessException(
-					String.format("Failed to delete bundle with id[%d]!", bundleId)
-					, "INVAILID PARAM:product_id"
-					, HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-
-
 		return deleteProduct(bundleId);
 	}
 
