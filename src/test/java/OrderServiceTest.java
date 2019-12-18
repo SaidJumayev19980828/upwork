@@ -1,16 +1,14 @@
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
-import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
+import static com.nasnav.enumerations.OrderStatus.DELIVERED;
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
-import static com.nasnav.enumerations.OrderStatus.DELIVERED;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static java.lang.String.format;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -31,7 +29,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -69,7 +66,6 @@ import com.nasnav.test.helpers.TestHelper;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -566,7 +562,7 @@ public class OrderServiceTest {
 		count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("1 order with user_id = 88 and store_id = 501 and status = NEW",1,count);
+		assertEquals("1 order with user_id = 88 and shop_id = 501 and status = NEW",1,count);
 	}
 	
 	
@@ -624,7 +620,7 @@ public class OrderServiceTest {
 	@Test
 	public void ordersListUnAuthTest() {
 		// invalid user-id test
-		ResponseEntity<String> response = template.exchange("/order/list?store_id=501", HttpMethod.GET,
+		ResponseEntity<String> response = template.exchange("/order/list?shop_id=501", HttpMethod.GET,
 				new HttpEntity<>(TestCommons.getHeaders("NO_EXISATING_TOKEN")), String.class); //no user with id = 99
 
 		assertEquals(HttpStatus.UNAUTHORIZED,response.getStatusCode());
@@ -638,15 +634,15 @@ public class OrderServiceTest {
 	@Test
 	public void ordersListInvalidfiltersTest() {
 		// by store_id only
-		ResponseEntity<String> response = template.exchange("/order/list?store_id=550&details_level=2", HttpMethod.GET,
+		ResponseEntity<String> response = template.exchange("/order/list?shop_id=550", HttpMethod.GET,
 				new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
 		JSONArray body = new JSONArray(response.getBody());
 		long count = body.length();
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("No orders with store_id = 550 ", 0, count);
+		assertEquals("No orders with shop_id = 550 ", 0, count);
 
 		// by user_id
-		response = template.exchange("/order/list?user_id=99&details_level=2", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
+		response = template.exchange("/order/list?user_id=99", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
@@ -654,7 +650,7 @@ public class OrderServiceTest {
 		assertEquals("no orders with user_id = 99",0,count);
 
 		// by org_id
-		response = template.exchange("/order/list?org_id=999999&details_level=2", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
+		response = template.exchange("/order/list?org_id=999999", HttpMethod.GET, new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
@@ -662,7 +658,7 @@ public class OrderServiceTest {
 		assertEquals("no orders with org_id = 999999",0,count);
 
 		// by status
-		response = template.exchange("/order/list?status=invalid_status&details_level=2", HttpMethod.GET,
+		response = template.exchange("/order/list?status=invalid_status", HttpMethod.GET,
 				new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
 
 		assertTrue(400 == response.getStatusCode().value());
@@ -1002,10 +998,12 @@ public class OrderServiceTest {
 	
 
 	private DetailedOrderRepObject createExpectedOrderInfo(Long orderId, BigDecimal price, Integer quantity, String status, Long userId) {
-		OrdersEntity entity = orderRepository.findById(orderId).get();
-		
+		OrdersEntity entity = helper.getOrderEntityFullData(orderId);
+
 		DetailedOrderRepObject order = new DetailedOrderRepObject();
 		order.setUserId(userId);
+		order.setUserName(entity.getName());
+        order.setShopName(entity.getShopsEntity().getName());
 		order.setCurrency("EGP");
 		order.setCreatedAt( entity.getCreationDate() );
 		order.setDeliveryDate( entity.getDeliveryDate() );

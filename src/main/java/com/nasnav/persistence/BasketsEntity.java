@@ -7,26 +7,27 @@ import javax.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 
-import com.nasnav.dto.BasketData;
+import com.nasnav.dto.BasketItemDetails;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 @NamedNativeQuery(
         name = "Basket",
-        query ="select p.id as product_id, p.name as product_name, p.p_name as product_pname, v.id as variant_id, s.id as stock_id," +
+        query ="select b.order_id, p.id as product_id, p.name as product_name, p.p_name as product_pname, v.id as variant_id, s.id as stock_id," +
                 " b.id as basket_id , b.quantity, b.price, b.currency, (select uri from product_Images where product_id = p.id and priority = 0 limit 1) " +
                 "from products p join product_variants v on p.id = v.product_id join stocks s ON v.id = s.variant_id " +
-                "join baskets b ON s.id = b.stock_id WHERE b.order_id = :orderId ",
-        resultClass = com.nasnav.dto.BasketData.class,
+                "join baskets b ON s.id = b.stock_id WHERE b.order_id in :orderId ",
+        resultClass = com.nasnav.dto.BasketItemDetails.class,
         resultSetMapping = "Basket"
 )
 @SqlResultSetMapping(
         name = "Basket",
         classes={
                 @ConstructorResult(
-                        targetClass=com.nasnav.dto.BasketData.class,
+                        targetClass=com.nasnav.dto.BasketItemDetails.class,
                         columns={
+                                @ColumnResult(name="order_id", type = Long.class),
                                 @ColumnResult(name="product_id", type = Long.class),
                                 @ColumnResult(name="product_name", type = String.class),
                                 @ColumnResult(name="product_pname", type = String.class),

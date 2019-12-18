@@ -7,8 +7,9 @@ import java.math.BigDecimal;
 
 @AllArgsConstructor
 @Data
-public class BasketData {
+public class BasketItemDetails {
 
+    private Long orderId;
     private Long productId;
     private String productName;
     private String productPname;
