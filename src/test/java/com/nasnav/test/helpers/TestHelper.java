@@ -122,7 +122,8 @@ public class TestHelper {
 		order.getBasketsEntity().stream().forEach( i-> i.toString());		
 		order.getOrganizationEntity();
 		order.getShopsEntity();
-		
+		order.getShopsEntity().getName();
+
 		return order;
 	}
 		

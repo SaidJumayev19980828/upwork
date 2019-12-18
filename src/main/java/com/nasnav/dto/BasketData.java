@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 @Data
 public class BasketData {
 
+    private Long orderId;
     private Long productId;
     private String productName;
     private String productPname;

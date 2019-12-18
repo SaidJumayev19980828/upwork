@@ -2,6 +2,7 @@ package com.nasnav.controller;
 
 import java.util.List;
 
+import com.nasnav.request.OrderSearchParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -82,13 +83,9 @@ public class OrdersController {
 	@GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	public List<DetailedOrderRepObject> getOrdersList(
 											@RequestHeader(name = "User-Token") String userToken,
-											@RequestParam(name = "user_id", required = false) Long userId,  //search parameter
-											@RequestParam(name = "store_id", required = false) Long storeId,
-											@RequestParam(name = "org_id", required = false) Long orgId,
-											@RequestParam(name = "status", required = false) String status,
-											@RequestParam(name = "details_level", required = false) Integer detailsLevel) throws BusinessException {
+											OrderSearchParam params) throws BusinessException {
 		
-		return  this.orderService.getOrdersList(userToken, userId, storeId, orgId, status, detailsLevel);
+		return  this.orderService.getOrdersList(params);
 	}
 	
 	
