@@ -1,5 +1,8 @@
+import static org.junit.Assert.assertTrue;
+
 import java.util.List;
 
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,10 +26,12 @@ import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+
 import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.controller.UserController;
+import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.response.BaseResponse;
 import com.nasnav.response.ResponseStatus;
@@ -55,6 +60,9 @@ public class EmployeeUserCreationTest {
 
 	@Autowired
 	EmployeeUserService employeeUserService;
+	
+	@Autowired
+	EmployeeUserRepository empRepository;
 
 	@Value("classpath:sql/EmpUsers_Test_Data_Insert.sql")
 	private Resource userDataInsert;
@@ -538,68 +546,68 @@ public class EmployeeUserCreationTest {
 		// no filter
 		ResponseEntity<List> response = template.exchange("/user/list", HttpMethod.GET,header, java.util.List.class);
 		Assert.assertEquals(response.getStatusCodeValue(), 200);
-		Assert.assertEquals(response.getBody().size() , 15);
+		Assert.assertEquals(16, response.getBody().size());
 
 		// org_id filter
 		response = template.exchange("/user/list?org_id=99001", HttpMethod.GET,header, java.util.List.class);
 		Assert.assertEquals(response.getStatusCodeValue(), 200);
-		Assert.assertEquals(response.getBody().size() , 8);
+		Assert.assertEquals(9 ,response.getBody().size());
 
 		response = template.exchange("/user/list?org_id=99002", HttpMethod.GET,header, java.util.List.class);
 		Assert.assertEquals(response.getStatusCodeValue(), 200);
-		Assert.assertEquals(response.getBody().size() , 7);
+		Assert.assertEquals(7, response.getBody().size());
 
 		// store_id filter
 		response = template.exchange("/user/list?store_id=501", HttpMethod.GET,header, java.util.List.class);
-		Assert.assertEquals(response.getStatusCodeValue(), 200);
-		Assert.assertEquals(response.getBody().size() , 7);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+		Assert.assertEquals(7, response.getBody().size());
 
 		response = template.exchange("/user/list?store_id=502", HttpMethod.GET,header, java.util.List.class);
-		Assert.assertEquals(response.getStatusCodeValue(), 200);
-		Assert.assertEquals(response.getBody().size() , 8);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+		Assert.assertEquals(9, response.getBody().size());
 
 		// role filter
 		response = template.exchange("/user/list?role=NASNAV_ADMIN", HttpMethod.GET,header, java.util.List.class);
 		System.out.println(response.getBody());
-		Assert.assertEquals(response.getStatusCodeValue(), 200);
-		Assert.assertEquals(response.getBody().size() , 2);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+		Assert.assertEquals(2, response.getBody().size());
 
 		ResponseEntity<String> failResponse = template.exchange("/user/list?role=invalid_role", HttpMethod.GET,header, String.class);
 		Assert.assertEquals(failResponse.getStatusCode(), HttpStatus.NOT_ACCEPTABLE);
 
 		response = template.exchange("/user/list?role=STORE_MANAGER", HttpMethod.GET,header, java.util.List.class);
 		System.out.println(response.getBody());
-		Assert.assertEquals(response.getStatusCodeValue(), 200);
-		Assert.assertEquals(response.getBody().size() , 2);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+		Assert.assertEquals(2, response.getBody().size());
 
 		// role and org_id filter
 		response = template.exchange("/user/list?role=STORE_MANAGER&org_id=99001", HttpMethod.GET,header, java.util.List.class);
 		System.out.println(response.getBody());
-		Assert.assertEquals(response.getStatusCodeValue(), 200);
-		Assert.assertEquals(response.getBody().size() , 1);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+		Assert.assertEquals(1, response.getBody().size());
 
 		// role and store_id filter
 		response = template.exchange("/user/list?role=STORE_ADMIN&store_id=501", HttpMethod.GET,header, java.util.List.class);
 		System.out.println(response.getBody());
-		Assert.assertEquals(response.getStatusCodeValue(), 200);
-		Assert.assertEquals(response.getBody().size() , 1);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+		Assert.assertEquals(1, response.getBody().size());
 
 		// org_id and store_id filter
 		response = template.exchange("/user/list?org_id=99001&store_id=502", HttpMethod.GET,header, java.util.List.class);
 		System.out.println(response.getBody());
-		Assert.assertEquals(response.getStatusCodeValue(), 200);
-		Assert.assertEquals(response.getBody().size() , 1);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+		Assert.assertEquals(2, response.getBody().size());
 
 		// org_id and store_id and role filter
 		response = template.exchange("/user/list?org_id=99001&store_id=502&role=STORE_MANAGER", HttpMethod.GET,header, java.util.List.class);
 		System.out.println(response.getBody());
-		Assert.assertEquals(response.getStatusCodeValue(), 200);
-		Assert.assertEquals(response.getBody().size() , 0);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+		Assert.assertEquals(0, response.getBody().size());
 
 		response = template.exchange("/user/list?org_id=99001&store_id=501&role=STORE_MANAGER", HttpMethod.GET,header, java.util.List.class);
 		System.out.println(response.getBody());
-		Assert.assertEquals(response.getStatusCodeValue(), 200);
-		Assert.assertEquals(response.getBody().size() , 1);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+		Assert.assertEquals(1, response.getBody().size());
 	}
 
 
@@ -650,4 +658,36 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(response.getStatusCodeValue(), 200);
 		Assert.assertEquals(response.getBody().size(), 2);
 	}
+	
+	
+	
+	
+	
+	@Test
+	public void testLoginByEmailUsedByCustomerAndEmployee() {
+		//try to get new password to use it for login
+		String email = "user1@nasnav.com";
+		String password = "12345678"; 
+		
+		String request = new JSONObject()
+								.put("password", password)
+								.put("email", email)
+								.put("org_id", 99001L)
+								.put("employee", true)
+								.toString();
+		
+		// login using the new password
+		HttpEntity<Object> userJson = TestCommons.getHttpEntity(request, "DOESNOT-NEED-TOKEN");
+		ResponseEntity<UserApiResponse> response = 
+				template.postForEntity("/user/login", userJson,	UserApiResponse.class);
+		
+		Assert.assertEquals(200, response.getStatusCode().value());
+		String token = response.getBody().getToken();
+		boolean employeeUserLoggedIn = empRepository.existsByAuthenticationToken( token);
+		assertTrue("the logged in user should be the employee user, "
+				+ "and its token should exists in EMPLOYEE_USER table", employeeUserLoggedIn );
+	}
+	
+	
+	
 }

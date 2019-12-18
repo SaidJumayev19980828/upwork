@@ -1,3 +1,5 @@
+import static org.junit.Assert.assertTrue;
+
 import java.time.LocalDateTime;
 import java.util.Date;
 
@@ -546,5 +548,37 @@ public class UserRegisterTest {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		return template.exchange(URL, HttpMethod.GET, new HttpEntity<>(headers), classRef);
+	}
+	
+	
+	
+	
+
+	
+	@Test
+	public void testCustomerLoginByEmailUsedByCustomerAndEmployee() {
+		//try to get new password to use it for login
+		String email = "user2@nasnav.com";
+		String password = "12345678"; 
+		
+		String request = new JSONObject()
+								.put("password", password)
+								.put("email", email)
+								.put("org_id", 99001L)
+								.put("employee", false)
+								.toString();
+		
+		// login using the new password
+		HttpEntity<Object> userJson = TestCommons.getHttpEntity(request, "DOESNOT-NEED-TOKEN");
+		ResponseEntity<UserApiResponse> response = 
+				template.postForEntity("/user/login", userJson,	UserApiResponse.class);
+		
+		//-------------------------------------------------------------------
+		Assert.assertEquals(200, response.getStatusCode().value());
+		
+		String token = response.getBody().getToken();
+		boolean userLoggedIn = userRepository.existsByAuthenticationToken( token);
+		assertTrue("the logged in user should be the customer user, "
+				+ "and its token should exists in USERS table", userLoggedIn );
 	}
 }
