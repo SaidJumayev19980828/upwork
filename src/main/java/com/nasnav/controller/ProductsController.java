@@ -36,7 +36,7 @@ import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.VariantUpdateResponse;
-import com.nasnav.service.DataImportService;
+import com.nasnav.service.CsvDataImportService;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.service.ProductService;
 
@@ -57,7 +57,7 @@ public class ProductsController {
 	ProductImageService productImgService;
 
     @Autowired
-    DataImportService dataImportService;
+    CsvDataImportService csvDataImportService;
 	
 	@ApiOperation(value = "Create or update a product", nickname = "product update", code = 201)
     @ApiResponses(value = {
@@ -280,7 +280,7 @@ public class ProductsController {
     @GetMapping(value = "/image/bulk/template")
     @ResponseBody
     public ResponseEntity<String> generateCsvTemplate(@RequestHeader("User-Token") String token) throws IOException {
-        ByteArrayOutputStream s = dataImportService.generateImagesCsvTemplate();
+        ByteArrayOutputStream s = csvDataImportService.generateImagesCsvTemplate();
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/csv"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Csv_Template.csv")

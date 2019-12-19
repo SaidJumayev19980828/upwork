@@ -6,7 +6,9 @@ import java.util.Map;
 import lombok.Data;
 
 @Data
-public class ProductImportCsvRowData {
+public class ProductImportDTO {
+	protected Long variantId;
+	protected Long externalId;
 	protected String name;
 	protected String pname;
 	protected String description;
