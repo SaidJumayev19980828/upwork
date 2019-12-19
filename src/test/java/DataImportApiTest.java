@@ -49,6 +49,7 @@ import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.security.AuthenticationFilter;
+import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
 
 import lombok.Data;

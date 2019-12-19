@@ -1,3 +1,4 @@
+package com.nasnav.test.commons;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;

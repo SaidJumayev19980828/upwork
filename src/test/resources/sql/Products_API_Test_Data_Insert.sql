@@ -16,7 +16,12 @@ INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (202, 'ca
 INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (501, 'shop_1', 102, now(), now(), 99002);
 INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (502, 'shop_2', 101, now(), now(), 99001);
 
---insering users
+--inserting users
+INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id,country,city ,address)
+    VALUES (88, 'user1@nasnav.com',now(), now(), 'user1','123', 99002, 'Egypt', 'Cairo', '12 Abbas el-Akkad, Nasr City');
+
+
+--insering employee users
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
 VALUES (68, now(), now(), 'testuser1@nasnav.com', 99001, '101112',  502);
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
@@ -47,6 +52,8 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1007, 'product_7',101, 202, 99002, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1008, 'product_8',102, 202, 99002, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1012, 'product_12',101, 202, 99002, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1013, 'product_13',101, 202, 99002, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1014, 'product_14',101, 202, 99002, now(), now());
 
 
 -- variants for each product
@@ -59,6 +66,8 @@ insert into public.product_variants(id, "name" , product_id ) values(310006, 'va
 insert into public.product_variants(id, "name" , product_id ) values(310007, 'var' 	, 1007);
 insert into public.product_variants(id, "name" , product_id ) values(310008, 'var' 	, 1008);
 insert into public.product_variants(id, "name" , product_id ) values(310012, 'var' 	, 1012);
+insert into public.product_variants(id, "name" , product_id ) values(310013, 'var' 	, 1013);
+insert into public.product_variants(id, "name" , product_id ) values(310014, 'var' 	, 1014);
 
 
 --inserting stocks
@@ -69,6 +78,8 @@ insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organiz
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(605, 502, 6, now(), now(), 99001, 700.0, 310005);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(606, 502, 6, now(), now(), 99001, 700.0, 310006);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(612, 502, 6, now(), now(), 99001, 700.0, 310012);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(613, 502, 6, now(), now(), 99002, 800.0, 310013);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(614, 502, 6, now(), now(), 99002, 600.0, 310014);
 
 
 --insert bundle 
@@ -109,4 +120,14 @@ VALUES(1003, null, 0, 1, 'img2.jpg');
 INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 VALUES(1010, null, 0, 1, 'img3.jpg');
 
+
+--inserting orders
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(630013, 88, now(), now(), 99002, 0, 502);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(630014, 88, now(), now(), 99002, 1, 502);
+
+
+
+-- insert order items
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(630013, 613, 14, 600.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(630014, 614, 14, 600.0, 1);
 

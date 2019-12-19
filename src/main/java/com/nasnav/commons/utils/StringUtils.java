@@ -108,4 +108,12 @@ public class StringUtils extends org.springframework.util.StringUtils{
 						.replaceAll("^-|-$","")
 						.toLowerCase();
 	}
+	
+	
+	
+	
+	public static String nullSafe(String string) {
+		return Optional.ofNullable(string)
+				       .orElse("");
+	}
 }

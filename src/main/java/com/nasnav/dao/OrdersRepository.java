@@ -25,6 +25,8 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
     List<OrdersEntity> findByUserId(Long userId);
     List<OrdersEntity> findByUserIdAndStatus(Long userId, Integer status);
 
+    OrdersEntity findByIdAndUserId(Long orderId, Long userId);
+
     List<OrdersEntity> findByShopsEntityId(Long shopId);
     List<OrdersEntity> getOrdersEntityByShopsEntityIdAndUserId(Long shopId, Long userId);
     List<OrdersEntity> getOrdersEntityByShopsEntityIdAndStatus(Long shopId, Integer status);
@@ -48,4 +50,8 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	Long countByStatusAndUserId(Integer value, long l);
 
 	void deleteByStatusAndUserId(Integer value, Long id);
+
+	Long countByOrganizationEntity_id(long orgId);
+
+	Long countByShopsEntity_id(Long shopId);
 }

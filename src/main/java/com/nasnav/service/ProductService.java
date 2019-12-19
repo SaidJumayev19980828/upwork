@@ -7,6 +7,7 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PR
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_USED_IN_NEW_ORDERS;
 import static java.lang.String.format;
 import static java.util.Comparator.comparing;
 
@@ -1201,6 +1202,21 @@ public class ProductService {
 		validateUserCanDeleteProduct(productId);
 		
 		validateProductIsNotInBundle(productId);
+		
+		validateProductNotUsedInNewOrders(productId);
+	}
+
+
+
+
+	private void validateProductNotUsedInNewOrders(Long productId) throws BusinessException {
+		Long count = basketRepo.countByProductIdAndOrderEntity_status(productId, 0);
+		if(count > 0) {
+			throw new BusinessException(
+							format(ERR_CANNOT_DELETE_PRODUCT_USED_IN_NEW_ORDERS, productId)
+							, "INVALID_PARAM:product_id"
+							, HttpStatus.NOT_ACCEPTABLE);
+		}
 	}
 
 
@@ -1246,24 +1262,6 @@ public class ProductService {
 
 	public ProductUpdateResponse deleteBundle(Long bundleId) throws BusinessException {
 		validateBundleToDelete(bundleId);
-
-		List<StocksEntity> bundleStocks = stockRepository.findByProductIdIn(Arrays.asList(bundleId));
-		try {
-			bundleStocks.forEach(stockRepository::delete);
-		}catch(DataIntegrityViolationException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			throw new BusinessException(
-					String.format("Failed to bundle with id[%d]! bundle is still used in the system (stocks, orders, bundles, ...)!", bundleId)
-					, "INVAILID PARAM:product_id"
-					, HttpStatus.FORBIDDEN);
-		}catch(Throwable e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			throw new BusinessException(
-					String.format("Failed to delete bundle with id[%d]!", bundleId)
-					, "INVAILID PARAM:product_id"
-					, HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-
 
 		return deleteProduct(bundleId);
 	}

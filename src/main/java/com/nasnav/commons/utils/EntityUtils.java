@@ -97,4 +97,15 @@ public class EntityUtils {
 		return concate;
 	}
 	
+	
+	
+	public static <T> Boolean collectionContainsAnyOf(Collection<T> collection, T... objects) {
+		List<T> objectList = Arrays.asList(objects);
+		return objectList.stream().anyMatch(collection::contains);
+	}
+	
+	
 }
+
+
+

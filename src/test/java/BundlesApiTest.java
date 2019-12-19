@@ -49,6 +49,7 @@ import com.nasnav.persistence.ProductTypes;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.BundleResponse;
 import com.nasnav.response.ProductUpdateResponse;
+import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -377,7 +378,6 @@ public class BundlesApiTest {
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(bundleId, response.getBody().getProductId());		
 		assertFalse("assert bundle doesn't exists", bundleRepo.existsById(bundleId));
-		assertFalse("assert bundle virtual stock doesn't exists", stockRepo.existsById(stockId));
 	}
 	
 	
@@ -474,7 +474,7 @@ public class BundlesApiTest {
 	
 	
 	@Test
-	public void bundleDeleteExistsInOrdersTest() {
+	public void bundleDeleteExistsInNewOrdersTest() {
 		Long bundleId = 200007L;
 		
 		assertTrue("assert bundle already exists", bundleRepo.existsById(bundleId));
@@ -497,7 +497,7 @@ public class BundlesApiTest {
 		BaseUserEntity user = empUserRepo.getById(69L); 
 		ResponseEntity<String> response = deleteBundleStrReponse(bundleId, user);
 		
-		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());		
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());		
 		assertTrue("assert bundle still exists after failed DELETE operation", bundleRepo.existsById(bundleId));
 	}
 	

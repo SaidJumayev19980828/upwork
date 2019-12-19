@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
@@ -43,6 +44,7 @@ import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.ProductUpdateResponse;
+import com.nasnav.test.commons.TestCommons;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -80,6 +82,10 @@ public class ProductApiTest {
 	
 	@Autowired
 	private JdbcTemplate jdbc;
+	
+	
+	@Autowired
+	private BasketRepository basketRepo;
 	
 	
 	@Test
@@ -745,6 +751,55 @@ public class ProductApiTest {
 		assertFalse("assert product was soft deleted", productRepository.existsById(productId));		
 		assertNotEquals("assert stocks were not deleted", 0L, stocks.size());
 	}
+	
+	
+	
+	
+	@Test
+	public void deleteProductInConfirmedOrdersTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(69L);
+		
+		Long productId = 1014L; 		
+		long basketItemsCountBefore = basketRepo.countByProductIdAndOrderEntity_status(productId, 1);
+		
+		assertNotEquals("assert product had confirmed order items", 0L, basketItemsCountBefore);
+		assertTrue("assert product exists before delete", productRepository.existsById(productId));
+		//---------------------------------------------------------------------
+		ResponseEntity<String> response = deleteProduct(user, productId);		
+
+		//---------------------------------------------------------------------
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertFalse("assert product was soft deleted", productRepository.existsById(productId));		
+		
+		long basketItemsCountAfter = basketRepo.countByProductIdAndOrderEntity_status(productId, 1);		
+		assertNotEquals("assert product item where not deleted", 0L, basketItemsCountAfter);
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void deleteProductInNewOrdersTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(69L);
+		
+		Long productId = 1013L; 		
+		long basketItemsCountBefore = basketRepo.countByProductIdAndOrderEntity_status(productId, 0);
+		
+		assertNotEquals("assert product had New order items", 0L, basketItemsCountBefore);
+		assertTrue("assert product exists before delete", productRepository.existsById(productId));
+		//---------------------------------------------------------------------
+		ResponseEntity<String> response = deleteProduct(user, productId);		
+
+		//---------------------------------------------------------------------
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertTrue("assert product was NOT deleted", productRepository.existsById(productId));
+		
+		long basketItemsCountAfter = basketRepo.countByProductIdAndOrderEntity_status(productId, 0);		
+		assertNotEquals("assert product item where not deleted", 0L, basketItemsCountAfter);
+	}
+	
 	
 	
 	

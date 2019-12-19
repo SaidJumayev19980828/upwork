@@ -37,6 +37,7 @@ import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dto.ProductFeatureDTO;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.test.commons.TestCommons;
 
 import net.jcip.annotations.NotThreadSafe;
 

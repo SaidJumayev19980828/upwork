@@ -10,7 +10,14 @@ import lombok.Getter;
  */
 public enum OrderStatus {
 	//
-	NEW(0), CLIENT_CONFIRMED(1);
+	NEW(0)
+	, CLIENT_CONFIRMED(1)
+	, STORE_CONFIRMED(2)
+	, STORE_PREPARED(3)
+	, DISPATCHED(4)
+	, DELIVERED(5)
+	, STORE_CANCELLED(6)
+	, CLIENT_CANCELLED(7);
 
 	@Getter
 	private Integer value;

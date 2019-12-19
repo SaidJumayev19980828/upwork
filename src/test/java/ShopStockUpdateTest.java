@@ -26,6 +26,7 @@ import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.StocksEntity;
+import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
 
 import net.jcip.annotations.NotThreadSafe;
