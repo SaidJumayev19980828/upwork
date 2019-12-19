@@ -459,7 +459,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------------
 		// by store_id
-		response = template.exchange("/order/list?store_id=501&details_level=2"
+		response = template.exchange("/order/list?shop_id=501&details_level=2"
 											, HttpMethod.GET
 											, httpEntity
 											, String.class);
@@ -467,7 +467,7 @@ public class OrderServiceTest {
 		count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("4 orders with store_id = 501",4,count);
+		assertEquals("4 orders with shop_id = 501",4,count);
 
 		//---------------------------------------------------------------------
 		// by user_id
@@ -507,7 +507,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------------
 		// by org_id and store_id
-		response = template.exchange("/order/list?org_id=99001&store_id=503&details_level=2"
+		response = template.exchange("/order/list?org_id=99001&shop_id=503&details_level=2"
 										, HttpMethod.GET
 										, httpEntity
 										, String.class);
@@ -528,7 +528,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------------
 		// by store_id and status
-		response = template.exchange("/order/list?store_id=501&status=NEW&details_level=2"
+		response = template.exchange("/order/list?shop_id=501&status=NEW&details_level=2"
 										, HttpMethod.GET
 										, httpEntity
 										, String.class);
@@ -536,7 +536,7 @@ public class OrderServiceTest {
 		count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("2 orders with order_id = 501 and status = NEW",2,count);
+		assertEquals("2 orders with shop_id = 501 and status = NEW",2,count);
 
 
 		//---------------------------------------------------------------------
@@ -554,7 +554,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------------
 		// by user_id, store_id and status
-		response = template.exchange("/order/list?user_id=88&store_id=501&status=NEW&details_level=2"
+		response = template.exchange("/order/list?user_id=88&shop_id=501&status=NEW&details_level=2"
 										, HttpMethod.GET
 										, httpEntity
 										, String.class);
