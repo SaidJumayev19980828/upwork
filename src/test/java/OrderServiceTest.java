@@ -32,6 +32,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -111,6 +112,9 @@ public class OrderServiceTest {
 	@Autowired
 	private BasketRepository basketRepository;
 	
+	
+	@Autowired
+	private JdbcTemplate jdbc;
 	
 	
 	@Test
@@ -458,7 +462,7 @@ public class OrderServiceTest {
 		assertEquals("7 orders with org_id = 99001",7,count);
 
 		//---------------------------------------------------------------------
-		// by store_id
+		// by shop_id
 		response = template.exchange("/order/list?shop_id=501&details_level=2"
 											, HttpMethod.GET
 											, httpEntity
@@ -506,7 +510,7 @@ public class OrderServiceTest {
 		assertEquals("3 orders with org_id = 99001 and status = NEW",2 ,count);
 
 		//---------------------------------------------------------------------
-		// by org_id and store_id
+		// by org_id and shop_id
 		response = template.exchange("/order/list?org_id=99001&shop_id=503&details_level=2"
 										, HttpMethod.GET
 										, httpEntity
@@ -527,7 +531,7 @@ public class OrderServiceTest {
 		assertEquals("1 order with org_id = 99002 and user_id = 90", 1,count);
 
 		//---------------------------------------------------------------------
-		// by store_id and status
+		// by shop_id and status
 		response = template.exchange("/order/list?shop_id=501&status=NEW&details_level=2"
 										, HttpMethod.GET
 										, httpEntity
@@ -553,7 +557,7 @@ public class OrderServiceTest {
 
 
 		//---------------------------------------------------------------------
-		// by user_id, store_id and status
+		// by user_id, shop_id and status
 		response = template.exchange("/order/list?user_id=88&shop_id=501&status=NEW&details_level=2"
 										, HttpMethod.GET
 										, httpEntity
@@ -633,7 +637,7 @@ public class OrderServiceTest {
 
 	@Test
 	public void ordersListInvalidfiltersTest() {
-		// by store_id only
+		// by shop_id only
 		ResponseEntity<String> response = template.exchange("/order/list?shop_id=550", HttpMethod.GET,
 				new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
 		JSONArray body = new JSONArray(response.getBody());
@@ -664,6 +668,40 @@ public class OrderServiceTest {
 		assertTrue(400 == response.getStatusCode().value());
 	}
 	
+	
+	
+	
+	@Test
+	public void testDateFilteration() {
+		modifyOrderUpdateTime(330044L, LocalDateTime.of(2017, 11, 26, 10, 00, 00));
+		modifyOrderUpdateTime(330045L, LocalDateTime.of(2017, 12, 15, 10, 00, 00));
+		modifyOrderUpdateTime(330046L, LocalDateTime.of(2017, 12, 16, 10, 00, 00));
+		
+		//-------------------------------------------------------------------
+		// by shop_id only
+		ResponseEntity<String> response = 
+				template.exchange(
+						"/order/list?updated_before=2017-12-23:12:12:12"
+								+ "&updated_after=2017-12-01:12:12:12"
+						, HttpMethod.GET
+						, getHttpEntity("101112")
+						, String.class);
+		
+		JSONArray body = new JSONArray(response.getBody());
+		long count = body.length();
+		
+		assertTrue(200 == response.getStatusCode().value());
+		assertEquals("expected 2 orders to be within this given time range ", 2, count);
+	}
+
+
+
+
+
+
+	private void modifyOrderUpdateTime(Long orderId, LocalDateTime newUpdateTime) {
+		jdbc.update("update orders set updated_at = ? where id = ?", newUpdateTime, orderId);
+	}
 	
 	
 	

@@ -1,9 +1,9 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
 import static com.nasnav.commons.utils.EntityUtils.setOf;
-import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
 import static com.nasnav.commons.utils.StringUtils.nullSafe;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_CALC_ORDER_FAILED;
@@ -43,6 +43,7 @@ import static java.util.stream.Collectors.groupingBy;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -72,9 +73,9 @@ import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
-import com.nasnav.dto.BasketItemDetails;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.BasketItemDTO;
+import com.nasnav.dto.BasketItemDetails;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.ShippingAddress;
@@ -97,6 +98,8 @@ import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 
 @Service
 public class OrderServiceImpl implements OrderService {
+
+	private static final int ORDER_FULL_DETAILS_LEVEL = 2;
 
 	private static final Long NON_EXISTING_ORDER_ID = -1L;
 
@@ -824,10 +827,10 @@ public class OrderServiceImpl implements OrderService {
 		OrdersEntity order;
 		if (user instanceof UserEntity && ordersRepository.existsByIdAndUserId(orderId, user.getId())) {
 			order = ordersRepository.findByIdAndUserId(orderId, user.getId());
-			return getDetailedOrderInfo(order, detailsLevel);
+			return getDetailedOrderInfo(order, ORDER_FULL_DETAILS_LEVEL);
 		} else if (ordersRepository.existsById(orderId)) {
 			order = ordersRepository.findById(orderId).get();
-			return getDetailedOrderInfo(order, detailsLevel);
+			return getDetailedOrderInfo(order, ORDER_FULL_DETAILS_LEVEL);
 		}			
 
 		throwInvalidOrderException( OrderFailedStatus.INVALID_ORDER.toString() );
@@ -1000,7 +1003,9 @@ public class OrderServiceImpl implements OrderService {
 		OrderSearchParam newParams = new OrderSearchParam();
 		newParams.setStatus_id(getOrderStatusId(params.getStatus()));		
 		newParams.setDetails_level( detailsLevel);
-
+		newParams.setUpdated_after( params.getUpdated_after() );
+		newParams.setUpdated_before( params.getUpdated_before() );
+		
 		BaseUserEntity user = securityService.getCurrentUser();
 		if (user instanceof EmployeeUserEntity) { 
 			newParams.setUser_id(params.getUser_id());			
@@ -1080,8 +1085,24 @@ public class OrderServiceImpl implements OrderService {
 
 		if(params.getStatus_id() != null)
 			predicates.add( builder.equal(root.get("status"), params.getStatus_id()) );
+		
+		if(params.getUpdated_after() != null) {
+			predicates.add( builder.greaterThanOrEqualTo( root.<LocalDateTime>get("updateDate"), builder.literal(readDate(params.getUpdated_after())) ) );
+		}		
+		
+		if(params.getUpdated_before() != null) {
+			predicates.add( builder.lessThanOrEqualTo( root.<LocalDateTime>get("updateDate"), builder.literal(readDate(params.getUpdated_before()))) );
+		}
 
 		return predicates.stream().toArray( Predicate[]::new) ;
+	}
+
+
+
+
+
+	private LocalDateTime readDate(String dateStr) {
+		return LocalDateTime.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd:HH:mm:ss"));
 	}
 	
 	
@@ -1095,7 +1116,7 @@ public class OrderServiceImpl implements OrderService {
 		OrdersEntity entity = ordersRepository.findFirstByUserIdAndStatusOrderByUpdateDateDesc( user.getId(), OrderStatus.NEW.getValue() )
 											 .orElseThrow(() -> getNoCurrentOrderFoundException() );
 		
-		return getDetailedOrderInfo(entity, detailsLevel);
+		return getDetailedOrderInfo(entity, ORDER_FULL_DETAILS_LEVEL);
 	}
 
 
