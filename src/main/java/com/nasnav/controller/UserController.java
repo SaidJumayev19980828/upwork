@@ -3,11 +3,13 @@ package com.nasnav.controller;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegisteration;
 import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.UserService;
 import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +21,9 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin("*") // allow all origins
 public class UserController {
 
-    private UserService userService;
+    private static final String OAUTH_ENTER_EMAIL_PAGE = "/user/login/oauth2/complete_registeration?token=";
+    
+	private UserService userService;
     private EmployeeUserService employeeUserService;
     
     @Autowired
@@ -161,7 +165,22 @@ public class UserController {
     })
     @PostMapping(value = "login/oauth2",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public UserApiResponse login(@RequestParam("token") String socialLoginToken) throws BusinessException {
-    	return securityService.socialLogin(socialLoginToken);
+    public ResponseEntity<UserApiResponse> login(@RequestParam("token") String socialLoginToken) throws BusinessException {
+    	ResponseEntity.BodyBuilder response = ResponseEntity.ok();
+    	try {
+    		UserApiResponse body = securityService.socialLogin(socialLoginToken);
+    		return response.body(body);
+    	}catch(InCompleteOAuthRegisteration e) {
+    		//change it to forward to a server rendered page
+    		return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+    							.header(HttpHeaders.LOCATION, OAUTH_ENTER_EMAIL_PAGE + socialLoginToken)
+    							.build();
+    	}    	
     }
+    
+    
+    
+    
+    
+    
 }

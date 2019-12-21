@@ -23,6 +23,7 @@ import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.CommonUserRepository;
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.OAuth2UserRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dto.UserDTOs.UserLoginObject;
 import com.nasnav.enumerations.Roles;
@@ -30,10 +31,12 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.OAuth2UserEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegisteration;
 
 import static java.lang.String.format;
 
@@ -54,6 +57,10 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	@Autowired
 	private OrganizationRepository orgRepo;
+	
+	
+	@Autowired
+	private OAuth2UserRepository oAuthUserRepo;
 
 
 	@Override
@@ -304,11 +311,16 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	private BaseUserEntity getUserBySocialLoginToken(String socialLoginToken) throws BusinessException {
-		return userRepo.findByAuthenticationToken(socialLoginToken)
-									.orElseThrow(() -> new BusinessException(
-											               format("No User have a social login with token[%s]", socialLoginToken) 
-											               , "INVALID_TOKEN"
-											               , HttpStatus.UNAUTHORIZED));
+		if( !oAuthUserRepo.existsByLoginToken(socialLoginToken)) {
+			throw new BusinessException(
+			               format("No User did OAuth2 login with token[%s]", socialLoginToken) 
+			               , "INVALID_TOKEN"
+			               , HttpStatus.UNAUTHORIZED);
+		}
+		
+		return oAuthUserRepo.findByLoginToken(socialLoginToken)
+							.map(OAuth2UserEntity::getUser)
+							.orElseThrow(() -> new InCompleteOAuthRegisteration());
 	}
 	
 }

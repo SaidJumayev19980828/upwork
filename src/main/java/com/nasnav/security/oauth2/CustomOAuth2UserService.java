@@ -38,7 +38,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         										.getOAuth2UserInfo(
         												oAuth2UserRequest.getClientRegistration().getRegistrationId()
         												, oAuth2User.getAttributes());
-        return UserPrincipal.create(oAuth2UserInfo);
+        String provider = oAuth2UserRequest.getClientRegistration().getRegistrationId();
+        return UserPrincipal.create(oAuth2UserInfo, provider);
 	}
 	
 }

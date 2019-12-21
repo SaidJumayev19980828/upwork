@@ -1,5 +1,8 @@
 package com.nasnav.security.oauth2;
+import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
+import static com.nasnav.security.oauth2.OAuth2AuthorizationRequestRepository.ORG_ID_COOKIE_NAME;
 import static com.nasnav.security.oauth2.OAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME;
+import static java.lang.String.format;
 
 import java.io.IOException;
 
@@ -17,13 +20,24 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.nasnav.dao.OAuth2UserRepository;
+import com.nasnav.persistence.OAuth2UserEntity;
+
 @Component
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
 
 
 	@Autowired
     private AuthorizationRequestRepository<OAuth2AuthorizationRequest> requestRepository;
 
+	
+	@Autowired
+	private OAuth2UserRepository oAuthUserRepo;
+	
+	
+	@Autowired
+	private OAuth2Helper helper;
 
 	
     @Override
@@ -34,22 +48,67 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         System.out.println("On Success - response :  "   + response.getHeaderNames());
         
         
-        String token = generateOAuth2Token();
-        saveTokenToDB(token);
-    	
-    	String targetUrl = determineTargetUrl(request, token);
-
+        String token = generateOAuth2Token();        
+        
         UserPrincipal user = (UserPrincipal)authentication.getPrincipal();
+        Long orgId = CookieUtils.getCookie(request, ORG_ID_COOKIE_NAME)
+        							.map(Cookie::getValue)
+        							.map(this::getOrgIdAsLongVal)
+					                .orElseThrow(() -> getNoOrgProvidedException(user) );
+        
         System.out.println("user at onSuccess : " + user);
+        
+        String oAuth2Id = user.getId(); 
+        oAuthUserRepo.findByOAuth2IdAndOrganizationId(oAuth2Id , orgId)
+					.map(usr -> saveTokenToDB(usr, token) )
+				 	.orElse(helper.registerNewOAuth2User(user, token, orgId));
+
+    	String targetUrl = determineTargetUrl(request, token);        
         
         if (response.isCommitted()) {
             logger.debug("Response has already been committed. Unable to redirect to " + targetUrl);
             return;
         }
 
-        clearAuthenticationAttributes(request, response);       
-        
+        clearAuthenticationAttributes(request, response);              
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
+    }
+    
+    
+    
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+  
+
+
+	private Long getOrgIdAsLongVal(String orgIdStr) {
+    	try {
+    		return Long.valueOf(orgIdStr);
+    	}catch(Exception e) {
+    		throw new IllegalStateException(format("Invalid Organization Id value [%s]", orgIdStr));
+    	}
+    	
+    }
+    
+    
+
+	private RuntimeException getNoOrgProvidedException(UserPrincipal user) {
+    	return new IllegalStateException(
+						format("No Organization id provided for auth. of user[%s] for provider[%s]"
+									, user.getId(), user.getProvider()));
     }
     
     
@@ -75,17 +134,16 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
 
 
-	private void saveTokenToDB(String token) {
-		// TODO Auto-generated method stub
-		
+	private OAuth2UserEntity saveTokenToDB(OAuth2UserEntity oAuthUser, String token) {
+		oAuthUser.setLoginToken(token);
+		return oAuthUserRepo.save(oAuthUser);
 	}
 
 
 
 
 	private String generateOAuth2Token() {
-//		return generateUUIDToken();
-		return "nopqrst";
+		return generateUUIDToken();
 	}
 
 

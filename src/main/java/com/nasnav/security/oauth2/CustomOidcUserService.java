@@ -42,8 +42,10 @@ public class CustomOidcUserService extends OidcUserService {
 	
 	
 	private OidcUser processOAuth2User(OAuth2UserRequest oAuth2UserRequest, OAuth2User oAuth2User) {
-        OAuth2UserInfo oAuth2UserInfo = OAuth2UserInfoFactory.getOAuth2UserInfo(oAuth2UserRequest.getClientRegistration().getRegistrationId(), oAuth2User.getAttributes());
-        return UserPrincipal.create(oAuth2UserInfo);
+		String provider = oAuth2UserRequest.getClientRegistration().getRegistrationId();
+		OAuth2UserInfo oAuth2UserInfo = OAuth2UserInfoFactory.getOAuth2UserInfo(provider, oAuth2User.getAttributes());
+       
+        return UserPrincipal.create(oAuth2UserInfo, provider);
 	}
 	
 	
