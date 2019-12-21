@@ -7,7 +7,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.nasnav.persistence.OrganizationEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -31,10 +30,12 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.commons.utils.EntityUtils;
+import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
+
+import static java.lang.String.format;
 
 @Service
 public class SecurityServiceImpl implements SecurityService {
@@ -96,6 +97,38 @@ public class SecurityServiceImpl implements SecurityService {
 		
 		BaseUserEntity userEntity = userRepo.getByEmailIgnoreCaseAndOrganizationId(loginData.email, loginData.orgId, loginData.employee);
 		
+		validateLoginUser(userEntity);			
+		validateUserPassword(loginData, userEntity);		
+		
+		return login(userEntity);				
+	}
+
+
+
+
+
+	private void validateUserPassword(UserLoginObject loginData, BaseUserEntity userEntity) {
+		boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncryptedPassword());		
+		if(!passwordMatched) {
+			throwInvalidCredentialsException();
+		}
+	}
+
+
+
+
+
+	private UserApiResponse login(BaseUserEntity userEntity) throws BusinessException {
+		// generate new AuthenticationToken and perform post login updates
+		userEntity = updatePostLogin(userEntity);
+		return createSuccessLoginResponse(userEntity);
+	}
+
+
+
+
+
+	private void validateLoginUser(BaseUserEntity userEntity) {
 		if(userEntity == null) {
 			throwInvalidCredentialsException();
 		}
@@ -103,26 +136,17 @@ public class SecurityServiceImpl implements SecurityService {
 		
 		boolean accountNeedActivation = isUserNeedActivation(userEntity);
 		if (accountNeedActivation) {
-			UserApiResponse failedLoginResponse = EntityUtils
-					.createFailedLoginResponse(Collections.singletonList(ResponseStatus.NEED_ACTIVATION));
+			UserApiResponse failedLoginResponse = 
+					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.NEED_ACTIVATION));
 			throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, HttpStatus.LOCKED);
 		}
 		
-		
-		boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncryptedPassword());		
-		if(!passwordMatched) {
-			throwInvalidCredentialsException();
-		}		
 		
 		if (isAccountLocked(userEntity)) { // NOSONAR
 			UserApiResponse failedLoginResponse = EntityUtils
 					.createFailedLoginResponse(Collections.singletonList(ResponseStatus.ACCOUNT_SUSPENDED));
 			throw new EntityValidationException("ACCOUNT_SUSPENDED ", failedLoginResponse, HttpStatus.LOCKED);
 		}
-		
-		// generate new AuthenticationToken and perform post login updates
-		userEntity = updatePostLogin(userEntity);
-		return createSuccessLoginResponse(userEntity);				
 	}
 
 
@@ -260,6 +284,31 @@ public class SecurityServiceImpl implements SecurityService {
 	public Boolean currentUserHasRole(Roles role) {
 		BaseUserEntity user = getCurrentUser();
 		return userHasRole(user, role);
+	}
+
+
+
+
+
+	@Override
+	public UserApiResponse socialLogin(String socialLoginToken) throws BusinessException {
+		BaseUserEntity userEntity = getUserBySocialLoginToken(socialLoginToken);
+		
+		validateLoginUser(userEntity);			
+		
+		return login(userEntity);	
+	}
+
+
+
+
+
+	private BaseUserEntity getUserBySocialLoginToken(String socialLoginToken) throws BusinessException {
+		return userRepo.findByAuthenticationToken(socialLoginToken)
+									.orElseThrow(() -> new BusinessException(
+											               format("No User have a social login with token[%s]", socialLoginToken) 
+											               , "INVALID_TOKEN"
+											               , HttpStatus.UNAUTHORIZED));
 	}
 	
 }

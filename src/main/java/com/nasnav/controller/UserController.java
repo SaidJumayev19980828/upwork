@@ -148,4 +148,21 @@ public class UserController {
                                       @RequestParam (value = "role", required = false) String role) throws BusinessException{
         return new ResponseEntity(employeeUserService.getUserList(userToken, orgId, storeId, role), HttpStatus.OK);
     }
+    
+    
+    
+    @ApiOperation(value = "Log in user using a social login token, "
+    		+ "mainly used as a redirect destination at the end of the OAuth2 login process"
+    		, nickname = "userSocialLogin")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "User logged in"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Invalid credentials"),
+            @io.swagger.annotations.ApiResponse(code = 423, message = "Account unavailable"),
+    })
+    @PostMapping(value = "login",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public UserApiResponse login(@RequestParam String socialLoginToken) throws BusinessException {
+    	return securityService.socialLogin(socialLoginToken);
+    }
 }
