@@ -1,9 +1,7 @@
 package com.nasnav.security.oauth2;
-import static com.nasnav.security.oauth2.OAuth2AuthorizationRequestRepository.AUTH_TOKEN_COOKIE_NAME;
 import static com.nasnav.security.oauth2.OAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME;
 
 import java.io.IOException;
-import java.util.Optional;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -16,6 +14,7 @@ import org.springframework.security.oauth2.client.web.AuthorizationRequestReposi
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
@@ -29,7 +28,16 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 	
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        String targetUrl = determineTargetUrl(request, response, authentication);
+    	 
+        System.out.println("On Success !");
+        System.out.println("On Success - request :  "   + request);
+        System.out.println("On Success - response :  "   + response.getHeaderNames());
+        
+        
+        String token = generateOAuth2Token();
+        saveTokenToDB(token);
+    	
+    	String targetUrl = determineTargetUrl(request, token);
 
         UserPrincipal user = (UserPrincipal)authentication.getPrincipal();
         System.out.println("user at onSuccess : " + user);
@@ -39,15 +47,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             return;
         }
 
-        String token = CookieUtils.getCookie(request, AUTH_TOKEN_COOKIE_NAME)
-												  .map(Cookie::getValue)
-												  .orElse("");
-        clearAuthenticationAttributes(request, response);
-        response.setHeader("User-Token", "token  - don't tell any one");
-        
-        System.out.println("On Success !");
-        System.out.println("On Success - request :  "   + request);
-        System.out.println("On Success - response :  "   + response.getHeaderNames());
+        clearAuthenticationAttributes(request, response);       
         
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
@@ -55,22 +55,45 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     
     
 
-    protected String determineTargetUrl(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-        Optional<String> redirectUri = CookieUtils.getCookie(request, REDIRECT_URI_PARAM_COOKIE_NAME)
-        											.map(Cookie::getValue);
+    protected String determineTargetUrl(HttpServletRequest request, String token) {
+    	UriComponents redirectUri = CookieUtils.getCookie(request, REDIRECT_URI_PARAM_COOKIE_NAME)
+    												.map(Cookie::getValue)
+        											.map(UriComponentsBuilder::fromUriString)
+        											.map(UriComponentsBuilder::build)
+        											.orElseGet(this::getDefaultRedirectUri);
+        if(redirectUri.getHost() != null) {
+            throw new IllegalStateException("Invalid redirect URL : " + redirectUri);
+        }
 
-//        if(redirectUri.isPresent() && !isAuthorizedRedirectUri(redirectUri.get())) {
-//            throw new BadRequestException("Sorry! We've got an Unauthorized Redirect URI and can't proceed with the authentication");
-//        }
-
-        String targetUrl = redirectUri.orElse(getDefaultTargetUrl());
-
-//        String token = tokenProvider.createToken(authentication);
-
-        return UriComponentsBuilder.fromUriString(targetUrl)
-//                .queryParam("token", token)
-                .build().toUriString();
+        return UriComponentsBuilder
+        			.fromUriString(redirectUri.toUriString())
+	                .queryParam("token", token)
+	                .build()
+	                .toUriString();
     }
+
+
+
+
+	private void saveTokenToDB(String token) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+
+
+	private String generateOAuth2Token() {
+//		return generateUUIDToken();
+		return "nopqrst";
+	}
+
+
+
+
+	private UriComponents getDefaultRedirectUri() {
+		return UriComponentsBuilder.fromUriString(getDefaultTargetUrl()).build();
+	}
     
     
     

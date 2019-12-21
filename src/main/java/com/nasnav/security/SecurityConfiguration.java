@@ -99,7 +99,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             Arrays.asList(
             			patternOf("/navbox/**")
                         , patternOf("/user/recover")
-                        , patternOf("/user/login")
+                        , patternOf("/user/login/**")
                         , patternOf("/user/register")
 						, patternOf("/user/info")
                         , patternOf("/payment/**")

@@ -159,10 +159,9 @@ public class UserController {
             @io.swagger.annotations.ApiResponse(code = 401, message = "Invalid credentials"),
             @io.swagger.annotations.ApiResponse(code = 423, message = "Account unavailable"),
     })
-    @PostMapping(value = "login",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public UserApiResponse login(@RequestParam String socialLoginToken) throws BusinessException {
+    @PostMapping(value = "login/oauth2",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public UserApiResponse login(@RequestParam("token") String socialLoginToken) throws BusinessException {
     	return securityService.socialLogin(socialLoginToken);
     }
 }

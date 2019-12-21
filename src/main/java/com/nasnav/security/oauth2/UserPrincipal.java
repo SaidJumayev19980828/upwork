@@ -24,34 +24,35 @@ public class UserPrincipal implements OidcUser,OAuth2User, UserDetails {
 	 * 
 	 */
 	private static final long serialVersionUID = 51841222L;
+	private String id;
 	private String username;
     private String password;
     private Collection<? extends GrantedAuthority> authorities;
     private Map<String, Object> attributes;
 
-    public UserPrincipal(String username, String password, Collection<? extends GrantedAuthority> authorities) {
+    public UserPrincipal(String id, String username, String password, Collection<? extends GrantedAuthority> authorities) {
         this.username = username;
         this.password = password;
         this.authorities = authorities;
     }
 
-    public static UserPrincipal create(UserDetails user) {
+    
+    
+    
+    public static UserPrincipal create(OAuth2UserInfo user) {
         List<GrantedAuthority> authorities = Collections.
                 singletonList(new SimpleGrantedAuthority("ROLE_USER"));
 
         return new UserPrincipal(
-                user.getUsername(),
-                user.getPassword(),
+        		user.getId(),
+                user.getEmail(),
+                "",
                 authorities
         );
     }
 
-    public static UserPrincipal create(UserDetails user, Map<String, Object> attributes) {
-        UserPrincipal userPrincipal = UserPrincipal.create(user);
-        userPrincipal.setAttributes(attributes);
-        return userPrincipal;
-    }
-
+    
+    
 
     @Override
     public String getPassword() {
@@ -114,7 +115,17 @@ public class UserPrincipal implements OidcUser,OAuth2User, UserDetails {
 
 	@Override
 	public OidcIdToken getIdToken() {
-		return new OidcIdToken(this.username, Instant.now(), Instant.now().plus(1, ChronoUnit.YEARS), attributes);
+		return new OidcIdToken(this.id, Instant.now(), Instant.now().plus(1, ChronoUnit.YEARS), attributes);
 	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+	
+	
 }
 

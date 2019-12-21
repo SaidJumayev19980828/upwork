@@ -12,7 +12,7 @@ import org.springframework.security.oauth2.client.web.AuthorizationRequestReposi
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.stereotype.Repository;
 
-import com.nasnav.commons.utils.StringUtils;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 
 
 
@@ -20,7 +20,7 @@ import com.nasnav.commons.utils.StringUtils;
 @Repository
 public class OAuth2AuthorizationRequestRepository implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
 
-	public static final String AUTH_TOKEN_COOKIE_NAME = "oauth_token";
+	public static final String OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME = "oauth2_auth_request";
 	public static final String REDIRECT_URI_PARAM_COOKIE_NAME = "redirect";
 	public static final String ORG_ID_COOKIE_NAME = "org_id";
 	public static Map<String,OAuth2AuthorizationRequest> requests = new HashMap<>();
@@ -29,10 +29,9 @@ public class OAuth2AuthorizationRequestRepository implements AuthorizationReques
 	
 	@Override
 	public OAuth2AuthorizationRequest loadAuthorizationRequest(HttpServletRequest request) {
-		return CookieUtils.getCookie(request, AUTH_TOKEN_COOKIE_NAME)
-			                .map(cookie -> CookieUtils.deserialize(cookie, String.class))
-			                .map(requests::get)
-			                .orElse(null); 
+		return CookieUtils.getCookie(request, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME)
+		                .map(cookie -> CookieUtils.deserialize(cookie, OAuth2AuthorizationRequest.class))
+		                .orElse(null);
 	}
 
 	
@@ -44,21 +43,25 @@ public class OAuth2AuthorizationRequestRepository implements AuthorizationReques
 	public void saveAuthorizationRequest(OAuth2AuthorizationRequest authorizationRequest, HttpServletRequest request,
 			HttpServletResponse response) {
 		int cookieExpireSeconds = 180;
-		String token = UUID.randomUUID().toString();
-		CookieUtils.addCookie(response, AUTH_TOKEN_COOKIE_NAME, token, cookieExpireSeconds);
+		
+		 if (authorizationRequest == null) {
+	            CookieUtils.deleteCookie(request, response, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME);
+	            CookieUtils.deleteCookie(request, response, REDIRECT_URI_PARAM_COOKIE_NAME);
+	            CookieUtils.deleteCookie(request, response, ORG_ID_COOKIE_NAME);
+	            return;
+	     }
+		 
 		
 		String redirectUriAfterLogin = request.getParameter(REDIRECT_URI_PARAM_COOKIE_NAME);
-        if (!StringUtils.isBlankOrNull(redirectUriAfterLogin)) {            
-			CookieUtils.addCookie(response, REDIRECT_URI_PARAM_COOKIE_NAME, redirectUriAfterLogin, cookieExpireSeconds);
-        }
-        
-        String orgId = request.getParameter(ORG_ID_COOKIE_NAME);
-        if (!StringUtils.isBlankOrNull(orgId)) {            
-			CookieUtils.addCookie(response, ORG_ID_COOKIE_NAME, orgId, cookieExpireSeconds);
-        }
-        
-		requests.put(token,authorizationRequest);
-		System.out.println("====> OAUTH2 saved state : " + authorizationRequest.getState() + " for token: " + token);
+		String orgId = request.getParameter(ORG_ID_COOKIE_NAME);
+		
+		if(isBlankOrNull(redirectUriAfterLogin) || isBlankOrNull(orgId)) {
+			throw new IllegalStateException("Missing OAuth2 request parameters! redirect url and organization id must be provided!");
+		}
+		
+		CookieUtils.addCookie(response, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME, CookieUtils.serialize(authorizationRequest), cookieExpireSeconds);
+		CookieUtils.addCookie(response, REDIRECT_URI_PARAM_COOKIE_NAME, redirectUriAfterLogin, cookieExpireSeconds);
+		CookieUtils.addCookie(response, ORG_ID_COOKIE_NAME, orgId, cookieExpireSeconds);		
 	}
 
 	
@@ -67,12 +70,7 @@ public class OAuth2AuthorizationRequestRepository implements AuthorizationReques
 	
 	@Override
 	public OAuth2AuthorizationRequest removeAuthorizationRequest(HttpServletRequest request) {
-		String token = CookieUtils.getCookie(request, AUTH_TOKEN_COOKIE_NAME)
-					                .map(Cookie::getValue)                
-					                .orElse("");
-		OAuth2AuthorizationRequest oauthReq = requests.get(token);
-		requests.remove(token);
-		return oauthReq;
+		return this.loadAuthorizationRequest(request);		
 	}
 
 }
