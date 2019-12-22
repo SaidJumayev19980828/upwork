@@ -388,7 +388,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 			throw new BusinessException("UNAUTHORIZED", "Logged user doesn't have the right to view other users data", HttpStatus.UNAUTHORIZED);
 		}
 		
-		BaseUserEntity user = commonUserRepo.findByAuthenticationToken(token)
+		BaseUserEntity user = commonUserRepo.findById(id, isEmp)
 											.orElseThrow(this::getNoUserHaveThisTokenException);
 			
 //		Optional<EmployeeUserEntity> empUser = employeeUserRepository.findById(id);
