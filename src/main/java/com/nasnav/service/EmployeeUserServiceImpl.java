@@ -346,20 +346,31 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		if (!empUser.isPresent())
 			throw new BusinessException("INVALID TOKEN", "provided request token is invalid!", HttpStatus.UNAUTHORIZED);
 
-		if (id != null) {
-			List<String> userRoles = empUserSvcHelper.getEmployeeUserRoles(empUser.get().getId());
-			if (!userRoles.contains("NASNAV_ADMIN"))
-				throw new BusinessException("UNAUTHORIZED", "Logged user doesn't have the right to view other users data", HttpStatus.UNAUTHORIZED);
-			empUser = employeeUserRepository.findById(id);
-			if (!empUser.isPresent()) {
-				Optional<UserEntity> user = userRepo.findById(id);
-				if (!user.isPresent())
-					throw new BusinessException("INVALID PARAM: id", "Provided id doesn't match any existing user id", HttpStatus.NOT_ACCEPTABLE);
-				return user.get().getRepresentation();
-			}
-			return empUser.get().getRepresentation();
+		List<String> userRoles = empUserSvcHelper.getEmployeeUserRoles(empUser.get().getId());
+
+		if (id == null) {
+			UserRepresentationObject userRepObj = empUser.get().getRepresentation();
+			userRepObj.setRoles(new HashSet<>(userRoles));
+			return userRepObj;
 		}
-		return empUser.get().getRepresentation();
+		else
+			return getOtherUserData(userRoles, id);
 	}
+
+	private UserRepresentationObject getOtherUserData(List<String> userRoles, Long id) throws BusinessException {
+		if (!userRoles.contains("NASNAV_ADMIN"))
+			throw new BusinessException("UNAUTHORIZED", "Logged user doesn't have the right to view other users data", HttpStatus.UNAUTHORIZED);
+		Optional<EmployeeUserEntity> empUser = employeeUserRepository.findById(id);
+		if (!empUser.isPresent()) {
+			Optional<UserEntity> user = userRepo.findById(id);
+			if (!user.isPresent())
+				throw new BusinessException("INVALID PARAM: id", "Provided id doesn't match any existing user id", HttpStatus.NOT_ACCEPTABLE);
+			return user.get().getRepresentation();
+		}
+		UserRepresentationObject userRepObj = empUser.get().getRepresentation();
+		userRepObj.setRoles(new HashSet<>(helper.getEmployeeUserRoles(empUser.get().getId())));
+		return userRepObj;
+	}
+
 
 }
