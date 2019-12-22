@@ -1,9 +1,23 @@
 package com.nasnav.service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import com.google.common.base.Enums;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
-import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.UserRepository;
@@ -13,23 +27,17 @@ import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
-import com.nasnav.persistence.*;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class EmployeeUserServiceImpl implements EmployeeUserService {
 
-	private EmployeeUserServiceHelper helper;
+	
 
 	private EmployeeUserRepository employeeUserRepository;
 	private PasswordEncoder passwordEncoder;
@@ -47,7 +55,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	@Autowired
 	public EmployeeUserServiceImpl(EmployeeUserServiceHelper helper, EmployeeUserRepository employeeUserRepository,
 								   PasswordEncoder passwordEncoder, RoleServiceImpl roleServiceImpl) {
-		this.helper = helper;
+		this.empUserSvcHelper = helper;
 		this.employeeUserRepository = employeeUserRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.roleServiceImpl = roleServiceImpl;
@@ -56,20 +64,20 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	@Override
 	public UserApiResponse createEmployeeUser(Long userId, String userToken, UserDTOs.EmployeeUserCreationObject employeeUserJson) {
 		List<String> rolesList = Arrays.asList(employeeUserJson.role.split(","));
-		helper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.orgId, rolesList);
+		empUserSvcHelper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.orgId, rolesList);
 		// get current logged in user
 		EmployeeUserEntity currentUser = getCurrentUser();
 		
 		// check if email and organization id already exists
 		if (employeeUserRepository.getByEmailAndOrganizationId(employeeUserJson.email, employeeUserJson.orgId) == null) {
-			int userType = helper.roleCanCreateUser(currentUser.getId());
+			int userType = empUserSvcHelper.roleCanCreateUser(currentUser.getId());
 			if (userType != -1) { // can add employees
 				if (userType == 2) { // can add employees within the same organization
 					if (!currentUser.getOrganizationId().equals(employeeUserJson.orgId)) { //not the same organization
 						throw new EntityValidationException("Error Occurred during user creation:: " + ResponseStatus.INSUFFICIENT_RIGHTS,
 								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
 					}
-					if (helper.checkOrganizationRolesRights(rolesList)) {
+					if (empUserSvcHelper.checkOrganizationRolesRights(rolesList)) {
 						throw new EntityValidationException("Insufficient Rights ",
 								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
 					}
@@ -78,17 +86,17 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 						throw new EntityValidationException("Error Occurred during user creation:: " + ResponseStatus.INSUFFICIENT_RIGHTS,
 								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
 					}
-					if (helper.checkStoreRolesRights(rolesList)) {
+					if (empUserSvcHelper.checkStoreRolesRights(rolesList)) {
 						throw new EntityValidationException("Insufficient Rights ",
 								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
 					}
 				}
 				// parse Json to EmployeeUserEntity
-				EmployeeUserEntity employeeUserEntity = helper.createEmployeeUser(employeeUserJson);
+				EmployeeUserEntity employeeUserEntity = empUserSvcHelper.createEmployeeUser(employeeUserJson);
 				// create Role and RoleEmployeeUser entities from the roles array
-				helper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.orgId);
-				employeeUserEntity = helper.generateResetPasswordToken(employeeUserEntity);
-				helper.sendRecoveryMail(employeeUserEntity);
+				empUserSvcHelper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.orgId);
+				employeeUserEntity = empUserSvcHelper.generateResetPasswordToken(employeeUserEntity);
+				empUserSvcHelper.sendRecoveryMail(employeeUserEntity);
 				return UserApiResponse.createStatusApiResponse(employeeUserEntity.getId(),
 						Arrays.asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
 			}
@@ -116,7 +124,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	public UserApiResponse updateEmployeeUser(Long userId, String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
 		EmployeeUserEntity updateUser,currentUser;
 		
-		int userType = helper.roleCanCreateUser(userId); //check user privileges
+		int userType = empUserSvcHelper.roleCanCreateUser(userId); //check user privileges
 		if (userType == -1) { // can't update employees
 			throw new EntityValidationException(""+ResponseStatus.INSUFFICIENT_RIGHTS,
 					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
@@ -136,14 +144,14 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 			throw new EntityValidationException("Not in the same Store " + ResponseStatus.INSUFFICIENT_RIGHTS,
 					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
 		}
-		return helper.updateEmployeeUser(userType, updateUser, employeeUserJson);
+		return empUserSvcHelper.updateEmployeeUser(userType, updateUser, employeeUserJson);
 	}
 
 	public UserApiResponse login(UserDTOs.UserLoginObject body) {
 		EmployeeUserEntity employeeUserEntity = this.employeeUserRepository.getByEmailAndOrganizationId(body.email, body.getOrgId());
 		if (employeeUserEntity != null) {
 			// check if account needs activation
-			boolean accountNeedActivation = helper.isEmployeeUserNeedActivation(employeeUserEntity);
+			boolean accountNeedActivation = empUserSvcHelper.isEmployeeUserNeedActivation(employeeUserEntity);
 			if (accountNeedActivation) {
 				UserApiResponse failedLoginResponse = EntityUtils
 						.createFailedLoginResponse(Collections.singletonList(ResponseStatus.NEED_ACTIVATION));
@@ -153,7 +161,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 			boolean passwordMatched = passwordEncoder.matches(body.password, employeeUserEntity.getEncryptedPassword());
 			if (passwordMatched) {
 				// check if account is locked
-				if (helper.isAccountLocked(employeeUserEntity)) { // TODO: so far there is no lockdown, so always
+				if (empUserSvcHelper.isAccountLocked(employeeUserEntity)) { // TODO: so far there is no lockdown, so always
 																	// false
 					// //NOSONAR
 					UserApiResponse failedLoginResponse = EntityUtils
@@ -161,8 +169,8 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 					throw new EntityValidationException("ACCOUNT_SUSPENDED ", failedLoginResponse, HttpStatus.LOCKED);
 				}
 				// generate new AuthenticationToken and perform post login updates
-				helper.updatePostLogin(employeeUserEntity);
-				return helper.createSuccessLoginResponse(employeeUserEntity);
+				empUserSvcHelper.updatePostLogin(employeeUserEntity);
+				return empUserSvcHelper.createSuccessLoginResponse(employeeUserEntity);
 			}
 		}
 		UserApiResponse failedLoginResponse = EntityUtils
@@ -194,8 +202,8 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	@Override
 	public UserApiResponse sendEmailRecovery(String email, Long orgId) {
 		EmployeeUserEntity employeeUserEntity = getEmployeeUserByEmail(email, orgId);
-		employeeUserEntity = helper.generateResetPasswordToken(employeeUserEntity);
-		return helper.sendRecoveryMail(employeeUserEntity);
+		employeeUserEntity = empUserSvcHelper.generateResetPasswordToken(employeeUserEntity);
+		return empUserSvcHelper.sendRecoveryMail(employeeUserEntity);
 	}
 
 	@Override
@@ -267,7 +275,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	public List<UserRepresentationObject> getUserList(String token, Long orgId, Long storeId, String role) throws BusinessException {
 		EmployeeUserEntity user = employeeUserRepository.findByAuthenticationToken(token).get();
-		List<String> userRoles = helper.getEmployeeUserRoles(user.getId());
+		List<String> userRoles = empUserSvcHelper.getEmployeeUserRoles(user.getId());
 		Set<String> roles = new HashSet<>();
 		List<EmployeeUserEntity> usersEntites = new ArrayList<>();
 		List<Long> employeesIds = new ArrayList<>();
@@ -322,7 +330,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 			else
 				usersEntites = employeeUserRepository.findByOrganizationIdAndShopId(orgId, storeId);
 		} else {
-			employeesIds = helper.getEmployeesIds(new ArrayList<>(roles));
+			employeesIds = empUserSvcHelper.getEmployeesIds(new ArrayList<>(roles));
 			if (storeId == null && orgId == null)
 				usersEntites = employeeUserRepository.findByIdIn(employeesIds);
 			else if (storeId != null && orgId == null)
@@ -335,40 +343,62 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 		userRepObjs = usersEntites.stream().map(entity -> entity.getRepresentation()).collect(Collectors.toList());
 		for(UserRepresentationObject obj : userRepObjs)
-			obj.setRoles(new HashSet<>(helper.getEmployeeUserRoles(obj.getId())));
+			obj.setRoles(new HashSet<>(empUserSvcHelper.getEmployeeUserRoles(obj.getId())));
 
 		return userRepObjs;
 	}
+	
+	
+	
+	
 
 	@Override
 	public UserRepresentationObject getUserData(String token, Long id) throws BusinessException {
-		Optional<EmployeeUserEntity> empUser = employeeUserRepository.findByAuthenticationToken(token);
-		if (!empUser.isPresent())
-			throw new BusinessException("INVALID TOKEN", "provided request token is invalid!", HttpStatus.UNAUTHORIZED);
-
-		List<String> userRoles = empUserSvcHelper.getEmployeeUserRoles(empUser.get().getId());
-
+		EmployeeUserEntity empUser = 
+				employeeUserRepository.findByAuthenticationToken(token)
+									.orElseThrow(this::getNoUserHaveThisTokenException);
+		
+		List<String> userRoles = empUserSvcHelper.getEmployeeUserRoles(empUser.getId());
 		if (id == null) {
-			UserRepresentationObject userRepObj = empUser.get().getRepresentation();
+			UserRepresentationObject userRepObj = empUser.getRepresentation();
 			userRepObj.setRoles(new HashSet<>(userRoles));
 			return userRepObj;
 		}
-		else
+		else {
 			return getOtherUserData(userRoles, id);
+		}
+			
 	}
+	
+	
+	
+	
+	
+	
+	private BusinessException getNoUserHaveThisTokenException() {
+		return new BusinessException("INVALID TOKEN", "provided request token is invalid!", HttpStatus.UNAUTHORIZED);
+	}
+	
+	
+	
 
 	private UserRepresentationObject getOtherUserData(List<String> userRoles, Long id) throws BusinessException {
-		if (!userRoles.contains("NASNAV_ADMIN"))
+		if (!userRoles.contains("NASNAV_ADMIN")) {
 			throw new BusinessException("UNAUTHORIZED", "Logged user doesn't have the right to view other users data", HttpStatus.UNAUTHORIZED);
+		}
+			
 		Optional<EmployeeUserEntity> empUser = employeeUserRepository.findById(id);
 		if (!empUser.isPresent()) {
 			Optional<UserEntity> user = userRepo.findById(id);
-			if (!user.isPresent())
+			if (!user.isPresent()) {
 				throw new BusinessException("INVALID PARAM: id", "Provided id doesn't match any existing user id", HttpStatus.NOT_ACCEPTABLE);
+			}				
 			return user.get().getRepresentation();
 		}
+		
 		UserRepresentationObject userRepObj = empUser.get().getRepresentation();
-		userRepObj.setRoles(new HashSet<>(helper.getEmployeeUserRoles(empUser.get().getId())));
+		userRepObj.setRoles(new HashSet<>(empUserSvcHelper.getEmployeeUserRoles(empUser.get().getId())));
+		
 		return userRepObj;
 	}
 
