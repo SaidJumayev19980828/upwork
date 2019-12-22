@@ -14,6 +14,7 @@ import com.nasnav.dto.UserDTOs.UserRegistrationObject;
 import com.nasnav.persistence.OAuth2ProviderEntity;
 import com.nasnav.persistence.OAuth2UserEntity;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.security.oauth2.exceptions.RegisterationEmailExistsException;
 
 @Component
 public class OAuth2Helper {
@@ -23,7 +24,7 @@ public class OAuth2Helper {
 
 
 	private static final String EMAIL_EXISTS = "A user with email [%s] already exists!"
-			+ "\nif you are the owner of this account, please login and link your %s account to it!";
+			+ ", if you are the owner of this account, please login and link your %s account to it!";
 
 	
 	
@@ -45,18 +46,18 @@ public class OAuth2Helper {
     	
     	Boolean emailExists = userRepo.existsByEmailIgnoreCaseAndOrganizationId(email, orgId);
     	if(emailExists) {
-    		throw new IllegalStateException( format(EMAIL_EXISTS, email, provider));
+    		throw new RegisterationEmailExistsException( format(EMAIL_EXISTS, email, provider));
     	}
     	
     	UserEntity nasnavUser = registerNasnavUser(user, orgId);    	
-    	OAuth2UserEntity oAuthUser = saveNewOAuthUser(user, token, orgId, nasnavUser);
+    	OAuth2UserEntity oAuthUser = saveNewOAuthUserToDB(user, token, orgId, nasnavUser);
     	
 		return oAuthUser;
 	}
 	
 	
 	
-	private OAuth2UserEntity saveNewOAuthUser(UserPrincipal user, String token, Long orgId, UserEntity nasnavUser) {
+	private OAuth2UserEntity saveNewOAuthUserToDB(UserPrincipal user, String token, Long orgId, UserEntity nasnavUser) {
 		OAuth2ProviderEntity providerEntity = providerRepo.findByProviderNameIgnoreCase(user.getProvider())
     												.orElseThrow(() -> getNoProviderFoundException(user));
     	

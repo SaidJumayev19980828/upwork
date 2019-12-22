@@ -5,12 +5,15 @@ import static com.nasnav.security.oauth2.OAuth2AuthorizationRequestRepository.RE
 import static java.lang.String.format;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
@@ -58,12 +61,18 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         
         System.out.println("user at onSuccess : " + user);
         
-        String oAuth2Id = user.getId(); 
-        oAuthUserRepo.findByOAuth2IdAndOrganizationId(oAuth2Id , orgId)
-					.map(usr -> saveTokenToDB(usr, token) )
-				 	.orElse(helper.registerNewOAuth2User(user, token, orgId));
-
-    	String targetUrl = determineTargetUrl(request, token);        
+        String targetUrl = determineTargetUrl(request, token);
+        
+        try {
+        	String oAuth2Id = user.getId(); 
+            oAuthUserRepo.findByOAuth2IdAndOrganizationId(oAuth2Id , orgId)
+    					.map(usr -> {return saveTokenToDB(usr, token);} )
+    				 	.orElseGet(() -> helper.registerNewOAuth2User(user, token, orgId));
+        }catch(Throwable t) {
+        	targetUrl = getErrorTargetUrl(request, t);
+        	System.out.println("exception is being handled for exception : " + t);
+        	System.out.println("Error target url : " + targetUrl);
+        }
         
         if (response.isCommitted()) {
             logger.debug("Response has already been committed. Unable to redirect to " + targetUrl);
@@ -75,23 +84,29 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     }
     
     
-    
-    
-    
-
-
-
-
-
-
-
-
-
-
-
-    
-    
+        
   
+
+
+	private String getErrorTargetUrl(HttpServletRequest request, Throwable t) {
+		UriComponents redirectUri = getRedirectParamFromRequest(request);
+		String encodedErrorMsg = "";
+		try {
+			encodedErrorMsg = URLEncoder.encode("\""+t.getMessage() +"\"", "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			logger.error(e,e);
+		}
+		
+        return UriComponentsBuilder
+        			.fromUriString(redirectUri.toUriString())
+	                .queryParam("error", encodedErrorMsg)
+	                .build()
+	                .toUriString();
+	}
+
+
+
+
 
 
 	private Long getOrgIdAsLongVal(String orgIdStr) {
@@ -115,14 +130,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     
 
     protected String determineTargetUrl(HttpServletRequest request, String token) {
-    	UriComponents redirectUri = CookieUtils.getCookie(request, REDIRECT_URI_PARAM_COOKIE_NAME)
-    												.map(Cookie::getValue)
-        											.map(UriComponentsBuilder::fromUriString)
-        											.map(UriComponentsBuilder::build)
-        											.orElseGet(this::getDefaultRedirectUri);
-        if(redirectUri.getHost() != null) {
-            throw new IllegalStateException("Invalid redirect URL : " + redirectUri);
-        }
+    	UriComponents redirectUri = getRedirectParamFromRequest(request);
 
         return UriComponentsBuilder
         			.fromUriString(redirectUri.toUriString())
@@ -134,9 +142,27 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
 
 
+
+
+	private UriComponents getRedirectParamFromRequest(HttpServletRequest request) {
+		UriComponents redirectUri = CookieUtils.getCookie(request, REDIRECT_URI_PARAM_COOKIE_NAME)
+    												.map(Cookie::getValue)
+        											.map(UriComponentsBuilder::fromUriString)
+        											.map(UriComponentsBuilder::build)
+        											.orElseGet(this::getDefaultRedirectUri);
+        if(redirectUri.getHost() != null) {
+            throw new IllegalStateException("Invalid redirect URL : " + redirectUri);
+        }
+		return redirectUri;
+	}
+
+
+
+
 	private OAuth2UserEntity saveTokenToDB(OAuth2UserEntity oAuthUser, String token) {
 		oAuthUser.setLoginToken(token);
-		return oAuthUserRepo.save(oAuthUser);
+		OAuth2UserEntity newOAuthUser = oAuthUserRepo.save(oAuthUser);
+		return newOAuthUser;
 	}
 
 
@@ -161,24 +187,4 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         requestRepository.removeAuthorizationRequest(request, response);
     }
 
-    
-    
-    
-    
-    private boolean isAuthorizedRedirectUri(String uri) {
-    	return true;
-//        URI clientRedirectUri = URI.create(uri);
-//
-//        return appProperties.getOauth2().getAuthorizedRedirectUris()
-//                .stream()
-//                .anyMatch(authorizedRedirectUri -> {
-//                    // Only validate host and port. Let the clients use different paths if they want to
-//                    URI authorizedURI = URI.create(authorizedRedirectUri);
-//                    if(authorizedURI.getHost().equalsIgnoreCase(clientRedirectUri.getHost())
-//                            && authorizedURI.getPort() == clientRedirectUri.getPort()) {
-//                        return true;
-//                    }
-//                    return false;
-//                });
-    }
 }

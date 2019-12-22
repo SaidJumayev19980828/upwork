@@ -15,6 +15,8 @@ import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
+import static com.nasnav.constatnts.EntityConstants.INITIAL_PASSWORD;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -53,9 +55,9 @@ public class UserPrincipal implements OidcUser,OAuth2User, UserDetails {
 
         return new UserPrincipal(
         		user.getId(),
-        		user.getEmail(),
+        		user.getName(),
                 user.getEmail(),
-                "",
+                INITIAL_PASSWORD,
                 provider,
                 authorities
         );
@@ -129,7 +131,7 @@ public class UserPrincipal implements OidcUser,OAuth2User, UserDetails {
 	}
 
 	public String getId() {
-		return id;
+		return this.id;
 	}
 
 	public void setId(String id) {

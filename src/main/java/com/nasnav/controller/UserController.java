@@ -109,6 +109,12 @@ public class UserController {
     public UserApiResponse login(@RequestBody UserDTOs.UserLoginObject login) throws BusinessException {
     	return securityService.login(login);
     }
+    
+    
+    
+    
+    
+    
 
     @ApiOperation(value = "Update an employee user", nickname = "employeeUserUpdate", code = 200)
     @ApiResponses(value = {
@@ -127,6 +133,10 @@ public class UserController {
         }
         return this.userService.updateUser(userId, userToken, json);
     }
+    
+    
+    
+    
 
     @ApiOperation(value = "Get user info", nickname = "userInfo")
     @ApiResponses(value = {
@@ -139,6 +149,10 @@ public class UserController {
 
         return new ResponseEntity(userService.getUserData(userToken, id), HttpStatus.OK);
     }
+    
+    
+    
+    
 
     @ApiOperation(value = "Get employee users list", nickname = "employeesInfo")
     @ApiResponses(value = {
@@ -152,6 +166,8 @@ public class UserController {
                                       @RequestParam (value = "role", required = false) String role) throws BusinessException{
         return new ResponseEntity(employeeUserService.getUserList(userToken, orgId, storeId, role), HttpStatus.OK);
     }
+    
+    
     
     
     

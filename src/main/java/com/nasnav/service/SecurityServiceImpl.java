@@ -115,6 +115,14 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	private void validateUserPassword(UserLoginObject loginData, BaseUserEntity userEntity) {
+
+		boolean accountNeedActivation = isUserNeedActivation(userEntity);
+		if (accountNeedActivation) {
+			UserApiResponse failedLoginResponse = 
+					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.NEED_ACTIVATION));
+			throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, HttpStatus.LOCKED);
+		}
+		
 		boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncryptedPassword());		
 		if(!passwordMatched) {
 			throwInvalidCredentialsException();
@@ -140,13 +148,6 @@ public class SecurityServiceImpl implements SecurityService {
 			throwInvalidCredentialsException();
 		}
 		
-		
-		boolean accountNeedActivation = isUserNeedActivation(userEntity);
-		if (accountNeedActivation) {
-			UserApiResponse failedLoginResponse = 
-					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.NEED_ACTIVATION));
-			throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, HttpStatus.LOCKED);
-		}
 		
 		
 		if (isAccountLocked(userEntity)) { // NOSONAR
@@ -223,15 +224,15 @@ public class SecurityServiceImpl implements SecurityService {
 		Long organizationId = userEntity.getOrganizationId();
 		
 		return new ApiResponseBuilder()
-				.setSuccess(true)
-				.setEntityId( userEntity.getId() )
-				.setName(userEntity.getName())
-				.setEmail(userEntity.getEmail())
-				.setToken( userEntity.getAuthenticationToken() )
-				.setRoles( userRepo.getUserRoles(userEntity) )
-				.setOrganizationId( organizationId != null ? organizationId : 0L)
-				.setStoreId(shopId != null ? shopId : 0L)
-				.build();
+					.setSuccess(true)
+					.setEntityId( userEntity.getId() )
+					.setName(userEntity.getName())
+					.setEmail(userEntity.getEmail())
+					.setToken( userEntity.getAuthenticationToken() )
+					.setRoles( userRepo.getUserRoles(userEntity) )
+					.setOrganizationId( organizationId != null ? organizationId : 0L)
+					.setStoreId(shopId != null ? shopId : 0L)
+					.build();
 	}
 
 
@@ -241,10 +242,10 @@ public class SecurityServiceImpl implements SecurityService {
 	@Override
 	public BaseUserEntity getCurrentUser() {
 		return Optional.ofNullable( SecurityContextHolder.getContext() )
-				.map(c -> c.getAuthentication())
-				.map(Authentication::getDetails)
-				.map(BaseUserEntity.class::cast)
-				.orElseThrow(()-> new IllegalStateException("Could not retrieve current user!"));
+					.map(c -> c.getAuthentication())
+					.map(Authentication::getDetails)
+					.map(BaseUserEntity.class::cast)
+					.orElseThrow(()-> new IllegalStateException("Could not retrieve current user!"));
 	}
 
 
