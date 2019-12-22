@@ -1,5 +1,7 @@
 package com.nasnav.service;
 
+import static java.util.Optional.ofNullable;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,6 +21,7 @@ import com.google.common.base.Enums;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
+import com.nasnav.dao.CommonUserRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.UserDTOs;
@@ -51,6 +54,9 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 	@Autowired
 	private UserRepository userRepo;
+	
+	@Autowired
+	private CommonUserRepository commonUserRepo;
 
 	@Autowired
 	public EmployeeUserServiceImpl(EmployeeUserServiceHelper helper, EmployeeUserRepository employeeUserRepository,
@@ -353,20 +359,13 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	
 
 	@Override
-	public UserRepresentationObject getUserData(String token, Long id) throws BusinessException {
-		EmployeeUserEntity empUser = 
-				employeeUserRepository.findByAuthenticationToken(token)
-									.orElseThrow(this::getNoUserHaveThisTokenException);
+	public UserRepresentationObject getUserData( Long id, Boolean isEmployee) throws BusinessException {
 		
-		List<String> userRoles = empUserSvcHelper.getEmployeeUserRoles(empUser.getId());
-		if (id == null) {
-			UserRepresentationObject userRepObj = empUser.getRepresentation();
-			userRepObj.setRoles(new HashSet<>(userRoles));
-			return userRepObj;
-		}
-		else {
-			return getOtherUserData(userRoles, id);
-		}
+		Boolean isRequiredUserEmp = ofNullable(isEmployee).orElse(false);
+		Long requiredUserId = ofNullable(id)
+							 	.orElse(securityService.getCurrentUser().getId());
+		
+		return getOtherUserData(requiredUserId, isRequiredUserEmp);
 			
 	}
 	
@@ -382,22 +381,29 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	
 	
 
-	private UserRepresentationObject getOtherUserData(List<String> userRoles, Long id) throws BusinessException {
-		if (!userRoles.contains("NASNAV_ADMIN")) {
+	private UserRepresentationObject getOtherUserData(Long id, Boolean isEmp) throws BusinessException {
+		Long currentUserId = securityService.getCurrentUser().getId();
+		if (currentUserId != id 
+				&& !securityService.currentUserHasRole(Roles.NASNAV_ADMIN)) {
 			throw new BusinessException("UNAUTHORIZED", "Logged user doesn't have the right to view other users data", HttpStatus.UNAUTHORIZED);
 		}
-			
-		Optional<EmployeeUserEntity> empUser = employeeUserRepository.findById(id);
-		if (!empUser.isPresent()) {
-			Optional<UserEntity> user = userRepo.findById(id);
-			if (!user.isPresent()) {
-				throw new BusinessException("INVALID PARAM: id", "Provided id doesn't match any existing user id", HttpStatus.NOT_ACCEPTABLE);
-			}				
-			return user.get().getRepresentation();
-		}
 		
-		UserRepresentationObject userRepObj = empUser.get().getRepresentation();
-		userRepObj.setRoles(new HashSet<>(empUserSvcHelper.getEmployeeUserRoles(empUser.get().getId())));
+		BaseUserEntity user = commonUserRepo.findByAuthenticationToken(token)
+											.orElseThrow(this::getNoUserHaveThisTokenException);
+			
+//		Optional<EmployeeUserEntity> empUser = employeeUserRepository.findById(id);
+//		if (!empUser.isPresent()) {
+//			Optional<UserEntity> user = userRepo.findById(id);
+//			if (!user.isPresent()) {
+//				throw new BusinessException("INVALID PARAM: id", "Provided id doesn't match any existing user id", HttpStatus.NOT_ACCEPTABLE);
+//			}				
+//			return user.get().getRepresentation();
+//		}
+		
+		
+		
+		UserRepresentationObject userRepObj = user.getRepresentation();
+		userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user));
 		
 		return userRepObj;
 	}

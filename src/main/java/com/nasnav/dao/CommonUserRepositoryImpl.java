@@ -114,4 +114,16 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 		}
 	}
 
+
+
+
+	@Override
+	public Optional<BaseUserEntity> findById(Long id, Boolean isEmp) {
+		if(isEmp) {
+			return empRepo.findById(id).flatMap(mapper);
+		}else {
+			return userRepo.findById(id);
+		}
+	}
+
 }

@@ -51,7 +51,7 @@ public class UserEntity extends BaseUserEntity{
     }
     
     
-
+    @Override
     public UserRepresentationObject getRepresentation() {
         UserRepresentationObject obj = new UserRepresentationObject();
         obj.id = this.getId();

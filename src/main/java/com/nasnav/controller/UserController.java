@@ -1,6 +1,7 @@
 package com.nasnav.controller;
 
 import com.nasnav.dto.UserDTOs;
+import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.EmployeeUserService;
@@ -124,18 +125,25 @@ public class UserController {
         return this.userService.updateUser(userId, userToken, json);
     }
 
+    
+    
+    
     @ApiOperation(value = "Get user info", nickname = "userInfo")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 404, message = "User not found"),
     })
     @GetMapping(value = "info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity getUserData(@RequestHeader (value = "User-Token") String userToken,
-                                      @RequestParam (value = "id", required = false) Long id) throws BusinessException{
+    public UserRepresentationObject getUserData(@RequestHeader (value = "User-Token") String userToken,
+                                      @RequestParam (value = "id", required = false) Long id
+                                      ,@RequestParam (value = "is_employee", required = false) Boolean isEmployee) throws BusinessException{
 
-        return new ResponseEntity(userService.getUserData(userToken, id), HttpStatus.OK);
+        return userService.getUserData(id, isEmployee);
     }
 
+    
+    
+    
     @ApiOperation(value = "Get employee users list", nickname = "employeesInfo")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),

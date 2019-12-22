@@ -46,6 +46,11 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	private EmployeeUserService empUserSvc;
+	
+	
+	@Autowired
+	private SecurityService securityService;
+	
 
 	@Autowired
 	public UserServiceImpl(UserRepository userRepository, MailService mailService, PasswordEncoder passwordEncoder) {
@@ -398,16 +403,24 @@ public class UserServiceImpl implements UserService {
 	public boolean checkAuthToken(Long userId, String authToken) {
 		return userRepository.existsByIdAndAuthenticationToken(userId, authToken);
 	}
+	
+	
+	
 
 	@Override
-	public UserRepresentationObject getUserData(String token, Long id) throws BusinessException {
-		Optional<UserEntity> userEntity = userRepository.findByAuthenticationToken(token);
-		if (userEntity.isPresent())
-			return userEntity.get().getRepresentation();
-		else
-			return empUserSvc.getUserData(token, id);
+	public UserRepresentationObject getUserData(Long id, Boolean isEmployee) throws BusinessException {
+		
+		BaseUserEntity currentUser = securityService.getCurrentUser();
+		if(currentUser instanceof UserEntity) {
+			return currentUser.getRepresentation();
+		}
+		
+		return empUserSvc.getUserData(id, isEmployee);
 	}
 
+	
+	
+	
 	private String[] getNullProperties(UserDTOs.EmployeeUserUpdatingObject userJson) {
 		final BeanWrapper src = new BeanWrapperImpl(userJson);
 		List<String> nullProperties = new ArrayList<>();
