@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,6 +21,9 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
+import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
@@ -29,6 +33,9 @@ import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import com.nasnav.enumerations.Roles;
+import com.nasnav.security.oauth2.CustomOAuth2UserService;
+import com.nasnav.security.oauth2.OAuth2AuthenticationFailureHandler;
+import com.nasnav.security.oauth2.OAuth2AuthenticationSuccessHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -38,7 +45,24 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     private static  RequestMatcher protectedUrlList ;
     private static  RequestMatcher publicUrlList ;
+    
+    
+    @Autowired
+    private AuthorizationRequestRepository<OAuth2AuthorizationRequest> oAuth2RequestRepository;
 
+    
+    @Autowired
+    private CustomOAuth2UserService oAuth2UserService;
+    
+    @Autowired
+    private OidcUserService customOidcUserService; 
+    
+    @Autowired
+    private OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler;
+    
+    @Autowired
+    private OAuth2AuthenticationFailureHandler oAuth2FailureHandler;
+    
     //- Any url is authenticated by default.
     //- to permit a url to all users without AuthN, add it to PUBLIC_URLS.
     //- to set certain roles who can access the url, add it in "permissions"
@@ -76,8 +100,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             Arrays.asList(
             			patternOf("/navbox/**")
                         , patternOf("/user/recover")
-                        , patternOf("/user/login")
+                        , patternOf("/user/login/**")
                         , patternOf("/user/register")						
+						, patternOf("/user/info")
                         , patternOf("/payment/**")
                         , patternOf("/product/bundles"					, HttpMethod.GET)
                         , patternOf("/product/info"						, HttpMethod.GET)
@@ -151,6 +176,25 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             .formLogin().disable()
             .httpBasic().disable()
             .logout().disable();
+        
+        http
+        .oauth2Login()
+        	.authorizationEndpoint()
+            .baseUri("/oauth2/authorize")
+            .authorizationRequestRepository(oAuth2RequestRepository)
+            .and()
+        .redirectionEndpoint()
+            .baseUri("/oauth2/callback/*")
+            .and()
+        .userInfoEndpoint()
+        	.oidcUserService(customOidcUserService)
+        	.and()
+        .userInfoEndpoint()
+            .userService(oAuth2UserService)
+            .and()
+        .successHandler(oAuth2SuccessHandler)
+        .failureHandler(oAuth2FailureHandler);
+        
 	    http.cors();
     }
     
