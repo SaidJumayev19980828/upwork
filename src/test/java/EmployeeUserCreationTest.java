@@ -106,7 +106,7 @@ public class EmployeeUserCreationTest {
 		String body = "{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 99001, \"store_id\": 100, \"role\": \"NASNAV_ADMIN\"}";
 
 		//this user have the role CUSTOMER in the test data, it can't create other users
-        HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123", "70");
+        HttpEntity<Object> employeeUserJson = getHttpEntity(body, "yuhjhu", "70");
 		ResponseEntity<BaseResponse> response = template.postForEntity("/user/create", employeeUserJson, BaseResponse.class);
 
 
@@ -502,17 +502,26 @@ public class EmployeeUserCreationTest {
 		Assert.assertFalse(response.getBody().isSuccess());
 		Assert.assertEquals(401, response.getStatusCode().value());
 	}
+	
+	
+	
+	
 	//finish STORE_EMPLOYEE role test
 
 	@Test
 	public void getUserOwnData() {
-		HttpEntity<Object> header = TestCommons.getHttpEntity("123");
-		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info", HttpMethod.GET,
-				                                        header, UserRepresentationObject.class);
+		HttpEntity<Object> header = TestCommons.getHttpEntity("yuhjhu");
+		ResponseEntity<UserRepresentationObject> response = 
+				template.exchange("/user/info", HttpMethod.GET, header, UserRepresentationObject.class);
 		System.out.println(response.toString());
-		Assert.assertEquals(response.getStatusCodeValue(), 200);
+		Assert.assertEquals( 200, response.getStatusCodeValue());
+		Assert.assertEquals( 88L, response.getBody().getId().longValue());
 	}
 
+	
+	
+	
+	
 	@Test
 	public void getUserDataDifferentUsers() {
 		// logged user is NASNAV_ADMIN so he can view all other users data
@@ -520,15 +529,20 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?id=88", HttpMethod.GET,
 				header, UserRepresentationObject.class);
 		System.out.println(response.toString());
-		Assert.assertEquals(response.getStatusCodeValue(), 200);
+		Assert.assertEquals(200, response.getStatusCodeValue());
 
-		// logged user is ORGANIZATION_ADMIN so he can't view any other users data
+		// logged user is ORGANIZATION_ADMIN ,so, he will just get his own data
 		header = TestCommons.getHttpEntity("hijkllm");
 		response = template.exchange("/user/info?id=88", HttpMethod.GET,
-				header, UserRepresentationObject.class);
+									header, UserRepresentationObject.class);
 		System.out.println(response.toString());
-		Assert.assertEquals(response.getStatusCodeValue(), 401);
+		Assert.assertEquals( 200, response.getStatusCodeValue());
+		Assert.assertEquals( 69L, response.getBody().getId().longValue());
 	}
+	
+	
+	
+	
 
 	@Test
 	public void getNonExistUserData() {
@@ -536,8 +550,11 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserRepresentationObject> response = template.exchange("/user/info?id=526523", HttpMethod.GET,
 				header, UserRepresentationObject.class);
 		System.out.println(response.toString());
-		Assert.assertEquals(response.getStatusCodeValue(), 406);
+		Assert.assertEquals( 406, response.getStatusCodeValue());
 	}
+	
+	
+	
 
 	// with NASNAV_ADIMN ACCOUNT
 	@Test

@@ -373,13 +373,6 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	
 	
 	
-	
-	private BusinessException getNoUserHaveThisTokenException() {
-		return new BusinessException("INVALID TOKEN", "provided request token is invalid!", HttpStatus.UNAUTHORIZED);
-	}
-	
-	
-	
 
 	private UserRepresentationObject getOtherUserData(Long id, Boolean isEmp) throws BusinessException {
 		Long currentUserId = securityService.getCurrentUser().getId();
@@ -389,23 +382,19 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		}
 		
 		BaseUserEntity user = commonUserRepo.findById(id, isEmp)
-											.orElseThrow(this::getNoUserHaveThisTokenException);
-			
-//		Optional<EmployeeUserEntity> empUser = employeeUserRepository.findById(id);
-//		if (!empUser.isPresent()) {
-//			Optional<UserEntity> user = userRepo.findById(id);
-//			if (!user.isPresent()) {
-//				throw new BusinessException("INVALID PARAM: id", "Provided id doesn't match any existing user id", HttpStatus.NOT_ACCEPTABLE);
-//			}				
-//			return user.get().getRepresentation();
-//		}
-		
-		
+											.orElseThrow(() -> getNoUserHaveThisIdException(id));			
 		
 		UserRepresentationObject userRepObj = user.getRepresentation();
-		userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user));
+		userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user)));
 		
 		return userRepObj;
+	}
+	
+	
+	
+	
+	private BusinessException getNoUserHaveThisIdException(Long id) {
+		return new BusinessException("Provided id doesn't match any existing user with id: "+id, "INVALID PARAM: id", HttpStatus.NOT_ACCEPTABLE);
 	}
 
 

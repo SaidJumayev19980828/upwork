@@ -120,9 +120,11 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 	@Override
 	public Optional<BaseUserEntity> findById(Long id, Boolean isEmp) {
 		if(isEmp) {
-			return empRepo.findById(id).flatMap(mapper);
+			return empRepo.findById(id)
+						.map(BaseUserEntity.class::cast);
 		}else {
-			return userRepo.findById(id);
+			return userRepo.findById(id)
+						.map(BaseUserEntity.class::cast);
 		}
 	}
 

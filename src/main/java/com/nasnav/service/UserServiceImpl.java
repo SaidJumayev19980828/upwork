@@ -411,7 +411,7 @@ public class UserServiceImpl implements UserService {
 	public UserRepresentationObject getUserData(Long id, Boolean isEmployee) throws BusinessException {
 		
 		BaseUserEntity currentUser = securityService.getCurrentUser();
-		if(currentUser instanceof UserEntity) {
+		if(!securityService.userHasRole(currentUser, Roles.NASNAV_ADMIN)) {
 			return currentUser.getRepresentation();
 		}
 		
