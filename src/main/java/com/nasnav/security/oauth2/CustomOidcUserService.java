@@ -21,13 +21,9 @@ public class CustomOidcUserService extends OidcUserService {
 
 	@Override
     public OidcUser loadUser(OidcUserRequest oAuth2UserRequest) throws OAuth2AuthenticationException {
-		System.out.println("in oid oauth in service : " + oAuth2UserRequest);
-        OAuth2User oAuth2User = super.loadUser(oAuth2UserRequest);
         
+		OAuth2User oAuth2User = super.loadUser(oAuth2UserRequest);
         
-        System.out.println("OAuth USer req : " + oAuth2UserRequest.getClientRegistration().getRegistrationId());
-        System.out.println("OAuth2 user : " + oAuth2User);
-        System.out.println("OAuth USer name attr name : "+ oAuth2UserRequest.getClientRegistration().getProviderDetails().getUserInfoEndpoint().getUserNameAttributeName());
         try {
             return processOAuth2User(oAuth2UserRequest, oAuth2User);
         } catch (AuthenticationException ex) {
@@ -37,6 +33,8 @@ public class CustomOidcUserService extends OidcUserService {
             throw new InternalAuthenticationServiceException(ex.getMessage(), ex.getCause());
         }
 	}
+	
+	
 	
 	
 	

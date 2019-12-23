@@ -2,12 +2,16 @@ package com.nasnav.persistence;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import lombok.Data;
 
@@ -33,9 +37,11 @@ public class OAuth2UserEntity {
 	
 	@ManyToOne
 	@JoinColumn(name="NASNAV_USER_ID")
-	UserEntity user;
+	@Fetch(FetchMode.JOIN) 
+	private UserEntity user;
 	
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name="provider_id")
-	OAuth2ProviderEntity provider;
+	@Fetch(FetchMode.JOIN) 
+	private OAuth2ProviderEntity provider;
 }

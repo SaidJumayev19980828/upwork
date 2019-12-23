@@ -45,11 +45,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 	
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-    	 
-        System.out.println("On Success !");
-        System.out.println("On Success - request :  "   + request);
-        System.out.println("On Success - response :  "   + response.getHeaderNames());
-        
         
         String token = generateOAuth2Token();        
         
@@ -58,8 +53,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         							.map(Cookie::getValue)
         							.map(this::getOrgIdAsLongVal)
 					                .orElseThrow(() -> getNoOrgProvidedException(user) );
-        
-        System.out.println("user at onSuccess : " + user);
         
         String targetUrl = determineTargetUrl(request, token);
         
@@ -70,8 +63,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     				 	.orElseGet(() -> helper.registerNewOAuth2User(user, token, orgId));
         }catch(Throwable t) {
         	targetUrl = getErrorTargetUrl(request, t);
-        	System.out.println("exception is being handled for exception : " + t);
-        	System.out.println("Error target url : " + targetUrl);
         }
         
         if (response.isCommitted()) {
