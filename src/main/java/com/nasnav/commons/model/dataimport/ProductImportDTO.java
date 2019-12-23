@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class ProductImportDTO {
 	protected Long variantId;
-	protected Long externalId;
+	protected String externalId;
 	protected String name;
 	protected String pname;
 	protected String description;

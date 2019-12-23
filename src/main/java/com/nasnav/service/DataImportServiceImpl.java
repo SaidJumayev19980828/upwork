@@ -8,15 +8,14 @@ import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.CategoriesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dto.ProductListImportDTO;
-import com.nasnav.dto.ProductUpdateDTO;
-import com.nasnav.dto.StockUpdateDTO;
-import com.nasnav.dto.VariantUpdateDTO;
+import com.nasnav.dto.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.response.ProductListImportResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.VariantUpdateResponse;
+import lombok.Data;
 import org.apache.commons.beanutils.BeanUtils;
 import org.jboss.logging.Logger;
 import org.json.JSONArray;
@@ -24,8 +23,10 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,7 +59,19 @@ public class DataImportServiceImpl implements DataImportService {
     private Logger logger = Logger.getLogger(getClass());
 
     @Override
-    public void saveToDB(List<ProductImportData> importedDtos, ProductListImportDTO importMetaData) throws BusinessException {
+    public ProductListImportResponse importProducts(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) throws BusinessException {
+
+        List<ProductImportData> importedDtos = toProductImportDto(productImportDTOS, productImportMetadata);
+
+        saveToDB(importedDtos, productImportMetadata);
+
+        if(productImportMetadata.isDryrun())
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+
+        return new ProductListImportResponse(Collections.emptyList());
+    }
+
+    private void saveToDB(List<ProductImportData> importedDtos, ProductImportMetadata importMetaData) throws BusinessException {
         List<String> errors = new ArrayList<>();
 
         for (int i = 0; i < importedDtos.size(); i++) {
@@ -88,7 +101,7 @@ public class DataImportServiceImpl implements DataImportService {
     }
 
 
-    private void saveSingleProductCsvRowToDB(ProductImportData dto, ProductListImportDTO importMetaData) throws BusinessException {
+    private void saveSingleProductCsvRowToDB(ProductImportData dto, ProductImportMetadata importMetaData) throws BusinessException {
         if (dto.isExisting()) {
             if (importMetaData.isUpdateProduct()) {
                 Long productId = saveProductDto(dto.getProductDto());
@@ -161,8 +174,7 @@ public class DataImportServiceImpl implements DataImportService {
     }
 
 
-    @Override
-    public List<ProductImportData> toProductImportDto(List<ProductImportDTO> rows, ProductListImportDTO importMetaData) throws BusinessException {
+    private List<ProductImportData> toProductImportDto(List<ProductImportDTO> rows, ProductImportMetadata importMetaData) throws BusinessException {
         List<ProductImportData> dtoList = new ArrayList<>();
         for (ProductImportDTO row : rows) {
             dtoList.add(toProductImportDto(row, importMetaData));
@@ -172,7 +184,7 @@ public class DataImportServiceImpl implements DataImportService {
     }
 
 
-    private ProductImportData toProductImportDto(ProductImportDTO row, ProductListImportDTO importMetaData) throws BusinessException {
+    private ProductImportData toProductImportDto(ProductImportDTO row, ProductImportMetadata importMetaData) throws BusinessException {
         ProductImportData dto = new ProductImportData();
 
         dto.setOriginalRowData(row.toString());
@@ -211,7 +223,7 @@ public class DataImportServiceImpl implements DataImportService {
     }
 
 
-    private StockUpdateDTO createStockDto(ProductImportDTO row, ProductListImportDTO importMetaData) {
+    private StockUpdateDTO createStockDto(ProductImportDTO row, ProductImportMetadata importMetaData) {
         StockUpdateDTO stock = new StockUpdateDTO();
         stock.setCurrency(importMetaData.getCurrency());
         stock.setShopId(importMetaData.getShopId());
@@ -269,5 +281,23 @@ public class DataImportServiceImpl implements DataImportService {
         product.setOperation(EntityConstants.Operation.CREATE);
         product.setPname(row.getPname());
         return product;
+    }
+}
+
+
+@Data
+class ProductImportData{
+    private VariantUpdateDTO variantDto;
+    private ProductUpdateDTO productDto;
+    private StockUpdateDTO stockDto;
+    private boolean existing;
+    private String originalRowData;
+
+    public ProductImportData() {
+        variantDto = new VariantUpdateDTO();
+        productDto = new ProductUpdateDTO();
+        stockDto = new StockUpdateDTO();
+        existing = false;
+        originalRowData = "[]";
     }
 }

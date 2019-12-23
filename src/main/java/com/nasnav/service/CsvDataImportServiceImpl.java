@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 
+import com.nasnav.dto.*;
 import com.univocity.parsers.csv.*;
 import org.apache.commons.beanutils.BeanMap;
 import org.apache.commons.beanutils.BeanUtils;
@@ -53,21 +54,12 @@ import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dto.CsvHeaderNamesDTO;
-import com.nasnav.dto.ProductListImportDTO;
-import com.nasnav.dto.ProductUpdateDTO;
-import com.nasnav.dto.StockUpdateDTO;
-import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.response.ProductListImportResponse;
-import com.nasnav.response.ProductUpdateResponse;
-import com.nasnav.response.VariantUpdateResponse;
 import com.nasnav.service.helpers.ProductCsvRowProcessor;
 import com.univocity.parsers.common.DataProcessingException;
 import com.univocity.parsers.common.ParsingContext;
@@ -88,34 +80,12 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	@Autowired
 	private EmployeeUserRepository empRepo;
 	
-	
-	@Autowired
-	private CategoriesRepository categoriesRepo;
-	
-	@Autowired
-	private BrandsRepository brandRepo;
-	
-	
-	@Autowired
-	private ProductVariantsRepository variantRepo;
-	
 	@Autowired
 	private SecurityService security;
 	
 	
 	@Autowired
-	private ProductService productService;
-	
-	@Autowired
-	private StockService stockService;
-	
-	
-	@Autowired
 	private ProductFeaturesRepository featureRepo;
-	
-	
-	@Autowired
-	private ProductRepository prodcutRepo;
 
 	@Autowired
 	private ProductFeaturesRepository prodcutFeaturesRepo;
@@ -129,25 +99,29 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 	@Transactional(rollbackFor = Throwable.class)
 	public ProductListImportResponse importProductListFromCSV(@Valid MultipartFile file,
-			@Valid ProductListImportDTO importMetaData) throws BusinessException {
-		
-		validateProductImportMetaData(importMetaData);
-		validateProductImportCsvFile(file);
-		
-		List<ProductImportDTO> rows = parseCsvFile(file, importMetaData);
-		
-		List<ProductImportData> importedDtos = dataImportService.toProductImportDto(rows, importMetaData);
+			@Valid ProductListImportDTO csvImportMetaData) throws BusinessException {
 
-		dataImportService.saveToDB(importedDtos, importMetaData);
-		
-		
-		if(importMetaData.isDryrun()) {
-			TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-		}
-		
-		return new ProductListImportResponse(Collections.emptyList());
+		validateProductImportMetaData(csvImportMetaData);
+		validateProductImportCsvFile(file);
+
+		List<ProductImportDTO> rows = parseCsvFile(file, csvImportMetaData);
+		ProductImportMetadata importMetadata = getImportMetaData(csvImportMetaData);
+		return dataImportService.importProducts(rows, importMetadata);
+
 	}
 
+	private ProductImportMetadata getImportMetaData(ProductListImportDTO csvImportMetaData) {
+		ProductImportMetadata importMetadata = new ProductImportMetadata();
+
+		importMetadata.setDryrun(csvImportMetaData.isDryrun());
+		importMetadata.setUpdateProduct(csvImportMetaData.isUpdateProduct());
+		importMetadata.setUpdateStocks(csvImportMetaData.isUpdateStocks());
+		importMetadata.setShopId(csvImportMetaData.getShopId());
+		importMetadata.setCurrency(csvImportMetaData.getCurrency());
+		importMetadata.setEncoding(csvImportMetaData.getEncoding());
+
+		return importMetadata;
+	}
 
 	private List<ProductImportDTO> parseCsvFile(MultipartFile file, ProductListImportDTO metaData) throws BusinessException {
 		List<ProductFeaturesEntity> orgFeatures = featureRepo.findByShopId( metaData.getShopId() );
@@ -456,27 +430,5 @@ class RowParseErrorHandler implements RowProcessorErrorHandler {
 		main.put("errors", errorsJson);
 		
 		return errorsJson.toString();
-	}
-}
-
-
-
-
-
-
-@Data
-class ProductImportData{
-	private VariantUpdateDTO variantDto;
-	private ProductUpdateDTO productDto;
-	private StockUpdateDTO stockDto;
-	private boolean existing;
-	private String originalRowData;
-	
-	public ProductImportData() {
-		variantDto = new VariantUpdateDTO();
-		productDto = new ProductUpdateDTO();
-		stockDto = new StockUpdateDTO();
-		existing = false;
-		originalRowData = "[]";
 	}
 }
