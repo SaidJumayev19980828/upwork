@@ -3,6 +3,7 @@ package com.nasnav.dao;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
@@ -33,4 +34,9 @@ public interface BasketRepository extends JpaRepository<BasketsEntity, Long> {
     		+ " where p.id= :productId "
     		+ " and o.status = :status ")
 	Long countByProductIdAndOrderEntity_status(Long productId, Integer status);
+
+    @Transactional
+    @Modifying
+    @Query("delete from BasketsEntity basket where basket.ordersEntity.id in :orderIdList")
+	void deleteByOrderIdIn( @Param("orderIdList") List<Long> orderIdList);
 }

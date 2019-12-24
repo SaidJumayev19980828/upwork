@@ -54,7 +54,7 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at
 --inserting orders
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, payment_status) values(330033, 88, now(), now(), 99003, 1, 504, 1);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330037, 88, now(), now(), 99003, 0, 501);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330038, 90, now(), now(), 99003, 1, 501);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330038, 89, now(), now(), 99003, 0, 501);
 
 
 
@@ -74,4 +74,5 @@ insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organiz
 
 -- insert order items
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330033, 601, 14, 600.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330038, 601, 14, 600.0, 1);
 

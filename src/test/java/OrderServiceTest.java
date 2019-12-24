@@ -1393,6 +1393,38 @@ public class OrderServiceTest {
 		assertEquals("payment status shouldn't change", STORE_CONFIRMED.getValue(), updatedOrder.getStatus());
 	}
 	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void userDeleteOrderWithSoftDeletedProducts() {
+		long countAllBefore = orderRepository.count();
+		long countBefore = orderRepository.countByStatusAndUserId(OrderStatus.NEW.getValue() , 89L);
+		
+		//-------------------------------------------
+		
+		ResponseEntity<String> response = template.exchange("/order/current"
+															, HttpMethod.DELETE
+															, new HttpEntity<>(TestCommons.getHeaders("456"))
+															, String.class);
+		
+		//-------------------------------------------
+		long countAfter = orderRepository.countByStatusAndUserId(OrderStatus.NEW.getValue() , 89L);
+		long countAllAfter = orderRepository.count();
+				
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertNotEquals( 0L, countBefore);
+		assertNotEquals(countAllBefore, countBefore);
+		assertEquals( 0L, countAfter);
+		assertEquals("check that other users orders were not affected"
+					, countBefore - countAfter
+					, countAllBefore - countAllAfter);
+	}
+	
 }
 
 

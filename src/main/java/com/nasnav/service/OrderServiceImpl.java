@@ -1134,6 +1134,13 @@ public class OrderServiceImpl implements OrderService {
 	public void deleteCurrentOrders() {
 		BaseUserEntity user = securityService.getCurrentUser();
 		
-		ordersRepository.deleteByStatusAndUserId( OrderStatus.NEW.getValue(), user.getId());
+		List<Long> userNewOrders = 
+				ordersRepository.findByUserIdAndStatus(user.getId(), NEW.getValue())
+								.stream()
+								.map(OrdersEntity::getId)
+								.collect(Collectors.toList());
+		
+		basketRepository.deleteByOrderIdIn(userNewOrders);		
+		ordersRepository.deleteByStatusAndUserId( NEW.getValue(), user.getId());
 	}
 }
