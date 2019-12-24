@@ -1,5 +1,8 @@
 package com.nasnav.service;
 
+import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
+import static java.util.Optional.ofNullable;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,8 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.nasnav.dto.UserRepresentationObject;
-import com.nasnav.exceptions.BusinessException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -26,16 +27,17 @@ import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
+import com.nasnav.dao.CommonUserRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.UserDTOs;
+import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.enumerations.Roles;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
-
-import javax.persistence.OneToMany;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -44,12 +46,14 @@ public class UserServiceImpl implements UserService {
 	private MailService mailService;
 	private PasswordEncoder passwordEncoder;
 
-	@Autowired
-	private EmployeeUserService empUserSvc;
-	
 	
 	@Autowired
 	private SecurityService securityService;
+	
+	
+	@Autowired
+	private CommonUserRepository commonUserRepo;
+
 	
 
 	@Autowired
@@ -408,15 +412,41 @@ public class UserServiceImpl implements UserService {
 	
 
 	@Override
-	public UserRepresentationObject getUserData(Long id, Boolean isEmployee) throws BusinessException {
-		
+	public UserRepresentationObject getUserData(Long userId, Boolean isEmployee) throws BusinessException {
 		BaseUserEntity currentUser = securityService.getCurrentUser();
-		if(!securityService.userHasRole(currentUser, Roles.NASNAV_ADMIN)) {
-			return currentUser.getRepresentation();
+		
+		if(!securityService.currentUserHasRole(NASNAV_ADMIN)) {
+			return getUserRepresentationWithUserRoles(currentUser);
 		}
 		
-		return empUserSvc.getUserData(id, isEmployee);
+		Boolean isEmp = ofNullable(isEmployee).orElse(false);
+		Long requiredUserId = ofNullable(userId).orElse(currentUser.getId());		
+				
+		BaseUserEntity user = 
+				commonUserRepo.findById(requiredUserId, isEmp)
+							.orElseThrow(() -> getNoUserHaveThisIdException(requiredUserId));			
+		
+		return getUserRepresentationWithUserRoles(user);
 	}
+	
+	
+	
+	
+
+	private UserRepresentationObject getUserRepresentationWithUserRoles(BaseUserEntity user) {
+		UserRepresentationObject userRepObj = user.getRepresentation();
+		userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user)));
+		return userRepObj;
+	}
+	
+	
+	
+
+	
+	private BusinessException getNoUserHaveThisIdException(Long id) {
+		return new BusinessException("Provided id doesn't match any existing user with id: "+id, "INVALID PARAM: id", HttpStatus.NOT_ACCEPTABLE);
+	}
+
 
 	
 	

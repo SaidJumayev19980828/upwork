@@ -1,3 +1,5 @@
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
@@ -514,8 +516,12 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserRepresentationObject> response = 
 				template.exchange("/user/info", HttpMethod.GET, header, UserRepresentationObject.class);
 		System.out.println(response.toString());
+		
 		Assert.assertEquals( 200, response.getStatusCodeValue());
-		Assert.assertEquals( 88L, response.getBody().getId().longValue());
+		UserRepresentationObject user = response.getBody();
+		Assert.assertEquals( 88L, user.getId().longValue());
+		assertNotNull(user.roles);
+		assertFalse(user.roles.isEmpty());
 	}
 
 	
@@ -531,13 +537,18 @@ public class EmployeeUserCreationTest {
 		System.out.println(response.toString());
 		Assert.assertEquals(200, response.getStatusCodeValue());
 
+		//-------------------------------------------------------------------
 		// logged user is ORGANIZATION_ADMIN ,so, he will just get his own data
 		header = TestCommons.getHttpEntity("hijkllm");
 		response = template.exchange("/user/info?id=88", HttpMethod.GET,
 									header, UserRepresentationObject.class);
+		
 		System.out.println(response.toString());
 		Assert.assertEquals( 200, response.getStatusCodeValue());
+		UserRepresentationObject user = response.getBody();
 		Assert.assertEquals( 69L, response.getBody().getId().longValue());
+		assertNotNull(user.roles);
+		assertFalse(user.roles.isEmpty());
 	}
 	
 	

@@ -1,14 +1,11 @@
 package com.nasnav.service;
 
-import static java.util.Optional.ofNullable;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,7 +29,6 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
@@ -52,12 +48,8 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	@Autowired
 	private EmployeeUserServiceHelper empUserSvcHelper;
 
-	@Autowired
-	private UserRepository userRepo;
 	
-	@Autowired
-	private CommonUserRepository commonUserRepo;
-
+	
 	@Autowired
 	public EmployeeUserServiceImpl(EmployeeUserServiceHelper helper, EmployeeUserRepository employeeUserRepository,
 								   PasswordEncoder passwordEncoder, RoleServiceImpl roleServiceImpl) {
@@ -354,48 +346,5 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		return userRepObjs;
 	}
 	
-	
-	
-	
-
-	@Override
-	public UserRepresentationObject getUserData( Long id, Boolean isEmployee) throws BusinessException {
-		
-		Boolean isRequiredUserEmp = ofNullable(isEmployee).orElse(false);
-		Long requiredUserId = ofNullable(id)
-							 	.orElse(securityService.getCurrentUser().getId());
-		
-		return getOtherUserData(requiredUserId, isRequiredUserEmp);
-			
-	}
-	
-	
-	
-	
-	
-
-	private UserRepresentationObject getOtherUserData(Long id, Boolean isEmp) throws BusinessException {
-		Long currentUserId = securityService.getCurrentUser().getId();
-		if (currentUserId != id 
-				&& !securityService.currentUserHasRole(Roles.NASNAV_ADMIN)) {
-			throw new BusinessException("UNAUTHORIZED", "Logged user doesn't have the right to view other users data", HttpStatus.UNAUTHORIZED);
-		}
-		
-		BaseUserEntity user = commonUserRepo.findById(id, isEmp)
-											.orElseThrow(() -> getNoUserHaveThisIdException(id));			
-		
-		UserRepresentationObject userRepObj = user.getRepresentation();
-		userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user)));
-		
-		return userRepObj;
-	}
-	
-	
-	
-	
-	private BusinessException getNoUserHaveThisIdException(Long id) {
-		return new BusinessException("Provided id doesn't match any existing user with id: "+id, "INVALID PARAM: id", HttpStatus.NOT_ACCEPTABLE);
-	}
-
 
 }
