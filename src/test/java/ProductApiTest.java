@@ -442,10 +442,8 @@ public class ProductApiTest {
 	
 	@Test
 	public void deleteProductTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(69L);
-		
-		Long productId = 1008L; 
-		
+		BaseUserEntity user = empUserRepo.getById(69L);		
+		Long productId = 1008L; 		
 		
 		assertTrue(productRepository.existsById(productId)); //assert product exists before delete
 		assertNotEquals("product had images", 0, imgRepo.findByProductEntity_Id(productId).size());
@@ -454,7 +452,7 @@ public class ProductApiTest {
 		
 		assertExpectedResponse(productId, response);
 		assertFalse(productRepository.existsById(productId));
-		assertEquals("product images was deleted", 0, imgRepo.findByProductEntity_Id(productId).size());
+		assertNotEquals("product images still exists", 0, imgRepo.findByProductEntity_Id(productId).size());
 	}
 	
 	

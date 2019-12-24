@@ -60,7 +60,7 @@ public class OrdersEntity implements BaseEntity{
 	private Integer paymentStatus;
 
 	public PaymentStatus getPaymentStatus() {
-		return PaymentStatus.getPaymentStatus(this.status);
+		return PaymentStatus.getPaymentStatus(paymentStatus);
 	}
 	public void setPaymentStatus(PaymentStatus status) {
 		this.status = status.getValue();

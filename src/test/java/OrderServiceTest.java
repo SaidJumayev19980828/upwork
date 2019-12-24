@@ -3,6 +3,8 @@ import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.DELIVERED;
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
+import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
+import static com.nasnav.enumerations.PaymentStatus.*;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
@@ -52,6 +54,7 @@ import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.ShippingAddress;
 import com.nasnav.enumerations.OrderStatus;
+
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrdersEntity;
@@ -1359,6 +1362,35 @@ public class OrderServiceTest {
 		
 		//---------------------------------------------------------------
 		assertEquals(HttpStatus.FORBIDDEN, updateResponse.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void managerConfirmsPaidOrder() {
+		String userToken = "sdrf8s"; 
+		Long orderId = 330033L;
+		//---------------------------------------------------------------
+
+		JSONObject updateRequest = createOrderRequestWithBasketItems(STORE_CONFIRMED);
+		updateRequest.put("order_id", orderId);
+		
+		ResponseEntity<String> updateResponse = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity(updateRequest.toString(), userToken)
+										, String.class);
+		System.out.println("----------response-----------------\n" + updateResponse);
+		
+		//---------------------------------------------------------------
+		assertEquals(HttpStatus.OK, updateResponse.getStatusCode());
+		
+		OrdersEntity updatedOrder = orderRepository.findById(orderId).get();
+		assertEquals("payment status shouldn't change", PAID, updatedOrder.getPaymentStatus());
+		assertEquals("payment status shouldn't change", STORE_CONFIRMED.getValue(), updatedOrder.getStatus());
 	}
 	
 }
