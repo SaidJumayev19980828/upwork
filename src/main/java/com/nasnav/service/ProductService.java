@@ -2,22 +2,20 @@ package com.nasnav.service;
 
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_BUNDLE_ITEM;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_BY_OTHER_ORG_USER;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_USED_IN_NEW_ORDERS;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_DELETE_FAILED;
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_DEFAULT_STOCK;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_USED_IN_NEW_ORDERS;
 import static java.lang.String.format;
 import static java.util.Comparator.comparing;
+import static java.util.Optional.ofNullable;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -848,81 +846,19 @@ public class ProductService {
 	
 	
 	
-	private StocksEntity getDefaultProductStock(Map.Entry<Long,List<StocksEntity>> productStocks){
-		return productStocks.getValue()
-							.stream()
-							.min( comparing(StocksEntity::getPrice))
-							.orElseThrow(() -> new IllegalStateException(format(ERR_PRODUCT_HAS_NO_DEFAULT_STOCK, productStocks.getKey())));
-	}
-	
-	
-	
-	
 	private Optional<StocksEntity> getDefaultProductStock(ProductEntity product) {
-		return Optional.ofNullable(product)
-						.map(ProductEntity::getProductVariants)
-						.map(Set::stream)
-						.map(s -> s.filter(var -> !var.getStocks().isEmpty()))
-						.map(s -> s.flatMap( variant -> variant.getStocks().stream()))
-						.flatMap(s -> s.min( comparing(StocksEntity::getPrice)));
-	}
-	
-	
-	
-	
-	
-	
-	
-	private List getProductsMinPrices(List<ProductRepresentationObject> productsRep, List<Long> productIdList, Long shopId) {
-		List<ProductVariantsEntity> productsVariants = productVariantsRepository.findByProductEntity_IdIn(productIdList);
-		for (ProductRepresentationObject obj : productsRep) {
-			List<ProductVariantsEntity> productVariants = productsVariants.stream()
-					.filter(variant -> variant.getProductEntity().getId().equals(obj.getId()))
-					.collect(Collectors.toList());
-			if (productVariants.isEmpty()) {
-				obj.setAvailable(false);
-				obj.setHidden(true);
-			}
-			else {
-				if (productVariants.size() > 1)
-					obj.setMultipleVariants(true);
-				else {
-					List<StocksEntity> productStocks;
-					if (shopId != null)
-						productStocks = stockRepository.findByProductVariantsEntityIdAndShopsEntityIdOrderByPriceAsc(productVariants.get(0).getId(), shopId);
-					else
-						productStocks = stockRepository.findByProductVariantsEntityIdOrderByPriceAsc(productVariants.get(0).getId());
-					if(!productStocks.isEmpty()) {
-						obj.setPrice(productStocks.get(0).getPrice());
-						obj.setDiscount(productStocks.get(0).getDiscount());
-						if (productStocks.get(0).getCurrency() != null)
-							obj.setCurrency(productStocks.get(0).getCurrency().ordinal());
-						obj.setStockId(productStocks.get(0).getId());
-					}
-					else
-						obj.setAvailable(false);
-				}
-			}
-		}
-		return productsRep;
-	}
-
-
-	
-	
-	
-	
-	
-	
-	
-	
-	private void setProductAvailability(List<StocksEntity> stocks, ProductRepresentationObject productRep) {
-		stocks.stream()
+		return ofNullable(product)
+				.map(ProductEntity::getProductVariants)
+				.orElseGet(Collections::emptySet)
+				.stream()
+				.map(ProductVariantsEntity::getStocks)
 				.filter(Objects::nonNull)
-				.filter(stock -> Objects.equals( getStockProductId(stock),  productRep.getId()))
-				.findFirst()
-				.ifPresent(s -> productRep.setAvailable(true));
+				.flatMap(Set::stream)
+				.min( comparing(StocksEntity::getPrice));
 	}
+	
+	
+	
 	
 	
 	
@@ -1177,7 +1113,6 @@ public class ProductService {
 		
 		validateProductToDelete(productId);
 
-		List<ProductImagesEntity> imgs = productImagesRepository.findByProductEntity_Id(productId) ;
 		try {
 			transactions.deleteProduct(productId);
 		}catch(DataIntegrityViolationException e) {
@@ -1187,10 +1122,6 @@ public class ProductService {
 			logger.log(Level.SEVERE, e.getMessage(), e);
 			throw new BusinessException( format(ERR_PRODUCT_DELETE_FAILED , productId), "INVAILID PARAM:product_id", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-
-		for(ProductImagesEntity img : imgs) {
-			fileService.deleteFileByUrl(img.getUri());
-		};
 
 		return new ProductUpdateResponse(true, productId);
 	}
@@ -1562,9 +1493,9 @@ public class ProductService {
 				productImagesRepository.findById(imgId)
 						.orElseThrow(()-> new BusinessException("No Image exists with id ["+ imgId+"] !", "INVALID PARAM:image_id", HttpStatus.NOT_ACCEPTABLE));
 
-		Long productId = Optional.ofNullable(img.getProductEntity())
-				.map(prod -> prod.getId())
-				.orElse(null);
+		Long productId = ofNullable(img.getProductEntity())
+							.map(prod -> prod.getId())
+							.orElse(null);
 
 		validateImgToDelete(img);
 

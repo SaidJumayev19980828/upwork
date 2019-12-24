@@ -452,7 +452,8 @@ public class ProductApiTest {
 		
 		assertExpectedResponse(productId, response);
 		assertFalse(productRepository.existsById(productId));
-		assertNotEquals("product images still exists", 0, imgRepo.findByProductEntity_Id(productId).size());
+		
+		assertProductImagesNotDeleted(productId);
 	}
 	
 	
@@ -576,14 +577,15 @@ public class ProductApiTest {
 		
 		assertVariantsHaveRemovedFlags(variantIds);
 		
-		assertProductImagesDeleted(productId);
+		assertProductImagesNotDeleted(productId);
 	}
 
 
 
 
-	private void assertProductImagesDeleted(Long productId) {
-		assertEquals("product images were deleted", 0, imgRepo.findByProductEntity_Id(productId).size());
+	private void assertProductImagesNotDeleted(Long productId) {
+		Long imgsCount = jdbc.queryForObject("select count(*) from product_images where product_id = "+ productId, Long.class);
+		assertNotEquals("product images still exists", 0L, imgsCount.longValue());
 	}
 
 

@@ -33,7 +33,6 @@ public class ProductServiceTransactions {
 	
 	public void deleteProduct(Long productId) {
 		variantRepo.deleteByProductEntity_Id(productId);
-		imgRepo.deleteByProductEntity_Id(productId);
 		productRepo.deleteById(productId);
 	}
 }
