@@ -83,8 +83,10 @@ public class DataImportApiTest {
 
 	@Value("classpath:/files/product__list_upload.csv")
     private Resource csvFile;
-	
-	
+
+	@Value("classpath:/files/product__list_upload_variants_with_variant_id.csv")
+	private Resource csvFileVariantsWithVariantId;
+
 	@Value("classpath:/files/product__list_upload_missing_col.csv")
     private Resource csvFileMissingCol;
 	
@@ -643,7 +645,27 @@ public class DataImportApiTest {
 		}
 	}
 
-	
+
+	@Test
+	public void uploadProductCSVExistingVariantIdNoVariantEntity() throws Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithVariantId, importProperties);
+
+		result.andExpect(status().is(406));
+	}
+
+	@Test
+	public void uploadProductCSVExistingVariantIdExistVariantEntity() throws Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithVariantId, importProperties);
+
+		result.andExpect(status().is(406));
+	}
+
 	
 	
 
@@ -990,6 +1012,8 @@ public class DataImportApiTest {
 		   colHeadersJson.put("brand_header", "brand");
 		   colHeadersJson.put("quantity_header", "quantity");
 		   colHeadersJson.put("price_header", "price");
+		   colHeadersJson.put("variant_id_header", "variant_id");
+		   colHeadersJson.put("external_id_header", "external_id");
 		return colHeadersJson;
 	}
 

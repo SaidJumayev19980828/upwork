@@ -3,6 +3,7 @@ package com.nasnav.service;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.CategoriesRepository;
@@ -10,6 +11,8 @@ import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dto.*;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.enums.MappingType;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.response.ProductListImportResponse;
@@ -55,6 +58,9 @@ public class DataImportServiceImpl implements DataImportService {
 
     @Autowired
     private SecurityService security;
+
+    @Autowired
+    private IntegrationService integrationService;
 
     private Logger logger = Logger.getLogger(getClass());
 
@@ -126,6 +132,8 @@ public class DataImportServiceImpl implements DataImportService {
 
         dto.getStockDto().setVariantId(variantId);
         stockService.updateStock(dto.getStockDto());
+        if(dto.getExternalId() != null)
+            integrationService.addMappedValue(security.getCurrentUserOrganizationId(), MappingType.PRODUCT, variantId.toString(), dto.getExternalId());
     }
 
 
@@ -191,9 +199,27 @@ public class DataImportServiceImpl implements DataImportService {
         dto.setProductDto(createProductDto(row));
         dto.setVariantDto(createVariantDto(row));
         dto.setStockDto(createStockDto(row, importMetaData));
+        dto.setExternalId(row.getExternalId());
 
         Long orgId = security.getCurrentUserOrganizationId();
-        Optional<ProductVariantsEntity> variantEnt = variantRepo.findByBarcodeAndProductEntity_OrganizationId(row.getBarcode(), orgId);
+
+        Optional<ProductVariantsEntity> variantEnt = null;
+
+        if (dto.getVariantDto().getVariantId() != null) {
+            variantEnt = variantRepo.findByIdAndProductEntity_OrganizationId(dto.getVariantDto().getVariantId(), orgId);
+            if (!variantEnt.isPresent())
+                throw new BusinessException("No variant found with id " + dto.getVariantDto().getVariantId(),
+                        "INVALID PARAM: variant_id",HttpStatus.NOT_ACCEPTABLE);
+        }
+
+        if (!variantEnt.isPresent() && row.getExternalId() != null) {
+            String localMappingId = integrationService.getLocalMappedValue(orgId, MappingType.PRODUCT, row.getExternalId());
+            if(localMappingId != null && StringUtils.validateUrl(localMappingId, "[0-9]+"))
+                variantEnt = variantRepo.findByIdAndProductEntity_OrganizationId(Long.parseLong(localMappingId), orgId);
+        }
+
+        if (!variantEnt.isPresent())
+            variantEnt = variantRepo.findByBarcodeAndProductEntity_OrganizationId(row.getBarcode(), orgId);
 
         if (variantEnt != null && variantEnt.isPresent()) {
             modifyProductCsvImportDtoForUpdate(dto, row, variantEnt.get());
@@ -240,6 +266,7 @@ public class DataImportServiceImpl implements DataImportService {
                 .orElse(null);
 
         VariantUpdateDTO variant = new VariantUpdateDTO();
+        variant.setVariantId(row.getVariantId());
         variant.setBarcode(row.getBarcode());
         variant.setFeatures("{}");
         variant.setDescription(row.getDescription());
@@ -292,6 +319,7 @@ class ProductImportData{
     private StockUpdateDTO stockDto;
     private boolean existing;
     private String originalRowData;
+    private String externalId;
 
     public ProductImportData() {
         variantDto = new VariantUpdateDTO();
