@@ -1,9 +1,9 @@
-package com.nasnav.payments.qnb;
+package com.nasnav.payments.mastercard;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
+import com.nasnav.payments.Account;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
@@ -13,20 +13,18 @@ import com.nasnav.exceptions.BusinessException;
 public class PaymentService {
 
 	// For testing purposes only!
-	public String getConfiguredHtml(String jsonResult, String template) throws BusinessException {
+	public String getConfiguredHtml(String jsonResult, String template, Account account) throws BusinessException {
 
 		String htmlPage = null;
-//		try {
-			InputStream is = getClass().getClassLoader().getResourceAsStream(template);
-			if (is == null) {
-				System.err.println("######## FILE NOT AVAILABLE");
-			}
-			BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-			htmlPage = reader.lines().collect(Collectors.joining(System.lineSeparator()));
+		InputStream is = getClass().getClassLoader().getResourceAsStream(template);
+		if (is == null) {
+			System.err.println("######## FILE NOT AVAILABLE");
+		}
+		BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+		htmlPage = reader.lines().collect(Collectors.joining(System.lineSeparator()));
 
 		String modified = htmlPage.replace("$rawJSON", jsonResult);
 		try {
-			Account merchant = new Account();
 			JSONObject data = new JSONObject(jsonResult);
 			modified = modified
 					.replace("$order_id", data.getString("order_uid"))
@@ -35,7 +33,7 @@ public class PaymentService {
 					.replace("$amount", data.getBigDecimal("order_amount").toString())
 					.replace("$currency", data.getString("order_currency"))
 					.replace("$confirm_url", data.getString("execute_url"))
-					.replace("$api_version", merchant.getApiVersion());
+					.replace("$api_version", account.getApiVersion());
 //			if (data.getJSONObject("session") != null) {
 //				modified = modified.replace("$session_id", data.getJSONObject("session").getString("id"));
 //			}
@@ -52,7 +50,7 @@ public class PaymentService {
 			}
 
 		} catch (Exception ex) {
-			System.out.println(ex);
+			ex.printStackTrace();
 		}
 		return modified;
 	}

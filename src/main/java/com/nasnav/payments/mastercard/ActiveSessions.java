@@ -1,4 +1,4 @@
-package com.nasnav.payments.qnb;
+package com.nasnav.payments.mastercard;
 
 import org.springframework.stereotype.Component;
 

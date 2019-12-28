@@ -3,6 +3,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashSet;
 
+import com.nasnav.payments.qnb.QnbSession;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,7 +24,6 @@ import com.nasnav.NavBox;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
@@ -31,8 +31,8 @@ import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.payments.qnb.Account;
-import com.nasnav.payments.qnb.Session;
+import com.nasnav.payments.qnb.QnbAccount;
+import com.nasnav.payments.mastercard.Session;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
@@ -52,10 +52,9 @@ import net.jcip.annotations.NotThreadSafe;
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Qnb_Test_Data_Insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class QnbHostedSessionPayment {
-    Account testAccount = new Account();
 
     @Autowired
-    private Session session;
+    private QnbSession session;
 
     @Autowired
     private WebTestClient webClient;
@@ -93,12 +92,13 @@ public class QnbHostedSessionPayment {
     @Before
     public void setup(){
         orderId = createOrder();
+        ((QnbAccount)session.getMerchantAccount()).setup();
     }
 
 
     @Test
     public void rawSessionCreationTest() throws BusinessException {
-        session.setMerchantAccount(testAccount);
+//        session.setMerchantAccount(testAccount);
         Assert.assertNotNull(session.initialize(orderRepository.findById(orderId).get()));
     }
 

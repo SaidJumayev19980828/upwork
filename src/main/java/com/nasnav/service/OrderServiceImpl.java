@@ -182,7 +182,7 @@ public class OrderServiceImpl implements OrderService {
 
 		List<BasketsEntity> basketsEntity = basketRepository.findByOrdersEntity_Id(order.getId());
 		for (BasketsEntity basketEntity : basketsEntity) {
-			amount = amount.add(basketEntity.getStocksEntity().getPrice().multiply(basketEntity.getQuantity()));
+			amount = amount.add(basketEntity.getPrice().multiply(basketEntity.getQuantity()));
 			if (currency == null) {
 				currency = basketEntity.getStocksEntity().getCurrency();
 			} else if (currency != basketEntity.getStocksEntity().getCurrency()) {
@@ -192,7 +192,6 @@ public class OrderServiceImpl implements OrderService {
 		OrderValue value = new OrderValue();
 		value.amount = amount;
 		value.currency = currency;
-
 		return value;
 	}
 	
