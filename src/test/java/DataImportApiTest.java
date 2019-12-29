@@ -7,13 +7,13 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.nasnav.dao.IntegrationMappingRepository;
+import com.nasnav.integration.enums.MappingType;
+import com.nasnav.persistence.IntegrationMappingEntity;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -61,8 +61,8 @@ import net.jcip.annotations.NotThreadSafe;
 @AutoConfigureMockMvc
 @PropertySource("classpath:database.properties")
 @NotThreadSafe 
-@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert.sql"})
-@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert.sql", "/sql/Integration_Service_Test_Mapping.sql"})
+@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql", "/sql/Integration_Test_cleanup.sql"})
 public class DataImportApiTest {
 	
 	private static final long TEST_STOCK_UPDATED = 400003L;
@@ -86,6 +86,18 @@ public class DataImportApiTest {
 
 	@Value("classpath:/files/product__list_upload_variants_with_variant_id.csv")
 	private Resource csvFileVariantsWithVariantId;
+
+    @Value("classpath:/files/product__list_upload_variants_with_variant_id_existing_variant.csv")
+    private Resource csvFileVariantsWithVariantIdExistingVariant;
+
+	@Value("classpath:/files/product__list_upload_variants_with_external_id.csv")
+	private Resource csvFileVariantsWithExternalId;
+
+	@Value("classpath:/files/product__list_upload_variants_with_external_id_barcode.csv")
+	private Resource csvFileVariantsWithExternalIdAndBarcode;
+
+	@Value("classpath:/files/product__list_upload_variants_with_external_id_existing_mapping.csv")
+	private Resource csvFileVariantsWithExternalIdExistingMapping;
 
 	@Value("classpath:/files/product__list_upload_missing_col.csv")
     private Resource csvFileMissingCol;
@@ -115,7 +127,9 @@ public class DataImportApiTest {
 
 	@Autowired
 	private TestRestTemplate template;
-	
+
+	@Autowired
+	private IntegrationMappingRepository integrationMappingRepo;
 	
 	
 	@Test
@@ -659,13 +673,64 @@ public class DataImportApiTest {
 	@Test
 	public void uploadProductCSVExistingVariantIdExistVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("update_product", true);
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
 
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithVariantId, importProperties);
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithVariantIdExistingVariant, importProperties);
 
-		result.andExpect(status().is(406));
+		result.andExpect(status().is(200));
+
+		ProductEntity product = variantRepo.findById(310001L).get().getProductEntity();
+		assertEquals("Squishy shoes", product.getName());
 	}
 
+
+	@Test
+	public void uploadProductCSVExistingExternalIdNoVariantEntity() throws Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithExternalId, importProperties);
+
+		result.andExpect(status().is(200));
+
+		Optional<IntegrationMappingEntity> mapping = integrationMappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(99001L, "PRODUCT", "5");
+		assertTrue(mapping.isPresent());
+
+		Optional<ProductVariantsEntity> product = variantRepo.findById(Long.parseLong(mapping.get().getLocalValue()));
+		assertTrue(product.isPresent());
+	}
+
+	@Test
+	public void uploadProductCSVExistingExternalIdExistVariantEntity() throws Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("update_product", true);
+
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithExternalIdExistingMapping, importProperties);
+
+		result.andExpect(status().is(200));
+
+		ProductEntity product = variantRepo.findById(310001L).get().getProductEntity();
+		assertEquals("Squishy shoes", product.getName());
+	}
+
+	@Test
+	public void uploadProductCSVExistingExternalIdAndBarcodeNoVariantEntity() throws Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("update_product", true);
+
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithExternalIdAndBarcode, importProperties);
+
+		result.andExpect(status().is(200));
+
+		ProductEntity product = variantRepo.findById(310001L).get().getProductEntity();
+		assertEquals("Squishy shoes", product.getName());
+
+        Optional<IntegrationMappingEntity> mapping = integrationMappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(99001L, "PRODUCT", "4");
+        assertTrue(mapping.isPresent());
+	}
 	
 	
 

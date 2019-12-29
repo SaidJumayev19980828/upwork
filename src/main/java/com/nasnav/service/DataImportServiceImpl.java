@@ -111,7 +111,8 @@ public class DataImportServiceImpl implements DataImportService {
         if (dto.isExisting()) {
             if (importMetaData.isUpdateProduct()) {
                 Long productId = saveProductDto(dto.getProductDto());
-                productService.updateVariant(dto.getVariantDto());
+                VariantUpdateResponse variantResponse = productService.updateVariant(dto.getVariantDto());
+                saveExternalMapping(dto, variantResponse.getVariantId());
             }
 
             if (importMetaData.isUpdateStocks()) {
@@ -132,10 +133,13 @@ public class DataImportServiceImpl implements DataImportService {
 
         dto.getStockDto().setVariantId(variantId);
         stockService.updateStock(dto.getStockDto());
-        if(dto.getExternalId() != null)
-            integrationService.addMappedValue(security.getCurrentUserOrganizationId(), MappingType.PRODUCT, variantId.toString(), dto.getExternalId());
+        saveExternalMapping(dto, variantId);
     }
 
+    private void saveExternalMapping(ProductImportData dto, Long variantId) throws BusinessException{
+        if (dto.getExternalId() != null)
+            integrationService.addMappedValue(security.getCurrentUserOrganizationId(), MappingType.PRODUCT, variantId.toString(), dto.getExternalId());
+    }
 
     private Long saveProductDto(ProductUpdateDTO dto) throws BusinessException {
         String productDtoJson = getProductDtoJson(dto);
@@ -212,13 +216,13 @@ public class DataImportServiceImpl implements DataImportService {
                         "INVALID PARAM: variant_id",HttpStatus.NOT_ACCEPTABLE);
         }
 
-        if (!variantEnt.isPresent() && row.getExternalId() != null) {
+        if (variantEnt == null && row.getExternalId() != null) {
             String localMappingId = integrationService.getLocalMappedValue(orgId, MappingType.PRODUCT, row.getExternalId());
             if(localMappingId != null && StringUtils.validateUrl(localMappingId, "[0-9]+"))
                 variantEnt = variantRepo.findByIdAndProductEntity_OrganizationId(Long.parseLong(localMappingId), orgId);
         }
 
-        if (!variantEnt.isPresent())
+        if (variantEnt == null)
             variantEnt = variantRepo.findByBarcodeAndProductEntity_OrganizationId(row.getBarcode(), orgId);
 
         if (variantEnt != null && variantEnt.isPresent()) {

@@ -774,7 +774,7 @@ public class IntegrationServiceTest {
 		
 		assertEquals("the previous mappings of the remote and local values should be delete, and only the new mapping should"
 				+ "exists"
-				, 1L
+				, 2L
 				, mappingRepo.count());
 	}
 	
@@ -791,10 +791,10 @@ public class IntegrationServiceTest {
 		
 		//-----------------------------------------------------------
 		integration.deleteMappingByLocalValue(ORG_ID, MappingType.PRODUCT, MAPPING_LOCAL_VAL);
-		assertEquals(1 , mappingRepo.count());
+		assertEquals(2 , mappingRepo.count());
 		
 		integration.deleteMappingByRemoteValue(ORG_ID, MappingType.PRODUCT, MAPPING_REMOTE_VAL);
-		assertEquals(0 , mappingRepo.count());		
+		assertEquals(1 , mappingRepo.count());
 	}
 	
 	
@@ -869,7 +869,7 @@ public class IntegrationServiceTest {
 					+ " a mapping is already inserted for test values."
 					, remoteValueMappingExists);
 		
-		assertEquals("only two mapping exists at the beginning of the test", 2L, mappingRepo.count());
+		assertEquals("only 3 mapping exists at the beginning of the test", 3L, mappingRepo.count());
 	}
 	
 	
