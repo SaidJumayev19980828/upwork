@@ -39,4 +39,7 @@ public interface BasketRepository extends JpaRepository<BasketsEntity, Long> {
     @Modifying
     @Query("delete from BasketsEntity basket where basket.ordersEntity.id in :orderIdList")
 	void deleteByOrderIdIn( @Param("orderIdList") List<Long> orderIdList);
+
+    @Query(value = "select b.orderId, b.quantity from BasketsEntity b where b.orderId in :ordersIds")
+    List<BasketsEntity> findQuantitiesByOrdersIds(@Param("ordersIds") List<Long> ordersIds);
 }
