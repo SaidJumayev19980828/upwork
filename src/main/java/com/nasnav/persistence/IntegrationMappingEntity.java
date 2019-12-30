@@ -43,16 +43,6 @@ public class IntegrationMappingEntity {
 	private Long organizationId;
 	
 	
-	@Column(name="created_at")
-	@CreationTimestamp
-	private LocalDateTime createdAt;
-	
-	
-	@Column(name="updated_at")
-	@UpdateTimestamp
-	private LocalDateTime updatedAt;
-	
-	
 	
 	
 	public IntegrationMappingEntity(Long organizationId, IntegrationMappingTypeEntity mappingType, String localValue, String remoteValue) {

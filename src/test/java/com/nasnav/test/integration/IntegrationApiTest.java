@@ -290,6 +290,7 @@ public class IntegrationApiTest {
 	
 	@Test
 	public void testRegisterModule() throws InvalidIntegrationEventException{
+		System.out.println("####>>>>");
 		registerIntegrationModule();
 	}
 
@@ -356,7 +357,7 @@ public class IntegrationApiTest {
 		TestEvent event = new TestEvent(ORG_ID, "hi", res -> isCalled.set(true));
 		Mono<EventResult<String, String>> eventResult = integrationSrv.pushIntegrationEvent(event, (e, t) -> assertTrue(false));
 		try {
-			eventResult.block(Duration.ofMillis(200));
+			eventResult.block(Duration.ofMillis(2000));
 		}catch(Throwable t) {
 			return false;
 		}	
@@ -985,8 +986,6 @@ public class IntegrationApiTest {
 		assertEquals(json.getLong("organization_id"),  parameter.getOrganizationId().longValue() );
 		assertEquals(json.getString("param_value"), parameter.getParamValue());
 		assertEquals(json.getString("param_name"), parameter.getType().getTypeName());
-		assertNotNull(parameter.getCreatedAt());
-		assertNotNull(parameter.getUpdatedAt());
 	}
 
 	

@@ -5,3 +5,8 @@ INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002
 
 -- integration Mapping types
 INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67004, 'CUSTOMER');
+
+
+-- Mandatory integration parameters
+INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(6601, 'INTEGRATION_MODULE', TRUE);
+INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(6602, 'MAX_REQUESTS_PER_SECOND', TRUE);

@@ -7,7 +7,7 @@
 INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(6600004, 'EXISTING_PARAM', FALSE);
 
 -- inserting integration parameter value
-insert into public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)
-values(55001, 6600004, 99001, 'old_val', now(), now());
+insert into public.integration_param(id, param_type, organization_id, param_value)
+values(55001, 6600004, 99001, 'old_val');
 
 

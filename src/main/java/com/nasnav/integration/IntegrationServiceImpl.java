@@ -375,10 +375,19 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 	private Boolean hasMandatoryParams(List<IntegrationParamEntity> params) {
-		Boolean mandatoryParamsExists = params.stream()
-											.map(IntegrationParamEntity::getType)
-											.collect(Collectors.toSet())
-											.containsAll(mandatoryIntegrationParams);
+		Set<String> mandatoryParamNames =
+				mandatoryIntegrationParams
+					.stream()
+					.map(IntegrationParamTypeEntity::getTypeName)
+					.collect(Collectors.toSet());
+		
+		Boolean mandatoryParamsExists = 
+				params.stream()
+						.map(IntegrationParamEntity::getType)
+						.map(IntegrationParamTypeEntity::getTypeName)
+						.collect(Collectors.toSet())
+						.containsAll(mandatoryParamNames);
+		
 		return mandatoryParamsExists;
 	}
 
@@ -628,6 +637,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 		try {
 			loadOrganizationIntegrationModule(orgId);
 		}catch(BusinessException e) {
+//			System.out.println("###>>>");
+			logger.error(e,e);
 			throw new BusinessException( 
 					format(ERR_INTEGRATION_MODULE_LOAD_FAILED, orgId)
 					,"INVALID INTEGRATION INFO"

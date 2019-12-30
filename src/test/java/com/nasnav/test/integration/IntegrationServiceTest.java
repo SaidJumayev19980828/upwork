@@ -83,16 +83,16 @@ public class IntegrationServiceTest {
 			"INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(1, 'INTEGRATION_MODULE', TRUE);" + 
 			"INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(2, 'MAX_REQUESTS_PER_SECOND', TRUE);" +
 			"INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(3, 'EXISTING_PARAM', FALSE);"+
-			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)" + 
-			"VALUES(1, 1, 99001, 'com.nasnav.test.integration.modules.TestIntegrationModule', now(), now());\n" +
-			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)" + 
-			"VALUES(2, 2, 99001, '10', now(), now());" +
-			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)" + 
-			"VALUES(3, 1, 99003, 'com.nasnav.test.integration.modules.TestIntegrationModule', now(), now());\n" +
-			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)" + 
-			"VALUES(4, 2, 99003, '5', now(), now());" +
-			"insert into public.integration_param(id, param_type, organization_id, param_value, created_at, updated_at)\n" + 
-			"values(55001, 3, 99001, 'old_val', now(), now());";
+			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value)" + 
+			"VALUES(1, 1, 99001, 'com.nasnav.test.integration.modules.TestIntegrationModule');\n" +
+			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value)" + 
+			"VALUES(2, 2, 99001, '10');" +
+			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value)" + 
+			"VALUES(3, 1, 99003, 'com.nasnav.test.integration.modules.TestIntegrationModule');\n" +
+			"INSERT INTO public.integration_param(id, param_type, organization_id, param_value)" + 
+			"VALUES(4, 2, 99003, '5');" +
+			"insert into public.integration_param(id, param_type, organization_id, param_value)\n" + 
+			"values(55001, 3, 99001, 'old_val');";
 
 	private static final String CLEAN_QUERY = 
 			"DELETE FROM public.integration_event_failure where organization_id BETWEEN 99000 AND 99999;\n"+
@@ -592,7 +592,7 @@ public class IntegrationServiceTest {
 		
 		List<HandlingInfo> orgEvents = pushBulkOfEvents(waiter, eventsNum, orgId, true);
 		//--------------------------------------------------------------
-		Long awaitTime = (long) (HandlingInfoSaver.HANDLING_TIME*(eventsNum/expectedEventRate)*10);
+		Long awaitTime = (long) (HandlingInfoSaver.HANDLING_TIME*(eventsNum/expectedEventRate)*15);
 		waiter.await( awaitTime );
 		
 		//--------------------------------------------------------------
@@ -621,7 +621,7 @@ public class IntegrationServiceTest {
 		//--------------------------------------------------------------
 		Integer eventsNum = eventsNum1 + eventsNum2;
 		Long expectedEventRate = Math.min(expectedEventRate1, expectedEventRate2);
-		Long awaitTime = (long) (HandlingInfoSaver.HANDLING_TIME*(eventsNum/expectedEventRate)*20);
+		Long awaitTime = (long) (HandlingInfoSaver.HANDLING_TIME*(eventsNum/expectedEventRate)*25);
 		waiter.await( awaitTime );
 		
 		//--------------------------------------------------------------
@@ -846,8 +846,6 @@ public class IntegrationServiceTest {
 		assertTrue(mapping.isPresent());
 		assertEquals(MAPPING_LOCAL_VAL, mapping.get().getLocalValue());
 		assertEquals(MAPPING_REMOTE_VAL, mapping.get().getRemoteValue());
-		assertNotNull( mapping.get().getCreatedAt() );
-		assertNotNull( mapping.get().getUpdatedAt() );
 	}
 
 
