@@ -1,0 +1,247 @@
+{
+  "products": [
+    {
+      "Ax_ID": "11CYM-00100/01300",
+      "Name": "CYBELE SET 2007 PAN STICK 2 + LIP LINER 1",
+      "SKU": "",
+      "OriginalPrice": 24.00,
+      "Brand": "Kotomoto",
+      "Category": "SKIN CARE",
+      "Qty": []
+    },
+    {
+      "Ax_ID": "11CYM-0010001",
+      "Name": "CYBELE PAN STICK NO. 1 TRANSPARENT",
+      "SKU": "6221105410004",
+      "OriginalPrice": 100.00,
+      "Brand": "Baldman",
+      "Category": "PERFUMES",
+      "Qty": [
+        {
+          "STORE_CODE": "",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "691",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOarabia",
+          "Value": 7.00
+        },
+        {
+          "STORE_CODE": "FOcitystar",
+          "Value": 15.00
+        },
+        {
+          "STORE_CODE": "FOedara",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOegypt",
+          "Value": 17.00
+        },
+        {
+          "STORE_CODE": "FOexpress",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOexpress2",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOfestival",
+          "Value": 10.00
+        },
+        {
+          "STORE_CODE": "FOlebanon",
+          "Value": 5.00
+        },
+        {
+          "STORE_CODE": "FOmarket",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOmaxim",
+          "Value": 4.00
+        },
+        {
+          "STORE_CODE": "FOnilecity",
+          "Value": 7.00
+        },
+        {
+          "STORE_CODE": "FOoscar",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOstefano",
+          "Value": 5.00
+        },
+        {
+          "STORE_CODE": "FOsuncity",
+          "Value": 0.00
+        }
+      ]
+    },
+    {
+      "Ax_ID": "11CYM-0010002",
+      "Name": "CYBELE PAN STICK NO. 2 PORCELAINE",
+      "SKU": "6221105410011",
+      "OriginalPrice": 100.00,
+      "Brand": "Cybele",
+      "Category": "MAKE UP",
+      "Qty": [
+        {
+          "STORE_CODE": "691",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOarabia",
+          "Value": 32.00
+        },
+        {
+          "STORE_CODE": "FOcitystar",
+          "Value": 20.00
+        },
+        {
+          "STORE_CODE": "FOedara",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOegypt",
+          "Value": 16.00
+        },
+        {
+          "STORE_CODE": "FOexpress",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOfestival",
+          "Value": 5.00
+        },
+        {
+          "STORE_CODE": "FOlebanon",
+          "Value": 6.00
+        },
+        {
+          "STORE_CODE": "FOmarket",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOmaxim",
+          "Value": 3.00
+        },
+        {
+          "STORE_CODE": "FOnilecity",
+          "Value": 4.00
+        },
+        {
+          "STORE_CODE": "FOoscar",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOstefano",
+          "Value": 2.00
+        },
+        {
+          "STORE_CODE": "FOsuncity",
+          "Value": 0.00
+        }
+      ]
+    },
+    {
+      "Ax_ID": "11CYM-0010003",
+      "Name": "CYBELE PAN STICK NO. 3 LUMINEUX",
+      "SKU": "6221105410028",
+      "OriginalPrice": 100.00,
+      "Brand": "Cybele",
+      "Category": "MAKE UP",
+      "Qty": [
+        {
+          "STORE_CODE": "",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "691",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOarabia",
+          "Value": 19.00
+        },
+        {
+          "STORE_CODE": "FOcitystar",
+          "Value": 35.00
+        },
+        {
+          "STORE_CODE": "FOedara",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOegypt",
+          "Value": 12.00
+        },
+        {
+          "STORE_CODE": "FOexpress",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOexpress2",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOfestival",
+          "Value": 10.00
+        },
+        {
+          "STORE_CODE": "FOlebanon",
+          "Value": 6.00
+        },
+        {
+          "STORE_CODE": "FOmarket",
+          "Value": 3.00
+        },
+        {
+          "STORE_CODE": "FOmaxim",
+          "Value": 2.00
+        },
+        {
+          "STORE_CODE": "FOnilecity",
+          "Value": 5.00
+        },
+        {
+          "STORE_CODE": "FOoscar",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "Fostefano",
+          "Value": 3.00
+        },
+        {
+          "STORE_CODE": "FOsuncity",
+          "Value": 0.00
+        }
+      ]
+    },
+    {
+      "Ax_ID": "11CYM-0010101",
+      "Name": "CYBELE COVER STICK NO. 1 CHAMPAGNE",
+      "SKU": "6221105410509",
+      "OriginalPrice": 28.00,
+      "Brand": "Cybele",
+      "Category": "MAKE UP",
+      "Qty": [
+        {
+          "STORE_CODE": "FOnilecity",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "Fostefano",
+          "Value": 0.00
+        }
+      ]
+    }
+  ],
+  "CurrentPage": 1,
+  "TotalPages": 7159.0
+}

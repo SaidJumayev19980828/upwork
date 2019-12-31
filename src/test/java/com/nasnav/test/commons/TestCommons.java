@@ -1,12 +1,14 @@
 package com.nasnav.test.commons;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Properties;
 
 import org.jdbi.v3.core.Jdbi;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -105,5 +107,12 @@ public class TestCommons {
     
     public static JSONArray jsonArray() {
     	return new JSONArray();
+    }
+    
+    
+    
+    
+    public static String readResource(Resource resource) throws IOException {
+    	return new String( Files.readAllBytes(resource.getFile().toPath()) );
     }
 }

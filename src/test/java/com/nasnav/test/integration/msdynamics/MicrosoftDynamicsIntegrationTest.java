@@ -3,10 +3,15 @@ package com.nasnav.test.integration.msdynamics;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
+import static com.nasnav.test.commons.TestCommons.*;
 
+import java.io.IOException;
+import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -15,9 +20,13 @@ import org.junit.runner.RunWith;
 import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.configurationprocessor.json.JSONException;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.io.Resource;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
@@ -25,11 +34,17 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.IntegrationMappingRepository;
+import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.dto.UserDTOs.UserRegistrationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.events.EventResult;
+import com.nasnav.integration.events.ShopsFetchEvent;
+import com.nasnav.integration.events.data.ShopsFetchParam;
+import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
+import com.nasnav.integration.model.IntegratedShop;
 import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.UserEntity;
 
@@ -52,6 +67,11 @@ public class MicrosoftDynamicsIntegrationTest {
 	private static final Long ORG_ID = 99001L;
 	private static final String USER_MAPPING = "CUSTOMER";
 	
+	
+	@Value("classpath:/json/ms_dynamics_integratoin_test/get_stores_response.json")
+	private Resource storesJson;
+	
+	
 	@Autowired
 	private IntegrationService integrationService;
 	
@@ -66,6 +86,10 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	@Autowired
 	private IntegrationMappingRepository mappingRepo;
+	
+	
+	@Autowired
+	private ShopsRepository shopsRepo;
 	
 	
 	 @Rule
@@ -103,7 +127,8 @@ public class MicrosoftDynamicsIntegrationTest {
 		
 		assertEquals( email, user.getEmail());
 		//------------------------------------------------
-		
+		//wait for the integration event to be handled.
+		//can't use concurrentunit.Waiter class, the response is served by the MockServer
 		Thread.sleep(7000);
 		
 		//------------------------------------------------
@@ -126,6 +151,63 @@ public class MicrosoftDynamicsIntegrationTest {
 		if(usingMockServer) {
 			assertEquals(testCommons.getDummyCustomerExtId(), mapping.get().getRemoteValue());
 		}
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void importStoresTest() throws InterruptedException, InvalidIntegrationEventException, IOException, JSONException {
+
+		long countBefore = shopsRepo.count();
+		assertEquals("no stores should exists", 0L, countBefore);
+		
+		//------------------------------------------------		
+		//push shop import event and wait for it
+		AtomicBoolean isEventHandled = new AtomicBoolean(false);
+		ShopsFetchEvent importShopEvent = 
+				new ShopsFetchEvent(ORG_ID, new ShopsFetchParam(), res -> onShopsImportSuccess(res, isEventHandled) );
+		
+		integrationService	
+				.pushIntegrationEvent(importShopEvent, (e,t) -> assertTrue(false))
+				.block(Duration.ofSeconds(20L));
+		//------------------------------------------------
+		//wait for the integration event to be handled.
+		//can't use concurrentunit.Waiter class, the response is served by the MockServer
+//		Thread.sleep(7000);
+		
+		//------------------------------------------------
+		//test the mock api was called
+		if(usingMockServer) {
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("GET")
+				        .withPath("/api/stores"),
+				      VerificationTimes.exactly(1)
+				    );
+		}
+		//------------------------------------------------
+		//test the imported shops were created
+		String shopsResponse = readResource(storesJson);
+		int len = new JSONObject(shopsResponse)
+						.getJSONArray("results")
+						.length();
+		
+		long countAfter = shopsRepo.count();
+		assertEquals("stores were imported", len, countAfter);
+	}
+	
+	
+	
+	
+	
+	
+	private void onShopsImportSuccess(EventResult<ShopsFetchParam, List<IntegratedShop>> result, AtomicBoolean isEventHandled) {
+		List<IntegratedShop> importedShops = result.getReturnedData();
+		System.out.println("Shops Imported!");
+		System.out.println("imported shops: " + importedShops);
+		isEventHandled.set(true);
 	}
 
 
