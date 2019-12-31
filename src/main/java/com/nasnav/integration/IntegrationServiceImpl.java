@@ -546,11 +546,26 @@ public class IntegrationServiceImpl implements IntegrationService {
 		E event = handling.getEvent();
 		OrganizationIntegrationInfo integration =  orgIntegration.get(event.getOrganizationId());
 		if(integration == null || integration.isDisabled()) {			
-			return; 	//ignore events if its organization has no integration info. loaded or is disabled.
+			//ignore events if its organization has no integration info. loaded or is disabled.
+			return; 	
 		}
+		
+		logTraceEventHandling(event);
 		
 		integration.getIntegrationModule()
 					.pushEvent(handling);		
+	}
+
+
+
+
+
+
+	private <E extends Event<T, R>, T,R> void logTraceEventHandling(E event) {
+		logger.tracef("Handling Event of type [%s] for org[%d] with data[%s]"
+					, event.getClass().getName()
+					, event.getOrganizationId()
+					, event.getEventInfo().getEventData());
 	}
 
 

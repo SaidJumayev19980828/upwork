@@ -61,8 +61,8 @@ import net.jcip.annotations.NotThreadSafe;
 @AutoConfigureMockMvc
 @PropertySource("classpath:database.properties")
 @NotThreadSafe 
-@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert.sql", "/sql/Integration_Service_Test_Mapping.sql"})
-@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql", "/sql/Integration_Test_cleanup.sql"})
+@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert.sql"})
+@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class DataImportApiTest {
 	
 	private static final long TEST_STOCK_UPDATED = 400003L;

@@ -30,6 +30,7 @@ public class TestEventHandler extends IntegrationEventListener<TestEvent, String
 	@Override
 	protected Mono<String> handleEventAsync(EventInfo<String> event) {
 		System.out.println("Hanlding Test Event! @ "+ LocalDateTime.now() );	
+		System.out.println("Hanlding Test Event with data : "+ event.toString() );
 		onHandle.accept(event);
 		return Mono.just(EXPECTED_RESULT);
 	}

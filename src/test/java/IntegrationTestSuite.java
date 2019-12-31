@@ -9,10 +9,10 @@ import com.nasnav.test.integration.msdynamics.MicrosoftDynamicsIntegrationWebCli
 
 @RunWith(Suite.class)
 @SuiteClasses({ 
-	IntegrationServiceTest.class	
-//	, MicrosoftDynamicsIntegrationTest.class
-	, IntegrationApiTest.class	
-//	, MicrosoftDynamicsIntegrationWebClientsTest.class
+	 IntegrationApiTest.class		
+	, MicrosoftDynamicsIntegrationTest.class
+	, IntegrationServiceTest.class
+	, MicrosoftDynamicsIntegrationWebClientsTest.class
 	})
 public class IntegrationTestSuite {
 

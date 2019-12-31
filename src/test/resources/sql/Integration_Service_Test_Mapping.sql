@@ -1,6 +1,21 @@
---inserting organizations(already inserted before the test class is loaded)
---INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001, 'organization_1', now(), now());
---INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());
+INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001, 'organization_1', now(), now());
+INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());
+INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99003, 'organization_3', now(), now());
+
+INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(1, 'INTEGRATION_MODULE', TRUE);
+INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(2, 'MAX_REQUESTS_PER_SECOND', TRUE);
+INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(3, 'EXISTING_PARAM', FALSE);
+
+INSERT INTO public.integration_param(id, param_type, organization_id, param_value)
+VALUES(1, 1, 99001, 'com.nasnav.test.integration.modules.TestIntegrationModule');
+INSERT INTO public.integration_param(id, param_type, organization_id, param_value)
+VALUES(2, 2, 99001, '10');
+INSERT INTO public.integration_param(id, param_type, organization_id, param_value)
+VALUES(3, 1, 99003, 'com.nasnav.test.integration.modules.TestIntegrationModule');
+INSERT INTO public.integration_param(id, param_type, organization_id, param_value)
+VALUES(4, 2, 99003, '5');
+insert into public.integration_param(id, param_type, organization_id, param_value)
+values(55001, 3, 99001, 'old_val');
 
 
 -- integration Mapping types

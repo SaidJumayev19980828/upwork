@@ -52,6 +52,7 @@ import com.nasnav.persistence.IntegrationParamEntity;
 import com.nasnav.persistence.IntegrationParamTypeEntity;
 import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.integration.event.TestEvent;
+import com.nasnav.test.integration.event.handler.TestEventHandler;
 import com.nasnav.test.integration.modules.TestIntegrationModule;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -99,6 +100,7 @@ public class IntegrationApiTest {
 	@Before
 	public void clearIntegrationModules() {
 		integrationSrv.clearAllIntegrationModules();
+		TestEventHandler.onHandle = e -> {};
 	}
 	
 	
