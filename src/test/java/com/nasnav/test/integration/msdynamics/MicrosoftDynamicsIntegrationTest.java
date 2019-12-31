@@ -1,18 +1,18 @@
 package com.nasnav.test.integration.msdynamics;
 
+import static com.nasnav.test.commons.TestCommons.readResource;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
-import static com.nasnav.test.commons.TestCommons.*;
 
-import java.io.IOException;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -21,8 +21,6 @@ import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.configurationprocessor.json.JSONException;
-import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.PropertySource;
@@ -41,11 +39,10 @@ import com.nasnav.dto.UserDTOs.UserRegistrationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.EventResult;
-import com.nasnav.integration.events.ShopsFetchEvent;
 import com.nasnav.integration.events.data.ShopsFetchParam;
-import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
-import com.nasnav.integration.model.IntegratedShop;
+import com.nasnav.integration.model.ImportedShop;
 import com.nasnav.persistence.IntegrationMappingEntity;
+import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.UserEntity;
 
 @RunWith(SpringRunner.class)
@@ -158,20 +155,14 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	
 	@Test
-	public void importStoresTest() throws InterruptedException, InvalidIntegrationEventException, IOException, JSONException {
+	public void importStoresTest() throws Throwable {
 
 		long countBefore = shopsRepo.count();
 		assertEquals("no stores should exists", 0L, countBefore);
 		
 		//------------------------------------------------		
 		//push shop import event and wait for it
-		AtomicBoolean isEventHandled = new AtomicBoolean(false);
-		ShopsFetchEvent importShopEvent = 
-				new ShopsFetchEvent(ORG_ID, new ShopsFetchParam(), res -> onShopsImportSuccess(res, isEventHandled) );
-		
-		integrationService	
-				.pushIntegrationEvent(importShopEvent, (e,t) -> assertTrue(false))
-				.block(Duration.ofSeconds(20L));
+		List<ShopsEntity> importedShops = integrationService.importOrganizationShops(ORG_ID);
 		//------------------------------------------------
 		//wait for the integration event to be handled.
 		//can't use concurrentunit.Waiter class, the response is served by the MockServer
@@ -190,12 +181,29 @@ public class MicrosoftDynamicsIntegrationTest {
 		//------------------------------------------------
 		//test the imported shops were created
 		String shopsResponse = readResource(storesJson);
-		int len = new JSONObject(shopsResponse)
-						.getJSONArray("results")
-						.length();
+		JSONArray extShopsJson = new JSONObject(shopsResponse)
+										.getJSONArray("results");
 		
 		long countAfter = shopsRepo.count();
-		assertEquals("stores were imported", len, countAfter);
+					
+		assertEquals("stores were imported", extShopsJson.length(), countAfter);
+		assertTrue("all imported stores id's have integration mapping" , allShopIdsHaveMapping(importedShops));
+	}
+
+
+
+
+
+
+	private Boolean allShopIdsHaveMapping(List<ShopsEntity> importedShops) {
+		Boolean allShopsHaveMapping = 
+				importedShops
+					.stream()
+					.map(ShopsEntity::getId)
+					.map(id -> id.toString())
+					.map(id -> mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, "SHOP", id))
+					.allMatch(Optional::isPresent);
+		return allShopsHaveMapping;
 	}
 	
 	
@@ -203,8 +211,8 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	
 	
-	private void onShopsImportSuccess(EventResult<ShopsFetchParam, List<IntegratedShop>> result, AtomicBoolean isEventHandled) {
-		List<IntegratedShop> importedShops = result.getReturnedData();
+	private void onShopsImportSuccess(EventResult<ShopsFetchParam, List<ImportedShop>> result, AtomicBoolean isEventHandled) {
+		List<ImportedShop> importedShops = result.getReturnedData();
 		System.out.println("Shops Imported!");
 		System.out.println("imported shops: " + importedShops);
 		isEventHandled.set(true);

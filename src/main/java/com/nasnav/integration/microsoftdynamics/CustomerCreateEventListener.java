@@ -10,30 +10,22 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.ClientResponse;
 
-import com.nasnav.integration.IntegrationEventListener;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.CustomerCreateEvent;
 import com.nasnav.integration.events.EventInfo;
 import com.nasnav.integration.events.data.AddressData;
 import com.nasnav.integration.events.data.CustomerData;
-import com.nasnav.integration.microsoftdynamics.webclient.FortuneWebClient;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.Address;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.Customer;
 
 import reactor.core.publisher.Mono;
 
-public class CustomerCreateEventListener extends IntegrationEventListener<CustomerCreateEvent, CustomerData, String> {
+public class CustomerCreateEventListener extends AbstractMSDynamicsEventListener<CustomerCreateEvent, CustomerData, String> {
 	
-	private static final String SERVER_URL_PARAM_NAME = "SERVER_URL";
-	private FortuneWebClient client;
-	public static Long ORG_ID = 99001L;
 	
 	
 	public CustomerCreateEventListener(IntegrationService integrationService) {
-		super(integrationService);
-		
-		String serverUrl = integrationService.getIntegrationParamValue(ORG_ID, SERVER_URL_PARAM_NAME);
-		client = new FortuneWebClient(serverUrl);
+		super(integrationService);		
 	}
 	
 	
@@ -42,8 +34,10 @@ public class CustomerCreateEventListener extends IntegrationEventListener<Custom
 
 	@Override
 	protected Mono<String> handleEventAsync(EventInfo<CustomerData> event) {
-		Customer customer = toMsDynamicsCustomer( event.getEventData() );		
-		return client.createCustomer(customer)
+		Customer customer = toMsDynamicsCustomer( event.getEventData() );
+		Long orgId = event.getOrganizationId();
+		return getWebClient(orgId)
+					.createCustomer(customer)
 					.filter( res -> res.statusCode() == HttpStatus.OK)
 					.doOnSuccess(this::throwExceptionIfNotOk)
 					.flatMap(res -> res.bodyToMono(String.class));		
@@ -52,14 +46,7 @@ public class CustomerCreateEventListener extends IntegrationEventListener<Custom
 	
 	
 	
-	private void throwExceptionIfNotOk(ClientResponse response) {
-		if(response.statusCode() != HttpStatus.OK) {
-			throw new RuntimeException("Failed to get valid response from Microsoft Dynamics API ");
-		}
-	}
-
-
-
+	
 
 
 	private Customer toMsDynamicsCustomer(CustomerData dat) {

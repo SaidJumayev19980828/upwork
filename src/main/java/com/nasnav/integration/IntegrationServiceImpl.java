@@ -5,15 +5,19 @@ import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.E
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INTEGRATION_MODULE_LOAD_FAILED;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INVALID_PARAM_NAME;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_LOADING_INTEGRATION_MODULE_CLASS;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_MAPPING_TYPE_NOT_EXISTS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_MISSING_MANDATORY_PARAMS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_MODULE;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_PARAMS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_ORG_NOT_EXISTS;
-import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_MAPPING_TYPE_NOT_EXISTS;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_MAPPING_FAILED;
 import static com.nasnav.integration.enums.IntegrationParam.DISABLED;
 import static com.nasnav.integration.enums.IntegrationParam.INTEGRATION_MODULE;
 import static com.nasnav.integration.enums.IntegrationParam.MAX_REQUEST_RATE;
 import static java.lang.String.format;
+import static org.junit.Assert.assertTrue;
+import static java.util.Optional.ofNullable;
+import static com.nasnav.integration.enums.MappingType.*;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -31,6 +35,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -45,6 +50,7 @@ import com.nasnav.dao.IntegrationMappingTypeRepository;
 import com.nasnav.dao.IntegrationParamRepository;
 import com.nasnav.dao.IntegrationParamTypeRepostory;
 import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
@@ -53,14 +59,17 @@ import com.nasnav.integration.enums.IntegrationParam;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
 import com.nasnav.integration.events.EventResult;
+import com.nasnav.integration.events.ShopsImportEvent;
+import com.nasnav.integration.events.data.ShopsFetchParam;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
-import com.nasnav.integration.model.IntegratedShop;
+import com.nasnav.integration.model.ImportedShop;
 import com.nasnav.integration.model.OrganizationIntegrationInfo;
 import com.nasnav.persistence.IntegrationEventFailureEntity;
 import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.IntegrationMappingTypeEntity;
 import com.nasnav.persistence.IntegrationParamEntity;
 import com.nasnav.persistence.IntegrationParamTypeEntity;
+import com.nasnav.persistence.ShopsEntity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -74,22 +83,28 @@ import reactor.core.scheduler.Schedulers;
 
 @Service
 public class IntegrationServiceImpl implements IntegrationService {
+	private static final long REQUEST_TIMEOUT_SEC = 20L;
+
 	private final Logger logger = Logger.getLogger(getClass());
 	
 	@Autowired
-	IntegrationParamRepository paramRepo;
+	private IntegrationParamRepository paramRepo;
 	
 	@Autowired
-	IntegrationParamTypeRepostory paramTypeRepo;
+	private IntegrationParamTypeRepostory paramTypeRepo;
 	
 	@Autowired
-	OrganizationRepository orgRepo;
+	private OrganizationRepository orgRepo;
 	
 	@Autowired
-	IntegrationMappingRepository mappingRepo;
+	private IntegrationMappingRepository mappingRepo;
 	
 	@Autowired
-	IntegrationMappingTypeRepository mappingTypeRepo;
+	private IntegrationMappingTypeRepository mappingTypeRepo;
+	
+	
+	@Autowired
+	private ShopsRepository shopsRepo;
 	
 	
 	private Map<Long, OrganizationIntegrationInfo> orgIntegration;
@@ -457,18 +472,66 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 
 	@Override
-	public List<IntegratedShop> fetchOrganizationShops(Long orgId) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ShopsEntity> importOrganizationShops(Long orgId) throws Throwable {
+		ShopsImportEvent importShopEvent = new ShopsImportEvent(orgId, new ShopsFetchParam()) ;
+		
+		return pushIntegrationEvent(importShopEvent, (e,t) -> {throw new RuntimeException("Failed To import shops of org "+ orgId);})
+				.block(Duration.ofSeconds(REQUEST_TIMEOUT_SEC))
+				.getReturnedData()
+				.stream()
+				.filter(Objects::nonNull)
+				.filter(extShop -> isExternalShopNotExists(orgId, extShop))
+				.map(extShop -> importExternalShop(orgId, extShop))
+				.collect(Collectors.toList());
 	}
 	
 	
 	
 	
 	
+	private Boolean isExternalShopNotExists(Long orgId, ImportedShop externalShop) {
+		return !isExternalShopExists(orgId, externalShop);
+	}
+	
+	
+	
+	
+	
+	private Boolean isExternalShopExists(Long orgId, ImportedShop externalShop) {
+		return getLocalMappedValue(orgId , SHOP, externalShop.getId()) != null;
+	}
+	
+	
+	
+	
+	
+	
+	private ShopsEntity importExternalShop(Long orgId, ImportedShop externalShop) {
+		ShopsEntity entity = new ShopsEntity();
+		
+		entity.setName(externalShop.getName());
+		entity = shopsRepo.save(entity);
+		
+		try {
+			addMappedValue(orgId, SHOP, String.valueOf(entity.getId()), String.valueOf(externalShop.getId()));
+		} catch (Throwable e) {
+			logger.error(e,e);
+			throw new RuntimeException(
+						format(ERR_MAPPING_FAILED, SHOP.toString()
+								, String.valueOf(entity.getId())
+								, externalShop.getId()));
+		}
+		
+		return entity;
+	}
+	
+
+	
+	
+	
 
 	@Override
-	public void mapToIntegratedShop(Long shopId, IntegratedShop integratedShop) {
+	public void mapToIntegratedShop(Long shopId, ImportedShop integratedShop) {
 		// TODO Auto-generated method stub
 
 	}

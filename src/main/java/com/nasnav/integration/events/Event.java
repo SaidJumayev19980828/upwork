@@ -31,6 +31,12 @@ public abstract class Event<T, R> {
 	
 	
 	
+	public Event(Long organizationId, T eventData) {
+		this(organizationId, eventData, res -> {});
+	}
+	
+	
+	
 	/**
 	 * sinks the result data into the EventResult Mono, which notifies any subscriber to this Mono.
 	 * */

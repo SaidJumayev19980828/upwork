@@ -3,7 +3,6 @@ package com.nasnav.integration;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
@@ -13,7 +12,8 @@ import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
 import com.nasnav.integration.events.EventResult;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
-import com.nasnav.integration.model.IntegratedShop;
+import com.nasnav.integration.model.ImportedShop;
+import com.nasnav.persistence.ShopsEntity;
 
 import reactor.core.publisher.Mono;
 
@@ -32,10 +32,12 @@ public interface IntegrationService {
 	String getLocalMappedValue(Long orgId, MappingType type, String externalValue);
 	
 	/**
-	 * Get the organization shops from an external system using the organization integration module.
+	 * import the organization shops from an external system using the organization integration module.
+	 * @return list of the new shops that were inserted into the system.
 	 * */
-	List<IntegratedShop> fetchOrganizationShops(Long orgId);
-	void mapToIntegratedShop(Long shopId, IntegratedShop integratedShop);
+	List<ShopsEntity> importOrganizationShops(Long orgId) throws Throwable;
+	
+	void mapToIntegratedShop(Long shopId, ImportedShop integratedShop);
 	
 	
 	/**

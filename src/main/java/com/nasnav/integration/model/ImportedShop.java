@@ -6,7 +6,7 @@ import java.util.Map;
 import lombok.Data;
 
 @Data
-public class IntegratedShop {
+public class ImportedShop {
 	private String id;
 	private String name;
 	private Map<String,String> additionalData;
@@ -14,7 +14,14 @@ public class IntegratedShop {
 	
 	
 	
-	public IntegratedShop() {
+	public ImportedShop() {
 		additionalData = new HashMap<>();
+	}
+	
+	
+	
+	public ImportedShop(String id, String name) {
+		this.id = id;
+		this.name = name;
 	}
 }

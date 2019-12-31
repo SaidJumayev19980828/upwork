@@ -4,13 +4,21 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.nasnav.integration.events.data.ShopsFetchParam;
-import com.nasnav.integration.model.IntegratedShop;
+import com.nasnav.integration.model.ImportedShop;
 
-public class ShopsFetchEvent extends Event<ShopsFetchParam, List<IntegratedShop>>{
+public class ShopsImportEvent extends Event<ShopsFetchParam, List<ImportedShop>>{
 
-	public ShopsFetchEvent(Long organizationId, ShopsFetchParam eventData
-			, Consumer<EventResult<ShopsFetchParam, List<IntegratedShop>>> onSuccess) {
+	public ShopsImportEvent(Long organizationId, ShopsFetchParam eventData
+			, Consumer<EventResult<ShopsFetchParam, List<ImportedShop>>> onSuccess) {
 		super(organizationId, eventData, onSuccess);
+	}
+	
+	
+	
+	
+	
+	public ShopsImportEvent(Long organizationId, ShopsFetchParam eventData) {
+		super(organizationId, eventData);
 	}
 
 }
