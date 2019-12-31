@@ -441,7 +441,7 @@ public class OrderServiceTest {
 	public void ordersListNasnavAdminDifferentFiltersTest() {
 		HttpEntity httpEntity = getHttpEntity("101112");
 		// no filters
-		ResponseEntity<String> response = template.exchange("/order/list?details_level=2"
+		ResponseEntity<String> response = template.exchange("/order/list?details_level=3"
 															, HttpMethod.GET
 															, httpEntity
 															, String.class);
@@ -454,7 +454,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------------
 		// by org_id
-		response = template.exchange("/order/list?org_id=99001&details_level=2"
+		response = template.exchange("/order/list?org_id=99001&details_level=3"
 										, HttpMethod.GET
 										, httpEntity
 										, String.class);		
@@ -466,7 +466,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------------
 		// by shop_id
-		response = template.exchange("/order/list?shop_id=501&details_level=2"
+		response = template.exchange("/order/list?shop_id=501&details_level=3"
 											, HttpMethod.GET
 											, httpEntity
 											, String.class);
@@ -478,7 +478,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------------
 		// by user_id
-		response = template.exchange("/order/list?user_id=88&details_level=2"
+		response = template.exchange("/order/list?user_id=88&details_level=3"
 												, HttpMethod.GET
 												, httpEntity
 												, String.class);
@@ -490,7 +490,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------------
 		// by status
-		response = template.exchange("/order/list?status=NEW&details_level=2"
+		response = template.exchange("/order/list?status=NEW&details_level=3"
 											, HttpMethod.GET
 											, httpEntity
 											, String.class);
@@ -502,7 +502,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------------
 		// by org_id and status
-		response = template.exchange("/order/list?org_id=99001&status=NEW&details_level=2"
+		response = template.exchange("/order/list?org_id=99001&status=NEW&details_level=3"
 											, HttpMethod.GET
 											, httpEntity
 											, String.class);
@@ -514,7 +514,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------------
 		// by org_id and shop_id
-		response = template.exchange("/order/list?org_id=99001&shop_id=503&details_level=2"
+		response = template.exchange("/order/list?org_id=99001&shop_id=503&details_level=3"
 										, HttpMethod.GET
 										, httpEntity
 										, String.class);
@@ -523,7 +523,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------------
 		// by org_id and user_id
-		response = template.exchange("/order/list?org_id=99002&user_id=90&details_level=2"
+		response = template.exchange("/order/list?org_id=99002&user_id=90&details_level=3"
 										, HttpMethod.GET
 										, httpEntity
 										, String.class);
@@ -535,7 +535,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------------
 		// by shop_id and status
-		response = template.exchange("/order/list?shop_id=501&status=NEW&details_level=2"
+		response = template.exchange("/order/list?shop_id=501&status=NEW&details_level=3"
 										, HttpMethod.GET
 										, httpEntity
 										, String.class);
@@ -548,7 +548,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------------
 		// by user_id and status
-		response = template.exchange("/order/list?user_id=88&status=NEW&details_level=2"
+		response = template.exchange("/order/list?user_id=88&status=NEW&details_level=3"
 										, HttpMethod.GET
 										, httpEntity
 										, String.class);
@@ -561,7 +561,7 @@ public class OrderServiceTest {
 
 		//---------------------------------------------------------------------
 		// by user_id, shop_id and status
-		response = template.exchange("/order/list?user_id=88&shop_id=501&status=NEW&details_level=2"
+		response = template.exchange("/order/list?user_id=88&shop_id=501&status=NEW&details_level=3"
 										, HttpMethod.GET
 										, httpEntity
 										, String.class);
@@ -579,7 +579,7 @@ public class OrderServiceTest {
 
 	@Test // Organization roles diffterent filters test
 	public void ordersListOrganizationDifferentFiltersTest() {
-		ResponseEntity<String> response = template.exchange("/order/list?details_level=2"
+		ResponseEntity<String> response = template.exchange("/order/list?details_level=3"
 																, HttpMethod.GET
 																, getHttpEntity("161718")
 																, String.class);
@@ -590,7 +590,7 @@ public class OrderServiceTest {
 		assertEquals("user#70 is Organization employee in org#99003 so he can view all orderes within org#99003", 7, count);
 		//-------------------------------------------------------------------------
 		
-		response = template.exchange("/order/list?details_level=2"
+		response = template.exchange("/order/list?details_level=3"
 										, HttpMethod.GET
 										, getHttpEntity("131415")
 										, String.class);
@@ -602,7 +602,7 @@ public class OrderServiceTest {
 		assertEquals("user#69 is Organization admin in org#99002 so he can view all orderes within org#99002", org99002Orders, count);
 
 		//-------------------------------------------------------------------------
-		response = template.exchange("/order/list?details_level=2"
+		response = template.exchange("/order/list?details_level=3"
 										, HttpMethod.GET
 										, getHttpEntity("192021")
 										, String.class);
@@ -727,7 +727,7 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getOrderInfoTest() throws JsonParseException, JsonMappingException, IOException {
 			
-		ResponseEntity<String> response = template.exchange("/order/info?order_id=330002&details_level=2"
+		ResponseEntity<String> response = template.exchange("/order/info?order_id=330002&details_level=3"
 														, HttpMethod.GET
 														,new HttpEntity<>(TestCommons.getHeaders("101112"))
 														, String.class);
@@ -741,9 +741,90 @@ public class OrderServiceTest {
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(expected, body);
 	}
-	
-	
-	
+
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getOrderListLevelTwoTest() throws  IOException {
+
+		ResponseEntity<String> response = template.exchange("/order/list?details_level=2&count=1", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
+
+		DetailedOrderRepObject body = getOrderListDetailedObject(response);
+
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertTrue( body.getTotalQuantity() != null);
+		assertTrue( body.getTotalQuantity() == 3);
+		assertEquals(null, body.getItems());
+	}
+
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getOrderListCountTest() throws  IOException {
+
+		ResponseEntity<List> response = template.exchange("/order/list?count=1", HttpMethod.GET,
+											new HttpEntity<>(TestCommons.getHeaders("101112")), List.class);
+
+		assertEquals(1, response.getBody().size());
+
+		response = template.exchange("/order/list?count=2", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders("101112")), List.class);
+
+		assertEquals(2, response.getBody().size());
+
+		response = template.exchange("/order/list?count=4", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders("101112")), List.class);
+
+		assertEquals(4, response.getBody().size());
+	}
+
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getOrderListStartTest() throws  IOException { //count=1&
+
+		ResponseEntity<String> response = template.exchange("/order/list?start=1&count=1&details_level=3", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
+
+		DetailedOrderRepObject body = getOrderListDetailedObject(response);
+		DetailedOrderRepObject expectedBody = createExpectedOrderInfo(330005L, new BigDecimal("50"), 1, "NEW", 89L);
+
+		assertEquals(expectedBody, body);
+
+
+		response = template.exchange("/order/list?start=2&count=1&details_level=3", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
+
+		body = getOrderListDetailedObject(response);
+
+		expectedBody = createExpectedOrderInfo(330003L, new BigDecimal("300"), 7, "NEW", 88L);
+
+		assertEquals(expectedBody, body);
+
+
+		response = template.exchange("/order/list?start=3&count=1&details_level=3", HttpMethod.GET,
+				new HttpEntity<>(TestCommons.getHeaders("101112")), String.class);
+
+		body = getOrderListDetailedObject(response);
+
+		expectedBody = createExpectedOrderInfo(330004L, new BigDecimal("200"), 5, "NEW", 89L);
+
+		assertEquals(expectedBody, body);
+
+	}
+
+	private DetailedOrderRepObject getOrderListDetailedObject(ResponseEntity<String> response) throws IOException {
+		JSONArray json = new JSONArray(response.getBody());
+
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.registerModule(new JavaTimeModule());
+
+		return mapper.readValue(json.getJSONObject(0).toString(), DetailedOrderRepObject.class);
+	}
 	
 	
 	@Test
@@ -824,7 +905,7 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getCurrentOrderTest() throws JsonParseException, JsonMappingException, IOException {
 			
-		ResponseEntity<String> response = template.exchange("/order/current?details_level=2"
+		ResponseEntity<String> response = template.exchange("/order/current?details_level=3"
 														, HttpMethod.GET
 														, new HttpEntity<>(TestCommons.getHeaders("123"))
 														, String.class);
@@ -863,7 +944,7 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getCurrentOrderNotFoundTest() throws JsonParseException, JsonMappingException, IOException {
 			
-		ResponseEntity<String> response = template.exchange("/order/current?details_level=2"
+		ResponseEntity<String> response = template.exchange("/order/current?details_level=3"
 														, HttpMethod.GET
 														, new HttpEntity<>(TestCommons.getHeaders("789"))
 														, String.class);
@@ -884,7 +965,7 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getCurrentOrderUserHasNoOrdersTest() throws JsonParseException, JsonMappingException, IOException {
 			
-		ResponseEntity<String> response = template.exchange("/order/current?details_level=2"
+		ResponseEntity<String> response = template.exchange("/order/current?details_level=3"
 														, HttpMethod.GET
 														, new HttpEntity<>(TestCommons.getHeaders("011"))
 														, String.class);
@@ -904,7 +985,7 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getCurrentOrderUserHasMultipleNewOrdersTest() throws JsonParseException, JsonMappingException, IOException {
 			
-		ResponseEntity<String> response = template.exchange("/order/current?details_level=2"
+		ResponseEntity<String> response = template.exchange("/order/current?details_level=3"
 														, HttpMethod.GET
 														, new HttpEntity<>(TestCommons.getHeaders("456"))
 														, String.class);		
@@ -913,7 +994,7 @@ public class OrderServiceTest {
 		
 		DetailedOrderRepObject body = readDetailedOrderRepObjectResponse(response);
 		
-		DetailedOrderRepObject expected = createExpectedOrderInfo(330004L, new BigDecimal("200.00"), 5, "NEW", 89L);
+		DetailedOrderRepObject expected = createExpectedOrderInfo(330005L, new BigDecimal("50.00"), 1, "NEW", 89L);
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(expected, body);
@@ -1252,7 +1333,7 @@ public class OrderServiceTest {
 	
 	
 	@Test
-	public void storeManagerUpadateOrderClientConfirmedToClientCancelled() {
+	public void storeManagerUpdateOrderClientConfirmedToClientCancelled() {
 		Long otherUserOrderId = 330046L;
 		String userToken = "sdfe47"; 
 		
