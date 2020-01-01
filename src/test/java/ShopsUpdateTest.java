@@ -90,7 +90,6 @@ public class ShopsUpdateTest {
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
-        Assert.assertEquals("", false, jsonResponse.getBoolean("success"));
         Assert.assertEquals(403, response.getStatusCode().value());
 
         // create shop using Nasnav_Admin role (test fail)
@@ -121,7 +120,6 @@ public class ShopsUpdateTest {
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
-        Assert.assertEquals( false, jsonResponse.getBoolean("success"));
         Assert.assertEquals(403, response.getStatusCode().value());
     }
     
