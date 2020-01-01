@@ -2,6 +2,7 @@ package com.nasnav.test.integration.msdynamics;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.readResource;
+import static com.nasnav.test.commons.TestCommons.json;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
@@ -39,6 +40,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.dao.IntegrationMappingRepository;
+import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
@@ -93,6 +95,9 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	@Autowired
     private TestRestTemplate template;
+	
+	@Autowired
+	private ProductRepository productRepo;
 	
 	
 	 @Rule
@@ -195,6 +200,55 @@ public class MicrosoftDynamicsIntegrationTest {
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals("stores were imported", extShopsJson.length(), countAfter - countBefore);
 		assertTrue("all imported stores id's have integration mapping" , allShopIdsHaveMapping(importedShops));
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_products_import_test_data.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void importProductsTest() throws Throwable {
+
+		//number of products before
+		//product to update initial stock
+		long countProductsBefore = productRepo.count();
+		long countShopsBefore = shopsRepo.count();
+		
+		//------------------------------------------------		
+		//call product import api
+		JSONObject requestJson = 
+				json()
+					.put("dry_run", false)
+					.put("update_product", true)
+					.put("update_stocks", true)
+					.put("currency", 1)
+					.put("encoding", "UTF-8");
+		
+		HttpEntity<Object> request = getHttpEntity(requestJson.toString(), "hijkllm");
+        ResponseEntity<String> response = template.exchange("/integration/import/products", HttpMethod.POST, request, String.class);
+        ObjectMapper mapper = new ObjectMapper();       
+        
+		
+		
+		//------------------------------------------------
+		//test the mock api was called
+		if(usingMockServer) {
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("GET")
+				        .withPath("/api/stores"),
+				      VerificationTimes.exactly(1)
+				    );
+		}
+		//------------------------------------------------
+		//test imported brands were created
+		//test the imported products were created
+		
+		long countProductsAfter = productRepo.count();
+		long countShopsAfter = shopsRepo.count();
 	}
 
 
