@@ -145,8 +145,6 @@ public class QnbHostedSessionPayment {
         
         //create shop
         shop = new ShopsEntity();
-        shop.setCreatedAt(new Date());
-        shop.setUpdatedAt(new Date());
         shop.setOrganizationEntity(org);
         ShopsEntity shopEntity = shopsRepository.save(shop);
 

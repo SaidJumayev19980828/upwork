@@ -33,9 +33,9 @@ public interface IntegrationService {
 	
 	/**
 	 * import the organization shops from an external system using the organization integration module.
-	 * @return list of the new shops that were inserted into the system.
+	 * @return list of the new shops id's that were inserted into the system.
 	 * */
-	List<ShopsEntity> importOrganizationShops(Long orgId) throws Throwable;
+	List<Long> importShops() throws Throwable;
 	
 	void mapToIntegratedShop(Long shopId, ImportedShop integratedShop);
 	

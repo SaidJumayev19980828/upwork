@@ -1,8 +1,7 @@
 package com.nasnav.service;
 
+import static java.lang.String.format;
 
-import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,7 +22,6 @@ import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrganizationImagesEntity;
 import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import com.nasnav.service.helpers.ShopServiceHelper;
@@ -114,17 +112,14 @@ public class ShopService {
     
     
 
-    private ShopResponse createShop(ShopJsonDTO shopJson, Long employeeUserOrgId, List<String> userRoles){
+    private ShopResponse createShop(ShopJsonDTO shopJson, Long employeeUserOrgId, List<String> userRoles) throws BusinessException{
         if (!userRoles.contains("ORGANIZATION_MANAGER") || !employeeUserOrgId.equals(shopJson.getOrgId())){
-            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.FORBIDDEN);
+        	throw new BusinessException("User is not an authorized to modify this shop!", "INSUFFICIENT RIGHTS", HttpStatus.FORBIDDEN);
         }
         
         ShopsEntity shopsEntity = new ShopsEntity();
         BeanUtils.copyProperties(shopJson, shopsEntity);
-        //shopsEntity.setOrganizationEntity(organizationRepository.findOneById(shopJson.getOrgId()));
         shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson);
-        shopsEntity.setCreatedAt(new Date());
-        shopsEntity.setUpdatedAt(new Date());
         shopsRepository.save(shopsEntity);
         return new ShopResponse(shopsEntity.getId(), HttpStatus.OK);
     }
@@ -133,26 +128,54 @@ public class ShopService {
     
     
 
-    private ShopResponse updateShop(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId, List<String> userRoles){
-        if (!userRoles.contains("ORGANIZATION_MANAGER") && !userRoles.contains("STORE_MANAGER")){
-            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.FORBIDDEN);
-        }
-        if (userRoles.contains("ORGANIZATION_MANAGER") && !employeeUserOrgId.equals(shopJson.getOrgId())){
-            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.FORBIDDEN);
-        }
-        if (userRoles.contains("STORE_MANAGER") && !employeeUserShopId.equals(shopJson.getId())){
-            return new ShopResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS), HttpStatus.FORBIDDEN);
-        }
-        ShopsEntity shopsEntity = shopsRepository.findById(shopJson.getId()).get();
-        if ( shopsEntity == null) {
-            return new ShopResponse(Collections.singletonList(ResponseStatus.INVALID_STORE), HttpStatus.NOT_FOUND);
-        }
+    private ShopResponse updateShop(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId, List<String> userRoles) throws BusinessException{
+    	
+    	validateShopUdpate(shopJson, employeeUserOrgId, employeeUserShopId, userRoles);
+        
+    	ShopsEntity shopsEntity = shopsRepository.findById(shopJson.getId()).get();
         BeanUtils.copyProperties(shopJson, shopsEntity, shopServiceHelper.getNullProperties(shopJson));
         shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson);
-        shopsEntity.setUpdatedAt(new Date());
+        
         shopsRepository.save(shopsEntity);
+        
         return new ShopResponse(shopsEntity.getId(), HttpStatus.OK);
     }
+
+
+
+
+	private void validateShopUdpate(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId,
+			List<String> userRoles) throws BusinessException {
+		
+		validateShop(shopJson);
+		validateUserToUpdateShop(shopJson, employeeUserOrgId, employeeUserShopId, userRoles);
+	}
+
+
+
+
+	private  void validateShop(ShopJsonDTO shopJson) throws BusinessException {
+		ShopsEntity shopsEntity = shopsRepository.findById(shopJson.getId()).get();
+        if ( shopsEntity == null) {
+        	throw new BusinessException(format("No shop exists with id[%d]!",shopJson.getId()), "INVALID STORE", HttpStatus.NOT_FOUND);
+        }
+	}
+
+
+
+
+	private void validateUserToUpdateShop(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId,
+			List<String> userRoles) throws BusinessException {
+		if (!userRoles.contains("ORGANIZATION_MANAGER") && !userRoles.contains("STORE_MANAGER")){
+        	throw new BusinessException("User is not an authorized to modify this shop!", "INSUFFICIENT RIGHTS", HttpStatus.FORBIDDEN);
+        }
+        if (userRoles.contains("ORGANIZATION_MANAGER") && !employeeUserOrgId.equals(shopJson.getOrgId())){
+        	throw new BusinessException("User is not an authorized to modify this shop!", "INSUFFICIENT RIGHTS", HttpStatus.FORBIDDEN);
+        }
+        if (userRoles.contains("STORE_MANAGER") && !employeeUserShopId.equals(shopJson.getId())){
+        	throw new BusinessException("User is not an authorized to modify this shop!", "INSUFFICIENT RIGHTS", HttpStatus.FORBIDDEN);
+        }
+	}
     
     
     

@@ -1,5 +1,6 @@
 package com.nasnav.test.integration.msdynamics;
 
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.readResource;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -9,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -23,13 +23,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.dao.IntegrationMappingRepository;
 import com.nasnav.dao.ShopsRepository;
@@ -38,11 +45,7 @@ import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.dto.UserDTOs.UserRegistrationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
-import com.nasnav.integration.events.EventResult;
-import com.nasnav.integration.events.data.ShopsFetchParam;
-import com.nasnav.integration.model.ImportedShop;
 import com.nasnav.persistence.IntegrationMappingEntity;
-import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.UserEntity;
 
 @RunWith(SpringRunner.class)
@@ -87,6 +90,9 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	@Autowired
 	private ShopsRepository shopsRepo;
+	
+	@Autowired
+    private TestRestTemplate template;
 	
 	
 	 @Rule
@@ -158,15 +164,13 @@ public class MicrosoftDynamicsIntegrationTest {
 	public void importStoresTest() throws Throwable {
 
 		long countBefore = shopsRepo.count();
-		assertEquals("no stores should exists", 0L, countBefore);
 		
 		//------------------------------------------------		
 		//push shop import event and wait for it
-		List<ShopsEntity> importedShops = integrationService.importOrganizationShops(ORG_ID);
-		//------------------------------------------------
-		//wait for the integration event to be handled.
-		//can't use concurrentunit.Waiter class, the response is served by the MockServer
-//		Thread.sleep(7000);
+		HttpEntity<Object> request = getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/integration/import_shops", HttpMethod.GET, request, String.class);
+        ObjectMapper mapper = new ObjectMapper();       
+        List<Long> importedShops = mapper.readValue(response.getBody().getBytes(), new TypeReference<List<Long>>(){});
 		
 		//------------------------------------------------
 		//test the mock api was called
@@ -182,11 +186,14 @@ public class MicrosoftDynamicsIntegrationTest {
 		//test the imported shops were created
 		String shopsResponse = readResource(storesJson);
 		JSONArray extShopsJson = new JSONObject(shopsResponse)
-										.getJSONArray("results");
+										.getJSONArray("results")
+										.getJSONObject(0)
+										.getJSONArray("shops");
 		
 		long countAfter = shopsRepo.count();
 					
-		assertEquals("stores were imported", extShopsJson.length(), countAfter);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals("stores were imported", extShopsJson.length(), countAfter - countBefore);
 		assertTrue("all imported stores id's have integration mapping" , allShopIdsHaveMapping(importedShops));
 	}
 
@@ -195,11 +202,10 @@ public class MicrosoftDynamicsIntegrationTest {
 
 
 
-	private Boolean allShopIdsHaveMapping(List<ShopsEntity> importedShops) {
+	private Boolean allShopIdsHaveMapping(List<Long> importedShops) {
 		Boolean allShopsHaveMapping = 
 				importedShops
 					.stream()
-					.map(ShopsEntity::getId)
 					.map(id -> id.toString())
 					.map(id -> mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, "SHOP", id))
 					.allMatch(Optional::isPresent);
@@ -208,19 +214,6 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	
 	
-	
-	
-	
-	private void onShopsImportSuccess(EventResult<ShopsFetchParam, List<ImportedShop>> result, AtomicBoolean isEventHandled) {
-		List<ImportedShop> importedShops = result.getReturnedData();
-		System.out.println("Shops Imported!");
-		System.out.println("imported shops: " + importedShops);
-		isEventHandled.set(true);
-	}
-
-
-
-
 
 
 	private String registerNasnavCustomer() {

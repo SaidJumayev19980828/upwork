@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
+import com.google.common.net.MediaType;
+
 
 
 @Component
@@ -80,7 +82,7 @@ public class IntegrationTestCommon {
 				request().withMethod("GET")
 						.withPath("/api/stores"))
 			.respond(
-					response().withBody(storesResponse) 
+					response().withBody(storesResponse, MediaType.JSON_UTF_8) 
 							  .withStatusCode(200))
 				;
 	}
@@ -95,7 +97,7 @@ public class IntegrationTestCommon {
 				request().withMethod("GET")
 						.withPath("/api/products/6221105441060"))
 			.respond(
-					response().withBody(productBySkuResponse) 
+					response().withBody(productBySkuResponse, MediaType.JSON_UTF_8) 
 							  .withStatusCode(200))
 				;
 	}
@@ -111,7 +113,7 @@ public class IntegrationTestCommon {
 				request().withMethod("GET")
 						.withPath("/apiCust/customer/GetCustByPhone/.*"))
 			.respond(
-					response().withBody(customerResponse) 
+					response().withBody(customerResponse, MediaType.JSON_UTF_8) 
 							  .withStatusCode(200))
 				;
 	}
@@ -128,7 +130,7 @@ public class IntegrationTestCommon {
 				request().withMethod("GET")
 						.withPath("/api/products/.*"))
 			.respond(
-					response().withBody(productsResponse) 
+					response().withBody(productsResponse, MediaType.JSON_UTF_8) 
 							  .withStatusCode(200))
 				;
 	}

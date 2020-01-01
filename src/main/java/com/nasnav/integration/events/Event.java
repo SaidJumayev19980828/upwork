@@ -17,6 +17,7 @@ public abstract class Event<T, R> {
 	protected FluxSink<EventResult<T,R>> eventResultFluxSink;
 	
 	
+	
 	public Event(Long organizationId, T eventData, Consumer<EventResult<T,R>> onSuccess) {
 		this.eventInfo = new EventInfo<>(organizationId, eventData);
 		
@@ -24,15 +25,18 @@ public abstract class Event<T, R> {
 		eventResult = emitterProcessor
 							.publish()
 							.autoConnect()
-							.next();			
-		eventResult.subscribe(onSuccess);
+							.next();
+		if(onSuccess != null ) {
+			eventResult.subscribe(onSuccess);
+		}
+		
 		eventResultFluxSink = emitterProcessor.sink();
 	}
 	
 	
 	
 	public Event(Long organizationId, T eventData) {
-		this(organizationId, eventData, res -> {});
+		this(organizationId, eventData, null);
 	}
 	
 	

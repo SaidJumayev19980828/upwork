@@ -135,7 +135,6 @@ public class NavBoxTest {
         shop.setFloor("3");
         shop.setLat(BigDecimal.valueOf(30.072994));
         shop.setLng(BigDecimal.valueOf(31.346011));
-        shop.setCreatedAt(new Date());
         System.out.println("XXX " + shop.getOrganizationEntity().getId());
         shopsRepository.save(shop);
         long objectId = shop.getId();

@@ -7,8 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
-public class GetStoresReponse {
-	//their api response have such structure, Don't ask me why !!
-	@JsonProperty("results")
-	private List<Stores> results;
+public class Stores {
+	@JsonProperty("shops")
+	private List<Store> stores;
 }

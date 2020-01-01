@@ -10,14 +10,12 @@ import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.E
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_MODULE;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_PARAMS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_ORG_NOT_EXISTS;
-import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_MAPPING_FAILED;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_SHOP_IMPORT_FAILED;
 import static com.nasnav.integration.enums.IntegrationParam.DISABLED;
 import static com.nasnav.integration.enums.IntegrationParam.INTEGRATION_MODULE;
 import static com.nasnav.integration.enums.IntegrationParam.MAX_REQUEST_RATE;
+import static com.nasnav.integration.enums.MappingType.SHOP;
 import static java.lang.String.format;
-import static org.junit.Assert.assertTrue;
-import static java.util.Optional.ofNullable;
-import static com.nasnav.integration.enums.MappingType.*;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -35,7 +33,6 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -50,10 +47,10 @@ import com.nasnav.dao.IntegrationMappingTypeRepository;
 import com.nasnav.dao.IntegrationParamRepository;
 import com.nasnav.dao.IntegrationParamTypeRepostory;
 import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
+import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.IntegrationParam;
 import com.nasnav.integration.enums.MappingType;
@@ -69,7 +66,9 @@ import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.IntegrationMappingTypeEntity;
 import com.nasnav.persistence.IntegrationParamEntity;
 import com.nasnav.persistence.IntegrationParamTypeEntity;
-import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.response.ShopResponse;
+import com.nasnav.service.SecurityService;
+import com.nasnav.service.ShopService;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -102,9 +101,11 @@ public class IntegrationServiceImpl implements IntegrationService {
 	@Autowired
 	private IntegrationMappingTypeRepository mappingTypeRepo;
 	
+	@Autowired
+	private ShopService shopService;
 	
 	@Autowired
-	private ShopsRepository shopsRepo;
+	private SecurityService securityService;
 	
 	
 	private Map<Long, OrganizationIntegrationInfo> orgIntegration;
@@ -472,7 +473,12 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 
 	@Override
-	public List<ShopsEntity> importOrganizationShops(Long orgId) throws Throwable {
+	@Transactional
+	public List<Long> importShops() throws Throwable {	
+		
+		validateImportShopRequest();
+		
+		Long orgId = securityService.getCurrentUserOrganizationId();
 		ShopsImportEvent importShopEvent = new ShopsImportEvent(orgId, new ShopsFetchParam()) ;
 		
 		return pushIntegrationEvent(importShopEvent, (e,t) -> {throw new RuntimeException("Failed To import shops of org "+ orgId);})
@@ -489,6 +495,18 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	
 	
+	private void validateImportShopRequest() throws BusinessException {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		if(!orgIntegration.containsKey(orgId)) {
+			throw getIntegrationInitException(ERR_NO_INTEGRATION_MODULE, orgId);
+		}
+	}
+
+
+
+
+
+
 	private Boolean isExternalShopNotExists(Long orgId, ImportedShop externalShop) {
 		return !isExternalShopExists(orgId, externalShop);
 	}
@@ -506,23 +524,22 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	
 	
-	private ShopsEntity importExternalShop(Long orgId, ImportedShop externalShop) {
-		ShopsEntity entity = new ShopsEntity();
+	private Long importExternalShop(Long orgId, ImportedShop externalShop) {
+		ShopJsonDTO shopUpdateDto = new ShopJsonDTO();
+		shopUpdateDto.setName(externalShop.getName());
+		shopUpdateDto.setOrgId(orgId);
 		
-		entity.setName(externalShop.getName());
-		entity = shopsRepo.save(entity);
-		
+		Long shopId = null;
 		try {
-			addMappedValue(orgId, SHOP, String.valueOf(entity.getId()), String.valueOf(externalShop.getId()));
+			ShopResponse response = shopService.shopModification(shopUpdateDto);
+			shopId = response.getStoreId();
+			addMappedValue(orgId, SHOP, String.valueOf(shopId), String.valueOf(externalShop.getId()));
 		} catch (Throwable e) {
 			logger.error(e,e);
 			throw new RuntimeException(
-						format(ERR_MAPPING_FAILED, SHOP.toString()
-								, String.valueOf(entity.getId())
-								, externalShop.getId()));
-		}
-		
-		return entity;
+						format(ERR_SHOP_IMPORT_FAILED, externalShop.getId()));
+		}		
+		return shopId;
 	}
 	
 

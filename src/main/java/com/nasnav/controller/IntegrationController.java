@@ -147,4 +147,18 @@ public class IntegrationController {
                                              @RequestBody IntegrationParamDeleteDTO param)  throws BusinessException {
 		integrationSrv.deleteIntegrationParam(param);
     }
+	
+	
+	
+	
+	@ApiOperation(value = "import the organization shops from external system", nickname = "ShopsImport", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "import_shops", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public List<Long> importShops(@RequestHeader (value = "User-Token") String userToken)  throws Throwable {
+		return integrationSrv.importShops();
+    }
 }

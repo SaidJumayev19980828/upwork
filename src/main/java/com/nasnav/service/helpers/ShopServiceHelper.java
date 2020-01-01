@@ -74,8 +74,6 @@ public class ShopServiceHelper extends BeanUtils{
         
         OrganizationEntity org = sercurityService.getCurrentUserOrganization();               
         shopsEntity.setOrganizationEntity(org);        
-        shopsEntity.setCreatedAt(new Date());
-        shopsEntity.setUpdatedAt(new Date());
         
         return shopsEntity;
     }
