@@ -17,4 +17,6 @@ public class IntegrationProductImportDTO {
 	private boolean updateStocks;
 	private Integer currency;	
 	private String encoding;
+	private Integer start;
+	private Integer count;
 }

@@ -1,12 +1,13 @@
 package com.nasnav.test.integration.msdynamics;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static com.nasnav.test.commons.TestCommons.readResource;
 import static com.nasnav.test.commons.TestCommons.json;
+import static com.nasnav.test.commons.TestCommons.readResource;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,8 +40,10 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
+import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.IntegrationMappingRepository;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
@@ -48,6 +51,7 @@ import com.nasnav.dto.UserDTOs.UserRegistrationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.IntegrationMappingEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.UserEntity;
 
 @RunWith(SpringRunner.class)
@@ -99,6 +103,11 @@ public class MicrosoftDynamicsIntegrationTest {
 	@Autowired
 	private ProductRepository productRepo;
 	
+	@Autowired
+	private ProductVariantsRepository variantRepo;
+	
+	@Autowired
+	private BrandsRepository brandRepo;
 	
 	 @Rule
 	 public MockServerRule mockServerRule = new MockServerRule(this);
@@ -189,17 +198,27 @@ public class MicrosoftDynamicsIntegrationTest {
 		}
 		//------------------------------------------------
 		//test the imported shops were created
-		String shopsResponse = readResource(storesJson);
-		JSONArray extShopsJson = new JSONObject(shopsResponse)
-										.getJSONArray("results")
-										.getJSONObject(0)
-										.getJSONArray("shops");
+		JSONArray extShopsJson = getExpectedShopsJson();
 		
 		long countAfter = shopsRepo.count();
 					
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals("stores were imported", extShopsJson.length(), countAfter - countBefore);
 		assertTrue("all imported stores id's have integration mapping" , allShopIdsHaveMapping(importedShops));
+	}
+
+
+
+
+
+
+	private JSONArray getExpectedShopsJson() throws IOException {
+		String shopsResponse = readResource(storesJson);
+		JSONArray extShopsJson = new JSONObject(shopsResponse)
+										.getJSONArray("results")
+										.getJSONObject(0)
+										.getJSONArray("shops");
+		return extShopsJson;
 	}
 	
 	
@@ -211,9 +230,7 @@ public class MicrosoftDynamicsIntegrationTest {
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_products_import_test_data.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void importProductsTest() throws Throwable {
-
-		//number of products before
-		//product to update initial stock
+		int count = 3;
 		long countProductsBefore = productRepo.count();
 		long countShopsBefore = shopsRepo.count();
 		
@@ -225,21 +242,19 @@ public class MicrosoftDynamicsIntegrationTest {
 					.put("update_product", true)
 					.put("update_stocks", true)
 					.put("currency", 1)
-					.put("encoding", "UTF-8");
+					.put("encoding", "UTF-8")
+					.put("count", count);
 		
 		HttpEntity<Object> request = getHttpEntity(requestJson.toString(), "hijkllm");
-        ResponseEntity<String> response = template.exchange("/integration/import/products", HttpMethod.POST, request, String.class);
-        ObjectMapper mapper = new ObjectMapper();       
-        
-		
-		
+        ResponseEntity<String> response = template.exchange("/integration/import/products", HttpMethod.POST, request, String.class);       
+        		
 		//------------------------------------------------
 		//test the mock api was called
 		if(usingMockServer) {
 			mockServerRule.getClient().verify(
 				      request()
 				        .withMethod("GET")
-				        .withPath("/api/stores"),
+				        .withPath("/api/products/.*"),
 				      VerificationTimes.exactly(1)
 				    );
 		}
@@ -249,6 +264,28 @@ public class MicrosoftDynamicsIntegrationTest {
 		
 		long countProductsAfter = productRepo.count();
 		long countShopsAfter = shopsRepo.count();
+		JSONArray extShopsJson = getExpectedShopsJson();
+		
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals("products were imported", count, countProductsAfter - countProductsBefore);
+		assertEquals("shops were imported", extShopsJson.length(), countShopsAfter - countShopsBefore);
+		assertEquals("assert brands were imported", 3L, brandRepo.count());
+		assertTrue("all imported products have integration mapping" , allProductHaveMapping());
+	}
+
+
+
+
+
+
+	private boolean allProductHaveMapping() {
+		return variantRepo
+				.findByOrganizationId(ORG_ID)
+				.stream()
+				.map(ProductVariantsEntity::getId)
+				.map(id -> id.toString())
+				.map(id -> mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, "PRODUCT_VARIANT", id))
+				.allMatch(Optional::isPresent);			
 	}
 
 

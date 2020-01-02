@@ -38,7 +38,7 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at
 -- integration Mapping types
 INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67004, 'CUSTOMER');
 INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67005, 'SHOP');
-INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67006, 'PRODUCT');
+INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67006, 'PRODUCT_VARIANT');
 
 
 -- Mandatory integration parameters

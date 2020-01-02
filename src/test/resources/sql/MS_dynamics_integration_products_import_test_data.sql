@@ -71,7 +71,7 @@ insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organiz
 -- integration Mapping types
 INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67004, 'CUSTOMER');
 INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67005, 'SHOP');
-INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67006, 'PRODUCT');
+INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67006, 'PRODUCT_VARIANT');
 
 
 

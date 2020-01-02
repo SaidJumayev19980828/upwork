@@ -240,6 +240,42 @@
           "Value": 0.00
         }
       ]
+    },
+    {
+      "Ax_ID": "11CYM-0330101",
+      "Name": "CYBELE COVER STICK NO. 12 OCEAN",
+      "SKU": "6221105410508",
+      "OriginalPrice": 28.00,
+      "Brand": "Cybele",
+      "Category": "MAKE UP",
+      "Qty": [
+        {
+          "STORE_CODE": "FOnilecity",
+          "Value": 2.00
+        },
+        {
+          "STORE_CODE": "Fostefano",
+          "Value": 3.00
+        }
+      ]
+    },
+    {
+      "Ax_ID": "11CYM-0570101",
+      "Name": "CYBELE COVER STICK NO. 13 SANDY",
+      "SKU": "6221105410507",
+      "OriginalPrice": 28.00,
+      "Brand": "Cybele",
+      "Category": "MAKE UP",
+      "Qty": [
+        {
+          "STORE_CODE": "FOnilecity",
+          "Value": 2.00
+        },
+        {
+          "STORE_CODE": "Fostefano",
+          "Value": 3.00
+        }
+      ]
     }
   ],
   "CurrentPage": 1,

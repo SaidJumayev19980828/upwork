@@ -1,5 +1,5 @@
 package com.nasnav.test.integration;
-import static com.nasnav.integration.enums.MappingType.PRODUCT;
+import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -721,7 +721,7 @@ public class IntegrationServiceTest {
 		assertMappingsExist();
 		
 		//-----------------------------------------------------------
-		integration.addMappedValue(ORG_ID, MappingType.PRODUCT, MAPPING_LOCAL_VAL, MAPPING_REMOTE_VAL);
+		integration.addMappedValue(ORG_ID, MappingType.PRODUCT_VARIANT, MAPPING_LOCAL_VAL, MAPPING_REMOTE_VAL);
 		
 		//-----------------------------------------------------------
 		assertMappingSaved();
@@ -742,10 +742,10 @@ public class IntegrationServiceTest {
 		assertMappingsExist();
 		
 		//-----------------------------------------------------------
-		integration.deleteMappingByLocalValue(ORG_ID, MappingType.PRODUCT, MAPPING_LOCAL_VAL);
+		integration.deleteMappingByLocalValue(ORG_ID, MappingType.PRODUCT_VARIANT, MAPPING_LOCAL_VAL);
 		assertEquals(2 , mappingRepo.count());
 		
-		integration.deleteMappingByRemoteValue(ORG_ID, MappingType.PRODUCT, MAPPING_REMOTE_VAL);
+		integration.deleteMappingByRemoteValue(ORG_ID, MappingType.PRODUCT_VARIANT, MAPPING_REMOTE_VAL);
 		assertEquals(1 , mappingRepo.count());
 	}
 	
@@ -793,7 +793,7 @@ public class IntegrationServiceTest {
 
 
 	private void assertMappingSaved() {
-		Optional<IntegrationMappingEntity> mapping = mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, MappingType.PRODUCT.getValue(), MAPPING_LOCAL_VAL);
+		Optional<IntegrationMappingEntity> mapping = mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, MappingType.PRODUCT_VARIANT.getValue(), MAPPING_LOCAL_VAL);
 		
 		assertTrue(mapping.isPresent());
 		assertEquals(MAPPING_LOCAL_VAL, mapping.get().getLocalValue());
@@ -806,10 +806,10 @@ public class IntegrationServiceTest {
 
 	private void assertMappingsExist() {		
 		boolean localValueMappingExists = mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(
-															ORG_ID, MappingType.PRODUCT.getValue(), MAPPING_LOCAL_VAL)
+															ORG_ID, MappingType.PRODUCT_VARIANT.getValue(), MAPPING_LOCAL_VAL)
 													 .isPresent();		
 		boolean remoteValueMappingExists = mappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(
-															ORG_ID, MappingType.PRODUCT.getValue(), MAPPING_REMOTE_VAL)
+															ORG_ID, MappingType.PRODUCT_VARIANT.getValue(), MAPPING_REMOTE_VAL)
 													  .isPresent();		
 		assertTrue("Only one local value can exists for the same org and mapping type."
 					+ " a mapping is already inserted for test values."
@@ -829,7 +829,7 @@ public class IntegrationServiceTest {
 	
 	@Test
 	public void testGetRemoteMappedValue() {
-		String remoteVal = integration.getRemoteMappedValue(ORG_ID, PRODUCT, MAPPING_LOCAL_VAL);		
+		String remoteVal = integration.getRemoteMappedValue(ORG_ID, PRODUCT_VARIANT, MAPPING_LOCAL_VAL);		
 		assertEquals("OLD_REMOTE_VAL" , remoteVal);
 	}
 	
@@ -839,7 +839,7 @@ public class IntegrationServiceTest {
 	
 	@Test
 	public void testGetRemoteMappedValueNonExisting() {
-		String remoteVal = integration.getRemoteMappedValue(ORG_ID, PRODUCT, "NON_EXISTING_VAL");		
+		String remoteVal = integration.getRemoteMappedValue(ORG_ID, PRODUCT_VARIANT, "NON_EXISTING_VAL");		
 		assertNull("OLD_REMOTE_VAL" , remoteVal);
 	}
 	
@@ -849,7 +849,7 @@ public class IntegrationServiceTest {
 	
 	@Test
 	public void testGetLocalMappedValue() {
-		String localVal = integration.getLocalMappedValue(ORG_ID, PRODUCT, MAPPING_REMOTE_VAL);		
+		String localVal = integration.getLocalMappedValue(ORG_ID, PRODUCT_VARIANT, MAPPING_REMOTE_VAL);		
 		assertEquals("OLD_LOCAL_VAL" , localVal);
 	}
 	
@@ -860,7 +860,7 @@ public class IntegrationServiceTest {
 	
 	@Test
 	public void testGetLocalMappedValueNonExisting() {
-		String localVal = integration.getLocalMappedValue(ORG_ID, PRODUCT, "NON_EXISTING_VAL");		
+		String localVal = integration.getLocalMappedValue(ORG_ID, PRODUCT_VARIANT, "NON_EXISTING_VAL");		
 		assertNull(localVal);
 	}
 	

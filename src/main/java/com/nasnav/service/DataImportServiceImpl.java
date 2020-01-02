@@ -138,7 +138,7 @@ public class DataImportServiceImpl implements DataImportService {
 
     private void saveExternalMapping(ProductImportData dto, Long variantId) throws BusinessException{
         if (dto.getExternalId() != null)
-            integrationService.addMappedValue(security.getCurrentUserOrganizationId(), MappingType.PRODUCT, variantId.toString(), dto.getExternalId());
+            integrationService.addMappedValue(security.getCurrentUserOrganizationId(), MappingType.PRODUCT_VARIANT, variantId.toString(), dto.getExternalId());
     }
 
     private Long saveProductDto(ProductUpdateDTO dto) throws BusinessException {
@@ -217,7 +217,7 @@ public class DataImportServiceImpl implements DataImportService {
         }
 
         if (variantEnt == null && row.getExternalId() != null) {
-            String localMappingId = integrationService.getLocalMappedValue(orgId, MappingType.PRODUCT, row.getExternalId());
+            String localMappingId = integrationService.getLocalMappedValue(orgId, MappingType.PRODUCT_VARIANT, row.getExternalId());
             if(localMappingId != null && StringUtils.validateUrl(localMappingId, "[0-9]+"))
                 variantEnt = variantRepo.findByIdAndProductEntity_OrganizationId(Long.parseLong(localMappingId), orgId);
         }
