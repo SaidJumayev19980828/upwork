@@ -1,6 +1,7 @@
 package com.nasnav.commons.model.dataimport;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.Map;
 
 import lombok.Data;
@@ -18,4 +19,9 @@ public class ProductImportDTO {
 	protected Integer quantity;
 	protected BigDecimal price;
 	protected Map<String,String> features;
+	
+	
+	public ProductImportDTO() {
+		features = new HashMap<>();
+	}
 }

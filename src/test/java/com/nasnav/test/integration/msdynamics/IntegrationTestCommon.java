@@ -11,7 +11,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 import com.google.common.net.MediaType;
-
+import static com.nasnav.test.commons.TestCommons.readResource;
 
 
 @Component
@@ -44,6 +44,9 @@ public class IntegrationTestCommon {
     @Value("classpath:/json/ms_dynamics_integratoin_test/get_stores_response.json")
 	private Resource getStoresJson;
     
+    @Value("classpath:/json/ms_dynamics_integratoin_test/get_products_response_2.json")
+	private Resource productsJson2;
+    
     
     
 
@@ -67,6 +70,7 @@ public class IntegrationTestCommon {
 		 mockCreateOrderRequest(mockServerRule);
 		 mockReturnOrderRequest(mockServerRule);
 		 mockGetProductsRequest(mockServerRule);
+		 mockGetProductsRequestWithPagination(mockServerRule);
 		 mockGetProductBySKURequest(mockServerRule);
 		 mockGetCustomerByPhoneRequest(mockServerRule);
 		 mockGetStoresRequest(mockServerRule);
@@ -129,6 +133,21 @@ public class IntegrationTestCommon {
 			.when(
 				request().withMethod("GET")
 						.withPath("/api/products/.*"))
+			.respond(
+					response().withBody(productsResponse, MediaType.JSON_UTF_8) 
+							  .withStatusCode(200))
+				;
+	}
+	
+	
+	
+	
+	private  void mockGetProductsRequestWithPagination(MockServerRule mockServerRule) throws IOException {
+		String productsResponse = readResource(productsJson2);
+    	 mockServerRule.getClient()
+			.when(
+				request().withMethod("GET")
+						.withPath("/api/products/\\d+/\\d+"))
 			.respond(
 					response().withBody(productsResponse, MediaType.JSON_UTF_8) 
 							  .withStatusCode(200))

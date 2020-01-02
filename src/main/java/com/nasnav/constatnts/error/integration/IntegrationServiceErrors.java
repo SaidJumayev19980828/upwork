@@ -22,4 +22,6 @@ public class IntegrationServiceErrors {
 	public static final String ERR_INTEGRATION_EVENT_PROCESSING_FAILED = "Failed to process integration event of type[%s]\nwith data[%s]\nfor organization [%d]!";
 	public static final String ERR_MAPPING_FAILED = "Failed to do integration mapping of type [%s] between local value[%s] and remote value [%s]!";
 	public static final String ERR_SHOP_IMPORT_FAILED = "Failed to import external shop with id[%s]";
+	public static final String ERR_NO_PRODUCT_DATA_RETURNED = "No Product data returned from external system for organization [%d]!";
+	public static final String ERR_EXTERNAL_SHOP_NOT_FOUND = "External shop with external id[%s] was not imported!";
 }

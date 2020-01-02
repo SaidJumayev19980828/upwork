@@ -6,6 +6,7 @@ import java.util.function.BiConsumer;
 
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
+import com.nasnav.dto.IntegrationProductImportDTO;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.MappingType;
@@ -13,7 +14,6 @@ import com.nasnav.integration.events.Event;
 import com.nasnav.integration.events.EventResult;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.integration.model.ImportedShop;
-import com.nasnav.persistence.ShopsEntity;
 
 import reactor.core.publisher.Mono;
 
@@ -41,9 +41,11 @@ public interface IntegrationService {
 	
 	
 	/**
-	 * Import the organization products from an external system, the run the callback when finished.
+	 * Import the organization products from an external system.
+	 * @return the number of total pages, -1 if this info. cannot be obtained.
+	 * @throws Throwable 
 	 * */
-	void importOrganizationProducts(Long orgId, Runnable onComplete, Runnable onError);
+	Integer importOrganizationProducts(IntegrationProductImportDTO metadata) throws Throwable;
 	
 	
 	/**

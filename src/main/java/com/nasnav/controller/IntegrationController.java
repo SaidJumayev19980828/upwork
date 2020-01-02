@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
+import com.nasnav.dto.IntegrationProductImportDTO;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
@@ -157,8 +158,22 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @GetMapping(value = "import_shops", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "/import/shops", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public List<Long> importShops(@RequestHeader (value = "User-Token") String userToken)  throws Throwable {
 		return integrationSrv.importShops();
+    }
+	
+	
+	
+	
+	@ApiOperation(value = "import the products from external system", nickname = "ProductsImport", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "/import/products", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public Integer importProdcuts(@RequestHeader (value = "User-Token") String userToken, IntegrationProductImportDTO metadata)  throws Throwable {
+		return integrationSrv.importOrganizationProducts(metadata);
     }
 }

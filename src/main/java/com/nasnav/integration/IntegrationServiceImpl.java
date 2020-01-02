@@ -9,6 +9,7 @@ import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.E
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_MISSING_MANDATORY_PARAMS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_MODULE;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_INTEGRATION_PARAMS;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_PRODUCT_DATA_RETURNED;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_ORG_NOT_EXISTS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_SHOP_IMPORT_FAILED;
 import static com.nasnav.integration.enums.IntegrationParam.DISABLED;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
 import org.jboss.logging.Logger;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -41,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.dao.IntegrationEventFailureRepository;
 import com.nasnav.dao.IntegrationMappingRepository;
 import com.nasnav.dao.IntegrationMappingTypeRepository;
@@ -49,14 +52,21 @@ import com.nasnav.dao.IntegrationParamTypeRepostory;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
+import com.nasnav.dto.IntegrationProductImportDTO;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
+import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.enums.IntegrationParam;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
 import com.nasnav.integration.events.EventResult;
+import com.nasnav.integration.events.IntegrationImportedProducts;
+import com.nasnav.integration.events.ProductsImportEvent;
+import com.nasnav.integration.events.ShopImportedProducts;
 import com.nasnav.integration.events.ShopsImportEvent;
+import com.nasnav.integration.events.data.ProductImportEventParam;
 import com.nasnav.integration.events.data.ShopsFetchParam;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.integration.model.ImportedShop;
@@ -67,6 +77,7 @@ import com.nasnav.persistence.IntegrationMappingTypeEntity;
 import com.nasnav.persistence.IntegrationParamEntity;
 import com.nasnav.persistence.IntegrationParamTypeEntity;
 import com.nasnav.response.ShopResponse;
+import com.nasnav.service.DataImportService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.ShopService;
 
@@ -82,6 +93,8 @@ import reactor.core.scheduler.Schedulers;
 
 @Service
 public class IntegrationServiceImpl implements IntegrationService {
+	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT = 45L;
+
 	private static final long REQUEST_TIMEOUT_SEC = 20L;
 
 	private final Logger logger = Logger.getLogger(getClass());
@@ -106,6 +119,9 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	@Autowired
 	private SecurityService securityService;
+	
+	@Autowired
+	private DataImportService dataImportService;
 	
 	
 	private Map<Long, OrganizationIntegrationInfo> orgIntegration;
@@ -385,6 +401,15 @@ public class IntegrationServiceImpl implements IntegrationService {
 										, "INTEGRATION INITIALIZATION FAILURE"
 										, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
+	
+	
+	
+	
+	private RuntimeBusinessException getIntegrationRuntimeException(String msg, Object... args) {
+		return new RuntimeBusinessException( String.format( msg, args )
+										, "INTEGRATION FAILURE"
+										, HttpStatus.INTERNAL_SERVER_ERROR);
+	}
 
 	
 
@@ -559,9 +584,117 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 
 	@Override
-	public void importOrganizationProducts(Long orgId, Runnable onComplete, Runnable onError) {
-		// TODO Auto-generated method stub
+	@Transactional
+	public Integer importOrganizationProducts(IntegrationProductImportDTO metadata) throws Throwable {
+		
+		importShops();
+		
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		
+		ProductImportMetadata commonImportMetaData = getImportMetaData(metadata);
+		
+		IntegrationImportedProducts importedProducts = getProductsFromExternalSystem(orgId, metadata);
+		
+		//TODO import brands first
+		
+		importProductsIntoNasnav(commonImportMetaData, importedProducts);
+		
+		return importedProducts.getTotalPages();
+	}
 
+
+
+
+
+
+	private void importProductsIntoNasnav(ProductImportMetadata commonImportMetaData,
+			IntegrationImportedProducts importedProducts) {
+		importedProducts
+			.getAllShopsProducts()
+			.stream()
+			.map(shopProducts -> toShopProductsImportData(shopProducts, commonImportMetaData))
+			.forEach(this::importSingleShopProducts);
+	}
+
+
+
+
+
+
+	private IntegrationImportedProducts getProductsFromExternalSystem(Long orgId, IntegrationProductImportDTO metadata)
+			throws Throwable, InvalidIntegrationEventException {
+		
+		ProductImportEventParam importParam = new ProductImportEventParam(metadata.getPageNum(), metadata.getPageCount());
+		ProductsImportEvent event = new ProductsImportEvent(orgId, importParam);
+		
+		IntegrationImportedProducts importedProducts = 
+				pushIntegrationEvent(event, this::onProductImportError)
+					.blockOptional(Duration.ofMinutes(PRODUCT_IMPORT_REQUEST_TIMEOUT))
+					.orElseThrow(() -> getNoDataReturnedException(event.getOrganizationId()))
+					.getReturnedData();
+		
+		return importedProducts;
+	}
+
+
+	
+	
+	
+	private Throwable getNoDataReturnedException(Long orgId) {
+		return getIntegrationRuntimeException(ERR_NO_PRODUCT_DATA_RETURNED, orgId);
+	}
+
+
+	
+
+
+	private ProductImportMetadata getImportMetaData(IntegrationProductImportDTO metadata) {
+		ProductImportMetadata commonImportMetaData = new ProductImportMetadata();
+		commonImportMetaData.setCurrency(metadata.getCurrency());
+		commonImportMetaData.setDryrun(metadata.isDryrun());
+		commonImportMetaData.setEncoding(metadata.getEncoding());
+		commonImportMetaData.setUpdateProduct(metadata.isUpdateProduct());
+		commonImportMetaData.setUpdateStocks(metadata.isUpdateStocks());
+		return commonImportMetaData;
+	}
+	
+	
+	
+	
+	
+	private void importSingleShopProducts(ProductImportInputData inputData) {
+		try {
+			dataImportService.importProducts(inputData.getProducts(), inputData.getMetadata());
+		} catch (BusinessException e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(e);
+		}
+	}
+	
+	
+	
+	
+	
+	private ProductImportInputData toShopProductsImportData(ShopImportedProducts shopProducts, ProductImportMetadata commonMetaData) {
+				
+		ProductImportMetadata metadata = new ProductImportMetadata();
+		BeanUtils.copyProperties(commonMetaData, metadata);
+		metadata.setShopId(shopProducts.getShopId());
+		
+		ProductImportInputData importData = new ProductImportInputData();
+		importData.setProducts(shopProducts.getImportedProducts());
+		importData.setMetadata(metadata);
+		
+		return importData;
+	}
+	
+	
+	
+	
+	
+	private void onProductImportError(ProductsImportEvent event, Throwable t) {
+		logger.error(t,t);
+		throw getIntegrationRuntimeException("Failed to import products from external system of organization [%d]!", event.getOrganizationId());
 	}
 	
 	
@@ -1077,4 +1210,13 @@ class EventHandling<E extends Event<T,R>, T, R>{
 	public static <E extends Event<T,R>, T, R> EventHandling<E,T,R> of(E event, BiConsumer<E, Throwable> onError){
 		return new EventHandling<E,T,R>(event, onError);
 	} 
+}
+
+
+
+
+@Data
+class ProductImportInputData{
+	private ProductImportMetadata metadata;
+	private List<ProductImportDTO> products;
 }

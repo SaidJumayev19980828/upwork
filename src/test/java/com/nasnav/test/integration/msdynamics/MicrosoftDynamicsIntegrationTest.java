@@ -78,6 +78,10 @@ public class MicrosoftDynamicsIntegrationTest {
 	private Resource storesJson;
 	
 	
+	@Value("classpath:/json/ms_dynamics_integratoin_test/get_products_response_2.json")
+	private Resource productsJson2;
+	
+	
 	@Autowired
 	private IntegrationService integrationService;
 	
@@ -182,7 +186,7 @@ public class MicrosoftDynamicsIntegrationTest {
 		//------------------------------------------------		
 		//push shop import event and wait for it
 		HttpEntity<Object> request = getHttpEntity("hijkllm");
-        ResponseEntity<String> response = template.exchange("/integration/import_shops", HttpMethod.GET, request, String.class);
+        ResponseEntity<String> response = template.exchange("/integration/import/shops", HttpMethod.GET, request, String.class);
         ObjectMapper mapper = new ObjectMapper();       
         List<Long> importedShops = mapper.readValue(response.getBody().getBytes(), new TypeReference<List<Long>>(){});
 		
@@ -243,10 +247,10 @@ public class MicrosoftDynamicsIntegrationTest {
 					.put("update_stocks", true)
 					.put("currency", 1)
 					.put("encoding", "UTF-8")
-					.put("count", count);
+					.put("page_count", count);
 		
 		HttpEntity<Object> request = getHttpEntity(requestJson.toString(), "hijkllm");
-        ResponseEntity<String> response = template.exchange("/integration/import/products", HttpMethod.POST, request, String.class);       
+        ResponseEntity<Integer> response = template.exchange("/integration/import/products", HttpMethod.POST, request, Integer.class);       
         		
 		//------------------------------------------------
 		//test the mock api was called
@@ -265,12 +269,15 @@ public class MicrosoftDynamicsIntegrationTest {
 		long countProductsAfter = productRepo.count();
 		long countShopsAfter = shopsRepo.count();
 		JSONArray extShopsJson = getExpectedShopsJson();
+		JSONArray extProductJson = new JSONObject(readResource(productsJson2))
+											.getJSONArray("products");
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals("products were imported", count, countProductsAfter - countProductsBefore);
 		assertEquals("shops were imported", extShopsJson.length(), countShopsAfter - countShopsBefore);
 		assertEquals("assert brands were imported", 3L, brandRepo.count());
 		assertTrue("all imported products have integration mapping" , allProductHaveMapping());
+		assertEquals("check number of remaining products to import", extProductJson.length(), count + response.getBody());
 	}
 
 

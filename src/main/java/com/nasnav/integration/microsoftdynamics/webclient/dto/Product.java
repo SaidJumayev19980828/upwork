@@ -14,16 +14,25 @@ public class Product {
 
     @JsonProperty("Ax_ID")
     private String axId;
+    
     @JsonProperty("ItemDesc")
     private String itemDescription;
-    @JsonProperty("ItemGroup")
-    private String itemGroup;
+    
     @JsonProperty("Name")
     private String name;
+    
     @JsonProperty("OriginalPrice")
     private BigDecimal originalPrice;
+    
     @JsonProperty("Qty")
     private List<Stocks> stocks;
+    
     @JsonProperty("SKU")
     private String sku;
+    
+    @JsonProperty("Brand")
+    private String brand;
+    
+    @JsonProperty("Category")
+    private String category;
 }
