@@ -17,4 +17,6 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
     
     @Query("select b.id FROM BrandsEntity b where b.name = :brandName")
 	Long findByName(@Param("brandName") String brandName);
+
+	boolean existsByNameIgnoreCaseAndOrganizationEntity_id(String brandName, Long orgId);
 }

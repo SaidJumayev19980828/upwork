@@ -26,7 +26,7 @@
           "Value": 0.00
         },
         {
-          "STORE_CODE": "FOarabia",
+          "STORE_CODE": "FOstefano",
           "Value": 7.00
         },
         {
@@ -279,5 +279,5 @@
     }
   ],
   "CurrentPage": 1,
-  "TotalPages": 7159.0
+  "TotalPages": 1
 }

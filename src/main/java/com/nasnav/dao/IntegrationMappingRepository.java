@@ -18,6 +18,8 @@ public interface IntegrationMappingRepository extends JpaRepository<IntegrationM
 	Optional<IntegrationMappingEntity> findByOrganizationIdAndMappingType_typeNameAndRemoteValue(Long orgId,
 			String value, String remoteValue);
 	
+	Optional<IntegrationMappingEntity> findByOrganizationIdAndMappingType_typeNameAndRemoteValueIgnoreCase(Long orgId
+			, String value, String externalShopId);
 	
 	@Modifying
 	@Query("DELETE FROM IntegrationMappingEntity m "
@@ -41,4 +43,5 @@ public interface IntegrationMappingRepository extends JpaRepository<IntegrationM
 			@Param("orgId") Long orgId
 			, @Param("type")IntegrationMappingTypeEntity typeId
 			, @Param("remoteValue") String remoteValue);
+
 }

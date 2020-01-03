@@ -2,6 +2,7 @@ package com.nasnav.integration;
 
 import static com.nasnav.commons.utils.EntityUtils.failSafeFunction;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_EVENT_HANDLE_GENERAL_ERROR;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_EXTERNAL_SHOP_NOT_FOUND;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INTEGRATION_MODULE_LOAD_FAILED;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INVALID_PARAM_NAME;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_LOADING_INTEGRATION_MODULE_CLASS;
@@ -44,12 +45,15 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
+import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.IntegrationEventFailureRepository;
 import com.nasnav.dao.IntegrationMappingRepository;
 import com.nasnav.dao.IntegrationMappingTypeRepository;
 import com.nasnav.dao.IntegrationParamRepository;
 import com.nasnav.dao.IntegrationParamTypeRepostory;
 import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.IntegrationProductImportDTO;
@@ -78,6 +82,7 @@ import com.nasnav.persistence.IntegrationParamEntity;
 import com.nasnav.persistence.IntegrationParamTypeEntity;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.DataImportService;
+import com.nasnav.service.OrganizationService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.ShopService;
 
@@ -93,7 +98,7 @@ import reactor.core.scheduler.Schedulers;
 
 @Service
 public class IntegrationServiceImpl implements IntegrationService {
-	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT = 45L;
+	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 1L;
 
 	private static final long REQUEST_TIMEOUT_SEC = 20L;
 
@@ -122,6 +127,15 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	@Autowired
 	private DataImportService dataImportService;
+	
+	@Autowired
+	private OrganizationService organizationService;
+	
+	@Autowired
+	private BrandsRepository brandRepo;
+	
+	@Autowired
+	private ShopsRepository shopRepo;
 	
 	
 	private Map<Long, OrganizationIntegrationInfo> orgIntegration;
@@ -498,7 +512,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 
 	@Override
-	@Transactional
+	@Transactional(rollbackFor = Throwable.class)
 	public List<Long> importShops() throws Throwable {	
 		
 		validateImportShopRequest();
@@ -584,10 +598,13 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 
 	@Override
-	@Transactional
+	@Transactional(rollbackFor = Throwable.class)
 	public Integer importOrganizationProducts(IntegrationProductImportDTO metadata) throws Throwable {
 		
-		importShops();
+		List<Long> shopIds = importShops();
+//		System.out.println(">>>"+shopIds);
+//		System.out.println(">>>" + shopRepo.findAll());
+//		System.out.println(">>>" + mappingRepo.findAll());
 		
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		
@@ -595,7 +612,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		
 		IntegrationImportedProducts importedProducts = getProductsFromExternalSystem(orgId, metadata);
 		
-		//TODO import brands first
+		importNonExistingBrands(importedProducts);		
 		
 		importProductsIntoNasnav(commonImportMetaData, importedProducts);
 		
@@ -603,6 +620,58 @@ public class IntegrationServiceImpl implements IntegrationService {
 	}
 
 
+
+
+
+
+	private void importNonExistingBrands(IntegrationImportedProducts importedProducts) {
+		importedProducts
+			.getAllShopsProducts()
+			.stream()
+			.map(ShopImportedProducts::getImportedProducts)
+			.flatMap(List::stream)
+			.map(ProductImportDTO::getBrand)
+			.distinct()
+			.filter(this::isBrandNotExists)
+			.map(this::toBrandDTO)
+			.forEach(this::createBrand);
+	}
+	
+	
+	
+	
+	private void createBrand(BrandDTO brandDto) {
+		try {
+			organizationService.createOrganizationBrand(brandDto, null, null);
+		}catch(BusinessException t) {
+			throw new RuntimeBusinessException(t);
+		}catch(Throwable t) {
+			logger.error(t,t);
+			throw new RuntimeBusinessException(
+					format("Failed to import brand with name [%s]",brandDto.getName())
+					, "INTEGRATION FAILURE"
+					,HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	
+	
+	
+	
+	private boolean isBrandNotExists(String brandName) {
+		Long orgId = securityService.getCurrentUserOrganizationId();		
+		return !brandRepo.existsByNameIgnoreCaseAndOrganizationEntity_id(brandName, orgId);
+	}
+	
+	
+	
+	
+	private BrandDTO toBrandDTO(String brandName) {
+		BrandDTO dto = new BrandDTO();
+		dto.setOperation("CREATE");
+		dto.setName(brandName);
+		return dto;
+	}
 
 
 
@@ -623,15 +692,21 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	private IntegrationImportedProducts getProductsFromExternalSystem(Long orgId, IntegrationProductImportDTO metadata)
 			throws Throwable, InvalidIntegrationEventException {
-		
 		ProductImportEventParam importParam = new ProductImportEventParam(metadata.getPageNum(), metadata.getPageCount());
 		ProductsImportEvent event = new ProductsImportEvent(orgId, importParam);
 		
 		IntegrationImportedProducts importedProducts = 
 				pushIntegrationEvent(event, this::onProductImportError)
-					.blockOptional(Duration.ofMinutes(PRODUCT_IMPORT_REQUEST_TIMEOUT))
-					.orElseThrow(() -> getNoDataReturnedException(event.getOrganizationId()))
+					.blockOptional(Duration.ofMinutes(PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN))
+					.orElseThrow(() -> getNoDataReturnedException(orgId))
 					.getReturnedData();
+		
+		if(importedProducts.getAllShopsProducts() == null 
+				||importedProducts.getAllShopsProducts( ).isEmpty()) {
+			throw  getNoDataReturnedException(orgId);
+		}
+		
+		addEveryShopLocalId(importedProducts);
 		
 		return importedProducts;
 	}
@@ -640,6 +715,46 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	
 	
+	private void addEveryShopLocalId(IntegrationImportedProducts importedProducts) {
+		importedProducts
+			.getAllShopsProducts()
+			.stream()
+			.forEach(this::addShopLocalId);
+	}
+
+
+	
+	
+	
+	
+	private void addShopLocalId(ShopImportedProducts shopProducts) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		String externalShopId = shopProducts.getExternalShopId();
+		String shopIdStr = 
+				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValueIgnoreCase(orgId, MappingType.SHOP.getValue(), externalShopId)
+					.map(IntegrationMappingEntity::getLocalValue)
+					.orElse(null);
+		Long shopId = -1L;
+		
+		try {
+			shopId = Long.valueOf(shopIdStr.toString());
+		}catch(Throwable t) {
+			logger.error(t,t);
+			throw new RuntimeBusinessException(
+					format(ERR_EXTERNAL_SHOP_NOT_FOUND, externalShopId)
+					, "INTEGRATION FAILURE"
+					, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		shopProducts.setShopId(shopId);
+	}
+
+	
+	
+	
+	
+
+
 	private Throwable getNoDataReturnedException(Long orgId) {
 		return getIntegrationRuntimeException(ERR_NO_PRODUCT_DATA_RETURNED, orgId);
 	}
@@ -865,7 +980,6 @@ public class IntegrationServiceImpl implements IntegrationService {
 		try {
 			loadOrganizationIntegrationModule(orgId);
 		}catch(BusinessException e) {
-//			System.out.println("###>>>");
 			logger.error(e,e);
 			throw new BusinessException( 
 					format(ERR_INTEGRATION_MODULE_LOAD_FAILED, orgId)

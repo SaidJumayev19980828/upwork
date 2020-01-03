@@ -99,7 +99,7 @@ public class DataImportServiceImpl implements DataImportService {
         if (!errors.isEmpty()) {
             JSONArray json = new JSONArray(errors);
             throw new BusinessException(
-                    ERR_PRODUCT_CSV_ROW_SAVE
+            		ERR_PRODUCT_DB_SAVE
                     , json.toString()
                     , HttpStatus.NOT_ACCEPTABLE);
         }
@@ -110,7 +110,7 @@ public class DataImportServiceImpl implements DataImportService {
     private void saveSingleProductCsvRowToDB(ProductImportData dto, ProductImportMetadata importMetaData) throws BusinessException {
         if (dto.isExisting()) {
             if (importMetaData.isUpdateProduct()) {
-                Long productId = saveProductDto(dto.getProductDto());
+                saveProductDto(dto.getProductDto());
                 VariantUpdateResponse variantResponse = productService.updateVariant(dto.getVariantDto());
                 saveExternalMapping(dto, variantResponse.getVariantId());
             }

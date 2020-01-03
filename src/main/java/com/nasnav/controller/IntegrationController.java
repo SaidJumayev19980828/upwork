@@ -172,8 +172,8 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @GetMapping(value = "/import/products", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public Integer importProdcuts(@RequestHeader (value = "User-Token") String userToken, IntegrationProductImportDTO metadata)  throws Throwable {
+    @PostMapping(value = "/import/products", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public Integer importProdcuts(@RequestHeader (value = "User-Token") String userToken,@RequestBody IntegrationProductImportDTO metadata)  throws Throwable {
 		return integrationSrv.importOrganizationProducts(metadata);
     }
 }

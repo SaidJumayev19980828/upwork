@@ -26,4 +26,5 @@ public class ErrorMessages {
 	public static final String ERR_PREPARE_PRODUCT_DTO_DATA = "Failed to prepare product data for save/update! product data: [%s]";
 	public static final String ERR_NO_IMG_IMPORT_RESPONSE = "No Import reposponse was returned!";
 	public static final String ERR_USER_CANNOT_MODIFY_PRODUCT ="User with email [%s] have no rights to modify products from organization of id[%d]!";
+	public static final String ERR_PRODUCT_DB_SAVE = "Failed to save imported product into the database";
 }

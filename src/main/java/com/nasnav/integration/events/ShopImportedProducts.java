@@ -11,5 +11,11 @@ import lombok.Data;
 @AllArgsConstructor
 public class ShopImportedProducts{
 	private Long shopId;
-	List<ProductImportDTO> importedProducts;
+	private String externalShopId;
+	private List<ProductImportDTO> importedProducts;
+	
+	public ShopImportedProducts(String externalShopId, List<ProductImportDTO> importedProducts) {
+		this.externalShopId = externalShopId;
+		this.importedProducts = importedProducts;
+	}
 }

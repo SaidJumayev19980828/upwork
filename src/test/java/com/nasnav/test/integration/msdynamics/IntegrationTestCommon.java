@@ -69,9 +69,9 @@ public class IntegrationTestCommon {
 		 mockCancelOrderRequest(mockServerRule);
 		 mockCreateOrderRequest(mockServerRule);
 		 mockReturnOrderRequest(mockServerRule);
-		 mockGetProductsRequest(mockServerRule);
-		 mockGetProductsRequestWithPagination(mockServerRule);
 		 mockGetProductBySKURequest(mockServerRule);
+		 mockGetProductsRequestWithPagination(mockServerRule);
+		 mockGetProductsRequest(mockServerRule);		 
 		 mockGetCustomerByPhoneRequest(mockServerRule);
 		 mockGetStoresRequest(mockServerRule);
 	}

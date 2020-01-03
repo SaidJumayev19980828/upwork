@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper=false)
 public class ProductImportMetadata {
-
     private boolean dryrun;
+	
     private boolean updateProduct;
     private boolean updateStocks;
 
