@@ -7,6 +7,26 @@ INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002
 INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (201, 'PERFUMES', now(), now());
 INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (202, 'SKIN CARE', now(), now());
 INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (203, 'MAKE UP', now(), now());
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('FRAGRANCE', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('BC POSM', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('BABY CARE', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('SC POSM', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('FOOT CARE', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('FR POSM', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('DIM', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('TREATMENT', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('FOOTC POSM', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('MAKE-UP AC', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('FORTUNE', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('HAIR CARE', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('READY TO WEAR', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('MU POSM', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('BODY', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('DELSEY', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('ACCESSORY', now(), now(), null, null, null);
+INSERT INTO public.categories ("name", created_at, updated_at, parent_id, logo, p_name) VALUES('GIFT VOUCHER', now(), now(), null, null, null);
+
+
 
 
 --inserting brands

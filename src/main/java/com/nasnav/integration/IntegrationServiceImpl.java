@@ -98,7 +98,7 @@ import reactor.core.scheduler.Schedulers;
 
 @Service
 public class IntegrationServiceImpl implements IntegrationService {
-	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 1L;
+	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 4L;
 
 	private static final long REQUEST_TIMEOUT_SEC = 20L;
 

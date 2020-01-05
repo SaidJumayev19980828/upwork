@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
@@ -209,20 +210,20 @@ public class DataImportServiceImpl implements DataImportService {
 
         Optional<ProductVariantsEntity> variantEnt = null;
 
-        if (dto.getVariantDto().getVariantId() != null) {
+        if (isNotBlankOrNull( dto.getVariantDto().getVariantId() )) {
             variantEnt = variantRepo.findByIdAndProductEntity_OrganizationId(dto.getVariantDto().getVariantId(), orgId);
             if (!variantEnt.isPresent())
                 throw new BusinessException("No variant found with id " + dto.getVariantDto().getVariantId(),
                         "INVALID PARAM: variant_id",HttpStatus.NOT_ACCEPTABLE);
         }
 
-        if (variantEnt == null && row.getExternalId() != null) {
+        if (variantEnt == null && isNotBlankOrNull(row.getExternalId()) ) {
             String localMappingId = integrationService.getLocalMappedValue(orgId, MappingType.PRODUCT_VARIANT, row.getExternalId());
             if(localMappingId != null && StringUtils.validateUrl(localMappingId, "[0-9]+"))
                 variantEnt = variantRepo.findByIdAndProductEntity_OrganizationId(Long.parseLong(localMappingId), orgId);
         }
 
-        if (variantEnt == null)
+        if (variantEnt == null && isNotBlankOrNull(row.getBarcode()))
             variantEnt = variantRepo.findByBarcodeAndProductEntity_OrganizationId(row.getBarcode(), orgId);
 
         if (variantEnt != null && variantEnt.isPresent()) {

@@ -249,7 +249,7 @@ public class MicrosoftDynamicsIntegrationTest {
 					.put("currency", 1)
 					.put("encoding", "UTF-8")
 //					.put("page_count", count)
-					.put("page_count", 100)
+					.put("page_count", 1000)
 					;
 		
 		HttpEntity<Object> request = getHttpEntity(requestJson.toString(), "hijkllm");
