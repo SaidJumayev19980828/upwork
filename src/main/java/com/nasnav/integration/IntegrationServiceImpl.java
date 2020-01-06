@@ -1,6 +1,7 @@
 package com.nasnav.integration;
 
 import static com.nasnav.commons.utils.EntityUtils.failSafeFunction;
+import static com.nasnav.commons.utils.StringUtils.anyBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.nullableToString;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_EVENT_HANDLE_GENERAL_ERROR;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_EXTERNAL_SHOP_NOT_FOUND;
@@ -831,14 +832,28 @@ public class IntegrationServiceImpl implements IntegrationService {
 	@Override
 	public Integer getExternalStock(Long localVariantId, Long localShopId) throws BusinessException {
 		
-		validateStockFetchParam(localVariantId, localShopId);
+		validateStockFetchParam(localVariantId, localShopId);		
 		
-		StockFetchEvent event = createStockFetchEvent(localVariantId, localShopId);
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		String externalVariantId = getRemoteMappedValue(orgId, PRODUCT_VARIANT, nullableToString(localVariantId));
+		String externalShopId = getRemoteMappedValue(orgId, SHOP, nullableToString(localShopId));
+		
+		//TODO: the part that returns the local stock as a fallback, it should be moved to the order service, as it is a part of 
+		//the order logic , not the integration.
+		//this method should instead throw a well-know exception if no stock were found, and upper layers decides what to user instead
+		//-------------------------------------------------------------
+		if(anyBlankOrNull(externalVariantId, externalShopId)) {
+			return getVariantLocalStockForShop(localVariantId, localShopId);
+		}
+		//-------------------------------------------------------------
+		
+		StockFetchEvent event = createStockFetchEvent(orgId, externalVariantId, externalShopId);
 		
 		//the webclient will return empty Mono if the response was not OK
 		return pushIntegrationEvent(event, (e,t) -> handleStockFetchFailure(localVariantId, localShopId, t))
 				.blockOptional(Duration.ofSeconds(REQUEST_TIMEOUT_SEC))
 				.map(res -> res.getReturnedData())
+				//-------------------------------------------------------------
 				.orElseGet( () -> getVariantLocalStockForShop(localVariantId, localShopId));
 	}
 
@@ -847,12 +862,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 
-	private StockFetchEvent createStockFetchEvent(Long localVariantId, Long localShopId) {
-		Long orgId = securityService.getCurrentUserOrganizationId();		
-		
-		String externalVariantId = getRemoteMappedValue(orgId, PRODUCT_VARIANT, nullableToString(localVariantId));
-		String externalShopId = getRemoteMappedValue(orgId, SHOP, nullableToString(localShopId));
-		
+	private StockFetchEvent createStockFetchEvent(Long orgId, String externalVariantId, String externalShopId) {					
 		StockEventParam param = new StockEventParam(externalVariantId, externalShopId);
 		StockFetchEvent event = new StockFetchEvent(orgId, param);
 		return event;

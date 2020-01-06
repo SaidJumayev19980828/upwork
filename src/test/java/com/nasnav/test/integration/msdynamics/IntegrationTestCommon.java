@@ -112,7 +112,7 @@ public class IntegrationTestCommon {
 	
 	
 	private  void mockGetProductByIdRequest(MockServerRule mockServerRule) throws IOException {
-		String productBySkuResponse = new String( Files.readAllBytes(productsJson.getFile().toPath()) );
+		String productBySkuResponse = new String( Files.readAllBytes(singleProductJson.getFile().toPath()) );
     	 mockServerRule.getClient()
 			.when(
 				request().withMethod("GET")

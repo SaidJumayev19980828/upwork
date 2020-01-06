@@ -299,11 +299,30 @@ public class MicrosoftDynamicsIntegrationTest {
 		Long SHOP_ID = 50001L;
 		String url = format("/test/integration/get_stock?variant_id=%d&shop_id=%d", VARIANT_ID, SHOP_ID);
 		
-		Integer stkQty = template.postForEntity(url, getHttpEntity("hijkllm"), Integer.class).getBody();				
-		
-		assertEquals(101, stkQty.intValue());
+		Integer stkQty = template.postForEntity(url, getHttpEntity("hijkllm"), Integer.class).getBody();
+		if(usingMockServer) {
+			assertEquals(101, stkQty.intValue());
+		}
 	}
 
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_get_stock_test_data.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void getVariantWithNoMappingExternalStockTest() throws Throwable {
+		Long VARIANT_ID = 310002L;
+		Long SHOP_ID = 50001L;
+		String url = format("/test/integration/get_stock?variant_id=%d&shop_id=%d", VARIANT_ID, SHOP_ID);
+		
+		Integer stkQty = template.postForEntity(url, getHttpEntity("hijkllm"), Integer.class).getBody();
+		if(usingMockServer) {
+			assertEquals(55, stkQty.intValue());
+		}
+	}
 
 
 

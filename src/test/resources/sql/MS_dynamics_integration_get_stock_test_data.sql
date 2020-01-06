@@ -84,7 +84,8 @@ insert into public.product_variants(id, "name" , product_id, barcode, feature_sp
 
 --inserting stocks
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(60001, 50001, 6, now(), now(), 99001, 600.0, 310001);
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(60002, 50002, 6, now(), now(), 99001, 600.0, 310002);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(60002, 50001, 55, now(), now(), 99001, 600.0, 310002);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(60003, 50002, 66, now(), now(), 99001, 600.0, 310001);
 
 
 -- integration Mapping types

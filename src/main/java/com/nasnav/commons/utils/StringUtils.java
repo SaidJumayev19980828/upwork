@@ -3,6 +3,7 @@ package com.nasnav.commons.utils;
 import static java.util.Optional.ofNullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
@@ -119,5 +120,25 @@ public class StringUtils extends org.springframework.util.StringUtils{
 		return ofNullable(object)
 				.map(Object::toString)
 				.orElse(null);		
+	}
+	
+	
+	
+	
+	public static boolean anyBlankOrNull(String... strings) {
+		return Arrays
+				.asList(strings)
+				.stream()
+				.anyMatch(StringUtils::isBlankOrNull);			
+	}
+	
+	
+	
+	
+	public static boolean anyNotBlankOrNull(String... strings) {
+		return Arrays
+				.asList(strings)
+				.stream()
+				.anyMatch(StringUtils::isNotBlankOrNull);			
 	}
 }
