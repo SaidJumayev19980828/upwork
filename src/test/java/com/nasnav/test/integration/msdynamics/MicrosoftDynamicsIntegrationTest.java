@@ -3,6 +3,7 @@ package com.nasnav.test.integration.msdynamics;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static com.nasnav.test.commons.TestCommons.readResource;
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
@@ -54,6 +55,7 @@ import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.test.commons.TestCommons;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -66,8 +68,8 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	private static final String MS_SERVER_URL = "http://41.39.128.74";
 	private static final String MOCK_SERVER_URL = "http://127.0.0.1";
-//	private static final String SERVER_URL = MOCK_SERVER_URL;
-	private static final String SERVER_URL = MS_SERVER_URL;
+	private static final String SERVER_URL = MOCK_SERVER_URL;
+//	private static final String SERVER_URL = MS_SERVER_URL;
 	private static final boolean usingMockServer = MOCK_SERVER_URL == SERVER_URL;
 	
 	
@@ -248,8 +250,7 @@ public class MicrosoftDynamicsIntegrationTest {
 					.put("update_stocks", true)
 					.put("currency", 1)
 					.put("encoding", "UTF-8")
-//					.put("page_count", count)
-					.put("page_count", 1000)
+					.put("page_count", count)
 					;
 		
 		HttpEntity<Object> request = getHttpEntity(requestJson.toString(), "hijkllm");
@@ -281,8 +282,26 @@ public class MicrosoftDynamicsIntegrationTest {
 			assertEquals("shops were imported", extShopsJson.length() - countShopsBefore, countShopsAfter - countShopsBefore);
 			assertEquals("assert brands were imported", 3L, brandRepo.count());
 			assertTrue("all imported products have integration mapping" , allProductHaveMapping());
-			assertEquals("check number of remaining pages to import", 1, response.getBody().intValue());
+			assertEquals("check number of remaining pages to import", 0, response.getBody().intValue());
 		}
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_get_stock_test_data.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void getVariantExternalStockTest() throws Throwable {
+		Long VARIANT_ID = 310001L;
+		Long SHOP_ID = 50001L;
+		String url = format("/test/integration/get_stock?variant_id=%d&shop_id=%d", VARIANT_ID, SHOP_ID);
+		
+		Integer stkQty = template.postForEntity(url, getHttpEntity("hijkllm"), Integer.class).getBody();				
+		
+		assertEquals(101, stkQty.intValue());
 	}
 
 

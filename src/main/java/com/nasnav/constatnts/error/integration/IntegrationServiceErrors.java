@@ -24,4 +24,7 @@ public class IntegrationServiceErrors {
 	public static final String ERR_SHOP_IMPORT_FAILED = "Failed to import external shop with id[%s]";
 	public static final String ERR_NO_PRODUCT_DATA_RETURNED = "No Product data returned from external system for organization [%d]!";
 	public static final String ERR_EXTERNAL_SHOP_NOT_FOUND = "External shop with external id[%s] was not imported!";
+	public static final String ERR_FETCH_STOCK_VARIANT_NOT_EXISTS = "Trying to fetch the external stock for non existing variant [%d]!";
+	public static final String ERR_FETCH_STOCK_SHOP_NOT_EXISTS = "Trying to fetch the external stock of variant [%d] for non-existing shop [%d]!";
+	public static final String ERR_FETCH_STOCK_NULL_PARAMETERS = "Failed to fetch the external stock of variant [%d] and shop [%d]!";
 }

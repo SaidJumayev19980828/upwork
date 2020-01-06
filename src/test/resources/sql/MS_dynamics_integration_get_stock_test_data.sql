@@ -78,11 +78,13 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 
 
 -- variants for each product
-insert into public.product_variants(id, "name" , product_id, barcode, feature_spec ) values(310001, 'var' 	, 1001, 'ABCD1234', '{"234":"40", "235":"pink"}');
+insert into public.product_variants(id, "name" , product_id, barcode, feature_spec ) values(310001, 'var' 	, 1001, '6221105441060', '{"234":"40", "235":"pink"}');
+insert into public.product_variants(id, "name" , product_id, barcode, feature_spec ) values(310002, 'var 2' , 1001, '6221105441061', '{"234":"80", "235":"Blue"}');
 
 
 --inserting stocks
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(60001, 50001, 6, now(), now(), 99002, 600.0, 310001);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(60001, 50001, 6, now(), now(), 99001, 600.0, 310001);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(60002, 50002, 6, now(), now(), 99001, 600.0, 310002);
 
 
 -- integration Mapping types
@@ -93,8 +95,7 @@ INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67006, 'PRODU
 
 
 -- insert integration mappings
-INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '501', 'Cust Trans', 99001);
-INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '502', 'DLalmaza', 99001);
+INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '50001', 'FOarabia', 99001);
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67006, '310001', '11CYM-0010001', 99001);
 
 

@@ -1,11 +1,11 @@
 {
   "products": [
     {
-      "Ax_ID": "11CYM-0150002",
+      "Ax_ID": "11CYM-0010001",
       "Name": "CYBELE NEW LIP LINER NO. 2 RED",
       "SKU": "6221105441060",
-      "OriginalPrice": 40.00,
-      "Brand": "Cybele",
+      "OriginalPrice": 800.00,
+      "Brand": "Baldman",
       "Category": "LIP LINER",
       "Qty": [
         {
@@ -67,3 +67,4 @@
       ]
     }
   ]
+ }

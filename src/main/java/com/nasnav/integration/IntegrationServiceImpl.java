@@ -1,8 +1,12 @@
 package com.nasnav.integration;
 
 import static com.nasnav.commons.utils.EntityUtils.failSafeFunction;
+import static com.nasnav.commons.utils.StringUtils.nullableToString;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_EVENT_HANDLE_GENERAL_ERROR;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_EXTERNAL_SHOP_NOT_FOUND;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_FETCH_STOCK_NULL_PARAMETERS;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_FETCH_STOCK_SHOP_NOT_EXISTS;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_FETCH_STOCK_VARIANT_NOT_EXISTS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INTEGRATION_MODULE_LOAD_FAILED;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INVALID_PARAM_NAME;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_LOADING_INTEGRATION_MODULE_CLASS;
@@ -16,12 +20,12 @@ import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.E
 import static com.nasnav.integration.enums.IntegrationParam.DISABLED;
 import static com.nasnav.integration.enums.IntegrationParam.INTEGRATION_MODULE;
 import static com.nasnav.integration.enums.IntegrationParam.MAX_REQUEST_RATE;
+import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static com.nasnav.integration.enums.MappingType.SHOP;
 import static java.lang.String.format;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,6 +56,7 @@ import com.nasnav.dao.IntegrationMappingTypeRepository;
 import com.nasnav.dao.IntegrationParamRepository;
 import com.nasnav.dao.IntegrationParamTypeRepostory;
 import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.IntegrationParamDTO;
@@ -70,8 +75,10 @@ import com.nasnav.integration.events.IntegrationImportedProducts;
 import com.nasnav.integration.events.ProductsImportEvent;
 import com.nasnav.integration.events.ShopImportedProducts;
 import com.nasnav.integration.events.ShopsImportEvent;
+import com.nasnav.integration.events.StockFetchEvent;
 import com.nasnav.integration.events.data.ProductImportEventParam;
 import com.nasnav.integration.events.data.ShopsFetchParam;
+import com.nasnav.integration.events.data.StockEventParam;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.integration.model.ImportedShop;
 import com.nasnav.integration.model.OrganizationIntegrationInfo;
@@ -80,11 +87,13 @@ import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.IntegrationMappingTypeEntity;
 import com.nasnav.persistence.IntegrationParamEntity;
 import com.nasnav.persistence.IntegrationParamTypeEntity;
+import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.DataImportService;
 import com.nasnav.service.OrganizationService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.ShopService;
+import com.nasnav.service.StockService;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -100,7 +109,7 @@ import reactor.core.scheduler.Schedulers;
 public class IntegrationServiceImpl implements IntegrationService {
 	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 4L;
 
-	private static final long REQUEST_TIMEOUT_SEC = 20L;
+	private static final long REQUEST_TIMEOUT_SEC = 60L;
 
 	private final Logger logger = Logger.getLogger(getClass());
 	
@@ -135,7 +144,13 @@ public class IntegrationServiceImpl implements IntegrationService {
 	private BrandsRepository brandRepo;
 	
 	@Autowired
+	private ProductVariantsRepository variantRepo;
+	
+	@Autowired
 	private ShopsRepository shopRepo;
+	
+	@Autowired
+	private StockService stockService;
 	
 	
 	private Map<Long, OrganizationIntegrationInfo> orgIntegration;
@@ -601,10 +616,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	@Transactional(rollbackFor = Throwable.class)
 	public Integer importOrganizationProducts(IntegrationProductImportDTO metadata) throws Throwable {
 		
-		List<Long> shopIds = importShops();
-//		System.out.println(">>>"+shopIds);
-//		System.out.println(">>>" + shopRepo.findAll());
-//		System.out.println(">>>" + mappingRepo.findAll());
+		importShops();
 		
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		
@@ -817,13 +829,91 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 
 	@Override
-	public BigDecimal getExternalStock(Long localStockId, Runnable onComplete, Runnable onError) {
-		// TODO Auto-generated method stub
-		return null;
+	public Integer getExternalStock(Long localVariantId, Long localShopId) throws BusinessException {
+		
+		validateStockFetchParam(localVariantId, localShopId);
+		
+		StockFetchEvent event = createStockFetchEvent(localVariantId, localShopId);
+		
+		//the webclient will return empty Mono if the response was not OK
+		return pushIntegrationEvent(event, (e,t) -> handleStockFetchFailure(localVariantId, localShopId, t))
+				.blockOptional(Duration.ofSeconds(REQUEST_TIMEOUT_SEC))
+				.map(res -> res.getReturnedData())
+				.orElseGet( () -> getVariantLocalStockForShop(localVariantId, localShopId));
+	}
+
+
+
+
+
+
+	private StockFetchEvent createStockFetchEvent(Long localVariantId, Long localShopId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();		
+		
+		String externalVariantId = getRemoteMappedValue(orgId, PRODUCT_VARIANT, nullableToString(localVariantId));
+		String externalShopId = getRemoteMappedValue(orgId, SHOP, nullableToString(localShopId));
+		
+		StockEventParam param = new StockEventParam(externalVariantId, externalShopId);
+		StockFetchEvent event = new StockFetchEvent(orgId, param);
+		return event;
 	}
 	
 	
 	
+	
+	
+	
+	private void validateStockFetchParam(Long variantId, Long shopId) throws BusinessException {
+		if(variantId == null || shopId == null) {
+			throw new BusinessException(
+					format(ERR_FETCH_STOCK_NULL_PARAMETERS, variantId, shopId)
+					, "INVALID INTEGRATION OPERATION"
+					, HttpStatus.INTERNAL_SERVER_ERROR);			
+		}
+		
+		boolean variantExists = variantRepo.existsById(variantId);
+		boolean shopdExists = shopRepo.existsById(shopId);
+		
+		if(!variantExists) {
+			throw new BusinessException(
+						format(ERR_FETCH_STOCK_VARIANT_NOT_EXISTS, variantId)
+						, "INVALID INTEGRATION OPERATION"
+						, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		if(!shopdExists) {
+			throw new BusinessException(
+						format(ERR_FETCH_STOCK_SHOP_NOT_EXISTS, variantId, shopId)
+						, "INVALID INTEGRATION OPERATION"
+						, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+
+
+
+
+
+	private Integer getVariantLocalStockForShop(Long localVariantId, Long localShopId) {
+		
+		List<StocksEntity> stocks = stockService.getVariantStockForShop(localVariantId, localShopId);
+		return stocks
+				.stream()
+				.map(StocksEntity::getQuantity)
+				.findFirst()
+				.orElse(0);
+	}
+	
+	
+	
+	
+	private void handleStockFetchFailure(Long variantId, Long shopId, Throwable t) {
+		logger.error(t,t);
+		throw new RuntimeBusinessException(
+				format("Failed To get stocks of variant [%d] for shop [%d]", variantId, shopId)
+				, "EXTERNAL STOCK FETCH FAILED"
+				, HttpStatus.INTERNAL_SERVER_ERROR);
+	}
 	
 	
 

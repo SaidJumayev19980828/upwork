@@ -1,6 +1,5 @@
 package com.nasnav.integration;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -50,8 +49,10 @@ public interface IntegrationService {
 	
 	/**
 	 * return the stock of a product in the external system.
+	 * @throws InvalidIntegrationEventException 
+	 * @throws BusinessException 
 	 * */
-	BigDecimal getExternalStock(Long localStockId, Runnable onComplete, Runnable onError);
+	Integer getExternalStock(Long localVariantId, Long localShopId) throws InvalidIntegrationEventException, BusinessException;
 	
 	
 	/**

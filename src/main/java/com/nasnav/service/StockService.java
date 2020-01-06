@@ -33,5 +33,8 @@ public interface StockService {
 	List<StocksEntity> getVariantStockForShop(ProductVariantsEntity variant, Long shopId) ;
 	
 	
+	List<StocksEntity> getVariantStockForShop(Long variantId, Long shopId);
+	
+	
 	StockUpdateResponse updateStock(StockUpdateDTO stockUpdateReq) throws BusinessException;
 }

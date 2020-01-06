@@ -153,11 +153,22 @@ public class StockServiceImpl implements StockService {
 
 	@Override
 	public List<StocksEntity> getVariantStockForShop(ProductVariantsEntity variant, Long shopId) {
+		Long variantId = variant.getId();
+		return getVariantStockForShop(variantId, shopId);
+	}
+
+	
+	
+	
+	
+
+	@Override
+	public List<StocksEntity> getVariantStockForShop(Long variantId, Long shopId) {
 		List<StocksEntity> stocks  = new ArrayList<>();
 		if(shopId != null) {
-			stocks  = stockRepo.findByShopsEntity_IdAndProductVariantsEntity_Id(shopId, variant.getId());
+			stocks  = stockRepo.findByShopsEntity_IdAndProductVariantsEntity_Id(shopId, variantId);
 		}else {
-			stocks  = stockRepo.findByProductVariantsEntity_Id(variant.getId());
+			stocks  = stockRepo.findByProductVariantsEntity_Id(variantId);
 		}
         
 		

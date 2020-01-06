@@ -69,6 +69,7 @@ public class IntegrationTestCommon {
 		 mockCancelOrderRequest(mockServerRule);
 		 mockCreateOrderRequest(mockServerRule);
 		 mockReturnOrderRequest(mockServerRule);
+		 mockGetProductByIdRequest(mockServerRule);
 		 mockGetProductBySKURequest(mockServerRule);
 		 mockGetProductsRequestWithPagination(mockServerRule);
 		 mockGetProductsRequest(mockServerRule);		 
@@ -100,6 +101,22 @@ public class IntegrationTestCommon {
 			.when(
 				request().withMethod("GET")
 						.withPath("/api/products/6221105441060"))
+			.respond(
+					response().withBody(productBySkuResponse, MediaType.JSON_UTF_8) 
+							  .withStatusCode(200))
+				;
+	}
+	
+	
+	
+	
+	
+	private  void mockGetProductByIdRequest(MockServerRule mockServerRule) throws IOException {
+		String productBySkuResponse = new String( Files.readAllBytes(productsJson.getFile().toPath()) );
+    	 mockServerRule.getClient()
+			.when(
+				request().withMethod("GET")
+						.withPath("/api/products/11CYM-0010001"))
 			.respond(
 					response().withBody(productBySkuResponse, MediaType.JSON_UTF_8) 
 							  .withStatusCode(200))

@@ -2,18 +2,18 @@ import static com.nasnav.commons.utils.EntityUtils.setOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static com.nasnav.integration.enums.MappingType.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.nasnav.dao.IntegrationMappingRepository;
-import com.nasnav.integration.enums.MappingType;
-import com.nasnav.persistence.IntegrationMappingEntity;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -41,10 +41,13 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.nasnav.NavBox;
+import com.nasnav.dao.IntegrationMappingRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.enumerations.TransactionCurrency;
+import com.nasnav.integration.enums.MappingType;
+import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
@@ -600,17 +603,21 @@ public class DataImportApiTest {
 	@Test
 	public void getProductsCsvTemplateInvalidAuthentication() {
 		HttpEntity<Object> request = TestCommons.getHttpEntity("","456");
-		ResponseEntity res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
+		ResponseEntity<String> res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
 		Assert.assertTrue(res.getStatusCodeValue() == 401);
 
 		res = template.exchange("/product/image/bulk/template", HttpMethod.GET, request ,String.class);
 		Assert.assertTrue(res.getStatusCodeValue() == 401);
 	}
 
+	
+	
+	
+	
 	@Test
 	public void getProductsCsvTemplateInvalidAuthorization() {
 		HttpEntity<Object> request = TestCommons.getHttpEntity("","101112");
-		ResponseEntity res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
+		ResponseEntity<String> res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
 		Assert.assertTrue(res.getStatusCodeValue() == 403);
 
 		res = template.exchange("/product/image/bulk/template", HttpMethod.GET, request ,String.class);
@@ -694,13 +701,21 @@ public class DataImportApiTest {
 
 		result.andExpect(status().is(200));
 
-		Optional<IntegrationMappingEntity> mapping = integrationMappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(99001L, "PRODUCT", "5");
+		Optional<IntegrationMappingEntity> mapping = 
+				integrationMappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(
+						99001L
+						, PRODUCT_VARIANT.getValue()
+						, "5");
 		assertTrue(mapping.isPresent());
 
 		Optional<ProductVariantsEntity> product = variantRepo.findById(Long.parseLong(mapping.get().getLocalValue()));
 		assertTrue(product.isPresent());
 	}
 
+	
+	
+	
+	
 	@Test
 	public void uploadProductCSVExistingExternalIdExistVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
@@ -728,9 +743,15 @@ public class DataImportApiTest {
 		ProductEntity product = variantRepo.findById(310001L).get().getProductEntity();
 		assertEquals("Squishy shoes", product.getName());
 
-        Optional<IntegrationMappingEntity> mapping = integrationMappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(99001L, "PRODUCT", "4");
+        Optional<IntegrationMappingEntity> mapping = 
+        		integrationMappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(
+        				99001L
+        				, PRODUCT_VARIANT.getValue()
+        				, "4");
         assertTrue(mapping.isPresent());
 	}
+	
+	
 	
 	
 

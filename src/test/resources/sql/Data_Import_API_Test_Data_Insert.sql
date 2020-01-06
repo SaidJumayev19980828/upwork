@@ -101,7 +101,7 @@ values(55001, 3, 99001, 'old_val');
 
 
 -- integration Mapping types
-INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67001, 'PRODUCT');
+INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67001, 'PRODUCT_VARIANT');
 INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67002, 'SHOP');
 INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67003, 'ORDER');
 INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67004, 'CUSTOMER');

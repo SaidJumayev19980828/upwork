@@ -1,17 +1,19 @@
 package com.nasnav.commons.utils;
 
-import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.exceptions.EntityValidationException;
-import com.nasnav.response.UserApiResponse;
-import com.nasnav.response.ApiResponseBuilder;
-import com.nasnav.response.ResponseStatus;
+import static java.util.Optional.ofNullable;
 
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+
+import com.nasnav.constatnts.EntityConstants;
+import com.nasnav.exceptions.EntityValidationException;
+import com.nasnav.response.ResponseStatus;
+import com.nasnav.response.UserApiResponse;
 
 
 public class StringUtils extends org.springframework.util.StringUtils{
@@ -107,5 +109,15 @@ public class StringUtils extends org.springframework.util.StringUtils{
 		return name.replaceAll("[^a-zA-Z0-9\\.]+", "-")
 						.replaceAll("^-|-$","")
 						.toLowerCase();
+	}
+
+	
+	/**
+	 * @return object.toString() , or null if the object is null
+	 * */
+	public static String nullableToString(Object object) {
+		return ofNullable(object)
+				.map(Object::toString)
+				.orElse(null);		
 	}
 }

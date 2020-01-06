@@ -130,4 +130,13 @@ public class FortuneWebClient {
                 .syncBody(payment)
                 .exchange();
     }
+    
+    
+    
+    
+    public Mono<ClientResponse> getProductById(String id){
+    	return client.get()
+                .uri("/api/products/"+id)
+                .exchange();
+    }
 }
