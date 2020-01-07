@@ -1,13 +1,16 @@
 package com.nasnav.controller;
 
 import com.nasnav.dto.UserDTOs;
+import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegisteration;
 import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.UserService;
 import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +22,9 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin("*") // allow all origins
 public class UserController {
 
-    private UserService userService;
+    private static final String OAUTH_ENTER_EMAIL_PAGE = "/user/login/oauth2/complete_registeration?token=";
+    
+	private UserService userService;
     private EmployeeUserService employeeUserService;
     
     @Autowired
@@ -105,6 +110,12 @@ public class UserController {
     public UserApiResponse login(@RequestBody UserDTOs.UserLoginObject login) throws BusinessException {
     	return securityService.login(login);
     }
+    
+    
+    
+    
+    
+    
 
     @ApiOperation(value = "Update an employee user", nickname = "employeeUserUpdate", code = 200)
     @ApiResponses(value = {
@@ -123,19 +134,34 @@ public class UserController {
         }
         return this.userService.updateUser(userId, userToken, json);
     }
+    
+    
+    
+    
 
+    
+    
+    
     @ApiOperation(value = "Get user info", nickname = "userInfo")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 404, message = "User not found"),
     })
     @GetMapping(value = "info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity getUserData(@RequestHeader (value = "User-Token") String userToken,
-                                      @RequestParam (value = "id", required = false) Long id) throws BusinessException{
+    public UserRepresentationObject getUserData(@RequestHeader (value = "User-Token") String userToken,
+                                      @RequestParam (value = "id", required = false) Long id
+                                      ,@RequestParam (value = "is_employee", required = false) Boolean isEmployee) throws BusinessException{
 
-        return new ResponseEntity(userService.getUserData(userToken, id), HttpStatus.OK);
+        return userService.getUserData(id, isEmployee);
     }
+    
+    
+    
+    
 
+    
+    
+    
     @ApiOperation(value = "Get employee users list", nickname = "employeesInfo")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
@@ -148,4 +174,37 @@ public class UserController {
                                       @RequestParam (value = "role", required = false) String role) throws BusinessException{
         return new ResponseEntity(employeeUserService.getUserList(userToken, orgId, storeId, role), HttpStatus.OK);
     }
+    
+    
+    
+    
+    
+    @ApiOperation(value = "Log in user using a social login token, "
+    		+ "mainly used as a redirect destination at the end of the OAuth2 login process"
+    		, nickname = "userSocialLogin")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "User logged in"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Invalid credentials"),
+            @io.swagger.annotations.ApiResponse(code = 423, message = "Account unavailable"),
+    })
+    @PostMapping(value = "login/oauth2",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<UserApiResponse> login(@RequestParam("token") String socialLoginToken) throws BusinessException {
+    	ResponseEntity.BodyBuilder response = ResponseEntity.ok();
+    	try {
+    		UserApiResponse body = securityService.socialLogin(socialLoginToken);
+    		return response.body(body);
+    	}catch(InCompleteOAuthRegisteration e) {
+    		//change it to forward to a server rendered page
+    		return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+    							.header(HttpHeaders.LOCATION, OAUTH_ENTER_EMAIL_PAGE + socialLoginToken)
+    							.build();
+    	}    	
+    }
+    
+    
+    
+    
+    
+    
 }

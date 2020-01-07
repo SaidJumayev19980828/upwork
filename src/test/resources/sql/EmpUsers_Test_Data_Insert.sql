@@ -42,10 +42,12 @@ INSERT INTO public.employee_users(id, name, created_at, updated_at, email, organ
 	VALUES (81, 'Hussien', now(), now(), 'testuser81@nasnav.com', 99002, '404142',  502);
 INSERT INTO public.employee_users(id, name, created_at, updated_at, email, organization_id, authentication_token, shop_id)
 	VALUES (158, 'Walid', now(), now(), 'testuser3@nasnav.com', 99001, 'nopqrst',  502);
+INSERT INTO public.employee_users(id, name, created_at, updated_at, email, organization_id, authentication_token, shop_id, encrypted_password)
+	VALUES (159, 'Walid', now(), now(), 'user1@nasnav.com', 99001, 'nopqrst',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
 
---inserting Users
-INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, address, country, city, phone_number, image, organization_id)
-    VALUES (88, 'user1@nasnav.com',now(), now(), 'user1','123', '21 jump street', 'Egypt', 'Cairo', '+021092154875','/urls/images/fdsafag23.jpg',  99001);
+--inserting User
+INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, address, country, city, phone_number, image, organization_id, encrypted_password)
+    VALUES (88, 'user1@nasnav.com',now(), now(), 'user1','yuhjhu', '21 jump street', 'Egypt', 'Cairo', '+021092154875','/urls/images/fdsafag23.jpg',  99001, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
 
 --inserting Roles
 insert into roles(id, name, created_at, updated_at, organization_id) values(1, 'NASNAV_ADMIN', now(), now(), 99001);

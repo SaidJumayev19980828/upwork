@@ -2,6 +2,7 @@ package com.nasnav.controller;
 
 import java.util.List;
 
+import com.nasnav.request.OrderSearchParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -62,9 +63,10 @@ public class OrdersController {
     @GetMapping(value = "/info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
     public DetailedOrderRepObject getOrderInfo(
             @RequestHeader(name = "User-Token") String userToken,
-            @RequestParam(name = "order_id") Long orderId) throws BusinessException {
+            @RequestParam(name = "order_id") Long orderId,
+			@RequestParam(name = "details_level", required = false) Integer detailsLevel) throws BusinessException {
 		
-    	return this.orderService.getOrderInfo(orderId);    	
+    	return this.orderService.getOrderInfo(orderId, detailsLevel);
     }
 	
 	
@@ -81,12 +83,9 @@ public class OrdersController {
 	@GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	public List<DetailedOrderRepObject> getOrdersList(
 											@RequestHeader(name = "User-Token") String userToken,
-											@RequestParam(name = "user_id", required = false) Long userId,  //search parameter
-											@RequestParam(name = "store_id", required = false) Long storeId,
-											@RequestParam(name = "org_id", required = false) Long orgId,
-											@RequestParam(name = "status", required = false) String status) throws BusinessException {
+											OrderSearchParam params) throws BusinessException {
 		
-		return  this.orderService.getOrdersList(userToken, userId, storeId, orgId, status);
+		return  this.orderService.getOrdersList(params);
 	}
 	
 	
@@ -98,9 +97,10 @@ public class OrdersController {
 						   @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
     @GetMapping(value = "/current", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
     public DetailedOrderRepObject getCurrentNewOrder(
-            @RequestHeader(name = "User-Token") String userToken) throws BusinessException {
+            @RequestHeader(name = "User-Token") String userToken,
+			@RequestParam(name = "details_level", required = false) Integer detailsLevel) throws BusinessException {
 		
-    	return this.orderService.getCurrentOrder();    	
+    	return this.orderService.getCurrentOrder(detailsLevel);
     }
 	
 	
