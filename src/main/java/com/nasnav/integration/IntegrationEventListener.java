@@ -11,7 +11,6 @@ import javax.annotation.Nonnull;
 
 import com.nasnav.integration.events.Event;
 import com.nasnav.integration.events.EventInfo;
-import com.nasnav.integration.events.EventResult;
 
 import reactor.core.publisher.Mono;
 
@@ -37,11 +36,11 @@ public abstract class IntegrationEventListener<E extends Event<T,R>, T, R> {
 	
 	public void pushEvent(E event, BiConsumer<E, Throwable> onError) {
 		BiConsumer<E,Throwable> onErrorWrapper = wrapOnErrorCallback(event, onError);						
-		try {
-			
+		try {			
 			Mono<R> resultDataMono = handleEventAsync( event.getEventInfo() );			
-			resultDataMono.subscribe( event::broadcastResultData );
-			
+			resultDataMono
+				.doFinally(data -> event.completeEvent())
+				.subscribe( event::broadcastResultData );
 		}catch(Throwable t) {
 			logger.log(Level.SEVERE 
 						,String.format( ERR_EVENT_HANDLE_FAILED, event, t.getClass()) 

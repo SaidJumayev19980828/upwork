@@ -55,7 +55,6 @@ import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.UserEntity;
-import com.nasnav.test.commons.TestCommons;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -302,6 +301,27 @@ public class MicrosoftDynamicsIntegrationTest {
 		Integer stkQty = template.postForEntity(url, getHttpEntity("hijkllm"), Integer.class).getBody();
 		if(usingMockServer) {
 			assertEquals(101, stkQty.intValue());
+		}
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_get_stock_test_data.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void getVariantExternalStockFailureTest() throws Throwable {
+		Long VARIANT_ID = 310003L;
+		Long SHOP_ID = 55555L;
+		String url = format("/test/integration/get_stock?variant_id=%d&shop_id=%d", VARIANT_ID, SHOP_ID);
+		
+		ResponseEntity<String> response = template.postForEntity(url, getHttpEntity("hijkllm"), String.class);
+		if(usingMockServer) {
+			assertEquals(
+					"Calling the mockserver with the given parameters will return response 500"
+					+ ", so , the local stock on nasnav is returned as a fallback value."
+					, 88, Integer.valueOf(response.getBody()).intValue());
 		}
 	}
 

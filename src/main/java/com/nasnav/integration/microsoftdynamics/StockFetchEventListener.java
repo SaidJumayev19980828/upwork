@@ -43,6 +43,10 @@ public class StockFetchEventListener extends AbstractMSDynamicsEventListener<Sto
 						.map(StockEventParam::getShopId)
 						.orElse(null);
 		
+		//TODO: for now the behavior is to fail silently and return empty mono.
+		//and leave it to the integration service to return a fallback value.
+		//this can change later as we may want to propagate the error, and let it be handled
+		//by error callbacks.
 		Long orgId = event.getOrganizationId();
 		return getWebClient(orgId)
 				.getProductById(extVariantId)

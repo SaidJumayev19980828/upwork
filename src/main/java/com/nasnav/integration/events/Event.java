@@ -51,6 +51,12 @@ public abstract class Event<T, R> {
 	
 	
 	
+	public void completeEvent() {
+		eventResultFluxSink.complete();
+	}
+	
+	
+	
 	
 	public Long getOrganizationId() {
 		return eventInfo.getOrganizationId();
