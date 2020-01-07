@@ -343,6 +343,18 @@ public class MicrosoftDynamicsIntegrationTest {
 			assertEquals(55, stkQty.intValue());
 		}
 	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_order_create_test_data.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void createOrderTest() throws Throwable {
+		
+	}
 
 
 
