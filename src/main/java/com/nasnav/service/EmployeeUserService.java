@@ -28,5 +28,4 @@ public interface EmployeeUserService extends CommonUserServiceInterface {
 
 	public List<UserRepresentationObject> getUserList(String token, Long orgId, Long storeId, String role) throws BusinessException;
 
-	public UserRepresentationObject getUserData(String token, Long id) throws BusinessException;
 }

@@ -19,6 +19,7 @@ import com.google.common.base.Enums;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
+import com.nasnav.dao.CommonUserRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.UserDTOs;
@@ -49,9 +50,8 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	@Autowired
 	private EmployeeUserServiceHelper empUserSvcHelper;
 
-	@Autowired
-	private UserRepository userRepo;
-
+	
+	
 	@Autowired
 	public EmployeeUserServiceImpl(EmployeeUserServiceHelper helper, EmployeeUserRepository employeeUserRepository,
 								   PasswordEncoder passwordEncoder, RoleServiceImpl roleServiceImpl) {
@@ -347,27 +347,6 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 		return userRepObjs;
 	}
-
-	@Override
-	public UserRepresentationObject getUserData(String token, Long id) throws BusinessException {
-		Optional<EmployeeUserEntity> empUser = employeeUserRepository.findByAuthenticationToken(token);
-		if (!empUser.isPresent())
-			throw new BusinessException("INVALID TOKEN", "provided request token is invalid!", HttpStatus.UNAUTHORIZED);
-
-		if (id != null) {
-			List<String> userRoles = empUserSvcHelper.getEmployeeUserRoles(empUser.get().getId());
-			if (!userRoles.contains("NASNAV_ADMIN"))
-				throw new BusinessException("UNAUTHORIZED", "Logged user doesn't have the right to view other users data", HttpStatus.UNAUTHORIZED);
-			empUser = employeeUserRepository.findById(id);
-			if (!empUser.isPresent()) {
-				Optional<UserEntity> user = userRepo.findById(id);
-				if (!user.isPresent())
-					throw new BusinessException("INVALID PARAM: id", "Provided id doesn't match any existing user id", HttpStatus.NOT_ACCEPTABLE);
-				return user.get().getRepresentation();
-			}
-			return empUser.get().getRepresentation();
-		}
-		return empUser.get().getRepresentation();
-	}
+	
 
 }
