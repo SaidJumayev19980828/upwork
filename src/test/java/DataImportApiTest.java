@@ -1,8 +1,8 @@
 import static com.nasnav.commons.utils.EntityUtils.setOf;
+import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static com.nasnav.integration.enums.MappingType.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -46,7 +46,6 @@ import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.enumerations.TransactionCurrency;
-import com.nasnav.integration.enums.MappingType;
 import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
@@ -86,10 +85,10 @@ public class DataImportApiTest {
 
 	@Value("classpath:/files/product__list_upload.csv")
     private Resource csvFile;
-
+	
 	@Value("classpath:/files/product__list_upload_variants_with_variant_id.csv")
 	private Resource csvFileVariantsWithVariantId;
-
+	
     @Value("classpath:/files/product__list_upload_variants_with_variant_id_existing_variant.csv")
     private Resource csvFileVariantsWithVariantIdExistingVariant;
 
@@ -130,7 +129,7 @@ public class DataImportApiTest {
 
 	@Autowired
 	private TestRestTemplate template;
-
+	
 	@Autowired
 	private IntegrationMappingRepository integrationMappingRepo;
 	

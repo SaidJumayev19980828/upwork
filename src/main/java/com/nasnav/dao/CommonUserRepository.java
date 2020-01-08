@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
 
 
 @Repository
@@ -16,5 +17,6 @@ public interface CommonUserRepository{
 	List<String> getUserRoles(BaseUserEntity user);
 	BaseUserEntity saveAndFlush(BaseUserEntity userEntity) throws BusinessException;
 	BaseUserEntity getByEmailAndOrganizationId(String email, Long org_id);
-	BaseUserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
+	BaseUserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId, Boolean isEmployee);
+	Optional<BaseUserEntity> findById(Long id, Boolean isEmp);
 }

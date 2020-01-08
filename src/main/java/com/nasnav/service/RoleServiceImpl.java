@@ -1,6 +1,6 @@
 package com.nasnav.service;
 
-import com.nasnav.commons.utils.StringUtils;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import com.nasnav.dao.RoleRepository;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.persistence.Role;
@@ -24,7 +24,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public List<Role> getRolesOfEmployeeUser(Long employeeUserId) {
-        if (StringUtils.isBlankOrNull(employeeUserId)) {
+        if ( isBlankOrNull(employeeUserId)) {
             return Collections.emptyList();
         }
         return roleRepository.getRolesOfEmployeeUser(employeeUserId);

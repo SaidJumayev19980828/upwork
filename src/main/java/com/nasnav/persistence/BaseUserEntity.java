@@ -8,6 +8,8 @@ import javax.persistence.MappedSuperclass;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.nasnav.dto.UserRepresentationObject;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -60,5 +62,6 @@ public abstract class BaseUserEntity extends DefaultBusinessEntity<Long>{
 	
 	abstract public String getName();
 	abstract public void setName(String name);
+	abstract public UserRepresentationObject getRepresentation();
 	
 }

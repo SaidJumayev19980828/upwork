@@ -8,4 +8,5 @@ public class ProductSrvErrorMessages {
 	public static final String ERR_PRODUCT_STILL_USED = "Failed to delete product with id[%d]! Product is still used in the system (stocks, orders, bundles, ...)!";
 	public static final String ERR_PRODUCT_DELETE_FAILED = "Failed to delete product with id[%d]!";
 	public static final String ERR_PRODUCT_HAS_NO_DEFAULT_STOCK = "Couldn't retrieve default stock for Product of id[%]";
+	public static final String ERR_CANNOT_DELETE_PRODUCT_USED_IN_NEW_ORDERS = "Cannot delete product with id[%d]! Product is still referenced by NEW Orders.";
 }

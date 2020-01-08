@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
@@ -81,6 +82,10 @@ public class ProductApiTest {
 	
 	@Autowired
 	private JdbcTemplate jdbc;
+	
+	
+	@Autowired
+	private BasketRepository basketRepo;
 	
 	
 	@Test
@@ -437,10 +442,8 @@ public class ProductApiTest {
 	
 	@Test
 	public void deleteProductTest() throws JsonParseException, JsonMappingException, IOException {
-		BaseUserEntity user = empUserRepo.getById(69L);
-		
-		Long productId = 1008L; 
-		
+		BaseUserEntity user = empUserRepo.getById(69L);		
+		Long productId = 1008L; 		
 		
 		assertTrue(productRepository.existsById(productId)); //assert product exists before delete
 		assertNotEquals("product had images", 0, imgRepo.findByProductEntity_Id(productId).size());
@@ -449,7 +452,8 @@ public class ProductApiTest {
 		
 		assertExpectedResponse(productId, response);
 		assertFalse(productRepository.existsById(productId));
-		assertEquals("product images was deleted", 0, imgRepo.findByProductEntity_Id(productId).size());
+		
+		assertProductImagesNotDeleted(productId);
 	}
 	
 	
@@ -573,14 +577,15 @@ public class ProductApiTest {
 		
 		assertVariantsHaveRemovedFlags(variantIds);
 		
-		assertProductImagesDeleted(productId);
+		assertProductImagesNotDeleted(productId);
 	}
 
 
 
 
-	private void assertProductImagesDeleted(Long productId) {
-		assertEquals("product images were deleted", 0, imgRepo.findByProductEntity_Id(productId).size());
+	private void assertProductImagesNotDeleted(Long productId) {
+		Long imgsCount = jdbc.queryForObject("select count(*) from product_images where product_id = "+ productId, Long.class);
+		assertNotEquals("product images still exists", 0L, imgsCount.longValue());
 	}
 
 
@@ -746,6 +751,55 @@ public class ProductApiTest {
 		assertFalse("assert product was soft deleted", productRepository.existsById(productId));		
 		assertNotEquals("assert stocks were not deleted", 0L, stocks.size());
 	}
+	
+	
+	
+	
+	@Test
+	public void deleteProductInConfirmedOrdersTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(69L);
+		
+		Long productId = 1014L; 		
+		long basketItemsCountBefore = basketRepo.countByProductIdAndOrderEntity_status(productId, 1);
+		
+		assertNotEquals("assert product had confirmed order items", 0L, basketItemsCountBefore);
+		assertTrue("assert product exists before delete", productRepository.existsById(productId));
+		//---------------------------------------------------------------------
+		ResponseEntity<String> response = deleteProduct(user, productId);		
+
+		//---------------------------------------------------------------------
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertFalse("assert product was soft deleted", productRepository.existsById(productId));		
+		
+		long basketItemsCountAfter = basketRepo.countByProductIdAndOrderEntity_status(productId, 1);		
+		assertNotEquals("assert product item where not deleted", 0L, basketItemsCountAfter);
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void deleteProductInNewOrdersTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(69L);
+		
+		Long productId = 1013L; 		
+		long basketItemsCountBefore = basketRepo.countByProductIdAndOrderEntity_status(productId, 0);
+		
+		assertNotEquals("assert product had New order items", 0L, basketItemsCountBefore);
+		assertTrue("assert product exists before delete", productRepository.existsById(productId));
+		//---------------------------------------------------------------------
+		ResponseEntity<String> response = deleteProduct(user, productId);		
+
+		//---------------------------------------------------------------------
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertTrue("assert product was NOT deleted", productRepository.existsById(productId));
+		
+		long basketItemsCountAfter = basketRepo.countByProductIdAndOrderEntity_status(productId, 0);		
+		assertNotEquals("assert product item where not deleted", 0L, basketItemsCountAfter);
+	}
+	
 	
 	
 	

@@ -1,0 +1,57 @@
+<html>
+<head>
+    <script src="https://banquemisr.gateway.mastercard.com/checkout/version/$api_version/checkout.js"
+            data-error="errorCallback"
+            data-cancel="cancelCallback"
+            data-complete="/payment/misr/verify?order_uid=$order_id"
+    ></script>
+
+    <script type="text/javascript">
+        function errorCallback(error) {
+            console.log(JSON.stringify(error));
+        }
+        function cancelCallback() {
+            console.log('Payment cancelled');
+        }
+
+        Checkout.configure({
+            merchant: '$merchant',
+            order: {
+                description: "$description",
+                id: "$order_id",
+            },
+            interaction: {
+                merchant: {
+                    name: "$seller_name",
+                    address: {
+                        line1: '$seller_address_1',
+                        line2: '$seller_address_2'
+                    }
+                },
+                displayControl: {
+                    billingAddress  : 'HIDE',
+                    customerEmail   : 'HIDE',
+                    orderSummary    : 'HIDE',
+                    shipping        : 'HIDE'
+                }
+            },
+            session: {
+                id: "$session_id"
+            }
+        });
+    </script>
+</head>
+<body>
+
+<h4>JSON</h4>
+<div style="width: 90%"><pre>$rawJSON</pre></div>
+<br>
+<h4>Order ID: $order_id</h4>
+<h4>Total Price: $amount $currency</h4>
+<br>
+
+<input type="button" value="Pay with Lightbox" onclick="Checkout.showLightbox();" />
+<!-- input type="button" value="Pay with Payment Page" onclick="Checkout.showPaymentPage();" /-->
+
+</body>
+</html>

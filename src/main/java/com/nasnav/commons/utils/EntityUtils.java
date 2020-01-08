@@ -100,6 +100,10 @@ public class EntityUtils {
 	
 	
 	
+	public static <T> Boolean collectionContainsAnyOf(Collection<T> collection, T... objects) {
+		List<T> objectList = Arrays.asList(objects);
+		return objectList.stream().anyMatch(collection::contains);
+	}
 	
 	
 	public static <T,R>  R calcValueOrElseReturn(Function<T,R> function, T arg , R elseValue) {
@@ -127,3 +131,6 @@ public class EntityUtils {
 		
 	}
 }
+
+
+

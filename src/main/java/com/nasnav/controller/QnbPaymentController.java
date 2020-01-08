@@ -7,12 +7,14 @@ import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dto.OrderSessionResponse;
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.payments.qnb.Account;
-import com.nasnav.payments.qnb.PaymentService;
-import com.nasnav.payments.qnb.Session;
+import com.nasnav.payments.qnb.QnbAccount;
+import com.nasnav.payments.mastercard.PaymentService;
+import com.nasnav.payments.mastercard.Session;
+import com.nasnav.payments.qnb.QnbSession;
 import com.nasnav.payments.qnb.UpgLightbox;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
+import com.nasnav.service.StockService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
 import org.apache.logging.log4j.LogManager;
@@ -35,38 +37,42 @@ public class QnbPaymentController {
 
     private static final Logger qnbLogger = LogManager.getLogger("Payment:QNB");
     
-    private final PaymentService paymentService;
+    protected final PaymentService paymentService;
 
-    private final OrdersRepository ordersRepository;
+    protected final OrdersRepository ordersRepository;
 
-    private final PaymentsRepository paymentsRepository;
+    protected final PaymentsRepository paymentsRepository;
 
-    private final Session session;
+    protected final QnbSession session;
+
+    private QnbAccount account;
 
     @Autowired
     public QnbPaymentController(
             PaymentService paymentService,
             OrdersRepository ordersRepository,
             PaymentsRepository paymentsRepository,
-            Session session) {
+            QnbSession session) {
         this.paymentService = paymentService;
         this.ordersRepository = ordersRepository;
         this.paymentsRepository = paymentsRepository;
         this.session = session;
+        this.account = new QnbAccount();
+        account.setup();
     }
 
 	@ApiIgnore
     @GetMapping(value = "/test/payment",produces=MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<?> testPayment(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
         String initResult = initPayment(orderId).getBody().toString();
-        return new ResponseEntity<>(paymentService.getConfiguredHtml(initResult, "static/session.html"), HttpStatus.OK);
+        return new ResponseEntity<>(paymentService.getConfiguredHtml(initResult, "static/session.html", account), HttpStatus.OK);
     }
 
     @ApiIgnore
     @GetMapping(value = "/test/lightbox",produces=MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<?> testLightbox(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
         String initResult = initPayment(orderId).getBody().toString();
-        return new ResponseEntity<>(paymentService.getConfiguredHtml(initResult, "static/lightbox.html"), HttpStatus.OK);
+        return new ResponseEntity<>(paymentService.getConfiguredHtml(initResult, "static/qnb-lightbox.html", account), HttpStatus.OK);
     }
 
     @ApiIgnore
@@ -187,7 +193,7 @@ public class QnbPaymentController {
         if(!orderOpt.isPresent()) {
             throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
         }
-        session.setMerchantAccount(new Account());
+//        session.setMerchantAccount(account);
         OrdersEntity order = orderOpt.get();
         OrderSessionResponse response = new OrderSessionResponse();
         response.setSuccess(false);

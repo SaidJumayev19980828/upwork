@@ -33,7 +33,7 @@ import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.StockRepository;
-import com.nasnav.payments.qnb.PaymentService;
+import com.nasnav.payments.mastercard.PaymentService;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;

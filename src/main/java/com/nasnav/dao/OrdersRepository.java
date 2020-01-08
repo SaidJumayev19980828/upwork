@@ -22,8 +22,17 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
     @Query("update OrdersEntity set payment_status = :paymentStatus, updated_at = :updateTimestamp where id = :orderId")
     void setPaymentStatusForOrder(@Param("orderId") Long orderId, @Param("paymentStatus") Integer paymentStatus, @Param("updateTimestamp") Date updateTimestamp);
 
+    
+    @Transactional
+    @Modifying
+	@Query("delete from OrdersEntity o where o.status = :status and o.userId = :userId")
+	void deleteByStatusAndUserId(@Param("status") Integer status, @Param("userId") Long userId);
+    
+    
     List<OrdersEntity> findByUserId(Long userId);
     List<OrdersEntity> findByUserIdAndStatus(Long userId, Integer status);
+
+    OrdersEntity findByIdAndUserId(Long orderId, Long userId);
 
     List<OrdersEntity> findByShopsEntityId(Long shopId);
     List<OrdersEntity> getOrdersEntityByShopsEntityIdAndUserId(Long shopId, Long userId);
@@ -47,5 +56,7 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 
 	Long countByStatusAndUserId(Integer value, long l);
 
-	void deleteByStatusAndUserId(Integer value, Long id);
+	Long countByOrganizationEntity_id(long orgId);
+
+	Long countByShopsEntity_id(Long shopId);
 }

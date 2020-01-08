@@ -106,14 +106,26 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 
 
 
+	public BaseUserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId, Boolean isEmployee) {		
+		if(isEmployee != null && isEmployee) {
+			return empRepo.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
+		}else {
+			return userRepo.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
+		}
+	}
+
+
+
+
 	@Override
-	public BaseUserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId) {		
-		BaseUserEntity user = userRepo.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
-		
-		if(user == null)
-			user = empRepo.getByEmailIgnoreCaseAndOrganizationId(email, orgId);
-		
-		return user;		
+	public Optional<BaseUserEntity> findById(Long id, Boolean isEmp) {
+		if(isEmp) {
+			return empRepo.findById(id)
+						.map(BaseUserEntity.class::cast);
+		}else {
+			return userRepo.findById(id)
+						.map(BaseUserEntity.class::cast);
+		}
 	}
 
 }

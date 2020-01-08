@@ -1,12 +1,10 @@
 package com.nasnav.dao;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.repository.CrudRepository;
 
-import com.nasnav.dto.ProductImageUpdateDTO;
 import com.nasnav.persistence.ProductImagesEntity;
 
 public interface ProductImagesRepository extends CrudRepository<ProductImagesEntity, Long>{

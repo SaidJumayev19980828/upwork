@@ -51,8 +51,7 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 public class NavBoxTest {
 
-    private MockMvc mockMvc;
-    HttpHeaders headers;
+    private HttpHeaders headers;
 
     @Autowired
     private TestRestTemplate template;

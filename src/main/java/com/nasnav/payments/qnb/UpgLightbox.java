@@ -1,9 +1,7 @@
 package com.nasnav.payments.qnb;
 
-import com.nasnav.dao.OrdersRepository;
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.TransactionCurrency;
-import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
 import org.apache.commons.codec.DecoderException;
@@ -29,7 +27,7 @@ import java.util.stream.Collectors;
 public class UpgLightbox {
 
 	private static DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-	private static Account account = new Account();
+	private static QnbAccount account = new QnbAccount();
 	private static final Logger qnbLogger = LogManager.getLogger("Payment:QNB");
 
 	public JSONObject getJsonConfig(OrdersEntity order) {
@@ -79,7 +77,7 @@ public class UpgLightbox {
 			return null;
 		}
 		PaymentEntity payment = new PaymentEntity();
-		payment.setOperator("QNB");
+		payment.setOperator("UPG");
 		payment.setOrdersEntity(order);
 		payment.setUid("MLB-" + json.getString("MerchantReference"));
 		payment.setExecuted(new Date());

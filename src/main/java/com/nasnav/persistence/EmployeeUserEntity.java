@@ -69,7 +69,8 @@ public class EmployeeUserEntity extends BaseUserEntity {
         
         return employeeUser;
     }
-
+    
+    @Override
     public UserRepresentationObject getRepresentation() {
         UserRepresentationObject obj = new UserRepresentationObject();
         BeanUtils.copyProperties(this, obj);

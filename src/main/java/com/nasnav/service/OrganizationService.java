@@ -259,6 +259,7 @@ public class OrganizationService {
                 throw new BusinessException("INVALID_PARAM: p_name", "Required Organization p_name is invalid",
                         HttpStatus.NOT_ACCEPTABLE);
             }
+            brand.setPname(json.pname);
         } else {
             brand.setPname(StringUtils.encodeUrl(json.name));
         }

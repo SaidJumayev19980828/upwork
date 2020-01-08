@@ -1,3 +1,4 @@
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -22,10 +23,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import com.nasnav.NavBox;
+import com.nasnav.dao.FilesRepository;
+import com.nasnav.dao.OrganizationImagesRepository;
+import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dto.OrganizationImagesRepresentationObject;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.test.commons.TestCommons;

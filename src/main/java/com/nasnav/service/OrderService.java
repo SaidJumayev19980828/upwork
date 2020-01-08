@@ -5,6 +5,7 @@ import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 
 import java.math.BigDecimal;
@@ -20,13 +21,13 @@ public interface OrderService {
 
 	public OrderResponse handleOrder(OrderJsonDto orderJson) throws BusinessException;
 
-	public DetailedOrderRepObject getOrderInfo(Long orderId)  throws BusinessException;
+	public DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
 
 	public OrderValue getOrderValue(OrdersEntity orderEntity);
 
-	public List<DetailedOrderRepObject> getOrdersList(String userToken, Long userId, Long storeId, Long orgId, String status);
+	public List<DetailedOrderRepObject> getOrdersList(OrderSearchParam params) throws BusinessException;
 
-	public DetailedOrderRepObject getCurrentOrder() throws BusinessException;
+	public DetailedOrderRepObject getCurrentOrder(Integer detailsLevel) throws BusinessException;
 
 	public void deleteCurrentOrders();
 }

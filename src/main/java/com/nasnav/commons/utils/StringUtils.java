@@ -13,8 +13,17 @@ import org.springframework.http.HttpStatus;
 
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.exceptions.EntityValidationException;
-import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.response.ApiResponseBuilder;
+import com.nasnav.response.ResponseStatus;
+
+import com.nasnav.response.UserApiResponse;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.*;
+
+import org.springframework.http.HttpStatus;
 
 
 public class StringUtils extends org.springframework.util.StringUtils{
@@ -123,6 +132,11 @@ public class StringUtils extends org.springframework.util.StringUtils{
 	}
 	
 	
+	
+	public static String nullSafe(String string) {
+		return Optional.ofNullable(string)
+				       .orElse("");
+	}
 	
 	
 	public static boolean anyBlankOrNull(String... strings) {

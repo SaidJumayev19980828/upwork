@@ -9,6 +9,7 @@ import lombok.Getter;
  * updated in to higher value only
  */
 public enum OrderStatus {
+	//
 	NEW(0)
 	, CLIENT_CONFIRMED(1)
 	, STORE_CONFIRMED(2)
