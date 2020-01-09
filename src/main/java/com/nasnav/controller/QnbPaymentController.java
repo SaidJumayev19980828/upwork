@@ -5,21 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dto.OrderSessionResponse;
-import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.qnb.QnbAccount;
 import com.nasnav.payments.mastercard.PaymentService;
-import com.nasnav.payments.mastercard.Session;
 import com.nasnav.payments.qnb.QnbSession;
-import com.nasnav.payments.qnb.UpgLightbox;
+import com.nasnav.payments.UpgLightbox;
 import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.PaymentEntity;
-import com.nasnav.service.StockService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -36,14 +31,14 @@ import java.util.Optional;
 public class QnbPaymentController {
 
     private static final Logger qnbLogger = LogManager.getLogger("Payment:QNB");
-    
-    protected final PaymentService paymentService;
 
-    protected final OrdersRepository ordersRepository;
+    private final PaymentService paymentService;
 
-    protected final PaymentsRepository paymentsRepository;
+    private final OrdersRepository ordersRepository;
 
-    protected final QnbSession session;
+    private final PaymentsRepository paymentsRepository;
+
+    private final QnbSession session;
 
     private QnbAccount account;
 
@@ -83,8 +78,8 @@ public class QnbPaymentController {
             throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
         }
         UpgLightbox lightbox = new UpgLightbox();
-        JSONObject data = lightbox.getJsonConfig(orderOpt.get());
-        String testPage = lightbox.getConfiguredHtml(data,"static/upg-lightbox.html");
+        JSONObject data = lightbox.getJsonConfig(orderOpt.get(), account);
+        String testPage = lightbox.getConfiguredHtml(data,"static/upg-lightbox.html", account.getUpgCallbackUrl());
 
 //        String initResult = initPayment(orderId).getBody().toString();
         return new ResponseEntity<>(testPage, HttpStatus.OK);
@@ -97,46 +92,15 @@ public class QnbPaymentController {
             throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
         }
         UpgLightbox lightbox = new UpgLightbox();
-        JSONObject data = lightbox.getJsonConfig(orderOpt.get());
+        JSONObject data = lightbox.getJsonConfig(orderOpt.get(), account);
         return new ResponseEntity<>(data.toString(), HttpStatus.OK);
     }
 
     @PostMapping(value = "/upg/callback")
     public ResponseEntity<?> upgCallback(@RequestBody String content) {
-//        System.out.println(content);
         qnbLogger.info("Received payment confirmation: {}", content);
-        long orderId = -1;
-        JSONObject jsonObject = null;
-        try {
-            jsonObject = new JSONObject(content);
-        } catch (JSONException ex) { ; }
-        if (jsonObject == null) {
-            qnbLogger.error("Unable to parse the response: {}", content);
-            return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to process the response received from the gateway\"}", HttpStatus.BAD_GATEWAY);
-        }
-        // get the order id from merchant reference
-        String ref = jsonObject.getString("MerchantReference");
-        try {
-            orderId = Long.parseLong(ref.substring(0, ref.indexOf('-')));
-        } catch (Exception ex) { ; }
-        if (orderId < 0) {
-            qnbLogger.error("Unable to retrieve order ID from the reference: {}", ref);
-            return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to process Order ID\"}", HttpStatus.BAD_GATEWAY);
-        }
-        Optional<OrdersEntity> oo = ordersRepository.findById(orderId);
-        if (!oo.isPresent()) {
-            qnbLogger.error("Order: {} does not exist", orderId);
-            return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to find applicable order\"}", HttpStatus.BAD_REQUEST);
-        }
-
-        PaymentEntity payment = UpgLightbox.verifyPayment(jsonObject, oo.get());
-        if (payment != null) {
-            paymentsRepository.saveAndFlush(payment);
-            ordersRepository.setPaymentStatusForOrder(orderId, PaymentStatus.PAID.getValue(), payment.getExecuted());
-            return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to verify payment confirmation\"}", HttpStatus.BAD_REQUEST);
-        }
+        UpgLightbox lightbox = new UpgLightbox();
+        return lightbox.callback(content, ordersRepository, paymentsRepository, account, qnbLogger);
     }
 
     @ApiOperation(value = "Execute the payment after setup and user's data collection", nickname = "qnbExecute")
@@ -193,7 +157,6 @@ public class QnbPaymentController {
         if(!orderOpt.isPresent()) {
             throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
         }
-//        session.setMerchantAccount(account);
         OrdersEntity order = orderOpt.get();
         OrderSessionResponse response = new OrderSessionResponse();
         response.setSuccess(false);

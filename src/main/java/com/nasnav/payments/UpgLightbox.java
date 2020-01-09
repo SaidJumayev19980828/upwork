@@ -1,14 +1,18 @@
-package com.nasnav.payments.qnb;
+package com.nasnav.payments;
 
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -27,10 +31,43 @@ import java.util.stream.Collectors;
 public class UpgLightbox {
 
 	private static DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-	private static QnbAccount account = new QnbAccount();
-	private static final Logger qnbLogger = LogManager.getLogger("Payment:QNB");
 
-	public JSONObject getJsonConfig(OrdersEntity order) {
+	public ResponseEntity<?> callback(String content, OrdersRepository ordersRepository, PaymentsRepository paymentsRepository, Account account, Logger upgLogger) {
+		long orderId = -1;
+		JSONObject jsonObject = null;
+		try {
+			jsonObject = new JSONObject(content);
+		} catch (JSONException ex) { ; }
+		if (jsonObject == null) {
+			upgLogger.error("Unable to parse the response: {}", content);
+			return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to process the response received from the gateway\"}", HttpStatus.BAD_GATEWAY);
+		}
+		// get the order id from merchant reference
+		String ref = jsonObject.getString("MerchantReference");
+		try {
+			orderId = Long.parseLong(ref.substring(0, ref.indexOf('-')));
+		} catch (Exception ex) { ; }
+		if (orderId < 0) {
+			upgLogger.error("Unable to retrieve order ID from the reference: {}", ref);
+			return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to process Order ID\"}", HttpStatus.BAD_GATEWAY);
+		}
+		Optional<OrdersEntity> oo = ordersRepository.findById(orderId);
+		if (!oo.isPresent()) {
+			upgLogger.error("Order: {} does not exist", orderId);
+			return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to find applicable order\"}", HttpStatus.BAD_REQUEST);
+		}
+
+		PaymentEntity payment = UpgLightbox.verifyPayment(jsonObject, oo.get(), upgLogger, account);
+		if (payment != null) {
+			paymentsRepository.saveAndFlush(payment);
+			ordersRepository.setPaymentStatusForOrder(orderId, PaymentStatus.PAID.getValue(), payment.getExecuted());
+			return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to verify payment confirmation\"}", HttpStatus.BAD_REQUEST);
+		}
+	}
+
+	public JSONObject getJsonConfig(OrdersEntity order, Account account) {
 		Date now = new Date();
 		JSONObject result = new JSONObject();
 		result.put("PaymentMethodFromLightBox", 0);
@@ -53,7 +90,7 @@ public class UpgLightbox {
 		return result;
 	}
 
-	public static PaymentEntity verifyPayment(JSONObject json, OrdersEntity order) {
+	public static PaymentEntity verifyPayment(JSONObject json, OrdersEntity order, Logger upgLogger, Account account) {
 //System.out.println("Received: " + json.toString(2));
 		JSONObject verifier = new JSONObject();
 		for (String param: new String[] {"TxnDate", "Amount", "Currency", "PaidThrough"}) {
@@ -63,7 +100,7 @@ public class UpgLightbox {
 		verifier.put("TerminalId", account.getUpgTerminalId());
 		String hash = calculateHash(verifier, account.getUpgSecureKey());
 		if (hash == null || !hash.toUpperCase().equals(json.getString("SecureHash").toUpperCase())) {
-			qnbLogger.error("Calculated hash {} does not match the received one {}", hash, json.get("SecureHash"));
+			upgLogger.error("Calculated hash {} does not match the received one {}", hash, json.get("SecureHash"));
 			return null;
 		}
 //System.out.println("received hash: " + json.get("SecureHash") + "\ncalculated: " + hash);
@@ -73,7 +110,7 @@ public class UpgLightbox {
 			paidAmount = Long.parseLong(json.getString("Amount"));
 		} catch (Exception ex) {;}
 		if (order.getAmount().longValue() * 100 != paidAmount) {
-			qnbLogger.error("Paid amount: {} does not equal order {} amount: {}", json.getString("Amount"), order.getId(), order.getAmount());
+			upgLogger.error("Paid amount: {} does not equal order {} amount: {}", json.getString("Amount"), order.getId(), order.getAmount());
 			return null;
 		}
 		PaymentEntity payment = new PaymentEntity();
@@ -114,9 +151,9 @@ public class UpgLightbox {
 		return null;
 	}
 
-	public String getConfiguredHtml(JSONObject data, String template) {
+	public String getConfiguredHtml(JSONObject data, String template, String callback) {
 		String htmlPage = null;
-//		try {
+
 		InputStream is = getClass().getClassLoader().getResourceAsStream(template);
 		if (is == null) {
 			System.err.println("######## LIGHTBOX TEMPLATE NOT AVAILABLE #######");
@@ -140,14 +177,8 @@ public class UpgLightbox {
 		String modified = htmlPage;
 		modified = modified.replace("$rawJSON", data.toString());
 		modified = modified.replace("/*TRNDATA*/", args.toString());
-		modified = modified.replace("/*CALLBACK*/", account.getUpgCallbackUrl());
-/*
-		try {
-		} catch (Exception ex) {
-			System.out.println(ex);
-		}
-*/
-		return modified;
+		modified = modified.replace("/*CALLBACK*/", callback);
 
+		return modified;
 	}
 }

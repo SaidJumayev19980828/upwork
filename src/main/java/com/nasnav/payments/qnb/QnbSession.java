@@ -2,9 +2,7 @@ package com.nasnav.payments.qnb;
 
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
-import com.nasnav.payments.Account;
 import com.nasnav.payments.mastercard.Session;
-import com.nasnav.payments.misr.MisrAccount;
 import com.nasnav.service.OrderService;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -6,16 +6,16 @@ import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dto.OrderSessionResponse;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.payments.UpgLightbox;
 import com.nasnav.payments.misr.MisrAccount;
 import com.nasnav.payments.misr.MisrSession;
-import com.nasnav.payments.qnb.QnbAccount;
 import com.nasnav.payments.mastercard.PaymentService;
-import com.nasnav.payments.mastercard.Session;
 import com.nasnav.persistence.OrdersEntity;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -69,6 +69,40 @@ public class MisrPaymentController {
         String initResult = initPayment(orderId).getBody().toString();
         return new ResponseEntity<>(paymentService.getConfiguredHtml(initResult, "static/misr-lightbox.html", account), HttpStatus.OK);
     }
+
+    @ApiIgnore
+    @GetMapping(value = "/test/upglightbox",produces=MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<?> testMezza(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
+        Optional<OrdersEntity> orderOpt = ordersRepository.findById(orderId);
+        if(!orderOpt.isPresent()) {
+            throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
+        }
+        UpgLightbox lightbox = new UpgLightbox();
+        JSONObject data = lightbox.getJsonConfig(orderOpt.get(), account);
+        String testPage = lightbox.getConfiguredHtml(data,"static/upg-lightbox.html", account.getUpgCallbackUrl());
+
+//        String initResult = initPayment(orderId).getBody().toString();
+        return new ResponseEntity<>(testPage, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/upg/init")
+    public ResponseEntity<?> upgGetData(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
+        Optional<OrdersEntity> orderOpt = ordersRepository.findById(orderId);
+        if(!orderOpt.isPresent()) {
+            throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
+        }
+        UpgLightbox lightbox = new UpgLightbox();
+        JSONObject data = lightbox.getJsonConfig(orderOpt.get(), account);
+        return new ResponseEntity<>(data.toString(), HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/upg/callback")
+    public ResponseEntity<?> upgCallback(@RequestBody String content) {
+        misrLogger.info("Received payment confirmation: {}", content);
+        UpgLightbox lightbox = new UpgLightbox();
+        return lightbox.callback(content, ordersRepository, paymentsRepository, account, misrLogger);
+    }
+
 
     @ApiOperation(value = "Execute the payment after setup and user's data collection", nickname = "misrExecute")
     @ApiResponses(value = {
@@ -124,8 +158,6 @@ public class MisrPaymentController {
         if(!orderOpt.isPresent()) {
             throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
         }
-//        session.setMerchantAccount(account);
-//        System.out.println("XXXX: " + session.getMerchantAccount().getMerchantId());
         OrdersEntity order = orderOpt.get();
         OrderSessionResponse response = new OrderSessionResponse();
         response.setSuccess(false);
