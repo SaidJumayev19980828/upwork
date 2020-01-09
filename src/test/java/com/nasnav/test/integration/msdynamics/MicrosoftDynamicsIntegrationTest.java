@@ -1,19 +1,26 @@
 package com.nasnav.test.integration.msdynamics;
 
+import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
+import static com.nasnav.enumerations.OrderStatus.NEW;
+import static com.nasnav.integration.enums.MappingType.ORDER;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static com.nasnav.test.commons.TestCommons.readResource;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.JsonBody.json;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -22,6 +29,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockserver.junit.MockServerRule;
+import org.mockserver.model.Body;
+import org.mockserver.model.JsonBody;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,11 +59,16 @@ import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.dto.UserDTOs.UserRegistrationObject;
+import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.enums.MappingType;
 import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.response.OrderResponse;
+import com.nasnav.test.commons.TestCommons;
+import com.nasnav.test.model.Item;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -75,6 +89,9 @@ public class MicrosoftDynamicsIntegrationTest {
 	private static final Long ORG_ID = 99001L;
 	private static final String USER_MAPPING = "CUSTOMER";
 	
+	
+	@Value("classpath:/json/ms_dynamics_integratoin_test/expected_order_request.json")
+	private Resource orderRequest;
 	
 	@Value("classpath:/json/ms_dynamics_integratoin_test/get_stores_response.json")
 	private Resource storesJson;
@@ -353,11 +370,96 @@ public class MicrosoftDynamicsIntegrationTest {
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_order_create_test_data.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void createOrderTest() throws Throwable {
+		//create order
+		String token = "123eerd";
 		
+		Long stockId = 60001L;
+		Integer orderQuantity = 5;
+		
+		//---------------------------------------------------------------
+		JSONObject request = createOrderRequestWithBasketItems(NEW, item(stockId, orderQuantity));
+		ResponseEntity<OrderResponse> response = 
+				template.postForEntity("/order/update"
+										, getHttpEntity( request.toString(), token)
+										, OrderResponse.class);
+		
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		Long orderId = response.getBody().getOrderId();
+		Optional orderMappingAfterOrderCreation = 
+				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, ORDER.getValue(), orderId.toString());
+		assertFalse(orderMappingAfterOrderCreation.isPresent()); 
+		//---------------------------------------------------------------		
+		//confirm the order
+		
+		JSONObject updateRequest = createOrderRequestWithBasketItems(CLIENT_CONFIRMED);
+		updateRequest.put("order_id", orderId);
+		
+		ResponseEntity<String> updateResponse = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity( updateRequest.toString(), token)
+										, String.class);
+		
+		assertEquals(HttpStatus.OK, updateResponse.getStatusCode());
+		//---------------------------------------------------------------		
+		Thread.sleep(2000);
+		//---------------------------------------------------------------		
+		//check the api was called with the expected request body
+		String expectedExtOrderRequest = TestCommons.readResource(orderRequest);
+		if(usingMockServer) {
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("PUT")
+				        .withPath("/api/salesorder")
+				        .withBody(json(expectedExtOrderRequest))
+				        ,
+				      VerificationTimes.exactly(1)
+				    );
+		}
+		
+		//---------------------------------------------------------------
+		//validate an integration mapping was created
+		
+		Optional<IntegrationMappingEntity> orderMappingAfterOrderConfirm = 
+				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, ORDER.getValue(), orderId.toString());
+		assertTrue(orderMappingAfterOrderConfirm.isPresent()); 
+					
 	}
 
 
 
+	
+	
+	private Item item(Long stockId, Integer quantity) {
+		return new Item(stockId, quantity);
+	}
+	
+	
+	
+	
+	
+	private JSONObject createOrderRequestWithBasketItems(OrderStatus status, Item... items) {
+		JSONArray basket = createBasket( items);
+		
+		JSONObject request = new JSONObject();
+		request.put("status", status.name());
+		request.put("basket", basket);
+		return request;
+	}
+	
+	
+	
+	
+	private JSONArray createBasket(Item...items) {
+		return new JSONArray( 
+				asList(items)
+					.stream()
+					.map(Item::toJsonObject)				
+					.collect(Collectors.toList())
+				);
+	}
+	
+	
+	
 
 
 	private boolean allProductHaveMapping() {

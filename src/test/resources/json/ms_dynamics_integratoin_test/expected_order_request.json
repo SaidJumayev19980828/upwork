@@ -1,0 +1,28 @@
+{
+  "CountryID": "EGY",
+  "CustomerID": "un5005009",
+  "Address": "12 Abbas el-Akkad, Nasr City, Cairo, Egypt ",
+  "City_Code": "",
+  "Total_Order_Discount": 0.0,
+  "Total": 3000.0,
+  "Shipping_fees": 0.0,
+  "COD_Fee": 0.0,
+  "Subtotal": 3000.0,
+  "InventSite": "OCTOBER1",
+  "Store": "FOarabia",
+  "PaymentMethod": "Credit_CHE",
+  "CodCode": "Non",
+  "CODFeeAmount": 0.0,
+  "ShippingfeesCode": "Non",
+  "Items": [{
+    "Item": "11CYM-0010001",
+    "InventSiteID": "OCTOBER1",
+    "Store": "FOarabia",
+    "Code": null,
+    "Qty": 5.0,
+    "SalesPrice": 600.0000000000000000,
+    "DiscountAmount": 0.0000000000000000,
+    "NetPrice": 3000.0,
+    "Totals": 3000.0
+  }]
+}

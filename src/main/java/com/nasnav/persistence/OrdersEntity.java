@@ -8,6 +8,7 @@ import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -26,12 +27,14 @@ import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
+import com.nasnav.persistence.listeners.OrdersEntityListener;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Entity
 @Table(name="orders")
+@EntityListeners(OrdersEntityListener.class)
 @Data
 @EqualsAndHashCode(callSuper=false)
 public class OrdersEntity implements BaseEntity{

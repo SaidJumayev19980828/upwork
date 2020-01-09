@@ -48,6 +48,10 @@ INSERT INTO public.employee_users(id, created_at, updated_at, email, organizatio
 	VALUES (69, now(), now(), 'testuser2@nasnav.com', 99001, 'hijkllm',  50001);
 
 
+INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id,country,city ,address)
+    VALUES (88, 'user1@nasnav.com',now(), now(), 'user1','123eerd', 99001, 'Egypt', 'Cairo', '12 Abbas el-Akkad, Nasr City');
+
+
 
 --inserting Roles
 insert into roles(id, name, created_at, updated_at, organization_id) values(1, 'NASNAV_ADMIN', now(), now(), 99001);
@@ -95,6 +99,7 @@ insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organiz
 INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67004, 'CUSTOMER');
 INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67005, 'SHOP');
 INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67006, 'PRODUCT_VARIANT');
+INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67007, 'ORDER');
 
 
 
@@ -103,6 +108,7 @@ INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value,
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '55555', 'Delsey', 99001);
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67006, '310001', '11CYM-0010001', 99001);
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67006, '310003', '11CYM-0015551', 99001);
+INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67004, '88', 'un5005009', 99001);
 
 
 

@@ -66,9 +66,8 @@ import com.nasnav.response.OrderResponse;
 import com.nasnav.service.UserService;
 import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
+import com.nasnav.test.model.Item;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
 
 @RunWith(SpringRunner.class)
@@ -1425,12 +1424,4 @@ public class OrderServiceTest {
 					, countAllBefore - countAllAfter);
 	}
 	
-}
-
-
-@Data
-@AllArgsConstructor
-class Item{
-	private Long stockId;
-	private Integer quantity;
 }

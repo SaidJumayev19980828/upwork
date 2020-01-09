@@ -7,9 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.reactive.function.client.ClientResponse;
-
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.CustomerCreateEvent;
 import com.nasnav.integration.events.EventInfo;
@@ -38,7 +35,6 @@ public class CustomerCreateEventListener extends AbstractMSDynamicsEventListener
 		Long orgId = event.getOrganizationId();
 		return getWebClient(orgId)
 					.createCustomer(customer)
-					.filter( res -> res.statusCode() == HttpStatus.OK)
 					.doOnSuccess(this::throwExceptionIfNotOk)
 					.flatMap(res -> res.bodyToMono(String.class));		
 	}

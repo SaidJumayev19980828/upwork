@@ -1,11 +1,11 @@
 package com.nasnav.integration;
 
-import com.nasnav.integration.events.EventResult;
 import com.nasnav.integration.events.data.CustomerData;
-
-import reactor.core.publisher.Mono;
+import com.nasnav.persistence.OrdersEntity;
 
 public interface IntegrationServiceHelper {
 
-	Mono<EventResult<CustomerData, String>> pushCustomerCreationEvent(CustomerData data, Long orgId);
+	void pushCustomerCreationEvent(CustomerData data, Long orgId);
+
+	void pushOrderConfirmEvent(OrdersEntity order);
 }
