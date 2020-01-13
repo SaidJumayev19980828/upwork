@@ -389,7 +389,7 @@ public class MicrosoftDynamicsIntegrationTest {
 		Long orderId = createNewOrder(token); 
 		confirmOrder(token, orderId);
 		//---------------------------------------------------------------		
-		Thread.sleep(2000);
+		Thread.sleep(3000);
 		//---------------------------------------------------------------		
 		assertOrderIntegration(orderId); 					
 	}
@@ -422,7 +422,7 @@ public class MicrosoftDynamicsIntegrationTest {
 		
 		payment= paymentRepo.save(payment);
 		//---------------------------------------------------------------		
-		Thread.sleep(2000);
+		Thread.sleep(5000);
 		//---------------------------------------------------------------
 		if(usingMockServer) {
 			mockServerRule.getClient().verify(
