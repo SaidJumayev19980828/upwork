@@ -1,6 +1,7 @@
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.TagsRepository;
+import com.nasnav.test.commons.TestCommons;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;

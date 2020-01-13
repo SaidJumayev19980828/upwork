@@ -7,6 +7,7 @@ import javax.persistence.*;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.NamedNativeQuery;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import com.nasnav.dto.Pair;
@@ -79,7 +80,7 @@ public class ProductEntity {
 
     @Column(name="organization_id")
     private Long organizationId;
-    
+
     @Column(name="category_id")
     private Long categoryId;
     

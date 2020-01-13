@@ -979,7 +979,6 @@ public class ProductApiTest {
 
 		// sorting by price ASC
 		param.sort = ProductSortOptions.PRICE;
-		param.minprice = true;
 		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
 		productsRes = response.getBody();
 
@@ -1021,7 +1020,6 @@ public class ProductApiTest {
 
 		// sorting by price ASC
 		param.sort = ProductSortOptions.PRICE;
-		param.minprice = true;
 		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
 		productsRes = response.getBody();
 

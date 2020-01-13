@@ -22,6 +22,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 @RestController
@@ -103,7 +104,7 @@ public class NavboxController {
 			@io.swagger.annotations.ApiResponse(code = 204, message = "Empty product list"),
 			@io.swagger.annotations.ApiResponse(code = 400, message = "Invalid query parameters"), })
 	@GetMapping("/products")
-	public ResponseEntity<?> getProducts(ProductSearchParam productSearchParam) throws BusinessException {
+	public ResponseEntity<?> getProducts(ProductSearchParam productSearchParam) throws BusinessException, InvocationTargetException, IllegalAccessException {
 
 		ProductsResponse productsResponse = productService.getProducts(productSearchParam);
 

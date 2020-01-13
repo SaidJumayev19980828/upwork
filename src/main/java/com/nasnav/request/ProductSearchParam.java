@@ -6,6 +6,7 @@ import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.dto.ProductSortOptions;
 
 import lombok.Data;
+import lombok.ToString;
 
 import java.util.List;
 
@@ -20,7 +21,6 @@ public class ProductSearchParam {
     public Long brand_id;
     public List<Long> tags;
     public String name;
-    public boolean minprice;
     public Integer start;
     public Integer count;
     public ProductSortOptions sort;
@@ -37,7 +37,11 @@ public class ProductSearchParam {
 
     @Override
     public String toString() {
+        if (this.org_id == null)
+            return null;
+
         String result = "";
+
         if (this.org_id != null)
             result += "&org_id="+this.org_id;
 
@@ -68,8 +72,6 @@ public class ProductSearchParam {
         if (this.tags != null)
             for(Long tagId: tags)
                 result += "&tags="+tagId;
-
-        result += "&minprice="+this.minprice;
 
         return result.substring(1);
 

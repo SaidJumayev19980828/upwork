@@ -186,8 +186,7 @@ public class ProductService {
 
 		List<Long> bundleProductsIdList = bundleRepository.getBundleItemsProductIds(product.getId());
 		List<ProductEntity> bundleProducts = this.getProductsByIds(bundleProductsIdList , "asc", "name");
-		ProductsResponse response = this.getProductsResponse(bundleProducts,"asc" , "name" , 0,
-				Integer.MAX_VALUE, false, null, (long)bundleProducts.size() );
+		ProductsResponse response = this.getProductsResponse(bundleProducts,"asc" , "name" ,  (long)bundleProducts.size() );
 		List<ProductRepresentationObject> productRepList = response == null? new ArrayList<>() : response.getProducts();
 		return productRepList;
 	}
@@ -337,7 +336,35 @@ public class ProductService {
 	}
 
 
-	public ProductsResponse getProducts(ProductSearchParam params) throws BusinessException {
+	public ProductsResponse getProducts(ProductSearchParam requestParams) throws BusinessException, InvocationTargetException, IllegalAccessException {
+		ProductSearchParam params = getProductSearchParams(requestParams);
+
+		List<ProductEntity> products = null;
+		Long productsCount = null;
+
+		CriteriaBuilder builder = em.getCriteriaBuilder();
+		CriteriaQuery<ProductEntity> query = builder.createQuery(ProductEntity.class);
+		Root<ProductEntity> root = query.from(ProductEntity.class);
+
+		Predicate[] predicatesArr = getProductQueryPredicates(params, builder, root);
+		Order orderBy = getProductQueryOrderBy(params, builder, root);
+
+		if (predicatesArr != null) {
+			query.where(predicatesArr);
+			if (orderBy != null)
+				query.orderBy(orderBy);
+			productsCount = (long) em.createQuery(query).getResultList().size();
+			products =  em.createQuery(query).setMaxResults(params.count).setFirstResult(params.start).getResultList();
+		}
+
+		return getProductsResponse(products, params.order.getValue(), params.sort.toString(), productsCount);
+	}
+
+
+	ProductSearchParam getProductSearchParams(ProductSearchParam oldParams) throws BusinessException, InvocationTargetException, IllegalAccessException {
+		ProductSearchParam params = new ProductSearchParam();
+		BeanUtils.copyProperties(params, oldParams);
+
 		if (params.sort != null && ProductSortOptions.getProductSortOptions(params.sort.getValue()) == null)
 			throw new BusinessException("Sort is limited to id, name, pname, price", null, HttpStatus.BAD_REQUEST);
 
@@ -365,35 +392,8 @@ public class ProductService {
 		if (params.order == null)
 			params.setOrder(defaultOrder);
 
-		List<ProductEntity> products = null;
-		Long productsCount = null;
-
-		CriteriaBuilder builder = em.getCriteriaBuilder();
-		CriteriaQuery<ProductEntity> query = builder.createQuery(ProductEntity.class);
-		Root<ProductEntity> root = query.from(ProductEntity.class);
-
-		Predicate[] predicatesArr = getProductQueryPredicates(params, builder, root);
-		Order orderBy = getProductQueryOrderBy(params, builder, root);
-
-		if (predicatesArr != null) {
-			query.where(predicatesArr);
-			if (orderBy != null)
-				query.orderBy(orderBy);
-			productsCount = (long) em.createQuery(query).getResultList().size();
-			products =  em.createQuery(query).setMaxResults(params.count).setFirstResult(params.start).getResultList();
-
-		}
-
-
-		if(params.shop_id != null && params.org_id == null)
-			return getProductsResponse(products, params.order.getValue(), params.sort.toString(), params.start, params.count,
-					params.minprice, params.shop_id, productsCount);
-
-		return getProductsResponse(products, params.order.getValue(), params.sort.toString(), params.start, params.count,
-				params.minprice, null, productsCount);
+		return params;
 	}
-
-
 
 
 	private Predicate[] getProductQueryPredicates(ProductSearchParam params, CriteriaBuilder builder, Root<ProductEntity> root) {
@@ -484,8 +484,7 @@ public class ProductService {
 	}
 
 
-	private ProductsResponse getProductsResponse(List<ProductEntity> products, String order, String sort, Integer start,
-	                                             Integer count, Long shopId, Long productsCount) {
+	private ProductsResponse getProductsResponse(List<ProductEntity> products, String order, String sort, Long productsCount) {
 		if(products == null)
 			return new ProductsResponse();
 
@@ -493,22 +492,17 @@ public class ProductService {
 				.map(ProductEntity::getId)
 				.collect(Collectors.toList());
 
-		List<ProductEntity> productsFullData = new ArrayList<>();
-		if(!productIdList.isEmpty())
-			productsFullData.addAll( productRepository.findFullDataByIdIn(productIdList) );
-
 		Map<Long, String> productCoverImages = imgService.getProductsCoverImages(productIdList);
 
 		List<ProductRepresentationObject> productsRep =
-				productsFullData.stream()
+				products.stream()
 						.map(prod -> getProductRepresentation(prod, productCoverImages))
 						.collect(Collectors.toList());
 
 		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE)
 			sortByPrice(productsRep, order);
 
-
-		return createProductResposneObj(start, count, productsRep);
+		return new ProductsResponse(productsCount, productsRep);
 
 	}
 
@@ -519,29 +513,6 @@ public class ProductService {
 			Collections.sort(productsRep, comparing(ProductRepresentationObject::getPrice));
 		}
 	}
-
-
-
-
-
-	private ProductsResponse createProductResposneObj(Integer start, Integer count,
-													  List<ProductRepresentationObject> productsRep) {
-		ProductsResponse productsResponse = new ProductsResponse();
-		int lastProductIndex = productsRep.size() - 1;
-		if (start > lastProductIndex) {
-			// TODO proper start handling(maybe default) or error massage
-			return null;
-		}
-		int toIndex = start + count;
-		if (toIndex > lastProductIndex)
-			toIndex = productsRep.size();
-
-		productsResponse.setProducts(productsRep.subList(start, toIndex));
-		productsResponse.setTotal((long) productsRep.size());
-
-		return productsResponse;
-	}
-
 
 
 
@@ -1732,54 +1703,54 @@ public class ProductService {
 		return true;
 	}
 
-  private ProductRepresentationObject getProductRepresentation(ProductEntity product) {
-	  ProductRepresentationObject productRep = new ProductRepresentationObject();
-	  productRep.setId( product.getId());
-	  productRep.setName(product.getName());
-	  productRep.setPname( product.getPname());
-	  productRep.setCategoryId( product.getCategoryId());
-	  productRep.setBrandId( product.getBrandId());
-	  productRep.setBarcode( product.getBarcode());
-	  productRep.setMultipleVariants( product.getProductVariants().size() > 1);
+	private ProductRepresentationObject getProductRepresentation(ProductEntity product) {
+		ProductRepresentationObject productRep = new ProductRepresentationObject();
+		productRep.setId( product.getId());
+		productRep.setName(product.getName());
+		productRep.setPname( product.getPname());
+		productRep.setCategoryId( product.getCategoryId());
+		productRep.setBrandId( product.getBrandId());
+		productRep.setBarcode( product.getBarcode());
+		productRep.setMultipleVariants( product.getProductVariants().size() > 1);
 
 
-	  Optional<StocksEntity> defaultStockOpt = getDefaultProductStock(product);
-	  Boolean stockExists = defaultStockOpt.isPresent();
+		Optional<StocksEntity> defaultStockOpt = getDefaultProductStock(product);
+		Boolean stockExists = defaultStockOpt.isPresent();
 
-	  if(stockExists) {
-		StocksEntity defaultStock = defaultStockOpt.get();
-		productRep.setPrice( defaultStock.getPrice() );
-		productRep.setDiscount( defaultStock.getDiscount() );
-		productRep.setStockId( defaultStock.getId());
-		productRep.setDefaultVariantFeatures( defaultStock.getProductVariantsEntity().getFeatureSpec());
-		if (defaultStock.getCurrency() != null) {
-			productRep.setCurrency( defaultStock.getCurrency().ordinal() );
+		if(stockExists) {
+			StocksEntity defaultStock = defaultStockOpt.get();
+			productRep.setPrice( defaultStock.getPrice() );
+			productRep.setDiscount( defaultStock.getDiscount() );
+			productRep.setStockId( defaultStock.getId());
+			productRep.setDefaultVariantFeatures( defaultStock.getProductVariantsEntity().getFeatureSpec());
+			if (defaultStock.getCurrency() != null) {
+				productRep.setCurrency( defaultStock.getCurrency().ordinal() );
+			}
 		}
-	  }
-	productRep.setAvailable(stockExists);
-	productRep.setHidden(!stockExists);
+		productRep.setAvailable(stockExists);
+		productRep.setHidden(!stockExists);
 
-	return productRep;
-  }
-
+		return productRep;
+	}
 
 
 
 
 
-  private ProductRepresentationObject getProductRepresentation(ProductEntity product, Map<Long, String> productCoverImgs) {
-	  ProductRepresentationObject rep = getProductRepresentation(product);
-	  setAdditionalInfo(rep, productCoverImgs);
-	  return rep;
-  }
+
+	private ProductRepresentationObject getProductRepresentation(ProductEntity product, Map<Long, String> productCoverImgs) {
+		ProductRepresentationObject rep = getProductRepresentation(product);
+		setAdditionalInfo(rep, productCoverImgs);
+		return rep;
+	}
 
 
 
 
 
-  private ProductDetailsDTO toProductDetailsDTO(ProductEntity product) throws IllegalAccessException, InvocationTargetException {
-	  	ProductDetailsDTO dto = new ProductDetailsDTO();
-	  	ProductRepresentationObject representationObj = getProductRepresentation(product);
+	private ProductDetailsDTO toProductDetailsDTO(ProductEntity product) throws IllegalAccessException, InvocationTargetException {
+		ProductDetailsDTO dto = new ProductDetailsDTO();
+		ProductRepresentationObject representationObj = getProductRepresentation(product);
 		BeanUtils.copyProperties( dto , representationObj);
 		dto.setDescription( product.getDescription() );
 		dto.setProductType( product.getProductType() );
@@ -1837,22 +1808,32 @@ public class ProductService {
 
 	private Map validateAndGetProductMap(List<Long> productIds) throws BusinessException {
 		Map<Long, ProductEntity> productsMap = new HashMap<>();
-		for(ProductEntity entity : productRepository.findByIdIn(productIds)) productsMap.put(entity.getId(), entity);
-		for(Long productId : productIds)
-			if(productsMap.get(productId) == null)
-				throw new BusinessException("Provided product_id("+productId+") does't match any existing product",
+
+		for(ProductEntity entity : productRepository.findByIdIn(productIds)) {
+			productsMap.put(entity.getId(), entity);
+		}
+
+		for(Long productId : productIds) {
+			if (productsMap.get(productId) == null)
+				throw new BusinessException("Provided product_id(" + productId + ") does't match any existing product",
 						"INVALID PARAM:product_id", HttpStatus.NOT_ACCEPTABLE);
+		}
 
 		return productsMap;
 	}
 
 	private Map validateAndGetTagMap(List<Long> tagIds) throws BusinessException {
 		Map<Long, OrganizationTagsEntity> tagsMap = new HashMap<>();
-		for(OrganizationTagsEntity entity : orgTagRepo.findByIdIn(tagIds)) tagsMap.put(entity.getId(), entity);
-		for(Long tagId : tagIds)
-			if(tagsMap.get(tagId) == null)
-				throw new BusinessException("Provided tag_id("+tagId+") does't match any existing tag",
+
+		for(OrganizationTagsEntity entity : orgTagRepo.findByIdIn(tagIds)) {
+			tagsMap.put(entity.getId(), entity);
+		}
+
+		for(Long tagId : tagIds) {
+			if (tagsMap.get(tagId) == null)
+				throw new BusinessException("Provided tag_id(" + tagId + ") does't match any existing tag",
 						"INVALID PARAM:tag_id", HttpStatus.NOT_ACCEPTABLE);
+		}
 
 		return tagsMap;
 	}
