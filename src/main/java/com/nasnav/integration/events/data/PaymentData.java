@@ -1,6 +1,7 @@
 package com.nasnav.integration.events.data;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import lombok.Data;
 
@@ -11,4 +12,5 @@ public class PaymentData {
 	private Long userId;
 	private String currency;
 	private Long orderId;
+	private LocalDateTime excutionTime;
 }

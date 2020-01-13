@@ -1,39 +1,40 @@
 package com.nasnav.persistence.listeners;
 
-import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
-
 import java.util.Objects;
 
+import javax.persistence.PostPersist;
 import javax.persistence.PostUpdate;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.integration.IntegrationServiceHelper;
-import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.PaymentEntity;
 
 
 
 
 @Component
-public class OrdersEntityListener {
+public class PaymentEntityListener {
 	
 	private static IntegrationServiceHelper integrationHelper;
 	
 	
 	@Autowired
 	public void setIntegrationServiceHelper(IntegrationServiceHelper integrationHelper) {
-		OrdersEntityListener.integrationHelper = integrationHelper;
+		PaymentEntityListener.integrationHelper = integrationHelper;
 	}
 	
 	
 	
 	
 	
+	@PostPersist	
 	@PostUpdate
-	public void postUpdate(OrdersEntity order) {	
-		if( Objects.equals(order.getStatus(), CLIENT_CONFIRMED.getValue()) ) {
-			integrationHelper.pushOrderConfirmEvent(order);
+	public void postPresist(PaymentEntity payment) {	
+		if( Objects.equals(payment.getStatus(), PaymentStatus.PAID) ) {
+			integrationHelper.pushNewPaymentEvent(payment);
 		}		
 	}
 

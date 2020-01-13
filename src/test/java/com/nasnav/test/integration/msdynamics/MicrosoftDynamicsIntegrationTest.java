@@ -2,20 +2,27 @@ package com.nasnav.test.integration.msdynamics;
 
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.NEW;
+import static com.nasnav.enumerations.PaymentStatus.PAID;
+import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.integration.enums.MappingType.ORDER;
+import static com.nasnav.integration.enums.MappingType.PAYMENT;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static com.nasnav.test.commons.TestCommons.readResource;
+import static com.nasnav.test.integration.msdynamics.IntegrationTestCommon.DUMMY_PAYMENT_ID;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.JsonBody.json;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +58,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.IntegrationMappingRepository;
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
@@ -61,6 +70,8 @@ import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.IntegrationMappingEntity;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.OrderResponse;
@@ -129,6 +140,13 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	@Autowired
 	private BrandsRepository brandRepo;
+	
+	
+	@Autowired
+	private PaymentsRepository paymentRepo;
+	
+	@Autowired
+	private OrdersRepository orderRepo;
 	
 	 @Rule
 	 public MockServerRule mockServerRule = new MockServerRule(this);
@@ -376,6 +394,51 @@ public class MicrosoftDynamicsIntegrationTest {
 		assertOrderIntegration(orderId); 					
 	}
 
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_pay_create_test_data.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void createPaymentTest() throws Throwable {
+		//create payment
+		Long orderId = 430033L;
+		
+		OrdersEntity order = orderRepo.findById(orderId).get();
+		PaymentEntity payment = new PaymentEntity();
+		JSONObject paymentObj = json().put("what_is_this?", "dummy_payment_obj");
+		
+		payment.setOperator("UPG");
+		payment.setOrdersEntity(order);
+		payment.setUid("MLB-<MerchantReference>");
+		payment.setExecuted(new Date());
+		payment.setObject(paymentObj.toString());
+		payment.setAmount(new BigDecimal("600"));
+		payment.setCurrency(EGP);
+		payment.setStatus(PAID);
+		
+		payment= paymentRepo.save(payment);
+		//---------------------------------------------------------------		
+		Thread.sleep(2000);
+		//---------------------------------------------------------------
+		if(usingMockServer) {
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("PUT")
+				        .withPath("/api/Payment")
+				        ,
+				      VerificationTimes.exactly(1)
+				    );
+		}
+		IntegrationMappingEntity paymentMapping = 
+				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, PAYMENT.getValue(), payment.getId().toString())
+							.orElse(null);
+		assertNotNull(paymentMapping);
+		assertEquals(DUMMY_PAYMENT_ID, paymentMapping.getRemoteValue());
+	}
 
 
 

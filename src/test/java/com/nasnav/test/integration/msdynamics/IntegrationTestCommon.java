@@ -1,4 +1,5 @@
 package com.nasnav.test.integration.msdynamics;
+import static com.nasnav.test.commons.TestCommons.readResource;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
@@ -11,14 +12,13 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 import com.google.common.net.MediaType;
-import static com.nasnav.test.commons.TestCommons.readResource;
 
 
 @Component
 public class IntegrationTestCommon {
 	
-	private static final String DUMMY_CUSTOMER_ID = "UNR-023517";
-
+	public static final String DUMMY_CUSTOMER_ID = "UNR-023517";
+	public static final String DUMMY_PAYMENT_ID  = "UNR-168360";
 
 
 	public  final String mockServerUrl = "http://127.0.0.1";
@@ -128,7 +128,6 @@ public class IntegrationTestCommon {
 	
 	
 	private  void mockGetProductByIdRequestFailure(MockServerRule mockServerRule) throws IOException {
-		String productBySkuResponse = new String( Files.readAllBytes(singleProductJson.getFile().toPath()) );
     	 mockServerRule.getClient()
 			.when(
 				request().withMethod("GET")
@@ -267,7 +266,7 @@ public class IntegrationTestCommon {
 					request().withMethod("PUT")
 							.withPath("/api/Payment"))
 				.respond(
-						response().withBody("UNR19-000000") 
+						response().withBody(DUMMY_PAYMENT_ID) 
 								  .withStatusCode(200))
 					;
 	}

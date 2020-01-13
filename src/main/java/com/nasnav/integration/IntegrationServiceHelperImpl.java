@@ -1,13 +1,23 @@
 package com.nasnav.integration;
 
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_CUSTOMER_MAPPING_FAILED;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_ORDER_MAPPING_FAILED;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_PAYMENT_MAPPING_FAILED;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INTEGRATION_EVENT_PROCESSING_FAILED;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INTEGRATION_EVENT_PUSH_FAILED;
 import static com.nasnav.integration.enums.MappingType.ORDER;
+import static com.nasnav.integration.enums.MappingType.PAYMENT;
 import static java.lang.String.format;
+import static java.math.BigDecimal.ZERO;
+import static java.time.LocalDateTime.now;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,13 +32,18 @@ import com.nasnav.integration.events.CustomerCreateEvent;
 import com.nasnav.integration.events.Event;
 import com.nasnav.integration.events.EventResult;
 import com.nasnav.integration.events.OrderConfirmEvent;
+import com.nasnav.integration.events.PaymentCreateEvent;
 import com.nasnav.integration.events.data.CustomerData;
 import com.nasnav.integration.events.data.OrderData;
 import com.nasnav.integration.events.data.OrderItemData;
+import com.nasnav.integration.events.data.PaymentData;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.StocksEntity;
+import com.nasnav.service.SecurityService;
 
 @Service
 public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
@@ -41,6 +56,8 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 	IntegrationService integrationService;
 	
 	
+	@Autowired
+	SecurityService securityService;
 
 	@Override
 	public void pushCustomerCreationEvent(CustomerData customer, Long orgId) {
@@ -121,7 +138,7 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 		try {
 			integrationService.addMappedValue(orgId, ORDER, String.valueOf(order.getOrderId()), remoteId);
 		} catch (BusinessException e) {
-			logger.error( format(ERR_CUSTOMER_MAPPING_FAILED, order.toString(), remoteId), e);
+			logger.error( format(ERR_ORDER_MAPPING_FAILED, order.toString(), remoteId), e);
 		}
 	}
 
@@ -166,6 +183,102 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 		data.setQuantity(basketItem.getQuantity());
 		data.setVariantId(stock.getProductVariantsEntity().getId());
 		return data;
+	}
+
+
+
+
+
+	@Override
+	public void pushNewPaymentEvent(PaymentEntity payment){
+		PaymentData data = createPaymentData(payment);		
+		Long orgId = getOrgId(payment);
+		
+		PaymentCreateEvent event = new PaymentCreateEvent(orgId, data, this::savePaymentExternalId);
+		pushEvent(event);
+	}
+
+
+
+
+
+	private Long getOrgId(PaymentEntity payment) {
+		return ofNullable(payment)
+				.map(PaymentEntity::getOrdersEntity)
+				.map(OrdersEntity::getOrganizationEntity)
+				.map(OrganizationEntity::getId)
+				.orElseGet(() -> securityService.getCurrentUserOrganizationId());
+	}
+
+
+
+
+
+	private PaymentData createPaymentData(PaymentEntity payment) {
+		PaymentData data = new PaymentData();
+		String currency = getCurrency(payment);
+		LocalDateTime executionTime = getExecutionTime(payment);
+		BigDecimal amount = getAmount(payment);
+		
+		data.setCurrency(currency);
+		data.setExcutionTime(executionTime);
+		data.setId(payment.getId());
+		data.setOrderId(payment.getOrdersEntity().getId());
+		data.setUserId(payment.getOrdersEntity().getUserId());
+		data.setValue(amount);
+		
+		return data;
+	}
+
+
+
+
+
+	private BigDecimal getAmount(PaymentEntity payment) {
+		return ofNullable(payment)
+				.map(PaymentEntity::getAmount)
+				.orElse(ZERO);
+	}
+
+
+
+
+
+	private LocalDateTime getExecutionTime(PaymentEntity payment) {
+		return ofNullable(payment)
+				.map(PaymentEntity::getExecuted)
+				.map(Date::toInstant)
+				.map(instant -> instant.atZone(ZoneId.systemDefault()))
+				.map(ZonedDateTime::toLocalDateTime)
+				.orElse(now());
+	}
+
+
+
+
+
+	private String getCurrency(PaymentEntity payment) {
+		return ofNullable(payment)
+				.map(PaymentEntity::getCurrency)
+				.map(Enum::name)
+				.orElse("");
+	}
+	
+	
+	
+	
+	
+	
+	private void savePaymentExternalId(EventResult<PaymentData, String> result) {
+		PaymentData payment = result.getEventInfo().getEventData();
+		Long orgId = result.getEventInfo().getOrganizationId();
+		String remoteId = result.getReturnedData();
+		
+		try {
+			integrationService.addMappedValue(orgId, PAYMENT, String.valueOf(payment.getId()), remoteId);
+		} catch (BusinessException e) {
+			logger.error( format(ERR_PAYMENT_MAPPING_FAILED, payment.toString(), remoteId), e);
+		}
 	}
 	
 	
