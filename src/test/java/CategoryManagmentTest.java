@@ -6,7 +6,6 @@ import com.nasnav.dao.OrganizationTagsRepository;
 import com.nasnav.dto.OrganizationTagsRepresentationObject;
 import com.nasnav.response.CategoryResponse;
 import com.nasnav.service.CategoryService;
-import io.micrometer.core.instrument.internal.DefaultGauge;
 import org.jgrapht.alg.cycle.CycleDetector;
 import com.nasnav.test.commons.TestCommons;
 
