@@ -29,8 +29,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockserver.junit.MockServerRule;
-import org.mockserver.model.Body;
-import org.mockserver.model.JsonBody;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,7 +60,6 @@ import com.nasnav.dto.UserDTOs.UserRegistrationObject;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
-import com.nasnav.integration.enums.MappingType;
 import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.UserEntity;
@@ -79,6 +76,7 @@ import com.nasnav.test.model.Item;
 @DirtiesContext
 public class MicrosoftDynamicsIntegrationTest {
 	
+	@SuppressWarnings("unused")
 	private static final String MS_SERVER_URL = "http://41.39.128.74";
 	private static final String MOCK_SERVER_URL = "http://127.0.0.1";
 	private static final String SERVER_URL = MOCK_SERVER_URL;
@@ -266,8 +264,7 @@ public class MicrosoftDynamicsIntegrationTest {
 					.put("update_stocks", true)
 					.put("currency", 1)
 					.put("encoding", "UTF-8")
-					.put("page_count", count)
-					;
+					.put("page_count", count);
 		
 		HttpEntity<Object> request = getHttpEntity(requestJson.toString(), "hijkllm");
         ResponseEntity<Integer> response = template.exchange("/integration/import/products", HttpMethod.POST, request, Integer.class);       
@@ -289,8 +286,6 @@ public class MicrosoftDynamicsIntegrationTest {
 		long countProductsAfter = productRepo.count();
 		long countShopsAfter = shopsRepo.count();
 		JSONArray extShopsJson = getExpectedShopsJson();
-		JSONArray extProductJson = new JSONObject(readResource(productsJson2))
-											.getJSONArray("products");
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertNotEquals("products were imported", 0L, countProductsAfter - countProductsBefore);
@@ -373,38 +368,22 @@ public class MicrosoftDynamicsIntegrationTest {
 		//create order
 		String token = "123eerd";
 		
-		Long stockId = 60001L;
-		Integer orderQuantity = 5;
-		
-		//---------------------------------------------------------------
-		JSONObject request = createOrderRequestWithBasketItems(NEW, item(stockId, orderQuantity));
-		ResponseEntity<OrderResponse> response = 
-				template.postForEntity("/order/update"
-										, getHttpEntity( request.toString(), token)
-										, OrderResponse.class);
-		
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		Long orderId = response.getBody().getOrderId();
-		Optional orderMappingAfterOrderCreation = 
-				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, ORDER.getValue(), orderId.toString());
-		assertFalse(orderMappingAfterOrderCreation.isPresent()); 
-		//---------------------------------------------------------------		
-		//confirm the order
-		
-		JSONObject updateRequest = createOrderRequestWithBasketItems(CLIENT_CONFIRMED);
-		updateRequest.put("order_id", orderId);
-		
-		ResponseEntity<String> updateResponse = 
-				template.postForEntity("/order/update"
-										, TestCommons.getHttpEntity( updateRequest.toString(), token)
-										, String.class);
-		
-		assertEquals(HttpStatus.OK, updateResponse.getStatusCode());
+		Long orderId = createNewOrder(token); 
+		confirmOrder(token, orderId);
 		//---------------------------------------------------------------		
 		Thread.sleep(2000);
 		//---------------------------------------------------------------		
+		assertOrderIntegration(orderId); 					
+	}
+
+
+
+
+
+
+	private void assertOrderIntegration(Long orderId) throws IOException, AssertionError {
 		//check the api was called with the expected request body
-		String expectedExtOrderRequest = TestCommons.readResource(orderRequest);
+		String expectedExtOrderRequest = readResource(orderRequest);
 		if(usingMockServer) {
 			mockServerRule.getClient().verify(
 				      request()
@@ -421,8 +400,48 @@ public class MicrosoftDynamicsIntegrationTest {
 		
 		Optional<IntegrationMappingEntity> orderMappingAfterOrderConfirm = 
 				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, ORDER.getValue(), orderId.toString());
-		assertTrue(orderMappingAfterOrderConfirm.isPresent()); 
-					
+		assertTrue(orderMappingAfterOrderConfirm.isPresent());
+	}
+
+
+
+
+
+
+	private void confirmOrder(String token, Long orderId) {
+		JSONObject updateRequest = createOrderRequestWithBasketItems(CLIENT_CONFIRMED);
+		updateRequest.put("order_id", orderId);
+		
+		ResponseEntity<String> updateResponse = 
+				template.postForEntity("/order/update"
+										, TestCommons.getHttpEntity( updateRequest.toString(), token)
+										, String.class);
+		
+		assertEquals(HttpStatus.OK, updateResponse.getStatusCode());
+	}
+
+
+
+
+
+
+	private Long createNewOrder(String token) {
+		Long stockId = 60001L;
+		Integer orderQuantity = 5;
+		
+		//---------------------------------------------------------------
+		JSONObject request = createOrderRequestWithBasketItems(NEW, item(stockId, orderQuantity));
+		ResponseEntity<OrderResponse> response = 
+				template.postForEntity("/order/update"
+										, getHttpEntity( request.toString(), token)
+										, OrderResponse.class);
+		
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		Long orderId = response.getBody().getOrderId();
+		Optional<IntegrationMappingEntity> orderMappingAfterOrderCreation = 
+				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, ORDER.getValue(), orderId.toString());
+		assertFalse(orderMappingAfterOrderCreation.isPresent());
+		return orderId;
 	}
 
 

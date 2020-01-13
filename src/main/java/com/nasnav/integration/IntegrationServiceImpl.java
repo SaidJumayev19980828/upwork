@@ -24,6 +24,9 @@ import static com.nasnav.integration.enums.IntegrationParam.MAX_REQUEST_RATE;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static com.nasnav.integration.enums.MappingType.SHOP;
 import static java.lang.String.format;
+import static java.time.Duration.ofMillis;
+import static java.util.Optional.ofNullable;
+import static reactor.core.scheduler.Schedulers.boundedElastic;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -110,7 +113,7 @@ import reactor.core.scheduler.Schedulers;
 public class IntegrationServiceImpl implements IntegrationService {
 	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 4L;
 
-	private static final long REQUEST_TIMEOUT_SEC = 60L;
+	private static final long REQUEST_TIMEOUT_SEC = 180L;
 
 	private final Logger logger = Logger.getLogger(getClass());
 	
@@ -158,8 +161,10 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	private Set<IntegrationParamTypeEntity> mandatoryIntegrationParams;
 	
+	@SuppressWarnings("rawtypes")
 	private FluxSink<EventHandling> eventFluxSink;
 	
+	@SuppressWarnings("rawtypes")
 	private Flux<EventHandling> eventFlux;
 	
 	@Autowired
@@ -184,6 +189,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	private void initEventFlux() {
 		Scheduler scheduler = Schedulers.boundedElastic(); 
+		@SuppressWarnings("rawtypes")
 		EmitterProcessor<EventHandling> emitterProcessor = EmitterProcessor.create();
 		eventFlux =	emitterProcessor									
 						.publishOn(scheduler) 																			
@@ -198,16 +204,17 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	
 	
+	@SuppressWarnings("rawtypes")
 	private void initOrganizationEventFlux(GroupedFlux<Long, EventHandling> orgFlux) {
 		Long orgId = orgFlux.key(); 
-		Long eventDelay = Optional.ofNullable( orgIntegration.get(orgId) )
-									.map(OrganizationIntegrationInfo::getRequestMinDelayMillis)
-									.orElse(0L);
+		Long eventDelay = ofNullable( orgIntegration.get(orgId) )
+							.map(OrganizationIntegrationInfo::getRequestMinDelayMillis)
+							.orElse(0L);
 		
-		orgFlux.delayElements(Duration.ofMillis(eventDelay) )
+		orgFlux.delayElements(ofMillis(eventDelay) )
 				.map(Mono::just)
-				.subscribe(m -> m.subscribeOn( Schedulers.boundedElastic() )
-						.subscribe(this::handle));
+				.subscribe(m -> m.subscribeOn( boundedElastic() )
+				.subscribe(this::handle));
 	}
 
 
@@ -1401,13 +1408,13 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 	private Optional<String> getParamCachedValue(Long orgId, String paramName) {
-		return Optional.ofNullable(orgIntegration.get(orgId))
-						.map(OrganizationIntegrationInfo::getParameters)
-						.orElse(new ArrayList<>())
-						.stream()
-						.filter( p -> Objects.equals(p.getParameterTypeName(), paramName))
-						.map(IntegrationParamEntity::getParamValue)
-						.findFirst();
+		return ofNullable(orgIntegration.get(orgId))
+				.map(OrganizationIntegrationInfo::getParameters)
+				.orElse(new ArrayList<>())
+				.stream()
+				.filter( p -> Objects.equals(p.getParameterTypeName(), paramName))
+				.map(IntegrationParamEntity::getParamValue)
+				.findFirst();
 	}
 
 }

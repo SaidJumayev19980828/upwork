@@ -82,7 +82,8 @@ public class FortuneWebClient {
     
 
     public Mono<ClientResponse> createSalesOrder(SalesOrder order) {
-        return client.put()
+        return client
+        		.put()
                 .uri("/api/salesorder")
                 .syncBody(order)
                 .exchange();
