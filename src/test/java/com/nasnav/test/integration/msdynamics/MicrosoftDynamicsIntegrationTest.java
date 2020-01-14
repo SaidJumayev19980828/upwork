@@ -8,6 +8,7 @@ import static com.nasnav.integration.enums.MappingType.ORDER;
 import static com.nasnav.integration.enums.MappingType.PAYMENT;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
+import static com.nasnav.test.commons.TestCommons.jsonArray;
 import static com.nasnav.test.commons.TestCommons.readResource;
 import static com.nasnav.test.integration.msdynamics.IntegrationTestCommon.DUMMY_PAYMENT_ID;
 import static java.lang.String.format;
@@ -19,6 +20,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.JsonBody.json;
+import static org.mockserver.verify.VerificationTimes.exactly;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -147,6 +149,10 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	@Autowired
 	private OrdersRepository orderRepo;
+	
+	
+	@Autowired
+	private IntegrationTestHelper testHelper;
 	
 	 @Rule
 	 public MockServerRule mockServerRule = new MockServerRule(this);
@@ -404,12 +410,89 @@ public class MicrosoftDynamicsIntegrationTest {
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_pay_create_test_data.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void createPaymentTest() throws Throwable {
-		//create payment
+		PaymentEntity payment = createDummyPayment();
+		//---------------------------------------------------------------		
+		Thread.sleep(5000);
+		//---------------------------------------------------------------
+		assertPaymentIntegration(payment);
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_pay_create_test_data.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void createPaymentAlreadySentTest() throws Throwable {
+		Long orderId = 430033L;
+		PaymentEntity payment = testHelper.createDummyPayment(orderId);
+		payment = testHelper.updatePayment(payment.getId());
+		//---------------------------------------------------------------		
+		Thread.sleep(5000);
+		//---------------------------------------------------------------
+		//The integration event should be issued once!
+		assertPaymentIntegration(payment);
+	}
+
+
+
+
+
+
+	private void assertPaymentIntegration(PaymentEntity payment) throws AssertionError {
+		String expectedBody = getPaymentApiRequestExpectedBody();
+		if(usingMockServer) {
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("PUT")
+				        .withPath("/api/Payment")
+				        .withBody(json(expectedBody))
+				      ,exactly(1)
+				    );
+		}
+		
+		IntegrationMappingEntity paymentMapping = 
+				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, PAYMENT.getValue(), payment.getId().toString())
+							.orElse(null);
+		assertNotNull(paymentMapping);
+		assertEquals(DUMMY_PAYMENT_ID, paymentMapping.getRemoteValue());
+	}
+
+
+
+
+
+
+	private String getPaymentApiRequestExpectedBody() {
+		return	json()
+				.put("SalesId", "un7782885")
+				.put("PaymDet", 
+						jsonArray()
+						.put(
+							json()
+							.put("SalesId", "un7782885")
+							.put("Amount", 600)
+							.put("PaymentMethod", "Credit_CHE")
+						  )
+						
+				).toString();
+	}
+
+
+
+
+
+
+	private PaymentEntity createDummyPayment() {
 		Long orderId = 430033L;
 		
 		OrdersEntity order = orderRepo.findById(orderId).get();
 		PaymentEntity payment = new PaymentEntity();
-		JSONObject paymentObj = json().put("what_is_this?", "dummy_payment_obj");
+		JSONObject paymentObj = 
+				json()
+				.put("what_is_this?", "dummy_payment_obj");
 		
 		payment.setOperator("UPG");
 		payment.setOrdersEntity(order);
@@ -421,23 +504,7 @@ public class MicrosoftDynamicsIntegrationTest {
 		payment.setStatus(PAID);
 		
 		payment= paymentRepo.save(payment);
-		//---------------------------------------------------------------		
-		Thread.sleep(5000);
-		//---------------------------------------------------------------
-		if(usingMockServer) {
-			mockServerRule.getClient().verify(
-				      request()
-				        .withMethod("PUT")
-				        .withPath("/api/Payment")
-				        ,
-				      VerificationTimes.exactly(1)
-				    );
-		}
-		IntegrationMappingEntity paymentMapping = 
-				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, PAYMENT.getValue(), payment.getId().toString())
-							.orElse(null);
-		assertNotNull(paymentMapping);
-		assertEquals(DUMMY_PAYMENT_ID, paymentMapping.getRemoteValue());
+		return payment;
 	}
 
 

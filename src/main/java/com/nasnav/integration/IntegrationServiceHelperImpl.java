@@ -1,10 +1,11 @@
 package com.nasnav.integration;
 
+import static com.nasnav.commons.utils.StringUtils.nullableToString;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_CUSTOMER_MAPPING_FAILED;
-import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_ORDER_MAPPING_FAILED;
-import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_PAYMENT_MAPPING_FAILED;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INTEGRATION_EVENT_PROCESSING_FAILED;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INTEGRATION_EVENT_PUSH_FAILED;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_ORDER_MAPPING_FAILED;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_PAYMENT_MAPPING_FAILED;
 import static com.nasnav.integration.enums.MappingType.ORDER;
 import static com.nasnav.integration.enums.MappingType.PAYMENT;
 import static java.lang.String.format;
@@ -25,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.MappingType;
@@ -75,7 +77,7 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 		String remoteId = result.getReturnedData();
 		
 		try {
-			integrationService.addMappedValue(orgId, MappingType.CUSTOMER, String.valueOf(customer.getId()), remoteId);
+			integrationService.addMappedValue(orgId, MappingType.CUSTOMER, nullableToString(customer.getId()), remoteId);
 		} catch (BusinessException e) {
 			logger.error( format(ERR_CUSTOMER_MAPPING_FAILED, customer.toString(), remoteId), e);
 		}
@@ -85,15 +87,15 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 	
 	
 	
-	private <E extends Event<D,R>,D,R> void handleGeneralIntegrationError(E event, Throwable error) {
+	private <E extends Event<D,R>,D,R> void generalIntegrationErrorHandler(E event, Throwable error) {
 		Long orgId = event.getOrganizationId();
 		logger.error( format(ERR_INTEGRATION_EVENT_PROCESSING_FAILED
-							, CustomerCreateEvent.class.getName()
+							, event.getClass().getName()
 							, event.getEventInfo().getEventData()
 							, orgId)
 				, error);
 		
-		integrationService.runGeneralErrorFallback(event, error, null);		
+		integrationService.runGeneralErrorFallback(event, error, error);		
 	}
 
 
@@ -117,13 +119,13 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 
 	private <E extends Event<D,R>,D,R> void pushEvent(E event) {
 		try {
-			integrationService.pushIntegrationEvent(event, this::handleGeneralIntegrationError);
+			integrationService.pushIntegrationEvent(event, this::generalIntegrationErrorHandler);
 		} catch (InvalidIntegrationEventException e) {
 			Object dat = event.getEventInfo().getEventData();
 			logger.error(
-					format(ERR_INTEGRATION_EVENT_PUSH_FAILED, OrderConfirmEvent.class.getName(), dat.toString(), event.getOrganizationId())
+					format(ERR_INTEGRATION_EVENT_PUSH_FAILED, event.getClass().getName(), dat.toString(), event.getOrganizationId())
 					, e);
-			handleGeneralIntegrationError(event, e);
+			generalIntegrationErrorHandler(event, e);
 		}
 	}
 	
@@ -190,7 +192,8 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 
 
 	@Override
-	public void pushNewPaymentEvent(PaymentEntity payment){
+	@Transactional
+	public void pushPaymentEvent(PaymentEntity payment){
 		PaymentData data = createPaymentData(payment);		
 		Long orgId = getOrgId(payment);
 		
@@ -212,7 +215,7 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 
 
 
-
+	
 
 	private PaymentData createPaymentData(PaymentEntity payment) {
 		PaymentData data = new PaymentData();
@@ -275,7 +278,7 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 		String remoteId = result.getReturnedData();
 		
 		try {
-			integrationService.addMappedValue(orgId, PAYMENT, String.valueOf(payment.getId()), remoteId);
+			integrationService.addMappedValue(orgId, PAYMENT, nullableToString(payment.getId()), remoteId);
 		} catch (BusinessException e) {
 			logger.error( format(ERR_PAYMENT_MAPPING_FAILED, payment.toString(), remoteId), e);
 		}

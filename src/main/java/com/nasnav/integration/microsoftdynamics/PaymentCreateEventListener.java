@@ -1,11 +1,19 @@
 package com.nasnav.integration.microsoftdynamics;
 
+import static com.nasnav.commons.utils.StringUtils.nullableToString;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_PAYMENT_ALREADY_HAS_EXT_ID;
 import static com.nasnav.integration.enums.MappingType.ORDER;
+import static com.nasnav.integration.enums.MappingType.PAYMENT;
+import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 
+import org.springframework.http.HttpStatus;
+
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.EventInfo;
 import com.nasnav.integration.events.PaymentCreateEvent;
@@ -33,12 +41,34 @@ public class PaymentCreateEventListener extends AbstractMSDynamicsEventListener<
 
 	@Override
 	protected Mono<String> handleEventAsync(EventInfo<PaymentData> event) {
+		//TODO: this validation should be generalized to all payment events and it should filter invalid events 
+		//before pushing them to the integration module , in the integration service.
+		//we can't add this in IntegrationHelper because it runs by JPA entity listeners, and the listeners are not
+		//managed by spring, which means we may not be able to control transactions, and errors are thrown if we try to 
+		//read from the database.
+		validatePaymentEvent(event);
 		
 		Payment requestData = createPaymentCreateRequest(event);
 		return getWebClient(event.getOrganizationId())
 				.createPayment(requestData)
 				.doOnSuccess(this::throwExceptionIfNotOk)
 				.flatMap(res -> res.bodyToMono(String.class));
+	}
+
+
+
+
+
+	private void validatePaymentEvent(EventInfo<PaymentData> event) {
+		PaymentData payment = event.getEventData();
+		Long orgId = (event.getOrganizationId());
+		String localId = nullableToString(payment.getId());
+		String remoteId = integrationService.getRemoteMappedValue(orgId, PAYMENT, localId);
+		if(remoteId != null) {
+			String msg = format(ERR_PAYMENT_ALREADY_HAS_EXT_ID, payment.toString(), remoteId, orgId);
+			logger.log(Level.SEVERE, msg);
+			throw new RuntimeBusinessException(msg, "INVALID INTEGRATION EVENT", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	

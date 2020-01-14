@@ -512,9 +512,17 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	@Override
 	public String getRemoteMappedValue(Long orgId, MappingType type, String localValue) {
-		return mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(orgId, type.getValue(), localValue)
-							.map(IntegrationMappingEntity::getRemoteValue)
-							.orElse(null);
+		String val= null;
+		try {
+			val = mappingRepo
+					.findByOrganizationIdAndMappingType_typeNameAndLocalValue(orgId, type.getValue(), localValue)
+					.map(IntegrationMappingEntity::getRemoteValue)
+					.orElse(null);
+		}catch(Throwable e) {
+			logger.error(e,e);
+		}
+		
+		return val;
 	}
 	
 	
@@ -1416,6 +1424,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 				.map(IntegrationParamEntity::getParamValue)
 				.findFirst();
 	}
+
 
 }
 

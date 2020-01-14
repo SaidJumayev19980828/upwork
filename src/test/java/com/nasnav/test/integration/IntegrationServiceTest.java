@@ -840,7 +840,16 @@ public class IntegrationServiceTest {
 	@Test
 	public void testGetRemoteMappedValueNonExisting() {
 		String remoteVal = integration.getRemoteMappedValue(ORG_ID, PRODUCT_VARIANT, "NON_EXISTING_VAL");		
-		assertNull("OLD_REMOTE_VAL" , remoteVal);
+		assertNull(remoteVal);
+	}
+	
+	
+	
+	
+	@Test
+	public void testGetRemoteMappedValueNullLocalValue() {
+		String remoteVal = integration.getRemoteMappedValue(ORG_ID, PRODUCT_VARIANT, null);		
+		assertNull(remoteVal);
 	}
 	
 	

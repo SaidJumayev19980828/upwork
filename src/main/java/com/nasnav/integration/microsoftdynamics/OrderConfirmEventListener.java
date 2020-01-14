@@ -1,15 +1,21 @@
 package com.nasnav.integration.microsoftdynamics;
 
 import static com.nasnav.commons.utils.StringUtils.nullableToString;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_ORDER_ALREADY_HAS_EXT_ID;
 import static com.nasnav.integration.enums.MappingType.CUSTOMER;
+import static com.nasnav.integration.enums.MappingType.ORDER;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static com.nasnav.integration.enums.MappingType.SHOP;
+import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
+import static java.util.logging.Level.SEVERE;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.EventInfo;
 import com.nasnav.integration.events.OrderConfirmEvent;
@@ -31,6 +37,14 @@ public class OrderConfirmEventListener extends AbstractMSDynamicsEventListener<O
 	
 	@Override
 	protected Mono<String> handleEventAsync(EventInfo<OrderData> event) {
+		//TODO: this validation should be generalized to all payment events and it should filter invalid events 
+		//before pushing them to the integration module , in the integration service.
+		//we can't add this in IntegrationHelper because it runs by JPA entity listeners, and the listeners are not
+		//managed by spring, which means we may not be able to control transactions, and errors are thrown if we try to 
+		//read from the database.
+		validateOrderEvent(event);
+		
+		
 		OrderData order = event.getEventData();
 		SalesOrder requestData = createSalesOrderData(order);
 		return getWebClient(order.getOrganizationId())
@@ -39,6 +53,25 @@ public class OrderConfirmEventListener extends AbstractMSDynamicsEventListener<O
 				.flatMap(res -> res.bodyToMono(String.class));
 	}
 
+	
+	
+	
+	
+	
+	private void validateOrderEvent(EventInfo<OrderData> event) {
+		OrderData order = event.getEventData();
+		Long orgId = event.getOrganizationId();
+		String localId = nullableToString(order.getOrderId());
+		String remoteId = integrationService.getRemoteMappedValue(orgId, ORDER, localId);
+		if(remoteId != null) {
+			String msg = format(ERR_ORDER_ALREADY_HAS_EXT_ID, order.toString(), remoteId, orgId);
+			logger.log(SEVERE, msg);
+			throw new RuntimeBusinessException(msg, "INVALID INTEGRATION EVENT", INTERNAL_SERVER_ERROR);
+		}
+	}
+	
+	
+	
 	
 	
 	

@@ -31,15 +31,20 @@ public class PaymentEntityListener {
 	
 	
 	@PostPersist	
-	@PostUpdate
 	public void postPresist(PaymentEntity payment) {	
 		if( Objects.equals(payment.getStatus(), PaymentStatus.PAID) ) {
-			integrationHelper.pushNewPaymentEvent(payment);
+			integrationHelper.pushPaymentEvent(payment);
 		}		
 	}
 
-
-
+	
+	
+	
+	
+	@PostUpdate
+	public void postUpdate(PaymentEntity payment) {
+		postPresist(payment);
+	}
 
 	
 }

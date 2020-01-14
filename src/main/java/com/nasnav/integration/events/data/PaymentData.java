@@ -13,4 +13,5 @@ public class PaymentData {
 	private String currency;
 	private Long orderId;
 	private LocalDateTime excutionTime;
+	private Long organizationId;
 }
