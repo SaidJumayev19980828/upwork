@@ -402,9 +402,6 @@ public class ProductService {
 		if(params.org_id != null)
 			predicates.add( builder.equal(root.get("organizationId"), params.org_id) );
 
-		if(params.category_id != null)
-			predicates.add( builder.equal(root.get("categoryId"), params.category_id) );
-
 		if(params.brand_id != null)
 			predicates.add( builder.equal(root.get("brandId"), params.brand_id) );
 
@@ -434,7 +431,7 @@ public class ProductService {
 											.collect(Collectors.toList());
 
 				Expression<String> parentExpression = root.get("id");
-				predicates.add(parentExpression.in(productsIds) );
+				predicates.add(parentExpression.in(productsIds));
  			} else
  				return null;
 		}
@@ -660,9 +657,7 @@ public class ProductService {
 
 		checkCreateProuctReqParams(productJson);
 
-		JsonNode categoryId = productJson.path("category_id");
 		JsonNode brandId = productJson.path("brand_id");
-		validateCategoryId(categoryId);
 		validateBrandId(user, brandId);
 	}
 
@@ -672,7 +667,6 @@ public class ProductService {
 	private void validateProductDtoToUpdate(JsonNode productJson, BaseUserEntity user)
 			throws BusinessException {
 		JsonNode id = productJson.path("product_id");
-		JsonNode categoryId = productJson.path("category_id");
 		JsonNode brandId = productJson.path("brand_id");
 
 		if(id.isMissingNode())
@@ -680,9 +674,6 @@ public class ProductService {
 
 		if(!id.isNull() && !productRepository.existsById(id.asLong()))
 			throw new BusinessException("No prodcut exists with ID: "+ id + " !", "INVALID_PARAM:product_id" , HttpStatus.NOT_ACCEPTABLE);
-
-		if(!categoryId.isMissingNode() )
-			validateCategoryId(categoryId);
 
 		if(!brandId.isMissingNode() )
 			validateBrandId(user, brandId);
@@ -694,7 +685,6 @@ public class ProductService {
 	private void checkCreateProuctReqParams(JsonNode productJson)
 			throws BusinessException {
 		JsonNode name = productJson.path("name");
-		JsonNode categoryId = productJson.path("category_id");
 		JsonNode brandId = productJson.path("brand_id");
 
 		if(name.isMissingNode())
@@ -702,12 +692,6 @@ public class ProductService {
 
 		if( name.isNull() )
 			throw new BusinessException("Product name cannot be Null ", "MISSING_PARAM:name" , HttpStatus.NOT_ACCEPTABLE);
-
-		if(categoryId.isMissingNode())
-			throw new BusinessException("category_id Must be provided! ", "MISSING_PARAM:category_id" , HttpStatus.NOT_ACCEPTABLE);
-
-		if(categoryId.isNull() )
-			throw new BusinessException("category_id cannot be Null!" , "MISSING_PARAM:category_id" , HttpStatus.NOT_ACCEPTABLE);
 
 		if(brandId.isMissingNode())
 			throw new BusinessException("Brand Id Must be provided!" , "MISSING_PARAM:brand_Id" , HttpStatus.NOT_ACCEPTABLE);
@@ -1228,9 +1212,6 @@ public class ProductService {
 		else
 			predicates.add( builder.equal(root.get("organizationId"), params.getOrg_id()) );
 
-		if(params.getCategory_id() != null)
-			predicates.add( builder.equal(root.get("categoryId"), params.getCategory_id() ));
-
 
 		Predicate[] predicatesArr = predicates.stream().toArray( Predicate[]::new) ;
 		return predicatesArr;
@@ -1708,7 +1689,6 @@ public class ProductService {
 		productRep.setId( product.getId());
 		productRep.setName(product.getName());
 		productRep.setPname( product.getPname());
-		productRep.setCategoryId( product.getCategoryId());
 		productRep.setBrandId( product.getBrandId());
 		productRep.setBarcode( product.getBarcode());
 		productRep.setMultipleVariants( product.getProductVariants().size() > 1);

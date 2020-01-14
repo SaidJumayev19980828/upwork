@@ -184,9 +184,7 @@ public class ProductApiTest {
 		
 		//original values should remain the same
 		assertEquals("updated-product", saved.getPname());
-		assertEquals(originalProduct.getDescription(), saved.getDescription());		
-		assertEquals(originalProduct.getCategoryId(), saved.getCategoryId());
-		assertEquals(user.getOrganizationId() , saved.getOrganizationId()); 
+		assertEquals(originalProduct.getDescription(), saved.getDescription());
 	}
 
 
@@ -216,7 +214,6 @@ public class ProductApiTest {
 		assertEquals(product.get("description"), saved.getDescription());
 		assertEquals(product.get("barcode"), saved.getBarcode());
 		assertEquals(product.get("brand_id"), saved.getBrandId());
-		assertEquals(product.get("category_id"), saved.getCategoryId());
 		assertEquals(userOrgId, saved.getOrganizationId()); //the new product takes the organization of the user 
 	}
 	
@@ -306,32 +303,6 @@ public class ProductApiTest {
 	}
 
 	
-	@Test
-	public void createProdcutNonExistingCategory() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L);
-		
-		JSONObject product = createNewDummyProduct();
-		product.put("category_id", 99999L);  
-		
-		ResponseEntity<String> response = postInvalidProductData(user, product);		
-		
-		validateErrorResponse(response);
-	}
-
-
-	
-	@Test
-	public void createProdcutNullCategory() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L);
-		
-		JSONObject product = createNewDummyProduct();
-		product.put("category_id",JSONObject.NULL);  
-		
-		ResponseEntity<String> response = postInvalidProductData(user, product);		
-		
-		validateErrorResponse(response);
-	}
-	
 	
 	@Test
 	public void createProdcutNullName() throws JsonProcessingException{
@@ -375,18 +346,7 @@ public class ProductApiTest {
 	}
 	
 	
-	
-	@Test
-	public void createProdcutNonExistingCategoryField() throws JsonProcessingException{
-		BaseUserEntity user = empUserRepo.getById(69L);
-		
-		JSONObject product = createNewDummyProduct();
-		product.remove("category_id"); 
-		
-		ResponseEntity<String> response = postInvalidProductData(user, product);		
-		
-		validateErrorResponse(response);
-	}
+
 	
 	
 	
@@ -882,7 +842,6 @@ public class ProductApiTest {
 		newProduct.setName("new Product");
 		newProduct.setBrandId(101L);
 		newProduct.setOrganizationId(99001L);
-		newProduct.setCategoryId(201L);
 		
 		newProduct = productRepository.save(newProduct);
 		

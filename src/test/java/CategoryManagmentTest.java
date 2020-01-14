@@ -100,7 +100,8 @@ public class CategoryManagmentTest {
         ResponseEntity<String> response = template.getForEntity("/navbox/categories", String.class);
         JSONArray json = new JSONArray(response.getBody());
         assertEquals("there are 4 Categories in total", 4, json.length());
-
+        /*
+        TODO Modify category listing test after getting categories by organization
         // with organization_id = 99001
         response = template.getForEntity("/navbox/categories?org_id=99001", String.class);
         json = new JSONArray(response.getBody());
@@ -110,7 +111,7 @@ public class CategoryManagmentTest {
         response = template.getForEntity("/navbox/categories?org_id=99002", String.class);
         json = new JSONArray(response.getBody());
         assertEquals("there are 2 Categories used by org 99002", 2, json.length());
-
+        */
         // with category_id = 201
         response = template.getForEntity("/navbox/categories?category_id=201", String.class);
         json = new JSONArray(response.getBody());
@@ -240,7 +241,7 @@ public class CategoryManagmentTest {
     @Test
     public void deleteCategoryUsedCategoryTest() {
         HttpHeaders header = TestCommons.getHeaders("abcdefg");
-        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=204",
+        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=202",
                 HttpMethod.DELETE, new HttpEntity<>(header), String.class);
         Assert.assertTrue(409 == deleteResponse.getStatusCode().value());
     }

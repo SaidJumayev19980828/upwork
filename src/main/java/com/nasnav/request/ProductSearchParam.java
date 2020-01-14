@@ -17,7 +17,6 @@ public class ProductSearchParam {
     //had to ignore java naming convention, because the bundle request parameters will be mapped to these properties by name
     public Long org_id;
     public Long shop_id;
-    public Long category_id;
     public Long brand_id;
     public List<Long> tags;
     public String name;
@@ -47,9 +46,6 @@ public class ProductSearchParam {
 
         if (this.shop_id != null)
             result += "&shop_id="+this.shop_id;
-
-        if (this.category_id != null)
-            result += "&category_id="+this.category_id;
 
         if (this.brand_id != null)
             result += "&brand_id="+this.brand_id;

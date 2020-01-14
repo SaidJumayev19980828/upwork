@@ -30,8 +30,4 @@ public interface BundleRepository extends JpaRepository<BundleEntity, Long> {
     BundleEntity findFirstByOrderByNameDesc();
 
 	Long countByOrganizationId(Long orgId);
-
-	Long countByCategoryId(Long categoryId);
-
-	BundleEntity findFirstByCategoryIdOrderByNameAsc(Long categoryId);
 }

@@ -16,7 +16,6 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     
     private BigDecimal price;
     private Boolean available;
-    private Long categoryId;
     private Long brandId;
     private String barcode;
     private BigDecimal discount;

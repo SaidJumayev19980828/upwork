@@ -327,7 +327,6 @@ public class ProductServiceTest {
 		ProductEntity productEntity = new ProductEntity();
 		productEntity.setName(PRODUCT_NAME);
 		productEntity.setPname(PRODUCT_P_NAME);
-		productEntity.setCategoryId(CATEGORY_ID);		
 		productEntity.setOrganizationId(99001L);
 		productEntity.setDescription(PRODUCT_DESC);
 		productEntity.setBarcode(PRODUCT_PRODUCT_BARCODE);
@@ -501,7 +500,6 @@ public class ProductServiceTest {
 		assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
 		assertEquals(PRODUCT_NAME, product.getString("name"));
 		assertEquals(PRODUCT_P_NAME, product.getString("p_name"));
-		assertEquals(CATEGORY_ID.longValue(), product.getLong("category_id"));
 		assertEquals(PRODUCT_PRODUCT_BARCODE, product.getString("barcode"));		
 		assertEquals(PRODUCT_DESC, product.getString("description"));
 		assertEquals(ProductTypes.DEFAULT, product.getInt("product_type"));
@@ -754,7 +752,6 @@ public class ProductServiceTest {
 		response = template.getForEntity("/navbox/product?product_id=1001", String.class);
 		System.out.println("response JSON >>>  "+ response.getBody().toString());
 		assertTrue(response.getBody().toString().contains("brand_id"));
-		assertTrue(response.getBody().toString().contains("category_id"));
 
 
 
@@ -769,7 +766,6 @@ public class ProductServiceTest {
 	private void assertJsonFieldExists(ResponseEntity<String> response) {
 		System.out.println("response JSON >>>  "+ response.getBody().toString());
 		assertTrue(response.getBody().toString().contains("brand_id"));
-		assertTrue(response.getBody().toString().contains("category_id"));
 		assertTrue(response.getBody().toString().contains("p_name"));
 		assertTrue(response.getBody().toString().contains("image_url"));
 		assertTrue(response.getBody().toString().contains("default_variant_features"));

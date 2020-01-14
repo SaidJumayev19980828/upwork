@@ -73,26 +73,17 @@ public class CategoryService {
         return null;
     }
 
-    public List<CategoryRepresentationObject> getCategories(Long organizationId, Long categoryId){
+    public List<CategoryRepresentationObject> getCategories(Long categoryId){
         List<CategoriesEntity> categoriesEntityList = new ArrayList<>();
         CategoriesEntity categoriesEntity = null;
         List<CategoryRepresentationObject> categoriesList;
-        if (organizationId == null && categoryId == null){
+        if (categoryId == null)
             categoriesEntityList = categoryRepository.findAll();
-        }
-        else if (categoryId == null) {
-            List<Long> categoriesIdList = productRepository.getOrganizationCategoriesId(organizationId);
-            categoriesEntityList = categoriesIdList.stream().map(id ->  categoryRepository.findById(id).get())
-                    .collect(Collectors.toList());
-        }
-        else if (organizationId == null){
+        else {
             if (categoryRepository.findById(categoryId).isPresent()) {
                 categoriesEntity = categoryRepository.findById(categoryId).get();
                 categoriesEntityList = categoryRepository.findByParentId(categoriesEntity.getId().intValue());
             }
-        }
-        else {
-            //what to do if org_id and category_id exists ??
         }
         categoriesList = categoriesEntityList.stream().map(category -> (CategoryRepresentationObject) category.getRepresentation())
                 .collect(Collectors.toList());
@@ -121,8 +112,6 @@ public class CategoryService {
             }
         }
         categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
-        categoriesEntity.setCreatedAt(LocalDateTime.now());
-        categoriesEntity.setUpdatedAt(LocalDateTime.now());
         categoryRepository.save(categoriesEntity);
         return new ResponseEntity(new CategoryResponse(categoriesEntity.getId()), HttpStatus.OK);
     }
@@ -166,7 +155,7 @@ public class CategoryService {
                     "No category entity found with provided ID", HttpStatus.NOT_ACCEPTABLE);
         }
         CategoriesEntity categoriesEntity = categoryRepository.findById(categoryId).get();
-        List<Long> productsIds = productRepository.getProductsByCategoryId(categoryId);
+        List<Long> productsIds = new ArrayList<>();
         if (productsIds.size() > 0){
             throw new BusinessException("NOT_EMPTY: products",
                     "There are still products "+productsIds.toString()+" assigned to this category", HttpStatus.CONFLICT);

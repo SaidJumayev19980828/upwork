@@ -123,7 +123,7 @@ public class DataImportServiceImpl implements DataImportService{
 	
 	private Logger logger = Logger.getLogger(getClass());
 
-	private final List<String> csvBaseHeaders = Arrays.asList(new String[]{"product_name","barcode","category","brand","price","quantity","description"});
+	private final List<String> csvBaseHeaders = Arrays.asList(new String[]{"product_name","barcode","brand","price","quantity","description"});
 
 	@Transactional(rollbackFor = Throwable.class)
 	public ProductListImportResponse importProductListFromCSV(@Valid MultipartFile file,
@@ -365,13 +365,6 @@ public class DataImportServiceImpl implements DataImportService{
 
 
 	private ProductUpdateDTO createProductDto(ProductImportCsvRowData row) throws BusinessException {
-		Long categoryId = categoriesRepo.findByName(row.getCategory());
-		if(categoryId == null) {
-			throw new BusinessException(
-					String.format(ERR_CATEGORY_NAME_NOT_EXIST, row.getCategory())
-					, "INVALID DATA:category"
-					, HttpStatus.NOT_ACCEPTABLE);
-		}
 		
 		Long brandId = brandRepo.findByName(row.getBrand());
 		if(brandId == null) {
@@ -385,7 +378,6 @@ public class DataImportServiceImpl implements DataImportService{
 		
 		ProductUpdateDTO product = new ProductUpdateDTO();
 		product.setBrandId(brandId);
-		product.setCategoryId(categoryId);
 		product.setDescription( row.getDescription() );
 		product.setBarcode(row.getBarcode());
 		product.setName(row.getName() );
@@ -551,7 +543,7 @@ public class DataImportServiceImpl implements DataImportService{
 
 
 	private void validateCsvHeaderNames(CsvHeaderNamesDTO headers) throws BusinessException{
-		if(anyIsNull(headers.getBarcode(), headers.getName(), headers.getCategory(), headers.getPrice(), headers.getQuantity())) {
+		if(anyIsNull(headers.getBarcode(), headers.getName(), headers.getPrice(), headers.getQuantity())) {
 			throw new BusinessException(
 					ERR_PRODUCT_IMPORT_MISSING_HEADER_NAME 
 					, "MISSING PARAM:csv-header(s)"

@@ -80,9 +80,6 @@ public class ProductEntity {
 
     @Column(name="organization_id")
     private Long organizationId;
-
-    @Column(name="category_id")
-    private Long categoryId;
     
     @Column(name="brand_id")
     private Long brandId;
