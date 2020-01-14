@@ -99,7 +99,9 @@ import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 @Service
 public class OrderServiceImpl implements OrderService {
 
-	private static final int ORDER_FULL_DETAILS_LEVEL = 2;
+	private static final int ORDER_DEFAULT_COUNT = 1000;
+
+	private static final int ORDER_FULL_DETAILS_LEVEL = 3;
 
 	private static final Long NON_EXISTING_ORDER_ID = -1L;
 
@@ -271,7 +273,7 @@ public class OrderServiceImpl implements OrderService {
 		}
 		
 		if( isCheckedOutOrder(order)) {
-			validateConfirmendOrder(orderId);
+			validateConfirmedOrder(orderId);
 		}
 	}
 
@@ -360,7 +362,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private void validateConfirmendOrder(Long orderId) throws BusinessException {
+	private void validateConfirmedOrder(Long orderId) throws BusinessException {
 		Integer basketCount = basketRepository.findByOrdersEntity_Id( orderId ).size();
 		if(Objects.equals(basketCount, 0)) {
 			throwInvalidOrderException(ERR_ORDER_CONFIRMED_WITH_EMPTY_BASKET, orderId);
@@ -824,12 +826,15 @@ public class OrderServiceImpl implements OrderService {
 		
 		BaseUserEntity user = securityService.getCurrentUser();
 		OrdersEntity order;
+
+		Integer finalDetailsLevel = getFinalDetailsLevel(detailsLevel);
+
 		if (user instanceof UserEntity && ordersRepository.existsByIdAndUserId(orderId, user.getId())) {
 			order = ordersRepository.findByIdAndUserId(orderId, user.getId());
-			return getDetailedOrderInfo(order, ORDER_FULL_DETAILS_LEVEL);
+			return getDetailedOrderInfo(order, finalDetailsLevel);
 		} else if (ordersRepository.existsById(orderId)) {
 			order = ordersRepository.findById(orderId).get();
-			return getDetailedOrderInfo(order, ORDER_FULL_DETAILS_LEVEL);
+			return getDetailedOrderInfo(order, finalDetailsLevel);
 		}			
 
 		throwInvalidOrderException( OrderFailedStatus.INVALID_ORDER.toString() );
@@ -837,13 +842,16 @@ public class OrderServiceImpl implements OrderService {
 		return null;
 	}
 	
-	
+	private Integer getFinalDetailsLevel(Integer detailsLevel) {
+		return (detailsLevel == null || detailsLevel < 0 || detailsLevel > 3) ? ORDER_FULL_DETAILS_LEVEL : detailsLevel;
+	}
 	
 	
 	
 	private DetailedOrderRepObject getDetailedOrderInfo(OrdersEntity order, Integer detailsLevel) {
 	    Map<Long, List<BasketItemDetails>> basketItemsDetailsMap = getBasketItemsDetailsMap( setOf(order.getId()) );
-	    return getDetailedOrderInfo(order, detailsLevel, basketItemsDetailsMap);
+		Map<Long, BigDecimal> orderItemsQuantity = getOrderItemsQuantity( setOf(order.getId()) );
+	    return getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap);
 	}
 	
 	
@@ -851,24 +859,28 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	//TODO: doesn't support getting shipment fees
-	private DetailedOrderRepObject getDetailedOrderInfo(OrdersEntity order, Integer detailsLevel, Map<Long, List<BasketItemDetails>> basketItemsDetailsMap) {
+	private DetailedOrderRepObject getDetailedOrderInfo(OrdersEntity order, Integer detailsLevel,
+														Map<Long, BigDecimal> orderItemsQuantity,
+														Map<Long, List<BasketItemDetails>> basketItemsDetailsMap) {
 		DetailedOrderRepObject representation = new DetailedOrderRepObject();
-		
+
 		List<BasketItemDetails> basketItemsDetails = ofNullable(basketItemsDetailsMap)
 															.map(map -> map.get(order.getId()) )
-															.orElse(new ArrayList<>())	;
-		
+															.orElse(new ArrayList<>());
+
 		
 		BeanUtils.copyProperties(getOrderSummary(order), representation);
-		if (detailsLevel == null) {
+		if (detailsLevel == null)
 			detailsLevel = 0;
-		}			
 
-        if (detailsLevel >= 1) {
+
+        if (detailsLevel >= 1)
         	BeanUtils.copyProperties( getOrderDetails(order), representation, new String[]{"orderId", "userId", "shopId", "createdAt", "status", "paymentStatus", "total"});
-        }			
 
-		if (detailsLevel == 2) {
+        if (detailsLevel == 2 && orderItemsQuantity.get(order.getId()) != null)
+        	representation.setTotalQuantity(orderItemsQuantity.get(order.getId()).intValue());
+
+		if (detailsLevel == 3) {
 			List<BasketItem> itemsList = getBasketItems(basketItemsDetails);
 			representation.setItems(itemsList);
 			
@@ -958,19 +970,23 @@ public class OrderServiceImpl implements OrderService {
 		Integer detailsLevel = finalParams.getDetails_level();
 
 		List<OrdersEntity> ordersEntityList = em.createQuery(getOrderCriteriaQuery(finalParams))
+												.setFirstResult(finalParams.getStart())
+												.setMaxResults(finalParams.getCount())
 												.getResultList();
 		
 		Set<Long> ordersIds = new HashSet<>();
-		if ( detailsLevel == 2) {
-			ordersIds = ordersEntityList.stream()
-										.map(OrdersEntity::getId)
-										.collect(Collectors.toSet());			
+
+		if ( detailsLevel >= 2) {
+			ordersIds = ordersEntityList.stream().map(OrdersEntity::getId).collect(Collectors.toSet());
 		}
-		
-		Map<Long, List<BasketItemDetails>> basketItemsDetailsMap = getBasketItemsDetailsMap(ordersIds);
+
+		Map<Long, List<BasketItemDetails>> basketItemsDetailsMap = getBasketItemsDetailsMap(detailsLevel == 3 ? ordersIds : new HashSet<>() );
+
+		Map<Long, BigDecimal> orderItemsQuantity = getOrderItemsQuantity(detailsLevel == 2 ? ordersIds : new HashSet<>());
+
 		
 		return ordersEntityList.stream()
-								.map(order -> getDetailedOrderInfo(order, detailsLevel, basketItemsDetailsMap))
+								.map(order -> getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap))
 								.collect(Collectors.toList());
 	}
 	
@@ -991,8 +1007,23 @@ public class OrderServiceImpl implements OrderService {
 						.filter(Objects::nonNull)
 						.collect( groupingBy(BasketItemDetails::getOrderId));
 	}
-	
-	
+
+
+	private Map<Long, BigDecimal> getOrderItemsQuantity(Set<Long> orderIds) {
+		List<BasketsEntity> basketsEntities = basketRepository.findByOrdersEntity_IdIn(orderIds)
+				.stream()
+				.collect( Collectors.toList());
+
+		Map<Long, BigDecimal> ordersQuantities = new HashMap<>();
+		for(BasketsEntity basket: basketsEntities) {
+			Long orderId = basket.getOrdersEntity().getId();
+			if (ordersQuantities.get(orderId) != null)
+				ordersQuantities.put(orderId, ordersQuantities.get(orderId).add(basket.getQuantity()));
+			else
+				ordersQuantities.put(orderId, basket.getQuantity());
+		}
+		return ordersQuantities;
+	}
 	
 	
 
@@ -1013,7 +1044,9 @@ public class OrderServiceImpl implements OrderService {
 			newParams.setUser_id(user.getId());
 			newParams.setOrg_id(user.getOrganizationId());
 		}
-		
+
+		setOrderSearchStartAndCount(params, newParams);
+
 		return newParams;
 	}
 
@@ -1034,10 +1067,20 @@ public class OrderServiceImpl implements OrderService {
 			newParams.setShop_id(params.getShop_id());
 		}
 	}
-	
-	
-	
-	
+
+
+	private void setOrderSearchStartAndCount(OrderSearchParam params, OrderSearchParam newParams) {
+		if (params.getStart() == null || params.getStart() <= 0)
+			newParams.setStart(0);
+		else
+			newParams.setStart(params.getStart());
+
+		if (params.getCount() == null || params.getCount() <= 0 || params.getCount() >= ORDER_DEFAULT_COUNT)
+			newParams.setCount(ORDER_DEFAULT_COUNT);
+		else
+			newParams.setCount(params.getCount());
+	}
+
 
 	private Integer getOrderStatusId(String status) throws BusinessException {
 		if (status != null) {
@@ -1062,7 +1105,7 @@ public class OrderServiceImpl implements OrderService {
 
 		Predicate[] predicatesArr = getOrderQueryPredicates(params, builder, root);
 
-		query.where(predicatesArr);
+		query.where(predicatesArr).orderBy(builder.desc(root.get("updateDate")));
 		
 		return query;
 	}
