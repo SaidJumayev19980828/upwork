@@ -205,21 +205,35 @@ public class EmployeeUserServiceHelper {
 					successResponseStatusList.add(ResponseStatus.NEED_ACTIVATION);
 					successResponseStatusList.add(ResponseStatus.ACTIVATION_SENT);
 				}
-			} else {
-				failResponseStatusList.add(ResponseStatus.INVALID_EMAIL);
 			}
+			else
+				failResponseStatusList.add(ResponseStatus.INVALID_EMAIL);
+
 		}
-		if (!failResponseStatusList.isEmpty()) {
+
+		if (!failResponseStatusList.isEmpty())
 			throw new EntityValidationException("Invalid User Entity: " + failResponseStatusList,
 					UserApiResponse.createStatusApiResponse(failResponseStatusList), HttpStatus.NOT_ACCEPTABLE);
-		}
+
+		employeeUserEntity = updateRemainingEmployeeUserInfo(employeeUserEntity,employeeUserJson);
+
 		employeeUserRepository.save(employeeUserEntity);
-		if (successResponseStatusList.isEmpty()) {
+
+		if (successResponseStatusList.isEmpty())
 			successResponseStatusList.add(ResponseStatus.ACTIVATED);
-		}
+
 		return  UserApiResponse.createMessagesApiResponse(true, successResponseStatusList);
 	}
 
+	EmployeeUserEntity updateRemainingEmployeeUserInfo(EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+		if (employeeUserJson.getAvatar() != null)
+			employeeUserEntity.setAvatar(employeeUserJson.getAvatar());
+
+		if (employeeUserJson.getPhoneNumber() != null)
+			employeeUserEntity.setPhoneNumber(employeeUserJson.getPhoneNumber());
+
+		return employeeUserEntity;
+	}
 	/**
 	 * Generate new AuthenticationToken and perform post login updates.
 	 *

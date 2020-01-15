@@ -60,7 +60,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 	@Override
-	public UserApiResponse createEmployeeUser(Long userId, String userToken, UserDTOs.EmployeeUserCreationObject employeeUserJson) {
+	public UserApiResponse createEmployeeUser(String userToken, UserDTOs.EmployeeUserCreationObject employeeUserJson) {
 		List<String> rolesList = Arrays.asList(employeeUserJson.role.split(","));
 		empUserSvcHelper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.orgId, rolesList);
 		// get current logged in user
@@ -119,21 +119,22 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 	@Override
-	public UserApiResponse updateEmployeeUser(Long userId, String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
-		EmployeeUserEntity updateUser,currentUser;
-		
-		int userType = empUserSvcHelper.roleCanCreateUser(userId); //check user privileges
-		if (userType == -1) { // can't update employees
+	public UserApiResponse updateEmployeeUser(String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+		EmployeeUserEntity updateUser,currentUser = getCurrentUser();
+
+		// check if same user doing the update
+		updateUser = StringUtils.isBlankOrNull(employeeUserJson.getUpdatedUserId()) ? currentUser : employeeUserRepository.getById(employeeUserJson.getUpdatedUserId());
+
+		int userType = empUserSvcHelper.roleCanCreateUser(currentUser.getId()); //check user privileges
+
+		if (updateUser.equals(currentUser))
+			return empUserSvcHelper.updateEmployeeUser(userType, updateUser, employeeUserJson);
+
+		if (userType == -1)  // can't update employees
 			throw new EntityValidationException(""+ResponseStatus.INSUFFICIENT_RIGHTS,
 					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
-		}
-		currentUser = getCurrentUser();
-		if (StringUtils.isBlankOrNull(employeeUserJson.getUpdatedUserId())) {// check if same user doing the update
-			updateUser = employeeUserRepository.getById(userId);
-		} else {
-			updateUser = employeeUserRepository.getById(employeeUserJson.getUpdatedUserId());
-		}
-		if ((userType == 2) && (!updateUser.getOrganizationId().equals(currentUser.getOrganizationId()))) {
+
+			if ((userType == 2) && (!updateUser.getOrganizationId().equals(currentUser.getOrganizationId()))) {
 			// can update employees within the same organization and they are not in the same organization
 			throw new EntityValidationException("Not in the same Organization " + ResponseStatus.INSUFFICIENT_RIGHTS,
 					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);

@@ -45,10 +45,9 @@ public class UserController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public UserApiResponse createEmployeeUser(@RequestHeader (value = "User-ID", required = true) Long userId,
-                                              @RequestHeader (value = "User-Token", required = true) String userToken,
+    public UserApiResponse createEmployeeUser(@RequestHeader (value = "User-Token", required = true) String userToken,
                                               @RequestBody UserDTOs.EmployeeUserCreationObject employeeUserJson) {
-        return this.employeeUserService.createEmployeeUser(userId, userToken, employeeUserJson);
+        return this.employeeUserService.createEmployeeUser(userToken, employeeUserJson);
     }
 
 
@@ -126,13 +125,12 @@ public class UserController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public UserApiResponse updateEmployeeUser(@RequestHeader (value = "User-ID", required = true) Long userId,
-                                              @RequestHeader (value = "User-Token", required = true) String userToken,
-                                              @RequestBody UserDTOs.EmployeeUserUpdatingObject json) {
+    public UserApiResponse updateEmployeeUser(@RequestHeader (value = "User-Token", required = true) String userToken,
+                                              @RequestBody UserDTOs.EmployeeUserUpdatingObject json) throws BusinessException {
         if (json.employee) {
-            return this.employeeUserService.updateEmployeeUser(userId, userToken, json);
+            return this.employeeUserService.updateEmployeeUser(userToken, json);
         }
-        return this.userService.updateUser(userId, userToken, json);
+        return this.userService.updateUser(userToken, json);
     }
     
     

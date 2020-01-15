@@ -97,12 +97,9 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserApiResponse updateUser(Long userId, String userToken, UserDTOs.EmployeeUserUpdatingObject userJson) {
-		if (!checkAuthToken((long)userId, userToken)){
-			throw new EntityValidationException("" + ResponseStatus.UNAUTHENTICATED,
-					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.UNAUTHENTICATED)), HttpStatus.NOT_ACCEPTABLE);
-		}
-		UserEntity userEntity = userRepository.getByIdAndAuthenticationToken((long)userId, userToken);
+	public UserApiResponse updateUser(String userToken, UserDTOs.EmployeeUserUpdatingObject userJson) throws BusinessException {
+
+		UserEntity userEntity = (UserEntity) securityService.getCurrentUser();
 		List<ResponseStatus> failResponseStatusList = new ArrayList<>();
 		List<ResponseStatus> successResponseStatusList = new ArrayList<>();
 		if (StringUtils.isNotBlankOrNull(userJson.getName()))
@@ -133,7 +130,7 @@ public class UserServiceImpl implements UserService {
 			}
 			return UserApiResponse.createMessagesApiResponse(true, successResponseStatusList);
 		}
-		return 	UserApiResponse.createMessagesApiResponse(false, failResponseStatusList);
+		throw new BusinessException(""+failResponseStatusList, "INVALID_PARAMS", HttpStatus.NOT_ACCEPTABLE);
 	}
 
 

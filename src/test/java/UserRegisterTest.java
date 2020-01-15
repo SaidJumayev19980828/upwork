@@ -5,6 +5,7 @@ import java.util.Date;
 
 import javax.annotation.PreDestroy;
 
+import com.nasnav.exceptions.BusinessException;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -581,5 +582,28 @@ public class UserRegisterTest {
 		boolean userLoggedIn = userRepository.existsByAuthenticationToken( token);
 		assertTrue("the logged in user should be the customer user, "
 				+ "and its token should exists in USERS table", userLoggedIn );
+	}
+
+
+	@Test
+	public void updateSelfUserTestSuccess() {
+		// update self data test success
+		String body = "{\"name\":\"John Doe\"}";
+		HttpEntity<Object> userJson = TestCommons.getHttpEntity(body, "123");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", userJson, UserApiResponse.class);
+
+		Assert.assertTrue(response.getBody().isSuccess());
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+
+	@Test
+	public void updateSelfUserInvalidDataTest() {
+		// update self data test success
+		String body = "{\"name\":\"123\", \"email\":\"gds\"}";
+		HttpEntity<Object> userJson = TestCommons.getHttpEntity(body, "123");
+		ResponseEntity<String> response = template.postForEntity("/user/update", userJson, String.class);
+
+		System.out.println(response.toString());
+		Assert.assertEquals( 406, response.getStatusCodeValue());
 	}
 }

@@ -55,6 +55,8 @@ public class EmployeeUserEntity extends BaseUserEntity {
     @Column(name = "organization_manager_id")
     private Long organizationManagerId;
 
+    @Column(name = "phone_number")
+    private String phoneNumber;
     
     public static EmployeeUserEntity createEmployeeUser(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
         // parse Json to EmployeeUserEntity

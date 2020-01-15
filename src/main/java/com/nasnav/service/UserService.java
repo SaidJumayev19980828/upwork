@@ -17,7 +17,7 @@ public interface UserService extends CommonUserServiceInterface{
      */
     UserApiResponse registerUser(UserDTOs.UserRegistrationObject userJson);
 
-    public UserApiResponse updateUser(Long userId, String userToken, UserDTOs.EmployeeUserUpdatingObject userJson);
+    public UserApiResponse updateUser(String userToken, UserDTOs.EmployeeUserUpdatingObject userJson) throws BusinessException;
 
     public UserRepresentationObject getUserData(Long id, Boolean isEmployee) throws BusinessException;
 }

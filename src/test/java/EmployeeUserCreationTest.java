@@ -313,7 +313,7 @@ public class EmployeeUserCreationTest {
 	@Test
 	public void updateOtherEmployeeUserAuthTestFail() {
 		// update user with id 158 fail(unauthorized assigning NASNAV_ADMIN role)
-		String body = "{\"updated_user_id\":\"158\", \"role\": \"NASNAV_ADMIN\"}";
+		String body = "{\"employee\":\"true\",\"updated_user_id\":\"158\", \"role\": \"NASNAV_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm", "69");
 		ResponseEntity<BaseResponse> response = template.postForEntity("/user/update", employeeUserJson, BaseResponse.class);
 
@@ -324,7 +324,7 @@ public class EmployeeUserCreationTest {
 	@Test
 	public void updateOtherEmployeeUserInvaildDataTestFail() {
 		// update user with id 158 fail(invalid name and email)
-		String body = "{\"updated_user_id\":\"158\",\"name\":\"74man\",\"email\":\"" + "boda  Test@nasnav.com" + "\", \"org_id\": 99001" + "}";
+		String body = "{\"employee\":\"true\",\"updated_user_id\":\"158\",\"name\":\"74man\",\"email\":\"" + "boda  Test@nasnav.com" + "\", \"org_id\": 99001" + "}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 		response.getBody().getEntityId();
@@ -380,7 +380,7 @@ public class EmployeeUserCreationTest {
 	//ORGANIZATION_ADMIN changing roles to NASNAV_ADMIN,ORGANIZATION_ADMIN,ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE
 	@Test
 	public void updateToNasnavAdminByOrganizationAdminTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"NASNAV_ADMIN\"}";
+		String body = "{\"employee\":\"true\",\"updated_user_id\":\"158\",\"role\":\"NASNAV_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm", "69");
 		ResponseEntity<BaseResponse> response = template.postForEntity("/user/update", employeeUserJson, BaseResponse.class);
 
@@ -412,7 +412,7 @@ public class EmployeeUserCreationTest {
 
 	@Test
 	public void updateToStoreEmployeeByOrganizationAdminTest() {
-		String body = "{\"updated_user_id\":\"158\",\"role\":\"STORE_EMPLOYEE\"}";
+		String body = "{\"employee\":\"true\",\"updated_user_id\":\"158\",\"role\":\"STORE_EMPLOYEE\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm", "69");
 		ResponseEntity<BaseResponse> response = template.postForEntity("/user/update", employeeUserJson, BaseResponse.class);
 
