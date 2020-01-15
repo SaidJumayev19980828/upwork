@@ -22,11 +22,10 @@ DELETE FROM public.files  where orig_filename = 'nasnav--Test_Photo.png';  -- fo
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.malls where id = 901;
-DELETE FROM public.tag_graph_edges WHERE child_id IN (select id from organization_tags where organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.tag_graph_edges WHERE child_id IN (select id from tags where organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.organization_themes WHERE organization_id BETWEEN 99000 AND 99999;
-DELETE FROM public.organization_tags WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.tags WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_image_types;
-DELETE FROM public.categories WHERE id between 200 AND 205;
-DELETE FROM public.tags WHERE id between 5001 AND 5007;
+DELETE FROM public.categories WHERE id between 200 AND 207;
 

@@ -2,8 +2,8 @@ import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
 import com.nasnav.controller.AdminController;
 import com.nasnav.dao.CategoryRepository;
-import com.nasnav.dao.OrganizationTagsRepository;
-import com.nasnav.dto.OrganizationTagsRepresentationObject;
+import com.nasnav.dao.TagsRepository;
+import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.response.CategoryResponse;
 import com.nasnav.service.CategoryService;
 import org.jgrapht.alg.cycle.CycleDetector;
@@ -71,7 +71,7 @@ public class CategoryManagmentTest {
     private CategoryService service;
 
     @Autowired
-    private OrganizationTagsRepository orgTagsRepo;
+    private TagsRepository orgTagsRepo;
 
     @Before
     public void setup() {
@@ -99,7 +99,7 @@ public class CategoryManagmentTest {
         // with no filters
         ResponseEntity<String> response = template.getForEntity("/navbox/categories", String.class);
         JSONArray json = new JSONArray(response.getBody());
-        assertEquals("there are 4 Categories in total", 4, json.length());
+        assertEquals("there are 4 Categories in total", 7, json.length());
         /*
         TODO Modify category listing test after getting categories by organization
         // with organization_id = 99001
@@ -233,7 +233,7 @@ public class CategoryManagmentTest {
     @Test
     public void deleteCategoryMissingCategoryTest() {
         HttpHeaders header = TestCommons.getHeaders("abcdefg");
-        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=206",
+        ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=209",
                 HttpMethod.DELETE, new HttpEntity<>(header), String.class);
         Assert.assertTrue(406 == deleteResponse.getStatusCode().value());
     }
@@ -256,12 +256,6 @@ public class CategoryManagmentTest {
 
         assertTrue(!cycleDetector.detectCycles());
         assertTrue(cycleVertices.size() == 0);
-        /*
-        Iterator<String> iterator = new DepthFirstIterator<>(graph, "Tag#1");
-        while (iterator.hasNext()) {
-            String uri = iterator.next();
-            //System.out.println(uri);
-        }*/
     }
 
     @Test
@@ -277,13 +271,14 @@ public class CategoryManagmentTest {
 
     @Test
     public void getTags() {
-        List<OrganizationTagsRepresentationObject> tgs = service.getOrganizationTags(99001L);
+        List<TagsRepresentationObject> tgs = service.getOrganizationTags(99001L);
+        assertTrue(!tgs.isEmpty());
         System.out.println(tgs.toString());
     }
 
     @Test
     public void createOrgTagsSuccess() {
-        String body = "{\"operation\":\"create\",  \"tag_id\":5007, \"alias\":\"org1_tag_7\"}";
+        String body = "{\"operation\":\"create\",  \"category_id\":207, \"name\":\"org1_tag_7\"}";
 
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
@@ -297,7 +292,7 @@ public class CategoryManagmentTest {
 
     @Test
     public void createOrgTagMissingOperation() {
-        String body = "{\"tag_id\":5001, \"alias\":\"org1_tag_1\"}";
+        String body = "{\"category_id\":201, \"alias\":\"org1_tag_1\"}";
 
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
@@ -307,7 +302,7 @@ public class CategoryManagmentTest {
 
     @Test
     public void createOrgTagInvalidOperation() {
-        String body = "{\"operation\":\"invalid operation\",  \"tag_id\":5001, \"alias\":\"org1_tag_1\"}";
+        String body = "{\"operation\":\"invalid operation\",  \"category_id\":2001, \"alias\":\"org1_tag_1\"}";
 
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
@@ -327,7 +322,7 @@ public class CategoryManagmentTest {
 
     @Test
     public void createOrgTagInvalidTagId() {
-        String body = "{\"operation\":\"create\", \"tag_id\":5008, \"alias\":\"org1_tag_1\"}";
+        String body = "{\"operation\":\"create\", \"category_id\":2008, \"alias\":\"org1_tag_1\"}";
 
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
@@ -337,7 +332,7 @@ public class CategoryManagmentTest {
 
     @Test
     public void updateOrgTagsSuccess() {
-        String body = "{\"operation\":\"update\",  \"id\":5001, \"alias\":\"org1_tag_1\"}";
+        String body = "{\"operation\":\"update\",  \"id\":5001, \"name\":\"org1_tag_1\"}";
 
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);

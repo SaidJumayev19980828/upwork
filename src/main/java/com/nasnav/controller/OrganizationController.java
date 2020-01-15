@@ -5,7 +5,6 @@ import java.util.List;
 import javax.validation.Valid;
 
 import com.nasnav.dto.*;
-import com.nasnav.persistence.OrganizationTagsEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.TagResponse;
@@ -184,8 +183,8 @@ public class OrganizationController {
     })
     @PostMapping(value = "tag", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity createOrganizationTag(@RequestHeader (value = "User-Token") String userToken,
-                                         @RequestBody OrganizationTagsDTO tagDTO) throws BusinessException {
-        OrganizationTagsEntity tag = categoryService.createOrgTag(tagDTO);
+                                         @RequestBody TagsDTO tagDTO) throws BusinessException {
+        TagsEntity tag = categoryService.createOrgTag(tagDTO);
         return new ResponseEntity(new TagResponse(tag.getId()),HttpStatus.OK);
     }
 
@@ -216,14 +215,4 @@ public class OrganizationController {
         return new ResponseEntity(new JSONObject("{\"Message\":\"Children removed from parent successfully\"}").toString(),HttpStatus.OK);
     }
 
-
-    @ApiOperation(value = "Get Nasnav original tags", nickname = "nasnavTags", code = 200)
-    @ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
-            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
-    })
-    @GetMapping(value = "tags", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public List<TagsEntity> createCategory(@RequestHeader (value = "User-Token") String userToken) throws BusinessException {
-        return categoryService.getNasnavTags();
-    }
 }

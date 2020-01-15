@@ -12,6 +12,9 @@ INSERT INTO public.categories(id, name, created_at, updated_at, parent_id, logo,
 INSERT INTO public.categories(id, name, created_at, updated_at, parent_id, logo) VALUES (202, 'category_2', now(), now(), 201,'logo_2');
 INSERT INTO public.categories(id, name, created_at, updated_at, parent_id, logo, p_name) VALUES (203, 'category_3', now(), now(), 201,'logo_3', 'category-3');
 INSERT INTO public.categories(id, name, created_at, updated_at, parent_id, logo,p_name) VALUES (204, 'category_4', now(), now(), 202,'logo_4','category-4');
+INSERT INTO public.categories(id, name, created_at, updated_at, logo,p_name) VALUES (205, 'category_5', now(), now(), 'logo_5','name');
+INSERT INTO public.categories(id, name, created_at, updated_at, logo) VALUES (206, 'category_6', now(), now(), 'logo_6');
+INSERT INTO public.categories(id, name, created_at, updated_at, logo, p_name) VALUES (207, 'category_7', now(), now(), 'logo_7', 'category-3');
 
 --inserting shops
 INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (501, 'shop_1', 102, now(), now(), 99002);
@@ -42,20 +45,12 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1008, 'product_8',102, 202, 99002, now(), now());
 
 
-insert into Tags(id, name) values(5001, 'tag_1');
-insert into Tags(id, name) values(5002, 'tag_2');
-insert into Tags(id, name) values(5003, 'tag_3');
-insert into Tags(id, name) values(5004, 'tag_4');
-insert into Tags(id, name) values(5005, 'tag_5');
-insert into Tags(id, name) values(5006, 'tag_6');
-insert into Tags(id, name) values(5007, 'tag_7');
-
-insert into organization_Tags(id, alias, tag_id, organization_id, metadata) values(5001,'tag_1', 5001, 99001, '');
-insert into organization_Tags(id, alias, tag_id, organization_id, metadata) values(5002,'tag_2', 5002, 99001, '');
-insert into organization_Tags(id, alias, tag_id, organization_id, metadata) values(5003,'tag_3', 5003, 99001, '');
-insert into organization_Tags(id, alias, tag_id, organization_id, metadata) values(5004,'tag_4', 5004, 99001, '');
-insert into organization_Tags(id, alias, tag_id, organization_id, metadata) values(5005,'tag_5', 5005, 99001, '');
-insert into organization_Tags(id, alias, tag_id, organization_id, metadata) values(5006,'tag_6', 5006, 99001, '');
+insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5001,'tag_1', 'tag_1', 201, 99001, '');
+insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5002,'tag_2', 'tag_2', 202, 99001, '');
+insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5003,'tag_3', 'tag_3', 203, 99001, '');
+insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5004,'tag_4', 'tag_4', 204, 99001, '');
+insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5005,'tag_5', 'tag_5', 205, 99001, '');
+insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5006,'tag_6', 'tag_6', 206, 99001, '');
 
 insert into tag_graph_edges(id, parent_id, child_id) values(5001, null, 5001);
 insert into tag_graph_edges(id, parent_id, child_id) values(5002, 5001, 5002);

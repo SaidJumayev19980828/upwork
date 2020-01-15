@@ -3,7 +3,6 @@ package com.nasnav.controller;
 import com.nasnav.dto.*;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.service.*;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -160,7 +159,7 @@ public class NavboxController {
 	})
 	@GetMapping(value="/tagstree",produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getTagsTree(@RequestParam(name = "org_id", required = false) Long organizationId) throws BusinessException {
-		List<OrganizationTagsRepresentationObject> response = categoryService.getOrganizationTagsTree(organizationId);
+		List<TagsRepresentationObject> response = categoryService.getOrganizationTagsTree(organizationId);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
@@ -171,7 +170,7 @@ public class NavboxController {
 	})
 	@GetMapping(value="/tags",produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getTags(@RequestParam(name = "org_id", required = false) Long organizationId) throws BusinessException {
-		List<OrganizationTagsRepresentationObject> response = categoryService.getOrganizationTags(organizationId);
+		List<TagsRepresentationObject> response = categoryService.getOrganizationTags(organizationId);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 }

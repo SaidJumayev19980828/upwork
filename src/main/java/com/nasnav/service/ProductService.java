@@ -52,7 +52,6 @@ import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.VariantUpdateResponse;
 import com.sun.istack.logging.Logger;
-import reactor.util.function.Tuple2;
 
 @Service
 public class ProductService {
@@ -112,7 +111,7 @@ public class ProductService {
 	private ProductImageService imgService;
 
 	@Autowired
-	private OrganizationTagsRepository orgTagRepo;
+	private TagsRepository orgTagRepo;
 
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
@@ -1743,7 +1742,7 @@ public class ProductService {
 		validateProductTagDTO(productTagDTO);
 
 		Map<Long, ProductEntity> productsMap = validateAndGetProductMap(productTagDTO.getProductIds());
-		Map<Long, OrganizationTagsEntity> tagsMap = validateAndGetTagMap(productTagDTO.getTagIds());
+		Map<Long, TagsEntity> tagsMap = validateAndGetTagMap(productTagDTO.getTagIds());
 
 		List<Pair> productTagsList = productRepository.getProductTags(productTagDTO.getProductIds(), productTagDTO.getTagIds());
 
@@ -1762,7 +1761,7 @@ public class ProductService {
 		validateProductTagDTO(productTagDTO);
 
 		Map<Long, ProductEntity> productsMap = validateAndGetProductMap(productTagDTO.getProductIds());
-		Map<Long, OrganizationTagsEntity> tagsMap = validateAndGetTagMap(productTagDTO.getTagIds());
+		Map<Long, TagsEntity> tagsMap = validateAndGetTagMap(productTagDTO.getTagIds());
 
 		List<Pair> productTagsList = productRepository.getProductTags(productTagDTO.getProductIds(), productTagDTO.getTagIds());
 
@@ -1803,9 +1802,9 @@ public class ProductService {
 	}
 
 	private Map validateAndGetTagMap(List<Long> tagIds) throws BusinessException {
-		Map<Long, OrganizationTagsEntity> tagsMap = new HashMap<>();
+		Map<Long, TagsEntity> tagsMap = new HashMap<>();
 
-		for(OrganizationTagsEntity entity : orgTagRepo.findByIdIn(tagIds)) {
+		for(TagsEntity entity : orgTagRepo.findByIdIn(tagIds)) {
 			tagsMap.put(entity.getId(), entity);
 		}
 

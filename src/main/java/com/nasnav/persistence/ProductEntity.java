@@ -116,13 +116,13 @@ public class ProductEntity {
     @JoinTable(name = "product_tags"
             ,joinColumns = {@JoinColumn(name="product_id")}
             ,inverseJoinColumns = {@JoinColumn(name="tag_id")})
-    private Set<OrganizationTagsEntity> tags;
+    private Set<TagsEntity> tags;
 
-    public void insertProductTag(OrganizationTagsEntity tag) {
+    public void insertProductTag(TagsEntity tag) {
         this.tags.add(tag);
     }
 
-    public void removeProductTag(OrganizationTagsEntity tag) {
+    public void removeProductTag(TagsEntity tag) {
         this.tags.remove(tag);
     }
 }
