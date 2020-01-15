@@ -1,2 +1,2 @@
-barcode,path
-ABCD123,nasnav--Test_Photo.png
+variant_id,external_id,barcode,path
+,,ABCD123,nasnav--Test_Photo.png

@@ -1,36 +1,30 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_BRAND_NAME_NOT_EXIST;
-import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CATEGORY_NAME_NOT_EXIST;
-import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CONVERT_TO_JSON;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CSV_PARSE_FAILURE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_INVALID_ENCODING;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_FILE_UPLOADED;
-import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_CSV_ROW_SAVE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMPORT_MISSING_HEADER_NAME;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMPORT_MISSING_PARAM;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_SHOP_ID_NOT_EXIST;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_CHANGE_OTHER_ORG_SHOP;
-import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PREPARE_PRODUCT_DTO_DATA;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 
-import com.nasnav.dto.*;
-import com.univocity.parsers.csv.*;
 import org.apache.commons.beanutils.BeanMap;
-import org.apache.commons.beanutils.BeanUtils;
 import org.jboss.logging.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -40,20 +34,15 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
-import com.nasnav.constatnts.EntityConstants.Operation;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.CategoriesRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dto.CsvHeaderNamesDTO;
+import com.nasnav.dto.ProductImportMetadata;
+import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.EmployeeUserEntity;
@@ -66,6 +55,10 @@ import com.univocity.parsers.common.ParsingContext;
 import com.univocity.parsers.common.RowProcessorErrorHandler;
 import com.univocity.parsers.common.fields.ColumnMapping;
 import com.univocity.parsers.common.processor.BeanListProcessor;
+import com.univocity.parsers.csv.CsvParser;
+import com.univocity.parsers.csv.CsvParserSettings;
+import com.univocity.parsers.csv.CsvWriter;
+import com.univocity.parsers.csv.CsvWriterSettings;
 
 import lombok.Data;
 
@@ -95,7 +88,8 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	
 	private Logger logger = Logger.getLogger(getClass());
 
-	private final List<String> csvBaseHeaders = Arrays.asList(new String[]{"product_name","barcode","category","brand","price","quantity","description"});
+	private final List<String> csvBaseHeaders = Arrays.asList(
+			new String[]{"product_name","barcode","category","brand","price","quantity","description","variant_id","external_id"});
 
 	@Transactional(rollbackFor = Throwable.class)
 	public ProductListImportResponse importProductListFromCSV(@Valid MultipartFile file,
@@ -394,7 +388,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 	@Override
 	public ByteArrayOutputStream generateImagesCsvTemplate() throws IOException{
-		List<String> headers = Arrays.asList(new String[]{"barcode","image_file"});
+		List<String> headers = Arrays.asList(new String[]{"variant_id","external_id","barcode","image_file"});
 
 		return writeCsvHeaders(headers);
 	}

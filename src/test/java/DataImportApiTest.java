@@ -629,7 +629,7 @@ public class DataImportApiTest {
 	@Test
 	public void getProductsCsvTemplate() {
 		String[] expectedProductHeaders = {"product_name","barcode","category","brand","price"
-											 ,"quantity","description","color","size"};
+											 ,"quantity","description","variant_id","external_id","color","size"};
 		HttpEntity<Object> request = TestCommons.getHttpEntity("","131415");
 		ResponseEntity<String> res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
 		
@@ -650,7 +650,7 @@ public class DataImportApiTest {
 	
 	@Test
 	public void getImageUploadCsvTemplate() {
-		String[] expectedImageHeaders = {"barcode","image_file"};
+		String[] expectedImageHeaders = {"variant_id","external_id","barcode","image_file"};
 		
 		HttpEntity<Object> request = TestCommons.getHttpEntity("","131415");
 		ResponseEntity<String> res = template.exchange("/product/image/bulk/template", HttpMethod.GET, request ,String.class);

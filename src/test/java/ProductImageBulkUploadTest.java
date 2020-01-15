@@ -90,6 +90,17 @@ public class ProductImageBulkUploadTest {
 	
 	private static final String TEST_ZIP_MULTI_BARCODE_SAME_FILE = "img_bulk_upload_multi_barcode_same_file.zip";
 
+    private static final String TEST_CSV_VARIANT_ID_EXISTING_VARIANT = "img_bulk_exist_variant_id_exist_variant.csv";
+
+	private static final String TEST_CSV_VARIANT_ID_NO_VARIANT = "img_bulk_exist_variant_id_no_variant.csv";
+
+	private static final String TEST_ZIP_WITH_VARIANTS = "img_bulk_upload_with_variants.zip";
+
+	private static final String TEST_CSV_EXTERNAL_ID_EXISTING_MAPPING = "img_bulk_exist_external_id_exist_mapping.csv";
+
+	private static final String TEST_CSV_EXTERNAL_ID_NO_MAPPING = "img_bulk_exist_external_id_no_mapping.csv";
+
+
 	@Value("${files.basepath}")
 	private String basePathStr;
 
@@ -271,8 +282,8 @@ public class ProductImageBulkUploadTest {
 	public void updateImgBulkTestInvalidBarcode() throws IOException, Exception {
 		
 		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
-		
-		String response = 
+
+		String response =
 				performFileUpload(TEST_ZIP_NON_EXISTING_BARCODE, TEST_CSV_NON_EXISTING_BARCODE, jsonBytes, USER_TOKEN)
 	             .andExpect(status().is(500))
 	             .andReturn()
@@ -464,11 +475,55 @@ public class ProductImageBulkUploadTest {
 		
 		assertNoImgsImported();
 	}
-	
-	
-	
-	
-	
+
+
+	@Test
+	public void updateImgBulkTestExistVariantIdExistVariantEntity() throws IOException, Exception {
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+
+		String response =
+				performFileUpload(TEST_ZIP_WITH_VARIANTS , TEST_CSV_VARIANT_ID_EXISTING_VARIANT, jsonBytes, USER_TOKEN)
+						.andExpect(status().is(200))
+						.andReturn()
+						.getResponse()
+						.getContentAsString();
+
+		assertImgsImported(response);
+	}
+
+	@Test
+	public void updateImgBulkTestExistExternalIdExistMapping() throws IOException, Exception {
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+
+		String response =
+				performFileUpload(TEST_ZIP_WITH_VARIANTS , TEST_CSV_EXTERNAL_ID_EXISTING_MAPPING, jsonBytes, USER_TOKEN)
+						.andExpect(status().is(200))
+						.andReturn()
+						.getResponse()
+						.getContentAsString();
+
+		assertImgsImported(response);
+	}
+
+	@Test
+	public void updateImgBulkTestExistVariantIdNoVariant() throws Exception {
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+
+		performFileUpload(TEST_ZIP_WITH_VARIANTS , TEST_CSV_VARIANT_ID_NO_VARIANT, jsonBytes, USER_TOKEN)
+				.andExpect(status().is(500));
+
+		assertNoImgsImported();
+	}
+
+	@Test
+	public void updateImgBulkTestExistExternalIdNoMapping() throws Exception {
+		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+
+		performFileUpload(TEST_ZIP_WITH_VARIANTS , TEST_CSV_EXTERNAL_ID_NO_MAPPING, jsonBytes, USER_TOKEN)
+				.andExpect(status().is(500));
+
+		assertNoImgsImported();
+	}
 
 	private void assertImgsImported(String response) {
 		JSONArray responseJson = new JSONArray(response);

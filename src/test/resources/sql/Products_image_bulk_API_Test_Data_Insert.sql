@@ -70,3 +70,18 @@ insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organiz
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(603, 501, 4, now(), now(), 99002, 200.00, 310003);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(604, 502, 6, now(), now(), 99001, 700.00, 310004);
 
+
+
+INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(1, 'INTEGRATION_MODULE', TRUE);
+INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(2, 'MAX_REQUESTS_PER_SECOND', TRUE);
+INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(3, 'EXISTING_PARAM', FALSE);
+
+INSERT INTO public.integration_param(id, param_type, organization_id, param_value)VALUES(1, 1, 99001, 'com.nasnav.test.integration.modules.TestIntegrationModule');
+INSERT INTO public.integration_param(id, param_type, organization_id, param_value)VALUES(2, 2, 99001, '10');
+insert into public.integration_param(id, param_type, organization_id, param_value)values(55001, 3, 99001, 'old_val');
+
+-- integration Mapping types
+INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67001, 'PRODUCT_VARIANT');
+
+INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id)VALUES(67001, '310001', '5', 99001) ;
+INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id)VALUES(67001, '310002', '6', 99001) ;
