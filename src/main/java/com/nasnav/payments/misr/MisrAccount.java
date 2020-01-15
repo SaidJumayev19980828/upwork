@@ -10,7 +10,6 @@ import java.util.Properties;
 
 @Component
 @Getter
-//@Setter
 public class MisrAccount extends Account {
 
     @PostConstruct

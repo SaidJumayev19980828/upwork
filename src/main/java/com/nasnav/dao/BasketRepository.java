@@ -1,15 +1,15 @@
 package com.nasnav.dao;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
-
-import com.nasnav.persistence.BasketsEntity;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.nasnav.persistence.BasketsEntity;
 
 public interface BasketRepository extends JpaRepository<BasketsEntity, Long> {
 
@@ -23,8 +23,6 @@ public interface BasketRepository extends JpaRepository<BasketsEntity, Long> {
     		+ " where p.id= :productId ")
     Long countByProductId(@Param("productId") Long productId);
 
-    @Transactional
-    void deleteByOrdersEntity_Id(Long orderId);
 
     @Query("select count(e) from BasketsEntity e "
     		+ " join e.ordersEntity o"
@@ -39,4 +37,6 @@ public interface BasketRepository extends JpaRepository<BasketsEntity, Long> {
     @Modifying
     @Query("delete from BasketsEntity basket where basket.ordersEntity.id in :orderIdList")
 	void deleteByOrderIdIn( @Param("orderIdList") List<Long> orderIdList);
+
+    List<BasketsEntity> findByOrdersEntity_IdIn(Set<Long> ordersIds);
 }

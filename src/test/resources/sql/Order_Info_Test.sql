@@ -110,7 +110,7 @@ VALUES(330002,'', '', '', 0, 88, now(), now(), now(), 99001, 1, '{}'::character 
 
 INSERT INTO public.orders
 (id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status)
-VALUES(330003,'', '', '', 0, 88, now(), now(), now(), 99001, 0, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 300.00, 0);
+VALUES(330003,'', '', '', 0, 88, now(), now()+interval '2 day', now(), 99001, 0, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 300.00, 0);
 
 
 INSERT INTO public.orders
@@ -119,12 +119,12 @@ VALUES(330004,'', '', '', 0, 89, now(), now()+ interval '1 day', now(), 99002, 0
 
 INSERT INTO public.orders
 (id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status)
-VALUES(330005,'', '', '', 0, 89, now(), now(), now(), 99002, 0, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 50.00, 0);
+VALUES(330005,'', '', '', 0, 89, now(), now()+interval '3 day', now(), 99002, 0, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 50.00, 0);
 
 
 INSERT INTO public.orders
 (id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status)
-VALUES(330006,'', '', '', 0, 90, now(), now(), now(), 99003, 1, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 100.00, 0);
+VALUES(330006,'', '', '', 0, 90, now(), now()+interval '4 day', now(), 99003, 1, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 100.00, 0);
 
 
 

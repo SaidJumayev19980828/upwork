@@ -6,10 +6,17 @@ import java.net.PasswordAuthentication;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Set;
+import java.util.TreeSet;
 
-import com.nasnav.payments.qnb.UpgLightbox;
+import com.gargoylesoftware.htmlunit.*;
+import com.gargoylesoftware.htmlunit.html.HtmlButton;
+import com.gargoylesoftware.htmlunit.html.HtmlInput;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.nasnav.payments.UpgLightbox;
 import org.json.JSONObject;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -23,10 +30,6 @@ import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.gargoylesoftware.htmlunit.CookieManager;
-import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
-import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.WebWindow;
 import com.nasnav.NavBox;
 import com.nasnav.controller.QnbPaymentController;
 import com.nasnav.dao.BasketRepository;
@@ -42,6 +45,7 @@ import com.nasnav.persistence.StocksEntity;
 import net.jcip.annotations.NotThreadSafe;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -85,65 +89,8 @@ public class PaymentControllerTest {
 		});
 	}
 
-	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Payment_Test_Data_Insert.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void testCompletePaymentRedirection() throws FailingHttpStatusCodeException, MalformedURLException, IOException {
 
-		Long orderId = createOrder();
-
-		WebClient webClient = new WebClient();
-		webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
-		webClient.getOptions().setCssEnabled(false);
-		webClient.getOptions().setJavaScriptEnabled(true);
-		webClient.getOptions().setRedirectEnabled(true);
-		webClient.getOptions().setThrowExceptionOnScriptError(false);
-
-
-		CookieManager cookieMan = webClient.getCookieManager();
-		cookieMan.setCookiesEnabled(false);
-
-		webClient
-				.getPage("http://localhost:" + randomServerPort + "/payment/qnb/test/payment/init?order_id=" + orderId);
-
-
-		webClient.close();
-	}
-
-	private Long createOrder() {
-		
-		//get dummy  stock		
-		StocksEntity stockEntity = stockRepository.findById(601L).get();
-
-		// create order
-		OrdersEntity order = new OrdersEntity();
-		order.setCreationDate( LocalDateTime.now()  );
-		order.setUpdateDate( LocalDateTime.now() );
-		order.setAmount(new BigDecimal(50));
-		order.setEmail("test@nasnav.com");
-		OrdersEntity orderEntity = orderRepository.save(order);
-		
-		//set organization for the order
-		OrganizationEntity organizationEntity = orgRepo.findOneById(99001L);
-		order.setOrganizationEntity(organizationEntity);
-		
-		BasketsEntity basket = new BasketsEntity();
-		basket.setCurrency(1);
-		basket.setPrice(new BigDecimal(100));
-		basket.setQuantity(new BigDecimal(5));
-		basket.setStocksEntity(stockEntity);
-		basket.setOrdersEntity(orderEntity);
-		BasketsEntity basketEntity = basketRepository.save(basket);
-		HashSet<BasketsEntity> baskets = new HashSet<BasketsEntity>();
-		baskets.add(basket);
-		order.setBasketsEntity(baskets);
-				
-		
-		orderEntity = orderRepository.save(order);
-		return orderEntity.getId();
-	}
-
-
+	@Ignore
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Payment_Test_Data_Insert.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
@@ -161,10 +108,23 @@ public class PaymentControllerTest {
 
 		CookieManager cookieMan = webClient.getCookieManager();
 		cookieMan.setCookiesEnabled(false);
+		System.out.println("Order: " + orderId);
+		HtmlPage page = webClient
+				.getPage("http://localhost:" + randomServerPort + "/payment/misr/test/upglightbox?order_id=5&" + orderId);
+		assertTrue(page.asText().contains("PAY NOW"));
+		assertTrue(page.getWebResponse().getContentAsString().contains("callPaySky"));
+		assertTrue(page.getWebResponse().getContentAsString().contains("SecureHash"));
+		HtmlButton payNow = (HtmlButton)page.getByXPath("//button").get(0);
+		page = payNow.click();
+		assertTrue(page.getWebResponse().getContentAsString().contains("Merchant Ref #"));
+		assertTrue(page.getWebResponse().getContentAsString().contains("Quick Payment Form"));
+		((HtmlInput)page.getElementById("CardNumber")).setValueAttribute("5078036254831639");
+		((HtmlInput)page.getElementById("Expiration")).setValueAttribute("09/23");
+		((HtmlInput)page.getElementById("CVV")).setValueAttribute("544");
+		((HtmlInput)page.getElementById("NameOnCard")).setValueAttribute("Test Owner");
+		page = (page.getElementById("pay")).click();
 
-		webClient
-				.getPage("http://localhost:" + randomServerPort + "/payment/qnb/test/payment/init?order_id=" + orderId);
-
+		System.out.println(page.getWebResponse().getContentAsString());
 
 		webClient.close();
 	}
@@ -199,5 +159,44 @@ public class PaymentControllerTest {
 		String hash2 = UpgLightbox.calculateHash(response, "66623430313531632D663137362D346664332D616634392D396531633665336337376230");
 		assertEquals("C95C35D54BD0C9BDF6FFB6008F9CF71B000754146C4C693B2B9CBD0EF021D410".toUpperCase(), hash2.toUpperCase());
 	}
+
+	private Long createOrder() {
+
+		//set organization for the order
+		OrganizationEntity organizationEntity = orgRepo.findOneById(99001L);
+
+		//get dummy  stock
+		StocksEntity stockEntity = new StocksEntity(); //stockRepository.findById(601L).get();
+		stockEntity.setPrice(new BigDecimal(100));
+		stockEntity.setOrganizationEntity(organizationEntity);
+		stockRepository.save(stockEntity);
+
+		// create order
+		OrdersEntity order = new OrdersEntity();
+		order.setCreationDate( LocalDateTime.now()  );
+		order.setUpdateDate( LocalDateTime.now() );
+		order.setAmount(new BigDecimal(100));
+		order.setEmail("test@nasnav.com");
+		OrdersEntity orderEntity = orderRepository.save(order);
+		order.setOrganizationEntity(organizationEntity);
+
+
+		BasketsEntity basket = new BasketsEntity();
+		basket.setCurrency(1);
+		basket.setPrice(new BigDecimal(100));
+		basket.setQuantity(new BigDecimal(5));
+		basket.setStocksEntity(stockEntity);
+		basket.setOrdersEntity(orderEntity);
+		BasketsEntity basketEntity = basketRepository.save(basket);
+		HashSet<BasketsEntity> baskets = new HashSet<BasketsEntity>();
+		baskets.add(basket);
+		order.setBasketsEntity(baskets);
+
+
+		orderEntity = orderRepository.save(order);
+		orderRepository.flush();
+		return orderEntity.getId();
+	}
+
 
 }
