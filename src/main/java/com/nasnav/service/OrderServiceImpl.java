@@ -37,6 +37,7 @@ import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
@@ -647,7 +648,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private OrderResponse updateOrderBasket(OrderJsonDto order, OrdersEntity orderEntity) throws BusinessException {
 
-		basketRepository.deleteByOrdersEntity_Id(order.getId());
+		basketRepository.deleteByOrderIdIn(asList(order.getId()));
 		
 		orderEntity.setAmount( calculateOrderTotalValue(order) );
 		orderEntity.setShopsEntity( getOrderShop( order) );
