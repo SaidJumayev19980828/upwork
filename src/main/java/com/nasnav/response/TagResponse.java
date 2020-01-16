@@ -22,4 +22,5 @@ public class TagResponse implements Serializable {
         this.success = true;
         this.tagId = tagId;
     }
+
 }

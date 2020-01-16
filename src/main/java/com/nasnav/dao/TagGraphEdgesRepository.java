@@ -19,4 +19,7 @@ public interface TagGraphEdgesRepository extends CrudRepository<TagGraphEdgesEnt
     @Query(nativeQuery = true)
     List<Pair> getTagsLinks(@Param("childIds") Set<Long> childIds);
 
+    @Query(value = "select t from TagGraphEdgesEntity t where t.parentId in :ids or t.childId in :ids")
+    List<TagGraphEdgesEntity> getTagsLinks(@Param("ids") List<Long> ids);
+
 }

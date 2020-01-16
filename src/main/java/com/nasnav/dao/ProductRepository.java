@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -72,6 +73,13 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
     @Query(nativeQuery = true)
     List<Pair> getProductTags(@Param("productsIds") List<Long> productsIds, @Param("tagsIds") List<Long> tagsIds);
+
+    @Query(value = "SELECT t.tag_id FROM Product_tags t WHERE t.tag_id in (select tag_id from tags where organization_id = :orgId)", nativeQuery = true)
+    List<BigInteger> getUsedTagsByOrg(@Param("orgId") Long orgId);
+
+
+    @Query(value = "select t.tag_id from Product_tags t where t.product_id = :id", nativeQuery = true)
+    List<BigInteger> getTagsByProductId(@Param("id") Long id);
 }
 
 

@@ -52,7 +52,6 @@ insert into Tags(id, name, alias, category_id, organization_id, metadata) values
 insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5005,'tag_5', 'tag_5', 205, 99001, '');
 insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5006,'tag_6', 'tag_6', 206, 99001, '');
 
-insert into tag_graph_edges(id, parent_id, child_id) values(5001, null, 5001);
 insert into tag_graph_edges(id, parent_id, child_id) values(5002, 5001, 5002);
 insert into tag_graph_edges(id, parent_id, child_id) values(5003, 5001, 5003);
 insert into tag_graph_edges(id, parent_id, child_id) values(5004, 5001, 5006);

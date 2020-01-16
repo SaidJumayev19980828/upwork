@@ -188,6 +188,19 @@ public class OrganizationController {
         return new ResponseEntity(new TagResponse(tag.getId()),HttpStatus.OK);
     }
 
+    @ApiOperation(value = "Delete Organization tag", nickname = "orgTagDeletion", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @DeleteMapping(value = "tag", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity createOrganizationTag(@RequestHeader (value = "User-Token") String userToken,
+                                                @RequestParam (value = "tag_id")Long tagId) throws BusinessException {
+        TagResponse tag = categoryService.deleteOrgTag(tagId);
+        return new ResponseEntity(tag, HttpStatus.OK);
+    }
+
     @ApiOperation(value = "Add children to parent tag", nickname = "addTagsLinks", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),

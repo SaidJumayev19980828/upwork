@@ -13,6 +13,7 @@ import static java.util.Optional.ofNullable;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -354,6 +355,18 @@ public class ProductService {
 				query.orderBy(orderBy);
 			productsCount = (long) em.createQuery(query).getResultList().size();
 			products =  em.createQuery(query).setMaxResults(params.count).setFirstResult(params.start).getResultList();
+
+			if (params.tags != null) {
+				int oldProductCount = products.size();
+				products = products.stream()
+						.filter(product -> productRepository.getTagsByProductId(product.getId())
+								.stream()
+								.mapToLong(BigInteger::longValue).boxed()
+								.collect(Collectors.toList())
+								.containsAll(params.tags))
+						.collect(Collectors.toList());
+				productsCount = productsCount - oldProductCount + products.size();
+			}
 		}
 
 		return getProductsResponse(products, params.order.getValue(), params.sort.toString(), productsCount);

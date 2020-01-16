@@ -394,26 +394,6 @@ public class CategoryManagmentTest {
     }
 
     @Test
-    public void deleteTagsLinkSuccess() {
-        String body = "{\"parent_id\":5001, \"children_ids\":[5002]}";
-
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/organization/tag/link", HttpMethod.DELETE, json, String.class);
-
-        Assert.assertEquals(200, response.getStatusCode().value());
-    }
-
-    @Test
-    public void deleteTopLevelTagsLinkSuccess() {
-        String body = "{\"parent_id\":null, \"children_ids\":[5001]}";
-
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/organization/tag/link", HttpMethod.DELETE, json, String.class);
-
-        Assert.assertEquals(200, response.getStatusCode().value());
-    }
-
-    @Test
     public void deleteTopLevelTagsLinkMissingId() {
         String body = "{\"parent_id\":null, \"children_ids\":null}";
 
