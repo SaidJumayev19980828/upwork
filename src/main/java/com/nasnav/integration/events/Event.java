@@ -1,10 +1,13 @@
 package com.nasnav.integration.events;
 
+import static lombok.AccessLevel.NONE;
+
 import java.time.LocalDateTime;
 import java.util.function.Consumer;
 
 import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
@@ -15,6 +18,10 @@ public abstract class Event<T, R> {
 	@Getter
 	protected Mono<EventResult<T,R>> eventResult;
 	protected FluxSink<EventResult<T,R>> eventResultFluxSink;
+	
+	@Getter
+	@Setter(NONE)
+	protected Integer retryCount;
 	
 	
 	
@@ -31,6 +38,8 @@ public abstract class Event<T, R> {
 		}
 		
 		eventResultFluxSink = emitterProcessor.sink();
+		
+		retryCount = 0;
 	}
 	
 	
@@ -66,5 +75,12 @@ public abstract class Event<T, R> {
 	
 	public LocalDateTime getCreationTime() {
 		return eventInfo.getCreationTime();
+	}
+	
+	
+	
+	
+	public void incrementRetryCount() {
+		retryCount++;
 	}
 }

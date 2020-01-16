@@ -1,10 +1,9 @@
 package com.nasnav.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
-
-import java.math.BigDecimal;
 
 @Getter
 public class BasketItemDTO {

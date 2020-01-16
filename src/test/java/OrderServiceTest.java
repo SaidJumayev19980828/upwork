@@ -4,13 +4,14 @@ import static com.nasnav.enumerations.OrderStatus.DELIVERED;
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
-import static com.nasnav.enumerations.PaymentStatus.*;
+import static com.nasnav.enumerations.PaymentStatus.PAID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpStatus.OK;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -54,7 +55,6 @@ import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.ShippingAddress;
 import com.nasnav.enumerations.OrderStatus;
-
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrdersEntity;
@@ -158,7 +158,9 @@ public class OrderServiceTest {
 	@Test
 	public void updateOrderSuccessTest() {
 		// create a new order, then take it's order id and try to make an update using it
-		StocksEntity stock = createStock();		
+		Integer orderQuantity = 5;
+		BigDecimal itemPrice = new BigDecimal(100).setScale(2);	
+		StocksEntity stock = createStock(itemPrice, orderQuantity);		
 				
 		JSONObject request = createOrderRequestWithBasketItems(NEW, item(stock.getId(), stock.getQuantity()));
 		ResponseEntity<OrderResponse> response = 
@@ -184,8 +186,16 @@ public class OrderServiceTest {
 										, OrderResponse.class);
 		System.out.println("----------response-----------------" + updateResponse);
 		
-
-		assertEquals(HttpStatus.OK, updateResponse.getStatusCode());
+		//---------------------------------------------------------------
+		OrderResponse body = updateResponse.getBody();
+		assertEquals(OK, updateResponse.getStatusCode());
+		
+		assertEquals(itemPrice.multiply(new BigDecimal(orderQuantity)), body.getPrice());
+		assertNotNull(body.getOrderId());
+		
+		OrdersEntity order = orderRepository.findById(body.getOrderId()).get();
+		assertEquals("user1", order.getName());
+		assertNotNull(order.getAddress());
 	}
 	
 	
@@ -425,9 +435,16 @@ public class OrderServiceTest {
 	
 
 	private StocksEntity createStock() {		
+		return createStock(new BigDecimal("100"), 100);
+	}
+	
+	
+	
+	
+	private StocksEntity createStock(BigDecimal price, Integer Quantity) {		
 		StocksEntity stock = stockRepository.findById(601L).get();
-		stock.setPrice(new BigDecimal(100));
-		stock.setQuantity(100);
+		stock.setPrice(price);
+		stock.setQuantity(Quantity);
 		StocksEntity stockEntity = stockRepository.save(stock);
 		return stockEntity;
 	}

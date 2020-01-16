@@ -5,9 +5,9 @@ import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.E
 import static com.nasnav.integration.enums.MappingType.ORDER;
 import static com.nasnav.integration.enums.MappingType.PAYMENT;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -18,6 +18,7 @@ import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.EventInfo;
 import com.nasnav.integration.events.PaymentCreateEvent;
 import com.nasnav.integration.events.data.PaymentData;
+import com.nasnav.integration.exceptions.EventExternalDependencyNotExists;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.Payment;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.PaymentDetails;
 
@@ -80,11 +81,15 @@ public class PaymentCreateEventListener extends AbstractMSDynamicsEventListener<
 		
 		PaymentData data = event.getEventData();
 		String orderId = getOrderId(data);		
-		String salesId = integrationService.getRemoteMappedValue(event.getOrganizationId(), ORDER, orderId);
+		String extOrderId = integrationService.getRemoteMappedValue(event.getOrganizationId(), ORDER, orderId);
 		
-		List<PaymentDetails> paymentDetails = createPaymentDetails(event, salesId);
+		if(extOrderId == null) {
+			throw new ExternalOrderIdNotFound();
+		}
+		
+		List<PaymentDetails> paymentDetails = createPaymentDetails(event, extOrderId);
 		payment.setPaymentDetails(paymentDetails);
-		payment.setSalesId(salesId);
+		payment.setSalesId(extOrderId);
 		
 		return payment;
 	}
@@ -94,11 +99,10 @@ public class PaymentCreateEventListener extends AbstractMSDynamicsEventListener<
 
 
 	private String getOrderId(PaymentData data) {
-		String paymentId = ofNullable(data)
-							.map(PaymentData::getOrderId)
-							.map(id -> id.toString())
-							.orElse(null);
-		return paymentId;
+		return ofNullable(data)
+				.map(PaymentData::getOrderId)
+				.map(id -> id.toString())
+				.orElse(null);
 	}
 
 
@@ -113,7 +117,7 @@ public class PaymentCreateEventListener extends AbstractMSDynamicsEventListener<
 		details.setSalesId(salesId);
 		details.setPaymentMethod(PAYMENT_METHOD);
 		
-		return Arrays.asList(details);
+		return asList(details);
 	}
 
 
@@ -122,8 +126,7 @@ public class PaymentCreateEventListener extends AbstractMSDynamicsEventListener<
 
 	@Override
 	protected PaymentCreateEvent handleError(PaymentCreateEvent event, Throwable t) {
-		// TODO Auto-generated method stub
-		return null;
+		return event;
 	}
 
 }

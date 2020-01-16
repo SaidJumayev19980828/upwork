@@ -15,7 +15,6 @@ import com.nasnav.integration.events.ShopsImportEvent;
 import com.nasnav.integration.events.data.ShopsFetchParam;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.GetStoresReponse;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.Store;
-import com.nasnav.integration.microsoftdynamics.webclient.dto.Stores;
 import com.nasnav.integration.model.ImportedShop;
 
 import reactor.core.publisher.Mono;

@@ -71,6 +71,7 @@ import com.nasnav.dto.UserDTOs.UserRegistrationObject;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.IntegrationServiceImpl;
 import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
@@ -89,6 +90,7 @@ import com.nasnav.test.model.Item;
 @DirtiesContext
 public class MicrosoftDynamicsIntegrationTest {
 	
+	private static final long DUMMY_ORDER = 430033L;
 	@SuppressWarnings("unused")
 	private static final String MS_SERVER_URL = "http://41.39.128.74";
 	private static final String MOCK_SERVER_URL = "http://127.0.0.1";
@@ -410,7 +412,7 @@ public class MicrosoftDynamicsIntegrationTest {
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_pay_create_test_data.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void createPaymentTest() throws Throwable {
-		PaymentEntity payment = createDummyPayment();
+		PaymentEntity payment = createDummyPayment(DUMMY_ORDER);
 		//---------------------------------------------------------------		
 		Thread.sleep(5000);
 		//---------------------------------------------------------------
@@ -434,6 +436,32 @@ public class MicrosoftDynamicsIntegrationTest {
 		//---------------------------------------------------------------
 		//The integration event should be issued once!
 		assertPaymentIntegration(payment);
+	}
+	
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_pay_create_test_data.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void createPaymentBeforeConfirmingOrderTest() throws Throwable {
+		
+		IntegrationServiceImpl.REQUEST_TIMEOUT_SEC = 1L;		
+		//create order
+		String token = "123eerd";
+		
+		Long orderId = createNewOrder(token);
+		PaymentEntity payment = createDummyPayment(orderId);	
+		Thread.sleep(1000);
+		confirmOrder(token, orderId);		
+		//---------------------------------------------------------------		
+		Thread.sleep(5000);
+		//---------------------------------------------------------------
+		assertPaymentIntegration(payment);
+		assertOrderIntegration(orderId); 
 	}
 
 
@@ -485,8 +513,7 @@ public class MicrosoftDynamicsIntegrationTest {
 
 
 
-	private PaymentEntity createDummyPayment() {
-		Long orderId = 430033L;
+	private PaymentEntity createDummyPayment(Long orderId) {
 		
 		OrdersEntity order = orderRepo.findById(orderId).get();
 		PaymentEntity payment = new PaymentEntity();
