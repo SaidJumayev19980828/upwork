@@ -111,7 +111,7 @@ import reactor.core.scheduler.Schedulers;
 
 @Service
 public class IntegrationServiceImpl implements IntegrationService {
-	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 4L;
+	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 90L;
 
 	private static final long REQUEST_TIMEOUT_SEC = 180L;
 
@@ -671,8 +671,6 @@ public class IntegrationServiceImpl implements IntegrationService {
 	private void createBrand(BrandDTO brandDto) {
 		try {
 			organizationService.createOrganizationBrand(brandDto, null, null);
-		}catch(BusinessException t) {
-			throw new RuntimeBusinessException(t);
 		}catch(Throwable t) {
 			logger.error(t,t);
 			throw new RuntimeBusinessException(
