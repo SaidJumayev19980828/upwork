@@ -18,7 +18,7 @@ import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.EventInfo;
 import com.nasnav.integration.events.PaymentCreateEvent;
 import com.nasnav.integration.events.data.PaymentData;
-import com.nasnav.integration.exceptions.EventExternalDependencyNotExists;
+import com.nasnav.integration.exceptions.ExternalOrderIdNotFound;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.Payment;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.PaymentDetails;
 
@@ -84,7 +84,8 @@ public class PaymentCreateEventListener extends AbstractMSDynamicsEventListener<
 		String extOrderId = integrationService.getRemoteMappedValue(event.getOrganizationId(), ORDER, orderId);
 		
 		if(extOrderId == null) {
-			throw new ExternalOrderIdNotFound();
+			logger.severe(format("Null external order id for payment event[%s]", data.toString()));
+			throw new ExternalOrderIdNotFound(data.getOrderId(), event.getOrganizationId());
 		}
 		
 		List<PaymentDetails> paymentDetails = createPaymentDetails(event, extOrderId);

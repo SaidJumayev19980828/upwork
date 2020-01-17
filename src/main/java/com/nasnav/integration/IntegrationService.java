@@ -1,5 +1,6 @@
 package com.nasnav.integration;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -151,4 +152,10 @@ public interface IntegrationService {
 	 * if the organization has no integration module or has no parameter with the given name, return null.
 	 * */
 	String getIntegrationParamValue(Long orgId, String paramName);
+	
+	
+	/**
+	 * push the event again after the given delay.
+	 * */
+	<E extends Event<T, R> ,T,R> void retryEvent(E event, BiConsumer<E, Throwable> onError, Duration delay, Integer maxRetryCount);
 }

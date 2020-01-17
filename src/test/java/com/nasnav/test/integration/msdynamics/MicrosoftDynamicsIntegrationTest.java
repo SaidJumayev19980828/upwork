@@ -448,20 +448,23 @@ public class MicrosoftDynamicsIntegrationTest {
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_pay_create_test_data.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void createPaymentBeforeConfirmingOrderTest() throws Throwable {
-		
+		long oldTimeout = IntegrationServiceImpl.REQUEST_TIMEOUT_SEC;
 		IntegrationServiceImpl.REQUEST_TIMEOUT_SEC = 1L;		
+		
 		//create order
 		String token = "123eerd";
 		
 		Long orderId = createNewOrder(token);
 		PaymentEntity payment = createDummyPayment(orderId);	
-		Thread.sleep(1000);
+		Thread.sleep(2000);
 		confirmOrder(token, orderId);		
 		//---------------------------------------------------------------		
-		Thread.sleep(5000);
+		Thread.sleep(4000);
 		//---------------------------------------------------------------
-		assertPaymentIntegration(payment);
+		assertPaymentIntegration(payment, "UNR19-050000");
 		assertOrderIntegration(orderId); 
+		
+		IntegrationServiceImpl.REQUEST_TIMEOUT_SEC = oldTimeout;
 	}
 
 
@@ -471,6 +474,28 @@ public class MicrosoftDynamicsIntegrationTest {
 
 	private void assertPaymentIntegration(PaymentEntity payment) throws AssertionError {
 		String expectedBody = getPaymentApiRequestExpectedBody();
+		if(usingMockServer) {
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("PUT")
+				        .withPath("/api/Payment")
+				        .withBody(json(expectedBody))
+				      ,exactly(1)
+				    );
+		}
+		
+		IntegrationMappingEntity paymentMapping = 
+				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, PAYMENT.getValue(), payment.getId().toString())
+							.orElse(null);
+		assertNotNull(paymentMapping);
+		assertEquals(DUMMY_PAYMENT_ID, paymentMapping.getRemoteValue());
+	}
+	
+	
+	
+	
+	private void assertPaymentIntegration(PaymentEntity payment, String externalOrderId) throws AssertionError {
+		String expectedBody = getPaymentApiRequestExpectedBody(externalOrderId);
 		if(usingMockServer) {
 			mockServerRule.getClient().verify(
 				      request()
@@ -501,6 +526,26 @@ public class MicrosoftDynamicsIntegrationTest {
 						.put(
 							json()
 							.put("SalesId", "un7782885")
+							.put("Amount", 600)
+							.put("PaymentMethod", "Credit_CHE")
+						  )
+						
+				).toString();
+	}
+	
+	
+	
+	
+	
+	
+	private String getPaymentApiRequestExpectedBody(String externalOrderId) {
+		return	json()
+				.put("SalesId", externalOrderId)
+				.put("PaymDet", 
+						jsonArray()
+						.put(
+							json()
+							.put("SalesId", externalOrderId)
 							.put("Amount", 600)
 							.put("PaymentMethod", "Credit_CHE")
 						  )

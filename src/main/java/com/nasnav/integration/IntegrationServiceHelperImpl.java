@@ -6,10 +6,12 @@ import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.E
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INTEGRATION_EVENT_PUSH_FAILED;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_ORDER_MAPPING_FAILED;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_PAYMENT_MAPPING_FAILED;
+import static com.nasnav.integration.IntegrationServiceImpl.REQUEST_TIMEOUT_SEC;
 import static com.nasnav.integration.enums.MappingType.ORDER;
 import static com.nasnav.integration.enums.MappingType.PAYMENT;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
+import static java.time.Duration.ofSeconds;
 import static java.time.LocalDateTime.now;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
@@ -39,6 +41,7 @@ import com.nasnav.integration.events.data.CustomerData;
 import com.nasnav.integration.events.data.OrderData;
 import com.nasnav.integration.events.data.OrderItemData;
 import com.nasnav.integration.events.data.PaymentData;
+import com.nasnav.integration.exceptions.ExternalOrderIdNotFound;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.OrdersEntity;
@@ -131,6 +134,31 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 	
 	
 	
+	private <E extends Event<D,R>,D,R> void pushPaymentEvent(E event) {
+		try {
+			integrationService.pushIntegrationEvent(event, this::onPaymentErrorHandler);
+		} catch (InvalidIntegrationEventException e) {
+			Object dat = event.getEventInfo().getEventData();
+			logger.error(
+					format(ERR_INTEGRATION_EVENT_PUSH_FAILED, event.getClass().getName(), dat.toString(), event.getOrganizationId())
+					, e);
+			generalIntegrationErrorHandler(event, e);
+		}
+	}
+	
+
+	
+	
+	
+	private <E extends Event<D,R>,D,R> void onPaymentErrorHandler(E event, Throwable error) {
+		if(error instanceof ExternalOrderIdNotFound) {
+			integrationService.retryEvent(event, this::generalIntegrationErrorHandler, ofSeconds(4*REQUEST_TIMEOUT_SEC), 3);
+		}else {
+			generalIntegrationErrorHandler(event, error);
+		}				
+	}
+	
+	
 	
 	private void saveOrderExternalId(EventResult<OrderData, String> result) {
 		OrderData order = result.getEventInfo().getEventData();
@@ -198,7 +226,7 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 		Long orgId = getOrgId(payment);
 		
 		PaymentCreateEvent event = new PaymentCreateEvent(orgId, data, this::savePaymentExternalId);
-		pushEvent(event);
+		pushPaymentEvent(event);
 	}
 
 
@@ -222,6 +250,7 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 		String currency = getCurrency(payment);
 		LocalDateTime executionTime = getExecutionTime(payment);
 		BigDecimal amount = getAmount(payment);
+		Long orgId = getOrganizationId(payment);
 		
 		data.setCurrency(currency);
 		data.setExcutionTime(executionTime);
@@ -229,8 +258,22 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 		data.setOrderId(payment.getOrdersEntity().getId());
 		data.setUserId(payment.getOrdersEntity().getUserId());
 		data.setValue(amount);
+		data.setOrganizationId(orgId);
 		
 		return data;
+	}
+
+
+
+
+
+	private Long getOrganizationId(PaymentEntity payment) {
+		Long orgId = ofNullable(payment)
+						.map(PaymentEntity::getOrdersEntity)
+						.map(OrdersEntity::getOrganizationEntity)
+						.map(OrganizationEntity::getId)
+						.orElse(null);
+		return orgId;
 	}
 
 

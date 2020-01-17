@@ -107,7 +107,6 @@ import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.GroupedFlux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
 
 @Service
 public class IntegrationServiceImpl implements IntegrationService {
@@ -188,7 +187,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	
 	private void initEventFlux() {
-		Scheduler scheduler = Schedulers.boundedElastic(); 
+		Scheduler scheduler = boundedElastic(); 
 		@SuppressWarnings("rawtypes")
 		EmitterProcessor<EventHandling> emitterProcessor = EmitterProcessor.create();
 		eventFlux =	emitterProcessor									
@@ -1423,6 +1422,37 @@ public class IntegrationServiceImpl implements IntegrationService {
 				.findFirst();
 	}
 
+
+
+
+
+
+	@Override
+	public <E extends Event<T, R>, T, R> void retryEvent(E event, BiConsumer<E, Throwable> onError, Duration delay, Integer maxRetryCount) {
+		event.incrementRetryCount();
+		if(event.getRetryCount() >= maxRetryCount) {
+			return;
+		}
+		
+		Mono.just(event)
+			.publishOn(boundedElastic())
+			.delayElement(delay)			
+			.subscribe(ev -> wrappedPushIntegrationEvent(ev, onError));
+	}
+	
+	
+	
+	
+	
+	public <E extends Event<T,R>, T, R> Mono<EventResult<T, R>> wrappedPushIntegrationEvent(E event, BiConsumer<E, Throwable> onError)  {
+		try {
+			return pushIntegrationEvent(event, onError);
+		} catch (InvalidIntegrationEventException e) {
+			throw new RuntimeBusinessException(e);
+		}
+	}
+	
+	
 
 }
 
