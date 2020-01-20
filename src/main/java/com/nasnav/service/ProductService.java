@@ -147,6 +147,7 @@ public class ProductService {
 	private ProductDetailsDTO createProductDetailsDTO(ProductEntity product, Long shopId, List<ProductVariantsEntity> productVariants) throws BusinessException {
 
 		List<VariantDTO> variantsDTOList = getVariantsList(productVariants, product.getId(), shopId);
+		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(product.getId());
 
 		ProductDetailsDTO productDTO = null;
 		try {
@@ -157,6 +158,7 @@ public class ProductService {
 			productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
 			productDTO.setBundleItems( getBundleItems(product));
 			productDTO.setImages( getProductImages(product.getId() ) );
+			productDTO.setTags(tagsDTOList);
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e );
 			throw new BusinessException(
@@ -168,7 +170,15 @@ public class ProductService {
 		return productDTO;
 	}
 
-
+	private List<TagsRepresentationObject> getProductTagsDTOList(Long productId) {
+		return orgTagRepo.findByIdIn(productRepository.getTagsByProductId(productId)
+				.stream()
+				.mapToLong(BigInteger::longValue).boxed()
+				.collect(Collectors.toList()))
+				.stream()
+				.map(tag ->(TagsRepresentationObject) tag.getRepresentation())
+				.collect(Collectors.toList());
+	}
 
 
 	private List<ProductVariantsEntity> getProductVariants(ProductEntity product) throws BusinessException {
@@ -395,8 +405,7 @@ public class ProductService {
 		if (params.start == null)
 			params.start = defaultStart;
 
-		if (params.count == null)
-			params.count = defaultCount;
+		params.count = getProductCountParam(params.count);
 
 		if (params.sort == null)
 			params.setSort(defaultSortAttribute);
@@ -407,6 +416,9 @@ public class ProductService {
 		return params;
 	}
 
+	Integer getProductCountParam(Integer count) {
+		return count == null ? defaultCount : count < 1000 ? count : 1000;
+	}
 
 	private Predicate[] getProductQueryPredicates(ProductSearchParam params, CriteriaBuilder builder, Root<ProductEntity> root) {
 		List<Predicate> predicates = new ArrayList<>();
@@ -1705,6 +1717,9 @@ public class ProductService {
 		productRep.setBarcode( product.getBarcode());
 		productRep.setMultipleVariants( product.getProductVariants().size() > 1);
 
+		List<TagsRepresentationObject> productTags = getProductTagsDTOList(product.getId());
+
+		productRep.setTags(productTags);
 
 		Optional<StocksEntity> defaultStockOpt = getDefaultProductStock(product);
 		Boolean stockExists = defaultStockOpt.isPresent();
