@@ -160,7 +160,7 @@ public class NavboxController {
 	@GetMapping(value="/tagstree",produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getTagsTree(@RequestParam(name = "org_id", required = false) Long organizationId) throws BusinessException {
 		List<TagsRepresentationObject> response = categoryService.getOrganizationTagsTree(organizationId);
-		return new ResponseEntity<>(response, HttpStatus.OK);
+		return response.isEmpty() ? new ResponseEntity<>(response, HttpStatus.NO_CONTENT): new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
 	@ApiOperation(value = "Get information about all organiaztion tags", nickname = "tags")

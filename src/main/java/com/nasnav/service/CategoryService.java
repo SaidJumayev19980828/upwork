@@ -192,6 +192,9 @@ public class CategoryService {
                 .stream().map(tag ->(TagsRepresentationObject) tag.getRepresentation())
                 .collect(Collectors.toList());
 
+        if (orgTags == null || orgTags.isEmpty())
+            return new ArrayList<>();
+
         List<TagGraphEdgesEntity> edges = tagEdgesRepo.getTagsLinks(orgTags.stream().map(tag -> tag.getId()).collect(Collectors.toList()));
 
         List <TagsRepresentationObject> removedChildren = new ArrayList<>();
