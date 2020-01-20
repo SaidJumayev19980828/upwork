@@ -94,8 +94,8 @@ public class MicrosoftDynamicsIntegrationTest {
 	@SuppressWarnings("unused")
 	private static final String MS_SERVER_URL = "http://41.39.128.74";
 	private static final String MOCK_SERVER_URL = "http://127.0.0.1";
-//	private static final String SERVER_URL = MOCK_SERVER_URL;
-	private static final String SERVER_URL = MS_SERVER_URL;
+	private static final String SERVER_URL = MOCK_SERVER_URL;
+//	private static final String SERVER_URL = MS_SERVER_URL;
 	private static final boolean usingMockServer = MOCK_SERVER_URL == SERVER_URL;
 	
 	
