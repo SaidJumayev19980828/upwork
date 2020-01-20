@@ -319,24 +319,24 @@ public class DataImportApiTest {
 		importProperties.getJSONObject("headers").remove("name_header");
 		
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
-        
+
         result.andExpect(status().is(406));
     }
 
 
 
-	
-	
+
+	/*
 	@Test
     public void uploadProductsCSVMissingCategoryHeadersTest() throws IOException, Exception {
-       
+
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.getJSONObject("headers").remove("category_header");		
-        
+		importProperties.getJSONObject("headers").remove("category_header");
+
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
         
         result.andExpect(status().is(406));
-    }
+    }*/
 	
 	
 	
@@ -606,7 +606,7 @@ public class DataImportApiTest {
 
 	@Test
 	public void getProductsCsvTemplate() {
-		String[] expectedProductHeaders = {"product_name","barcode","category","brand","price"
+		String[] expectedProductHeaders = {"product_name","barcode","brand","price"
 											 ,"quantity","description","color","size"};
 		HttpEntity<Object> request = TestCommons.getHttpEntity("","131415");
 		ResponseEntity<String> res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
@@ -729,7 +729,6 @@ public class DataImportApiTest {
         assertTrue( propertyValuesIn(products, ProductEntity::getName, expected.getProductNames()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getPname, expected.getPNames()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getDescription, expected.getDescriptions()) );
-        assertTrue( propertyValuesIn(products, ProductEntity::getCategoryId, expected.getCategories()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getBrandId, expected.getBrands()) );
 	}
 	

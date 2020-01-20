@@ -1,8 +1,8 @@
 package com.nasnav.controller;
 
 import com.nasnav.dto.*;
+import com.nasnav.request.ProductSearchParam;
 import com.nasnav.service.*;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,6 +21,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 @RestController
@@ -95,51 +96,23 @@ public class NavboxController {
 		return new ResponseEntity<>(shopService.getShopById(shopId), HttpStatus.OK);
 	}
 
+
 	@ApiOperation(value = "Get list of products", nickname = "productList")
 	@ApiResponses(value = {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 204, message = "Empty product list"),
 			@io.swagger.annotations.ApiResponse(code = 400, message = "Invalid query parameters"), })
 	@GetMapping("/products")
-	public ResponseEntity<?> getProducts(@RequestParam(name = "org_id", required = false) Long organizationId,
-										 @RequestParam(name = "shop_id", required = false) Long shopId,
-										 @RequestParam(name = "category_id", required = false) Long categoryId,
-										 @RequestParam(name = "start", required = false) Integer start,
-										 @RequestParam(name = "count", required = false) Integer count,
-										 @RequestParam(name = "sort", required = false) String sort,
-										 @RequestParam(name = "order", required = false) String order,
-										 @RequestParam(name = "brand_id", required = false) Long brandId,
-										 @RequestParam(name = "name", required = false) String name,
-										 @RequestParam(name = "minprice", required = false) boolean minPrice) throws BusinessException {
+	public ResponseEntity<?> getProducts(ProductSearchParam productSearchParam) throws BusinessException, InvocationTargetException, IllegalAccessException {
 
-		if (sort != null && ProductSortOptions.getProductSortOptions(sort) == null)
-			throw new BusinessException("Sort is limited to id, name, pname, price", null, HttpStatus.BAD_REQUEST);
+		ProductsResponse productsResponse = productService.getProducts(productSearchParam);
 
-		if (order != null && !order.equals("asc") && !order.equals("desc"))
-			throw new BusinessException("Order is limited to asc and desc only", null, HttpStatus.BAD_REQUEST);
-
-		if (start != null && start < 0)
-			throw new BusinessException("Start can be zero or more", null, HttpStatus.BAD_REQUEST);
-
-		if (count != null && count < 1)
-			throw new BusinessException("Start can be One or more", null, HttpStatus.BAD_REQUEST);
-
-		ProductsResponse productsResponse = null;
-		if (organizationId != null) {
-			productsResponse = productService.getProductsResponseByOrganizationId(organizationId, categoryId, brandId,
-					start, count, sort, order, name);
-		} else if (shopId != null) {
-			productsResponse = productService.getProductsResponseByShopId(shopId, categoryId, brandId, start, count,
-					sort, order,  name);
-		} else {
-			throw new BusinessException("Shop Id or Organization Id shall be provided", null, HttpStatus.BAD_REQUEST);
-		}
-		if (productsResponse == null) {
+		if (productsResponse == null)
 			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-		}
 
 		return new ResponseEntity<>(productsResponse, HttpStatus.OK);
 	}
+
 
 	@ApiOperation(value = "Get information about a specific product", nickname = "productInfo")
 	@ApiResponses(value = {
@@ -171,10 +144,33 @@ public class NavboxController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
 	})
 	@GetMapping(value="/categories",produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getCategories(@RequestParam(name = "org_id", required = false) Long organizationId,
+	public ResponseEntity<?> getCategories(/*@RequestParam(name = "org_id", required = false) Long organizationId,*/
 										   @RequestParam(name = "category_id", required = false) Long categoryId) throws BusinessException {
-		List<CategoryRepresentationObject> response = categoryService.getCategories(organizationId, categoryId);
+		List<CategoryRepresentationObject> response = categoryService.getCategories(categoryId);
 
+		return response.isEmpty() ? new ResponseEntity<>(HttpStatus.NO_CONTENT): new ResponseEntity<>(response, HttpStatus.OK);
+	}
+
+
+	@ApiOperation(value = "Get information about organization tags tree", nickname = "tagsTree")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
+	})
+	@GetMapping(value="/tagstree",produces=MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getTagsTree(@RequestParam(name = "org_id", required = false) Long organizationId) throws BusinessException {
+		List<TagsRepresentationObject> response = categoryService.getOrganizationTagsTree(organizationId);
+		return response.isEmpty() ? new ResponseEntity<>(response, HttpStatus.NO_CONTENT): new ResponseEntity<>(response, HttpStatus.OK);
+	}
+
+	@ApiOperation(value = "Get information about all organiaztion tags", nickname = "tags")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
+	})
+	@GetMapping(value="/tags",produces=MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getTags(@RequestParam(name = "org_id", required = false) Long organizationId) throws BusinessException {
+		List<TagsRepresentationObject> response = categoryService.getOrganizationTags(organizationId);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 }

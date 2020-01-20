@@ -1,6 +1,7 @@
 package com.nasnav.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
@@ -16,7 +17,6 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     
     private BigDecimal price;
     private Boolean available;
-    private Long categoryId;
     private Long brandId;
     private String barcode;
     private BigDecimal discount;
@@ -25,4 +25,5 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private boolean multipleVariants;
     private boolean hidden;
     private String defaultVariantFeatures;
+    private List<TagsRepresentationObject> tags;
 }

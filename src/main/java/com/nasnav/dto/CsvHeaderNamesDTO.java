@@ -36,14 +36,7 @@ public class CsvHeaderNamesDTO extends ProductImportCsvFieldNames{
 	public void setBarcode(String barcode) {
 		this.barcode = barcode;
 	}
-	
-	
-	@JsonProperty("category_header")
-	public void setCategory(String category) {
-		this.category = category;
-	}
-	
-	
+
 	@JsonProperty("brand_header")
 	public void setBrand(String brand) {
 		this.brand = brand;

@@ -1,0 +1,28 @@
+package com.nasnav.dto;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Data
+@EqualsAndHashCode(callSuper=true)
+public class TagsRepresentationObject extends BaseRepresentationObject {
+
+    private Long id;
+    private String name;
+    private String alias;
+    private String metadata;
+    @JsonProperty("p_name")
+    private String pname;
+    public List<TagsRepresentationObject> children;
+
+    public TagsRepresentationObject() {
+        children = new ArrayList<>();
+    }
+
+}

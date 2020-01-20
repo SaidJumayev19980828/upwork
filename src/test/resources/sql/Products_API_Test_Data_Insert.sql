@@ -131,3 +131,10 @@ insert into public.orders(id,user_id,created_at, updated_at, organization_id,sta
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(630013, 613, 14, 600.0, 1);
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(630014, 614, 14, 600.0, 1);
 
+
+
+insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5001, 'tag_1', 'tag_1', 201, 99001, '');
+
+
+insert into product_tags(product_id, tag_id) values(1001, 5001);
+insert into product_tags(product_id, tag_id) values(1005, 5001);

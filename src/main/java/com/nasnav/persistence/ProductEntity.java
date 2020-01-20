@@ -3,32 +3,36 @@ package com.nasnav.persistence;
 import java.time.LocalDateTime;
 import java.util.Set;
 
-import javax.persistence.Column;
-import javax.persistence.DiscriminatorColumn;
-import javax.persistence.DiscriminatorType;
-import javax.persistence.DiscriminatorValue;
+import javax.persistence.*;
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
+import javax.persistence.NamedNativeQuery;
 import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.DiscriminatorFormula;
-import org.hibernate.annotations.Loader;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.annotations.Where;
+import com.nasnav.dto.Pair;
+import org.hibernate.annotations.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+
+
+@SqlResultSetMapping(
+        name = "Pair",
+        classes = @ConstructorResult(
+                targetClass = Pair.class,
+                columns = {
+                        @ColumnResult(name = "product_id", type = long.class),
+                        @ColumnResult(name = "tag_id", type = long.class)
+                }))
+@NamedNativeQuery(
+        name = "ProductEntity.getProductTags",
+        query = "SELECT t.product_id, t.tag_id FROM Product_tags t WHERE t.product_id in :productsIds and t.tag_id in :tagsIds",
+        resultSetMapping = "Pair"
+)
 
 @Entity
 @Table(name = "products")
@@ -43,7 +47,7 @@ import lombok.ToString;
 @NamedQuery(name = "findProductById", query = "SELECT p FROM ProductEntity p WHERE p.id=?1 AND p.removed = 0")
 @Where(clause = "removed = 0")
 public class ProductEntity {
-	
+
 	public ProductEntity() {
 		removed = 0;
 	}
@@ -77,9 +81,6 @@ public class ProductEntity {
     @Column(name="organization_id")
     private Long organizationId;
     
-    @Column(name="category_id")
-    private Long categoryId;
-    
     @Column(name="brand_id")
     private Long brandId;
 
@@ -89,10 +90,10 @@ public class ProductEntity {
     @Column(name="product_type")
     private Integer productType = ProductTypes.DEFAULT;
     
-    
+
     @Column(name="removed")
     private Integer removed;
-    
+
 
     //TODO : we only need this until the Column PRODUCTS.PRODUCT_TYPE is set as non-null
     public Integer getProductType(){
@@ -108,6 +109,20 @@ public class ProductEntity {
     private Set<ProductVariantsEntity> productVariants;
 
 
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JoinTable(name = "product_tags"
+            ,joinColumns = {@JoinColumn(name="product_id")}
+            ,inverseJoinColumns = {@JoinColumn(name="tag_id")})
+    private Set<TagsEntity> tags;
 
+    public void insertProductTag(TagsEntity tag) {
+        this.tags.add(tag);
+    }
 
+    public void removeProductTag(TagsEntity tag) {
+        this.tags.remove(tag);
+    }
 }

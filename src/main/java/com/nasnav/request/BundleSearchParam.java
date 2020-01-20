@@ -13,7 +13,7 @@ public class BundleSearchParam {
 	
 	//had to ignore java naming convention, because the bundle request parameters will be mapped to these properties by name
 	private Long org_id;
-	private Long category_id;
+	//private Long category_id;
 	private Long bundle_id;
 	private Integer start;
 	private Integer count;
