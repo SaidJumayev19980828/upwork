@@ -40,21 +40,31 @@ public abstract class IntegrationEventListener<E extends Event<T,R>, T, R> {
 			Mono<R> resultDataMono = handleEventAsync( event.getEventInfo() );			
 			resultDataMono
 				.doFinally(data -> event.completeEvent())
+				.doOnError(t -> onEventError(event, onErrorWrapper, t))
 				.subscribe( event::broadcastResultData );
 		}catch(Throwable t) {
+			onEventError(event, onErrorWrapper, t);			
+		}
+	}
+
+
+
+
+
+
+
+	private void onEventError(E event, BiConsumer<E, Throwable> onErrorWrapper, Throwable t) {
+		logger.log(Level.SEVERE 
+					,String.format( ERR_EVENT_HANDLE_FAILED, event, t.getClass()) 
+					,t);
+		try {
+			onErrorWrapper.accept(event, t);
+		}catch(Throwable t2){
 			logger.log(Level.SEVERE 
-						,String.format( ERR_EVENT_HANDLE_FAILED, event, t.getClass()) 
-						,t);
-			try {
-				onErrorWrapper.accept(event, t);
-			}catch(Throwable t2){
-				logger.log(Level.SEVERE 
-							,String.format( ERR_EVENT_HANDLE_FALLBACK_RUN_FAILED, event, t.getClass()) 
-							,t2);
-				
-				integrationService.runGeneralErrorFallback(event, t, t2);
-			}
+						,String.format( ERR_EVENT_HANDLE_FALLBACK_RUN_FAILED, event, t.getClass()) 
+						,t2);
 			
+			integrationService.runGeneralErrorFallback(event, t, t2);
 		}
 	}
 	

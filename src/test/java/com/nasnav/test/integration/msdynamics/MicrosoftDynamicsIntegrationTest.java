@@ -94,8 +94,8 @@ public class MicrosoftDynamicsIntegrationTest {
 	@SuppressWarnings("unused")
 	private static final String MS_SERVER_URL = "http://41.39.128.74";
 	private static final String MOCK_SERVER_URL = "http://127.0.0.1";
-	private static final String SERVER_URL = MOCK_SERVER_URL;
-//	private static final String SERVER_URL = MS_SERVER_URL;
+//	private static final String SERVER_URL = MOCK_SERVER_URL;
+	private static final String SERVER_URL = MS_SERVER_URL;
 	private static final boolean usingMockServer = MOCK_SERVER_URL == SERVER_URL;
 	
 	
@@ -449,7 +449,7 @@ public class MicrosoftDynamicsIntegrationTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void createPaymentBeforeConfirmingOrderTest() throws Throwable {
 		long oldTimeout = IntegrationServiceImpl.REQUEST_TIMEOUT_SEC;
-		IntegrationServiceImpl.REQUEST_TIMEOUT_SEC = 1L;		
+		IntegrationServiceImpl.REQUEST_TIMEOUT_SEC = 30L;		
 		
 		//create order
 		String token = "123eerd";

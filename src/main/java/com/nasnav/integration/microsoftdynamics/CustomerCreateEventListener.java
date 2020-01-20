@@ -35,7 +35,7 @@ public class CustomerCreateEventListener extends AbstractMSDynamicsEventListener
 		Long orgId = event.getOrganizationId();
 		return getWebClient(orgId)
 					.createCustomer(customer)
-					.doOnSuccess(this::throwExceptionIfNotOk)
+					.flatMap(this::throwExceptionIfNotOk)
 					.flatMap(res -> res.bodyToMono(String.class));		
 	}
 	

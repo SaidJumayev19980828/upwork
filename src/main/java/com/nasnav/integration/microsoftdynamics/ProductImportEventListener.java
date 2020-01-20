@@ -48,7 +48,7 @@ public class ProductImportEventListener extends AbstractMSDynamicsEventListener<
 		return getWebClient(event.getOrganizationId())
 				.getProducts(param.getPageCount(), param.getPageNum())
 				.filter( res -> res.statusCode() == HttpStatus.OK)
-				.doOnSuccess(this::throwExceptionIfNotOk)
+				.flatMap(this::throwExceptionIfNotOk)
 				.flatMap(res -> res.bodyToMono(ProductsResponse.class))
 				.map(res -> new ProductResponseWithOrgId(res, event.getOrganizationId()))
 				.map(this::toIntegrationImportedProducts);

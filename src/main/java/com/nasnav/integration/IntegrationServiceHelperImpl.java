@@ -53,6 +53,10 @@ import com.nasnav.service.SecurityService;
 @Service
 public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 	
+	private static final int PAYMENT_DELAY_FACTOR = 2;
+
+
+
 	private static Logger logger = LogManager.getLogger();
 	
 	
@@ -152,7 +156,7 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 	
 	private <E extends Event<D,R>,D,R> void onPaymentErrorHandler(E event, Throwable error) {
 		if(error instanceof ExternalOrderIdNotFound) {
-			integrationService.retryEvent(event, this::generalIntegrationErrorHandler, ofSeconds(4*REQUEST_TIMEOUT_SEC), 3);
+			integrationService.retryEvent(event, this::generalIntegrationErrorHandler, ofSeconds(PAYMENT_DELAY_FACTOR*REQUEST_TIMEOUT_SEC), 3);
 		}else {
 			generalIntegrationErrorHandler(event, error);
 		}				

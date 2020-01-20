@@ -34,7 +34,7 @@ public class ShopsImportEventListener extends AbstractMSDynamicsEventListener<Sh
 		return getWebClient(orgId)
 				.getStores()
 				.filter( res -> res.statusCode() == HttpStatus.OK)
-				.doOnSuccess(this::throwExceptionIfNotOk)				
+				.flatMap(this::throwExceptionIfNotOk)				
 				.flatMap(res -> res.bodyToMono(GetStoresReponse.class))
 				.map(this::getStoreList)
 				.map(this::toImportedShopsList);

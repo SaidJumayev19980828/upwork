@@ -52,7 +52,7 @@ public class PaymentCreateEventListener extends AbstractMSDynamicsEventListener<
 		Payment requestData = createPaymentCreateRequest(event);
 		return getWebClient(event.getOrganizationId())
 				.createPayment(requestData)
-				.doOnSuccess(this::throwExceptionIfNotOk)
+				.flatMap(this::throwExceptionIfNotOk)
 				.flatMap(res -> res.bodyToMono(String.class));
 	}
 

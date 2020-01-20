@@ -49,7 +49,7 @@ public class OrderConfirmEventListener extends AbstractMSDynamicsEventListener<O
 		SalesOrder requestData = createSalesOrderData(order);
 		return getWebClient(order.getOrganizationId())
 				.createSalesOrder(requestData)
-				.doOnSuccess(this::throwExceptionIfNotOk)
+				.flatMap(this::throwExceptionIfNotOk)
 				.flatMap(res -> res.bodyToMono(String.class));
 	}
 
