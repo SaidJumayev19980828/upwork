@@ -43,7 +43,7 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
     @Column(name = "removed")
     private int removed;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "category_id", referencedColumnName = "id")
     @JsonIgnore
     private CategoriesEntity categoriesEntity;
@@ -65,7 +65,8 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
         obj.setAlias(getAlias());
         obj.setPname(getPname());
         obj.setMetadata(getMetadata());
-
+        obj.setCategoryId(categoriesEntity.getId());
+        
         return obj;
     }
 

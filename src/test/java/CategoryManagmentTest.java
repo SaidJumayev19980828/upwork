@@ -1,3 +1,38 @@
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
+
+import java.util.List;
+import java.util.Set;
+
+import javax.sql.DataSource;
+
+import org.jgrapht.Graph;
+import org.jgrapht.Graphs;
+import org.jgrapht.alg.cycle.CycleDetector;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.DirectedAcyclicGraph;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
 import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
 import com.nasnav.controller.AdminController;
@@ -6,49 +41,14 @@ import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.response.CategoryResponse;
 import com.nasnav.service.CategoryService;
-import org.jgrapht.alg.cycle.CycleDetector;
 import com.nasnav.test.commons.TestCommons;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.datasource.init.ScriptUtils;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Set;
-
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
-
-import org.jgrapht.*;
-import org.jgrapht.graph.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
+@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert.sql"})
+@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class CategoryManagmentTest {
 
     private MockMvc mockMvc;
@@ -60,10 +60,6 @@ public class CategoryManagmentTest {
     private TestRestTemplate template;
     @Autowired
     private CategoryRepository categoryRepository;
-    @Value("classpath:sql/Category_Test_Data_Insert.sql")
-    private Resource categoryDataInsert;
-    @Value("classpath:sql/database_cleanup.sql")
-    private Resource databaseCleanup;
     @Autowired
     private DataSource datasource;
 
@@ -77,41 +73,32 @@ public class CategoryManagmentTest {
     public void setup() {
         config.mailDryRun = true;
         mockMvc = MockMvcBuilders.standaloneSetup(adminController).build();
-        cleanup();
-        try (Connection con = datasource.getConnection()) {
-            ScriptUtils.executeSqlScript(con, categoryDataInsert);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
     }
 
-    @After
-    public void cleanup() {
-        try (Connection con = datasource.getConnection()) {
-            ScriptUtils.executeSqlScript(con, databaseCleanup);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
 
+    
+    
+    
     @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_2.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
     public void getCategoryListDifferentFiltersTest() {
         // with no filters
         ResponseEntity<String> response = template.getForEntity("/navbox/categories", String.class);
         JSONArray json = new JSONArray(response.getBody());
         assertEquals("there are 4 Categories in total", 7, json.length());
-        /*
-        TODO Modify category listing test after getting categories by organization
+
+        //TODO Modify category listing test after getting categories by organization
         // with organization_id = 99001
         response = template.getForEntity("/navbox/categories?org_id=99001", String.class);
         json = new JSONArray(response.getBody());
-        assertEquals("there are 3 Categories used by org 99001", 3, json.length());
+        assertEquals("there are 3 Categories used by org 99001", 4, json.length());
 
         // with organization_id = 99002
         response = template.getForEntity("/navbox/categories?org_id=99002", String.class);
         json = new JSONArray(response.getBody());
         assertEquals("there are 2 Categories used by org 99002", 2, json.length());
-        */
+        
         // with category_id = 201
         response = template.getForEntity("/navbox/categories?category_id=201", String.class);
         json = new JSONArray(response.getBody());
@@ -133,8 +120,10 @@ public class CategoryManagmentTest {
         assertTrue(response.getBody().contains("\"parent_id\":201"));
         assertTrue(response.getBody().contains("\"p_name\":\"category-3\""));
     }
+    
+    
+    
 
-    //createCategory
     @Test
     public void createCategorySuccessTest() {
         String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 202}";

@@ -1,13 +1,14 @@
 package com.nasnav.service;
 
-import com.nasnav.commons.utils.StringUtils;
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.*;
-import com.nasnav.response.CategoryResponse;
-import com.nasnav.response.ResponseStatus;
-import com.nasnav.response.TagResponse;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedAcyclicGraph;
 import org.springframework.beans.BeanUtils;
@@ -16,9 +17,30 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.nasnav.commons.utils.StringUtils;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.CategoriesRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.OrganizationThemeRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.SocialRepository;
+import com.nasnav.dao.TagGraphEdgesRepository;
+import com.nasnav.dao.TagsRepository;
+import com.nasnav.dto.CategoryDTO;
+import com.nasnav.dto.CategoryRepresentationObject;
+import com.nasnav.dto.Pair;
+import com.nasnav.dto.TagsDTO;
+import com.nasnav.dto.TagsLinkDTO;
+import com.nasnav.dto.TagsRepresentationObject;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.BrandsEntity;
+import com.nasnav.persistence.CategoriesEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.TagGraphEdgesEntity;
+import com.nasnav.persistence.TagsEntity;
+import com.nasnav.response.CategoryResponse;
+import com.nasnav.response.ResponseStatus;
+import com.nasnav.response.TagResponse;
 
 @Service
 public class CategoryService {
@@ -27,7 +49,7 @@ public class CategoryService {
     private final BrandsRepository brandsRepository;
 
     @Autowired
-    private final CategoryRepository categoryRepository;
+    private  CategoriesRepository categoryRepository;
 
     @Autowired
     private final ProductRepository productRepository;
@@ -43,13 +65,16 @@ public class CategoryService {
 
     @Autowired
     private OrganizationRepository orgRepo;
+    
+    
+    @Autowired
+    private TagsRepository tagsRepo;
 
     @Autowired
     public CategoryService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository,
-                           SocialRepository socialRepository, OrganizationThemeRepository organizationThemeRepository,
-                           CategoryRepository categoryRepository, ProductRepository productRepository) {
+                           SocialRepository socialRepository, OrganizationThemeRepository organizationThemeRepository
+                           , ProductRepository productRepository) {
         this.brandsRepository = brandsRepository;
-        this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;
     }
 
@@ -66,26 +91,38 @@ public class CategoryService {
         //TODO brands table fix of categories Varchar [] to bigint []
         return null;
     }
+    
+    
+    
 
-    public List<CategoryRepresentationObject> getCategories(Long categoryId){
-        List<CategoriesEntity> categoriesEntityList = new ArrayList<>();
-        CategoriesEntity categoriesEntity = null;
-        List<CategoryRepresentationObject> categoriesList;
-        if (categoryId == null)
-            categoriesEntityList = categoryRepository.findAll();
-        else {
-            if (categoryRepository.findById(categoryId).isPresent()) {
-                categoriesEntity = categoryRepository.findById(categoryId).get();
-                categoriesEntityList = categoryRepository.findByParentId(categoriesEntity.getId().intValue());
-            }
-        }
-        categoriesList = categoriesEntityList.stream().map(category -> (CategoryRepresentationObject) category.getRepresentation())
-                .collect(Collectors.toList());
-        if (categoriesEntity != null) {
-            categoriesList.add((CategoryRepresentationObject)categoriesEntity.getRepresentation());
-        }
-        return categoriesList;
+    public List<CategoryRepresentationObject> getCategories(Long organizationId, Long categoryId){
+    	List<CategoriesEntity> categoriesEntityList = new ArrayList<>();
+    	if(organizationId == null && categoryId == null) {
+    		categoriesEntityList =  categoryRepository.findAll();
+    	}else if(categoryId == null) {
+    		categoriesEntityList = categoryRepository.findByOrganizationId(organizationId);  
+    	}else if(organizationId == null && categoryId != null) {
+        	categoriesEntityList = 
+        			categoryRepository.findById(categoryId)
+        					.map(Arrays::asList)
+        					.map(ArrayList::new)
+        					.orElse(new ArrayList<>());        	
+        	if(!categoriesEntityList.isEmpty()) {
+        		List<CategoriesEntity> children = categoryRepository.findByParentId(categoryId.intValue());
+            	children.forEach(categoriesEntityList::add);
+        	}     	        					
+    	}else {
+    		categoriesEntityList = categoryRepository.findByOrganizationIdAndCategoryId(organizationId, categoryId);
+    	}    	
+    	
+        return categoriesEntityList
+        			.stream()
+					.map(category -> (CategoryRepresentationObject) category.getRepresentation())
+					.collect(Collectors.toList());
     }
+    
+    
+    
 
     public ResponseEntity createCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
         if (categoryJson.getName() == null) {
@@ -263,8 +300,6 @@ public class CategoryService {
             throw new BusinessException("MISSING PARAM: category_id", "category_id is required to create tag", HttpStatus.NOT_ACCEPTABLE);
         if (!categoryRepository.findById(tagDTO.getCategoryId()).isPresent())
             throw new BusinessException("INVALID PARAM: category_id", "No category exists with provided id", HttpStatus.NOT_ACCEPTABLE);
-        if (orgTagsRepo.findByCategoriesEntity_IdAndOrganizationEntity_Id(tagDTO.getCategoryId(), org.getId()) != null)
-            throw new BusinessException("INVALID PARAM: category_id, org_id", "The same category exists in the same organization", HttpStatus.NOT_ACCEPTABLE);
 
         category = categoryRepository.findById(tagDTO.getCategoryId()).get();
         entity = new TagsEntity();

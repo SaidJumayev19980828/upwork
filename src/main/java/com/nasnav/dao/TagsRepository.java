@@ -15,7 +15,7 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
     TagsEntity findByIdAndOrganizationEntity_Id(Long id, Long orgId);
     List<TagsEntity> findByCategoriesEntity_IdIn(List<Long> tagsIds);
     List<TagsEntity> findByCategoriesEntity_IdInAndOrganizationEntity_Id(List<Long> tagsIds, Long orgId);
-    TagsEntity findByCategoriesEntity_IdAndOrganizationEntity_Id(Long tagId, Long orgId);
+    List<TagsEntity> findByCategoriesEntity_IdAndOrganizationEntity_Id(Long tagId, Long orgId);
     List<TagsEntity> findByIdInAndOrganizationEntity_Id(List<Long> ids, Long orgId);
 
     @Query("select t from TagsEntity t  where t.organizationEntity = :org " +
