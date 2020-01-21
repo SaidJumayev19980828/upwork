@@ -144,11 +144,9 @@ public class NavboxController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
 	})
 	@GetMapping(value="/categories",produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getCategories(@RequestParam(name = "org_id", required = false) Long organizationId,
+	public List<CategoryRepresentationObject> getCategories(@RequestParam(name = "org_id", required = false) Long organizationId,
 										   @RequestParam(name = "category_id", required = false) Long categoryId) throws BusinessException {
-		List<CategoryRepresentationObject> response = categoryService.getCategories(organizationId, categoryId);
-
-		return response.isEmpty() ? new ResponseEntity<>(response,HttpStatus.NO_CONTENT): new ResponseEntity<>(response, HttpStatus.OK);
+		return categoryService.getCategories(organizationId, categoryId);
 	}
 
 
