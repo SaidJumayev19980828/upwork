@@ -148,7 +148,7 @@ public class NavboxController {
 										   @RequestParam(name = "category_id", required = false) Long categoryId) throws BusinessException {
 		List<CategoryRepresentationObject> response = categoryService.getCategories(organizationId, categoryId);
 
-		return response.isEmpty() ? new ResponseEntity<>(HttpStatus.NO_CONTENT): new ResponseEntity<>(response, HttpStatus.OK);
+		return response.isEmpty() ? new ResponseEntity<>(response,HttpStatus.NO_CONTENT): new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
 
