@@ -84,6 +84,9 @@ public class ProductEntity {
     @Column(name="brand_id")
     private Long brandId;
 
+    @Column(name="category_id")
+    private Long categoryId;
+
     @Column(name="barcode")
     private String barcode;
 

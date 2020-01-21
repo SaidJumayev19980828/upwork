@@ -429,8 +429,14 @@ public class ProductService {
 		if(params.brand_id != null)
 			predicates.add( builder.equal(root.get("brandId"), params.brand_id) );
 
-		if(params.name != null)
-			predicates.add(  builder.like( builder.lower(root.get("name") ), params.name.toLowerCase() ) );
+		if(params.category_id != null)
+			predicates.add( builder.equal(root.get("categoryId"), params.category_id) );
+
+		if(params.name != null) {
+			Predicate searchInName = builder.like(builder.lower(root.get("name")), "%" + params.name.toLowerCase() + "%");
+			Predicate searchInDescription = builder.like(builder.lower(root.get("description")), "%" + params.name.toLowerCase() + "%");
+			predicates.add(builder.or(searchInName, searchInDescription));
+		}
 
 		if(params.tags != null) {
 			List<Long> productIds = productRepository.getProductIdsByTagsList(params.tags);
@@ -1714,6 +1720,7 @@ public class ProductService {
 		productRep.setName(product.getName());
 		productRep.setPname( product.getPname());
 		productRep.setBrandId( product.getBrandId());
+		productRep.setCategoryId( product.getCategoryId());
 		productRep.setBarcode( product.getBarcode());
 		productRep.setMultipleVariants( product.getProductVariants().size() > 1);
 
