@@ -36,7 +36,8 @@ public class CustomerCreateEventListener extends AbstractMSDynamicsEventListener
 		return getWebClient(orgId)
 					.createCustomer(customer)
 					.flatMap(this::throwExceptionIfNotOk)
-					.flatMap(res -> res.bodyToMono(String.class));		
+					.flatMap(res -> res.bodyToMono(String.class))
+					.map(paymentId -> paymentId.replace("\"", ""));		
 	}
 	
 	

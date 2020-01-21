@@ -50,7 +50,8 @@ public class OrderConfirmEventListener extends AbstractMSDynamicsEventListener<O
 		return getWebClient(order.getOrganizationId())
 				.createSalesOrder(requestData)
 				.flatMap(this::throwExceptionIfNotOk)
-				.flatMap(res -> res.bodyToMono(String.class));
+				.flatMap(res -> res.bodyToMono(String.class))
+				.map(paymentId -> paymentId.replace("\"", ""));
 	}
 
 	

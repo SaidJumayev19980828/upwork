@@ -445,25 +445,31 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	
 	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_pay_create_test_data.sql"})
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_pay_create_test_data_2.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void createPaymentBeforeConfirmingOrderTest() throws Throwable {
 		long oldTimeout = IntegrationServiceImpl.REQUEST_TIMEOUT_SEC;
-		IntegrationServiceImpl.REQUEST_TIMEOUT_SEC = 30L;		
+		
+		if(usingMockServer) {
+			IntegrationServiceImpl.REQUEST_TIMEOUT_SEC = 1L;
+		}else {
+			IntegrationServiceImpl.REQUEST_TIMEOUT_SEC = 30L;	
+		}			
 		
 		//create order
 		String token = "123eerd";
 		
-		Long orderId = createNewOrder(token);
+		Long orderId = createNewOrder(token);		
 		PaymentEntity payment = createDummyPayment(orderId);	
 		Thread.sleep(2000);
 		confirmOrder(token, orderId);		
 		//---------------------------------------------------------------		
-		Thread.sleep(4000);
+		Thread.sleep(IntegrationServiceImpl.REQUEST_TIMEOUT_SEC*4*1000);
 		//---------------------------------------------------------------
-		assertPaymentIntegration(payment, "UNR19-050000");
-		assertOrderIntegration(orderId); 
-		
+		if(usingMockServer) {
+			assertPaymentIntegration(payment, "UNR19-050000");
+			assertOrderIntegration(orderId); 
+		}
 		IntegrationServiceImpl.REQUEST_TIMEOUT_SEC = oldTimeout;
 	}
 

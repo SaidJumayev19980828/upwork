@@ -1,5 +1,6 @@
 package com.nasnav.integration.microsoftdynamics.webclient;
 
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -9,6 +10,7 @@ import com.nasnav.integration.microsoftdynamics.webclient.dto.ReturnSalesOrder;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.SalesOrder;
 
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
 
 
 public class FortuneWebClient {	
@@ -17,6 +19,9 @@ public class FortuneWebClient {
     
     public FortuneWebClient(String baseUrl) {
     	client = WebClient.builder()
+		    			.clientConnector(new ReactorClientHttpConnector(
+		    	                HttpClient.create().wiretap(true)
+		    	            ))
 						.baseUrl(baseUrl)						
 						.build();  
     }

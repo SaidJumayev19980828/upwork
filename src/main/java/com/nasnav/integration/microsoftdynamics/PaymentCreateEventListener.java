@@ -49,11 +49,12 @@ public class PaymentCreateEventListener extends AbstractMSDynamicsEventListener<
 		//read from the database.
 		validatePaymentEvent(event);
 		
-		Payment requestData = createPaymentCreateRequest(event);
+		Payment requestData = createPaymentRequest(event);
 		return getWebClient(event.getOrganizationId())
 				.createPayment(requestData)
 				.flatMap(this::throwExceptionIfNotOk)
-				.flatMap(res -> res.bodyToMono(String.class));
+				.flatMap(res -> res.bodyToMono(String.class))
+				.map(paymentId -> paymentId.replace("\"", ""));
 	}
 
 
@@ -76,7 +77,7 @@ public class PaymentCreateEventListener extends AbstractMSDynamicsEventListener<
 	
 	
 	
-	private Payment createPaymentCreateRequest(EventInfo<PaymentData> event) {
+	private Payment createPaymentRequest(EventInfo<PaymentData> event) {
 		Payment payment = new Payment();
 		
 		PaymentData data = event.getEventData();
