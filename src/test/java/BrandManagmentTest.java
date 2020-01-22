@@ -107,7 +107,7 @@ public class BrandManagmentTest {
 
     @Test
     public void createBrandInvalidNameTest() {
-        String body = "{\"operation\":\"create\", \"name\":\"12Alfa Romero\"}";
+        String body = "{\"operation\":\"create\", \"name\":\"12Alfa Romero#\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
@@ -117,7 +117,7 @@ public class BrandManagmentTest {
 
     @Test
     public void createBrandInvalidPnameTest() {
-        String body = "{\"operation\":\"create\", \"name\":\"Alfa Romero\", \"name\":\"12Alfa Romero\"}";
+        String body = "{\"operation\":\"create\", \"name\":\"Alfa Romero\", \"p_name\":\"12Alfa Romero#\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
@@ -139,7 +139,7 @@ public class BrandManagmentTest {
 
     @Test
     public void updateBrandInvalidNameTest() {
-        String body = "{\"operation\":\"update\", \"brand_id\": 101,\"name\":\"12Alfa Romero\"}";
+        String body = "{\"operation\":\"update\", \"brand_id\": 101,\"name\":\"12Alfa Romero#\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
@@ -149,7 +149,7 @@ public class BrandManagmentTest {
 
     @Test
     public void updateBrandInvalidPnameTest() {
-        String body = "{\"operation\":\"update\", \"brand_id\": 101,\"name\":\"Alfa Romero\", \"name\":\"12Alfa Romero\"}";
+        String body = "{\"operation\":\"update\", \"brand_id\": 101,\"name\":\"Alfa Romero\", \"p_name\":\"12Alfa Romero#\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);

@@ -155,7 +155,7 @@ public class OrganizationManagmentTest {
 
     @Test
     public void createOrganizationSuccessTest() {
-        String body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad-pant\"}";
+        String body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad-pant-trello\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
                 OrganizationResponse.class);
@@ -179,13 +179,13 @@ public class OrganizationManagmentTest {
 
     @Test
     public void createOrganizationInvalidValuesTest() {
-        String body = "{\"name\":\"23Solad Pant\", \"p_name\":\"solad-pant\"}";
+        String body = "{\"name\":\"23Solad Pant#\", \"p_name\":\"solad-pant\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
                 OrganizationResponse.class);
         Assert.assertEquals(406, response.getStatusCode().value());
 
-        body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad_pant\"}";
+        body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad_pant#$!^*\"}";
         json = TestCommons.getHttpEntity(body,"abcdefg");
         response = template.postForEntity("/admin/organization", json, OrganizationResponse.class);
         Assert.assertEquals(406, response.getStatusCode().value());
