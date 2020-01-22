@@ -1,11 +1,9 @@
 import static org.junit.Assert.assertTrue;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 import javax.annotation.PreDestroy;
 
-import com.nasnav.exceptions.BusinessException;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -243,7 +241,7 @@ public class UserRegisterTest {
 	@Test
 	public void testInvalidNameRegistration() {
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"name\":\"Ahmed234\",\"email\":\"" + TestCommons.TestUserEmail + "\"}");
+				"{\"name\":\"Ahmed234#\",\"email\":\"" + TestCommons.TestUserEmail + "\"}");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/register", userJson,
 				UserApiResponse.class);
 		// success should be false
