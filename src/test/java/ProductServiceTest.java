@@ -436,8 +436,6 @@ public class ProductServiceTest {
 	private ShopsEntity createDummyShop(OrganizationEntity organizationEntity) {
 		ShopsEntity shopsEntity = new ShopsEntity();
 		shopsEntity.setName("Fortune");
-		shopsEntity.setCreatedAt(new Date());
-		shopsEntity.setUpdatedAt(new Date());
 		shopsEntity.setOrganizationEntity(organizationEntity);
 		shopsEntity = shopsRepository.save(shopsEntity);
 		return shopsEntity;

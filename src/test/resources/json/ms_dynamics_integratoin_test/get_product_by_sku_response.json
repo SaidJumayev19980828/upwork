@@ -1,0 +1,70 @@
+{
+  "products": [
+    {
+      "Ax_ID": "11CYM-0010001",
+      "Name": "CYBELE NEW LIP LINER NO. 2 RED",
+      "SKU": "6221105441060",
+      "OriginalPrice": 800.00,
+      "Brand": "Baldman",
+      "Category": "LIP LINER",
+      "Qty": [
+        {
+          "STORE_CODE": "691",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOarabia",
+          "Value": 101.00
+        },
+        {
+          "STORE_CODE": "FOcitystar",
+          "Value": 30.00
+        },
+        {
+          "STORE_CODE": "FOedara",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOegypt",
+          "Value": 22.00
+        },
+        {
+          "STORE_CODE": "FOexpress",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOfestival",
+          "Value": 12.00
+        },
+        {
+          "STORE_CODE": "FOlebanon",
+          "Value": 10.00
+        },
+        {
+          "STORE_CODE": "FOmarket",
+          "Value": 1.00
+        },
+        {
+          "STORE_CODE": "FOmaxim",
+          "Value": 6.00
+        },
+        {
+          "STORE_CODE": "FOnilecity",
+          "Value": 4.00
+        },
+        {
+          "STORE_CODE": "FOoscar",
+          "Value": 0.00
+        },
+        {
+          "STORE_CODE": "FOstefano",
+          "Value": 14.00
+        },
+        {
+          "STORE_CODE": "FOsuncity",
+          "Value": 0.00
+        }
+      ]
+    }
+  ]
+ }

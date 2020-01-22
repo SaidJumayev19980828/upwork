@@ -97,7 +97,6 @@ public class EmployeeUserCreationTest {
 
 		response.getBody().getEntityId();
 
-		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
 	
@@ -362,7 +361,6 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
-		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
 
@@ -372,7 +370,6 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg", "68");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
-		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
 	//finish Nasnav_admin role test

@@ -1,6 +1,5 @@
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.HashSet;
 
 import com.nasnav.payments.qnb.QnbSession;
@@ -145,8 +144,6 @@ public class QnbHostedSessionPayment {
         
         //create shop
         shop = new ShopsEntity();
-        shop.setCreatedAt(new Date());
-        shop.setUpdatedAt(new Date());
         shop.setOrganizationEntity(org);
         ShopsEntity shopEntity = shopsRepository.save(shop);
 

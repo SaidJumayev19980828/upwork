@@ -1,11 +1,23 @@
 package com.nasnav.commons.utils;
 
+import static java.util.Optional.ofNullable;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+
+import org.springframework.http.HttpStatus;
+
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 
+import com.nasnav.response.UserApiResponse;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -108,12 +120,39 @@ public class StringUtils extends org.springframework.util.StringUtils{
 						.replaceAll("^-|-$","")
 						.toLowerCase();
 	}
+
 	
+	/**
+	 * @return object.toString() , or null if the object is null
+	 * */
+	public static String nullableToString(Object object) {
+		return ofNullable(object)
+				.map(Object::toString)
+				.orElse(null);		
+	}
 	
 	
 	
 	public static String nullSafe(String string) {
 		return Optional.ofNullable(string)
 				       .orElse("");
+	}
+	
+	
+	public static boolean anyBlankOrNull(String... strings) {
+		return Arrays
+				.asList(strings)
+				.stream()
+				.anyMatch(StringUtils::isBlankOrNull);			
+	}
+	
+	
+	
+	
+	public static boolean anyNotBlankOrNull(String... strings) {
+		return Arrays
+				.asList(strings)
+				.stream()
+				.anyMatch(StringUtils::isNotBlankOrNull);			
 	}
 }

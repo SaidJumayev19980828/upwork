@@ -172,6 +172,23 @@
 		</dependency>
 		
 
+		<dependency>
+	        <groupId>io.projectreactor</groupId>
+	        <artifactId>reactor-core</artifactId>
+	        <version>3.3.0.RELEASE</version>
+	        <scope>compile</scope>
+	      </dependency>	      
+	    <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+            <version>${spring.boot.version}</version>
+        </dependency>
+         <dependency>
+            <groupId>org.projectreactor</groupId>
+            <artifactId>reactor-spring</artifactId>
+            <version>1.0.1.RELEASE</version>
+        </dependency>
+
 
 
         <dependency>
@@ -197,6 +214,17 @@
             <version>${spring.boot.version}</version>
             <scope>test</scope>
         </dependency>
+	<dependency>
+	    <groupId>net.jodah</groupId>
+	    <artifactId>concurrentunit</artifactId>
+	    <version>0.4.6</version>
+	    <scope>test</scope>
+	</dependency>
+	<dependency>
+	    <groupId>org.mock-server</groupId>
+	    <artifactId>mockserver-netty</artifactId>
+	    <version>5.3.0</version>
+	</dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
@@ -250,6 +278,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.version}</version>
                 <configuration>
+                  <skipAfterFailureCount>1</skipAfterFailureCount>
 			      <properties>
 			        <property>
 			          <name>listener</name>

@@ -19,5 +19,6 @@ public abstract class ProductImportCsvFieldNames {
 	protected String brand;
 	protected String quantity;
 	protected String price;
-		
+	protected String variantId;
+	protected String externalId;
 }

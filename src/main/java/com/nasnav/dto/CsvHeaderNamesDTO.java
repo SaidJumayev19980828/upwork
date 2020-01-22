@@ -47,10 +47,25 @@ public class CsvHeaderNamesDTO extends ProductImportCsvFieldNames{
 	public void setQuantity(String quantity) {
 		this.quantity = quantity;
 	}
-	
-	
+
+
 	@JsonProperty("price_header")
 	public void setPrice(String price) {
 		this.price = price;
 	}
+
+
+	@JsonProperty("variant_id_header")
+	public void setVariantId(String variantId) {
+		this.variantId = variantId;
+	}
+
+
+	@JsonProperty("external_id_header")
+	public void setExternalId(String externalId) {
+		this.externalId = externalId;
+	}
+
+
+
 }

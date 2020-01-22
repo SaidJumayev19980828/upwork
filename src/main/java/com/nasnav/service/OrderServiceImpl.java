@@ -37,6 +37,7 @@ import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
 import static java.lang.String.format;
+import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
@@ -805,17 +806,18 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	private BigDecimal getBasketItemValue(BasketItemDTO item) {
-		BigDecimal quantity = Optional.ofNullable( item.getQuantity() )
-										.map(BigDecimal::new)
-										.orElse(BigDecimal.ZERO);
+		BigDecimal quantity = ofNullable( item.getQuantity() )
+								.map(q -> q.toString())	//it is preferred to create Bigdecimals from strings
+								.map(BigDecimal::new)
+								.orElse(ZERO);
 		
-		return Optional.ofNullable(item)
-						.map(BasketItemDTO::getStockId)
-						.flatMap(stockRepository::findById)
-						.map(StocksEntity::getPrice)
-						.filter(Objects::nonNull)
-						.map(price -> price.multiply(quantity))
-						.orElseThrow( () ->  new RuntimeException(ERR_CALC_ORDER_FAILED));
+		return ofNullable(item)
+				.map(BasketItemDTO::getStockId)
+				.flatMap(stockRepository::findById)
+				.map(StocksEntity::getPrice)
+				.filter(Objects::nonNull)
+				.map(price -> price.multiply(quantity))
+				.orElseThrow( () ->  new RuntimeException(ERR_CALC_ORDER_FAILED));
 	}
 	
 	

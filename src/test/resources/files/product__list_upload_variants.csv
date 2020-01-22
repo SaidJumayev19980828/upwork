@@ -1,5 +1,5 @@
-barcode,Product name,p_name,description,brand,category,quantity,price,size,color,extra,not-feature-col
-1354ABN,Squishy shoes,s_shoe,squishy,squish,squishy things,101,10.25,XXL,Lettuce Heart,,no
-87847777EW,hard shoes,h_shoe,too hard,hardy,mountain equipment,102,88.6,M,Fo7loqy,,ok
-878466658S,hard shoes,h_shoe,too hard,hardy,mountain equipment,45,88.6,L,Browny,,ok
-878849956E,hard shoes,h_shoe,too hard,hardy,mountain equipment,102,88.6,XXXL,PINKY,,ok
+barcode,Product name,p_name,description,brand,category,quantity,price,size,color,extra,not-feature-col,variant_id,external_id
+1354ABN,Squishy shoes,s_shoe,squishy,squish,squishy things,101,10.25,XXL,Lettuce Heart,,no,,
+87847777EW,hard shoes,h_shoe,too hard,hardy,mountain equipment,102,88.6,M,Fo7loqy,,ok,,
+878466658S,hard shoes,h_shoe,too hard,hardy,mountain equipment,45,88.6,L,Browny,,ok,,
+878849956E,hard shoes,h_shoe,too hard,hardy,mountain equipment,102,88.6,XXXL,PINKY,,ok,,

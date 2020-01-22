@@ -1,6 +1,7 @@
 package com.nasnav.persistence;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 import javax.persistence.CascadeType;
@@ -14,6 +15,9 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.Address;
@@ -63,11 +67,14 @@ public class ShopsEntity implements BaseEntity{
     
     @Column(name = "brand_id")
     private Long brandId;
+    
     @Column(name = "created_at")
-    private Date createdAt;
+    @CreationTimestamp
+    private LocalDateTime createdAt;
     
     @Column(name = "updated_at")
-    private Date updatedAt = new Date();
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     @Column(name = "p_street")
     private String pStreet;

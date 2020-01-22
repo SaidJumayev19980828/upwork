@@ -185,6 +185,7 @@ public class ProductApiTest {
 		//original values should remain the same
 		assertEquals("updated-product", saved.getPname());
 		assertEquals(originalProduct.getDescription(), saved.getDescription());
+		assertEquals(user.getOrganizationId() , saved.getOrganizationId()); 
 	}
 
 

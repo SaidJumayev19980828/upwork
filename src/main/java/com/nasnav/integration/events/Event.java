@@ -1,0 +1,86 @@
+package com.nasnav.integration.events;
+
+import static lombok.AccessLevel.NONE;
+
+import java.time.LocalDateTime;
+import java.util.function.Consumer;
+
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import reactor.core.publisher.EmitterProcessor;
+import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.Mono;
+
+@Data
+public abstract class Event<T, R> {
+	protected EventInfo<T> eventInfo;
+	@Getter
+	protected Mono<EventResult<T,R>> eventResult;
+	protected FluxSink<EventResult<T,R>> eventResultFluxSink;
+	
+	@Getter
+	@Setter(NONE)
+	protected Integer retryCount;
+	
+	
+	
+	public Event(Long organizationId, T eventData, Consumer<EventResult<T,R>> onSuccess) {
+		this.eventInfo = new EventInfo<>(organizationId, eventData);
+		
+		EmitterProcessor<EventResult<T,R>> emitterProcessor = EmitterProcessor.create();
+		eventResult = emitterProcessor
+							.publish()
+							.autoConnect()
+							.next();
+		if(onSuccess != null ) {
+			eventResult.subscribe(onSuccess);
+		}
+		
+		eventResultFluxSink = emitterProcessor.sink();
+		
+		retryCount = 0;
+	}
+	
+	
+	
+	public Event(Long organizationId, T eventData) {
+		this(organizationId, eventData, null);
+	}
+	
+	
+	
+	/**
+	 * sinks the result data into the EventResult Mono, which notifies any subscriber to this Mono.
+	 * */
+	public void broadcastResultData(R resultData) {
+		EventResult<T,R> evResult = new EventResult<>(eventInfo, resultData);
+		eventResultFluxSink.next(evResult);
+	}
+	
+	
+	
+	public void completeEvent() {
+		eventResultFluxSink.complete();
+	}
+	
+	
+	
+	
+	public Long getOrganizationId() {
+		return eventInfo.getOrganizationId();
+	}
+	
+	
+	
+	public LocalDateTime getCreationTime() {
+		return eventInfo.getCreationTime();
+	}
+	
+	
+	
+	
+	public void incrementRetryCount() {
+		retryCount++;
+	}
+}

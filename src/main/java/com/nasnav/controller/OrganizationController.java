@@ -97,9 +97,9 @@ public class OrganizationController {
         BrandDTO json = mapper.readValue(jsonString, BrandDTO.class);
         if (json.operation != null) {
             if (json.operation.equals("create")) {
-                response = orgService.createOrganizationBrand(userToken, json, logo, banner);
+                response = orgService.createOrganizationBrand(json, logo, banner);
             } else if (json.operation.equals("update")) {
-                response = orgService.updateOrganizationBrand(userToken, json, logo, banner);
+                response = orgService.updateOrganizationBrand(json, logo, banner);
             } else
                 throw new BusinessException("INVALID_PARAM: operation", "", HttpStatus.NOT_ACCEPTABLE);
         } else {

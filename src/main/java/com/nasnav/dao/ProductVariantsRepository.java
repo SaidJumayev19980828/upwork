@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.nasnav.persistence.ProductVariantsEntity;
 
@@ -18,4 +20,9 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	void deleteByProductEntity_Id(Long productId);
 
 	Optional<ProductVariantsEntity> findByBarcodeAndProductEntity_OrganizationId(String barcode, Long orgId);
+
+	Optional<ProductVariantsEntity> findByIdAndProductEntity_OrganizationId(Long id, Long orgId);
+
+	@Query("SELECT variant FROM ProductVariantsEntity variant INNER JOIN FETCH variant.productEntity prod where prod.organizationId = :orgId")
+	List<ProductVariantsEntity> findByOrganizationId(@Param("orgId") Long orgId);
 }

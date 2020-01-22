@@ -1,4 +1,5 @@
 import static com.nasnav.commons.utils.EntityUtils.setOf;
+import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -10,6 +11,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -41,10 +43,12 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.nasnav.NavBox;
+import com.nasnav.dao.IntegrationMappingRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.enumerations.TransactionCurrency;
+import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
@@ -84,7 +88,21 @@ public class DataImportApiTest {
 	@Value("classpath:/files/product__list_upload.csv")
     private Resource csvFile;
 	
+	@Value("classpath:/files/product__list_upload_variants_with_variant_id.csv")
+	private Resource csvFileVariantsWithVariantId;
 	
+    @Value("classpath:/files/product__list_upload_variants_with_variant_id_existing_variant.csv")
+    private Resource csvFileVariantsWithVariantIdExistingVariant;
+
+	@Value("classpath:/files/product__list_upload_variants_with_external_id.csv")
+	private Resource csvFileVariantsWithExternalId;
+
+	@Value("classpath:/files/product__list_upload_variants_with_external_id_barcode.csv")
+	private Resource csvFileVariantsWithExternalIdAndBarcode;
+
+	@Value("classpath:/files/product__list_upload_variants_with_external_id_existing_mapping.csv")
+	private Resource csvFileVariantsWithExternalIdExistingMapping;
+
 	@Value("classpath:/files/product__list_upload_missing_col.csv")
     private Resource csvFileMissingCol;
 	
@@ -114,6 +132,8 @@ public class DataImportApiTest {
 	@Autowired
 	private TestRestTemplate template;
 	
+	@Autowired
+	private IntegrationMappingRepository integrationMappingRepo;
 	
 	
 	@Test
@@ -319,7 +339,7 @@ public class DataImportApiTest {
 		importProperties.getJSONObject("headers").remove("name_header");
 		
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
-
+        
         result.andExpect(status().is(406));
     }
 
@@ -584,17 +604,21 @@ public class DataImportApiTest {
 	@Test
 	public void getProductsCsvTemplateInvalidAuthentication() {
 		HttpEntity<Object> request = TestCommons.getHttpEntity("","456");
-		ResponseEntity res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
+		ResponseEntity<String> res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
 		Assert.assertTrue(res.getStatusCodeValue() == 401);
 
 		res = template.exchange("/product/image/bulk/template", HttpMethod.GET, request ,String.class);
 		Assert.assertTrue(res.getStatusCodeValue() == 401);
 	}
 
+	
+	
+	
+	
 	@Test
 	public void getProductsCsvTemplateInvalidAuthorization() {
 		HttpEntity<Object> request = TestCommons.getHttpEntity("","101112");
-		ResponseEntity res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
+		ResponseEntity<String> res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
 		Assert.assertTrue(res.getStatusCodeValue() == 403);
 
 		res = template.exchange("/product/image/bulk/template", HttpMethod.GET, request ,String.class);
@@ -628,7 +652,7 @@ public class DataImportApiTest {
 	
 	@Test
 	public void getImageUploadCsvTemplate() {
-		String[] expectedImageHeaders = {"barcode","image_file"};
+		String[] expectedImageHeaders = {"variant_id","external_id","barcode","image_file"};
 		
 		HttpEntity<Object> request = TestCommons.getHttpEntity("","131415");
 		ResponseEntity<String> res = template.exchange("/product/image/bulk/template", HttpMethod.GET, request ,String.class);
@@ -643,6 +667,91 @@ public class DataImportApiTest {
 		}
 	}
 
+
+	@Test
+	public void uploadProductCSVExistingVariantIdNoVariantEntity() throws Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithVariantId, importProperties);
+
+		result.andExpect(status().is(406));
+	}
+
+	@Test
+	public void uploadProductCSVExistingVariantIdExistVariantEntity() throws Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("update_product", true);
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithVariantIdExistingVariant, importProperties);
+
+		result.andExpect(status().is(200));
+
+		ProductEntity product = variantRepo.findById(310001L).get().getProductEntity();
+		assertEquals("Squishy shoes", product.getName());
+	}
+
+
+	@Test
+	public void uploadProductCSVExistingExternalIdNoVariantEntity() throws Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithExternalId, importProperties);
+
+		result.andExpect(status().is(200));
+
+		Optional<IntegrationMappingEntity> mapping = 
+				integrationMappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(
+						99001L
+						, PRODUCT_VARIANT.getValue()
+						, "5");
+		assertTrue(mapping.isPresent());
+
+		Optional<ProductVariantsEntity> product = variantRepo.findById(Long.parseLong(mapping.get().getLocalValue()));
+		assertTrue(product.isPresent());
+	}
+
+	
+	
+	
+	
+	@Test
+	public void uploadProductCSVExistingExternalIdExistVariantEntity() throws Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("update_product", true);
+
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithExternalIdExistingMapping, importProperties);
+
+		result.andExpect(status().is(200));
+
+		ProductEntity product = variantRepo.findById(310001L).get().getProductEntity();
+		assertEquals("Squishy shoes", product.getName());
+	}
+
+	@Test
+	public void uploadProductCSVExistingExternalIdAndBarcodeNoVariantEntity() throws Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("update_product", true);
+
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithExternalIdAndBarcode, importProperties);
+
+		result.andExpect(status().is(200));
+
+		ProductEntity product = variantRepo.findById(310001L).get().getProductEntity();
+		assertEquals("Squishy shoes", product.getName());
+
+        Optional<IntegrationMappingEntity> mapping = 
+        		integrationMappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(
+        				99001L
+        				, PRODUCT_VARIANT.getValue()
+        				, "4");
+        assertTrue(mapping.isPresent());
+	}
+	
 	
 	
 	
@@ -989,6 +1098,8 @@ public class DataImportApiTest {
 		   colHeadersJson.put("brand_header", "brand");
 		   colHeadersJson.put("quantity_header", "quantity");
 		   colHeadersJson.put("price_header", "price");
+		   colHeadersJson.put("variant_id_header", "variant_id");
+		   colHeadersJson.put("external_id_header", "external_id");
 		return colHeadersJson;
 	}
 

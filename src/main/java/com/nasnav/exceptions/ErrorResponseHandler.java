@@ -1,9 +1,5 @@
 package com.nasnav.exceptions;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,7 +50,21 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 	
 
 	private final Logger exceptionLogger = LoggerFactory.getLogger(ErrorResponseHandler.class.getName());
+	
+	@ExceptionHandler(RuntimeBusinessException.class)
+	@ResponseBody
+	public ResponseEntity<ErrorResponseDTO> handleBusinessExceptionInterface(BusinessException e, WebRequest requestInfo , HttpServletRequest request) {
+		logException(requestInfo, request , e);
+		
+		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getErrorMessage(), e.getErrorCode());
 
+		return new ResponseEntity<>(errorResponseDTO,
+				e.getHttpStatus() != null ? e.getHttpStatus() : HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+	
+	
+	
+	
 	@ExceptionHandler(BusinessException.class)
 	@ResponseBody
 	public ResponseEntity<ErrorResponseDTO> handleBusinessException(BusinessException e, WebRequest requestInfo , HttpServletRequest request) {

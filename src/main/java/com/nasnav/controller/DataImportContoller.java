@@ -1,38 +1,24 @@
 package com.nasnav.controller;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import javax.websocket.server.PathParam;
 
-import com.univocity.parsers.csv.Csv;
-import com.univocity.parsers.csv.CsvWriter;
-import com.univocity.parsers.csv.CsvWriterSettings;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
-import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.ModelAndView;
 
 import com.nasnav.dto.ProductListImportDTO;
-import com.nasnav.dto.UserDTOs.UserLoginObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ProductListImportResponse;
-import com.nasnav.service.DataImportService;
-import com.nasnav.service.SecurityService;
+import com.nasnav.service.CsvDataImportService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponses;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 
 
@@ -43,7 +29,7 @@ public class DataImportContoller {
 	
 	
 	@Autowired
-	private DataImportService importService;
+	private CsvDataImportService importService;
 
 
 	@ApiResponses(value = {

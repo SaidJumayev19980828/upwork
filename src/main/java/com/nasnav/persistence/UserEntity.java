@@ -4,12 +4,14 @@ import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
 import javax.persistence.Table;
 
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dto.Address;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.persistence.listeners.UserEntityListener;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -17,6 +19,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Entity
+@EntityListeners(UserEntityListener.class)
 @Table(name = "users")
 @EqualsAndHashCode(callSuper=false)
 @NoArgsConstructor

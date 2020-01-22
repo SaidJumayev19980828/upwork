@@ -11,7 +11,7 @@ import lombok.Getter;
 public final class EntityConstants {
     public static final String INITIAL_PASSWORD = "";
     public static final String EMAIL_PATTERN = "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,6}$";
-    public static final String Name_PATTERN = "^[a-zA-z \']+$";
+    public static final String Name_PATTERN = "^[a-zA-z0-9 \'&-]+$";
 
     /*Password Min and Max length*/
     public static final int PASSWORD_MIN_LENGTH = 6;
