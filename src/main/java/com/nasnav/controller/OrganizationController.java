@@ -195,7 +195,7 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @DeleteMapping(value = "tag", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity createOrganizationTag(@RequestHeader (value = "User-Token") String userToken,
+    public ResponseEntity deleteOrganizationTag(@RequestHeader (value = "User-Token") String userToken,
                                                 @RequestParam (value = "tag_id")Long tagId) throws BusinessException {
         TagResponse tag = categoryService.deleteOrgTag(tagId);
         return new ResponseEntity(tag, HttpStatus.OK);

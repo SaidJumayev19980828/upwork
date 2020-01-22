@@ -281,10 +281,10 @@ public class CategoryService {
         else if(tagDTO.getOperation().equals("update")) {
             if (tagDTO.getId() == null)
                 throw new BusinessException("MISSING PARAM: id", "id is required to update tag", HttpStatus.NOT_ACCEPTABLE);
-            if (!orgTagsRepo.findById(tagDTO.getId()).isPresent())
-                throw new BusinessException("INVALID PARAM: id", "No tag exists with provided id", HttpStatus.NOT_ACCEPTABLE);
 
-            entity = orgTagsRepo.findById(tagDTO.getId()).get();
+            entity = orgTagsRepo.findByIdAndOrganizationEntity_Id(tagDTO.getId(), org.getId());
+            if (entity == null)
+                throw new BusinessException("INVALID PARAM: id", "No tag exists in the organization with provided id", HttpStatus.NOT_ACCEPTABLE);
         } else {
             throw new BusinessException("INVALID PARAM: operation", "unsupported operation" + tagDTO.getOperation(), HttpStatus.NOT_ACCEPTABLE);
         }
@@ -314,12 +314,13 @@ public class CategoryService {
 
     public void createTagEdges(TagsLinkDTO tagsLinks) throws BusinessException{
 
-        validateTagLinkDTO(tagsLinks);
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+
+        validateTagLinkDTO(tagsLinks, org.getId());
 
         Long parentId = tagsLinks.getParentId();
         List<Long> childrenIds = tagsLinks.getChildrenIds();
 
-        OrganizationEntity org = securityService.getCurrentUserOrganization();
         List<TagsEntity> orgTags = orgTagsRepo.findByOrganizationEntity_Id(org.getId());
 
         Map<Long, TagsEntity> tagsMap = new HashMap<>();
@@ -360,9 +361,10 @@ public class CategoryService {
     }
 
     public boolean deleteTagLink(TagsLinkDTO tagsLinks) throws BusinessException {
-        validateTagLinkDTO(tagsLinks);
-
         Long orgId = securityService.getCurrentUserOrganizationId();
+
+        validateTagLinkDTO(tagsLinks, orgId);
+
         Long parentId = tagsLinks.getParentId();
         List<Long> childrenIds = tagsLinks.getChildrenIds();
         TagGraphEdgesEntity edge;
@@ -378,11 +380,11 @@ public class CategoryService {
     }
 
 
-    private void validateTagLinkDTO(TagsLinkDTO tagsLinks) throws BusinessException {
+    private void validateTagLinkDTO(TagsLinkDTO tagsLinks, Long orgId) throws BusinessException {
         if (tagsLinks.getParentId() == null)
             throw new BusinessException("MISSING PARAM: parent_id", "Required parent_id is missing", HttpStatus.NOT_ACCEPTABLE);
 
-        if (!orgTagsRepo.findById(tagsLinks.getParentId()).isPresent())
+        if (orgTagsRepo.findByIdAndOrganizationEntity_Id(tagsLinks.getParentId(), orgId) == null)
             throw new BusinessException("INVALID PARAM: parent_id", "Provided parent_id doesn't match any existing tag", HttpStatus.NOT_ACCEPTABLE);
 
         if (tagsLinks.getChildrenIds() == null)
@@ -399,7 +401,7 @@ public class CategoryService {
 
         List<TagGraphEdgesEntity> tags = tagEdgesRepo.getTagsLinks(Collections.singletonList(tagId));
         if (!tags.isEmpty())
-            throw new BusinessException("There are tags Links connected to this tag!","NOT_EMPTY:tags Links",HttpStatus.NOT_ACCEPTABLE);
+            throw new BusinessException("There are tags Linked to this tag!","NOT_EMPTY:tags Links",HttpStatus.NOT_ACCEPTABLE);
 
         List<Long> products = productRepository.getProductIdsByTagsList(Collections.singletonList(tagId));
         if (!products.isEmpty())
