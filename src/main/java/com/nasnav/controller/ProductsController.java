@@ -28,6 +28,7 @@ import com.nasnav.dto.BundleElementUpdateDTO;
 import com.nasnav.dto.ProductImageBulkUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateDTO;
 import com.nasnav.dto.ProductImgDetailsDTO;
+import com.nasnav.dto.ProductTagDTO;
 import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.BundleSearchParam;

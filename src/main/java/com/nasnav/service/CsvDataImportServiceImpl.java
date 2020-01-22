@@ -270,7 +270,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 	private void validateCsvHeaderNames(CsvHeaderNamesDTO headers) throws BusinessException{
-		if(anyIsNull(headers.getBarcode(), headers.getName(), headers.getCategory(), headers.getPrice(), headers.getQuantity())) {
+		if(anyIsNull(headers.getBarcode(), headers.getName(), headers.getPrice(), headers.getQuantity())) {
 			throw new BusinessException(
 					ERR_PRODUCT_IMPORT_MISSING_HEADER_NAME 
 					, "MISSING PARAM:csv-header(s)"
