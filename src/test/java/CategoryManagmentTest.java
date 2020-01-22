@@ -143,7 +143,7 @@ public class CategoryManagmentTest {
 
     @Test
     public void createCategoryInvalidNameTest() {
-        String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes\", \"operation\": \"create\"}";
+        String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes#$\", \"operation\": \"create\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
@@ -183,7 +183,7 @@ public class CategoryManagmentTest {
 
     @Test
     public void updateCategoryInvalidNameTest() {
-        String body = "{\"id\":202,\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes\", \"operation\": \"update\"}";
+        String body = "{\"id\":202,\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes#$\", \"operation\": \"update\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
         Assert.assertTrue(406 == response.getStatusCode().value());
