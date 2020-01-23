@@ -108,7 +108,7 @@ INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value,
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '55555', 'Delsey', 99001);
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67006, '310001', '11CYM-0010001', 99001);
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67006, '310003', '11CYM-0015551', 99001);
-INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67004, '88', 'un5005009', 99001);
+INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67004, '88', 'UNR-023538', 99001);
 
 
 
