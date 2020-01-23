@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -630,8 +628,8 @@ public class DataImportApiTest {
 
 	@Test
 	public void getProductsCsvTemplate() {
-		String[] expectedProductHeaders = {"product_name","barcode","brand","price"
-											 ,"quantity","description","color","size"};
+		String[] expectedProductHeaders = {"product_name", "barcode", "tags", "brand", "price", "quantity", "description"
+										, "variant_id", "external_id", "color", "size"};
 		HttpEntity<Object> request = TestCommons.getHttpEntity("","131415");
 		ResponseEntity<String> res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
 		

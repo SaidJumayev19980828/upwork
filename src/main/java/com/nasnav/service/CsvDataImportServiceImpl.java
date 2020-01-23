@@ -89,7 +89,8 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	private Logger logger = Logger.getLogger(getClass());
 
 	private final List<String> csvBaseHeaders = Arrays.asList(
-			new String[]{"product_name","barcode","category","brand","price","quantity","description","variant_id","external_id"});
+			new String[]{"product_name", "barcode", "tags", "brand", "price", "quantity", "description"
+					, "variant_id", "external_id"});
 
 	@Transactional(rollbackFor = Throwable.class)
 	public ProductListImportResponse importProductListFromCSV(@Valid MultipartFile file,
@@ -371,11 +372,13 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	@Override
 	public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException{
 		Long orgId = security.getCurrentUserOrganizationId();
-		List<String> features = prodcutFeaturesRepo.findByOrganizationId(orgId)
-													.stream()
-													.map(ProductFeaturesEntity::getName)
-													.sorted()
-													.collect(Collectors.toList());
+		List<String> features = 
+				prodcutFeaturesRepo
+					.findByOrganizationId(orgId)
+					.stream()
+					.map(ProductFeaturesEntity::getName)
+					.sorted()
+					.collect(Collectors.toList());
 		
 		List<String> baseHeaders = new ArrayList<>(csvBaseHeaders);
 		baseHeaders.addAll(features);
