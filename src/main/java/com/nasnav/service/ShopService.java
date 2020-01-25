@@ -137,7 +137,13 @@ public class ShopService {
     
     
     
-    
+    public List<ShopRepresentationObject> getLocationShops(Long orgId, Double longitude, Double latitude, Long range, String name) {
+        Double minLong, maxLong, minLat, maxLat;
+        //minLong =
+        if (orgId == null)
+            return shopsRepository.getShopsByLocation(orgId, name, minLong, maxLong, minLat, maxLat);
+        return
+    }
 
 	
 }
