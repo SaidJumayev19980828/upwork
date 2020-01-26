@@ -1,10 +1,7 @@
 package com.nasnav.service;
 
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
@@ -139,10 +136,16 @@ public class ShopService {
     
     public List<ShopRepresentationObject> getLocationShops(Long orgId, Double longitude, Double latitude, Long range, String name) {
         Double minLong, maxLong, minLat, maxLat;
-        //minLong =
+        minLong = null;
+        maxLong = null;
+        minLat = null;
+        maxLat = null;
+
+        List<ShopsEntity> shops = new ArrayList<>();
         if (orgId == null)
-            return shopsRepository.getShopsByLocation(orgId, name, minLong, maxLong, minLat, maxLat);
-        return
+            shops =  shopsRepository.getShopsByLocation(orgId, name, minLong, maxLong, minLat, maxLat);
+
+        return shops.stream().map(s -> (ShopRepresentationObject)s.getRepresentation()).collect(Collectors.toList());
     }
 
 	
