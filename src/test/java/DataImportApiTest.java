@@ -1,8 +1,10 @@
 import static com.nasnav.commons.utils.EntityUtils.setOf;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
@@ -291,45 +293,6 @@ public class DataImportApiTest {
 	
 	
 	
-	@Test
-    public void uploadProductsCSVMissingBarcodeHeadersTest() throws IOException, Exception {
-       
-		JSONObject importProperties = createDataImportProperties();
-		importProperties.getJSONObject("headers").remove("barcode_header");
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
-        
-        result.andExpect(status().is(406));
-    }
-	
-	
-	
-	@Test
-    public void uploadProductsCSVMissingPriceHeadersTest() throws IOException, Exception {
-       
-		JSONObject importProperties = createDataImportProperties();
-		importProperties.getJSONObject("headers").remove("price_header");
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
-        
-        result.andExpect(status().is(406));
-    }
-
-	
-	
-	
-	@Test
-    public void uploadProductsCSVMissingQuantityHeadersTest() throws IOException, Exception {
-       
-		JSONObject importProperties = createDataImportProperties();
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
-        
-        result.andExpect(status().is(406));
-    }
-	
-
-	
 	
 	
 	
@@ -603,21 +566,20 @@ public class DataImportApiTest {
 
 	@Test
 	public void getProductsCsvTemplate() {
-		String[] expectedProductHeaders = {"product_name", "barcode", "tags", "brand", "price", "quantity", "description"
-										, "variant_id", "external_id", "color", "size"};
-		HttpEntity<Object> request = TestCommons.getHttpEntity("","131415");
-		ResponseEntity<String> res = template.exchange("/upload/productlist/template", HttpMethod.GET, request ,String.class);
+		Set<String> expectedTemplateHeaders = 
+				setOf("product_name", "barcode", "tags", "brand", "price", "quantity", "description"
+						, "variant_id", "external_id", "color", "size");
+		HttpEntity<Object> request = getHttpEntity("","131415");
+		ResponseEntity<String> res = template.exchange("/upload/productlist/template", GET, request ,String.class);
 		
 		Assert.assertTrue(res.getStatusCodeValue() == 200);
 		
-		String[] headers = res.getBody()
-							.replace(System.lineSeparator(), "")
-							.split(",");
-		for(int i=0;i<headers.length;i++){
-			Assert.assertTrue(headers[i].equals(expectedProductHeaders[i]));
-		}
-
+		String[] headersArr = res.getBody()
+								.replace(System.lineSeparator(), "")
+								.split(",");		
+		Set<String> headers = setOf(headersArr);
 		
+		assertEquals(expectedTemplateHeaders, headers);
 	}
 	
 	

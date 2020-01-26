@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.service.CsvRow;
 import com.univocity.parsers.common.Context;
 import com.univocity.parsers.common.processor.BeanListProcessor;
 import com.univocity.parsers.common.record.Record;
@@ -15,11 +15,11 @@ import com.univocity.parsers.common.record.Record;
 
 
 
-public class ProductCsvRowProcessor<T extends ProductImportDTO> extends BeanListProcessor<ProductImportDTO> {
+public class ProductCsvRowProcessor<T extends CsvRow> extends BeanListProcessor<CsvRow> {
 	List<ProductFeaturesEntity> features;
 	
 	
-	public ProductCsvRowProcessor(Class<ProductImportDTO> beanType, List<ProductFeaturesEntity> features) {
+	public ProductCsvRowProcessor(Class<CsvRow> beanType, List<ProductFeaturesEntity> features) {
 		super(beanType);
 		
 		this.features = features != null ? features : new ArrayList<>();
@@ -30,8 +30,8 @@ public class ProductCsvRowProcessor<T extends ProductImportDTO> extends BeanList
 	
 	
 	@Override
-	public ProductImportDTO createBean(String[] row, Context context){
-		ProductImportDTO bean = super.createBean(row, context);
+	public CsvRow createBean(String[] row, Context context){
+		CsvRow bean = super.createBean(row, context);
 		if(bean != null) {
 			Map<String, String> spec = getFeatureSpecs(row, context);		
 			bean.setFeatures(spec);

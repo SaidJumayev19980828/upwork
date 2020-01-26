@@ -7,6 +7,7 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_FILE_U
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMPORT_MISSING_PARAM;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_SHOP_ID_NOT_EXIST;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_CHANGE_OTHER_ORG_SHOP;
+import static java.util.stream.Collectors.toList;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -117,9 +118,15 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		validateProductImportMetaData(csvImportMetaData);
 		validateProductImportCsvFile(file);
 
-		List<ProductImportDTO> rows = parseCsvFile(file, csvImportMetaData);
+		List<CsvRow> rows = parseCsvFile(file, csvImportMetaData);
 		ProductImportMetadata importMetadata = getImportMetaData(csvImportMetaData);
-		return dataImportService.importProducts(rows, importMetadata);
+		
+		List<ProductImportDTO> productsData = 
+				rows
+				.stream()
+				.map(CsvRow::toProductImportDto)
+				.collect(toList());
+		return dataImportService.importProducts(productsData, importMetadata);
 
 	}
 	
@@ -143,13 +150,13 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	
 	
 
-	private List<ProductImportDTO> parseCsvFile(MultipartFile file, ProductListImportDTO metaData) throws BusinessException {
+	private List<CsvRow> parseCsvFile(MultipartFile file, ProductListImportDTO metaData) throws BusinessException {
 		List<ProductFeaturesEntity> orgFeatures = featureRepo.findByShopId( metaData.getShopId() );
 		
-		List<ProductImportDTO> rows = new ArrayList<>();
+		List<CsvRow> rows = new ArrayList<>();
 		
 		ByteArrayInputStream in = readCsvFile(file);		
-		BeanListProcessor<ProductImportDTO> rowProcessor = createRowProcessor(metaData, orgFeatures);
+		BeanListProcessor<CsvRow> rowProcessor = createRowProcessor(metaData, orgFeatures);
 		RowParseErrorHandler rowParsingErrHandler = new RowParseErrorHandler();
 		CsvParserSettings settings = createParsingSettings(rowProcessor, rowParsingErrHandler);
 		
@@ -190,7 +197,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 
-	private CsvParserSettings createParsingSettings(BeanListProcessor<ProductImportDTO> rowProcessor,
+	private CsvParserSettings createParsingSettings(BeanListProcessor<CsvRow> rowProcessor,
 			RowParseErrorHandler rowParsingErrHandler) {
 		CsvParserSettings settings = new CsvParserSettings();
 		settings.setHeaderExtractionEnabled(true);
@@ -201,11 +208,11 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 
-	private BeanListProcessor<ProductImportDTO> createRowProcessor(ProductListImportDTO metaData, List<ProductFeaturesEntity> features) {
+	private BeanListProcessor<CsvRow> createRowProcessor(ProductListImportDTO metaData, List<ProductFeaturesEntity> features) {
 		ColumnMapping mapper = createAttrToColMapping(metaData);
 		
-		BeanListProcessor<ProductImportDTO> rowProcessor =
-				new ProductCsvRowProcessor<ProductImportDTO>(ProductImportDTO.class, features);
+		BeanListProcessor<CsvRow> rowProcessor =
+				new ProductCsvRowProcessor<CsvRow>(CsvRow.class, features);
 		rowProcessor.setColumnMapper(mapper);
 		rowProcessor.setStrictHeaderValidationEnabled(true);
 		return rowProcessor;
