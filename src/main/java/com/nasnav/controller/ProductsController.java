@@ -274,6 +274,9 @@ public class ProductsController {
 		return  productImgService.updateProductImageBulk(zip, csv, metaData);
     }
 
+	
+	
+	
 
     @ApiOperation(value = "Link list of products to list of tags", nickname = "productsTagsLinking", code = 200)
     @ApiResponses(value = {
@@ -284,12 +287,14 @@ public class ProductsController {
     })
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "tag", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity updateProductTags(@RequestHeader("User-Token") String token,
+    public void updateProductTags(@RequestHeader("User-Token") String token,
                                             @RequestBody ProductTagDTO productTagDTO ) throws BusinessException {
         productService.updateProductTags(productTagDTO);
-        return new ResponseEntity("{\"Message\":\"Linking products with tags created successfully\"}".toString(), HttpStatus.OK);
     }
 
+    
+    
+    
     @ApiOperation(value = "Remove link between list of products to list and tags", nickname = "removeProductsTagsLinking", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Product tag Removed successfully"),
@@ -299,10 +304,9 @@ public class ProductsController {
     })
     @ResponseStatus(HttpStatus.OK)
     @DeleteMapping(value = "tag", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity deleteProductTags(@RequestHeader("User-Token") String token,
+    public void deleteProductTags(@RequestHeader("User-Token") String token,
                                             @RequestBody ProductTagDTO productTagDTO ) throws BusinessException {
         productService.deleteProductTags(productTagDTO);
-        return new ResponseEntity("{\"Message\":\"Remove Linking between products and tags completed successfully\"}".toString(), HttpStatus.OK);
     }
 
 

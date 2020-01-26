@@ -7,6 +7,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Set;
 
 public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
 
@@ -21,5 +22,7 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
     @Query("select t from TagsEntity t  where t.organizationEntity = :org " +
             "and (t.id in(select l1.childId from TagGraphEdgesEntity l1) or t.id in(select l2.parentId from TagGraphEdgesEntity l2))")
     List<TagsEntity> getTagsByOrgId(@Param("org") OrganizationEntity org);
+    
+	Set<TagsEntity> findByNameIn(Set<String> tags);
 
 }

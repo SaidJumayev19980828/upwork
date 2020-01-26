@@ -18,7 +18,5 @@ public class ProductListImportDTO {
 	
 	private Long shopId;
 	private Integer currency;	
-	private String encoding;
-	
-	private CsvHeaderNamesDTO headers;
+	private String encoding;	
 }

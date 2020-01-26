@@ -1,5 +1,6 @@
 import static com.nasnav.commons.utils.EntityUtils.setOf;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -50,6 +51,7 @@ import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.TagsEntity;
 import com.nasnav.security.AuthenticationFilter;
 import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
@@ -320,7 +322,6 @@ public class DataImportApiTest {
     public void uploadProductsCSVMissingQuantityHeadersTest() throws IOException, Exception {
        
 		JSONObject importProperties = createDataImportProperties();
-		importProperties.getJSONObject("headers").remove("quantity_header");
 		
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
         
@@ -329,32 +330,6 @@ public class DataImportApiTest {
 	
 
 	
-	
-	@Test
-    public void uploadProductsCSVMissingNameHeadersTest() throws IOException, Exception {
-       
-		JSONObject importProperties = createDataImportProperties();
-		importProperties.getJSONObject("headers").remove("name_header");
-		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
-        
-        result.andExpect(status().is(406));
-    }
-
-
-
-
-	/*
-	@Test
-    public void uploadProductsCSVMissingCategoryHeadersTest() throws IOException, Exception {
-
-		JSONObject importProperties = createDataImportProperties();
-		importProperties.getJSONObject("headers").remove("category_header");
-
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFile, importProperties);
-        
-        result.andExpect(status().is(406));
-    }*/
 	
 	
 	
@@ -836,7 +811,20 @@ public class DataImportApiTest {
         assertTrue( propertyValuesIn(products, ProductEntity::getName, expected.getProductNames()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getPname, expected.getPNames()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getDescription, expected.getDescriptions()) );
+        assertTrue( propertyValuesIn(products, this::getFirstTagName, expected.getTags()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getBrandId, expected.getBrands()) );
+	}
+	
+	
+	
+	
+	private String getFirstTagName(ProductEntity product) {
+		return product
+				.getTags()
+				.stream()
+				.findFirst()
+				.map(TagsEntity::getName)
+				.orElse("");
 	}
 	
 	
@@ -866,7 +854,7 @@ public class DataImportApiTest {
 		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
 		data.setPNames(setOf("s_shoe", "h_shoe") );
 		data.setDescriptions( setOf("squishy", "too hard") );
-		data.setCategories( setOf(201L, 202L) );
+		data.setTags( setOf("squishy things", "mountain equipment") );
 		data.setBrands(setOf(101L, 102L) );
 		data.setStocksNum(2);
         
@@ -887,7 +875,7 @@ public class DataImportApiTest {
 		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
 		data.setPNames(setOf("s_shoe", "h_shoe") );
 		data.setDescriptions( setOf("squishy", "too hard") );
-		data.setCategories( setOf(201L, 202L) );
+		data.setTags( setOf("squishy things", "mountain equipment") );
 		data.setBrands(setOf(101L, 102L) );
 		data.setStocksNum(4);
 		data.setFeatureSpecs(  createNewVariantsExpectedFeautreSpec());
@@ -929,7 +917,7 @@ public class DataImportApiTest {
 		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
 		data.setPNames(setOf("s_shoe", "h_shoe") );
 		data.setDescriptions( setOf("squishy", "too hard") );
-		data.setCategories( setOf(201L, 202L) );
+		data.setTags( setOf("squishy things", "mountain equipment") );
 		data.setBrands( setOf(101L, 102L) );
 		data.setFeatureSpecs(  createExpectedFeautreSpec());
 		data.setStocksNum(2);
@@ -950,7 +938,7 @@ public class DataImportApiTest {
 		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
 		data.setPNames(setOf("s_shoe", "h_shoe") );
 		data.setDescriptions( setOf("squishy", "too hard") );
-		data.setCategories( setOf(201L, 202L) );
+		data.setTags( setOf("squishy things", "mountain equipment") );
 		data.setBrands( setOf(101L, 102L) );
 		data.setFeatureSpecs(  createExpectedFeautreSpec());
 		data.setStocksNum(2);
@@ -997,7 +985,7 @@ public class DataImportApiTest {
 		data.setProductNames( setOf("Product to update", "hard shoes") );
 		data.setPNames(setOf("u_shoe", "h_shoe") );
 		data.setDescriptions( setOf("old desc", "too hard") );
-		data.setCategories( setOf(201L, 202L) );
+		data.setTags( setOf("squishy things", "mountain equipment") );
 		data.setBrands( setOf(101L, 102L) );
 		data.setFeatureSpecs(  createNewProductOnlyExpectedFeautreSpec());
 		data.setStocksNum(2);
@@ -1024,7 +1012,7 @@ public class DataImportApiTest {
 	private <T,V>  boolean  propertyValuesIn(List<T> entityList, Function<T,V> getter, Set<V> expectedValues) {
 		return entityList.stream()
 						.map(getter)
-						.collect(Collectors.toSet())
+						.collect(toSet())
 						.equals(expectedValues);
 	}
 	
@@ -1038,10 +1026,8 @@ public class DataImportApiTest {
 
 
 	private JSONObject createDataImportProperties() {
-		JSONObject colHeadersJson = createCsvHeaderJson();
 		
 		JSONObject json = new JSONObject();
-		json.put("headers", colHeadersJson);
 		json.put("dryrun", false);
 		json.put("update_product", false);
 		json.put("update_stocks", false);
@@ -1081,25 +1067,6 @@ public class DataImportApiTest {
 		return result;
 	}
 	
-	
-	
-	
-	
-
-	private JSONObject createCsvHeaderJson() {
-		JSONObject colHeadersJson = new JSONObject();
-		   colHeadersJson.put("name_header", "Product name");
-		   colHeadersJson.put("pname_header", "p_name");
-		   colHeadersJson.put("description_header", "description");
-		   colHeadersJson.put("barcode_header", "barcode");
-		   colHeadersJson.put("category_header", "category");
-		   colHeadersJson.put("brand_header", "brand");
-		   colHeadersJson.put("quantity_header", "quantity");
-		   colHeadersJson.put("price_header", "price");
-		   colHeadersJson.put("variant_id_header", "variant_id");
-		   colHeadersJson.put("external_id_header", "external_id");
-		return colHeadersJson;
-	}
 
 }
 
@@ -1113,7 +1080,7 @@ class ExpectedSavedData{
 	private Set<String> ProductNames;
 	private Set<String> PNames;
 	private Set<String>  descriptions;
-	private Set<Long> categories;
+	private Set<String> tags;
 	private Set<Long> brands;
 	private Set<TransactionCurrency> currencies;
 	private Set<JSONObject> featureSpecs;

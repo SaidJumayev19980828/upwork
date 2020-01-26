@@ -1,3 +1,4 @@
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -5,17 +6,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.Arrays;
-import java.util.List;
 
-import com.nasnav.dto.ProductRepresentationObject;
-import com.nasnav.dto.ProductSortOptions;
-import com.nasnav.dto.ProductsResponse;
-import com.nasnav.request.ProductSearchParam;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,11 +41,15 @@ import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
+import com.nasnav.dto.ProductRepresentationObject;
+import com.nasnav.dto.ProductSortOptions;
+import com.nasnav.dto.ProductsResponse;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
+import com.nasnav.request.ProductSearchParam;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.test.commons.TestCommons;
 
@@ -102,7 +101,7 @@ public class ProductApiTest {
 		
 		JSONObject productJson = createNewDummyProduct();		
 		
-		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(productJson.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/info"
@@ -163,7 +162,7 @@ public class ProductApiTest {
 		product.put("name","updated product");
 		product.put("brand_id", JSONObject.NULL);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(product.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  TestCommons.getHttpEntity(product.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<ProductUpdateResponse> response = 
 				template.exchange("/product/info"
@@ -195,7 +194,7 @@ public class ProductApiTest {
 	private ResponseEntity<ProductUpdateResponse> postProductData(BaseUserEntity user, JSONObject productJson)
 			throws JsonProcessingException {
 		
-		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  TestCommons.getHttpEntity(productJson.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<ProductUpdateResponse> response = 
 				template.exchange("/product/info"
@@ -229,7 +228,6 @@ public class ProductApiTest {
 		product.put("description", "Testing creating/updating product");
 		product.put("barcode", "BAR12345CODE");
 		product.put("brand_id", 101L);
-		product.put("category_id", 201L);
 		
 		return product;
 	}
@@ -394,7 +392,7 @@ public class ProductApiTest {
 	private ResponseEntity<String> postInvalidProductData(BaseUserEntity user, JSONObject productJson)
 			throws JsonProcessingException {				
 		
-		HttpEntity request =  TestCommons.getHttpEntity(productJson.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  TestCommons.getHttpEntity(productJson.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/info"
@@ -490,7 +488,7 @@ public class ProductApiTest {
 
 
 	private ResponseEntity<String> deleteBundle(BaseUserEntity user, Long bundleId) {
-		HttpEntity request =  TestCommons.getHttpEntity("" ,user.getAuthenticationToken());
+		HttpEntity<?> request =  TestCommons.getHttpEntity("" ,user.getAuthenticationToken());
 		ResponseEntity<String> response =
 				template.exchange("/product/bundle?product_id=" + bundleId
 						, HttpMethod.DELETE
@@ -674,8 +672,6 @@ public class ProductApiTest {
 		
 		ResponseEntity<String> response = deleteProduct(user, productId);
 		
-		JSONObject body = new JSONObject(response.getBody());
-		
 		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
 	}
 	
@@ -688,7 +684,7 @@ public class ProductApiTest {
 		
 		assertTrue(productRepository.existsById(productId)); //assert product exists before delete
 		
-		HttpEntity request =  TestCommons.getHttpEntity("" ,"InvalidToken");
+		HttpEntity<?> request =  TestCommons.getHttpEntity("" ,"InvalidToken");
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product?product_id=" + productId
@@ -812,7 +808,7 @@ public class ProductApiTest {
 
 
 	private ResponseEntity<String> deleteProduct(BaseUserEntity user, Long productId) {
-		HttpEntity request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
+		HttpEntity<?> request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product?product_id=" + productId

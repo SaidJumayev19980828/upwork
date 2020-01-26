@@ -2,7 +2,9 @@ package com.nasnav.commons.model.dataimport;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import lombok.Data;
 
@@ -14,7 +16,7 @@ public class ProductImportDTO {
 	protected String pname;
 	protected String description;
 	protected String barcode;
-	protected String category;
+	protected Set<String> tags;
 	protected String brand;
 	protected Integer quantity;
 	protected BigDecimal price;
@@ -23,5 +25,6 @@ public class ProductImportDTO {
 	
 	public ProductImportDTO() {
 		features = new HashMap<>();
+		tags = new HashSet<>();
 	}
 }

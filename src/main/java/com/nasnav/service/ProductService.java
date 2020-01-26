@@ -474,8 +474,9 @@ public class ProductService {
 		if (!params.sort.getValue().equals("price")) {
 			Path orderByAttr = root.get(params.sort.getValue());
 			Order orderBy = builder.asc(orderByAttr);
-			if (params.order.equals(SortOrder.DESC))
+			if (params.order.equals(SortOrder.DESC)) {
 				orderBy = builder.desc(orderByAttr);
+			}				
 			return orderBy;
 		}
 		return null;
@@ -566,6 +567,9 @@ public class ProductService {
 				.min( comparing(StocksEntity::getPrice));
 	}
 
+	
+	
+	
 	private Long getStockProductId(StocksEntity stock) {
 		return Optional.ofNullable(stock)
 						.map(StocksEntity::getProductVariantsEntity)
@@ -574,10 +578,11 @@ public class ProductService {
 						.orElse(0L);
 	}
 
+	
+	
 
-	public ProductUpdateResponse updateProduct(String productJson, Boolean isBundle) throws BusinessException {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+	public ProductUpdateResponse updateProduct(String productJson, Boolean isBundle) throws BusinessException {		
+		BaseUserEntity user =  securityService.getCurrentUser();
 
 		ObjectMapper mapper = createObjectMapper();
 		JsonNode rootNode;
@@ -1819,8 +1824,13 @@ public class ProductService {
 		if(productTagDTO.getTagIds() == null)
 			throw new BusinessException("Provided tags_ids can't be empty", "MISSING PARAM:tags_ids", HttpStatus.NOT_ACCEPTABLE);
 	}
+	
+	
+	
+	
+	
 
-	private Map validateAndGetProductMap(List<Long> productIds) throws BusinessException {
+	private Map<Long, ProductEntity> validateAndGetProductMap(List<Long> productIds) throws BusinessException {
 		Map<Long, ProductEntity> productsMap = new HashMap<>();
 
 		for(ProductEntity entity : productRepository.findByIdIn(productIds)) {
@@ -1829,23 +1839,31 @@ public class ProductService {
 
 		for(Long productId : productIds) {
 			if (productsMap.get(productId) == null)
-				throw new BusinessException("Provided product_id(" + productId + ") does't match any existing product",
+				throw new BusinessException(
+						format("Provided product_id(%d) does't match any existing product", productId),
 						"INVALID PARAM:product_id", HttpStatus.NOT_ACCEPTABLE);
 		}
 
 		return productsMap;
 	}
 
-	private Map validateAndGetTagMap(List<Long> tagIds) throws BusinessException {
+	
+	
+	
+	
+	
+	private Map<Long, TagsEntity> validateAndGetTagMap(List<Long> tagIds) throws BusinessException {
 		Map<Long, TagsEntity> tagsMap = new HashMap<>();
-
-		for(TagsEntity entity : orgTagRepo.findByIdIn(tagIds)) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		
+		for(TagsEntity entity : orgTagRepo.findByIdInAndOrganizationEntity_Id(tagIds, orgId)) {
 			tagsMap.put(entity.getId(), entity);
 		}
 
 		for(Long tagId : tagIds) {
 			if (tagsMap.get(tagId) == null)
-				throw new BusinessException("Provided tag_id(" + tagId + ") does't match any existing tag",
+				throw new BusinessException(
+						format("Provided tag_id(%d) doesn't match any existing tag for organization(%d)", tagId, orgId),
 						"INVALID PARAM:tag_id", HttpStatus.NOT_ACCEPTABLE);
 		}
 

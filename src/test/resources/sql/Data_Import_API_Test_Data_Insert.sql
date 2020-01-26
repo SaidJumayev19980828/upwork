@@ -32,6 +32,18 @@ INSERT INTO public.product_features(id,"name", p_name, description, organization
 VALUES(7003,'color', 'color', 'test feature', 99002);
 
 
+-- insert tags
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22001, 201, 'squishy things', 'squishy things', 'squishy_things', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22002, 202, 'mountain equipment', 'mountain equipment', 'mountain_equipment', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22003, 201, 'squishy things', 'squishy things', 'squishy_things', '{}', 0, 99002);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22004, 202, 'mountain equipment', 'mountain equipment', 'mountain_equipment', '{}', 0, 99002);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22005, 201, 'squishy things', 'squishy things', 'squishy_things', '{}', 0, 99003);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22006, 202, 'mountain equipment', 'mountain equipment', 'mountain_equipment', '{}', 0, 99003);
+
+
+
+
+
 
 -- dummy products
 insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200001, 'Bundle Product#1' , now() , now(), 0 , 99001, 201);
@@ -115,3 +127,8 @@ INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value,
 	VALUES(67001, 'OLD_LOCAL_VAL', 'REMOTE_VAL', 99001) ;
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id)
 	VALUES(67001, '310001', '5', 99001) ;
+
+
+
+-- insert products tags
+

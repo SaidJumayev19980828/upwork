@@ -1,5 +1,6 @@
 package com.nasnav.integration.microsoftdynamics;
 
+import static com.nasnav.commons.utils.EntityUtils.setOf;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -154,7 +155,7 @@ public class ProductImportEventListener extends AbstractMSDynamicsEventListener<
 		ProductImportDTO productImportDto = new ProductImportDTO();
 		productImportDto.setBarcode(product.getSku());
 		productImportDto.setBrand(product.getBrand());
-		productImportDto.setCategory(product.getCategory());
+		productImportDto.setTags( setOf(product.getCategory()));
 		productImportDto.setDescription(product.getItemDescription());
 		productImportDto.setExternalId(product.getAxId());
 		productImportDto.setName(product.getName());

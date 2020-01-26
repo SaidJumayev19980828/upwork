@@ -4,7 +4,6 @@ import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CSV_PARSE_FAILURE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_INVALID_ENCODING;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_FILE_UPLOADED;
-import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMPORT_MISSING_HEADER_NAME;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMPORT_MISSING_PARAM;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_SHOP_ID_NOT_EXIST;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_CHANGE_OTHER_ORG_SHOP;
@@ -17,14 +16,15 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 
-import org.apache.commons.beanutils.BeanMap;
 import org.jboss.logging.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -37,10 +37,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
+import com.nasnav.commons.utils.MapBuilder;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dto.CsvHeaderNamesDTO;
 import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.enumerations.TransactionCurrency;
@@ -88,9 +88,27 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	
 	private Logger logger = Logger.getLogger(getClass());
 
-	private final List<String> csvBaseHeaders = Arrays.asList(
-			new String[]{"product_name", "barcode", "tags", "brand", "price", "quantity", "description"
-					, "variant_id", "external_id"});
+	
+	
+	
+	private final Map<String,String> fieldToColumnHeaderMapping = 
+			MapBuilder.<String, String>map()
+				.put("name", "product_name")
+				.put("barcode", "barcode")
+				.put("tags", "tags")
+				.put("brand", "brand")
+				.put("price", "price")
+				.put("quantity", "quantity")
+				.put("description", "description")
+				.put("variantId", "variant_id")
+				.put("externalId", "external_id")
+				.getMap();
+	
+	
+	
+	private final Set<String> csvBaseHeaders = new HashSet<String>(fieldToColumnHeaderMapping.values());
+	
+	
 
 	@Transactional(rollbackFor = Throwable.class)
 	public ProductListImportResponse importProductListFromCSV(@Valid MultipartFile file,
@@ -104,6 +122,9 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		return dataImportService.importProducts(rows, importMetadata);
 
 	}
+	
+	
+	
 
 	private ProductImportMetadata getImportMetaData(ProductListImportDTO csvImportMetaData) {
 		ProductImportMetadata importMetadata = new ProductImportMetadata();
@@ -117,6 +138,10 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 		return importMetadata;
 	}
+	
+	
+	
+	
 
 	private List<ProductImportDTO> parseCsvFile(MultipartFile file, ProductListImportDTO metaData) throws BusinessException {
 		List<ProductFeaturesEntity> orgFeatures = featureRepo.findByShopId( metaData.getShopId() );
@@ -210,18 +235,8 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 	private ColumnMapping createAttrToColMapping(ProductListImportDTO metaData) {
-		Map<Object,Object> beanMap = new BeanMap(metaData.getHeaders());
-		Map<String,String> attrToColumnMap = beanMap.entrySet()
-													.stream()
-													.collect(
-														Collectors.toMap(
-																e -> e.getKey().toString()
-																,e-> e.getValue().toString()
-																)
-													  );
-		
 		ColumnMapping mapping = new ColumnMapping();
-		mapping.attributesToColumnNames(attrToColumnMap);
+		mapping.attributesToColumnNames(fieldToColumnHeaderMapping);
 		
 		return mapping;
 	}
@@ -248,9 +263,8 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		Long shopId = metaData.getShopId();
 		String encoding = metaData.getEncoding();
 		Integer currency = metaData.getCurrency();
-		CsvHeaderNamesDTO headerNames = metaData.getHeaders();
 		
-		if( anyIsNull(shopId, encoding, currency, headerNames)) {
+		if( anyIsNull(shopId, encoding, currency)) {
 			throw new BusinessException(
 					ERR_PRODUCT_IMPORT_MISSING_PARAM
 					, "MISSING PARAM"
@@ -261,24 +275,11 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		
 		validateEncodingCharset(encoding);		
 		
-		validateStockCurrency(currency);
-		
-		validateCsvHeaderNames( headerNames);
+		validateStockCurrency(currency);		
 	}
 
 
 
-
-
-	private void validateCsvHeaderNames(CsvHeaderNamesDTO headers) throws BusinessException{
-		if(anyIsNull(headers.getBarcode(), headers.getName(), headers.getPrice(), headers.getQuantity())) {
-			throw new BusinessException(
-					ERR_PRODUCT_IMPORT_MISSING_HEADER_NAME 
-					, "MISSING PARAM:csv-header(s)"
-					, HttpStatus.NOT_ACCEPTABLE);
-		}
-		
-	}
 
 
 
