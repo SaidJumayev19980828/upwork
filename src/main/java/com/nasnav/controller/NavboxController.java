@@ -183,8 +183,8 @@ public class NavboxController {
 	public List<ShopRepresentationObject> getLocationShops(@RequestParam(name = "org_id", required = false) Long organizationId,
 											  @RequestParam(name = "long", required = false) Double longitude,
 											  @RequestParam(name = "lat", required = false) Double lattitude,
-											  @RequestParam(name = "range", required = false) Long range,
+											  @RequestParam(name = "radius", required = false) Double radius,
 											  @RequestParam(name = "name", required = false) String name) throws BusinessException {
-		return shopService.getLocationShops(organizationId, longitude, lattitude, range, name);
+		return shopService.getLocationShops(organizationId, longitude, lattitude, radius, name);
 	}
 }
