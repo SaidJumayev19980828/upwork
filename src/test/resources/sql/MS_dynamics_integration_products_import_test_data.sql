@@ -4,27 +4,52 @@ INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002
 
 
 --inserting categories
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(201, 'PERFUMES', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(202, 'SKIN CARE', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(203, 'MAKE UP', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(204, 'FRAGRANCE', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(205, 'BC POSM', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(206, 'BABY CARE', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(207, 'SC POSM', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(208, 'FOOT CARE', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(209, 'FR POSM', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(210, 'DIM', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(211, 'TREATMENT', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(212, 'FOOTC POSM', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(213, 'MAKE-UP AC', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(214, 'FORTUNE', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(215, 'HAIR CARE', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(217, 'READY TO WEAR', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(218, 'MU POSM', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(219, 'BODY', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(220, 'DELSEY', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(221, 'ACCESSORY', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(222, 'GIFT VOUCHER', now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(201, 'PERFUMES'		, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(202, 'SKIN CARE'		, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(203, 'MAKE UP'		, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(204, 'FRAGRANCE'		, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(205, 'BC POSM'		, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(206, 'BABY CARE'		, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(207, 'SC POSM'		, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(208, 'FOOT CARE'		, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(209, 'FR POSM'		, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(210, 'DIM'			, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(211, 'TREATMENT'		, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(212, 'FOOTC POSM'	, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(213, 'MAKE-UP AC'	, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(214, 'FORTUNE'		, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(215, 'HAIR CARE'		, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(217, 'READY TO WEAR'	, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(218, 'MU POSM'		, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(219, 'BODY'			, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(220, 'DELSEY'		, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(221, 'ACCESSORY'		, now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(222, 'GIFT VOUCHER'	, now(), now());
+
+
+
+--tags                                                                                                                                      
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(201, 'PERFUMES'		,'PERFUMES'		, 'prefumes', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(202, 'SKIN CARE'	,'SKIN CARE'	, 'skin-care', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(203, 'MAKE UP'		,'MAKE UP'		, 'make-up', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(204, 'FRAGRANCE'	,'FRAGRANCE'	, 'fragrance', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(205, 'BC POSM'		,'BC POSM'		, 'bc-posm', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(206, 'BABY CARE'	,'BABY CARE'	, 'baby-care', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(207, 'SC POSM'		,'SC POSM'		, 'sc-posm', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(208, 'FOOT CARE'	,'FOOT CARE'	, 'foot-care', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(209, 'FR POSM'		,'FR POSM'		, 'fr-posm', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(210, 'DIM'			,'DIM'			, 'dim', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(211, 'TREATMENT'	,'TREATMENT'	, 'treatment', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(212, 'FOOTC POSM'	,'FOOTC POSM'	, 'footc-posm', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(213, 'MAKE-UP AC'	,'MAKE-UP AC'	, 'make-up-ac', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(214, 'FORTUNE'		,'FORTUNE'		, 'fortune', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(215, 'HAIR CARE'	,'HAIR CARE'	, 'hair-care', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(217, 'READY TO WEAR','READY TO WEAR', 'ready-to-wear', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(218, 'MU POSM'		,'MU POSM'		, 'mu-posm', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(219, 'BODY'			,'BODY'			, 'body', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(220, 'DELSEY'		,'DELSEY'		, 'delsey', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(221, 'ACCESSORY'	,'ACCESSORY'	, 'accessory', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(222, 'GIFT VOUCHER'	,'GIFT VOUCHER'	, 'gift-voucher', '{}', 0, 99001);
 
 
 

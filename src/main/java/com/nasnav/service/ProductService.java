@@ -1,7 +1,9 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
+import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_BUNDLE_ITEM;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_BY_OTHER_ORG_USER;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_USED_IN_NEW_ORDERS;
@@ -1464,8 +1466,7 @@ public class ProductService {
 
 
 	public VariantUpdateResponse updateVariant(VariantUpdateDTO variant) throws BusinessException {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+		BaseUserEntity user =  securityService.getCurrentUser();
 		Long orgId = user.getOrganizationId();
 
 		validateVariant(variant, orgId);
@@ -1623,7 +1624,7 @@ public class ProductService {
 
 		Operation opr = variant.getOperation();
 
-		if( opr.equals( Operation.UPDATE)) {
+		if( opr.equals( UPDATE)) {
 			entity = productVariantsRepository.findById( variant.getVariantId()).get();
 		}
 
@@ -1650,7 +1651,10 @@ public class ProductService {
 			entity.setFeatureSpec( variant.getFeatures() );
 		}
 		
-		entity.setPname( getPname(variant, opr) );
+		String pname = getPname(variant, opr);
+		if(!isBlankOrNull(pname)) {
+			entity.setPname(pname);
+		}		
 
 		entity = productVariantsRepository.save(entity);
 
@@ -1660,22 +1664,22 @@ public class ProductService {
 
 
 
-	private String getPname(VariantUpdateDTO variant, Operation opr) {
-		String pname = encodeUrl(variant.getName());
-		if(variant.isUpdated("pname") && !StringUtils.isBlankOrNull( variant.getPname()) ) {
-			pname = variant.getPname();
-		}else if(opr.equals( CREATE )){
-			pname = createPnameFromVariantFeatures(variant);
-		}
-		return pname;
+	private String getPname(VariantUpdateDTO variantDto, Operation opr) {
+		if(opr.equals( CREATE )){
+			return getDefaultVariantPName(variantDto);
+		}else if(variantDto.isUpdated("pname") && !StringUtils.isBlankOrNull( variantDto.getPname()) ) {
+			return variantDto.getPname();
+		}else {
+			return "";
+		}		
 	}
 
 
 
 
-	private String createPnameFromVariantFeatures(VariantUpdateDTO variant) {
+	private String getDefaultVariantPName(VariantUpdateDTO variant) {
 		JSONObject json = new JSONObject(variant.getFeatures());
-
+		
 		StringBuilder pname = new StringBuilder();
 		for(String key: json.keySet()) {
 			String featureName = getProductFeatureName(key);

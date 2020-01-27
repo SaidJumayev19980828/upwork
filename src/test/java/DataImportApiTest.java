@@ -1,4 +1,6 @@
 import static com.nasnav.commons.utils.EntityUtils.setOf;
+import static com.nasnav.enumerations.TransactionCurrency.EGP;
+import static com.nasnav.enumerations.TransactionCurrency.USD;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.util.stream.Collectors.toSet;
@@ -722,7 +724,6 @@ public class DataImportApiTest {
 	private void assertTestProductUpdated(ProductEntity updatedProduct) {
 		assertEquals("TT232222", updatedProduct.getBarcode());
         assertEquals("Squishy shoes", updatedProduct.getName());
-        assertEquals("s_shoe", updatedProduct.getPname());
         assertEquals("squishy", updatedProduct.getDescription());
         assertEquals(101L, updatedProduct.getBrandId().longValue());
 	}
@@ -735,7 +736,6 @@ public class DataImportApiTest {
 	private void assertTestVariantUpdated(ProductVariantsEntity updatedVariant) {
 		assertEquals("TT232222", updatedVariant.getBarcode());
         assertEquals("Squishy shoes", updatedVariant.getName());
-        assertEquals("s_shoe", updatedVariant.getPname());
         assertEquals("squishy", updatedVariant.getDescription());
 	}
 	
@@ -837,7 +837,7 @@ public class DataImportApiTest {
 		
 		data.setBarcodes( setOf("1354ABN", "87847777EW", "878466658S", "878849956E") );
 		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
-		data.setVariantsPNames(setOf("squishy-shoes", "hard-shoes") );
+		data.setVariantsPNames(setOf("color-lettuce-heart-size-xxl", "color-fo7loqy-size-m", "color-browny-size-l", "color-pinky-size-xxxl") );
 		data.setProductPNames(setOf("squishy-shoes", "hard-shoes") );
 		data.setDescriptions( setOf("squishy", "too hard") );
 		data.setTags( setOf("squishy things", "mountain equipment") );
@@ -880,8 +880,8 @@ public class DataImportApiTest {
 		
 		data.setBarcodes( setOf("TT232222", "87847777EW") );
 		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
-		data.setVariantsPNames(setOf("color-fo7loqy-size-m", "color-lettuce-heart-size-xxl") );
-		data.setProductPNames(setOf("squishy-shoes", "hard-shoes") );
+		data.setVariantsPNames(setOf("color-fo7loqy-size-m", "u_shoe") );
+		data.setProductPNames(setOf("u_shoe", "hard-shoes") );
 		data.setDescriptions( setOf("squishy", "too hard") );
 		data.setTags( setOf("squishy things", "mountain equipment") );
 		data.setBrands( setOf(101L, 102L) );
@@ -898,12 +898,11 @@ public class DataImportApiTest {
 
 		data.setQuantities( setOf(30,102) );
 		data.setPrices( setOf(new BigDecimal("15"), new BigDecimal("88.6")));
-		data.setCurrencies( setOf(TransactionCurrency.EGP, TransactionCurrency.USD));
-		
+		data.setCurrencies( setOf(EGP, USD));		
 		data.setBarcodes( setOf("TT232222", "87847777EW") );
 		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
-		data.setVariantsPNames(setOf("squishy-shoes", "hard-shoes") );
-		data.setProductPNames(setOf("squishy-shoes", "hard-shoes") );
+		data.setVariantsPNames(setOf("u_shoe", "color-fo7loqy-size-m") );
+		data.setProductPNames(setOf("u_shoe", "hard-shoes") );
 		data.setDescriptions( setOf("squishy", "too hard") );
 		data.setTags( setOf("squishy things", "mountain equipment") );
 		data.setBrands( setOf(101L, 102L) );
