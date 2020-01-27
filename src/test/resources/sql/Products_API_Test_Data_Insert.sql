@@ -134,7 +134,8 @@ INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(
 
 
 insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5001, 'tag_1', 'tag_1', 201, 99001, '');
-
+insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5002, 'tag_2', 'tag_2', 201, 99002, '');
+insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5003, 'tag_3', 'tag_2', 201, 99002, '');
 
 insert into product_tags(product_id, tag_id) values(1001, 5001);
 insert into product_tags(product_id, tag_id) values(1005, 5001);

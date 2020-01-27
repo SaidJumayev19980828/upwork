@@ -1,14 +1,20 @@
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
+import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.json.JSONObject;
@@ -41,6 +47,7 @@ import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductSortOptions;
 import com.nasnav.dto.ProductsResponse;
@@ -49,6 +56,7 @@ import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.TagsEntity;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.test.commons.TestCommons;
@@ -60,8 +68,8 @@ import net.jcip.annotations.NotThreadSafe;
 @AutoConfigureWebTestClient
 @PropertySource("classpath:database.properties")
 @NotThreadSafe
-@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_API_Test_Data_Insert.sql"})
-@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Products_API_Test_Data_Insert.sql"})
+@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class ProductApiTest {
 	
 	@Autowired
@@ -93,6 +101,9 @@ public class ProductApiTest {
 	
 	@Autowired
 	private BasketRepository basketRepo;
+	
+	@Autowired
+	private TagsRepository tagsRepo;
 
 
 	@Test
@@ -392,7 +403,7 @@ public class ProductApiTest {
 	private ResponseEntity<String> postInvalidProductData(BaseUserEntity user, JSONObject productJson)
 			throws JsonProcessingException {				
 		
-		HttpEntity<?> request =  TestCommons.getHttpEntity(productJson.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(productJson.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/info"
@@ -808,7 +819,7 @@ public class ProductApiTest {
 
 
 	private ResponseEntity<String> deleteProduct(BaseUserEntity user, Long productId) {
-		HttpEntity<?> request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity("" , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product?product_id=" + productId
@@ -849,6 +860,9 @@ public class ProductApiTest {
 	}
 
 
+	
+	
+	
 	@Test
 	public void testGetProductsFilters() {
 		/* try to get products by different filters */
@@ -983,4 +997,73 @@ public class ProductApiTest {
 		for(int i=0;i<productRepObj.size()-1;i++)
 			Assert.assertTrue(productRepObj.get(i).getPrice().compareTo(productRepObj.get(i+1).getPrice()) >= 0);
     }
+    
+    
+    
+    
+    
+    @Test
+    public void updateTagsTest() {
+    	//assign two tags to two products
+    	BaseUserEntity user = empUserRepo.getById(69L);
+
+    	List<Long> productIds = asList(1013L, 1014L);
+    	List<Long> tagsIds = asList(5002L, 5003L);
+    	Set<TagsEntity> tags = new HashSet<>(tagsRepo.findByIdIn(tagsIds));
+    			
+		assertTrue("assert products had no tags assigned for them.", allProductsHaveNoTags(productIds));
+		//---------------------------------------------------------------------
+		ResponseEntity<String> response = runUpdateTagsRequest(user, productIds, tagsIds);
+		
+		//---------------------------------------------------------------------
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertFalse("assert products have tags now", allProductsHaveNoTags(productIds));		
+		assertTrue("each product should have the 2 tags", allProductsHaveTags(productIds, tags) );
+    }
+
+    
+    
+
+
+
+	private ResponseEntity<String> runUpdateTagsRequest(BaseUserEntity user, List<Long> productIds,
+			List<Long> tagsIds) {
+		JSONObject requestJson = 
+				json()
+				.put("products_ids", productIds)
+				.put("tags_ids", tagsIds);
+		
+		HttpEntity<?> request =  getHttpEntity(requestJson.toString() , user.getAuthenticationToken());
+		
+		ResponseEntity<String> response = 
+				template.exchange("/product/tag"
+						, HttpMethod.POST
+						, request
+						, String.class);
+		return response;
+	}
+
+
+    
+    
+
+
+	private boolean allProductsHaveTags(List<Long> productIds, Set<TagsEntity> tags) {
+		return productRepository
+				.findByIdIn(productIds)
+				.stream()
+				.map(ProductEntity::getTags)
+				.allMatch(t -> Objects.equals(tags, t));
+	}
+
+
+
+
+	private boolean allProductsHaveNoTags(List<Long> productIds) {
+		return productRepository
+				.findByIdIn(productIds)
+				.stream()
+				.map(ProductEntity::getTags)
+				.allMatch(Set::isEmpty);
+	}
 }

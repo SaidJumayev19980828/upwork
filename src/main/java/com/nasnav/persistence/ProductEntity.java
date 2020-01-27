@@ -3,6 +3,7 @@ package com.nasnav.persistence;
 import static lombok.AccessLevel.NONE;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -74,7 +75,9 @@ public class ProductEntity {
 
 	public ProductEntity() {
 		removed = 0;
+		tags = new HashSet<>();
 	}
+	
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -137,7 +140,7 @@ public class ProductEntity {
     private Set<ProductVariantsEntity> productVariants;
 
 
-    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

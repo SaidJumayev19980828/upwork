@@ -1,5 +1,7 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.StringUtils.encodeUrl;
+import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_BUNDLE_ITEM;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_BY_OTHER_ORG_USER;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_USED_IN_NEW_ORDERS;
@@ -14,17 +16,27 @@ import static java.util.Optional.ofNullable;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
-import javax.persistence.criteria.*;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Expression;
+import javax.persistence.criteria.Order;
+import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
-import com.nasnav.persistence.*;
-import com.nasnav.request.ProductSearchParam;
 import org.apache.commons.beanutils.BeanUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -45,8 +57,46 @@ import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.BasketRepository;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.BundleRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ProductImagesRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.TagsRepository;
+import com.nasnav.dto.BundleDTO;
+import com.nasnav.dto.BundleElementUpdateDTO;
+import com.nasnav.dto.Pair;
+import com.nasnav.dto.ProductBaseInfo;
+import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductImageUpdateDTO;
+import com.nasnav.dto.ProductImgDTO;
+import com.nasnav.dto.ProductRepresentationObject;
+import com.nasnav.dto.ProductSortOptions;
+import com.nasnav.dto.ProductTagDTO;
+import com.nasnav.dto.ProductUpdateDTO;
+import com.nasnav.dto.ProductsResponse;
+import com.nasnav.dto.StockDTO;
+import com.nasnav.dto.TagsRepresentationObject;
+import com.nasnav.dto.VariantDTO;
+import com.nasnav.dto.VariantFeatureDTO;
+import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.BrandsEntity;
+import com.nasnav.persistence.BundleEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.ProductImagesEntity;
+import com.nasnav.persistence.ProductTypes;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.TagsEntity;
 import com.nasnav.request.BundleSearchParam;
+import com.nasnav.request.ProductSearchParam;
 import com.nasnav.response.BundleResponse;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
@@ -88,9 +138,6 @@ public class ProductService {
 
 	@Autowired
 	private EmployeeUserRepository empRepo;
-
-	@Autowired
-	private CategoriesRepository categoriesRepo;
 
 
 	@Autowired
@@ -568,19 +615,9 @@ public class ProductService {
 	}
 
 	
-	
-	
-	private Long getStockProductId(StocksEntity stock) {
-		return Optional.ofNullable(stock)
-						.map(StocksEntity::getProductVariantsEntity)
-						.map(ProductVariantsEntity::getProductEntity)
-						.map(ProductEntity::getId)
-						.orElse(0L);
-	}
 
 	
 	
-
 	public ProductUpdateResponse updateProduct(String productJson, Boolean isBundle) throws BusinessException {		
 		BaseUserEntity user =  securityService.getCurrentUser();
 
@@ -734,21 +771,8 @@ public class ProductService {
 
 
 
-
-	private void validateCategoryId(JsonNode categoryId) throws BusinessException {
-		if(categoryId.isMissingNode())
-			return ;
-
-		if(categoryId.isNull())
-			throw new BusinessException("category_id cannot be Null!" , "MISSING_PARAM:category_id" , HttpStatus.NOT_ACCEPTABLE);
-
-		long id = categoryId.asLong();
-		if(!categoriesRepo.existsById(id) )
-			throw new BusinessException("No Category exists with ID: " + id + " !" , "INVALID_PARAM:category_id" , HttpStatus.NOT_ACCEPTABLE);
-	}
-
-
-
+	
+	
 
 	private void validateBrandId(BaseUserEntity user, JsonNode brandId) throws BusinessException {
 		if(brandId.isMissingNode() || brandId.isNull()) //brand_id is optional and can be null
@@ -1612,8 +1636,7 @@ public class ProductService {
 		if(variant.isUpdated("name")){
 			entity.setName( variant.getName());
 		}
-
-		setPnameOrGenerateDefault(variant, entity, opr);
+		
 
 		if(variant.isUpdated("description")) {
 			entity.setDescription( variant.getDescription() );
@@ -1626,6 +1649,8 @@ public class ProductService {
 		if(variant.isUpdated("features")) {
 			entity.setFeatureSpec( variant.getFeatures() );
 		}
+		
+		entity.setPname( getPname(variant, opr) );
 
 		entity = productVariantsRepository.save(entity);
 
@@ -1635,16 +1660,14 @@ public class ProductService {
 
 
 
-	private void setPnameOrGenerateDefault(VariantUpdateDTO variant, ProductVariantsEntity entity,
-	                                       Operation opr) {
-
+	private String getPname(VariantUpdateDTO variant, Operation opr) {
+		String pname = encodeUrl(variant.getName());
 		if(variant.isUpdated("pname") && !StringUtils.isBlankOrNull( variant.getPname()) ) {
-			entity.setPname(variant.getPname() );
-		}else if(opr.equals( Operation.CREATE )){
-			String defaultPname = createPnameFromVariantFeatures(variant);
-			entity.setPname(defaultPname);
+			pname = variant.getPname();
+		}else if(opr.equals( CREATE )){
+			pname = createPnameFromVariantFeatures(variant);
 		}
-
+		return pname;
 	}
 
 
@@ -1662,19 +1685,18 @@ public class ProductService {
 				pname.append("-");
 
 			String toAppend = featureName + "-"+value;
-			pname.append(StringUtils.encodeUrl(toAppend));
+			pname.append(encodeUrl(toAppend));
 		}
 
-
-		String defaultPname = StringUtils.encodeUrl(pname.toString());
-		return defaultPname;
+		String pnameStr = pname.length() == 0? variant.getName() : pname.toString();
+		return encodeUrl(pnameStr);
 	}
 
 
 
 
 	private String getProductFeatureName(String idAsStr) {
-		return Optional.ofNullable(idAsStr)
+		return ofNullable(idAsStr)
 				.map(Integer::valueOf)
 				.map(productFeaturesRepository::findById)
 				.filter(Optional::isPresent)
@@ -1778,6 +1800,9 @@ public class ProductService {
 		return dto;
 	}
 
+	
+	
+	
 	public boolean updateProductTags(ProductTagDTO productTagDTO) throws BusinessException {
 		validateProductTagDTO(productTagDTO);
 
@@ -1796,6 +1821,9 @@ public class ProductService {
 		}
 		return true;
 	}
+	
+	
+	
 
 	public boolean deleteProductTags(ProductTagDTO productTagDTO) throws BusinessException {
 		validateProductTagDTO(productTagDTO);

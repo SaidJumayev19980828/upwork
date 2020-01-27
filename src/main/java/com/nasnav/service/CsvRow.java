@@ -20,7 +20,6 @@ public class CsvRow {
 	protected Long variantId;
 	protected String externalId;
 	protected String name;
-	protected String pname;
 	protected String description;
 	protected String barcode;
 	protected String tags;
@@ -47,7 +46,6 @@ public class CsvRow {
 		product.setExternalId(externalId);
 		product.setFeatures(getFeatures());
 		product.setName(name);
-		product.setPname(pname);
 		product.setPrice(price);
 		product.setQuantity(quantity);
 		product.setTags(tagsSet);

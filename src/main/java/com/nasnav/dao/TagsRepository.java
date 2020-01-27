@@ -1,13 +1,14 @@
 package com.nasnav.dao;
 
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.TagsEntity;
+import java.util.List;
+import java.util.Set;
+
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
-import java.util.Set;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.TagsEntity;
 
 public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
 
@@ -23,6 +24,6 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
             "and (t.id in(select l1.childId from TagGraphEdgesEntity l1) or t.id in(select l2.parentId from TagGraphEdgesEntity l2))")
     List<TagsEntity> getTagsByOrgId(@Param("org") OrganizationEntity org);
     
-	Set<TagsEntity> findByNameIn(Set<String> tags);
+	Set<TagsEntity> findByNameInAndOrganizationEntity_Id(Set<String> tags, Long orgId);
 
 }

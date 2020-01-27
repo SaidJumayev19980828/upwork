@@ -1,17 +1,25 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_BRAND_NAME_NOT_EXIST;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CONVERT_TO_JSON;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PREPARE_PRODUCT_DTO_DATA;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_DB_SAVE;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_TAGS_NOT_FOUND;
+import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -30,11 +38,11 @@ import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.CategoriesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.ProductImportMetadata;
+import com.nasnav.dto.ProductTagDTO;
 import com.nasnav.dto.ProductUpdateDTO;
 import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.dto.VariantUpdateDTO;
@@ -43,6 +51,7 @@ import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.ProductListImportResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.VariantUpdateResponse;
@@ -52,8 +61,6 @@ import lombok.Data;
 @Service
 public class DataImportServiceImpl implements DataImportService {
 
-    @Autowired
-    private CategoriesRepository categoriesRepo;
 
     @Autowired
     private BrandsRepository brandRepo;
@@ -108,7 +115,7 @@ public class DataImportServiceImpl implements DataImportService {
             ProductData data = productsData.get(i);
             try {
                 saveSingleProductDataToDB(data, importMetaData);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.error(e, e);
 
                 StringBuilder msg = new StringBuilder();
@@ -137,15 +144,7 @@ public class DataImportServiceImpl implements DataImportService {
 
     private void saveSingleProductDataToDB(ProductData product, ProductImportMetadata importMetaData) throws BusinessException {
         if (product.isExisting()) {
-            if (importMetaData.isUpdateProduct()) {
-                saveProductDto(product.getProductDto());
-                VariantUpdateResponse variantResponse = productService.updateVariant(product.getVariantDto());
-                saveExternalMapping(product, variantResponse.getVariantId());
-            }
-
-            if (importMetaData.isUpdateStocks()) {
-                stockService.updateStock(product.getStockDto());
-            }
+            updateProduct(product, importMetaData);
         } else {
             saveNewImportedProduct(product);
         }
@@ -153,20 +152,115 @@ public class DataImportServiceImpl implements DataImportService {
     }
 
 
-    private void saveNewImportedProduct(ProductData dto) throws BusinessException {
-        Long productId = saveProductDto(dto.getProductDto());
-        dto.getVariantDto().setProductId(productId);
-        VariantUpdateResponse variantResponse = productService.updateVariant(dto.getVariantDto());
+
+
+	private void updateProduct(ProductData product, ProductImportMetadata importMetaData) throws BusinessException {
+		if (importMetaData.isUpdateProduct()) {
+		    Long productId = saveProductDto(product.getProductDto());
+		    VariantUpdateResponse variantResponse = productService.updateVariant(product.getVariantDto());
+		    saveProductTags(product, productId);
+		    saveExternalMapping(product, variantResponse.getVariantId());
+		}
+
+		if (importMetaData.isUpdateStocks()) {
+		    stockService.updateStock(product.getStockDto());
+		}
+	}
+    
+    
+    
+
+
+    private void saveNewImportedProduct(ProductData data) throws BusinessException {
+        Long productId = saveProductDto(data.getProductDto());
+        data.getVariantDto().setProductId(productId);
+        
+        VariantUpdateResponse variantResponse = productService.updateVariant(data.getVariantDto());
         Long variantId = variantResponse.getVariantId();
 
-        dto.getStockDto().setVariantId(variantId);
-        stockService.updateStock(dto.getStockDto());
-        saveExternalMapping(dto, variantId);
+        data.getStockDto().setVariantId(variantId);
+        stockService.updateStock(data.getStockDto());
+        
+        saveProductTags(data, productId);
+
+        saveExternalMapping(data, variantId);
     }
 
+
+
+
+    
+	private void saveProductTags(ProductData data, Long productId) throws BusinessException {
+		Long orgId = security.getCurrentUserOrganizationId();
+        Set<String> tagsNames = data.getTagsNames();
+        Map<String, TagsEntity> tagsMap = getTagsNamesMap(orgId, tagsNames);
+        
+        validateTags(orgId, tagsNames, tagsMap);        
+        
+        saveProductTagsToDB(tagsMap, productId);
+	}
+
+
+
+
+	private Map<String, TagsEntity> getTagsNamesMap(Long orgId, Set<String> tagsNames) {
+		return tagsRepo
+				.findByNameInAndOrganizationEntity_Id(tagsNames, orgId)
+				.stream()
+				.collect(toMap(TagsEntity::getName, t -> t));
+	}
+
+
+
+
+	private void saveProductTagsToDB(Map<String, TagsEntity> tagsMap, Long productId) throws BusinessException {
+		ProductTagDTO productTagDTO = new ProductTagDTO();
+        List<Long> tagIds = getTagIdList(tagsMap);
+        productTagDTO.setProductIds(asList(productId));
+        productTagDTO.setTagIds(tagIds);
+        
+        productService.updateProductTags(productTagDTO);
+	}
+
+
+
+
+	private List<Long> getTagIdList(Map<String, TagsEntity> tagsMap) {
+		return tagsMap
+	    		.values()
+	    		.stream()
+	    		.map(TagsEntity::getId)
+	    		.collect(toList());
+	}
+
+
+
+
+	private void validateTags(Long orgId, Set<String> tagsNames, Map<String, TagsEntity> tagsMap)
+			throws BusinessException {
+		Set<String> nonExistingTags = 
+        		tagsNames
+        		.stream()
+        		.filter(tagName -> !tagsMap.keySet().contains(tagName))
+        		.collect(toSet());
+        
+        if(!nonExistingTags.isEmpty()) {
+        	throw new BusinessException(
+        				String.format(ERR_TAGS_NOT_FOUND, nonExistingTags, orgId)
+        				, "INVLAID PRODUCT DATA"
+        				, NOT_ACCEPTABLE
+        			);
+        }
+	}
+
+    
+    
+    
     private void saveExternalMapping(ProductData dto, Long variantId) throws BusinessException{
-        if (dto.getExternalId() != null)
-            integrationService.addMappedValue(security.getCurrentUserOrganizationId(), MappingType.PRODUCT_VARIANT, variantId.toString(), dto.getExternalId());
+        if ( !anyIsNull(dto.getExternalId(), variantId) ) {
+        	Long orgId = security.getCurrentUserOrganizationId();
+        	integrationService.addMappedValue(orgId, PRODUCT_VARIANT, variantId.toString(), dto.getExternalId());
+        }            
     }
 
     

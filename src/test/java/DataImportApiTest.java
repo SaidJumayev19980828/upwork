@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -765,13 +766,13 @@ public class DataImportApiTest {
         
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getBarcode, expected.getBarcodes())	);
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getName, expected.getProductNames()) );
-        assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getPname, expected.getPNames()) );
+        assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getPname, expected.getVariantsPNames()) );
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getDescription, expected.getDescriptions()) );
         assertTrue( jsonValuesIn(variants, ProductVariantsEntity::getFeatureSpec, expected.getFeatureSpecs()) );
         
         
         assertTrue( propertyValuesIn(products, ProductEntity::getName, expected.getProductNames()) );
-        assertTrue( propertyValuesIn(products, ProductEntity::getPname, expected.getPNames()) );
+        assertTrue( propertyValuesIn(products, ProductEntity::getPname, expected.getProductPNames()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getDescription, expected.getDescriptions()) );
         assertTrue( propertyValuesIn(products, this::getFirstTagName, expected.getTags()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getBrandId, expected.getBrands()) );
@@ -786,7 +787,7 @@ public class DataImportApiTest {
 				.stream()
 				.findFirst()
 				.map(TagsEntity::getName)
-				.orElse("");
+				.orElse(null);
 	}
 	
 	
@@ -814,7 +815,8 @@ public class DataImportApiTest {
 		
 		data.setBarcodes( setOf("1354ABN", "87847777EW") );
 		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
-		data.setPNames(setOf("s_shoe", "h_shoe") );
+		data.setVariantsPNames(setOf("squishy-shoes", "hard-shoes") );
+		data.setProductPNames(setOf("squishy-shoes", "hard-shoes") );
 		data.setDescriptions( setOf("squishy", "too hard") );
 		data.setTags( setOf("squishy things", "mountain equipment") );
 		data.setBrands(setOf(101L, 102L) );
@@ -835,7 +837,8 @@ public class DataImportApiTest {
 		
 		data.setBarcodes( setOf("1354ABN", "87847777EW", "878466658S", "878849956E") );
 		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
-		data.setPNames(setOf("s_shoe", "h_shoe") );
+		data.setVariantsPNames(setOf("squishy-shoes", "hard-shoes") );
+		data.setProductPNames(setOf("squishy-shoes", "hard-shoes") );
 		data.setDescriptions( setOf("squishy", "too hard") );
 		data.setTags( setOf("squishy things", "mountain equipment") );
 		data.setBrands(setOf(101L, 102L) );
@@ -877,7 +880,8 @@ public class DataImportApiTest {
 		
 		data.setBarcodes( setOf("TT232222", "87847777EW") );
 		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
-		data.setPNames(setOf("s_shoe", "h_shoe") );
+		data.setVariantsPNames(setOf("color-fo7loqy-size-m", "color-lettuce-heart-size-xxl") );
+		data.setProductPNames(setOf("squishy-shoes", "hard-shoes") );
 		data.setDescriptions( setOf("squishy", "too hard") );
 		data.setTags( setOf("squishy things", "mountain equipment") );
 		data.setBrands( setOf(101L, 102L) );
@@ -898,7 +902,8 @@ public class DataImportApiTest {
 		
 		data.setBarcodes( setOf("TT232222", "87847777EW") );
 		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
-		data.setPNames(setOf("s_shoe", "h_shoe") );
+		data.setVariantsPNames(setOf("squishy-shoes", "hard-shoes") );
+		data.setProductPNames(setOf("squishy-shoes", "hard-shoes") );
 		data.setDescriptions( setOf("squishy", "too hard") );
 		data.setTags( setOf("squishy things", "mountain equipment") );
 		data.setBrands( setOf(101L, 102L) );
@@ -945,9 +950,10 @@ public class DataImportApiTest {
 		
 		data.setBarcodes( setOf("TT232222", "87847777EW") );
 		data.setProductNames( setOf("Product to update", "hard shoes") );
-		data.setPNames(setOf("u_shoe", "h_shoe") );
+		data.setVariantsPNames(setOf("color-fo7loqy-size-m", "u_shoe") );
+		data.setProductPNames(setOf( "u_shoe", "hard-shoes") );
 		data.setDescriptions( setOf("old desc", "too hard") );
-		data.setTags( setOf("squishy things", "mountain equipment") );
+		data.setTags( setOf("mountain equipment") );
 		data.setBrands( setOf(101L, 102L) );
 		data.setFeatureSpecs(  createNewProductOnlyExpectedFeautreSpec());
 		data.setStocksNum(2);
@@ -974,8 +980,17 @@ public class DataImportApiTest {
 	private <T,V>  boolean  propertyValuesIn(List<T> entityList, Function<T,V> getter, Set<V> expectedValues) {
 		return entityList.stream()
 						.map(getter)
+						.filter(Objects::nonNull)
 						.collect(toSet())
 						.equals(expectedValues);
+	}
+	
+	
+	
+	private <T,V>  boolean  eachPropertyValueIn(List<T> entityList, Function<T,V> getter, Set<V> expectedValues) {
+		return entityList.stream()
+						.map(getter)
+						.allMatch(v -> expectedValues.contains(v));
 	}
 	
 	
@@ -1040,7 +1055,8 @@ class ExpectedSavedData{
 	private Set<BigDecimal> prices ;
 	private Set<String> barcodes ;
 	private Set<String> ProductNames;
-	private Set<String> PNames;
+	private Set<String> productPNames;
+	private Set<String> variantsPNames;
 	private Set<String>  descriptions;
 	private Set<String> tags;
 	private Set<Long> brands;

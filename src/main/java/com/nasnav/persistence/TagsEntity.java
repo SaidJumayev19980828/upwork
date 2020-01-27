@@ -5,6 +5,8 @@ import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.TagsRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.EqualsAndHashCode.Exclude;
+
 import org.hibernate.annotations.Loader;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
@@ -55,6 +57,8 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
 
     @ManyToMany(mappedBy = "tags")
     @JsonIgnore
+    @Exclude
+    @lombok.ToString.Exclude
     private Set<ProductEntity> products;
 
     @Override

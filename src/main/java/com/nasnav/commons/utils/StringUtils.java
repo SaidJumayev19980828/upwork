@@ -106,7 +106,10 @@ public class StringUtils extends org.springframework.util.StringUtils{
 	
 
 	public static String encodeUrl(String url){
-		String result = url.replaceAll("[^a-zA-Z0-9]+", "-").replaceAll("^-|-$","");
+		String result = ofNullable(url)
+							.orElse("")
+							.replaceAll("[^a-zA-Z0-9]+", "-")
+							.replaceAll("^-|-$","");
 		return result.toLowerCase();
 	}
 	
