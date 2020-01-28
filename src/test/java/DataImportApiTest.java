@@ -3,6 +3,7 @@ import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.USD;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -12,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -19,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -117,6 +120,10 @@ public class DataImportApiTest {
 	
 	@Value("classpath:/files/product__list_upate.csv")
 	private Resource csvFileUpdate;
+	
+	
+	@Value("classpath:/files/product__list_multitag_upate.csv")
+	private Resource csvMulitagProductUpdate;
 	
 	@Autowired
 	private  MockMvc mockMvc;
@@ -693,6 +700,31 @@ public class DataImportApiTest {
 	
 	
 	
+	
+	@Test
+	public void uploadProductCSVUpdateProductWitjMultipleTagsTest() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", true);
+		importProperties.put("update_stocks", true);
+        
+		ProductDataCount before = countProductData();			
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvMulitagProductUpdate, importProperties);
+		
+		result.andExpect(status().is(200));
+		
+		ProductDataCount after = countProductData();		
+		assertExpectedRowNumInserted(before, after, 0);         
+
+        ExpectedSavedData expected = getExpectedUpdatedDataForMultipleTags();
+        assertProductDataImported(TEST_UPDATE_SHOP, expected);
+        assertProductUpdatedDataSavedWithStock();        
+	}
+	
+	
+	
+	
 
 	private void assertProductUpdatedDataSavedWithStock() {
 		ProductVariantsEntity updatedVariant = helper.getVariantFullData(TEST_VARIANT_UPDATED);
@@ -774,20 +806,20 @@ public class DataImportApiTest {
         assertTrue( propertyValuesIn(products, ProductEntity::getName, expected.getProductNames()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getPname, expected.getProductPNames()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getDescription, expected.getDescriptions()) );
-        assertTrue( propertyValuesIn(products, this::getFirstTagName, expected.getTags()) );
+        assertTrue( propertyMultiValuesIn(products, this::getTags, expected.getTags()) );
         assertTrue( propertyValuesIn(products, ProductEntity::getBrandId, expected.getBrands()) );
 	}
 	
 	
 	
 	
-	private String getFirstTagName(ProductEntity product) {
+	
+	private Set<String> getTags(ProductEntity product){
 		return product
 				.getTags()
 				.stream()
-				.findFirst()
 				.map(TagsEntity::getName)
-				.orElse(null);
+				.collect(toSet());
 	}
 	
 	
@@ -893,6 +925,30 @@ public class DataImportApiTest {
 	
 	
 	
+	
+	
+	private ExpectedSavedData getExpectedUpdatedDataForMultipleTags() {
+		ExpectedSavedData data = new ExpectedSavedData();		
+
+		data.setQuantities( setOf(101) );
+		data.setPrices( setOf(new BigDecimal("10.25")));
+		data.setCurrencies( setOf(EGP));
+		
+		data.setBarcodes( setOf("TT232222") );
+		data.setProductNames( setOf("Squishy shoes") );
+		data.setVariantsPNames(setOf("u_shoe") );
+		data.setProductPNames(setOf("u_shoe") );
+		data.setDescriptions( setOf("squishy") );
+		data.setTags( setOf("squishy things", "mountain equipment") );
+		data.setBrands( setOf(101L) );
+		data.setFeatureSpecs(  createExpectedFeautreSpecForOnlyUpdatedProduct());
+		data.setStocksNum(1);
+		
+		return data;
+	}
+	
+	
+	
 	private ExpectedSavedData getExpectedNewAndUpdatedDataWithoutStocks() {
 		ExpectedSavedData data = new ExpectedSavedData();		
 
@@ -919,9 +975,21 @@ public class DataImportApiTest {
 		Set<JSONObject> specs = new HashSet<>();
 		JSONObject spec1 = createFeatureSpec("XXL", "Lettuce Heart");
 		JSONObject spec2 = createFeatureSpec("M", "Fo7loqy");
-		specs.addAll( Arrays.asList(spec1,spec2));
+		specs.addAll( asList(spec1,spec2));
 		return specs;
 	}
+	
+	
+	
+	
+	private Set<JSONObject> createExpectedFeautreSpecForOnlyUpdatedProduct() {
+		Set<JSONObject> specs = new HashSet<>();
+		JSONObject spec1 = createFeatureSpec("XXL", "Lettuce Heart");
+		specs.addAll( asList(spec1));
+		return specs;
+	}
+	
+	
 
 
 
@@ -977,20 +1045,44 @@ public class DataImportApiTest {
 
 
 	private <T,V>  boolean  propertyValuesIn(List<T> entityList, Function<T,V> getter, Set<V> expectedValues) {
-		return entityList.stream()
-						.map(getter)
-						.filter(Objects::nonNull)
-						.collect(toSet())
-						.equals(expectedValues);
+		return entityList
+				.stream()
+				.map(getter)
+				.flatMap(this::getStreamOf)
+				.filter(Objects::nonNull)
+				.collect(toSet())
+				.equals(expectedValues);
 	}
 	
 	
 	
-	private <T,V>  boolean  eachPropertyValueIn(List<T> entityList, Function<T,V> getter, Set<V> expectedValues) {
-		return entityList.stream()
-						.map(getter)
-						.allMatch(v -> expectedValues.contains(v));
+	
+	
+	private <T,V>  boolean  propertyMultiValuesIn(List<T> entityList, Function<T,? extends Collection<V>> getter, Set<V> expectedValues) {
+		return entityList
+				.stream()
+				.map(getter)
+				.flatMap(Collection::stream)
+				.filter(Objects::nonNull)
+				.collect(toSet())
+				.equals(expectedValues);
 	}
+	
+	
+	
+	
+	@SuppressWarnings("unchecked")
+	private <T, R> Stream<R> getStreamOf(T value ){
+		if(value instanceof Collection) {
+			return Collection.class.cast(value).stream();
+		}else {
+			return (Stream<R>) Stream.of(value);
+		}
+	}
+	
+	
+
+	
 	
 	
 	private <T,V extends BigDecimal>  boolean  compareEntityBigDecimalFieldValues(List<T> entityList, Function<T, V> getter, Set<V> expectedValues) {
