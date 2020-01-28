@@ -77,7 +77,7 @@ public class UserDTOs {
     	@ApiModelProperty(value = "User's name", example = "John Smith", required = true)
         @JsonProperty("name")
         public String name;
-    	
+
         @ApiModelProperty(value = "Roles Separated by Comma", example = "STORE_ADMIN,ORGANIZATION_EMPLOYEE", required = true)
         @JsonProperty("role")
         public String role;
@@ -85,6 +85,10 @@ public class UserDTOs {
         @ApiModelProperty(value = "Store Id", example = "1234", required = false)
         @JsonProperty("store_id")
         public Long storeId;
+
+        @ApiModelProperty(value = "Avatar", example = "99001/avatar.jpg", required = false)
+        @JsonProperty("avatar")
+        private String avatar;
     }
 
     @Getter

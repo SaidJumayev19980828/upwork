@@ -57,7 +57,10 @@ public class EmployeeUserEntity extends BaseUserEntity {
 
     @Column(name = "phone_number")
     private String phoneNumber;
-    
+
+    @Column(name = "avatar")
+    private String avatar;
+
     public static EmployeeUserEntity createEmployeeUser(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
         // parse Json to EmployeeUserEntity
         EmployeeUserEntity employeeUser = new EmployeeUserEntity();
@@ -68,7 +71,7 @@ public class EmployeeUserEntity extends BaseUserEntity {
         employeeUser.setShopId(employeeUserJson.storeId);
         employeeUser.setCreatedAt(LocalDateTime.now());
         employeeUser.setUpdatedAt(LocalDateTime.now());
-        
+        employeeUser.setAvatar(employeeUserJson.getAvatar());
         return employeeUser;
     }
 
@@ -76,6 +79,7 @@ public class EmployeeUserEntity extends BaseUserEntity {
     public UserRepresentationObject getRepresentation() {
         UserRepresentationObject obj = new UserRepresentationObject();
         BeanUtils.copyProperties(this, obj);
+        obj.setImage(this.avatar);
         obj.id = this.getId();
         return obj;
     }
