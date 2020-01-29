@@ -8,6 +8,7 @@ import static java.util.stream.Collectors.toMap;
 import java.util.List;
 import java.util.Map;
 
+import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.service.CsvRow;
 import com.univocity.parsers.common.Context;
@@ -19,12 +20,13 @@ import com.univocity.parsers.common.record.Record;
 
 public class ProductCsvRowProcessor<T extends CsvRow> extends BeanListProcessor<CsvRow> {
 	List<ProductFeaturesEntity> orgVariantFeatures;
+	List<ExtraAttributesEntity> orgExtraAttributes;
 	
-	
-	public ProductCsvRowProcessor(Class<CsvRow> beanType, List<ProductFeaturesEntity> orgFeatures) {
+	public ProductCsvRowProcessor(Class<CsvRow> beanType, List<ProductFeaturesEntity> orgFeatures, List<ExtraAttributesEntity> orgExtraAttributes) {
 		super(beanType);
 		
 		this.orgVariantFeatures = ofNullable(orgFeatures).orElse(emptyList());
+		this.orgExtraAttributes = ofNullable(orgExtraAttributes).orElse(emptyList());
 	}
 	
 	

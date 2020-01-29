@@ -27,9 +27,10 @@ public class CsvRow {
 	protected Integer quantity;
 	protected BigDecimal price;
 	protected Map<String,String> features;
-	
+	protected Map<String,String> extraAttributes;
 	
 	public CsvRow() {
+		extraAttributes = new HashMap<>();
 		features = new HashMap<>();
 	}
 	

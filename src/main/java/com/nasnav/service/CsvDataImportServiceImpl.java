@@ -40,6 +40,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.MapBuilder;
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ExtraAttributesRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.ProductImportMetadata;
@@ -47,6 +48,7 @@ import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.response.ProductListImportResponse;
@@ -86,6 +88,9 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 	@Autowired
 	private DataImportService dataImportService;
+	
+	@Autowired
+	private ExtraAttributesRepository extraAttrRepo;
 	
 	private Logger logger = Logger.getLogger(getClass());
 
@@ -209,10 +214,13 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 	private BeanListProcessor<CsvRow> createRowProcessor(ProductListImportDTO metaData, List<ProductFeaturesEntity> orgFeatures) {
-		ColumnMapping mapper = createAttrToColMapping(metaData);
+		Long orgId = security.getCurrentUserOrganizationId();
+		List<ExtraAttributesEntity> orgExtraAttributes = extraAttrRepo.findByOrganizationId(orgId);
+		
+		ColumnMapping mapper = createAttrToColMapping(metaData);		
 		
 		BeanListProcessor<CsvRow> rowProcessor =
-				new ProductCsvRowProcessor<CsvRow>(CsvRow.class, orgFeatures);
+				new ProductCsvRowProcessor<CsvRow>(CsvRow.class, orgFeatures, orgExtraAttributes);
 		rowProcessor.setColumnMapper(mapper);
 		rowProcessor.setStrictHeaderValidationEnabled(true);
 		return rowProcessor;
