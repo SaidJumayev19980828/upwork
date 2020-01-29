@@ -40,7 +40,6 @@ import org.springframework.web.multipart.MultipartFile;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.MapBuilder;
 import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.ExtraAttributesRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.ProductImportMetadata;
@@ -48,7 +47,6 @@ import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.response.ProductListImportResponse;
@@ -89,8 +87,6 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	@Autowired
 	private DataImportService dataImportService;
 	
-	@Autowired
-	private ExtraAttributesRepository extraAttrRepo;
 	
 	private Logger logger = Logger.getLogger(getClass());
 
@@ -214,13 +210,12 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 	private BeanListProcessor<CsvRow> createRowProcessor(ProductListImportDTO metaData, List<ProductFeaturesEntity> orgFeatures) {
-		Long orgId = security.getCurrentUserOrganizationId();
-		List<ExtraAttributesEntity> orgExtraAttributes = extraAttrRepo.findByOrganizationId(orgId);
+		List<String> defaultTemplateHeaders = getProductImportTemplateHeaders();
 		
 		ColumnMapping mapper = createAttrToColMapping(metaData);		
 		
 		BeanListProcessor<CsvRow> rowProcessor =
-				new ProductCsvRowProcessor<CsvRow>(CsvRow.class, orgFeatures, orgExtraAttributes);
+				new ProductCsvRowProcessor<CsvRow>(CsvRow.class, orgFeatures, defaultTemplateHeaders);
 		rowProcessor.setColumnMapper(mapper);
 		rowProcessor.setStrictHeaderValidationEnabled(true);
 		return rowProcessor;
@@ -386,7 +381,17 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	}
 
 	@Override
-	public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException{
+	public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException{		
+		List<String> baseHeaders = getProductImportTemplateHeaders();
+
+		return writeCsvHeaders(baseHeaders);
+	}
+
+
+
+
+	@Override
+	public List<String> getProductImportTemplateHeaders() {
 		Long orgId = security.getCurrentUserOrganizationId();
 		List<String> features = 
 				prodcutFeaturesRepo
@@ -398,8 +403,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		
 		List<String> baseHeaders = new ArrayList<>(csvBaseHeaders);
 		baseHeaders.addAll(features);
-
-		return writeCsvHeaders(baseHeaders);
+		return baseHeaders;
 	}
 	
 	

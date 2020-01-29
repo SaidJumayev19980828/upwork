@@ -7,8 +7,11 @@ import static java.util.stream.Collectors.toMap;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import com.nasnav.persistence.ExtraAttributesEntity;
+import org.apache.commons.lang3.tuple.Pair;
+
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.service.CsvRow;
 import com.univocity.parsers.common.Context;
@@ -19,14 +22,14 @@ import com.univocity.parsers.common.record.Record;
 
 
 public class ProductCsvRowProcessor<T extends CsvRow> extends BeanListProcessor<CsvRow> {
-	List<ProductFeaturesEntity> orgVariantFeatures;
-	List<ExtraAttributesEntity> orgExtraAttributes;
+	private List<ProductFeaturesEntity> orgVariantFeatures;
+	private List<String> defaultTemplateHeaders;
 	
-	public ProductCsvRowProcessor(Class<CsvRow> beanType, List<ProductFeaturesEntity> orgFeatures, List<ExtraAttributesEntity> orgExtraAttributes) {
+	public ProductCsvRowProcessor(Class<CsvRow> beanType, List<ProductFeaturesEntity> orgFeatures , List<String> defaultTemplateHeaders) {
 		super(beanType);
 		
 		this.orgVariantFeatures = ofNullable(orgFeatures).orElse(emptyList());
-		this.orgExtraAttributes = ofNullable(orgExtraAttributes).orElse(emptyList());
+		this.defaultTemplateHeaders = defaultTemplateHeaders;
 	}
 	
 	
@@ -39,9 +42,36 @@ public class ProductCsvRowProcessor<T extends CsvRow> extends BeanListProcessor<
 		if(bean != null) {
 			Map<String, String> variantSpec = getVariantFeatureSpecs(row, context);		
 			bean.setFeatures(variantSpec);
+			
+			Map<String, String> extraAttributes = getExtraAttributes(row, context);		
+			bean.setExtraAttributes(extraAttributes);
 		}
 		
 		return bean;
+	}
+
+
+
+
+
+	private Map<String, String> getExtraAttributes(String[] row, Context context) {
+		Record record = context.toRecord(row);
+		Set<String> extraHeaders = getExtraCsvHeaders(context);
+		return extraHeaders
+				.stream()
+				.map(header -> Pair.of(header, record.getString(header)))
+				.filter(pair -> pair.getRight() != null)
+				.collect(toMap(Pair::getLeft, Pair::getRight));
+	}
+
+
+
+
+
+	private Set<String> getExtraCsvHeaders(Context context) {
+		Set<String> extraHeaders = EntityUtils.setOf(context.headers());
+		extraHeaders.removeAll(defaultTemplateHeaders);
+		return extraHeaders;
 	}
 
 

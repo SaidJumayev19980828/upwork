@@ -51,6 +51,7 @@ public class CsvRow {
 		product.setQuantity(quantity);
 		product.setTags(tagsSet);
 		product.setVariantId(variantId);
+		product.setExtraAttributes(getExtraAttributes());
 		
 		return product;
 	}
