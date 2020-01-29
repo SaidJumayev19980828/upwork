@@ -1,7 +1,9 @@
 package com.nasnav.service;
 
+
 import static java.lang.String.format;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -179,7 +181,25 @@ public class ShopService {
     
     
     
-    
+    public List<ShopRepresentationObject> getLocationShops(Long orgId, Double longitude, Double latitude, Double radius, String name) {
+        Double minLong, maxLong, minLat, maxLat;
+        double earthRadius = 6371;
+        radius -= 1; // for approximate calculations - not accurate
+
+        minLong = longitude - Math.toDegrees(radius/earthRadius/Math.cos(Math.toRadians(latitude)));
+        maxLong = longitude + Math.toDegrees(radius/earthRadius/Math.cos(Math.toRadians(latitude)));
+
+        minLat = latitude - Math.toDegrees(radius/earthRadius);
+        maxLat = latitude + Math.toDegrees(radius/earthRadius);
+
+        List<ShopsEntity> shops = new ArrayList<>();
+        if (orgId == null)
+            shops = shopsRepository.getShopsByLocation(name, minLong, maxLong, minLat, maxLat);
+        else
+            shops =  shopsRepository.getShopsByLocation(orgId, name, minLong, maxLong, minLat, maxLat);
+
+        return shops.stream().map(s -> (ShopRepresentationObject)s.getRepresentation()).collect(Collectors.toList());
+    }
 
 	
 }
