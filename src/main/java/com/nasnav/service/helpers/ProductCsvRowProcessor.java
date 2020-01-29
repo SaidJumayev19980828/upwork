@@ -1,8 +1,10 @@
 package com.nasnav.service.helpers;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toMap;
+
 import java.util.List;
 import java.util.Map;
 
@@ -16,13 +18,13 @@ import com.univocity.parsers.common.record.Record;
 
 
 public class ProductCsvRowProcessor<T extends CsvRow> extends BeanListProcessor<CsvRow> {
-	List<ProductFeaturesEntity> features;
+	List<ProductFeaturesEntity> orgVariantFeatures;
 	
 	
-	public ProductCsvRowProcessor(Class<CsvRow> beanType, List<ProductFeaturesEntity> features) {
+	public ProductCsvRowProcessor(Class<CsvRow> beanType, List<ProductFeaturesEntity> orgFeatures) {
 		super(beanType);
 		
-		this.features = features != null ? features : new ArrayList<>();
+		this.orgVariantFeatures = ofNullable(orgFeatures).orElse(emptyList());
 	}
 	
 	
@@ -33,8 +35,8 @@ public class ProductCsvRowProcessor<T extends CsvRow> extends BeanListProcessor<
 	public CsvRow createBean(String[] row, Context context){
 		CsvRow bean = super.createBean(row, context);
 		if(bean != null) {
-			Map<String, String> spec = getFeatureSpecs(row, context);		
-			bean.setFeatures(spec);
+			Map<String, String> variantSpec = getVariantFeatureSpecs(row, context);		
+			bean.setFeatures(variantSpec);
 		}
 		
 		return bean;
@@ -44,19 +46,39 @@ public class ProductCsvRowProcessor<T extends CsvRow> extends BeanListProcessor<
 
 
 
-	private Map<String, String> getFeatureSpecs(String[] row, Context context) {
-		Map<String, String> spec = new HashMap<>();
-		
+	private Map<String, String> getVariantFeatureSpecs(String[] row, Context context) {		
 		Record record = context.toRecord(row);
-		List<String> headers = Arrays.asList(context.headers());
-		this.features.stream()
-				.filter(f -> headers.contains(f.getName()))
-				.forEach(
-						f -> spec.put( String.valueOf(f.getId())
-								, record.getString(f.getName())));
-		return spec;
+		List<String> headers = asList(context.headers());
+		
+		return orgVariantFeatures
+				.stream()
+				.filter(feature -> isFeatureNameInCsvHeaders(headers, feature))
+				.collect(toMap(this::getFeatureIdAsStr, feature -> getFeatureValueFromCsvRecord(record, feature)));			
+	}
+
+
+
+
+
+	private Boolean isFeatureNameInCsvHeaders(List<String> headers, ProductFeaturesEntity feature) {
+		return headers.contains(feature.getName());
 	}
 	
 	
+	
+	
+	
+	private String getFeatureIdAsStr(ProductFeaturesEntity feature) {
+		return String.valueOf(feature.getId());
+	}
+	
+	
+	
+	
+	
+	private String getFeatureValueFromCsvRecord(Record record, ProductFeaturesEntity feature) {
+		String headerName = feature.getName();
+		return record.getString(headerName);
+	}
 
 }

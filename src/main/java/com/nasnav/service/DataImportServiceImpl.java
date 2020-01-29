@@ -30,6 +30,7 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -92,6 +93,7 @@ public class DataImportServiceImpl implements DataImportService {
     
 
     @Override
+    @Transactional(rollbackFor = Throwable.class)
     public ProductListImportResponse importProducts(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) throws BusinessException {
 
         List<ProductData> productsData = toProductDataList(productImportDTOS, productImportMetadata);

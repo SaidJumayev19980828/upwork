@@ -208,11 +208,11 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 
-	private BeanListProcessor<CsvRow> createRowProcessor(ProductListImportDTO metaData, List<ProductFeaturesEntity> features) {
+	private BeanListProcessor<CsvRow> createRowProcessor(ProductListImportDTO metaData, List<ProductFeaturesEntity> orgFeatures) {
 		ColumnMapping mapper = createAttrToColMapping(metaData);
 		
 		BeanListProcessor<CsvRow> rowProcessor =
-				new ProductCsvRowProcessor<CsvRow>(CsvRow.class, features);
+				new ProductCsvRowProcessor<CsvRow>(CsvRow.class, orgFeatures);
 		rowProcessor.setColumnMapper(mapper);
 		rowProcessor.setStrictHeaderValidationEnabled(true);
 		return rowProcessor;

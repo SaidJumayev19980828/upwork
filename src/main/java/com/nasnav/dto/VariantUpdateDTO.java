@@ -22,6 +22,7 @@ public class VariantUpdateDTO extends BaseJsonDTO{
 	private String description;
 	private String barcode;
 	private String features;
+	private String extraAttr;
 	
 	@JsonProperty("p_name")
 	private String pname;

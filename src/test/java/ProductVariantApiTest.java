@@ -1,6 +1,11 @@
+import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import java.util.Collection;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.json.JSONObject;
 import org.junit.Test;
@@ -60,7 +65,7 @@ public class ProductVariantApiTest {
 	
 	@Test
 	public void variantCreateNoAuthNTest() {
-		HttpEntity request = TestCommons.getHttpEntity("","INVALID TOKEN");
+		HttpEntity<?> request = TestCommons.getHttpEntity("","INVALID TOKEN");
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -78,7 +83,7 @@ public class ProductVariantApiTest {
 	public void productVariantUpdateNoAuthZTest() {
 		BaseUserEntity user = empRepo.getById(68L); //not an organization admin
 		
-		HttpEntity request = TestCommons.getHttpEntity("", user.getAuthenticationToken());
+		HttpEntity<?> request = TestCommons.getHttpEntity("", user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -98,7 +103,7 @@ public class ProductVariantApiTest {
 		
 		JSONObject json = createProductVariantRequest();
 		json.remove("operation");
-		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -117,7 +122,7 @@ public class ProductVariantApiTest {
 		
 		JSONObject json = createProductVariantRequest();
 		json.remove("product_id");
-		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -136,7 +141,7 @@ public class ProductVariantApiTest {
 		
 		JSONObject json = createProductVariantRequest();
 		json.remove("features");
-		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -157,7 +162,7 @@ public class ProductVariantApiTest {
 		JSONObject json = createProductVariantRequest();
 		json.put("operation", Operation.UPDATE.getValue());
 		json.remove("variant_id");
-		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -177,31 +182,46 @@ public class ProductVariantApiTest {
 		BaseUserEntity user = empRepo.getById(69L);
 		
 		JSONObject json = createProductVariantRequest();		
-		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
-		ResponseEntity<String> response = template.exchange("/product/variant"
-															, HttpMethod.POST
-															, request
-															, String.class
-															);
+		ResponseEntity<String> response = 
+				template.exchange("/product/variant"
+									, HttpMethod.POST
+									, request
+									, String.class);
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		JSONObject body = new JSONObject(response.getBody());
 		Long id = body.getLong("variant_id");
 		
 		ProductVariantsEntity saved = variantRepo.findById(id).get();
+		JSONObject extraAtrrJson = new JSONObject(json.getString("extra_attr"));
 		
 		assertEquals(json.getString("name"), saved.getName());
 		assertEquals(json.getString("barcode"), saved.getBarcode());
 		assertEquals(json.getLong("product_id"), saved.getProductEntity().getId().longValue() );
 		assertEquals(json.getString("description"), saved.getDescription());
 		assertEquals(json.getString("features"), saved.getFeatureSpec());
-		assertEquals("shoe-size-37-shoe-color-black", saved.getPname());
+		assertEquals("shoe-size-37-shoe-color-black", saved.getPname());		
+		assertTrue(extraAtrrJson.similar(getExtraAttributesAsJson(saved)));
 	}
 
 	
 	
 	
+	private JSONObject getExtraAttributesAsJson(ProductVariantsEntity saved) {
+		Map<String,String> extraAttrNameValuePair = 
+				saved.getExtraAttributes()
+					.stream()
+					.collect(toMap(attr -> attr.getExtraAttribute().getName()
+								, attr-> attr.getValue()));
+		
+		return new JSONObject(extraAttrNameValuePair);
+	}
+
+
+
+
 	@Test
 	public void productVariantUpdateTest() {
 		BaseUserEntity user = empRepo.getById(69L);
@@ -209,18 +229,18 @@ public class ProductVariantApiTest {
 		ProductVariantsEntity before = variantRepo.findById(TEST_VARIANT_ID).get();
 		
 		JSONObject json = new JSONObject();
-		json.put("operation", Operation.UPDATE.getValue());
+		json.put("operation", UPDATE.getValue());
 		json.put("product_id", TEST_PRODUCT_ID);
 		json.put("variant_id", TEST_VARIANT_ID);
 		json.put("name", "updated");
 		json.put("features", "{\"234\": 30, \"235\": \"WHITE\"}");
-		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
-		ResponseEntity<String> response = template.exchange("/product/variant"
-															, HttpMethod.POST
-															, request
-															, String.class
-															);
+		ResponseEntity<String> response = 
+				template.exchange("/product/variant"
+									, HttpMethod.POST
+									, request
+									, String.class);
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		JSONObject body = new JSONObject(response.getBody());
@@ -248,7 +268,7 @@ public class ProductVariantApiTest {
 		json.put("operation", Operation.UPDATE.getValue());
 		json.put("variant_id", TEST_VARIANT_ID);
 		
-		HttpEntity request = TestCommons.getHttpEntity(json.toString(), user.getAuthenticationToken());
+		HttpEntity<?> request = TestCommons.getHttpEntity(json.toString(), user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -269,7 +289,7 @@ public class ProductVariantApiTest {
 		JSONObject json = createProductVariantRequest();
 		json.put("features", "{\"236\": 37, \"235\": \"BLack\"}");
 		
-		HttpEntity request = TestCommons.getHttpEntity(json.toString(), user.getAuthenticationToken());
+		HttpEntity<?> request = TestCommons.getHttpEntity(json.toString(), user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -291,7 +311,7 @@ public class ProductVariantApiTest {
 		JSONObject json = createProductVariantRequest();
 		json.put("features", "{\"888888\": 37, \"235\": \"BLack\"}");
 		
-		HttpEntity request = TestCommons.getHttpEntity(json.toString(), user.getAuthenticationToken());
+		HttpEntity<?> request = TestCommons.getHttpEntity(json.toString(), user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
 															, HttpMethod.POST
@@ -316,6 +336,7 @@ public class ProductVariantApiTest {
 		json.put("description", "my description");
 		json.put("barcode", "ABC12345");
 		json.put("features", "{\"234\": 37, \"235\": \"BLack\"}");
+		json.put("extra_attr", "{\"extra\": \"Cool Add-on\", \"Model\": \"D2R2\"}");
 		
 		return json;
 	}
