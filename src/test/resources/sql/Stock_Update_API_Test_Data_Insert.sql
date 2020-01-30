@@ -16,7 +16,7 @@ INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organiza
 -- dummy shop
 INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100001 , 'Bundle Shop' , now() , now() , 99001);
 INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100011 , 'another Shop - same org' , now() , now() , 99001);
-INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100012 , 'another Shop - same org' , now() , now() , 99001);
+INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100012 , 'another another Shop - same org' , now() , now() , 99001);
 INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100002 , 'other org Shop' , now() , now() , 99002);
 
 

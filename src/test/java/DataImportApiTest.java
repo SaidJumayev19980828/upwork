@@ -853,11 +853,12 @@ public class DataImportApiTest {
 	
 	
 	private boolean jsonValuesIn(List<ProductVariantsEntity> variants, Function<ProductVariantsEntity,String> jsonStringGetter, Set<JSONObject> expectedSpecs) {
-		return variants.stream()
-					.map(jsonStringGetter)
-					.map(JSONObject::new)
-					.allMatch(json -> expectedSpecs.stream().anyMatch(expected -> expected.similar(json)));
-		
+		return variants
+				.stream()
+				.map(jsonStringGetter)
+				.filter(jsonStr -> jsonStr != null && !jsonStr.equals("{}"))
+				.map(JSONObject::new)
+				.allMatch(json -> expectedSpecs.stream().anyMatch(expected -> expected.similar(json)));
 	}
 
 
