@@ -15,125 +15,125 @@ public class Product {
     @JsonProperty("Description")
     public String description;
     @JsonProperty("Stk_Unit__c")
-    public String stkUnitC;
+    public String stockUnitC;
     @JsonProperty("Stk_Unit__r")
-    public String stkUnitR;
+    public String stockUnitR;
     @JsonProperty("EItem_Name__c")
-    public String eItemNameC;
+    public String englishItemName;
     @JsonProperty("Icon_Attachment_Id__c")
-    public String iconAttachmentIdC;
+    public String iconAttachmentId;
     @JsonProperty("Arabic_Category__c")
-    public String arabicCategoryC;
+    public String arabicCategory;
     @JsonProperty("Arabic_Class__c")
-    public String arabicClassC;
+    public String arabicClass;
     @JsonProperty("Arabic_Color__c")
-    public String arabicColorC;
+    public String arabicColor;
     @JsonProperty("Arabic_Cut__c")
-    public String arabicCutC;
+    public String arabicCut;
     @JsonProperty("Arabic_Depth__c")
-    public String arabicDepthC;
+    public String arabicDepth;
     @JsonProperty("Arabic_Drain__c")
-    public String arabicDrainC;
+    public String arabicDrain;
     @JsonProperty("Arabic_Factory__c")
-    public String arabicFactoryC;
+    public String arabicFactory;
     @JsonProperty("Arabic_Family__c")
-    public String arabicFamilyC;
+    public String arabicFamily;
     @JsonProperty("Arabic_Glaze__c")
-    public String arabicGlazeC;
+    public String arabicGlaze;
     @JsonProperty("Arabic_Mixer__c")
-    public String arabicMixerC;
+    public String arabicMixer;
     @JsonProperty("Arabic_Model__c")
-    public String arabicModelC;
+    public String arabicModel;
     @JsonProperty("Arabic_Origin__c")
-    public String arabicOriginC;
+    public String arabicOrigin;
     @JsonProperty("Arabic_Shape__c")
-    public String arabicShapeC;
+    public String arabicShape;
     @JsonProperty("Arabic_Specifications__c")
-    public String arabicSpecificationsC;
+    public String arabicSpecifications;
     @JsonProperty("Arabic_Style__c")
-    public String arabicStyleC;
+    public String arabicStyle;
     @JsonProperty("Arabic_Tank__c")
-    public String arabicTankC;
+    public String arabicTank;
     @JsonProperty("Arabic_Texture__c")
-    public String arabicTextureC;
+    public String arabicTexture;
     @JsonProperty("Arabic_Type__c")
-    public String arabicTypeC;
+    public String arabicType;
     @JsonProperty("English_Category__c")
-    public String englishCategoryC;
+    public String englishCategory;
     @JsonProperty("English_Class__c")
-    public String englishClassC;
+    public String englishClass;
     @JsonProperty("English_Color__c")
-    public String englishColorC;
+    public String englishColor;
     @JsonProperty("English_Cut__c")
-    public String englishCutC;
+    public String englishCut;
     @JsonProperty("English_Depth__c")
-    public String englishDepthC;
+    public String englishDepth;
     @JsonProperty("English_Drain__c")
-    public String englishDrainC;
+    public String englishDrain;
     @JsonProperty("English_Factory__c")
-    public String englishFactoryC;
+    public String englishFactory;
     @JsonProperty("English_Family__c")
-    public String englishFamilyC;
+    public String englishFamily;
     @JsonProperty("English_Glaze__c")
-    public String englishGlazeC;
+    public String englishGlaze;
     @JsonProperty("English_Mixer__c")
-    public String englishMixerC;
+    public String englishMixer;
     @JsonProperty("English_Model__c")
-    public String englishModelC;
+    public String englishModel;
     @JsonProperty("English_Origin__c")
-    public String englishOriginC;
+    public String englishOrigin;
     @JsonProperty("English_Shape__c")
-    public String englishShapeC;
+    public String englishShape;
     @JsonProperty("English_Specifications__c")
-    public String englishSpecificationsC;
+    public String englishSpecifications;
     @JsonProperty("English_Style__c")
-    public String englishStyleC;
+    public String englishStyle;
     @JsonProperty("English_Tank__c")
-    public String englishTankC;
+    public String englishTank;
     @JsonProperty("English_Texture__c")
-    public String englishTextureC;
+    public String englishTexture;
     @JsonProperty("English_Type__c")
-    public String englishTypeC;
+    public String englishType;
     @JsonProperty("Category__c")
-    public String categoryC;
+    public String category;
     @JsonProperty("Class__c")
     public String classC;
     @JsonProperty("Color__c")
-    public String colorC;
+    public String color;
     @JsonProperty("Cut__c")
-    public String cutC;
+    public String cut;
     @JsonProperty("Depth__c")
-    public String depthC;
+    public String depth;
     @JsonProperty("Drain__c")
-    public String drainC;
+    public String drain;
     @JsonProperty("Factory__c")
-    public String factoryC;
+    public String factory;
     @JsonProperty("Family")
     public String family;
     @JsonProperty("Glaze__c")
-    public String glazeC;
+    public String glaze;
     @JsonProperty("Mixer__c")
-    public String mixerC;
+    public String mixer;
     @JsonProperty("Model__c")
-    public String modelC;
+    public String model;
     @JsonProperty("Origin__c")
-    public String originC;
+    public String origin;
     @JsonProperty("Shape__c")
-    public String shapeC;
+    public String shape;
     @JsonProperty("Specifications__c")
-    public String specificationsC;
+    public String specifications;
     @JsonProperty("Style__c")
-    public String styleC;
+    public String style;
     @JsonProperty("Tank__c")
-    public String tankC;
+    public String tank;
     @JsonProperty("Texture__c")
-    public String textureC;
+    public String texture;
     @JsonProperty("Type__c")
-    public String typeC;
+    public String type;
     @JsonProperty("Model_No__c")
-    public Object modelNoC;
+    public Object modelNo;
     @JsonProperty("Size__c")
-    public String sizeC;
+    public String size;
     @JsonProperty("Pack_Closing__c")
-    public Double packClosingC;
+    public Double packClosing;
 }
