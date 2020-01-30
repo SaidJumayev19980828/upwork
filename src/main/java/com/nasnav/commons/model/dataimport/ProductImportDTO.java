@@ -21,12 +21,10 @@ public class ProductImportDTO {
 	protected Integer quantity;
 	protected BigDecimal price;
 	protected Map<String,String> features;
-	protected Map<String,String> extraAttributes;
 	
 	
 	public ProductImportDTO() {
 		features = new HashMap<>();
 		tags = new HashSet<>();
-		extraAttributes = new HashMap<>();
 	}
 }

@@ -10,7 +10,6 @@ import com.nasnav.response.ProductListImportResponse;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.List;
 
 public interface CsvDataImportService {
 	public ProductListImportResponse importProductListFromCSV(
@@ -19,5 +18,4 @@ public interface CsvDataImportService {
 
 	public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException;
 	public ByteArrayOutputStream generateImagesCsvTemplate() throws IOException;
-	List<String> getProductImportTemplateHeaders();
 }

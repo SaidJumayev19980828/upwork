@@ -1,4 +1,3 @@
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -100,7 +99,7 @@ public class ProductFeaturesApiTest {
 	
 	@Test
 	public void productFeatureUpdateNoAuthNTest() {
-		HttpEntity<?> request = getHttpEntity("","INVALID TOKEN");
+		HttpEntity request = TestCommons.getHttpEntity("","INVALID TOKEN");
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
 															, HttpMethod.POST
@@ -118,7 +117,7 @@ public class ProductFeaturesApiTest {
 	public void productFeatureUpdateNoAuthZTest() {
 		BaseUserEntity user = empRepo.getById(68L);
 		
-		HttpEntity<?> request = TestCommons.getHttpEntity("", user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity("", user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
 															, HttpMethod.POST
@@ -138,7 +137,7 @@ public class ProductFeaturesApiTest {
 		
 		JSONObject json = createProductFeatureRequest();
 		json.remove("operation");
-		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
 															, HttpMethod.POST
@@ -158,7 +157,7 @@ public class ProductFeaturesApiTest {
 		
 		JSONObject json = createProductFeatureRequest();
 		json.put("operation", "NOT VALID");
-		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
 															, HttpMethod.POST
@@ -179,7 +178,7 @@ public class ProductFeaturesApiTest {
 		json.put("name", JSONObject.NULL);
 		json.remove("p_name");
 		json.remove("description");
-		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
 															, HttpMethod.POST
@@ -199,7 +198,7 @@ public class ProductFeaturesApiTest {
 		JSONObject json = createProductFeatureRequest();
 		json.remove("p_name");
 		json.remove("description");
-		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
 															, HttpMethod.POST
@@ -221,7 +220,7 @@ public class ProductFeaturesApiTest {
 		JSONObject json = createProductFeatureRequest();
 		json.put("operation", "update");
 		json.put("feature_id", 999999999L);
-		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
 															, HttpMethod.POST
@@ -242,7 +241,7 @@ public class ProductFeaturesApiTest {
 		JSONObject json = createProductFeatureRequest();
 		json.put("operation", "update");
 		json.remove("feature_id");
-		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
 															, HttpMethod.POST
@@ -264,7 +263,7 @@ public class ProductFeaturesApiTest {
 		JSONObject json = createProductFeatureRequest();
 		json.put("operation", "update");
 		json.put("feature_id", id);
-		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
 															, HttpMethod.POST
@@ -283,7 +282,7 @@ public class ProductFeaturesApiTest {
 		BaseUserEntity user = empRepo.getById(69L);
 		
 		JSONObject json = createProductFeatureRequest();
-		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
 															, HttpMethod.POST
@@ -326,7 +325,7 @@ public class ProductFeaturesApiTest {
 		json.remove("description");
 		json.remove("organization");
 		
-		HttpEntity<?> request = getHttpEntity(json.toString() , user.getAuthenticationToken());
+		HttpEntity request = TestCommons.getHttpEntity(json.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/organization/products_feature"
 															, HttpMethod.POST

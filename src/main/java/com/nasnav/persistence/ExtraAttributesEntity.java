@@ -1,7 +1,7 @@
 package com.nasnav.persistence;
 
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -20,6 +20,7 @@ import lombok.EqualsAndHashCode;
 @Table(name = "extra_attributes")
 @Data
 @EqualsAndHashCode(callSuper = false)
+
 public class ExtraAttributesEntity implements BaseEntity {
 
     @Id
@@ -40,12 +41,10 @@ public class ExtraAttributesEntity implements BaseEntity {
     private String iconUrl;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    private Date createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-    
-    
+    private Date updatedAt;
 
     @Override
     public BaseRepresentationObject getRepresentation() {

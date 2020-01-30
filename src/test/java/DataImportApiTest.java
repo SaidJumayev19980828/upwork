@@ -3,7 +3,6 @@ import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.USD;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static com.nasnav.test.commons.TestCommons.json;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
@@ -21,7 +20,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -59,7 +57,6 @@ import com.nasnav.dao.StockRepository;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductExtraAttributesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.TagsEntity;
@@ -804,7 +801,6 @@ public class DataImportApiTest {
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getPname, expected.getVariantsPNames()) );
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getDescription, expected.getDescriptions()) );
         assertTrue( jsonValuesIn(variants, ProductVariantsEntity::getFeatureSpec, expected.getFeatureSpecs()) );
-        assertTrue( jsonValuesIn(variants, this::getExtraAtrributesStr, expected.getExtraAttributes()) );
         
         
         assertTrue( propertyValuesIn(products, ProductEntity::getName, expected.getProductNames()) );
@@ -816,29 +812,6 @@ public class DataImportApiTest {
 	
 	
 	
-	
-	private String getExtraAtrributesStr(ProductVariantsEntity variant){		
-		return variant
-				.getExtraAttributes()
-				.stream()
-				.collect(Collector.of(JSONObject::new
-							, this::putAttributeIntoJson
-							, this::notWorkingMergeJson
-							, JSONObject::toString));
-	}
-	
-	
-	
-	
-	private void putAttributeIntoJson( JSONObject json, ProductExtraAttributesEntity attr) {
-		json.put(attr.getExtraAttribute().getName(), attr.getValue());
-	}
-	
-	
-	
-	private JSONObject notWorkingMergeJson(JSONObject json1, JSONObject json2) {
-		return json1;
-	}
 	
 	
 	private Set<String> getTags(ProductEntity product){
@@ -853,12 +826,11 @@ public class DataImportApiTest {
 	
 	
 	private boolean jsonValuesIn(List<ProductVariantsEntity> variants, Function<ProductVariantsEntity,String> jsonStringGetter, Set<JSONObject> expectedSpecs) {
-		return variants
-				.stream()
-				.map(jsonStringGetter)
-				.filter(jsonStr -> jsonStr != null && !jsonStr.equals("{}"))
-				.map(JSONObject::new)
-				.allMatch(json -> expectedSpecs.stream().anyMatch(expected -> expected.similar(json)));
+		return variants.stream()
+					.map(jsonStringGetter)
+					.map(JSONObject::new)
+					.allMatch(json -> expectedSpecs.stream().anyMatch(expected -> expected.similar(json)));
+		
 	}
 
 
@@ -904,33 +876,11 @@ public class DataImportApiTest {
 		data.setBrands(setOf(101L, 102L) );
 		data.setStocksNum(4);
 		data.setFeatureSpecs(  createNewVariantsExpectedFeautreSpec());
-		data.setExtraAttributes(  createNewVaraintsExpectedExtraAttr());
 		
 		return data;
 	}
 
 
-	
-	
-	private Set<JSONObject> createNewVaraintsExpectedExtraAttr() {
-		return setOf(
-					json()
-					 .put("extra", "ext1")
-					 .put("not-feature-col", "no")
-					,
-					json()
-					 .put("extra", "ext2")
-					 .put("not-feature-col", "ok")
-					,
-					json()
-					 .put("extra", "ext3")
-					 .put("not-feature-col", "ok")
-					,
-					json()
-					 .put("extra", "ext4")
-					 .put("not-feature-col", "ok")
-				);
-	}
 
 
 
@@ -968,7 +918,6 @@ public class DataImportApiTest {
 		data.setTags( setOf("squishy things", "mountain equipment") );
 		data.setBrands( setOf(101L, 102L) );
 		data.setFeatureSpecs(  createExpectedFeautreSpec());
-		data.setExtraAttributes(  createExpectedExtraAttr());
 		data.setStocksNum(2);
 		
 		return data;
@@ -993,21 +942,9 @@ public class DataImportApiTest {
 		data.setTags( setOf("squishy things", "mountain equipment") );
 		data.setBrands( setOf(101L) );
 		data.setFeatureSpecs(  createExpectedFeautreSpecForOnlyUpdatedProduct());
-		data.setExtraAttributes(  createExpectedExtraAttrForOnlyUpdatedProduct());
 		data.setStocksNum(1);
 		
 		return data;
-	}
-	
-	
-	
-	
-	private Set<JSONObject> createExpectedExtraAttrForOnlyUpdatedProduct() {
-		return setOf(
-					json()
-					.put("extra", "ext1")
-					.put("not-feature-col", "no")
-				);
 	}
 	
 	
@@ -1026,25 +963,9 @@ public class DataImportApiTest {
 		data.setTags( setOf("squishy things", "mountain equipment") );
 		data.setBrands( setOf(101L, 102L) );
 		data.setFeatureSpecs(  createExpectedFeautreSpec());
-		data.setExtraAttributes(  createExpectedExtraAttr());
 		data.setStocksNum(2);
         
 		return data;
-	}
-	
-	
-	
-	
-	private Set<JSONObject> createExpectedExtraAttr() {
-		return setOf(
-					json()
-					 .put("extra", "ext2")
-					 .put("not-feature-col", "ok")
-					, 
-					json()
-					 .put("extra", "ext1")
-					 .put("not-feature-col", "no")
-				);
 	}
 	
 	
@@ -1102,7 +1023,6 @@ public class DataImportApiTest {
 		data.setTags( setOf("mountain equipment") );
 		data.setBrands( setOf(101L, 102L) );
 		data.setFeatureSpecs(  createNewProductOnlyExpectedFeautreSpec());
-		data.setExtraAttributes(  createNewProductOnlyExpectedExtraAttr());
 		data.setStocksNum(2);
 		
 		return data;
@@ -1111,19 +1031,6 @@ public class DataImportApiTest {
 	
 	
 	
-	private Set<JSONObject> createNewProductOnlyExpectedExtraAttr() {
-		return setOf(
-					json()
-					.put("extra", "ext2")
-					.put("not-feature-col", "ok")
-				);
-	}
-
-
-
-
-
-
 	private Set<JSONObject> createNewProductOnlyExpectedFeautreSpec() {
 		Set<JSONObject> specs = new HashSet<>();
 		JSONObject spec1 = new JSONObject("{}") ;
@@ -1179,10 +1086,9 @@ public class DataImportApiTest {
 	
 	
 	private <T,V extends BigDecimal>  boolean  compareEntityBigDecimalFieldValues(List<T> entityList, Function<T, V> getter, Set<V> expectedValues) {
-		return entityList
-				.stream()
-				.map(getter)
-				.allMatch(n -> expectedValues.stream().anyMatch( e-> e.compareTo(n) == 0));
+		return entityList.stream()
+						.map(getter)
+						.allMatch(n -> expectedValues.stream().anyMatch( e-> e.compareTo(n) == 0));
 	}
 	
 
@@ -1247,11 +1153,9 @@ class ExpectedSavedData{
 	private Set<Long> brands;
 	private Set<TransactionCurrency> currencies;
 	private Set<JSONObject> featureSpecs;
-	private Set<JSONObject> extraAttributes;
 	private Integer stocksNum;
 	
 	public ExpectedSavedData() {
-		extraAttributes = new HashSet<>();
 		featureSpecs = new HashSet<>();
 		featureSpecs.add(new JSONObject("{}") );
 	}

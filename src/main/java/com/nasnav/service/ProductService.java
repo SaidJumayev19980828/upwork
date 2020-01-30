@@ -7,7 +7,6 @@ import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_BUNDLE_ITEM;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_BY_OTHER_ORG_USER;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_PRODUCT_USED_IN_NEW_ORDERS;
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_INVALID_EXTRA_ATTR_STRING;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_DELETE_FAILED;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
@@ -15,7 +14,6 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PR
 import static java.lang.String.format;
 import static java.util.Comparator.comparing;
 import static java.util.Optional.ofNullable;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -65,7 +63,6 @@ import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.ExtraAttributesRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
@@ -90,13 +87,10 @@ import com.nasnav.dto.VariantDTO;
 import com.nasnav.dto.VariantFeatureDTO;
 import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.BundleEntity;
-import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductImagesEntity;
 import com.nasnav.persistence.ProductTypes;
@@ -169,10 +163,6 @@ public class ProductService {
 	@Autowired
 	private TagsRepository orgTagRepo;
 
-	@Autowired
-	private ExtraAttributesRepository extraAttrRepo;
-	
-	
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
 	                      ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
@@ -1664,71 +1654,13 @@ public class ProductService {
 		String pname = getPname(variant, opr);
 		if(!isBlankOrNull(pname)) {
 			entity.setPname(pname);
-		}
-		
-		if(!isBlankOrNull(variant.getExtraAttr())) {
-			saveExtraAttributesIntoEntity(variant, entity);					
-		}
+		}		
 
 		entity = productVariantsRepository.save(entity);
 
 		return entity;
 	}
 
-
-
-
-	private void saveExtraAttributesIntoEntity(VariantUpdateDTO variant, ProductVariantsEntity entity) {
-		try {
-			JSONObject  extraAttrJson = new JSONObject(variant.getExtraAttr());
-			
-			extraAttrJson
-			.keySet()
-			.stream()
-			.map(attrName -> createVariantExtraAttribute(attrName, extraAttrJson.getString(attrName)))
-			.forEach(entity::addExtraAttribute);
-		}catch(Throwable t) {
-			throw new RuntimeBusinessException(
-					ERR_INVALID_EXTRA_ATTR_STRING
-					, "INVLAID: extra_attr"
-					, NOT_ACCEPTABLE);
-		}	
-	}
-
-	
-	
-	
-	private ProductExtraAttributesEntity createVariantExtraAttribute(String name, String value) {
-		ExtraAttributesEntity extraAttrEntity = getExtraAttributeOrCreateIt(name);
-		
-		ProductExtraAttributesEntity variantExtraAttr = new ProductExtraAttributesEntity();
-		variantExtraAttr.setExtraAttribute(extraAttrEntity);
-		variantExtraAttr.setValue(value);
-		
-		return variantExtraAttr;
-	}
-	
-	
-	
-	private ExtraAttributesEntity getExtraAttributeOrCreateIt(String name) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		return extraAttrRepo
-				.findByNameAndOrganizationId(name, orgId)
-				.orElseGet(() -> createNewExtraAttribute(name));
-	}
-	
-	
-	
-	
-	private ExtraAttributesEntity createNewExtraAttribute(String name) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		ExtraAttributesEntity newAttr = new ExtraAttributesEntity();
-		newAttr.setName(name);
-		newAttr.setOrganizationId(orgId);
-		
-		return extraAttrRepo.save(newAttr);
-	}
-	
 
 
 
