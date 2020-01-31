@@ -13,7 +13,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
@@ -29,6 +28,9 @@ import com.nasnav.persistence.OAuth2UserEntity;
 @Component
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
+
+
+	private static final String NASNAV_DOMAIN = "nasnav.com";
 
 
 	@Autowired
@@ -141,10 +143,20 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         											.map(UriComponentsBuilder::fromUriString)
         											.map(UriComponentsBuilder::build)
         											.orElseGet(this::getDefaultRedirectUri);
-        if(redirectUri.getHost() != null) {
+        if(isInvalidRedirectUrl(redirectUri)) {
             throw new IllegalStateException("Invalid redirect URL : " + redirectUri);
         }
 		return redirectUri;
+	}
+
+
+
+
+
+
+	private boolean isInvalidRedirectUrl(UriComponents redirectUri) {
+		String host = redirectUri.getHost();
+		return host != null && !host.endsWith(NASNAV_DOMAIN);
 	}
 
 
