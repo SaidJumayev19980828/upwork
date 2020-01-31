@@ -1,5 +1,6 @@
 package com.nasnav.persistence;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -37,6 +38,7 @@ public class ProductVariantsEntity {
 
 	public ProductVariantsEntity() {
 		removed = 0;
+		extraAttributes = new HashSet<>();
 	}
 	
 	
@@ -76,5 +78,26 @@ public class ProductVariantsEntity {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<StocksEntity> stocks;
+    
+    
+    @OneToMany(mappedBy = "variant", fetch = FetchType.EAGER, cascade=CascadeType.ALL)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<ProductExtraAttributesEntity> extraAttributes;
+    
+    
+    
+    public void addExtraAttribute(ProductExtraAttributesEntity extraAttribute) {
+    	extraAttribute.setVariant(this);
+    	extraAttributes.add(extraAttribute);
+    }
+    
+    
+    
+    public void deleteExtraAttribute(ProductExtraAttributesEntity extraAttribute) {    	
+    	extraAttributes.remove(extraAttribute);
+    	extraAttribute.setVariant(null);
+    }
 
 }

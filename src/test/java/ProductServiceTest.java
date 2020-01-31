@@ -1,9 +1,12 @@
+import static java.lang.Math.random;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -24,8 +27,6 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.dao.FilesRepository;
@@ -435,10 +436,17 @@ public class ProductServiceTest {
 
 	private ShopsEntity createDummyShop(OrganizationEntity organizationEntity) {
 		ShopsEntity shopsEntity = new ShopsEntity();
-		shopsEntity.setName("Fortune");
+		shopsEntity.setName("Fortune - #"+ getRandomInt());
 		shopsEntity.setOrganizationEntity(organizationEntity);
 		shopsEntity = shopsRepository.save(shopsEntity);
 		return shopsEntity;
+	}
+
+
+
+
+	private int getRandomInt() {
+		return (int)(random()*Integer.MAX_VALUE);
 	}
 	
 	
@@ -745,15 +753,11 @@ public class ProductServiceTest {
 		response = template.getForEntity("/navbox/products?org_id=99001", String.class);
 
 		assertJsonFieldExists(response);
-		ProductRepresentationObject product = getProductFromStringResponse(response, 1005L);
+		getProductFromStringResponse(response, 1005L);
 
 		response = template.getForEntity("/navbox/product?product_id=1001", String.class);
 		System.out.println("response JSON >>>  "+ response.getBody().toString());
 		assertTrue(response.getBody().toString().contains("brand_id"));
-
-
-
-
 		//// finish test
 	}
 

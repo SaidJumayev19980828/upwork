@@ -92,6 +92,7 @@ public class DataImportServiceImpl implements DataImportService {
     
 
     @Override
+//    @Transactional(rollbackFor = Throwable.class)		// adding this will cause exception because of the enforced rollback , still unknown why
     public ProductListImportResponse importProducts(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) throws BusinessException {
 
         List<ProductData> productsData = toProductDataList(productImportDTOS, productImportMetadata);
@@ -356,14 +357,17 @@ public class DataImportServiceImpl implements DataImportService {
             variantEnt = variantRepo.findByBarcodeAndProductEntity_OrganizationId(row.getBarcode(), orgId);
 
         if (variantEnt != null && variantEnt.isPresent()) {
-            modifyProductCsvImportDtoForUpdate(data, row, variantEnt.get());
+            modifyProductDataForUpdate(data, row, variantEnt.get());
         }
 
         return data;
     }
+    
+    
+    
 
 
-    private void modifyProductCsvImportDtoForUpdate(ProductData dto, ProductImportDTO row, ProductVariantsEntity variantEnt)
+    private void modifyProductDataForUpdate(ProductData dto, ProductImportDTO row, ProductVariantsEntity variantEnt)
             throws BusinessException {
         dto.setExisting(true);
 
@@ -394,7 +398,14 @@ public class DataImportServiceImpl implements DataImportService {
 
 
     private VariantUpdateDTO createVariantDto(ProductImportDTO row) {
-        String features = Optional.ofNullable(row.getFeatures())
+        String features = 
+        		ofNullable(row.getFeatures())
+                .map(JSONObject::new)
+                .map(JSONObject::toString)
+                .orElse(null);
+        
+        String extraAtrributes = 
+        		ofNullable(row.getExtraAttributes())
                 .map(JSONObject::new)
                 .map(JSONObject::toString)
                 .orElse(null);
@@ -409,6 +420,9 @@ public class DataImportServiceImpl implements DataImportService {
         variant.setPname(row.getPname());
         if (features != null) {
             variant.setFeatures(features);
+        }
+        if(extraAtrributes != null) {
+        	variant.setExtraAttr(extraAtrributes);
         }
 
         return variant;

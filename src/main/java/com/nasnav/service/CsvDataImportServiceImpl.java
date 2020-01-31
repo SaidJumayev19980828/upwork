@@ -87,6 +87,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	@Autowired
 	private DataImportService dataImportService;
 	
+	
 	private Logger logger = Logger.getLogger(getClass());
 
 	
@@ -208,11 +209,13 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 
-	private BeanListProcessor<CsvRow> createRowProcessor(ProductListImportDTO metaData, List<ProductFeaturesEntity> features) {
-		ColumnMapping mapper = createAttrToColMapping(metaData);
+	private BeanListProcessor<CsvRow> createRowProcessor(ProductListImportDTO metaData, List<ProductFeaturesEntity> orgFeatures) {
+		List<String> defaultTemplateHeaders = getProductImportTemplateHeaders();
+		
+		ColumnMapping mapper = createAttrToColMapping(metaData);		
 		
 		BeanListProcessor<CsvRow> rowProcessor =
-				new ProductCsvRowProcessor<CsvRow>(CsvRow.class, features);
+				new ProductCsvRowProcessor<CsvRow>(CsvRow.class, orgFeatures, defaultTemplateHeaders);
 		rowProcessor.setColumnMapper(mapper);
 		rowProcessor.setStrictHeaderValidationEnabled(true);
 		return rowProcessor;
@@ -378,7 +381,17 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	}
 
 	@Override
-	public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException{
+	public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException{		
+		List<String> baseHeaders = getProductImportTemplateHeaders();
+
+		return writeCsvHeaders(baseHeaders);
+	}
+
+
+
+
+	@Override
+	public List<String> getProductImportTemplateHeaders() {
 		Long orgId = security.getCurrentUserOrganizationId();
 		List<String> features = 
 				prodcutFeaturesRepo
@@ -390,8 +403,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		
 		List<String> baseHeaders = new ArrayList<>(csvBaseHeaders);
 		baseHeaders.addAll(features);
-
-		return writeCsvHeaders(baseHeaders);
+		return baseHeaders;
 	}
 	
 	

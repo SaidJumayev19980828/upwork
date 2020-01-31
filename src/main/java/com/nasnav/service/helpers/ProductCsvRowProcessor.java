@@ -1,11 +1,17 @@
 package com.nasnav.service.helpers;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toMap;
+
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.apache.commons.lang3.tuple.Pair;
+
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.service.CsvRow;
 import com.univocity.parsers.common.Context;
@@ -16,13 +22,14 @@ import com.univocity.parsers.common.record.Record;
 
 
 public class ProductCsvRowProcessor<T extends CsvRow> extends BeanListProcessor<CsvRow> {
-	List<ProductFeaturesEntity> features;
+	private List<ProductFeaturesEntity> orgVariantFeatures;
+	private List<String> defaultTemplateHeaders;
 	
-	
-	public ProductCsvRowProcessor(Class<CsvRow> beanType, List<ProductFeaturesEntity> features) {
+	public ProductCsvRowProcessor(Class<CsvRow> beanType, List<ProductFeaturesEntity> orgFeatures , List<String> defaultTemplateHeaders) {
 		super(beanType);
 		
-		this.features = features != null ? features : new ArrayList<>();
+		this.orgVariantFeatures = ofNullable(orgFeatures).orElse(emptyList());
+		this.defaultTemplateHeaders = defaultTemplateHeaders;
 	}
 	
 	
@@ -33,8 +40,11 @@ public class ProductCsvRowProcessor<T extends CsvRow> extends BeanListProcessor<
 	public CsvRow createBean(String[] row, Context context){
 		CsvRow bean = super.createBean(row, context);
 		if(bean != null) {
-			Map<String, String> spec = getFeatureSpecs(row, context);		
-			bean.setFeatures(spec);
+			Map<String, String> variantSpec = getVariantFeatureSpecs(row, context);		
+			bean.setFeatures(variantSpec);
+			
+			Map<String, String> extraAttributes = getExtraAttributes(row, context);		
+			bean.setExtraAttributes(extraAttributes);
 		}
 		
 		return bean;
@@ -44,19 +54,63 @@ public class ProductCsvRowProcessor<T extends CsvRow> extends BeanListProcessor<
 
 
 
-	private Map<String, String> getFeatureSpecs(String[] row, Context context) {
-		Map<String, String> spec = new HashMap<>();
-		
+	private Map<String, String> getExtraAttributes(String[] row, Context context) {
 		Record record = context.toRecord(row);
-		List<String> headers = Arrays.asList(context.headers());
-		this.features.stream()
-				.filter(f -> headers.contains(f.getName()))
-				.forEach(
-						f -> spec.put( String.valueOf(f.getId())
-								, record.getString(f.getName())));
-		return spec;
+		Set<String> extraHeaders = getExtraCsvHeaders(context);
+		return extraHeaders
+				.stream()
+				.map(header -> Pair.of(header, record.getString(header)))
+				.filter(pair -> pair.getRight() != null)
+				.collect(toMap(Pair::getLeft, Pair::getRight));
+	}
+
+
+
+
+
+	private Set<String> getExtraCsvHeaders(Context context) {
+		Set<String> extraHeaders = EntityUtils.setOf(context.headers());
+		extraHeaders.removeAll(defaultTemplateHeaders);
+		return extraHeaders;
+	}
+
+
+
+
+
+	private Map<String, String> getVariantFeatureSpecs(String[] row, Context context) {		
+		Record record = context.toRecord(row);
+		List<String> headers = asList(context.headers());
+		
+		return orgVariantFeatures
+				.stream()
+				.filter(feature -> isFeatureNameInCsvHeaders(headers, feature))
+				.collect(toMap(this::getFeatureIdAsStr, feature -> getFeatureValueFromCsvRecord(record, feature)));			
+	}
+
+
+
+
+
+	private Boolean isFeatureNameInCsvHeaders(List<String> headers, ProductFeaturesEntity feature) {
+		return headers.contains(feature.getName());
 	}
 	
 	
+	
+	
+	
+	private String getFeatureIdAsStr(ProductFeaturesEntity feature) {
+		return String.valueOf(feature.getId());
+	}
+	
+	
+	
+	
+	
+	private String getFeatureValueFromCsvRecord(Record record, ProductFeaturesEntity feature) {
+		String headerName = feature.getName();
+		return record.getString(headerName);
+	}
 
 }
