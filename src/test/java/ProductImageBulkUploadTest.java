@@ -141,7 +141,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkNoAuthz() throws IOException, Exception {
 		
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, "NON-EXISTING-TOKEN")
 	             .andExpect(status().is(401));
@@ -157,7 +157,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkNoAuthN() throws IOException, Exception {
 		
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, STORE_ADMIN_TOKEN)
 	             .andExpect(status().is(403));
@@ -171,7 +171,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkNoZip() throws IOException, Exception {
 		
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		MockMultipartFile csvPart = createCsvPart(TEST_CSV);				
 		MockPart jsonPart = createJsonPart(jsonBytes);
@@ -192,7 +192,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkMissingType() throws IOException, Exception {
 		
-		JSONObject json = createDummUploadRequest();
+		JSONObject json = createDummyUploadRequest();
 		json.remove("type");
 		byte[] jsonBytes = json.toString().getBytes();
 		
@@ -210,7 +210,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkMissingPriority() throws IOException, Exception {
 		
-		JSONObject json = createDummUploadRequest();
+		JSONObject json = createDummyUploadRequest();
 		json.remove("priority");
 		
 		byte[] jsonBytes = json.toString().getBytes();
@@ -227,7 +227,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkEmptyZip() throws IOException, Exception {
 		
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		MockMultipartFile zipPart = createEmptyZipPart(TEST_ZIP);	
 		MockMultipartFile csvPart = createCsvPart(TEST_CSV);				
@@ -249,7 +249,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkNotZipFile() throws IOException, Exception {
 		
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		performFileUpload(TEST_CSV, TEST_CSV, jsonBytes, USER_TOKEN)
 	             .andExpect(status().is(406));
@@ -263,7 +263,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkInvalidZipFile() throws IOException, Exception {
 		
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		//if the zip file is invalid , nothing will be read from it , but
 		//no exception is thrown.
@@ -281,7 +281,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkTestInvalidBarcode() throws IOException, Exception {
 		
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 
 		String response =
 				performFileUpload(TEST_ZIP_NON_EXISTING_BARCODE, TEST_CSV_NON_EXISTING_BARCODE, jsonBytes, USER_TOKEN)
@@ -308,7 +308,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkAdminOfOtherOrg() throws IOException, Exception {
 		
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		String response = 
 				performFileUpload(TEST_ZIP, TEST_CSV, jsonBytes, OTHER_ORG_ADMIN_TOKEN)
@@ -334,7 +334,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkWithCSVTest() throws IOException, Exception {
 		
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		String response = 
 				performFileUpload(TEST_ZIP_UPLOADED_WITH_CSV, TEST_CSV, jsonBytes, USER_TOKEN)
@@ -354,7 +354,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkWithCSVAndMultipleBarcodeForSamePathTest() throws IOException, Exception {
 		
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		String response = 
 				performFileUpload(TEST_ZIP_MULTI_BARCODE_SAME_FILE, TEST_CSV_MULTI_BARCODE_PER_PATH, jsonBytes, USER_TOKEN)
@@ -373,7 +373,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkWithCSVAndInternalStructureTest() throws IOException, Exception {
 		
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		//test adding images inside internal folders of the ZIP file.
 		//The path of images in the CSV may start with '/' or not.
@@ -394,7 +394,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkNoCSVAndInternalStructureTest() throws IOException, Exception {
 		
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		String response = 
 				performFileUploadNoCSV(TEST_ZIP_INTERNAL_STRUCT_WITH_BARCODE, jsonBytes, USER_TOKEN)
@@ -417,7 +417,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkNoCSVTest() throws IOException, Exception {
 		
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		String response = performFileUploadNoCSV(TEST_ZIP, jsonBytes, USER_TOKEN)
 									.andExpect(status().is(200))
@@ -437,7 +437,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkWithIncompleteCSVTest() throws IOException, Exception {
 		
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		String response = 
 				performFileUpload(TEST_ZIP, TEST_CSV_INCOMPLETE, jsonBytes, USER_TOKEN)
@@ -457,7 +457,7 @@ public class ProductImageBulkUploadTest {
 	@Test
 	public void updateImgBulkTestEmptyImgFile() throws IOException, Exception {
 		
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		String response = 
 				performFileUpload(TEST_ZIP_EMPTY_IMG_FILE, TEST_CSV, jsonBytes, USER_TOKEN)
@@ -479,7 +479,7 @@ public class ProductImageBulkUploadTest {
 
 	@Test
 	public void updateImgBulkTestExistVariantIdExistVariantEntity() throws IOException, Exception {
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 
 		String response =
 				performFileUpload(TEST_ZIP_WITH_VARIANTS , TEST_CSV_VARIANT_ID_EXISTING_VARIANT, jsonBytes, USER_TOKEN)
@@ -493,7 +493,7 @@ public class ProductImageBulkUploadTest {
 
 	@Test
 	public void updateImgBulkTestExistExternalIdExistMapping() throws IOException, Exception {
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 
 		String response =
 				performFileUpload(TEST_ZIP_WITH_VARIANTS , TEST_CSV_EXTERNAL_ID_EXISTING_MAPPING, jsonBytes, USER_TOKEN)
@@ -507,7 +507,7 @@ public class ProductImageBulkUploadTest {
 
 	@Test
 	public void updateImgBulkTestExistVariantIdNoVariant() throws Exception {
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 
 		performFileUpload(TEST_ZIP_WITH_VARIANTS , TEST_CSV_VARIANT_ID_NO_VARIANT, jsonBytes, USER_TOKEN)
 				.andExpect(status().is(500));
@@ -517,7 +517,7 @@ public class ProductImageBulkUploadTest {
 
 	@Test
 	public void updateImgBulkTestExistExternalIdNoMapping() throws Exception {
-		byte[] jsonBytes = createDummUploadRequest().toString().getBytes();
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 
 		performFileUpload(TEST_ZIP_WITH_VARIANTS , TEST_CSV_EXTERNAL_ID_NO_MAPPING, jsonBytes, USER_TOKEN)
 				.andExpect(status().is(500));
@@ -528,11 +528,11 @@ public class ProductImageBulkUploadTest {
 	private void assertImgsImported(String response) {
 		JSONArray responseJson = new JSONArray(response);
 		assertEquals(
-				"import 2 images, one of them have a barcode that is used by both a product and a variant, so the 2 images are imported as 3 records"
-				, 3 
+				"import 2 images for two variants"
+				, 2
 				, responseJson.length());				
 		
-		assertEquals( 3L, imgRepo.count());		
+		assertEquals( 2L, imgRepo.count());		
 		
 		IntStream.range(0, responseJson.length())
 				.mapToObj(responseJson::getJSONObject)
@@ -547,11 +547,11 @@ public class ProductImageBulkUploadTest {
 	private void assertSameImgImportedForProductAndVariants(String response) {
 		JSONArray responseJson = new JSONArray(response);
 		assertEquals(
-				"import 2 images, one of them have a barcode that is used by both a product and a variant, so the 2 images are imported as 3 records"
-				, 3 
+				"import 2 images"
+				, 2
 				, responseJson.length());				
 		
-		assertEquals( 3L, imgRepo.count());		
+		assertEquals( 2L, imgRepo.count());		
 		
 		IntStream.range(0, responseJson.length())
 				.mapToObj(responseJson::getJSONObject)
@@ -677,7 +677,7 @@ public class ProductImageBulkUploadTest {
 	
 	
 	
-	private JSONObject createDummUploadRequest() {
+	private JSONObject createDummyUploadRequest() {
 		JSONObject metaData = new JSONObject();		
 		
 		metaData.put("type", 7);
