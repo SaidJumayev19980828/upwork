@@ -53,6 +53,7 @@ public class SallabWebClient {
                     .exchange();
     }
 
+
     public Mono<ClientResponse> getProduct(String token, String productId) {
         return client.get()
                 .uri("/services/data/v44.0/sobjects/Product2/"+productId)
@@ -86,6 +87,7 @@ public class SallabWebClient {
                 .exchange();
     }
 
+
     public Mono<ClientResponse> createCart(String token, CartDTO cart) {
         return client.post()
                 .uri("/services/data/v40.0/sobjects/Opportunity")
@@ -95,6 +97,7 @@ public class SallabWebClient {
                 .exchange();
     }
 
+
     public Mono<ClientResponse> createCustomer(String token, CustomerDTO customer) {
         return client.post()
                 .uri("/services/data/v40.0/sobjects/Account")
@@ -103,6 +106,7 @@ public class SallabWebClient {
                 .syncBody(customer)
                 .exchange();
     }
+
 
     public Mono<ClientResponse> getCustomer(String token, String id) {
         return client.get()

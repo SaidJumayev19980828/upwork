@@ -4,6 +4,7 @@ import com.nasnav.NavBox;
 import com.nasnav.integration.sallab.webclient.SallabWebClient;
 import com.nasnav.integration.sallab.webclient.dto.*;
 import net.jodah.concurrentunit.Waiter;
+import org.json.JSONArray;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,7 +17,9 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import java.io.*;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -62,13 +65,13 @@ public class SallabIntegrationWebClientsTest {
     public void getProductsNextRecords() throws Exception {
         Waiter waiter = new Waiter();
         Consumer<AuthenticationResponse> res = response -> {
-            client.getProductsNextRecords("Bearer "+response.getAccessToken(), "01g250000146PVoAAM-2000")
+            client.getProductsNextRecords("Bearer "+response.getAccessToken(), "01g25000014VP64AAG-4000")
                     .flatMap(r -> r.bodyToMono(ProductsResponse.class))
                     .subscribe(r -> printProductsData(r, waiter));
         };
 
         client.authenticate(data).subscribe(res);
-        waiter.await(20000, TimeUnit.MILLISECONDS);
+        waiter.await(30000, TimeUnit.MILLISECONDS);
     }
 
     @Test
@@ -115,7 +118,7 @@ public class SallabIntegrationWebClientsTest {
         };
 
         client.authenticate(data).subscribe(res);
-        waiter.await(4000, TimeUnit.MILLISECONDS);
+        waiter.await(8000, TimeUnit.MILLISECONDS);
 
     }
 
@@ -141,12 +144,16 @@ public class SallabIntegrationWebClientsTest {
     public void createCustomer() throws TimeoutException, InterruptedException {
         Waiter waiter = new Waiter();
 
-        CustomerDTO customer = new CustomerDTO();
+        byte[] array = new byte[7]; // length is bounded by 7
+        new Random().nextBytes(array);
+        String generatedString = new String(array, Charset.forName("UTF-8"));
+
+        CustomerDTO customer = new CustomerDTO(generatedString, null, null, "a@b.com", generatedString, null, new SalArea(6), new CustomerType(1));
 
         Consumer<AuthenticationResponse> res = response -> {
             client.createCustomer("Bearer "+response.getAccessToken(), customer)
                     .flatMap(r -> r.bodyToMono(SuccessResponse.class))
-                    .subscribe(r -> printSuccessResponse(r, waiter));
+                    .subscribe(r ->  printSuccessResponse(r, waiter));
         };
 
         client.authenticate(data).subscribe(res);
@@ -159,12 +166,12 @@ public class SallabIntegrationWebClientsTest {
         Waiter waiter = new Waiter();
         Consumer<AuthenticationResponse> res = response -> {
             client.getCustomer("Bearer "+response.getAccessToken(), "0012500001G8wDtAAJ")
-                    .flatMap(r -> r.bodyToMono(String.class))
-                    .subscribe(r -> printCustomerData(r, waiter));
+                    .flatMap(r -> r.bodyToMono(Customer.class))
+                    .subscribe(r ->  printCustomerData(r, waiter));
         };
 
         client.authenticate(data).subscribe(res);
-        waiter.await(20000, TimeUnit.MILLISECONDS);
+        waiter.await(5000, TimeUnit.MILLISECONDS);
     }
 
     //@Test
@@ -179,9 +186,10 @@ public class SallabIntegrationWebClientsTest {
                     String id;
                     while ((id = br.readLine()) != null) {
                         String finalId = id;
-                        client.getProductImage(response.getAccessToken(), id)
-                                .subscribe(r -> print(finalId, waiter));
-                        Thread.sleep(10);
+                        client.getProductImage("Bearer "+response.getAccessToken(), id)
+                                //.filter(r -> r.statusCode().is2xxSuccessful())
+                                .flatMap(r -> r.bodyToMono(String.class))
+                                .subscribe(r -> print(r, finalId, waiter)).wait(16);
                     }
                 } catch (Exception e) {
 
@@ -189,12 +197,12 @@ public class SallabIntegrationWebClientsTest {
         };
 
         client.authenticate(data).subscribe(res);
-        waiter.await(80000, TimeUnit.MILLISECONDS);
+        waiter.await(90000, TimeUnit.MILLISECONDS);
     }
 
 
-    private void printCustomerData(String c, Waiter w) {
-        System.out.println(c);
+    private void printCustomerData(Customer c, Waiter w) {
+        System.out.println(c.toString());
         w.resume();
     }
 
@@ -203,13 +211,21 @@ public class SallabIntegrationWebClientsTest {
         waiter.resume();
     }
 
+    private void printErrorResponse(String response, Waiter waiter) {
+        JSONArray arr = new JSONArray(response);
+        System.out.println(arr.get(0));
+        waiter.resume();
+    }
+
     private void printItemData(ItemPrice item, Waiter waiter) {
         System.out.println(item.toString());
         waiter.resume();
     }
 
-    private void print(String id, Waiter waiter) {
-        System.out.println(id);
+    private void print(String res, String id, Waiter waiter) {
+        System.out.println(res);
+        if (!res.contains("errorCode"))
+            System.out.println("thisss "+id);
         if(id.equals("00P58000006DgNT"))
             waiter.resume();
     }
@@ -224,9 +240,9 @@ public class SallabIntegrationWebClientsTest {
         System.out.println(response.totalSize);
         System.out.println(response.nextRecordsUrl);
         System.out.println(response.done);
-        for(Record r : response.records) {
+        /*for(Record r : response.records) {
             printRecordData(r);
-        }
+        }*/
         waiter.resume();
     }
 

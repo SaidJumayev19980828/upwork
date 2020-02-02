@@ -110,28 +110,29 @@ public class Customer {
     private String ownerId;
 
     @JsonProperty("CreatedDate")
-    private LocalDateTime createdDate;
+    private String createdDate;
 
     @JsonProperty("CreatedById")
     private String createdById;
 
     @JsonProperty("LastModifiedDate")
-    private LocalDateTime lastModifiedDate;
+    private String lastModifiedDate;
 
     @JsonProperty("LastModifiedById")
     private String lastModifiedById;
 
     @JsonProperty("SystemModstamp")
-    private LocalDateTime systemModstamp;
+    private String systemModstamp;
 
     @JsonProperty("LastActivityDate")
     private LocalDateTime lastActivityDate;
 
     @JsonProperty("LastViewedDate")
-    private LocalDateTime lastViewedDate;
+    private String lastViewedDate;
 
     @JsonProperty("LastReferencedDate")
-    private LocalDateTime lastReferencedDate;
+    private String
+            lastReferencedDate;
 
     @JsonProperty("JigsawCompanyId")
     private String jigsawCompanyId;
@@ -250,7 +251,7 @@ public class Customer {
     @JsonProperty("A_Reward__c")
     private Double aReward;
 
-    @JsonProperty("Category_A_Changed")
+    @JsonProperty("Category_A_Changed__c")
     private boolean categoryAChanged;
 
     @JsonProperty("Category_A_Difference__c")
@@ -269,7 +270,7 @@ public class Customer {
     private boolean categoryCChanged;
 
     @JsonProperty("Category_C_Difference__c")
-    private String categoryCDifference_;
+    private String categoryCDifference;
 
     @JsonProperty("Category_C_Points_Reward__c")
     private Double categoryCPointsReward;
