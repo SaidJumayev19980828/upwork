@@ -795,13 +795,17 @@ public class ProductImageServiceImpl implements ProductImageService {
 				variant = productVariantsRepository.findById(Long.parseLong(localMappedValue));
 				validateVariantExistance(variant, localMappedValue);
 			}
-			else
+			else {
 				throw new BusinessException("Provided external_id("+identifier.getExternalId()+") doesn't match any mapped value!",
 						"INVALID_PARAM: external_id", HttpStatus.NOT_ACCEPTABLE);
+			}
+				
 		}
 
-		if ( (variant == null || !variant.isPresent()) && identifier.getBarcode() != null)
+		if ( !variant.isPresent() && identifier.getBarcode() != null) {
 			variant = productVariantsRepository.findByBarcodeAndProductEntity_OrganizationId(identifier.getBarcode(), orgId);
+		}
+			
 
 
 		ProductImageUpdateDTO productMetaData = null;
