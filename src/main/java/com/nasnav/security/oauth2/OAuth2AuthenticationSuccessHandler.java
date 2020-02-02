@@ -1,5 +1,6 @@
 package com.nasnav.security.oauth2;
 import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
+import static com.nasnav.security.oauth2.CookieUtils.getCookie;
 import static com.nasnav.security.oauth2.OAuth2AuthorizationRequestRepository.ORG_ID_COOKIE_NAME;
 import static com.nasnav.security.oauth2.OAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME;
 import static java.lang.String.format;
@@ -138,11 +139,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
 
 	private UriComponents getRedirectParamFromRequest(HttpServletRequest request) {
-		UriComponents redirectUri = CookieUtils.getCookie(request, REDIRECT_URI_PARAM_COOKIE_NAME)
-    												.map(Cookie::getValue)
-        											.map(UriComponentsBuilder::fromUriString)
-        											.map(UriComponentsBuilder::build)
-        											.orElseGet(this::getDefaultRedirectUri);
+		UriComponents redirectUri = getCookie(request, REDIRECT_URI_PARAM_COOKIE_NAME)
+									.map(Cookie::getValue)
+									.map(UriComponentsBuilder::fromUriString)
+									.map(UriComponentsBuilder::build)
+									.orElseGet(this::getDefaultRedirectUri);
         if(isInvalidRedirectUrl(redirectUri)) {
             throw new IllegalStateException("Invalid redirect URL : " + redirectUri);
         }
