@@ -35,10 +35,6 @@ import java.util.zip.ZipInputStream;
 
 import javax.validation.Valid;
 
-import com.nasnav.commons.utils.StringUtils;
-import com.nasnav.dto.ProductImageUpdateIdentifier;
-import com.nasnav.integration.IntegrationService;
-import com.nasnav.integration.enums.MappingType;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.json.JSONArray;
@@ -53,16 +49,18 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dto.ProductImageBulkUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateDTO;
+import com.nasnav.dto.ProductImageUpdateIdentifier;
 import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductImagesEntity;
@@ -105,8 +103,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 	@Autowired
 	private SecurityService securityService;
 	
-	@Autowired
-	private FilesRepository fileRepo;
 	
 	@Autowired
 	private IntegrationService integrationService;
@@ -780,7 +776,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 			throws BusinessException {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 
-		ProductEntity product = null;
 		Optional<ProductVariantsEntity> variant = empty();
 
 		if (identifier.getVariantId() != null) {
@@ -805,19 +800,13 @@ public class ProductImageServiceImpl implements ProductImageService {
 		if ( !variant.isPresent() && identifier.getBarcode() != null) {
 			variant = productVariantsRepository.findByBarcodeAndProductEntity_OrganizationId(identifier.getBarcode(), orgId);
 		}
-			
-
-
-		ProductImageUpdateDTO productMetaData = null;
-		if (identifier.getBarcode() != null)
-			productMetaData = productRepository.findByBarcodeAndOrganizationId(identifier.getBarcode(), orgId)
-														.map(prod -> createImgMetaData(prod, metaData))
-														.orElse(null);
 		
-		ProductImageUpdateDTO variantMetaData = variant.map(var -> createImgMetaData(var, metaData))
-													   .orElse(null);
+		ProductImageUpdateDTO variantMetaData = 
+				variant
+					.map(var -> createImgMetaData(var, metaData))
+					.orElse(null);
 
-		if(productMetaData == null && variantMetaData == null) {
+		if(variantMetaData == null) {
 			throw new BusinessException(
 					String.format(ERR_NO_PRODUCT_EXISTS_WITH_BARCODE, identifier.getBarcode(), orgId)
 					, "INVALID PARAM:imgs_zip"
@@ -825,7 +814,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		}
 		
 		return
-			asList( productMetaData, variantMetaData )
+			asList( variantMetaData )
 			  .stream()
 			  .filter(java.util.Objects::nonNull)
 			  .collect(toList());
@@ -892,22 +881,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 	}
 
 
-	
-	
-	
-	private ProductImageUpdateDTO createImgMetaData(ProductEntity prod, ProductImageBulkUpdateDTO metaData) {
-		ProductImageUpdateDTO imgMetaData = new  ProductImageUpdateDTO();
-		imgMetaData.setOperation(Operation.CREATE);
-		imgMetaData.setPriority( metaData.getPriority() );
-		imgMetaData.setType( metaData.getType() );
-		imgMetaData.setProductId(prod.getId());
-		imgMetaData.setVariantId(null);
-		
-		return imgMetaData;
-	}
-	
-	
-	
 	
 	
 	
