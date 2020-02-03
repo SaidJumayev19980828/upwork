@@ -3,6 +3,7 @@ package com.nasnav.controller;
 import com.nasnav.dto.*;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.service.*;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -22,6 +23,8 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 @RestController
@@ -186,5 +189,21 @@ public class NavboxController {
 											  @RequestParam(name = "radius", required = false) Double radius,
 											  @RequestParam(name = "name", required = false) String name) throws BusinessException {
 		return shopService.getLocationShops(organizationId, longitude, lattitude, radius, name);
+	}
+
+
+
+	@ApiOperation(value = "Identify Organization by its domain", nickname = "orgId")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
+	})
+	@GetMapping(value="/orgid",produces=MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getOrganizationByDomain(@RequestParam(name = "url") URI url) throws URISyntaxException {
+		Long orgId = organizationService.getOrganizationByDomain(url);
+		if (orgId != null) {
+			 return new ResponseEntity<>("{\"org_id\":"+orgId+"}", HttpStatus.OK);
+		}
+		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 	}
 }

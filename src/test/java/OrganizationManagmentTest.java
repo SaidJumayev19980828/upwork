@@ -3,6 +3,7 @@ import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.test.commons.TestCommons;
 
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -24,6 +25,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import javax.sql.DataSource;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -200,4 +203,51 @@ public class OrganizationManagmentTest {
                 OrganizationResponse.class);
         Assert.assertEquals(403, response.getStatusCode().value());
     }
+
+
+
+    @Test
+    public void getOrgByURLTestSuccess() throws URISyntaxException {
+        URI url = new URI("http://www.fortune.nasnav.com/");
+        ResponseEntity<String> response = template.getForEntity("/navbox/orgid?url="+ url, String.class);
+
+        checkSuccessResponse(response);
+
+        url = new URI("https://www.nasnav.com/fortune/product/74");
+        response = template.getForEntity("/navbox/orgid?url="+ url, String.class);
+
+        checkSuccessResponse(response);
+
+        url = new URI("https://www.fortune-egypt.com/categories/");
+        response = template.getForEntity("/navbox/orgid?url="+ url, String.class);
+
+        checkSuccessResponse(response);
+    }
+
+    @Test
+    public void getOrgByURLNoOrgTest() throws URISyntaxException {
+        URI url = new URI("http://www.invaliddomain.nasnav.com/");
+        ResponseEntity<String> response = template.getForEntity("/navbox/orgid?url="+ url, String.class);
+
+        Assert.assertEquals(404, response.getStatusCode().value());
+
+        url = new URI("https://www.nasnav.com/invaliddomain/product/74");
+        response = template.getForEntity("/navbox/orgid?url="+ url, String.class);
+
+        Assert.assertEquals(404, response.getStatusCode().value());
+
+        url = new URI("https://www.invaliddomain-egypt.com/categories/");
+        response = template.getForEntity("/navbox/orgid?url="+ url, String.class);
+
+        Assert.assertEquals(404, response.getStatusCode().value());
+    }
+
+
+    private void checkSuccessResponse(ResponseEntity<String> response) {
+        JSONObject json = new JSONObject(response.getBody());
+
+        Assert.assertEquals(200, response.getStatusCode().value());
+        Assert.assertEquals(99001, json.getInt("org_id"));
+    }
+
 }
