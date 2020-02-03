@@ -211,11 +211,16 @@ public class CategoryService {
 
 
 
-    public List<TagsRepresentationObject> getOrganizationTags(Long orgId) {
-        return orgTagsRepo.findByOrganizationEntity_Id(orgId)
-                .stream()
-                .map(tag ->(TagsRepresentationObject) tag.getRepresentation())
-                .collect(Collectors.toList());
+    public List<TagsRepresentationObject> getOrganizationTags(Long orgId, String categoryName) {
+        List<TagsEntity> tagsEntities;
+        if(categoryName != null) 
+            tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_Id(categoryName, orgId);
+        else
+            tagsEntities = orgTagsRepo.findByOrganizationEntity_Id(orgId);
+
+        return tagsEntities.stream()
+                           .map(tag ->(TagsRepresentationObject) tag.getRepresentation())
+                           .collect(Collectors.toList());
     }
 
     public List<TagsRepresentationObject> getOrganizationTagsTree(Long orgId) throws BusinessException {

@@ -167,8 +167,9 @@ public class NavboxController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
 	})
 	@GetMapping(value="/tags",produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getTags(@RequestParam(name = "org_id", required = false) Long organizationId) throws BusinessException {
-		List<TagsRepresentationObject> response = categoryService.getOrganizationTags(organizationId);
+	public ResponseEntity<?> getTags(@RequestParam(name = "org_id") Long organizationId,
+									 @RequestParam(value = "category_name", required = false) String categoryName) throws BusinessException {
+		List<TagsRepresentationObject> response = categoryService.getOrganizationTags(organizationId, categoryName);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 

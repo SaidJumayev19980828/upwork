@@ -260,7 +260,7 @@ public class CategoryManagmentTest {
 
     @Test
     public void getTags() {
-        List<TagsRepresentationObject> tgs = service.getOrganizationTags(99001L);
+        List<TagsRepresentationObject> tgs = service.getOrganizationTags(99001L, "");
         assertTrue(!tgs.isEmpty());
         System.out.println(tgs.toString());
     }
