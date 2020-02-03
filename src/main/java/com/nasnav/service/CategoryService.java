@@ -213,10 +213,10 @@ public class CategoryService {
 
     public List<TagsRepresentationObject> getOrganizationTags(Long orgId, String categoryName) {
         List<TagsEntity> tagsEntities;
-        if(categoryName != null) 
-            tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_Id(categoryName, orgId);
-        else
+        if(categoryName == null || categoryName.equals(""))
             tagsEntities = orgTagsRepo.findByOrganizationEntity_Id(orgId);
+        else
+            tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_Id(categoryName, orgId);
 
         return tagsEntities.stream()
                            .map(tag ->(TagsRepresentationObject) tag.getRepresentation())
