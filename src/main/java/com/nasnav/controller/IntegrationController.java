@@ -77,7 +77,7 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @GetMapping(value = "module/all", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "module/all", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public List<OrganizationIntegrationInfoDTO> getAllIntegrationModules(@RequestHeader (value = "User-Token") String userToken)  throws BusinessException {
 		return integrationSrv.getAllIntegrationModules();
     }
