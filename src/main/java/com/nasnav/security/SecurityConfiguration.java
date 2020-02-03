@@ -108,7 +108,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
    
     private List<AuthPattern> PUBLIC_URLS =
             Arrays.asList(
-            			patternOf("/navbox/**")
+					    patternOf("/360view/**")
+            			, patternOf("/navbox/**")
                         , patternOf("/user/recover")
                         , patternOf("/user/login/**")
                         , patternOf("/user/register")						
