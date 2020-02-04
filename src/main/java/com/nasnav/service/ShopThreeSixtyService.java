@@ -1,14 +1,18 @@
 package com.nasnav.service;
 
 import com.nasnav.dao.ProductPositionsRepository;
+import com.nasnav.dao.ShopFloorsRepository;
 import com.nasnav.dao.ShopThreeSixtyRepository;
+import com.nasnav.dto.ShopFloorDTO;
 import com.nasnav.persistence.ProductPositionEntity;
 import com.nasnav.persistence.ShopThreeSixtyEntity;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ShopThreeSixtyService {
@@ -18,6 +22,9 @@ public class ShopThreeSixtyService {
 
     @Autowired
     private ProductPositionsRepository productPosRepo;
+
+    @Autowired
+    private ShopFloorsRepository shopFloorsRepo;
 
 
     public String getShop360JsonInfo(Long shopId, String type) {
@@ -48,9 +55,16 @@ public class ShopThreeSixtyService {
         return positionsJson.toString();
     }
 
-    public List getSections(Long shopId) {
+    public List<ShopFloorDTO> getSections(Long shopId) {
+        ShopThreeSixtyEntity shop = shop360Repo.findByShopsEntity_Id(shopId);
+        if (shop == null)
+            return new ArrayList<>();
 
-        return null;
+        List<ShopFloorDTO> floors = shopFloorsRepo.findByShopThreeSixtyEntity_Id(shop.getId())
+                                                          .stream()
+                                                          .map(f -> (ShopFloorDTO) f.getRepresentation())
+                                                          .collect(Collectors.toList());
+        return floors;
     }
 
 
