@@ -260,9 +260,22 @@ public class CategoryManagmentTest {
 
     @Test
     public void getTags() {
-        List<TagsRepresentationObject> tgs = service.getOrganizationTags(99001L);
-        assertTrue(!tgs.isEmpty());
-        System.out.println(tgs.toString());
+        List<TagsRepresentationObject> tags = service.getOrganizationTags(99001L, null);
+        assertTrue(!tags.isEmpty());
+        System.out.println(tags.toString());
+    }
+
+    @Test
+    public void getTagsWithCategory() {
+        List<TagsRepresentationObject> tags = service.getOrganizationTags(99001L, "category_1");
+        assertTrue(tags.size() == 1);
+        System.out.println(tags.toString());
+    }
+
+    @Test
+    public void getTagsInvalidCategory() {
+        List<TagsRepresentationObject> tags = service.getOrganizationTags(99001L, "invalid Category");
+        assertTrue(tags.isEmpty());
     }
 
     @Test
