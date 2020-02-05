@@ -1,4 +1,5 @@
 package com.nasnav.test.integration.sallab;
+import static com.google.common.net.MediaType.JSON_UTF_8;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
@@ -9,8 +10,6 @@ import org.mockserver.junit.MockServerRule;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
-
-import com.google.common.net.MediaType;
 
 
 @Component
@@ -30,7 +29,13 @@ public class ElSallabIntegrationTestCommon {
     
     
     
+    @Value("classpath:/json/el_sallab_integration_test/get_stock_response.json")
+    private Resource stockResponseJson;
     
+    
+    
+    @Value("classpath:/json/el_sallab_integration_test/get_price_response.json")
+    private Resource priceResponseJson;
     
 
 	public  String initElSallabMockServer(MockServerRule mockServerRule) throws Exception {		
@@ -46,7 +51,10 @@ public class ElSallabIntegrationTestCommon {
 	
 	private  void prepareMockRequests(MockServerRule mockServerRule) throws Exception {
 		mockGetProductsRequest(mockServerRule);
-		mockGetAuthRequest(mockServerRule);//TODO: auth is on different domain, it needs separate mock server- or not
+		mockGetProductsNextRecordRequest(mockServerRule);
+		mockGetAuthRequest(mockServerRule);
+		mockGetPriceRequest(mockServerRule);
+		mockGetItemStockRequest(mockServerRule);
 	}
 	
 	
@@ -61,10 +69,29 @@ public class ElSallabIntegrationTestCommon {
 				request().withMethod("GET")
 						.withPath("/services/data/v44.0/query"))
 			.respond(
-					response().withBody(productsResponse, MediaType.JSON_UTF_8) 
+					response().withBody(productsResponse, JSON_UTF_8) 
 							  .withStatusCode(200))
 				;
 	}
+	
+	
+	
+	
+	
+	
+	private  void mockGetProductsNextRecordRequest(MockServerRule mockServerRule) throws IOException {
+		String productsResponse = readJsonFile(productsResponseJson);
+    	 mockServerRule.getClient()
+			.when(
+				request().withMethod("GET")
+						.withPath("/services/data/v44.0/query/.*"))
+			.respond(
+					response().withBody(productsResponse, JSON_UTF_8) 
+							  .withStatusCode(200))
+				;
+	}
+	
+	
 	
 	
 	
@@ -73,17 +100,56 @@ public class ElSallabIntegrationTestCommon {
 		String authResponse = readJsonFile(authResponseJson);
     	 mockServerRule.getClient()
 			.when(
-				request().withMethod("GET")
-						.withPath("/services/oauth2/token"))
+				request()
+					.withMethod("POST")
+					.withPath("/services/oauth2/token")
+				)
 			.respond(
-					response().withBody(authResponse, MediaType.JSON_UTF_8) 
+					response().withBody(authResponse, JSON_UTF_8) 
 							  .withStatusCode(200))
 				;
 	}
 
 
+	
+	
+	
+	
+	private  void mockGetPriceRequest(MockServerRule mockServerRule) throws IOException {
+		String priceResponse = readJsonFile(priceResponseJson);
+    	 mockServerRule.getClient()
+			.when(
+				request()
+					.withMethod("GET")
+					.withPath("/ElSallab.Webservice/SallabService.svc/getItemPriceBreakdown")
+				)
+			.respond(
+					response().withBody(priceResponse, JSON_UTF_8) 
+							  .withStatusCode(200))
+				;
+	}
+	
+	
+	
+	
+	
+	
+	private  void mockGetItemStockRequest(MockServerRule mockServerRule) throws IOException {
+		String stockResponse = readJsonFile(stockResponseJson);
+    	 mockServerRule.getClient()
+			.when(
+				request()
+					.withMethod("GET")
+					.withPath("/ElSallab.Webservice/SallabService.svc/getItemStockBalance")
+				)
+			.respond(
+					response().withBody(stockResponse, JSON_UTF_8) 
+							  .withStatusCode(200))
+				;
+	}
+	
 
-
+	
 
 
 

@@ -1,0 +1,32 @@
+[
+    {
+        "QTY": 3.4650,
+        "FREE_BAL": 3.4650,
+        "RESV_BAL": 0,
+        "STK_NO": 222,
+        "STK_NAME": "العرض صحي التجمع",
+        "ESTK_NAME": null,
+        "STK_ADDRESS": null,
+        "STK_STR_ID": null
+    },
+    {
+        "QTY": 5.8530,
+        "FREE_BAL": 5.8530,
+        "RESV_BAL": 0,
+        "STK_NO": 183,
+        "STK_NAME": "معرض مستورد الجيزه",
+        "ESTK_NAME": "jizza",
+        "STK_ADDRESS": "146 ش البحر الأعظم",
+        "STK_STR_ID": null
+    },
+    {
+        "QTY": 1582.4970,
+        "FREE_BAL": 1576.0320,
+        "RESV_BAL": 6.4650,
+        "STK_NO": 110,
+        "STK_NAME": "مستورد الشروق",
+        "ESTK_NAME": "IMPORTED STORE",
+        "STK_ADDRESS": "طريق مصر الاسماعلية-خلف قرية مصطفى عساكر للأيتام-الشروق",
+        "STK_STR_ID": null
+    }
+]

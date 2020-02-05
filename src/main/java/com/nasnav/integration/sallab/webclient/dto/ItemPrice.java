@@ -9,7 +9,7 @@ public class ItemPrice {
 
     private String itemNumber;
     private BigDecimal price;
-    private BigDecimal discountRate;
+    private String discountRate;
     private BigDecimal discountPerc;
     private Integer addingFlag;
     private Integer addingValue;

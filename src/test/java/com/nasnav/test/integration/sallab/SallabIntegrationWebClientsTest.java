@@ -1,21 +1,12 @@
 package com.nasnav.test.integration.sallab;
 
-import com.nasnav.NavBox;
-import com.nasnav.integration.sallab.webclient.SallabWebClient;
-import com.nasnav.integration.sallab.webclient.dto.*;
-import net.jodah.concurrentunit.Waiter;
-import org.json.JSONArray;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.io.Resource;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringRunner;
-import java.io.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.mockserver.model.HttpRequest.request;
+import static org.springframework.http.HttpStatus.OK;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -24,6 +15,42 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
+import org.json.JSONArray;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockserver.junit.MockServerRule;
+import org.mockserver.verify.VerificationTimes;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.io.Resource;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import com.nasnav.NavBox;
+import com.nasnav.integration.sallab.webclient.SallabWebClient;
+import com.nasnav.integration.sallab.webclient.dto.AuthenticationData;
+import com.nasnav.integration.sallab.webclient.dto.AuthenticationResponse;
+import com.nasnav.integration.sallab.webclient.dto.CartDTO;
+import com.nasnav.integration.sallab.webclient.dto.Customer;
+import com.nasnav.integration.sallab.webclient.dto.CustomerDTO;
+import com.nasnav.integration.sallab.webclient.dto.CustomerType;
+import com.nasnav.integration.sallab.webclient.dto.ItemDTO;
+import com.nasnav.integration.sallab.webclient.dto.ItemPrice;
+import com.nasnav.integration.sallab.webclient.dto.ItemSearchParam;
+import com.nasnav.integration.sallab.webclient.dto.ItemStockBalance;
+import com.nasnav.integration.sallab.webclient.dto.Product;
+import com.nasnav.integration.sallab.webclient.dto.ProductsResponse;
+import com.nasnav.integration.sallab.webclient.dto.Record;
+import com.nasnav.integration.sallab.webclient.dto.SalArea;
+import com.nasnav.integration.sallab.webclient.dto.SuccessResponse;
+
+import net.jodah.concurrentunit.Waiter;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @PropertySource("classpath:database.properties")
@@ -31,8 +58,16 @@ import java.util.function.Consumer;
 @DirtiesContext
 public class SallabIntegrationWebClientsTest {
 
-    private static final String sallabServerUrl = "https://azizsallab--DevSanbox.cs80.my.salesforce.com";
-    private static final String mockServerUrl = "http://127.0.0.1";
+    private static final String SALLAB_SERVER_URL = "https://azizsallab--DevSanbox.cs80.my.salesforce.com";    
+    private static final String SALLAB_SEVER_URL_2 = "http://41.33.113.70";
+    private static final String AUTH_SERVER_URL = "https://test.salesforce.com";
+    private static final String MOCK_SERVER_URL = "http://127.0.0.1";
+    
+  private static final String SERVER_URL = MOCK_SERVER_URL;
+//  private static final String SERVER_URL = SALLAB_SERVER_URL;
+  
+    private static final boolean usingMockServer = SERVER_URL.equals(MOCK_SERVER_URL);
+    
 
     public SallabWebClient client;
 
@@ -41,41 +76,160 @@ public class SallabIntegrationWebClientsTest {
     @Value("classpath:/json/sallab_integration_test/productsIds.json")
     private Resource productsJson;
 
+    
+    
+    @Rule
+    public MockServerRule mockServerRule = new MockServerRule(this);
+    
+    
+    @Autowired
+	private ElSallabIntegrationTestCommon testCommons;
+    
+    
     @Before
     public void init() throws Exception {
-        client = new SallabWebClient(sallabServerUrl);
+    	String serverFullUrl  = SALLAB_SERVER_URL;
+    	String server2FullUrl = SALLAB_SEVER_URL_2;
+    	String authServerUrl = AUTH_SERVER_URL;
+    	
+    	if(usingMockServer) {
+			serverFullUrl = testCommons.initElSallabMockServer(mockServerRule);
+			server2FullUrl = serverFullUrl;
+			authServerUrl = serverFullUrl;
+		}
+    	
+        client = new SallabWebClient(serverFullUrl, server2FullUrl,  authServerUrl);
         data = new AuthenticationData("password", "3MVG98_Psg5cppyZgL4kzqXARpsy8tyvcM1d8DwhODOxPiDTnqaf71BGU2cmzBpvf8l_myMTql31bhVa.ar8V",
                 "4085100268240543918", "mzaklama@elsallab.com.devsanbox", "CloudzLab001tBHMDjhBGvDRsmWMrfog0oHG7");
     }
 
-//    @Test
+    
+    
+    
+    
+    @Test
     public void getProducts() throws Exception {
         Waiter waiter = new Waiter();
-        Consumer<AuthenticationResponse> res = response -> {
-                    client.getProducts("Bearer "+response.getAccessToken())
-                    .flatMap(r -> r.bodyToMono(ProductsResponse.class))
-                    .subscribe(r -> printProductsData(r, waiter));
-                };
-
-        client.authenticate(data).subscribe(res);
-        waiter.await(20000, TimeUnit.MILLISECONDS);
-    }
-
-    
-    
-//    @Test
-    public void getProductsNextRecords() throws Exception {
-        Waiter waiter = new Waiter();
-        Consumer<AuthenticationResponse> res = response -> {
-            client.getProductsNextRecords("Bearer "+response.getAccessToken(), "01g25000014VP64AAG-4000")
-                    .flatMap(r -> r.bodyToMono(ProductsResponse.class))
-                    .subscribe(r -> printProductsData(r, waiter));
+        
+        Consumer<ProductsResponse> onResponse = response -> {
+        	System.out.println(response.toString());
+            waiter.resume();
         };
 
-        client.authenticate(data).subscribe(res);
-        waiter.await(30000, TimeUnit.MILLISECONDS);
+        client
+        	.authenticate(data)
+        	.doOnNext(res -> waiter.assertEquals(res.statusCode(), OK))
+        	.flatMap(res -> res.bodyToMono(AuthenticationResponse.class))
+        	.flatMap(res -> client.getProducts(res.getAccessToken()))
+        	.flatMap(prodRes -> prodRes.bodyToMono(ProductsResponse.class))
+        	.subscribe(onResponse);
+        
+        waiter.await(30000, MILLISECONDS);
+        //-------------------------------------------------------
+        
+        if(usingMockServer) {
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("GET")
+				        .withPath("/services/data/v44.0/query"),
+				      VerificationTimes.exactly(1)
+				    );
+		}
     }
 
+    
+    
+    
+    
+    @Test
+    public void getProductsNextRecords() throws Exception {
+        Waiter waiter = new Waiter();
+        
+        Consumer<ProductsResponse> onResponse = response -> {
+        	System.out.println(response.toString());
+            waiter.resume();
+        };
+
+        client
+        	.authenticate(data)
+        	.doOnNext(res -> waiter.assertEquals(res.statusCode(), OK))
+        	.flatMap(res -> res.bodyToMono(AuthenticationResponse.class))
+        	.flatMap(res -> client.getProductsNextRecords(res.getAccessToken(), "01g25000014iC4QAAU-2000"))
+        	.flatMap(prodRes -> prodRes.bodyToMono(ProductsResponse.class))
+        	.subscribe(onResponse);
+        
+        waiter.await(50000, TimeUnit.MILLISECONDS);
+    }
+    
+    
+    
+    
+    
+    
+    @Test
+    public void getPrice() throws Exception {
+        Waiter waiter = new Waiter();
+        
+        Consumer<ItemPrice> onResponse = response -> {
+        	System.out.println(response.toString());
+            waiter.resume();
+        };
+
+        client
+        	.authenticate(data)
+        	.flatMap(res -> res.bodyToMono(AuthenticationResponse.class))
+        	.flatMap(res -> client.getItemPrice(new ItemSearchParam("0550500023100011")) )
+        	.flatMap(priceRes -> priceRes.bodyToMono(ItemPrice.class))
+        	.subscribe(onResponse);
+        
+        waiter.await(40000, MILLISECONDS);
+        //-------------------------------------------------------
+        
+        if(usingMockServer) {
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("GET")
+				        .withPath("/ElSallab.Webservice/SallabService.svc/getItemPriceBreakdown"),
+				      VerificationTimes.exactly(1)
+				    );
+		}
+    }
+    
+    
+    
+    
+    
+    
+
+    @Test
+    public void getStock() throws Exception {
+        Waiter waiter = new Waiter();
+        
+        Consumer<ItemStockBalance> onResponse = response -> {
+        	System.out.println(response.toString());
+            waiter.resume();
+        };
+
+        client
+        	.authenticate(data)
+        	.flatMap(res -> res.bodyToMono(AuthenticationResponse.class))
+        	.flatMap(res -> client.getItemStockBalance("0550500023100011" , 2019) )
+        	.flatMapMany(stockRes -> stockRes.bodyToFlux(ItemStockBalance.class))
+        	.subscribe(onResponse);
+        
+        waiter.await(5000, MILLISECONDS);
+        //-------------------------------------------------------
+        
+        if(usingMockServer) {
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("GET")
+				        .withPath("/ElSallab.Webservice/SallabService.svc/getItemStockBalance"),
+				      VerificationTimes.exactly(1)
+				    );
+		}
+    }
+    
     
     
     
@@ -89,7 +243,7 @@ public class SallabIntegrationWebClientsTest {
                             .subscribe(r -> printProductData(r, waiter));
                 };
 
-        client.authenticate(data).subscribe(res);
+//        client.authenticate(data).subscribe(res);
         waiter.await(20000, TimeUnit.MILLISECONDS);
     }
 
@@ -102,7 +256,7 @@ public class SallabIntegrationWebClientsTest {
         Waiter waiter = new Waiter();
         ItemSearchParam param = new ItemSearchParam("80151507570000", 1, BigDecimal.ONE, BigDecimal.ZERO, BigDecimal.ZERO);
 
-        client.getItemPrice(param).subscribe(res -> printItemData(res, waiter));
+//        client.getItemPrice(param).subscribe(res -> printItemData(res, waiter));
         waiter.await(5000, TimeUnit.MILLISECONDS);
     }
 
@@ -115,7 +269,7 @@ public class SallabIntegrationWebClientsTest {
     public void getItemStock() throws TimeoutException, InterruptedException {
         Waiter waiter = new Waiter();
 
-        client.getItemStockBalance("80151507570000", 2019).subscribe(res -> printItemStock(res, waiter));
+//        client.getItemStockBalance("80151507570000", 2019).subscribe(res -> printItemStock(res, waiter));
         waiter.await(2000, TimeUnit.MILLISECONDS);
     }
 
@@ -136,7 +290,7 @@ public class SallabIntegrationWebClientsTest {
                       .subscribe(r -> printSuccessResponse(r, waiter));
         };
 
-        client.authenticate(data).subscribe(res);
+//        client.authenticate(data).subscribe(res);
         waiter.await(8000, TimeUnit.MILLISECONDS);
 
     }
@@ -157,7 +311,7 @@ public class SallabIntegrationWebClientsTest {
                     .subscribe(r -> printSuccessResponse(r, waiter));
         };
 
-        client.authenticate(data).subscribe(res);
+//        client.authenticate(data).subscribe(res);
         waiter.await(10000, TimeUnit.MILLISECONDS);
 
     }
@@ -182,7 +336,7 @@ public class SallabIntegrationWebClientsTest {
                     .subscribe(r ->  printSuccessResponse(r, waiter));
         };
 
-        client.authenticate(data).subscribe(res);
+//        client.authenticate(data).subscribe(res);
         waiter.await(10000, TimeUnit.MILLISECONDS);
 
     }
@@ -200,7 +354,7 @@ public class SallabIntegrationWebClientsTest {
                     .subscribe(r ->  printCustomerData(r, waiter));
         };
 
-        client.authenticate(data).subscribe(res);
+//        client.authenticate(data).subscribe(res);
         waiter.await(5000, TimeUnit.MILLISECONDS);
     }
 
@@ -226,7 +380,7 @@ public class SallabIntegrationWebClientsTest {
                 }
         };
 
-        client.authenticate(data).subscribe(res);
+//        client.authenticate(data).subscribe(res);
         waiter.await(90000, TimeUnit.MILLISECONDS);
     }
 
@@ -267,9 +421,9 @@ public class SallabIntegrationWebClientsTest {
     }
 
     private void printProductsData(ProductsResponse response, Waiter waiter) {
-        System.out.println(response.totalSize);
-        System.out.println(response.nextRecordsUrl);
-        System.out.println(response.done);
+//        System.out.println(response.totalSize);
+//        System.out.println(response.nextRecordsUrl);
+//        System.out.println(response.done);
         /*for(Record r : response.records) {
             printRecordData(r);
         }*/
