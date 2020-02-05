@@ -24,11 +24,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@PropertySource("classpath:database.properties")
-@AutoConfigureWebTestClient
-@DirtiesContext
+//@RunWith(SpringRunner.class)
+//@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+//@PropertySource("classpath:database.properties")
+//@AutoConfigureWebTestClient
+//@DirtiesContext
 public class SallabIntegrationWebClientsTest {
 
     private static final String sallabServerUrl = "https://azizsallab--DevSanbox.cs80.my.salesforce.com";
@@ -48,7 +48,7 @@ public class SallabIntegrationWebClientsTest {
                 "4085100268240543918", "mzaklama@elsallab.com.devsanbox", "CloudzLab001tBHMDjhBGvDRsmWMrfog0oHG7");
     }
 
-    @Test
+//    @Test
     public void getProducts() throws Exception {
         Waiter waiter = new Waiter();
         Consumer<AuthenticationResponse> res = response -> {
@@ -61,7 +61,9 @@ public class SallabIntegrationWebClientsTest {
         waiter.await(20000, TimeUnit.MILLISECONDS);
     }
 
-    @Test
+    
+    
+//    @Test
     public void getProductsNextRecords() throws Exception {
         Waiter waiter = new Waiter();
         Consumer<AuthenticationResponse> res = response -> {
@@ -74,7 +76,11 @@ public class SallabIntegrationWebClientsTest {
         waiter.await(30000, TimeUnit.MILLISECONDS);
     }
 
-    @Test
+    
+    
+    
+    
+//    @Test
     public void getProduct() throws Exception {
         Waiter waiter = new Waiter();
         Consumer<AuthenticationResponse> res = response -> {
@@ -87,7 +93,11 @@ public class SallabIntegrationWebClientsTest {
         waiter.await(20000, TimeUnit.MILLISECONDS);
     }
 
-    @Test
+    
+    
+    
+    
+//    @Test
     public void getItemPrice() throws TimeoutException, InterruptedException {
         Waiter waiter = new Waiter();
         ItemSearchParam param = new ItemSearchParam("80151507570000", 1, BigDecimal.ONE, BigDecimal.ZERO, BigDecimal.ZERO);
@@ -96,7 +106,12 @@ public class SallabIntegrationWebClientsTest {
         waiter.await(5000, TimeUnit.MILLISECONDS);
     }
 
-    @Test
+    
+    
+    
+    
+    
+//    @Test
     public void getItemStock() throws TimeoutException, InterruptedException {
         Waiter waiter = new Waiter();
 
@@ -104,7 +119,11 @@ public class SallabIntegrationWebClientsTest {
         waiter.await(2000, TimeUnit.MILLISECONDS);
     }
 
-    @Test
+    
+    
+    
+    
+//    @Test
     public void addCartItem() throws TimeoutException, InterruptedException {
         Waiter waiter = new Waiter();
 
@@ -122,7 +141,10 @@ public class SallabIntegrationWebClientsTest {
 
     }
 
-    @Test
+    
+    
+    
+//    @Test
     public void createCart() throws TimeoutException, InterruptedException {
         Waiter waiter = new Waiter();
 
@@ -140,7 +162,11 @@ public class SallabIntegrationWebClientsTest {
 
     }
 
-    @Test
+    
+    
+    
+    
+//    @Test
     public void createCustomer() throws TimeoutException, InterruptedException {
         Waiter waiter = new Waiter();
 
@@ -160,8 +186,12 @@ public class SallabIntegrationWebClientsTest {
         waiter.await(10000, TimeUnit.MILLISECONDS);
 
     }
+    
+    
+    
+    
 
-    @Test
+//    @Test
     public void getCustomer() throws Exception {
         Waiter waiter = new Waiter();
         Consumer<AuthenticationResponse> res = response -> {
