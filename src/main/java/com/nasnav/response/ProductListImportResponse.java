@@ -15,6 +15,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class ProductListImportResponse extends BaseResponse{
+public class ProductListImportResponse{
 	List<String> errors;
 }
