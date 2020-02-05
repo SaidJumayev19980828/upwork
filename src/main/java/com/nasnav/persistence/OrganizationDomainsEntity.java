@@ -6,6 +6,8 @@ import com.nasnav.dto.BaseRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import static javax.persistence.GenerationType.IDENTITY;
+
 import javax.persistence.*;
 
 @Entity
@@ -15,10 +17,10 @@ import javax.persistence.*;
 public class OrganizationDomainsEntity implements BaseEntity{
 
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy= IDENTITY)
     private Long id;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "organization_id", referencedColumnName = "id")
     @JsonIgnore
     private OrganizationEntity organizationEntity;

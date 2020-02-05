@@ -1,15 +1,12 @@
 package com.nasnav.service;
 
 import java.net.URI;
-import java.net.URL;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.nasnav.dao.*;
-import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -19,6 +16,16 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.dao.OrganizationDomainsRepository;
+import com.nasnav.dao.OrganizationImagesRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.OrganizationThemeRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.SocialRepository;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.ExtraAttributesRepresentationObject;
 import com.nasnav.dto.OrganizationDTO;
@@ -31,6 +38,16 @@ import com.nasnav.dto.ProductFeatureDTO;
 import com.nasnav.dto.ProductFeatureUpdateDTO;
 import com.nasnav.dto.SocialRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.BrandsEntity;
+import com.nasnav.persistence.ExtraAttributesEntity;
+import com.nasnav.persistence.OrganizationDomainsEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.OrganizationImagesEntity;
+import com.nasnav.persistence.OrganizationThemeEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.SocialEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
@@ -673,13 +690,16 @@ public class OrganizationService {
         String domain = url.getHost();
         domain = domain.startsWith("www.") ? domain.substring(4) : domain; //getting domain
         OrganizationDomainsEntity orgDomain = orgDomainsRep.findByDomain(domain);
-        if(orgDomain != null)
-            return orgDomain.getOrganizationEntity().getId();
+        if(orgDomain != null) {
+        	return orgDomain.getOrganizationEntity().getId();
+        }            
 
         domain = domain.substring(0, domain.indexOf(".")); // getting sub domain
         orgDomain = orgDomainsRep.findByDomain(domain);
-        if(orgDomain != null)
-            return orgDomain.getOrganizationEntity().getId();
+        if(orgDomain != null) {
+        	return orgDomain.getOrganizationEntity().getId();
+        }
+            
 
         domain = url.getPath();
         if (domain.length() > 3) {
