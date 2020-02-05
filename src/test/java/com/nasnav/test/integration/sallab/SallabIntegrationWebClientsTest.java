@@ -24,11 +24,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
-//@RunWith(SpringRunner.class)
-//@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-//@PropertySource("classpath:database.properties")
-//@AutoConfigureWebTestClient
-//@DirtiesContext
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@PropertySource("classpath:database.properties")
+@AutoConfigureWebTestClient
+@DirtiesContext
 public class SallabIntegrationWebClientsTest {
 
     private static final String sallabServerUrl = "https://azizsallab--DevSanbox.cs80.my.salesforce.com";
