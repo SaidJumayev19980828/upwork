@@ -30,6 +30,7 @@ DELETE FROM public.malls where id = 901;
 DELETE FROM public.tag_graph_edges WHERE child_id IN (select id from tags where organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.organization_themes WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.tags WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.organization_domains WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_image_types;
 DELETE FROM public.categories WHERE id between 200 AND 230;

@@ -1,6 +1,10 @@
 --inserting organizations
-INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001, 'organization_1', now(), now());
+INSERT INTO public.organizations(id, name, created_at, updated_at, p_name) VALUES (99001, 'organization_1', now(), now(), 'fortune');
 INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());
+
+--inserting organization domain
+insert into organization_domains values(1, 'fortune', 99001);
+insert into organization_domains values(2, 'fortune-egypt.com', 99001);
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (101, 202, 'brand_1', now(), now(), 99002);
