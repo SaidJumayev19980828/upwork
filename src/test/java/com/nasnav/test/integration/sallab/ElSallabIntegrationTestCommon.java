@@ -37,6 +37,10 @@ public class ElSallabIntegrationTestCommon {
     @Value("classpath:/json/el_sallab_integration_test/get_price_response.json")
     private Resource priceResponseJson;
     
+    
+    @Value("classpath:/json/el_sallab_integration_test/get_next_products_response.json")
+    private Resource nextProductsResponseJson;
+    
 
 	public  String initElSallabMockServer(MockServerRule mockServerRule) throws Exception {		
 		prepareMockRequests(mockServerRule);
@@ -80,13 +84,13 @@ public class ElSallabIntegrationTestCommon {
 	
 	
 	private  void mockGetProductsNextRecordRequest(MockServerRule mockServerRule) throws IOException {
-		String productsResponse = readJsonFile(productsResponseJson);
+		String nextProductsResponse = readJsonFile(nextProductsResponseJson);
     	 mockServerRule.getClient()
 			.when(
 				request().withMethod("GET")
-						.withPath("/services/data/v44.0/query/.*"))
+						.withPath("/services/data/v44.0/query/.+"))
 			.respond(
-					response().withBody(productsResponse, JSON_UTF_8) 
+					response().withBody(nextProductsResponse, JSON_UTF_8) 
 							  .withStatusCode(200))
 				;
 	}

@@ -1,0 +1,45 @@
+package com.nasnav.integration.sallab;
+
+import static java.util.Arrays.asList;
+import static reactor.core.publisher.Mono.just;
+
+import java.util.List;
+
+import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.events.EventInfo;
+import com.nasnav.integration.events.ShopsImportEvent;
+import com.nasnav.integration.events.data.ShopsFetchParam;
+import com.nasnav.integration.model.ImportedShop;
+
+import reactor.core.publisher.Mono;
+
+public class ShopsImportEventListener extends AbstractElSallabEventListener<ShopsImportEvent, ShopsFetchParam, List<ImportedShop>> {
+
+	public ShopsImportEventListener(IntegrationService integrationService) {
+		super(integrationService);
+	}
+
+	
+	
+	
+	
+	@Override
+	protected Mono<List<ImportedShop>> handleEventAsync(EventInfo<ShopsFetchParam> event) {
+		ImportedShop hardCodedShop = new ImportedShop();
+		hardCodedShop.setId("222");
+		hardCodedShop.setName("New Cairo");
+		
+		return just(asList(hardCodedShop));
+	}
+
+	
+	
+	
+	
+	@Override
+	protected ShopsImportEvent handleError(ShopsImportEvent event, Throwable t) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}

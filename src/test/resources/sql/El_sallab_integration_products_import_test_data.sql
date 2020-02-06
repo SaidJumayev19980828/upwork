@@ -12,7 +12,8 @@ INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(202, 'COL
 --tags                                                                                                                                      
 INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(201, 'CERMAICS'		,'CERMAICS'		, 'ceramics', '{}', 0, 99001);
 INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(202, 'ROYAL'		,'ROYAL'		, 'royal', '{}', 0, 99001);
-
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(202, 'VANDOME'		,'VANDOME'		, 'vandome', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(201, 'FLOOR'		,'FLOOR'		, 'floor', '{}', 0, 99001);
 
 
 
@@ -22,8 +23,9 @@ INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organiza
 
 
 --inserting shops
-INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (50001, 'shop_1', 102, now(), now(), 99001);
+INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (50001, 'New Cairo', 102, now(), now(), 99001);
 INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (50002, 'shop_2', 101, now(), now(), 99001);
+INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (50003, 'shop_3', 102, now(), now(), 99001);
 
 
 
@@ -57,19 +59,9 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at
 --inserting product features
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(234,'Color', 'color', 'whatever', 99001);
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(235,'Size', 'size', 'bla bla bla', 99001);
-INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(236,'Class', 'class', 'Material of the shoes', 99001);
+INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(236,'Class', 'class', 'Class of ceramic', 99001);
 
 
---inserting products
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
-
-
--- variants for each product
-insert into public.product_variants(id, "name" , product_id, barcode, feature_spec ) values(310001, 'var' 	, 1001, 'ABCD1234', '{"234":"40", "235":"pink"}');
-
-
---inserting stocks
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(60001, 50001, 6, now(), now(), 99002, 600.0, 310001);
 
 
 -- integration Mapping types
@@ -80,8 +72,9 @@ INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67006, 'PRODU
 
 
 -- insert integration mappings
-INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '501', 'Cust Trans', 99001);
-INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '502', 'DLalmaza', 99001);
+INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '50001', '222', 99001);
+INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '50002', '183', 99001);
+INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '50003', '110', 99001);
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67006, '310001', '11CYM-0010001', 99001);
 
 

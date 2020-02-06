@@ -158,7 +158,17 @@ public class SallabIntegrationWebClientsTest {
         	.flatMap(prodRes -> prodRes.bodyToMono(ProductsResponse.class))
         	.subscribe(onResponse);
         
-        waiter.await(50000, TimeUnit.MILLISECONDS);
+        waiter.await(50000, MILLISECONDS);
+        //-------------------------------------------------------
+        if(usingMockServer) {
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("GET")
+				        .withPath("/services/data/v44.0/query/.+"),
+				      VerificationTimes.exactly(1)
+				    );
+		}
+        
     }
     
     

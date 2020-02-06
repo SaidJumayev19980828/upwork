@@ -1,18 +1,22 @@
 package com.nasnav.test.integration.sallab;
 
+import static com.nasnav.integration.sallab.ElSallabIntegrationParams.AUTH_GRANT_TYPE;
+import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_ID;
+import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_SECRET;
+import static com.nasnav.integration.sallab.ElSallabIntegrationParams.PASSWORD;
+import static com.nasnav.integration.sallab.ElSallabIntegrationParams.USERNAME;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
+import static org.springframework.http.HttpMethod.POST;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Rule;
@@ -26,7 +30,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
@@ -43,6 +46,7 @@ import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.sallab.ElSallabIntegrationParams;
 import com.nasnav.persistence.ProductVariantsEntity;
 
 @RunWith(SpringRunner.class)
@@ -126,7 +130,9 @@ public class ElSallabIntegrationTest {
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/El_sallab_integration_products_import_test_data.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void importProductsTest() throws Throwable {
-		int count = 7;
+		int productCount = 2;
+		int variantCount = 4;
+		long countVariantsBefore = variantRepo.count();
 		long countProductsBefore = productRepo.count();
 		long countShopsBefore = shopsRepo.count();
 		
@@ -139,10 +145,10 @@ public class ElSallabIntegrationTest {
 					.put("update_stocks", true)
 					.put("currency", 1)
 					.put("encoding", "UTF-8")
-					.put("page_count", count);
+					.put("page_count", 100);
 		
 		HttpEntity<Object> request = getHttpEntity(requestJson.toString(), "hijkllm");
-        ResponseEntity<Integer> response = template.exchange("/integration/import/products", HttpMethod.POST, request, Integer.class);       
+        ResponseEntity<Integer> response = template.exchange("/integration/import/products", POST, request, Integer.class);       
         		
 		//------------------------------------------------
 		//test the mock api was called
@@ -150,25 +156,50 @@ public class ElSallabIntegrationTest {
 			mockServerRule.getClient().verify(
 				      request()
 				        .withMethod("GET")
-				        .withPath("/api/products/\\d+/\\d+"),
+				        .withPath("/services/data/v44.0/query"),
 				      VerificationTimes.exactly(1)
 				    );
+			
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("GET")
+				        .withPath("/services/data/v44.0/query/.+"),
+				      VerificationTimes.exactly(1)
+				    );
+			
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("GET")
+				        .withPath("/ElSallab.Webservice/SallabService.svc/getItemPriceBreakdown"),
+				      VerificationTimes.exactly(4)
+				    );
+			
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("GET")
+				        .withPath("/ElSallab.Webservice/SallabService.svc/getItemStockBalance"),
+				      VerificationTimes.exactly(4)
+				    );
+			
 		}
 		//------------------------------------------------
 		//test imported brands were created
 		//test the imported products were created
 		
 		long countProductsAfter = productRepo.count();
+		long countVariantsAfter = variantRepo.count();
 		long countShopsAfter = shopsRepo.count();
-		JSONArray extShopsJson = getExpectedShopsJson();
+		long shopsCount = 1;
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertNotEquals("products were imported", 0L, countProductsAfter - countProductsBefore);
 		if(usingMockServer) {
-			assertEquals("shops were imported", extShopsJson.length() - countShopsBefore, countShopsAfter - countShopsBefore);
-			assertEquals("assert brands were imported", 3L, brandRepo.count());
+			assertEquals("assert brands were imported", 1L, brandRepo.count());
 			assertTrue("all imported products have integration mapping" , allProductHaveMapping());
 			assertEquals("check number of remaining pages to import", 0, response.getBody().intValue());
+			assertEquals("check number of imported products" , productCount, countProductsAfter - countProductsBefore);
+			assertEquals("check number of imported variants" , variantCount, countVariantsAfter - countVariantsBefore);
+			assertEquals("check number of imported shops" , shopsCount, countShopsAfter - countShopsBefore);
 		}
 	}
 	
@@ -187,11 +218,16 @@ public class ElSallabIntegrationTest {
 	private void registerIntegrationModule(String serverFullUrl, String server2FullUrl, String authServerUrl) throws BusinessException {
 		Map<String,String> params = new HashMap<>();
 		params.put("SERVER_URL", serverFullUrl);
-		params.put("SERVER2_URL", server2FullUrl);
+		params.put("SERVER_2_URL", server2FullUrl);
 		params.put("AUTH_SERVER_URL", authServerUrl);
+		params.put(AUTH_GRANT_TYPE.getValue(), "password");
+		params.put(CLIENT_ID.getValue(), "3MVG98_Psg5cppyZgL4kzqXARpsy8tyvcM1d8DwhODOxPiDTnqaf71BGU2cmzBpvf8l_myMTql31bhVa.ar8V");
+		params.put(CLIENT_SECRET.getValue(), "4085100268240543918");
+		params.put(USERNAME.getValue(), "mzaklama@elsallab.com.devsanbox");
+		params.put(PASSWORD.getValue(), "CloudzLab001tBHMDjhBGvDRsmWMrfog0oHG7");
 		
 		OrganizationIntegrationInfoDTO integrationInfo = new OrganizationIntegrationInfoDTO();
-		integrationInfo.setIntegrationModule("com.nasnav.integration.elsallb.ElSallabIntegrationModule");
+		integrationInfo.setIntegrationModule("com.nasnav.integration.sallb.ElSallabIntegrationModule");
 		integrationInfo.setMaxRequestRate(1);
 		integrationInfo.setOrganizationId(99001L);
 		integrationInfo.setIntegrationParameters(params);
@@ -210,13 +246,6 @@ public class ElSallabIntegrationTest {
 				.map(id -> id.toString())
 				.map(id -> mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, "PRODUCT_VARIANT", id))
 				.allMatch(Optional::isPresent);			
-	}
-	
-	
-	
-	private JSONArray getExpectedShopsJson() throws IOException {
-		JSONArray extShopsJson = new JSONArray();
-		return extShopsJson;
 	}
 	
 
