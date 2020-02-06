@@ -93,6 +93,7 @@ public class ElSallabIntegrationTest {
 	@Autowired
 	private IntegrationMappingRepository mappingRepo;
 	
+	
 	@Rule
 	 public MockServerRule mockServerRule = new MockServerRule(this);
 	
@@ -122,7 +123,7 @@ public class ElSallabIntegrationTest {
 	
 	
 	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_products_import_test_data.sql"})
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/El_sallab_integration_products_import_test_data.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void importProductsTest() throws Throwable {
 		int count = 7;
