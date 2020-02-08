@@ -25,6 +25,7 @@ import com.nasnav.integration.events.data.ProductImportEventParam;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.Product;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.ProductsResponse;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.Stocks;
+import com.nasnav.integration.model.ProductImportDTOWithShop;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -167,15 +168,6 @@ public class ProductImportEventListener extends AbstractMSDynamicsEventListener<
 	
 
 }
-
-
-
-@Data
-class ProductImportDTOWithShop{
-	private String externalShopId;
-	private ProductImportDTO productDto;
-}
-
 
 
 

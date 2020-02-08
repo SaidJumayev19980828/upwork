@@ -227,7 +227,7 @@ public class ElSallabIntegrationTest {
 		params.put(PASSWORD.getValue(), "CloudzLab001tBHMDjhBGvDRsmWMrfog0oHG7");
 		
 		OrganizationIntegrationInfoDTO integrationInfo = new OrganizationIntegrationInfoDTO();
-		integrationInfo.setIntegrationModule("com.nasnav.integration.sallb.ElSallabIntegrationModule");
+		integrationInfo.setIntegrationModule("com.nasnav.integration.sallab.ElSallabIntegrationModule");
 		integrationInfo.setMaxRequestRate(1);
 		integrationInfo.setOrganizationId(99001L);
 		integrationInfo.setIntegrationParameters(params);
