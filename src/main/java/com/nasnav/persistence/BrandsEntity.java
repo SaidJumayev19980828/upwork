@@ -17,6 +17,8 @@ import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.Organization_BrandRepresentationObject;
 
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "brands")
@@ -34,9 +36,11 @@ public class BrandsEntity implements BaseEntity{
     private String bannerImage;
     
     @Column(name = "created_at")
+    @CreationTimestamp
     private Date createdAt;
     
     @Column(name = "updated_at")
+    @UpdateTimestamp
     private Date updatedAt;
 
     @Column(name = "p_name")

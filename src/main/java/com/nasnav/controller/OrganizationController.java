@@ -95,17 +95,8 @@ public class OrganizationController {
         ObjectMapper mapper = new ObjectMapper();
         OrganizationResponse response = null;
         BrandDTO json = mapper.readValue(jsonString, BrandDTO.class);
-        if (json.operation != null) {
-            if (json.operation.equals("create")) {
-                response = orgService.createOrganizationBrand(json, logo, banner);
-            } else if (json.operation.equals("update")) {
-                response = orgService.updateOrganizationBrand(json, logo, banner);
-            } else
-                throw new BusinessException("INVALID_PARAM: operation", "", HttpStatus.NOT_ACCEPTABLE);
-        } else {
-            throw new BusinessException("MISSING_PARAM: operation", "", HttpStatus.NOT_ACCEPTABLE);
-        }
-        return new ResponseEntity(response, response.getHttpStatus());
+        OrganizationResponse res = orgService.validateAndUpdateBrand(json, logo, banner);
+        return new ResponseEntity(res, res.getHttpStatus());
     }
 
 

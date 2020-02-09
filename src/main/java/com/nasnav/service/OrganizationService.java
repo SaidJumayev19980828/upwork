@@ -251,70 +251,22 @@ public class OrganizationService {
         return brands;
     }
 
-    public OrganizationResponse createOrganizationBrand(BrandDTO json, MultipartFile logo,
-                                        MultipartFile banner) throws BusinessException {
-        BrandsEntity brand = new BrandsEntity();
-        if (json.name == null)
-            throw new BusinessException("MISSING_PARAM: name", "'name' field can't be empty", HttpStatus.NOT_ACCEPTABLE);
-        if (!StringUtils.validateName(json.name))
-            throw new BusinessException("INVALID_PARAM: name", "Required Brand name is invalid", HttpStatus.NOT_ACCEPTABLE);
-        brand.setName(json.name);
+
+
+
+    private OrganizationResponse modifyBrandAdditionalData(BrandsEntity entity, BrandDTO json, MultipartFile logo, MultipartFile banner) throws BusinessException {
+        BrandsEntity brand = entity;
+
         if (json.pname != null) {
             if (!StringUtils.encodeUrl(json.pname).equals(json.pname)) {
                 throw new BusinessException("INVALID_PARAM: p_name", "Required Organization p_name is invalid",
                         HttpStatus.NOT_ACCEPTABLE);
             }
             brand.setPname(json.pname);
-        } else {
-            brand.setPname(StringUtils.encodeUrl(json.name));
-        }
-        
-        Long orgId = securityService.getCurrentUserOrganizationId();
-        if (logo != null) {
-            String mimeType = logo.getContentType();
-            if(!mimeType.startsWith("image"))
-                throw new BusinessException("INVALID PARAM:image",
-                        "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!", HttpStatus.NOT_ACCEPTABLE);
-            brand.setLogo(fileService.saveFile(logo, orgId));
-        }
-        if (banner != null) {
-            String mimeType = banner.getContentType();
-            if(!mimeType.startsWith("image"))
-                throw new BusinessException("INVALID PARAM:image",
-                        "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!", HttpStatus.NOT_ACCEPTABLE);
-            brand.setBannerImage(fileService.saveFile(banner, orgId));
-        }
-        brand.setCreatedAt(new Date());
-        brand.setUpdatedAt(new Date());
-        brand.setOrganizationEntity(organizationRepository.getOne(orgId));
-        brandsRepository.save(brand);
-        return new OrganizationResponse(brand.getId(), 1);
-    }
-
-    public OrganizationResponse updateOrganizationBrand(BrandDTO json, MultipartFile logo,
-                                        MultipartFile banner) throws BusinessException {
-        if (json.id == null) {
-            throw new BusinessException("MISSING_PARAM: brand_id", "'brand_id' property can't be empty", HttpStatus.NOT_ACCEPTABLE);
-        }
-        if (!brandsRepository.existsById(json.id)) {
-            throw new BusinessException("ENTITY NOT FOUND", "No Brand entity found with given id", HttpStatus.NOT_FOUND);
-        }
-        BrandsEntity brand = brandsRepository.findById(json.id).get();
-
-        if (json.name != null) {
-            if (!StringUtils.validateName(json.name))
-                throw new BusinessException("INVALID_PARAM: name", "Brand name is invalid", HttpStatus.NOT_ACCEPTABLE);
-            brand.setName(json.name);
-        }
-        if (json.pname != null) {
-            if (!StringUtils.encodeUrl(json.pname).equals(json.pname)) {
-                throw new BusinessException("INVALID_PARAM: p_name", "Required Organization p_name is invalid",
-                        HttpStatus.NOT_ACCEPTABLE);
-            }
         } else if (json.name != null) {
             brand.setPname(StringUtils.encodeUrl(json.name));
         }
-        
+
         Long orgId = securityService.getCurrentUserOrganizationId();
         if (logo != null) {
             String mimeType = logo.getContentType();
@@ -330,9 +282,55 @@ public class OrganizationService {
                         "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!", HttpStatus.NOT_ACCEPTABLE);
             brand.setBannerImage(fileService.saveFile(banner, orgId));
         }
-        brand.setUpdatedAt(new Date());
+
         brandsRepository.save(brand);
         return new OrganizationResponse(brand.getId(), 1);
+    }
+
+    public OrganizationResponse validateAndUpdateBrand(BrandDTO json, MultipartFile logo, MultipartFile banner) throws BusinessException {
+        if (json.operation != null) {
+            if (json.operation.equals("create"))
+                return createOrganizationBrand(json, logo, banner);
+            else if (json.operation.equals("update"))
+                return updateOrganizationBrand(json, logo, banner);
+            else
+                throw new BusinessException("INVALID_PARAM: operation", "", HttpStatus.NOT_ACCEPTABLE);
+        }
+        else
+            throw new BusinessException("MISSING_PARAM: operation", "", HttpStatus.NOT_ACCEPTABLE);
+    }
+
+    public OrganizationResponse createOrganizationBrand(BrandDTO json, MultipartFile logo, MultipartFile banner) throws BusinessException {
+        BrandsEntity brand = new BrandsEntity();
+
+        if (json.name == null)
+            throw new BusinessException("MISSING_PARAM: name", "'name' field can't be empty", HttpStatus.NOT_ACCEPTABLE);
+        if (!StringUtils.validateName(json.name))
+            throw new BusinessException("INVALID_PARAM: name", "Required Brand name is invalid", HttpStatus.NOT_ACCEPTABLE);
+
+        brand.setName(json.name);
+
+        brand.setOrganizationEntity(securityService.getCurrentUserOrganization());
+
+        return modifyBrandAdditionalData(brand, json, logo, banner);
+    }
+
+    private OrganizationResponse updateOrganizationBrand(BrandDTO json, MultipartFile logo, MultipartFile banner) throws BusinessException {
+        if (json.id == null) {
+            throw new BusinessException("MISSING_PARAM: brand_id", "'brand_id' property can't be empty", HttpStatus.NOT_ACCEPTABLE);
+        }
+        if (!brandsRepository.existsById(json.id)) {
+            throw new BusinessException("ENTITY NOT FOUND", "No Brand entity found with given id", HttpStatus.NOT_FOUND);
+        }
+        BrandsEntity brand = brandsRepository.findById(json.id).get();
+
+        if (json.name != null) {
+            if (!StringUtils.validateName(json.name))
+                throw new BusinessException("INVALID_PARAM: name", "Brand name is invalid", HttpStatus.NOT_ACCEPTABLE);
+            brand.setName(json.name);
+        }
+
+        return modifyBrandAdditionalData(brand, json, logo, banner);
     }
     
     
