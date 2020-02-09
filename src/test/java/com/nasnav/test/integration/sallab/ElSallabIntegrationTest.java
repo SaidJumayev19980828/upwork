@@ -149,7 +149,10 @@ public class ElSallabIntegrationTest {
 		
 		HttpEntity<Object> request = getHttpEntity(requestJson.toString(), "hijkllm");
         ResponseEntity<Integer> response = template.exchange("/integration/import/products", POST, request, Integer.class);       
-        		
+
+		//------------------------------------------------
+
+        Thread.sleep(2000);
 		//------------------------------------------------
 		//test the mock api was called
 		if(usingMockServer) {
