@@ -46,7 +46,6 @@ import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
-import com.nasnav.integration.sallab.ElSallabIntegrationParams;
 import com.nasnav.persistence.ProductVariantsEntity;
 
 @RunWith(SpringRunner.class)
@@ -163,12 +162,12 @@ public class ElSallabIntegrationTest {
 				      VerificationTimes.exactly(1)
 				    );
 			
-			mockServerRule.getClient().verify(
-				      request()
-				        .withMethod("GET")
-				        .withPath("/services/data/v44.0/query/.+"),
-				      VerificationTimes.exactly(1)
-				    );
+//			mockServerRule.getClient().verify(
+//				      request()
+//				        .withMethod("GET")
+//				        .withPath("/services/data/v44.0/query/.+"),
+//				      VerificationTimes.exactly(1)
+//				    );
 			
 			mockServerRule.getClient().verify(
 				      request()

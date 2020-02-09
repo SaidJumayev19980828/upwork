@@ -10,7 +10,7 @@ INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(202, 'COL
 
 
 --tags                                                                                                                                      
-INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(201, 'CERMAICS'		,'CERMAICS'		, 'ceramics', '{}', 0, 99001);
+INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(201, 'CERAMIC'		,'CERMAIC'		, 'ceramics', '{}', 0, 99001);
 INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(202, 'ROYAL'		,'ROYAL'		, 'royal', '{}', 0, 99001);
 INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(202, 'VANDOME'		,'VANDOME'		, 'vandome', '{}', 0, 99001);
 INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(201, 'FLOOR'		,'FLOOR'		, 'floor', '{}', 0, 99001);

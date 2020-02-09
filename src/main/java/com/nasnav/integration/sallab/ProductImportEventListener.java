@@ -82,7 +82,7 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 	private Mono<IntegrationImportedProducts> toIntegrationImportedProductsMono(ProductImportEventParam param, String authToken, Long orgId) {
 		return
 				fetchProductsFromExternalSystem(param, authToken, orgId)
-					.map(this::toIntegrationImportedProducts);
+					.flatMap(this::toIntegrationImportedProducts);
 				
 	}
 	
@@ -100,19 +100,20 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 				.getProducts(authToken)
 				.flatMap(this::throwExceptionIfNotOk)
 				.flatMap(prodRes -> prodRes.bodyToMono(ProductsResponse.class))
-				.map(prodRes -> toFetchedProductsData(prodRes, param, orgId, authToken));
+//				.flatMap(prodRes -> getMoreProductsIfNeeded())
+				.flatMap(prodRes -> toFetchedProductsData(prodRes, param, orgId, authToken));
 	}
 	
 	
+
 	
-	
-	
-	
-	private FetchedProductsData toFetchedProductsData(ProductsResponse productsResponse, ProductImportEventParam param, Long orgId, String authToken) {
-		Integer totalPages = calculateTotalPages(productsResponse);		
-		List<Product> page = getProductsData(productsResponse, param, orgId);
+	private Mono<FetchedProductsData> toFetchedProductsData(ProductsResponse productsResponse, ProductImportEventParam param, Long orgId, String authToken) {
+		Mono<Integer> totalPages = calculateTotalPages(productsResponse);		
+		Mono<List<Product>> page = getProductsData(productsResponse, param, orgId);
 		
-		return new FetchedProductsData(totalPages, page, orgId, authToken);
+		return Mono.zip(totalPages
+						, page
+						, (totPages, products) -> new FetchedProductsData(totPages, products, orgId, authToken) );
 	}
 
 
@@ -120,18 +121,30 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 
 
 
-	private List<Product> getProductsData(ProductsResponse productsResponse, ProductImportEventParam param,
+	private Mono<List<Product>> getProductsData(ProductsResponse productsResponse, ProductImportEventParam param,
 			Long orgId) {
-		List<Product> productsBuffer = new ArrayList<>(productsResponse.getRecords().size());
 		
-		getMoreProductsIfNeeded(productsBuffer , param, productsResponse, orgId);
+		List<Product> retrievedProducts = getProductsList(productsResponse);
+		Flux<Product> allProducts = getMoreProductsIfNeeded(param, productsResponse, orgId, retrievedProducts);
 
-		return getProductPage(productsBuffer, param);
+		return getProductPageMono(allProducts, param);
 	}
+	
 
 
 
-private List<Product> getProductPage(List<Product> allNeededProducts, ProductImportEventParam param) {
+	private Mono<List<Product>> getProductPageMono(Flux<Product> allNeededProducts, ProductImportEventParam param) {
+		return allNeededProducts
+				.buffer()
+				.single()
+				.map( productslist -> getProductPage(productslist, param));
+	}
+	
+	
+	
+	
+	
+	private List<Product> getProductPage(List<Product> allNeededProducts, ProductImportEventParam param) {
 		Integer fromIndex = param.getPageCount()*(param.getPageNum() -1);
 		Integer toIndex = fromIndex + param.getPageCount();
 		toIndex = toIndex > (allNeededProducts.size() -1) ? allNeededProducts.size() -1 : toIndex;
@@ -144,29 +157,44 @@ private List<Product> getProductPage(List<Product> allNeededProducts, ProductImp
 
 
 
-//TODO : this should be converted to a reactive style, but i couldn't think of something at the time. and we are blocking any way to get all
-	//products after processing the event.
 	/**
 	 * El sallab api returns products in linked-list style, each response provides a batch of products and  an url for the next batch.
 	 * so, we need to traverse and buffer products until we get the required page.
 	 * */
-	private void getMoreProductsIfNeeded(List<Product> buffer, ProductImportEventParam param, ProductsResponse response, Long orgId) {
-		SallabWebClient client = getWebClient(orgId);		
+	private Flux<Product> getMoreProductsIfNeeded(ProductImportEventParam param, ProductsResponse response, Long orgId, List<Product> buffer) {
 		
-		buffer.addAll(getProductsList(response));		
+		buffer.addAll(getProductsList(response));
 		
 		Integer neededBufferSize = param.getPageCount()*param.getPageNum();
 		
+		Flux<Product> bufferFlux = Flux.fromIterable(buffer);
+		
 		if( !response.getDone() && neededBufferSize < buffer.size()) {
-			ProductsResponse nextResponse=
-					client
-						.getProductsNextRecords("", response.getNextRecordsUrl())
-						.flatMap(this::throwExceptionIfNotOk)
-						.flatMap(prodRes -> prodRes.bodyToMono(ProductsResponse.class))
-						.block();
-			
-			getMoreProductsIfNeeded(buffer, param, nextResponse, orgId);	
+			Flux<Product> moreProducts = getProductsUsingWebAPI(orgId, response.getNextRecordsUrl());
+			return Flux.merge(bufferFlux, moreProducts);
 		}
+		
+		return bufferFlux;
+	}
+	
+	
+	
+	
+	private Flux<Product> getProductsUsingWebAPI(Long orgId, String url){
+		SallabWebClient client = getWebClient(orgId);
+		return client
+				.getProductsNextRecords("", url)
+				.flatMap(this::throwExceptionIfNotOk)
+				.flatMap(prodRes -> prodRes.bodyToMono(ProductsResponse.class))
+				.flatMapMany(this::getProductsFluxFromResponse);
+	}
+	
+	
+	
+	
+	private Flux<Product> getProductsFluxFromResponse(ProductsResponse response) {
+		return Flux.fromIterable(response.getRecords())
+					.map(Record::getProduct);
 	}
 	
 
@@ -174,13 +202,11 @@ private List<Product> getProductPage(List<Product> allNeededProducts, ProductImp
 
 
 	private List<Product> getProductsList(ProductsResponse productsResponse) {
-		List<Product> allNeededProducts = 
-				productsResponse
+		return productsResponse
 					.getRecords()
 					.stream()
 					.map(Record::getProduct)
 					.collect(toList());
-		return allNeededProducts;
 	}
 	
 	
@@ -192,13 +218,12 @@ private List<Product> getProductPage(List<Product> allNeededProducts, ProductImp
 
 
 
-	private IntegrationImportedProducts toIntegrationImportedProducts(FetchedProductsData productsData) {
-		IntegrationImportedProducts imported = new IntegrationImportedProducts();
+	private Mono<IntegrationImportedProducts> toIntegrationImportedProducts(FetchedProductsData productsData) {
+		Mono<Integer> totalPages = Mono.just(productsData.getTotalPages()); 
+		Mono<List<ShopImportedProducts>> shopsProducts =  getAllShopsProducts(productsData);
 		
-		imported.setTotalPages( productsData.getTotalPages() );
-		imported.setAllShopsProducts( getAllShopsProducts(productsData));
 		
-		return imported;
+		return Mono.zip(totalPages, shopsProducts, (tot, prods) -> new IntegrationImportedProducts(tot, prods));
 	} 
 	
 	
@@ -208,17 +233,14 @@ private List<Product> getProductPage(List<Product> allNeededProducts, ProductImp
 	
 	
 	//TODO need a generic method for this for a util class
-	private List<ShopImportedProducts> getAllShopsProducts(FetchedProductsData productsData) {
+	private Mono<List<ShopImportedProducts>> getAllShopsProducts(FetchedProductsData productsData) {
 		
-		List<ProductImportDTOWithShop> productsWithShops = toProductImportDtoWithShop(productsData);
+		Flux<ProductImportDTOWithShop> productsWithShops = toProductImportDtoWithShop(productsData);
 		return productsWithShops
-				.stream()
-				.filter(prod -> Objects.nonNull(prod.getExternalShopId()))
 				.collect( 
 						groupingBy(ProductImportDTOWithShop::getExternalShopId
 								, mapping(ProductImportDTOWithShop::getProductDto, toList())))
-				.entrySet()
-				.stream()
+				.flatMapIterable(Map::entrySet)
 				.map(shopProductMapping -> new ShopImportedProducts(shopProductMapping.getKey(), shopProductMapping.getValue()))
 				.collect(toList());
 	}
@@ -228,7 +250,7 @@ private List<Product> getProductPage(List<Product> allNeededProducts, ProductImp
 
 
 	//TODO: should be some how in a base class of all product import events handlers
-	private List<ProductImportDTOWithShop> toProductImportDtoWithShop(FetchedProductsData productsData) {
+	private Flux<ProductImportDTOWithShop> toProductImportDtoWithShop(FetchedProductsData productsData) {
 		
 		return 
 			Flux.fromIterable(productsData.getProducts())
@@ -236,9 +258,7 @@ private List<Product> getProductPage(List<Product> allNeededProducts, ProductImp
 				.runOn(elastic())
 				.flatMap(product -> getProductWithQtyAndStock(product, productsData.getOrgId()))
 				.flatMap(this::toManyProductImportDtoWithShop)
-				.ordered(comparing(ProductImportDTOWithShop::getExternalShopId))
-				.buffer()
-				.blockFirst();
+				.ordered(comparing(ProductImportDTOWithShop::getExternalShopId));
 	}
 	
 	
@@ -300,11 +320,10 @@ private List<Product> getProductPage(List<Product> allNeededProducts, ProductImp
 
 
 	private Integer getQuantity(ItemStockBalance stock) {
-		Integer quantity = ofNullable(stock)
-							.map(ItemStockBalance::getQuantity)
-							.map(BigDecimal::intValue)
-							.orElse(0);
-		return quantity;
+		return ofNullable(stock)
+				.map(ItemStockBalance::getQuantity)
+				.map(BigDecimal::intValue)
+				.orElse(0);
 	}
 
 
@@ -313,11 +332,10 @@ private List<Product> getProductPage(List<Product> allNeededProducts, ProductImp
 
 
 	private BigDecimal getPrice(ProductWithQtyAndPrice productWithQtyAndPrice) {
-		BigDecimal price = ofNullable(productWithQtyAndPrice)
-							.map(ProductWithQtyAndPrice::getPrice)
-							.map(ItemPrice::getNetPrice)
-							.orElse(ZERO);
-		return price;
+		return ofNullable(productWithQtyAndPrice)
+				.map(ProductWithQtyAndPrice::getPrice)
+				.map(ItemPrice::getNetPrice)
+				.orElse(ZERO);
 	}
 
 
@@ -326,7 +344,7 @@ private List<Product> getProductPage(List<Product> allNeededProducts, ProductImp
 
 
 	private Set<String> getTags(Product product) {
-		Set<String> tags = setOf(product.getCategory(), product.getFamily(), product.getType());
+		Set<String> tags = setOf(product.getEnglishCategory(), product.getEnglishFamily(), product.getEnglishType());
 		return tags;
 	}
 
@@ -339,9 +357,9 @@ private List<Product> getProductPage(List<Product> allNeededProducts, ProductImp
 		Map<String, String> variantFeatures = 
 				MapBuilder
 				.<String,String>map()
-				.put("Color", product.getColor())
+				.put("Color", product.getEnglishColor())
 				.put("Size", product.getSize())
-				.put("Class", product.getClassC())
+				.put("Class", product.getEnglishClass())
 				.getMap();
 		return variantFeatures;
 	}
@@ -394,7 +412,7 @@ private List<Product> getProductPage(List<Product> allNeededProducts, ProductImp
 
 
 
-	private Integer  calculateTotalPages(ProductsResponse productsResponse) {
+	private Mono<Integer>  calculateTotalPages(ProductsResponse productsResponse) {
 		Integer totalProducts = ofNullable(productsResponse)
 									.map(ProductsResponse::getTotalSize)
 									.orElse(0);
@@ -403,7 +421,7 @@ private List<Product> getProductPage(List<Product> allNeededProducts, ProductImp
 									.map(List::size)
 									.orElse(1);
 		
-		return (int) Math.ceil( totalProducts.doubleValue()/ productsPerPage.doubleValue());
+		return Mono.just( (int) Math.ceil( totalProducts.doubleValue()/ productsPerPage.doubleValue()));
 	}
 
 

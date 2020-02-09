@@ -10,6 +10,7 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_TAGS_NOT_
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -38,6 +39,7 @@ import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.TagsRepository;
@@ -50,6 +52,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.ProductListImportResponse;
@@ -85,6 +88,11 @@ public class DataImportServiceImpl implements DataImportService {
     
     @Autowired
     private TagsRepository tagsRepo;
+    
+    
+    @Autowired
+	private ProductFeaturesRepository featureRepo;
+    
 
     private Logger logger = Logger.getLogger(getClass());
     
@@ -94,7 +102,7 @@ public class DataImportServiceImpl implements DataImportService {
     @Override
 //    @Transactional(rollbackFor = Throwable.class)		// adding this will cause exception because of the enforced rollback , still unknown why
     public ProductListImportResponse importProducts(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) throws BusinessException {
-
+    	
         List<ProductData> productsData = toProductDataList(productImportDTOS, productImportMetadata);
 
         saveToDB(productsData, productImportMetadata);
@@ -317,21 +325,23 @@ public class DataImportServiceImpl implements DataImportService {
 
 
     private List<ProductData> toProductDataList(List<ProductImportDTO> rows, ProductImportMetadata importMetaData) throws BusinessException {
+    	Map<String, String> featureNameToIdMapping = getFeatureNameToIdMap();
+    	
         List<ProductData> dtoList = new ArrayList<>();
         for (ProductImportDTO row : rows) {
-            dtoList.add(toProductData(row, importMetaData));
+            dtoList.add(toProductData(row, importMetaData, featureNameToIdMapping));
         }
 
         return dtoList;
     }
 
 
-    private ProductData toProductData(ProductImportDTO row, ProductImportMetadata importMetaData) throws BusinessException {
+    private ProductData toProductData(ProductImportDTO row, ProductImportMetadata importMetaData, Map<String, String> featureNameToIdMapping) throws BusinessException {
         ProductData data = new ProductData();
 
         data.setOriginalRowData(row.toString());
         data.setProductDto(createProductDto(row));
-        data.setVariantDto(createVariantDto(row));
+        data.setVariantDto(createVariantDto(row, featureNameToIdMapping));
         data.setStockDto(createStockDto(row, importMetaData));
         data.setExternalId(row.getExternalId());
         data.setTagsNames( ofNullable(row.getTags()).orElse(emptySet()) );
@@ -397,9 +407,11 @@ public class DataImportServiceImpl implements DataImportService {
     }
 
 
-    private VariantUpdateDTO createVariantDto(ProductImportDTO row) {
+    private VariantUpdateDTO createVariantDto(ProductImportDTO row, Map<String,String> featureNameToIdMapping) {
+    	
         String features = 
         		ofNullable(row.getFeatures())
+        		.map(map -> toFeaturesIdToValueMap(map, featureNameToIdMapping))
                 .map(JSONObject::new)
                 .map(JSONObject::toString)
                 .orElse(null);
@@ -427,6 +439,40 @@ public class DataImportServiceImpl implements DataImportService {
 
         return variant;
     }
+    
+    
+    
+    
+    
+    private Map<String,String> toFeaturesIdToValueMap(Map<String,String> featuresNameToValueMap, Map<String,String> nameToIdMap){    	
+    	
+    	return ofNullable(featuresNameToValueMap)
+    			.orElse(emptyMap())
+    			.entrySet()
+    			.stream()
+    			.collect(toMap(ent -> nameToIdMap.get(ent.getKey())
+    									, Map.Entry::getValue));
+    }
+
+
+
+
+	private Map<String, String> getFeatureNameToIdMap() {
+		Long orgId = security.getCurrentUserOrganizationId();
+    	List<ProductFeaturesEntity> featuresEnt = featureRepo.findByOrganizationId(orgId);
+    	Map<String, String> nameToIdMapping = 
+    			featuresEnt.stream()
+    			.collect(toMap(ProductFeaturesEntity::getName, this::getFeatureIdAsStr));
+		return nameToIdMapping;
+	}
+    
+    
+    
+    private String getFeatureIdAsStr(ProductFeaturesEntity feature) {
+    	return String.valueOf(feature.getId());
+    }
+    
+    
 
 
     private ProductUpdateDTO createProductDto(ProductImportDTO row) throws BusinessException {

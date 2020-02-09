@@ -85,7 +85,7 @@ public class ProductCsvRowProcessor<T extends CsvRow> extends BeanListProcessor<
 		return orgVariantFeatures
 				.stream()
 				.filter(feature -> isFeatureNameInCsvHeaders(headers, feature))
-				.collect(toMap(this::getFeatureIdAsStr, feature -> getFeatureValueFromCsvRecord(record, feature)));			
+				.collect(toMap(ProductFeaturesEntity::getName, feature -> getFeatureValueFromCsvRecord(record, feature)));			
 	}
 
 
@@ -95,15 +95,6 @@ public class ProductCsvRowProcessor<T extends CsvRow> extends BeanListProcessor<
 	private Boolean isFeatureNameInCsvHeaders(List<String> headers, ProductFeaturesEntity feature) {
 		return headers.contains(feature.getName());
 	}
-	
-	
-	
-	
-	
-	private String getFeatureIdAsStr(ProductFeaturesEntity feature) {
-		return String.valueOf(feature.getId());
-	}
-	
 	
 	
 	
