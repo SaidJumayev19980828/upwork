@@ -69,16 +69,24 @@ public class NavboxController {
 			@ApiResponse(code = 400, message = "Missing parameter. Either org_id or p_name is required", response = OrganizationRepresentationObject.class) })
 	public @ResponseBody OrganizationRepresentationObject getOrganizationByName(
 			@RequestParam(name = "p_name", required = false) String organizationName,
-			@RequestParam(name = "org_id", required = false) Long organizationId) throws BusinessException {
+			@RequestParam(name = "org_id", required = false) Long organizationId,
+			@RequestParam(name = "url") URI url) throws BusinessException {
 
-		if (organizationName == null && organizationId == null)
-			throw new BusinessException("Provide org_id or p_name request params", null, HttpStatus.BAD_REQUEST);
+		if (organizationName == null && organizationId == null && url == null)
+			throw new BusinessException("Provide org_id or p_name or url request params", null, HttpStatus.BAD_REQUEST);
 
 		if (organizationName != null)
 			return organizationService.getOrganizationByName(organizationName);
 
+		if (url != null) {
+			Long orgId = organizationService.getOrganizationByDomain(url);
+			if (orgId != null) {
+				return organizationService.getOrganizationById(orgId);
+			}
+		}
 		return organizationService.getOrganizationById(organizationId);
 	}
+
 
 	@ApiOperation(value = "Get selected organization's shops", nickname = "orgShops")
 	@ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
