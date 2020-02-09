@@ -70,7 +70,7 @@ public class NavboxController {
 	public @ResponseBody OrganizationRepresentationObject getOrganizationByName(
 			@RequestParam(name = "p_name", required = false) String organizationName,
 			@RequestParam(name = "org_id", required = false) Long organizationId,
-			@RequestParam(name = "url") URI url) throws BusinessException {
+			@RequestParam(name = "url", required = false) URI url) throws BusinessException {
 
 		if (organizationName == null && organizationId == null && url == null)
 			throw new BusinessException("Provide org_id or p_name or url request params", null, HttpStatus.BAD_REQUEST);
