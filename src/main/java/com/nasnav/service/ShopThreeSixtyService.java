@@ -33,12 +33,22 @@ public class ShopThreeSixtyService {
             return null;
 
         JSONObject data = new JSONObject();
-        if(type.equals("web"))
-            data = new JSONObject(shop.getWebJsonData());
-        else if (type.equals("mobile"))
-            data = new JSONObject(shop.getMobileJsonData());
+        if(type.equals("web")) {
+            data = new JSONObject(getJsonDataStringSerlizable(shop.getWebJsonData()));
+        }
+        else if (type.equals("mobile")) {
+            data = new JSONObject(getJsonDataStringSerlizable(shop.getMobileJsonData()));
+        }
 
         return data.toString();
+    }
+
+    // ! custom modifier to deal with mailformed json data in shop360s !
+    private String getJsonDataStringSerlizable(String oldJsonDataString) {
+        String jsonDataString = oldJsonDataString;
+        if (jsonDataString.startsWith("---'") && jsonDataString.endsWith("'"))
+            jsonDataString = jsonDataString.substring(3, jsonDataString.length()-2);
+        return jsonDataString.replaceAll("\n", "");
     }
 
     public String getProductPositions(Long shopId) {
@@ -50,7 +60,7 @@ public class ShopThreeSixtyService {
         if (productPosition == null)
             return null;
 
-        JSONObject positionsJson =  new JSONObject(productPosition.getPositionsJsonData());
+        JSONObject positionsJson =  new JSONObject(getJsonDataStringSerlizable(productPosition.getPositionsJsonData()));
 
         return positionsJson.toString();
     }
