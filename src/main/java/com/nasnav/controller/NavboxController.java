@@ -1,9 +1,8 @@
 package com.nasnav.controller;
 
-import com.nasnav.dto.*;
-import com.nasnav.request.ProductSearchParam;
-import com.nasnav.service.*;
-import org.json.JSONObject;
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -15,17 +14,26 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nasnav.dto.CategoryRepresentationObject;
+import com.nasnav.dto.ExtraAttributesRepresentationObject;
+import com.nasnav.dto.OrganizationRepresentationObject;
+import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductsResponse;
+import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.request.ProductSearchParam;
+import com.nasnav.service.BrandService;
+import com.nasnav.service.CategoryService;
+import com.nasnav.service.OrganizationService;
+import com.nasnav.service.ProductService;
+import com.nasnav.service.ShopService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-
-import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/navbox")
@@ -70,7 +78,7 @@ public class NavboxController {
 	public @ResponseBody OrganizationRepresentationObject getOrganizationByName(
 			@RequestParam(name = "p_name", required = false) String organizationName,
 			@RequestParam(name = "org_id", required = false) Long organizationId,
-			@RequestParam(name = "url", required = false) URI url) throws BusinessException {
+			@RequestParam(name = "url", required = false) String url) throws BusinessException {
 
 		if (organizationName == null && organizationId == null && url == null)
 			throw new BusinessException("Provide org_id or p_name or url request params", null, HttpStatus.BAD_REQUEST);
@@ -80,9 +88,7 @@ public class NavboxController {
 
 		if (url != null) {
 			Long orgId = organizationService.getOrganizationByDomain(url);
-			if (orgId != null) {
-				return organizationService.getOrganizationById(orgId);
-			}
+			return organizationService.getOrganizationById(orgId);
 		}
 		return organizationService.getOrganizationById(organizationId);
 	}
@@ -208,11 +214,10 @@ public class NavboxController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
 	})
 	@GetMapping(value="/orgid",produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getOrganizationByDomain(@RequestParam(name = "url") URI url) throws URISyntaxException {
+	public ResponseEntity<?> getOrganizationByDomain(@RequestParam(name = "url") String url) throws BusinessException {
+
 		Long orgId = organizationService.getOrganizationByDomain(url);
-		if (orgId != null) {
-			 return new ResponseEntity<>("{\"org_id\":"+orgId+"}", HttpStatus.OK);
-		}
-		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+		return new ResponseEntity<>("{\"id\":"+orgId+"}", HttpStatus.OK);
 	}
 }

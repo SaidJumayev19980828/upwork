@@ -1,12 +1,12 @@
 package com.nasnav.service;
 
-import java.net.URI;
-import java.util.Date;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -684,7 +684,16 @@ public class OrganizationService {
         }
     }
 
-    public Long getOrganizationByDomain(URI url) {
+    public Long getOrganizationByDomain(String urlString) throws BusinessException {
+        URIBuilder url = null;
+
+        try {
+            urlString = urlString.startsWith("http") ? urlString: "http://"+urlString;
+            url = new URIBuilder(urlString);
+        } catch (URISyntaxException e) {
+            throw new BusinessException("the provided url is mailformed","INVALID_PARAM: url", HttpStatus.NOT_ACCEPTABLE);
+        }
+
         String domain = url.getHost();
         domain = domain.startsWith("www.") ? domain.substring(4) : domain; //getting domain
         OrganizationDomainsEntity orgDomain = orgDomainsRep.findByDomain(domain);
@@ -692,21 +701,21 @@ public class OrganizationService {
         	return orgDomain.getOrganizationEntity().getId();
         }            
 
-        domain = domain.substring(0, domain.indexOf(".")); // getting sub domain
+        domain = domain.split("\\.")[0]; // getting sub domain
         orgDomain = orgDomainsRep.findByDomain(domain);
         if(orgDomain != null) {
         	return orgDomain.getOrganizationEntity().getId();
         }
             
 
-        domain = url.getPath();
-        if (domain.length() > 3) {
-            domain = domain.substring(1, domain.substring(1).indexOf("/") + 1); // getting first subdirectory
-            OrganizationEntity org = orgRepo.findByPname(domain);
+        String[] subdirectories = url.getPath().split("/");
+        if (subdirectories.length > 0) {
+            String subDirectory = subdirectories[1];// getting first subdirectory
+            OrganizationEntity org = orgRepo.findByPname(subDirectory);
             if (org != null)
                 return org.getId();
         }
 
-        return null;
+        return 0L;
     }
 }

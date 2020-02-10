@@ -218,7 +218,7 @@ public class OrganizationManagmentTest {
 
         checkSuccessResponse(response);
 
-        url = new URI("https://www.fortune-egypt.com/categories/");
+        url = new URI("www.fortune-egypt.com/categories/");
         response = template.getForEntity("/navbox/orgid?url="+ url, String.class);
 
         checkSuccessResponse(response);
@@ -228,18 +228,15 @@ public class OrganizationManagmentTest {
     public void getOrgByURLNoOrgTest() throws URISyntaxException {
         URI url = new URI("http://www.invaliddomain.nasnav.com/");
         ResponseEntity<String> response = template.getForEntity("/navbox/orgid?url="+ url, String.class);
-
-        Assert.assertEquals(404, response.getStatusCode().value());
+        checkFailResponse(response);
 
         url = new URI("https://www.nasnav.com/invaliddomain/product/74");
         response = template.getForEntity("/navbox/orgid?url="+ url, String.class);
-
-        Assert.assertEquals(404, response.getStatusCode().value());
+        checkFailResponse(response);
 
         url = new URI("https://www.invaliddomain-egypt.com/categories/");
         response = template.getForEntity("/navbox/orgid?url="+ url, String.class);
-
-        Assert.assertEquals(404, response.getStatusCode().value());
+        checkFailResponse(response);
     }
 
 
@@ -247,7 +244,14 @@ public class OrganizationManagmentTest {
         JSONObject json = new JSONObject(response.getBody());
 
         Assert.assertEquals(200, response.getStatusCode().value());
-        Assert.assertEquals(99001, json.getInt("org_id"));
+        Assert.assertEquals(99001, json.getInt("id"));
+    }
+
+    private void checkFailResponse(ResponseEntity<String> response) {
+        JSONObject json = new JSONObject(response.getBody());
+
+        Assert.assertEquals(200, response.getStatusCode().value());
+        Assert.assertEquals(0, json.getInt("id"));
     }
 
 }
