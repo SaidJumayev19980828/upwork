@@ -6,7 +6,6 @@ import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_SEC
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.PASSWORD;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.USERNAME;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static com.nasnav.test.commons.TestCommons.getJdbi;
 import static com.nasnav.test.commons.TestCommons.json;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -45,6 +44,7 @@ import com.nasnav.dao.IntegrationMappingRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
@@ -98,10 +98,12 @@ public class ElSallabIntegrationTest {
 	
 	@Autowired
 	private IntegrationMappingRepository mappingRepo;
-	
-	
+		
 	@Autowired
 	private JdbcTemplate jdbc;
+	
+	@Autowired
+	private StockRepository stocksRepo;
 	
 	@Rule
 	 public MockServerRule mockServerRule = new MockServerRule(this);
@@ -139,6 +141,7 @@ public class ElSallabIntegrationTest {
 		int variantCount = 5;
 		int productTagsCount = productCount*3;
 		int extaAttrCount = variantCount*5;
+		int stockCount = variantCount;
 		
 		long countVariantsBefore = variantRepo.count();
 		long countProductsBefore = productRepo.count();
@@ -146,6 +149,7 @@ public class ElSallabIntegrationTest {
 		long countBrandsBefore = brandRepo.count();		
 		long productTagsBefore = countProductTags();		
 		Long extraAttrBefore = countProductExtraAttr();
+		Long stockCountBefore = stocksRepo.count();
 		
 		//------------------------------------------------		
 		//call product import api
@@ -207,6 +211,7 @@ public class ElSallabIntegrationTest {
 		long countBrandsAfter = brandRepo.count();
 		long productTagsAfter = countProductTags();		
 		Long extraAttrAfter = countProductExtraAttr();
+		Long stockCountAfter = stocksRepo.count();
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertNotEquals("products were imported", 0L, countProductsAfter - countProductsBefore);
@@ -219,6 +224,7 @@ public class ElSallabIntegrationTest {
 			assertEquals("check number of imported shops" , shopsCount, countShopsAfter - countShopsBefore);
 			assertEquals("check the number of added product tags", productTagsCount , productTagsAfter - productTagsBefore);
 			assertEquals("check the number of added extra-attributes", extaAttrCount , extraAttrAfter- extraAttrBefore);
+			assertEquals("check the number of added stocks", stockCount , stockCountAfter- stockCountBefore);
 		}
 	}
 

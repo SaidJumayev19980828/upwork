@@ -6,7 +6,9 @@ import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_ID;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_SECRET;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.PASSWORD;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.USERNAME;
+import static com.nasnav.integration.sallab.ShopsImportEventListener.HARD_CODED_STOCK;
 import static java.math.BigDecimal.ZERO;
+import static java.util.Arrays.asList;
 import static java.util.Comparator.comparing;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
@@ -99,7 +101,6 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 				.getProducts(authToken)
 				.flatMap(this::throwExceptionIfNotOk)
 				.flatMap(prodRes -> prodRes.bodyToMono(ProductsResponse.class))
-//				.flatMap(prodRes -> getMoreProductsIfNeeded())
 				.flatMap(prodRes -> toFetchedProductsData(prodRes, param, orgId, authToken));
 	}
 	
@@ -194,32 +195,6 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 				.flatMap(prodRes -> prodRes.bodyToMono(ProductsResponse.class));				
 	}
 	
-	
-	
-	
-	private Flux<Product> getProductsFluxFromResponse(ProductsResponse response) {
-		return Flux.fromIterable(response.getRecords())
-					.map(Record::getProduct);
-	}
-	
-
-
-
-
-	private List<Product> getProductsList(ProductsResponse productsResponse) {
-		return productsResponse
-					.getRecords()
-					.stream()
-					.map(Record::getProduct)
-					.collect(toList());
-	}
-	
-	
-	
-	
-
-
-
 
 
 
@@ -271,13 +246,18 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 	
 	
 	private Flux<ProductImportDTOWithShop> toManyProductImportDtoWithShop(ProductWithQtyAndPrice productWithQtyAndPrice) {
-		return 
-				Flux.fromStream(
-					productWithQtyAndPrice
-					.getStocks()
-					.stream()
-					.map(stock -> toProductImportDTOWithShop(productWithQtyAndPrice, stock))
-				);
+		BigDecimal totalQty = 
+			productWithQtyAndPrice
+				.getStocks()
+				.stream()
+				.map(ItemStockBalance::getQuantity)
+				.reduce(ZERO, BigDecimal::add);
+		
+		ItemStockBalance totalStock = new ItemStockBalance(); 
+		totalStock.setStockId(HARD_CODED_STOCK);
+		totalStock.setQuantity(totalQty);
+		
+		return 	Flux.fromIterable( asList(toProductImportDTOWithShop(productWithQtyAndPrice, totalStock)) );
 	}
 	
 	

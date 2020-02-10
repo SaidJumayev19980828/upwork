@@ -15,6 +15,12 @@ import reactor.core.publisher.Mono;
 
 public class ShopsImportEventListener extends AbstractElSallabEventListener<ShopsImportEvent, ShopsFetchParam, List<ImportedShop>> {
 
+	public static final int HARD_CODED_STOCK = 222;
+
+
+
+
+
 	public ShopsImportEventListener(IntegrationService integrationService) {
 		super(integrationService);
 	}
@@ -26,7 +32,7 @@ public class ShopsImportEventListener extends AbstractElSallabEventListener<Shop
 	@Override
 	protected Mono<List<ImportedShop>> handleEventAsync(EventInfo<ShopsFetchParam> event) {
 		ImportedShop hardCodedShop = new ImportedShop();
-		hardCodedShop.setId("222");
+		hardCodedShop.setId(String.valueOf(HARD_CODED_STOCK));
 		hardCodedShop.setName("New Cairo");
 		
 		return just(asList(hardCodedShop));
