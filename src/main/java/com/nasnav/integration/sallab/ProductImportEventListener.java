@@ -19,7 +19,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
@@ -124,8 +123,7 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 	private Mono<List<Product>> getProductsData(ProductsResponse productsResponse, ProductImportEventParam param,
 			Long orgId) {
 		
-		List<Product> retrievedProducts = getProductsList(productsResponse);
-		Flux<Product> allProducts = getMoreProductsIfNeeded(param, productsResponse, orgId, retrievedProducts);
+		Flux<Product> allProducts = getAllRequiredProducts(param, productsResponse, orgId);
 
 		return getProductPageMono(allProducts, param);
 	}
@@ -149,7 +147,8 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 		Integer toIndex = fromIndex + param.getPageCount();
 		toIndex = toIndex > (allNeededProducts.size() -1) ? allNeededProducts.size() -1 : toIndex;
 		
-		return allNeededProducts.subList(fromIndex, toIndex);
+//		return allNeededProducts.subList(fromIndex, toIndex);
+		return allNeededProducts;
 	}
 
 
@@ -161,32 +160,38 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 	 * El sallab api returns products in linked-list style, each response provides a batch of products and  an url for the next batch.
 	 * so, we need to traverse and buffer products until we get the required page.
 	 * */
-	private Flux<Product> getMoreProductsIfNeeded(ProductImportEventParam param, ProductsResponse response, Long orgId, List<Product> buffer) {
-		
-		buffer.addAll(getProductsList(response));
-		
-		Integer neededBufferSize = param.getPageCount()*param.getPageNum();
-		
-		Flux<Product> bufferFlux = Flux.fromIterable(buffer);
-		
-		if( !response.getDone() && neededBufferSize < buffer.size()) {
-			Flux<Product> moreProducts = getProductsUsingWebAPI(orgId, response.getNextRecordsUrl());
-			return Flux.merge(bufferFlux, moreProducts);
-		}
-		
-		return bufferFlux;
+	private Flux<Product> getAllRequiredProducts(ProductImportEventParam param, ProductsResponse response, Long orgId) {
+		return getRemainingProductsFromApiIfNeeded(param, new AccumlatedProductsResponse(response), orgId)
+					.flatMapIterable(accProducts -> accProducts.getBuffer());
 	}
 	
 	
 	
 	
-	private Flux<Product> getProductsUsingWebAPI(Long orgId, String url){
+	
+	/**
+	 * recursive function to get products from the API's using the linked-list style of it.
+	 * */
+	private Mono<AccumlatedProductsResponse> getRemainingProductsFromApiIfNeeded(ProductImportEventParam param, AccumlatedProductsResponse response, Long orgId) {
+		Integer neededBufferSize = param.getPageCount()*param.getPageNum();
+		
+		if( !response.isDone() && neededBufferSize < response.getBuffer().size()) {
+			return	getProductsUsingWebAPI(orgId, response.getResponse().getNextRecordsUrl())
+						.flatMap(newRes -> getRemainingProductsFromApiIfNeeded(param, new AccumlatedProductsResponse(newRes, response.getBuffer()), orgId) );
+		}
+		
+		return Mono.just(response);
+	}
+	
+	
+	
+	
+	private Mono<ProductsResponse> getProductsUsingWebAPI(Long orgId, String url){
 		SallabWebClient client = getWebClient(orgId);
 		return client
 				.getProductsNextRecords("", url)
 				.flatMap(this::throwExceptionIfNotOk)
-				.flatMap(prodRes -> prodRes.bodyToMono(ProductsResponse.class))
-				.flatMapMany(this::getProductsFluxFromResponse);
+				.flatMap(prodRes -> prodRes.bodyToMono(ProductsResponse.class));				
 	}
 	
 	
@@ -301,9 +306,9 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 		
 		
 		dto.setBarcode(product.getItemNoC());
-		dto.setBrand(product.getFactory());
+		dto.setBrand(product.getEnglishFactory());
 		dto.setExternalId(product.getItemNoC());
-		dto.setName(product.getModel());
+		dto.setName(product.getEnglishModel());
 		dto.setPrice(price);
 		dto.setQuantity(quantity);
 		dto.setDescription(product.getDescription());
@@ -489,4 +494,48 @@ class ProductWithQtyAndPrice{
 		this.stocks = (List<ItemStockBalance>)args[2];
 		this.orgId = (Long) args[3];
 	} 
+}
+
+
+
+
+@Data
+class AccumlatedProductsResponse{
+	private ProductsResponse response;
+	private List<Product> buffer;
+	
+	
+	
+	
+	public AccumlatedProductsResponse(ProductsResponse response) {
+		this.response = response;
+		this.buffer = new ArrayList<>(response.getRecords().size());
+		buffer.addAll(getProductsList(response));
+	}
+	
+	
+	
+	public AccumlatedProductsResponse(ProductsResponse response, List<Product> buffer) {
+		this.response = response;
+		this.buffer = buffer;
+		buffer.addAll(getProductsList(response));
+	}
+	
+	
+	
+	private List<Product> getProductsList(ProductsResponse productsResponse) {
+		return productsResponse
+					.getRecords()
+					.stream()
+					.map(Record::getProduct)
+					.collect(toList());
+	}
+	
+	
+	
+	public Boolean isDone() {
+		return response.getDone();
+	}
+	
+	
 }

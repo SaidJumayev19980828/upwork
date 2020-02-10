@@ -75,7 +75,6 @@ INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67006, 'PRODU
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '50001', '222', 99001);
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '50002', '183', 99001);
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '50003', '110', 99001);
-INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67006, '310001', '11CYM-0010001', 99001);
 
 
 

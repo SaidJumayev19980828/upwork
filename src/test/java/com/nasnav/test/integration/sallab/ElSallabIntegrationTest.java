@@ -130,10 +130,11 @@ public class ElSallabIntegrationTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void importProductsTest() throws Throwable {
 		int productCount = 2;
-		int variantCount = 4;
+		int variantCount = 5;
 		long countVariantsBefore = variantRepo.count();
 		long countProductsBefore = productRepo.count();
 		long countShopsBefore = shopsRepo.count();
+		long countBrandsBefore = brandRepo.count();
 		
 		//------------------------------------------------		
 		//call product import api
@@ -173,14 +174,14 @@ public class ElSallabIntegrationTest {
 				      request()
 				        .withMethod("GET")
 				        .withPath("/ElSallab.Webservice/SallabService.svc/getItemPriceBreakdown"),
-				      VerificationTimes.exactly(4)
+				      VerificationTimes.exactly(5)
 				    );
 			
 			mockServerRule.getClient().verify(
 				      request()
 				        .withMethod("GET")
 				        .withPath("/ElSallab.Webservice/SallabService.svc/getItemStockBalance"),
-				      VerificationTimes.exactly(4)
+				      VerificationTimes.exactly(5)
 				    );
 			
 		}
@@ -192,11 +193,12 @@ public class ElSallabIntegrationTest {
 		long countVariantsAfter = variantRepo.count();
 		long countShopsAfter = shopsRepo.count();
 		long shopsCount = 1;
+		long countBrandsAfter = brandRepo.count();
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertNotEquals("products were imported", 0L, countProductsAfter - countProductsBefore);
 		if(usingMockServer) {
-			assertEquals("assert brands were imported", 1L, brandRepo.count());
+			assertEquals("assert brands were imported", 1L, countBrandsAfter - countBrandsBefore);
 			assertTrue("all imported products have integration mapping" , allProductHaveMapping());
 			assertEquals("check number of remaining pages to import", 0, response.getBody().intValue());
 			assertEquals("check number of imported products" , productCount, countProductsAfter - countProductsBefore);
