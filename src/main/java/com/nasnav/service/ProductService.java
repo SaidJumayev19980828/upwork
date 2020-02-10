@@ -122,7 +122,7 @@ public class ProductService {
 	//	@Value("${products.default.count}")
 	private Integer defaultCount = 10;
 	//	@Value("${products.default.sort.attribute}")
-	private String defaultSortAttribute = "name";
+	private String defaultSortAttribute = "creation_date";
 	//	@Value("${products.default.order}")
 	private String defaultOrder = "desc";
 
@@ -445,6 +445,9 @@ public class ProductService {
 	ProductSearchParam getProductSearchParams(ProductSearchParam oldParams) throws BusinessException, InvocationTargetException, IllegalAccessException {
 		ProductSearchParam params = new ProductSearchParam();
 		BeanUtils.copyProperties(params, oldParams);
+
+		if (oldParams.order != null)
+			params.setOrder(oldParams.order.getValue());
 
 		if (params.sort != null && ProductSortOptions.getProductSortOptions(params.sort.getValue()) == null)
 			throw new BusinessException("Sort is limited to id, name, pname, price", null, HttpStatus.BAD_REQUEST);
