@@ -6,6 +6,7 @@ import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_SEC
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.PASSWORD;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.USERNAME;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.getJdbi;
 import static com.nasnav.test.commons.TestCommons.json;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -32,6 +33,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
@@ -47,6 +49,7 @@ import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.ProductVariantsEntity;
+
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -97,6 +100,9 @@ public class ElSallabIntegrationTest {
 	private IntegrationMappingRepository mappingRepo;
 	
 	
+	@Autowired
+	private JdbcTemplate jdbc;
+	
 	@Rule
 	 public MockServerRule mockServerRule = new MockServerRule(this);
 	
@@ -131,10 +137,15 @@ public class ElSallabIntegrationTest {
 	public void importProductsTest() throws Throwable {
 		int productCount = 2;
 		int variantCount = 5;
+		int productTagsCount = productCount*3;
+		int extaAttrCount = variantCount*5;
+		
 		long countVariantsBefore = variantRepo.count();
 		long countProductsBefore = productRepo.count();
 		long countShopsBefore = shopsRepo.count();
-		long countBrandsBefore = brandRepo.count();
+		long countBrandsBefore = brandRepo.count();		
+		long productTagsBefore = countProductTags();		
+		Long extraAttrBefore = countProductExtraAttr();
 		
 		//------------------------------------------------		
 		//call product import api
@@ -194,24 +205,36 @@ public class ElSallabIntegrationTest {
 		long countShopsAfter = shopsRepo.count();
 		long shopsCount = 1;
 		long countBrandsAfter = brandRepo.count();
+		long productTagsAfter = countProductTags();		
+		Long extraAttrAfter = countProductExtraAttr();
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertNotEquals("products were imported", 0L, countProductsAfter - countProductsBefore);
 		if(usingMockServer) {
 			assertEquals("assert brands were imported", 1L, countBrandsAfter - countBrandsBefore);
 			assertTrue("all imported products have integration mapping" , allProductHaveMapping());
-			assertEquals("check number of remaining pages to import", 0, response.getBody().intValue());
+			assertEquals("check total number of pages to import", 1, response.getBody().intValue());
 			assertEquals("check number of imported products" , productCount, countProductsAfter - countProductsBefore);
 			assertEquals("check number of imported variants" , variantCount, countVariantsAfter - countVariantsBefore);
 			assertEquals("check number of imported shops" , shopsCount, countShopsAfter - countShopsBefore);
+			assertEquals("check the number of added product tags", productTagsCount , productTagsAfter - productTagsBefore);
+			assertEquals("check the number of added extra-attributes", extaAttrCount , extraAttrAfter- extraAttrBefore);
 		}
 	}
-	
-	
-	
-	
-	
-	
+
+
+
+
+	private Long countProductExtraAttr() {
+		return 	jdbc.queryForObject("select count(*) from public.products_extra_attributes", Long.class);
+	}
+
+
+
+
+	private long countProductTags() {
+		return 	jdbc.queryForObject("select count(*) from public.product_tags", Long.class); 
+	}
 	
 	
 	

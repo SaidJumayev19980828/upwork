@@ -107,7 +107,7 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 
 	
 	private Mono<FetchedProductsData> toFetchedProductsData(ProductsResponse productsResponse, ProductImportEventParam param, Long orgId, String authToken) {
-		Mono<Integer> totalPages = calculateTotalPages(productsResponse);		
+		Mono<Integer> totalPages = calculateTotalPages(productsResponse, param);		
 		Mono<List<Product>> page = getProductsData(productsResponse, param, orgId);
 		
 		return Mono.zip(totalPages
@@ -141,7 +141,7 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 	
 	
 	
-	
+	//TODO: pagination is disabled for now, should be done later
 	private List<Product> getProductPage(List<Product> allNeededProducts, ProductImportEventParam param) {
 		Integer fromIndex = param.getPageCount()*(param.getPageNum() -1);
 		Integer toIndex = fromIndex + param.getPageCount();
@@ -175,7 +175,7 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 	private Mono<AccumlatedProductsResponse> getRemainingProductsFromApiIfNeeded(ProductImportEventParam param, AccumlatedProductsResponse response, Long orgId) {
 		Integer neededBufferSize = param.getPageCount()*param.getPageNum();
 		
-		if( !response.isDone() && neededBufferSize < response.getBuffer().size()) {
+		if( !response.isDone() && neededBufferSize > response.getBuffer().size()) {
 			return	getProductsUsingWebAPI(orgId, response.getResponse().getNextRecordsUrl())
 						.flatMap(newRes -> getRemainingProductsFromApiIfNeeded(param, new AccumlatedProductsResponse(newRes, response.getBuffer()), orgId) );
 		}
@@ -417,14 +417,11 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 
 
 
-	private Mono<Integer>  calculateTotalPages(ProductsResponse productsResponse) {
+	private Mono<Integer>  calculateTotalPages(ProductsResponse productsResponse, ProductImportEventParam param) {
 		Integer totalProducts = ofNullable(productsResponse)
 									.map(ProductsResponse::getTotalSize)
 									.orElse(0);
-		Integer productsPerPage = ofNullable(productsResponse)
-									.map(ProductsResponse::getRecords)
-									.map(List::size)
-									.orElse(1);
+		Integer productsPerPage = param.getPageCount();
 		
 		return Mono.just( (int) Math.ceil( totalProducts.doubleValue()/ productsPerPage.doubleValue()));
 	}
@@ -515,10 +512,13 @@ class AccumlatedProductsResponse{
 	
 	
 	
-	public AccumlatedProductsResponse(ProductsResponse response, List<Product> buffer) {
+	public AccumlatedProductsResponse(ProductsResponse response, List<Product> bufferedData) {
 		this.response = response;
-		this.buffer = buffer;
-		buffer.addAll(getProductsList(response));
+		List<Product> newData = getProductsList(response);
+		
+		this.buffer = new ArrayList<>(bufferedData.size() + newData.size());
+		this.buffer.addAll(bufferedData);
+		this.buffer.addAll(newData);
 	}
 	
 	
