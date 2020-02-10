@@ -70,7 +70,7 @@ public class NavboxController {
 	public @ResponseBody OrganizationRepresentationObject getOrganizationByName(
 			@RequestParam(name = "p_name", required = false) String organizationName,
 			@RequestParam(name = "org_id", required = false) Long organizationId,
-			@RequestParam(name = "url", required = false) URI url) throws BusinessException {
+			@RequestParam(name = "url", required = false) String url) throws BusinessException {
 
 		if (organizationName == null && organizationId == null && url == null)
 			throw new BusinessException("Provide org_id or p_name or url request params", null, HttpStatus.BAD_REQUEST);
@@ -80,9 +80,7 @@ public class NavboxController {
 
 		if (url != null) {
 			Long orgId = organizationService.getOrganizationByDomain(url);
-			if (orgId != null) {
-				return organizationService.getOrganizationById(orgId);
-			}
+			return organizationService.getOrganizationById(orgId);
 		}
 		return organizationService.getOrganizationById(organizationId);
 	}
@@ -207,11 +205,10 @@ public class NavboxController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
 	})
 	@GetMapping(value="/orgid",produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getOrganizationByDomain(@RequestParam(name = "url") URI url) throws URISyntaxException {
+	public ResponseEntity<?> getOrganizationByDomain(@RequestParam(name = "url") String url) throws BusinessException {
+
 		Long orgId = organizationService.getOrganizationByDomain(url);
-		if (orgId != null) {
-			 return new ResponseEntity<>("{\"org_id\":"+orgId+"}", HttpStatus.OK);
-		}
-		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+		return new ResponseEntity<>("{\"id\":"+orgId+"}", HttpStatus.OK);
 	}
 }
