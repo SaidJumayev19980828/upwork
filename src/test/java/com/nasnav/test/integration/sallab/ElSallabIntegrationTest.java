@@ -55,7 +55,7 @@ import com.nasnav.persistence.ProductVariantsEntity;
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @PropertySource("classpath:database.properties")
 @AutoConfigureWebTestClient
-@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/El_sallab_integration_Test_Data_Insert.sql","el_sallab_tags_insert.sql"})
+@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/El_sallab_integration_Test_Data_Insert.sql","el_sallab_tags_insert.sql", "el_sallab_brands_insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 @DirtiesContext
 public class ElSallabIntegrationTest {

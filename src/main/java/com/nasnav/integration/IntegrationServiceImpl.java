@@ -25,6 +25,7 @@ import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static com.nasnav.integration.enums.MappingType.SHOP;
 import static java.lang.String.format;
 import static java.time.Duration.ofMillis;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static reactor.core.scheduler.Schedulers.boundedElastic;
 
@@ -659,6 +660,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 			.flatMap(List::stream)
 			.map(ProductImportDTO::getBrand)
 			.distinct()
+			.filter(brand -> nonNull(brand))
 			.filter(this::isBrandNotExists)
 			.map(this::toBrandDTO)
 			.forEach(this::createBrand);

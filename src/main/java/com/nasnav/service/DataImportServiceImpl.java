@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.jboss.logging.Logger;
@@ -60,6 +61,7 @@ import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.VariantUpdateResponse;
 
 import lombok.Data;
+import reactor.tuple.Tuple;
 
 @Service
 public class DataImportServiceImpl implements DataImportService {
@@ -120,21 +122,11 @@ public class DataImportServiceImpl implements DataImportService {
     private void saveToDB(List<ProductData> productsData, ProductImportMetadata importMetaData) throws BusinessException {
         List<String> errors = new ArrayList<>();
 
-        for (int i = 0; i < productsData.size(); i++) {
-            ProductData data = productsData.get(i);
-            try {
-                saveSingleProductDataToDB(data, importMetaData);
-            } catch (Throwable e) {
-                logger.error(e, e);
-
-                StringBuilder msg = new StringBuilder();
-                msg.append(String.format("Error at Row[%d], with data[%s]", i + 1, data.toString()));
-                msg.append(System.getProperty("line.separator"));
-                msg.append("Error Message: " + e.getMessage());
-
-                errors.add(msg.toString());
-            }
-        }
+        IntStream
+        	.range(0, productsData.size())
+        	.parallel()
+        	.mapToObj(i -> Tuple.of(i, productsData.get(i)))
+        	.forEach( tuple -> saveSingleProductToDbAndLogErrors(importMetaData, errors, tuple.getT1(), tuple.getT2()));
 
         if (!errors.isEmpty()) {
             JSONArray json = new JSONArray(errors);
@@ -145,6 +137,25 @@ public class DataImportServiceImpl implements DataImportService {
         }
 
     }
+
+
+
+
+	private void saveSingleProductToDbAndLogErrors(ProductImportMetadata importMetaData, List<String> errors, int i,
+			ProductData data) {
+		try {
+		    saveSingleProductDataToDB(data, importMetaData);
+		} catch (Throwable e) {
+		    logger.error(e, e);
+
+		    StringBuilder msg = new StringBuilder();
+		    msg.append(String.format("Error at Row[%d], with data[%s]", i + 1, data.toString()));
+		    msg.append(System.getProperty("line.separator"));
+		    msg.append("Error Message: " + e.getMessage());
+
+		    errors.add(msg.toString());
+		}
+	}
     
     
     

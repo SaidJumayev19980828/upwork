@@ -21,7 +21,6 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,10 +52,7 @@ import reactor.core.publisher.Mono;
 
 public class ProductImportEventListener extends AbstractElSallabEventListener<ProductsImportEvent, ProductImportEventParam, IntegrationImportedProducts> {
 
-	private static final int PRODUCT_BATCH_PROCESSING_DELAY = 6;
-
-
-
+	private static final int PRODUCT_BATCH_PROCESSING_DELAY = 3;
 
 
 
@@ -64,8 +60,6 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 		super(integrationService);
 	}
 
-	
-	
 	
 	
 	
