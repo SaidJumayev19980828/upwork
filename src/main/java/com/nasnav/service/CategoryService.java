@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 
 import java.time.LocalDateTime;
@@ -105,7 +106,8 @@ public class CategoryService {
         return categoriesEntityList
         			.stream()
 					.map(category -> (CategoryRepresentationObject) category.getRepresentation())
-					.collect(Collectors.toList());
+					.sorted(comparing(CategoryRepresentationObject::getName))
+					.collect(toList());
     }
     
     
