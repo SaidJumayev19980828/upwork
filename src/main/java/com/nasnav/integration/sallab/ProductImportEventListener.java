@@ -9,6 +9,7 @@ import static com.nasnav.integration.sallab.ElSallabIntegrationParams.USERNAME;
 import static com.nasnav.integration.sallab.ShopsImportEventListener.HARD_CODED_STOCK;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
@@ -17,8 +18,10 @@ import static java.util.stream.Collectors.toList;
 import static reactor.core.scheduler.Schedulers.elastic;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +52,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public class ProductImportEventListener extends AbstractElSallabEventListener<ProductsImportEvent, ProductImportEventParam, IntegrationImportedProducts> {
+
+	private static final int PRODUCT_BATCH_PROCESSING_DELAY = 6;
+
+
+
+
+
 
 	public ProductImportEventListener(IntegrationService integrationService) {
 		super(integrationService);
@@ -234,9 +244,19 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 		
 		return 
 			Flux.fromIterable(productsData.getProducts())
+				.window(10)
+				.delayElements(Duration.ofSeconds(PRODUCT_BATCH_PROCESSING_DELAY))
+				.flatMap(batch -> getStockAndPriceForProductBatch(batch, productsData.getOrgId()));	
+	}
+	
+	
+	
+	
+	private Flux<ProductImportDTOWithShop> getStockAndPriceForProductBatch(Flux<Product> flux, Long orgId){
+		return flux
 				.parallel()
 				.runOn(elastic())
-				.flatMap(product -> getProductWithQtyAndStock(product, productsData.getOrgId()))
+				.flatMap(product -> getProductWithQtyAndStock(product, orgId))
 				.flatMap(this::toManyProductImportDtoWithShop)
 				.ordered(comparing(ProductImportDTOWithShop::getExternalShopId));
 	}
@@ -385,6 +405,7 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 					.flatMap(this::throwExceptionIfNotOk)
 					.flatMapMany(stockRes -> stockRes.bodyToFlux(ItemStockBalance.class))
 					.buffer()
+					.defaultIfEmpty(emptyList())
 					.single();
 		
 		return Mono.zip(ProductWithQtyAndPrice::new, Mono.just(product), price, stocks, Mono.just(orgId));

@@ -46,13 +46,31 @@ public class SallabWebClient {
     
     
 
-    public Mono<ClientResponse> authenticate(AuthenticationData data) {//testing account
-
+    public Mono<ClientResponse> authenticate(AuthenticationData authData) {//testing account
+    	String uri = buildAuthUri(authData);
         return authWebClient
                 .post()
-                .uri("/services/oauth2/token?"+ data.toString())
+                .uri(uri)
                 .exchange();                
     }
+    
+    
+    
+    
+
+	
+	private String buildAuthUri(AuthenticationData param) {
+		String baseUriStr = "/services/oauth2/token";
+    	UriComponentsBuilder uriBuilder = 
+    			UriComponentsBuilder
+    				.fromPath(baseUriStr)
+    				.queryParam("grant_type", param.getGrantType())
+    				.queryParam("client_id", param.getClientId())
+    				.queryParam("client_secret", param.getClientSecret())
+    				.queryParam("username",  param.getUserName())
+    				.queryParam("password",  param.getPassword());
+    	return uriBuilder.build().toString();
+	}
 
 
     
@@ -169,6 +187,9 @@ public class SallabWebClient {
     				.queryParam("disValue",  getBigDecimalAsStr(param.getDiscountValue()));
     	return uriBuilder.build().toString();
 	}
+	
+	
+	
 
 
 

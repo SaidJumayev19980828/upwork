@@ -4,11 +4,11 @@ import lombok.Getter;
 
 public enum ElSallabIntegrationParams {
 	
-	AUTH_GRANT_TYPE("com.sallab.auth.grantType"),
-	CLIENT_ID("com.sallab.auth.clientId"), 
-	CLIENT_SECRET("com.sallab.auth.clientSecret"),
-	USERNAME("com.sallab.auth.username"), 
-	PASSWORD("com.sallab.auth.password");
+	AUTH_GRANT_TYPE("COM.SALLAB.AUTH.GRANTTYPE"),
+	CLIENT_ID("COM.SALLAB.AUTH.CLIENTID"), 
+	CLIENT_SECRET("COM.SALLAB.AUTH.CLIENTSECRET"),
+	USERNAME("COM.SALLAB.AUTH.USERNAME"), 
+	PASSWORD("COM.SALLAB.AUTH.PASSWORD");
 	
 	@Getter
 	private String value;

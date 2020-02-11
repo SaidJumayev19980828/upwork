@@ -55,7 +55,7 @@ import com.nasnav.persistence.ProductVariantsEntity;
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @PropertySource("classpath:database.properties")
 @AutoConfigureWebTestClient
-@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/El_sallab_integration_Test_Data_Insert.sql"})
+@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/El_sallab_integration_Test_Data_Insert.sql","el_sallab_tags_insert.sql"})
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 @DirtiesContext
 public class ElSallabIntegrationTest {
@@ -65,8 +65,8 @@ public class ElSallabIntegrationTest {
     private static final String AUTH_SERVER_URL = "https://test.salesforce.com";
     private static final String MOCK_SERVER_URL = "http://127.0.0.1";
     
-  private static final String SERVER_URL = MOCK_SERVER_URL;
-//  private static final String SERVER_URL = SALLAB_SERVER_URL;
+//  private static final String SERVER_URL = MOCK_SERVER_URL;
+  private static final String SERVER_URL = SALLAB_SERVER_URL;
   
     private static final boolean usingMockServer = SERVER_URL.equals(MOCK_SERVER_URL);
 	
