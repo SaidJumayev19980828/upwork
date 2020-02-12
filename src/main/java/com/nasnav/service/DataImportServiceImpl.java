@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
+import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_BRAND_NAME_NOT_EXIST;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CONVERT_TO_JSON;
@@ -50,8 +51,10 @@ import com.nasnav.dto.ProductUpdateDTO;
 import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.enums.MappingType;
+import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
@@ -60,6 +63,7 @@ import com.nasnav.response.ProductListImportResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.VariantUpdateResponse;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import reactor.tuple.Tuple;
 
@@ -124,7 +128,7 @@ public class DataImportServiceImpl implements DataImportService {
 
         IntStream
         	.range(0, productsData.size())
-        	.parallel()
+//        	.parallel() // transactions are not shared among threads
         	.mapToObj(i -> Tuple.of(i, productsData.get(i)))
         	.forEach( tuple -> saveSingleProductToDbAndLogErrors(importMetaData, errors, tuple.getT1(), tuple.getT2()));
 
@@ -335,24 +339,57 @@ public class DataImportServiceImpl implements DataImportService {
     }
 
 
-    private List<ProductData> toProductDataList(List<ProductImportDTO> rows, ProductImportMetadata importMetaData) throws BusinessException {
-    	Map<String, String> featureNameToIdMapping = getFeatureNameToIdMap();
+    private List<ProductData> toProductDataList(List<ProductImportDTO> rows, ProductImportMetadata importMetaData) throws BusinessException {    	
+    	DataImportCachedData cache = getImportCachedData();
     	
-        List<ProductData> dtoList = new ArrayList<>();
-        for (ProductImportDTO row : rows) {
-            dtoList.add(toProductData(row, importMetaData, featureNameToIdMapping));
-        }
-
-        return dtoList;
+    	return rows
+    			.stream()
+//	    		.parallel() //transactions are not shared among threads
+	    		.filter(row -> isNotBlankOrNull(row.getBrand()))
+	    		.map(row -> toProductDataWrapped(importMetaData, cache, row))
+	    		.collect(toList());
     }
 
 
-    private ProductData toProductData(ProductImportDTO row, ProductImportMetadata importMetaData, Map<String, String> featureNameToIdMapping) throws BusinessException {
+
+
+	private DataImportCachedData getImportCachedData() {
+		Map<String, String> featureNameToIdMapping = getFeatureNameToIdMap();
+    	Map<String, BrandsEntity> brandNameToIdMapping = getBrandsMapping();
+    	return new DataImportCachedData(featureNameToIdMapping, brandNameToIdMapping);
+	}
+
+
+
+
+	private Map<String, BrandsEntity> getBrandsMapping() {
+		Long orgId = security.getCurrentUserOrganizationId();
+		return brandRepo
+				.findByOrganizationEntity_Id(orgId)
+				.stream()
+				.collect(toMap(brand -> brand.getName().toUpperCase() , brand -> brand));
+	}
+
+
+
+
+	private ProductData toProductDataWrapped(ProductImportMetadata importMetaData,
+			DataImportCachedData cache, ProductImportDTO row) {
+		try {
+			return toProductData(row, importMetaData, cache);
+		} catch (BusinessException e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(e);
+		}
+	}
+
+
+    private ProductData toProductData(ProductImportDTO row, ProductImportMetadata importMetaData, DataImportCachedData cache) throws BusinessException {
         ProductData data = new ProductData();
 
         data.setOriginalRowData(row.toString());
-        data.setProductDto(createProductDto(row));
-        data.setVariantDto(createVariantDto(row, featureNameToIdMapping));
+        data.setProductDto(createProductDto(row, cache));
+        data.setVariantDto(createVariantDto(row, cache));
         data.setStockDto(createStockDto(row, importMetaData));
         data.setExternalId(row.getExternalId());
         data.setTagsNames( ofNullable(row.getTags()).orElse(emptySet()) );
@@ -418,7 +455,8 @@ public class DataImportServiceImpl implements DataImportService {
     }
 
 
-    private VariantUpdateDTO createVariantDto(ProductImportDTO row, Map<String,String> featureNameToIdMapping) {
+    private VariantUpdateDTO createVariantDto(ProductImportDTO row, DataImportCachedData cache) {
+    	Map<String,String> featureNameToIdMapping = cache.getFeatureNameToIdMapping();
     	
         String features = 
         		ofNullable(row.getFeatures())
@@ -456,11 +494,11 @@ public class DataImportServiceImpl implements DataImportService {
     
     
     private Map<String,String> toFeaturesIdToValueMap(Map<String,String> featuresNameToValueMap, Map<String,String> nameToIdMap){    	
-    	
     	return ofNullable(featuresNameToValueMap)
     			.orElse(emptyMap())
     			.entrySet()
     			.stream()
+    			.filter(ent -> noneIsNull(ent.getKey(), ent.getValue()))
     			.collect(toMap(ent -> nameToIdMap.get(ent.getKey())
     									, Map.Entry::getValue));
     }
@@ -470,11 +508,11 @@ public class DataImportServiceImpl implements DataImportService {
 
 	private Map<String, String> getFeatureNameToIdMap() {
 		Long orgId = security.getCurrentUserOrganizationId();
-    	List<ProductFeaturesEntity> featuresEnt = featureRepo.findByOrganizationId(orgId);
-    	Map<String, String> nameToIdMapping = 
-    			featuresEnt.stream()
-    			.collect(toMap(ProductFeaturesEntity::getName, this::getFeatureIdAsStr));
-		return nameToIdMapping;
+    	return 
+    		featureRepo
+	    		.findByOrganizationId(orgId)
+				.stream()
+				.collect(toMap(ProductFeaturesEntity::getName, this::getFeatureIdAsStr));
 	}
     
     
@@ -486,10 +524,15 @@ public class DataImportServiceImpl implements DataImportService {
     
 
 
-    private ProductUpdateDTO createProductDto(ProductImportDTO row) throws BusinessException {
-    	
-        Long brandId = brandRepo.findByName(row.getBrand());
-        if (brandId == null) {
+    private ProductUpdateDTO createProductDto(ProductImportDTO row, DataImportCachedData cache) throws BusinessException {
+    	Map<String, BrandsEntity> brandsCache = cache.getBrandsCache();
+    	String brandName = ofNullable(row.getBrand())
+    						.map(String::toUpperCase)
+    						.orElse("");
+    	BrandsEntity brand = brandsCache.get(brandName);
+        if (brand == null) {
+        	System.out.println(">>>>" + brandRepo.count());
+        	System.out.println(">>>>" + brandRepo.findAll());
             throw new BusinessException(
                     String.format(ERR_BRAND_NAME_NOT_EXIST, row.getBrand())
                     , "INVALID DATA:brand"
@@ -498,7 +541,7 @@ public class DataImportServiceImpl implements DataImportService {
 
 
         ProductUpdateDTO product = new ProductUpdateDTO();
-        product.setBrandId(brandId);
+        product.setBrandId(brand.getId());
         product.setDescription(row.getDescription());
         product.setBarcode(row.getBarcode());
         product.setName(row.getName());
@@ -527,4 +570,15 @@ class ProductData{
         originalRowData = "[]";
         tagsNames = emptySet();
     }
+}
+
+
+
+
+
+@Data
+@AllArgsConstructor
+class DataImportCachedData {
+	private Map<String, String> featureNameToIdMapping;
+	private Map<String, BrandsEntity> brandsCache;
 }

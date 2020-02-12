@@ -33,5 +33,5 @@ DELETE FROM public.tags WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_domains WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_image_types;
-DELETE FROM public.categories WHERE id between 200 AND 230;
+DELETE FROM public.categories WHERE id between 200 AND 240;
 

@@ -52,7 +52,7 @@ import reactor.core.publisher.Mono;
 
 public class ProductImportEventListener extends AbstractElSallabEventListener<ProductsImportEvent, ProductImportEventParam, IntegrationImportedProducts> {
 
-	private static final int PRODUCT_BATCH_PROCESSING_DELAY = 3;
+	private static final int PRODUCT_BATCH_PROCESSING_DELAY = 2;
 
 
 
@@ -356,9 +356,9 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 		Map<String, String> variantFeatures = 
 				MapBuilder
 				.<String,String>map()
-				.put("Color", product.getEnglishColor())
-				.put("Size", product.getSize())
-				.put("Class", product.getEnglishClass())
+				.putNonNull("Color", product.getEnglishColor())
+				.putNonNull("Size", product.getSize())
+				.putNonNull("Class", product.getEnglishClass())
 				.getMap();
 		return variantFeatures;
 	}

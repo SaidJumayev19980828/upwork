@@ -111,7 +111,7 @@ import reactor.core.scheduler.Scheduler;
 
 @Service
 public class IntegrationServiceImpl implements IntegrationService {
-	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 90L;
+	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 120L;
 
 	public static  long REQUEST_TIMEOUT_SEC = 180L;
 
@@ -660,7 +660,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 			.flatMap(List::stream)
 			.map(ProductImportDTO::getBrand)
 			.distinct()
-			.filter(brand -> nonNull(brand))
+			.filter(Objects::nonNull)
 			.filter(this::isBrandNotExists)
 			.map(this::toBrandDTO)
 			.forEach(this::createBrand);

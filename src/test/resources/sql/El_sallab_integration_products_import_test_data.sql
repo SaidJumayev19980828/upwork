@@ -18,12 +18,12 @@ INSERT INTO public.tags (category_id, "name", alias, p_name, metadata, removed, 
 
 
 --inserting brands
-INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (102, 201, 'lecico', now(), now(), 99001);
+INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (111102, 201, 'lecico', now(), now(), 99001);
 
 
 --inserting shops
-INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (50002, 'shop_2', 102, now(), now(), 99001);
-INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (50003, 'shop_3', 102, now(), now(), 99001);
+INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (50002, 'shop_2', 111102, now(), now(), 99001);
+INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (50003, 'shop_3', 111102, now(), now(), 99001);
 
 
 

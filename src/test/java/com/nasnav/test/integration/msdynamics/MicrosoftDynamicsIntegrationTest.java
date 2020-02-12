@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.JsonBody.json;
 import static org.mockserver.verify.VerificationTimes.exactly;
+import static org.springframework.http.HttpStatus.OK;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -293,8 +294,9 @@ public class MicrosoftDynamicsIntegrationTest {
 					.put("page_count", count);
 		
 		HttpEntity<Object> request = getHttpEntity(requestJson.toString(), "hijkllm");
-        ResponseEntity<Integer> response = template.exchange("/integration/import/products", HttpMethod.POST, request, Integer.class);       
-        		
+        ResponseEntity<String> response = template.exchange("/integration/import/products", HttpMethod.POST, request, String.class);       
+        
+        assertEquals(OK, response.getStatusCode());
 		//------------------------------------------------
 		//test the mock api was called
 		if(usingMockServer) {
@@ -319,7 +321,7 @@ public class MicrosoftDynamicsIntegrationTest {
 			assertEquals("shops were imported", extShopsJson.length() - countShopsBefore, countShopsAfter - countShopsBefore);
 			assertEquals("assert brands were imported", 3L, brandRepo.count());
 			assertTrue("all imported products have integration mapping" , allProductHaveMapping());
-			assertEquals("check number of remaining pages to import", 0, response.getBody().intValue());
+			assertEquals("check number of remaining pages to import", 0, Integer.valueOf(response.getBody()).intValue());
 		}
 	}
 	
