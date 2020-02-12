@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -129,6 +130,18 @@ public class EntityUtils {
 				}
 			};
 		
+	}
+
+
+	public static boolean noneIsNull(Object... elements) {
+		List elementList =  Arrays.asList(elements);
+		return elementList.stream().noneMatch(Objects::isNull);
+	}
+
+
+	public static boolean nonIsEmpty(Collection<?> ... collections) {
+		List<Collection> elementList =  Arrays.asList(collections);
+		return elementList.stream().noneMatch(Collection::isEmpty);
 	}
 }
 

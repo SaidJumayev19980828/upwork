@@ -1,5 +1,7 @@
 package com.nasnav.commons.utils;
 
+import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,6 +27,15 @@ public class MapBuilder<K,V> {
 		map.put(key, value);
 		return this;
 	}
+	
+	
+	
+	public MapBuilder<K, V> putNonNull(K key, V value) {
+		if(!noneIsNull(key, value)) {
+			map.put(key, value);
+		}		
+		return this;
+	} 
 	
 	
 	

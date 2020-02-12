@@ -305,8 +305,6 @@ public class OrganizationService {
 
         if (json.name == null)
             throw new BusinessException("MISSING_PARAM: name", "'name' field can't be empty", HttpStatus.NOT_ACCEPTABLE);
-        if (!StringUtils.validateName(json.name))
-            throw new BusinessException("INVALID_PARAM: name", "Required Brand name is invalid", HttpStatus.NOT_ACCEPTABLE);
 
         brand.setName(json.name);
 
@@ -325,8 +323,6 @@ public class OrganizationService {
         BrandsEntity brand = brandsRepository.findById(json.id).get();
 
         if (json.name != null) {
-            if (!StringUtils.validateName(json.name))
-                throw new BusinessException("INVALID_PARAM: name", "Brand name is invalid", HttpStatus.NOT_ACCEPTABLE);
             brand.setName(json.name);
         }
 

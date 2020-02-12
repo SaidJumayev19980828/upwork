@@ -17,6 +17,7 @@ import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.Organization_BrandRepresentationObject;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode.Exclude;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -64,6 +65,8 @@ public class BrandsEntity implements BaseEntity{
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "organization_id", nullable = false)
     @JsonIgnore
+    @Exclude
+    @lombok.ToString.Exclude
     private OrganizationEntity organizationEntity;
 
 

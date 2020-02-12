@@ -2,14 +2,20 @@ package com.nasnav.integration.sallab.webclient.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.Data;
+
 import java.util.List;
 
+
+@Data
 public class ProductsResponse {
     @JsonProperty("totalSize")
-    public Integer totalSize;
+    private Integer totalSize;
+    
     @JsonProperty("done")
-    public Boolean done;
+    private Boolean done;
+    
     @JsonProperty("nextRecordsUrl")
-    public String nextRecordsUrl;
-    public List<Record> records;
+    private String nextRecordsUrl;
+    private List<Record> records;
 }

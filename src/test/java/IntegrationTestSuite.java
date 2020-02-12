@@ -6,6 +6,7 @@ import com.nasnav.test.integration.IntegrationApiTest;
 import com.nasnav.test.integration.IntegrationServiceTest;
 import com.nasnav.test.integration.msdynamics.MicrosoftDynamicsIntegrationTest;
 import com.nasnav.test.integration.msdynamics.MicrosoftDynamicsIntegrationWebClientsTest;
+import com.nasnav.test.integration.sallab.ElSallabIntegrationTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({ 
@@ -13,6 +14,7 @@ import com.nasnav.test.integration.msdynamics.MicrosoftDynamicsIntegrationWebCli
 	, MicrosoftDynamicsIntegrationTest.class
 	, IntegrationServiceTest.class
 	, MicrosoftDynamicsIntegrationWebClientsTest.class
+	, ElSallabIntegrationTest.class
 	})
 public class IntegrationTestSuite {
 

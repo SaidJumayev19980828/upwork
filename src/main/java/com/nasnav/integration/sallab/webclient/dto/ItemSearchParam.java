@@ -21,6 +21,13 @@ public class ItemSearchParam {
 
     @JsonProperty("disValue")
     private BigDecimal discountValue;
+    
+    
+    
+    public ItemSearchParam(String itemNumber) {
+    	this.itemNumber = itemNumber;
+    }
+    
 
     @Override
     public String toString() {

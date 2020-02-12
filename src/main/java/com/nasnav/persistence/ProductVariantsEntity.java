@@ -1,6 +1,7 @@
 package com.nasnav.persistence;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -89,8 +90,16 @@ public class ProductVariantsEntity {
     
     
     public void addExtraAttribute(ProductExtraAttributesEntity extraAttribute) {
-    	extraAttribute.setVariant(this);
-    	extraAttributes.add(extraAttribute);
+    	ProductExtraAttributesEntity extraAttr = 
+    			extraAttributes
+    				.stream()
+    				.filter(attr -> Objects.equals(extraAttribute.getExtraAttribute(), attr.getExtraAttribute()))
+    				.findFirst()
+    				.orElse(extraAttribute);
+    	
+    	extraAttr.setValue(extraAttribute.getValue());
+    	extraAttr.setVariant(this);
+    	extraAttributes.add(extraAttr);
     }
     
     

@@ -19,4 +19,7 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 	Long findByName(@Param("brandName") String brandName);
 
 	boolean existsByNameIgnoreCaseAndOrganizationEntity_id(String brandName, Long orgId);
+
+	@Query("select b.id FROM BrandsEntity b where UPPER(b.name) = UPPER(:brandName)")
+	Long findByNameIgnoreCase(@Param("brandName")String brandName);
 }
