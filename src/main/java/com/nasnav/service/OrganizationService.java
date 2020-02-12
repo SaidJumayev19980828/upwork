@@ -241,6 +241,11 @@ public class OrganizationService {
         return new OrganizationResponse();
     }
 
+    
+    
+    
+    
+    
     public List<Organization_BrandRepresentationObject> getOrganizationBrands(Long orgId){
         List<Organization_BrandRepresentationObject> brands = null;
         if (orgId == null)
@@ -251,14 +256,18 @@ public class OrganizationService {
         return brands;
     }
 
+    
+    
+    
+    
     public OrganizationResponse createOrganizationBrand(BrandDTO json, MultipartFile logo,
                                         MultipartFile banner) throws BusinessException {
         BrandsEntity brand = new BrandsEntity();
         if (json.name == null)
             throw new BusinessException("MISSING_PARAM: name", "'name' field can't be empty", HttpStatus.NOT_ACCEPTABLE);
-        if (!StringUtils.validateName(json.name))
-            throw new BusinessException("INVALID_PARAM: name", "Required Brand name is invalid", HttpStatus.NOT_ACCEPTABLE);
+       
         brand.setName(json.name);
+        
         if (json.pname != null) {
             if (!StringUtils.encodeUrl(json.pname).equals(json.pname)) {
                 throw new BusinessException("INVALID_PARAM: p_name", "Required Organization p_name is invalid",
@@ -290,6 +299,10 @@ public class OrganizationService {
         brandsRepository.save(brand);
         return new OrganizationResponse(brand.getId(), 1);
     }
+    
+    
+    
+    
 
     public OrganizationResponse updateOrganizationBrand(BrandDTO json, MultipartFile logo,
                                         MultipartFile banner) throws BusinessException {

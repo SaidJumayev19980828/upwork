@@ -65,8 +65,8 @@ public class ElSallabIntegrationTest {
     private static final String AUTH_SERVER_URL = "https://test.salesforce.com";
     private static final String MOCK_SERVER_URL = "http://127.0.0.1";
     
-//  private static final String SERVER_URL = MOCK_SERVER_URL;
-  private static final String SERVER_URL = SALLAB_SERVER_URL;
+  private static final String SERVER_URL = MOCK_SERVER_URL;
+//  private static final String SERVER_URL = SALLAB_SERVER_URL;
   
     private static final boolean usingMockServer = SERVER_URL.equals(MOCK_SERVER_URL);
 	
@@ -216,7 +216,7 @@ public class ElSallabIntegrationTest {
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertNotEquals("products were imported", 0L, countProductsAfter - countProductsBefore);
 		if(usingMockServer) {
-			assertEquals("assert brands were imported", 1L, countBrandsAfter - countBrandsBefore);
+			assertEquals("assert brands were imported", 0L, countBrandsAfter - countBrandsBefore);
 			assertTrue("all imported products have integration mapping" , allProductHaveMapping());
 			assertEquals("check total number of pages to import", 1, response.getBody().intValue());
 			assertEquals("check number of imported products" , productCount, countProductsAfter - countProductsBefore);

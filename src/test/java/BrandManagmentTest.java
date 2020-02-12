@@ -105,16 +105,9 @@ public class BrandManagmentTest {
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
-    @Test
-    public void createBrandInvalidNameTest() {
-        String body = "{\"operation\":\"create\", \"name\":\"12Alfa Romero#\"}";
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", body);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
-        ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
-        Assert.assertEquals(406, response.getStatusCode().value());
-    }
-
+    
+    
+    
     @Test
     public void createBrandInvalidPnameTest() {
         String body = "{\"operation\":\"create\", \"name\":\"Alfa Romero\", \"p_name\":\"12Alfa Romero#\"}";
@@ -124,6 +117,9 @@ public class BrandManagmentTest {
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
+    
+    
+    
 
     @Test
     public void createBrandInvalidFilesTest() {

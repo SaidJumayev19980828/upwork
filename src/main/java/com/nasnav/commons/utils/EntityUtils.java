@@ -137,6 +137,12 @@ public class EntityUtils {
 		List elementList =  Arrays.asList(elements);
 		return elementList.stream().noneMatch(Objects::isNull);
 	}
+
+
+	public static boolean nonIsEmpty(Collection<?> ... collections) {
+		List<Collection> elementList =  Arrays.asList(collections);
+		return elementList.stream().noneMatch(Collection::isEmpty);
+	}
 }
 
 

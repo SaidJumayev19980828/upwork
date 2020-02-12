@@ -1,5 +1,7 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.EntityUtils.nonIsEmpty;
+import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
@@ -1878,10 +1880,16 @@ public class ProductService {
 	public boolean updateProductTags(ProductTagDTO productTagDTO) throws BusinessException {
 		validateProductTagDTO(productTagDTO);
 
-		Map<Long, ProductEntity> productsMap = validateAndGetProductMap(productTagDTO.getProductIds());
-		Map<Long, TagsEntity> tagsMap = validateAndGetTagMap(productTagDTO.getTagIds());
+		List<Long> productIds = productTagDTO.getProductIds();
+		List<Long> tagIds = productTagDTO.getTagIds();
+		Map<Long, ProductEntity> productsMap = validateAndGetProductMap(productIds);
+		Map<Long, TagsEntity> tagsMap = validateAndGetTagMap(tagIds);
 
-		List<Pair> productTagsList = productRepository.getProductTags(productTagDTO.getProductIds(), productTagDTO.getTagIds());
+		List<Pair> productTagsList = new ArrayList<>();
+		if(noneIsNull(productIds, tagIds) && nonIsEmpty(productIds, tagIds)) {
+			productTagsList = productRepository.getProductTags(productIds, tagIds);
+		}
+		 
 
 		for(Long productId : productTagDTO.getProductIds()) {
 			for(Long tagId : productTagDTO.getTagIds()) {
@@ -1931,6 +1939,7 @@ public class ProductService {
 	
 
 	private Map<Long, ProductEntity> validateAndGetProductMap(List<Long> productIds) throws BusinessException {
+		
 		Map<Long, ProductEntity> productsMap = new HashMap<>();
 
 		for(ProductEntity entity : productRepository.findByIdIn(productIds)) {
@@ -1953,6 +1962,7 @@ public class ProductService {
 	
 	
 	private Map<Long, TagsEntity> validateAndGetTagMap(List<Long> tagIds) throws BusinessException {
+		
 		Map<Long, TagsEntity> tagsMap = new HashMap<>();
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		

@@ -53,7 +53,7 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 	
 	@ExceptionHandler(RuntimeBusinessException.class)
 	@ResponseBody
-	public ResponseEntity<ErrorResponseDTO> handleBusinessExceptionInterface(BusinessException e, WebRequest requestInfo , HttpServletRequest request) {
+	public ResponseEntity<ErrorResponseDTO> handleBusinessExceptionInterface(RuntimeBusinessException e, WebRequest requestInfo , HttpServletRequest request) {
 		logException(requestInfo, request , e);
 		
 		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getErrorMessage(), e.getErrorCode());

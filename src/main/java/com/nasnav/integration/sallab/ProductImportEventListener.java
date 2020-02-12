@@ -15,6 +15,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static reactor.core.scheduler.Schedulers.elastic;
 
 import java.math.BigDecimal;
@@ -23,7 +24,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.MapBuilder;
@@ -52,7 +55,7 @@ import reactor.core.publisher.Mono;
 
 public class ProductImportEventListener extends AbstractElSallabEventListener<ProductsImportEvent, ProductImportEventParam, IntegrationImportedProducts> {
 
-	private static final int PRODUCT_BATCH_PROCESSING_DELAY = 2;
+	private static final int PRODUCT_BATCH_PROCESSING_DELAY = 4;
 
 
 
@@ -297,12 +300,13 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 		Map<String, String> variantFeatures = getVariantFeatures(product);
 		Set<String> tags = getTags(product);
 		Map<String, String> extraAttributes = getExtraAttributes(product);
+		String productName = getProductName(product);
 		
 		
 		dto.setBarcode(product.getItemNoC());
 		dto.setBrand(product.getEnglishFactory());
 		dto.setExternalId(product.getItemNoC());
-		dto.setName(product.getEnglishModel());
+		dto.setName(productName);
 		dto.setPrice(price);
 		dto.setQuantity(quantity);
 		dto.setDescription(product.getDescription());
@@ -311,6 +315,17 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 		dto.setExtraAttributes(extraAttributes);
 		
 		return dto;
+	}
+
+
+
+
+	private String getProductName(Product product) {
+		String productName = Stream.of( product.getEnglishModel(), product.getName(), product.getId())
+								.filter(Objects::nonNull)
+								.findFirst()
+								.orElse("Cool Product ...");
+		return productName;
 	}
 
 
@@ -344,7 +359,10 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 
 	private Set<String> getTags(Product product) {
 		Set<String> tags = setOf(product.getEnglishCategory(), product.getEnglishFamily(), product.getEnglishType());
-		return tags;
+		return tags
+				.stream()
+				.filter(Objects::nonNull)
+				.collect(toSet());
 	}
 
 

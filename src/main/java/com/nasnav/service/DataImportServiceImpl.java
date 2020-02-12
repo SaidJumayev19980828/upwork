@@ -13,7 +13,9 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
+import static java.util.Comparator.comparing;
 import static java.util.Optional.ofNullable;
+import static java.util.function.BinaryOperator.minBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
@@ -339,7 +341,7 @@ public class DataImportServiceImpl implements DataImportService {
     }
 
 
-    private List<ProductData> toProductDataList(List<ProductImportDTO> rows, ProductImportMetadata importMetaData) throws BusinessException {    	
+    private List<ProductData> toProductDataList(List<ProductImportDTO> rows, ProductImportMetadata importMetaData) throws BusinessException, RuntimeBusinessException {    	
     	DataImportCachedData cache = getImportCachedData();
     	
     	return rows
@@ -367,7 +369,10 @@ public class DataImportServiceImpl implements DataImportService {
 		return brandRepo
 				.findByOrganizationEntity_Id(orgId)
 				.stream()
-				.collect(toMap(brand -> brand.getName().toUpperCase() , brand -> brand));
+				.collect(toMap(
+							brand -> brand.getName().toUpperCase() 
+							, brand -> brand
+							, minBy(comparing(BrandsEntity::getId))));
 	}
 
 
