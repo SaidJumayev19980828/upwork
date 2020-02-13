@@ -146,7 +146,7 @@ public class BrandManagmentTest {
         map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
-        Assert.assertEquals(406, response.getStatusCode().value());
+        Assert.assertEquals(200, response.getStatusCode().value());
     }
 
     @Test

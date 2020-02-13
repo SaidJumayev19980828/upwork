@@ -127,7 +127,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------
 		
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stock.getId(), stock.getQuantity()));
-		ResponseEntity<String> response = template.postForEntity("/order/update"
+		ResponseEntity<String> response = template.postForEntity("/order/create"
 															, TestCommons.getHttpEntity(request.toString(), "XX")
 															, String.class);
 		
@@ -145,7 +145,7 @@ public class OrderServiceTest {
 	public void addNewOrderWithEmptyBasket() {
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW);
 		ResponseEntity<OrderResponse> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 										, TestCommons.getHttpEntity(request.toString(), "123")
 										, OrderResponse.class);
 		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
@@ -164,7 +164,7 @@ public class OrderServiceTest {
 				
 		JSONObject request = createOrderRequestWithBasketItems(NEW, item(stock.getId(), stock.getQuantity()));
 		ResponseEntity<OrderResponse> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 										, TestCommons.getHttpEntity(request.toString(), "123")
 										, OrderResponse.class);
 
@@ -225,7 +225,7 @@ public class OrderServiceTest {
 		// try updating with a non-existing stock id
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(9845757332L, 4));
 		ResponseEntity<String> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 										, TestCommons.getHttpEntity(request.toString(), "123")
 										, String.class);
 		
@@ -252,7 +252,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stocksEntity.getId(), orderQuantity));
 		ResponseEntity<String> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 										, TestCommons.getHttpEntity( request.toString(), persistentUser.getAuthenticationToken())
 										, String.class);
 		
@@ -302,7 +302,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stockId , orderQuantity));
 		ResponseEntity<String> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 										, TestCommons.getHttpEntity( request.toString(), persistentUser.getAuthenticationToken())
 										, String.class);
 		
@@ -398,7 +398,7 @@ public class OrderServiceTest {
 		
 		// create a new order, then take it's order id and try to make an update using it
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stock.getId(), stock.getQuantity()));
-		ResponseEntity<String> response = template.postForEntity("/order/update"
+		ResponseEntity<String> response = template.postForEntity("/order/create"
 														, TestCommons.getHttpEntity(request.toString(), persistentUser.getAuthenticationToken())
 														, String.class);
 
@@ -849,7 +849,7 @@ public class OrderServiceTest {
 		JSONObject request = createOrderUpdateRequestWithNonExistingStock();
 		
 		ResponseEntity<String> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 									, TestCommons.getHttpEntity(request.toString(), "123")
 									, String.class);
 		
@@ -865,7 +865,7 @@ public class OrderServiceTest {
 		JSONObject request = createOrderUpdateRequestWithInvalidQuantity();
 		
 		ResponseEntity<String> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 									, TestCommons.getHttpEntity(request.toString(), "123")
 									, String.class);
 		
@@ -1453,7 +1453,7 @@ public class OrderServiceTest {
 		JSONObject updateRequest = createOrderRequestWithBasketItems(NEW);
 		
 		ResponseEntity<String> updateResponse = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 										, TestCommons.getHttpEntity(updateRequest.toString(), userToken)
 										, String.class);
 		System.out.println("----------response-----------------\n" + updateResponse);

@@ -200,7 +200,19 @@ public class OrderServiceImpl implements OrderService {
 	}
 	
 	
-	
+	public OrderResponse createNewOrder(OrderJsonDto orderJson) throws BusinessException {
+
+		validateOrderCreation(orderJson);
+
+		return createNewOrderAndBasketItems(orderJson);
+	}
+
+	public OrderResponse updateExistingOrder(OrderJsonDto orderJson) throws BusinessException {
+
+		validateOrderUpdate(orderJson);
+
+		return updateOrder(orderJson);
+	}
 	
 	
 	@Override
@@ -250,7 +262,15 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private void validateOrderUpdate(OrderJsonDto order) throws BusinessException {		
+	private void validateOrderUpdate(OrderJsonDto order) throws BusinessException {
+
+		List<String> possibleStatusList = getPossibleOrderStatus();
+		if(!possibleStatusList.contains( order.getStatus() ))
+			throwInvalidOrderException(ERR_INVALID_ORDER_STATUS);
+
+		if( !isNewOrder(order) && isNullOrZero(order.getId()) )
+			throwInvalidOrderException(ERR_UPDATED_ORDER_WITH_NO_ID);
+
 		if(isCustomerUser()) {
 			validateOrderUpdateForUser(order);
 		}else {
@@ -402,6 +422,8 @@ public class OrderServiceImpl implements OrderService {
 		if ( isNullOrEmpty(order.getBasket()) ) {
 			throwInvalidOrderException(ERR_NEW_ORDER_WITH_EMPTY_BASKET);
 		}
+
+		validateBasketItems(order);
 	}
 
 

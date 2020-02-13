@@ -642,7 +642,7 @@ public class MicrosoftDynamicsIntegrationTest {
 		//---------------------------------------------------------------
 		JSONObject request = createOrderRequestWithBasketItems(NEW, item(stockId, orderQuantity));
 		ResponseEntity<OrderResponse> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 										, getHttpEntity( request.toString(), token)
 										, OrderResponse.class);
 		
