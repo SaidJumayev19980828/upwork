@@ -3,6 +3,7 @@ package com.nasnav.integration.sallab;
 import static com.nasnav.integration.enums.IntegrationParam.AUTH_SERVER_URL;
 import static com.nasnav.integration.enums.IntegrationParam.SERVER_2_URL;
 import static com.nasnav.integration.enums.IntegrationParam.SERVER_URL;
+import static java.lang.String.format;
 import static org.springframework.http.HttpStatus.OK;
 import static reactor.core.publisher.Mono.error;
 import static reactor.core.publisher.Mono.just;
@@ -47,15 +48,26 @@ public abstract class AbstractElSallabEventListener<E extends Event<T,R>, T, R> 
 	
 	protected Mono<ClientResponse> throwExceptionIfNotOk(ClientResponse response) {
 		return just(response)
-				.filter(res -> res.statusCode() == OK)
-				.switchIfEmpty( error( getFailedResponseRuntimeException()));
+				.flatMap(this::checkResponse);
 	}
+	
+	
+	
+	
+	protected Mono<ClientResponse> checkResponse(ClientResponse response){
+		if(response.statusCode() == OK) {
+			return Mono.just(response);
+		}else {
+			return error( getFailedResponseRuntimeException(response));
+		}
+	}
+	
 
 
 
-
-	protected RuntimeException getFailedResponseRuntimeException() {
-		return new RuntimeException("Failed to get valid response from El-sallab API ");
+	protected RuntimeException getFailedResponseRuntimeException(ClientResponse response) {
+		return new RuntimeException(
+				format("Failed to get valid response from El-sallab API! failed response [%s] ", response.toString()));
 	}
 
 
