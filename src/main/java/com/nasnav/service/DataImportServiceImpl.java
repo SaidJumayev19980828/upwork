@@ -324,8 +324,13 @@ public class DataImportServiceImpl implements DataImportService {
 
     private ProductUpdateDTO prepareProductUpdateDto(ProductUpdateDTO dto) throws BusinessException {
         try {
+        	Long orgId = security.getCurrentUserOrganizationId();
             ProductUpdateDTO dtoClone = (ProductUpdateDTO) BeanUtils.cloneBean(dto);
-            Optional<ProductEntity> product = productRepo.findByName(dto.getName());
+            Optional<ProductEntity> product = 
+            		productRepo
+            			.findByNameAndOrganizationId(dto.getName(), orgId)
+            			.stream()
+            			.findFirst();
             if (product.isPresent()) {
                 dtoClone.setId(product.get().getId());
                 dtoClone.setOperation(EntityConstants.Operation.UPDATE);
