@@ -6,6 +6,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
 
@@ -29,4 +30,6 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
                                          @Param("maxLong") Double maxLong,
                                          @Param("minLat") Double minLat,
                                          @Param("maxLat") Double maxLat);
+
+	Optional<ShopsEntity> findByNameAndOrganizationEntity_Id(String shopName, Long orgId);
 }

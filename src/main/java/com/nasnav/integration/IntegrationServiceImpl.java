@@ -25,8 +25,8 @@ import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static com.nasnav.integration.enums.MappingType.SHOP;
 import static java.lang.String.format;
 import static java.time.Duration.ofMillis;
-import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 import static reactor.core.scheduler.Schedulers.boundedElastic;
 
 import java.io.PrintWriter;
@@ -92,6 +92,7 @@ import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.IntegrationMappingTypeEntity;
 import com.nasnav.persistence.IntegrationParamEntity;
 import com.nasnav.persistence.IntegrationParamTypeEntity;
+import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.DataImportService;
@@ -558,7 +559,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 				.filter(Objects::nonNull)
 				.filter(extShop -> isExternalShopNotExists(orgId, extShop))
 				.map(extShop -> importExternalShop(orgId, extShop))
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 	
 	
@@ -595,14 +596,15 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	
 	private Long importExternalShop(Long orgId, ImportedShop externalShop) {
-		ShopJsonDTO shopUpdateDto = new ShopJsonDTO();
-		shopUpdateDto.setName(externalShop.getName());
-		shopUpdateDto.setOrgId(orgId);
+		String shopName = externalShop.getName();
 		
 		Long shopId = null;
 		try {
-			ShopResponse response = shopService.shopModification(shopUpdateDto);
-			shopId = response.getStoreId();
+			shopId = shopRepo
+						.findByNameAndOrganizationEntity_Id(shopName, orgId)
+						.map(ShopsEntity::getId)
+						.orElseGet(() -> createNewShop(externalShop, orgId));
+
 			addMappedValue(orgId, SHOP, String.valueOf(shopId), String.valueOf(externalShop.getId()));
 		} catch (Throwable e) {
 			logger.error(e,e);
@@ -616,6 +618,27 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	
 	
+
+	private Long createNewShop(ImportedShop externalShop, Long orgId)  {
+		ShopJsonDTO shopUpdateDto = new ShopJsonDTO();
+		shopUpdateDto.setName(externalShop.getName());
+		shopUpdateDto.setOrgId(orgId);
+		
+		ShopResponse response;
+		try {
+			response = shopService.shopModification(shopUpdateDto);
+		} catch (Throwable e) {
+			logger.error(e,e);
+			throw new RuntimeException(
+						format(ERR_SHOP_IMPORT_FAILED, externalShop.getId()));
+		}
+		return response.getStoreId();
+	}
+
+
+
+
+
 
 	@Override
 	public void mapToIntegratedShop(Long shopId, ImportedShop integratedShop) {
