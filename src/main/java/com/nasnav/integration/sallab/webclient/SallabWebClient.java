@@ -107,7 +107,7 @@ public class SallabWebClient {
 
     public Mono<ClientResponse> getProductsNextRecords(String token, String recordsUri) {
         return client.get()
-                .uri("/services/data/v44.0/query/"+ recordsUri)
+                .uri(recordsUri)
                 .header("Authorization", "Bearer "+ token)
                 .exchange();
     }
