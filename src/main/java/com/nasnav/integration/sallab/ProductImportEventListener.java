@@ -116,7 +116,7 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 	
 	private Mono<FetchedProductsData> toFetchedProductsData(ProductsResponse productsResponse, ProductImportEventParam param, Long orgId, String authToken) {
 		Mono<Integer> totalPages = calculateTotalPages(productsResponse, param);		
-		Mono<List<Product>> page = getProductsData(productsResponse, param, orgId);
+		Mono<List<Product>> page = getProductsData(productsResponse, param, orgId, authToken);
 		
 		return Mono.zip(totalPages
 						, page
@@ -129,9 +129,9 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 
 
 	private Mono<List<Product>> getProductsData(ProductsResponse productsResponse, ProductImportEventParam param,
-			Long orgId) {
+			Long orgId, String authToken) {
 		
-		Flux<Product> allProducts = getAllRequiredProducts(param, productsResponse, orgId);
+		Flux<Product> allProducts = getAllRequiredProducts(param, productsResponse, orgId, authToken);
 
 		return getProductPageMono(allProducts, param);
 	}
@@ -168,8 +168,8 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 	 * El sallab api returns products in linked-list style, each response provides a batch of products and  an url for the next batch.
 	 * so, we need to traverse and buffer products until we get the required page.
 	 * */
-	private Flux<Product> getAllRequiredProducts(ProductImportEventParam param, ProductsResponse response, Long orgId) {
-		return getRemainingProductsFromApiIfNeeded(param, new AccumlatedProductsResponse(response), orgId)
+	private Flux<Product> getAllRequiredProducts(ProductImportEventParam param, ProductsResponse response, Long orgId, String authToken) {
+		return getRemainingProductsFromApiIfNeeded(param, new AccumlatedProductsResponse(response, orgId, authToken))
 					.flatMapIterable(accProducts -> accProducts.getBuffer());
 	}
 	
@@ -180,12 +180,14 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 	/**
 	 * recursive function to get products from the API's using the linked-list style of it.
 	 * */
-	private Mono<AccumlatedProductsResponse> getRemainingProductsFromApiIfNeeded(ProductImportEventParam param, AccumlatedProductsResponse response, Long orgId) {
+	private Mono<AccumlatedProductsResponse> getRemainingProductsFromApiIfNeeded(ProductImportEventParam param, AccumlatedProductsResponse response) {
 		Integer neededBufferSize = param.getPageCount()*param.getPageNum();
 		
 		if( !response.isDone() && neededBufferSize > response.getBuffer().size()) {
-			return	getProductsUsingWebAPI(orgId, response.getResponse().getNextRecordsUrl())
-						.flatMap(newRes -> getRemainingProductsFromApiIfNeeded(param, new AccumlatedProductsResponse(newRes, response.getBuffer()), orgId) );
+			return	getProductsUsingWebAPI(response)
+						.flatMap(newRes -> getRemainingProductsFromApiIfNeeded(
+												param
+												, new AccumlatedProductsResponse(newRes, response)) );
 		}
 		
 		return Mono.just(response);
@@ -194,10 +196,14 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 	
 	
 	
-	private Mono<ProductsResponse> getProductsUsingWebAPI(Long orgId, String url){
+	private Mono<ProductsResponse> getProductsUsingWebAPI(AccumlatedProductsResponse response){
+		Long orgId = response.getOrgId();
+		String url = response.getResponse().getNextRecordsUrl();
+		String authToken = response.getAuthToken();
+		
 		SallabWebClient client = getWebClient(orgId);
 		return client
-				.getProductsNextRecords("", url)
+				.getProductsNextRecords(authToken, url)
 				.flatMap(this::throwExceptionIfNotOk)
 				.flatMap(prodRes -> prodRes.bodyToMono(ProductsResponse.class));				
 	}
@@ -511,13 +517,17 @@ class ProductWithQtyAndPrice{
 
 @Data
 class AccumlatedProductsResponse{
+	private String authToken;
+	private Long orgId;
 	private ProductsResponse response;
 	private List<Product> buffer;
 	
 	
 	
 	
-	public AccumlatedProductsResponse(ProductsResponse response) {
+	public AccumlatedProductsResponse(ProductsResponse response, Long orgId, String authToken) {
+		this.orgId = orgId;
+		this.authToken = authToken;
 		this.response = response;
 		this.buffer = new ArrayList<>(response.getRecords().size());
 		buffer.addAll(getProductsList(response));
@@ -525,9 +535,13 @@ class AccumlatedProductsResponse{
 	
 	
 	
-	public AccumlatedProductsResponse(ProductsResponse response, List<Product> bufferedData) {
+	public AccumlatedProductsResponse(ProductsResponse response, AccumlatedProductsResponse accumlatedResponse) {
 		this.response = response;
+		this.authToken = accumlatedResponse.getAuthToken();
+		this.orgId = accumlatedResponse.getOrgId();
+		
 		List<Product> newData = getProductsList(response);
+		List<Product> bufferedData = accumlatedResponse.getBuffer();
 		
 		this.buffer = new ArrayList<>(bufferedData.size() + newData.size());
 		this.buffer.addAll(bufferedData);

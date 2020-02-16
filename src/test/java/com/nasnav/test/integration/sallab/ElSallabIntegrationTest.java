@@ -64,6 +64,7 @@ public class ElSallabIntegrationTest {
     private static final String SALLAB_SEVER_URL_2 = "http://41.33.113.70";
     private static final String AUTH_SERVER_URL = "https://test.salesforce.com";
     private static final String MOCK_SERVER_URL = "http://127.0.0.1";
+    private static final String MOCK_SERVER_AUTH_TOKEN = "00D250000009BEF!AQcAQHE4mvVZ6hmXm7_4y1s26_FIG0yMMVvq58ecs1GshIRcQE2l5d40r_NR8AJA5g.gko2fNdCctisUWg4cOIGhqnK9xMma";
     
   private static final String SERVER_URL = MOCK_SERVER_URL;
 //  private static final String SERVER_URL = SALLAB_SERVER_URL;
@@ -178,12 +179,13 @@ public class ElSallabIntegrationTest {
 				      VerificationTimes.exactly(1)
 				    );
 			
-//			mockServerRule.getClient().verify(
-//				      request()
-//				        .withMethod("GET")
-//				        .withPath("/services/data/v44.0/query/.+"),
-//				      VerificationTimes.exactly(1)
-//				    );
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("GET")
+				        .withPath("/services/data/v44.0/query/.+")
+				        .withHeader("Authorization", "Bearer "+MOCK_SERVER_AUTH_TOKEN),
+				      VerificationTimes.exactly(1)
+				    );
 			
 			mockServerRule.getClient().verify(
 				      request()
