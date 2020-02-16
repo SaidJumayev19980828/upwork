@@ -112,9 +112,9 @@ import reactor.core.scheduler.Scheduler;
 
 @Service
 public class IntegrationServiceImpl implements IntegrationService {
-	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 120L;
+	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 5760L;
 
-	public static  long REQUEST_TIMEOUT_SEC = 180L;
+	public static  long REQUEST_TIMEOUT_SEC = 300L;
 
 	private final Logger logger = Logger.getLogger(getClass());
 	
