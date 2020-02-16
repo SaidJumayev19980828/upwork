@@ -106,6 +106,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/integration/module/enable"							, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 						patternOf( "/integration/module/**"								, setOf(NASNAV_ADMIN)),
 						patternOf( "/integration/param/**"								, setOf(NASNAV_ADMIN)),
+						patternOf( "/integration/dictionary"							, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+						patternOf( "/integration/errors"								, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 						patternOf( "/integration/**"									, setOf(NASNAV_ADMIN)),
 						patternOf( "/**")
 						);

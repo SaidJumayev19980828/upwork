@@ -64,6 +64,8 @@ import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.BrandDTO;
+import com.nasnav.dto.IntegrationDictionaryDTO;
+import com.nasnav.dto.IntegrationErrorDTO;
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.IntegrationProductImportDTO;
@@ -94,6 +96,8 @@ import com.nasnav.persistence.IntegrationParamEntity;
 import com.nasnav.persistence.IntegrationParamTypeEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
+import com.nasnav.request.GetIntegrationDictParam;
+import com.nasnav.request.GetIntegrationErrorParam;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.DataImportService;
 import com.nasnav.service.OrganizationService;
@@ -1475,6 +1479,28 @@ public class IntegrationServiceImpl implements IntegrationService {
 		} catch (InvalidIntegrationEventException e) {
 			throw new RuntimeBusinessException(e);
 		}
+	}
+
+
+
+
+
+
+	@Override
+	public List<IntegrationDictionaryDTO> getIntegrationDictionary(GetIntegrationDictParam param) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+
+
+
+
+	@Override
+	public List<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 	

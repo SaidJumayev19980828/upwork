@@ -1113,4 +1113,41 @@ public class IntegrationApiTest {
 	}
 	
 	
+	
+	
+	
+
+	
+	@Test
+	public void testGetIntegrationDictNoAuthN() {
+		
+	}
+	
+	
+	
+	
+	@Test
+	public void testGetIntegrationDictNoAuthZ() {
+		
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void testGetIntegrationErrorsNoAuthN() {
+		
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void testGetIntegrationErrorsNoAuthZ() {
+		
+	}
+	
+	
 }
