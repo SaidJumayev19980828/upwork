@@ -50,7 +50,6 @@ import org.jboss.logging.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -73,11 +72,13 @@ import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.IntegrationDictionaryDTO;
 import com.nasnav.dto.IntegrationErrorDTO;
+import com.nasnav.dto.IntegrationErrorPage;
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.IntegrationProductImportDTO;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.dto.ProductImportMetadata;
+import com.nasnav.dto.ResponsePage;
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -1496,7 +1497,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 	@Override
-	public Page<IntegrationDictionaryDTO> getIntegrationDictionary(GetIntegrationDictParam param) {
+	public IntegrationErrorPage<IntegrationDictionaryDTO> getIntegrationDictionary(GetIntegrationDictParam param) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -1507,7 +1508,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 	@Override
-	public Page<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param) {
+	public IntegrationErrorPage<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param) {
 		GetIntegrationErrorParam rectifiedParams = rectifyGetIntegrationErrorsParams(param);
 		
 		Pageable pageable = createErrorPageSpecs(rectifiedParams);
@@ -1607,7 +1608,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 
-	private Page<IntegrationErrorDTO> toPageOfIntegrationErrorDTO(Page<IntegrationEventFailureEntity> failuresPage) {
+	private ResponsePage<IntegrationErrorDTO> toPageOfIntegrationErrorDTO(Page<IntegrationEventFailureEntity> failuresPage) {
 		List<IntegrationErrorDTO> content = 
 				ofNullable(failuresPage)
 					.map(Page::getContent)
@@ -1615,7 +1616,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 					.stream()
 					.map(this::toIntegrationErrorDTO)
 					.collect(toList());
-		return new PageImpl<>(content, failuresPage.getPageable(), failuresPage.getTotalElements());
+		return new ResponsePage<>(content, failuresPage.getPageable(), failuresPage.getTotalElements());
 	}
 	
 	

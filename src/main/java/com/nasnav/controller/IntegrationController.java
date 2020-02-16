@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nasnav.dto.IntegrationDictionaryDTO;
 import com.nasnav.dto.IntegrationErrorDTO;
+import com.nasnav.dto.ResponsePage;
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.IntegrationProductImportDTO;
@@ -194,7 +195,7 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @GetMapping(value = "/dictionary", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public Page<IntegrationDictionaryDTO> getDictionary(@RequestHeader (value = "User-Token") String userToken, GetIntegrationDictParam param )  throws Throwable {
+    public ResponsePage<IntegrationDictionaryDTO> getDictionary(@RequestHeader (value = "User-Token") String userToken, GetIntegrationDictParam param )  throws Throwable {
 		return integrationSrv.getIntegrationDictionary(param);
     }
 	
@@ -209,7 +210,7 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @GetMapping(value = "/errors", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public Page<IntegrationErrorDTO> getErrors(@RequestHeader (value = "User-Token") String userToken, GetIntegrationErrorParam param )  throws Throwable {
+    public ResponsePage<IntegrationErrorDTO> getErrors(@RequestHeader (value = "User-Token") String userToken, GetIntegrationErrorParam param )  throws Throwable {
 		return integrationSrv.getIntegrationErrors(param);
     }
 }

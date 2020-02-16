@@ -4,10 +4,9 @@ import java.time.Duration;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-import org.springframework.data.domain.Page;
-
 import com.nasnav.dto.IntegrationDictionaryDTO;
 import com.nasnav.dto.IntegrationErrorDTO;
+import com.nasnav.dto.ResponsePage;
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.IntegrationProductImportDTO;
@@ -166,7 +165,7 @@ public interface IntegrationService {
 	<E extends Event<T, R> ,T,R> void retryEvent(E event, BiConsumer<E, Throwable> onError, Duration delay, Integer maxRetryCount);
 	
 	
-	Page<IntegrationDictionaryDTO> getIntegrationDictionary(GetIntegrationDictParam param);
+	ResponsePage<IntegrationDictionaryDTO> getIntegrationDictionary(GetIntegrationDictParam param);
 	
-	Page<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param);
+	ResponsePage<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param);
 }
