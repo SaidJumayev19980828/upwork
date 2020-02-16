@@ -2,10 +2,13 @@ package com.nasnav.test.integration;
 import static com.nasnav.integration.enums.IntegrationParam.DISABLED;
 import static com.nasnav.integration.enums.IntegrationParam.INTEGRATION_MODULE;
 import static com.nasnav.integration.enums.IntegrationParam.MAX_REQUEST_RATE;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -41,7 +44,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
-import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.IntegrationParamRepository;
 import com.nasnav.dao.IntegrationParamTypeRepostory;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
@@ -109,7 +111,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testRegisterModuleAuthN(){
 		String url = "/integration/module";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", "non-existing-token");
+		HttpEntity<?> request =  TestCommons.getHttpEntity("{}", "non-existing-token");
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -127,7 +129,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testRegisterModuleAuthZ(){
 		String url = "/integration/module";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", ORG_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity("{}", ORG_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -147,7 +149,7 @@ public class IntegrationApiTest {
 		JSONObject json = getIntegrationModuleRequestJson();
 		json.remove("organization_id");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
 		
 		
 		ResponseEntity<String> response = 
@@ -187,7 +189,7 @@ public class IntegrationApiTest {
 		JSONObject json = getIntegrationModuleRequestJson();
 		json.remove("integration_module");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -210,7 +212,7 @@ public class IntegrationApiTest {
 		JSONObject json = getIntegrationModuleRequestJson();
 		json.put("organization_id", 1111111111L);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -231,7 +233,7 @@ public class IntegrationApiTest {
 		JSONObject json = getIntegrationModuleRequestJson();
 		json.put("integration_module", "non.existing.module");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -254,7 +256,7 @@ public class IntegrationApiTest {
 		JSONObject json = getIntegrationModuleRequestJson();
 		json.put("integration_module", "com.nasnav.test.integration.modules.InvalidIntegrationModule");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -276,7 +278,7 @@ public class IntegrationApiTest {
 		JSONObject json = getIntegrationModuleRequestJson();
 		json.put("max_request_rate", -2000);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -331,7 +333,7 @@ public class IntegrationApiTest {
 
 	private ResponseEntity<String> registerIntegrationModule(JSONObject json) {
 		String url = "/integration/module";
-		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -418,7 +420,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testDisableModuleAuthN(){
 		String url = "/integration/module/disable";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", "non-existing-token");
+		HttpEntity<?> request =  TestCommons.getHttpEntity("{}", "non-existing-token");
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -436,7 +438,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testDisableModuleAuthZ(){
 		String url = "/integration/module/disable";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", ORG_EMP_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity("{}", ORG_EMP_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -453,7 +455,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testDisableModuleForOrgWithNoIntegration(){
 		String url = "/integration/module/disable";
-		HttpEntity request =  TestCommons.getHttpEntity("", ORG_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity("", ORG_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url + "?organization_id=88859"
@@ -476,7 +478,7 @@ public class IntegrationApiTest {
 		//----------------------------------------------------------------	
 		
 		String url = "/integration/module/disable";
-		HttpEntity request =  TestCommons.getHttpEntity("", ORG_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity("", ORG_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url + "?organization_id=" + ORG_ID
@@ -497,7 +499,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testEnableModuleAuthN(){
 		String url = "/integration/module/enable";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", "non-existing-token");
+		HttpEntity<?> request =  TestCommons.getHttpEntity("{}", "non-existing-token");
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -515,7 +517,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testEnableModuleAuthZ(){
 		String url = "/integration/module/enable";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", ORG_EMP_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity("{}", ORG_EMP_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -539,7 +541,7 @@ public class IntegrationApiTest {
 		//----------------------------------------------------------------	
 		
 		String url = "/integration/module/enable";
-		HttpEntity request =  TestCommons.getHttpEntity("", ORG_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity("", ORG_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url + "?organization_id=" + ORG_ID
@@ -563,7 +565,7 @@ public class IntegrationApiTest {
 		//----------------------------------------------------------------	
 		
 		String url = "/integration/module/enable";
-		HttpEntity request =  TestCommons.getHttpEntity("", ORG_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity("", ORG_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url + "?organization_id=" + ORG_ID
@@ -583,7 +585,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testRemoveModuleAuthN(){
 		String url = "/integration/module";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", "non-existing-token");
+		HttpEntity<?> request =  TestCommons.getHttpEntity("{}", "non-existing-token");
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -601,7 +603,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testRemoveModuleAuthZ(){
 		String url = "/integration/module";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", ORG_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity("{}", ORG_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -618,7 +620,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testRemoveNonExistingModule(){
 		String url = "/integration/module";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity("{}", NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url + "?organization_id=" + ORG_ID
@@ -641,7 +643,7 @@ public class IntegrationApiTest {
 		//-------------------------------------------------
 		
 		String url = "/integration/module";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity("{}", NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url + "?organization_id=" + ORG_ID
@@ -662,7 +664,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testAddParamAuthN(){
 		String url = "/integration/param";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", "non-existing-token");
+		HttpEntity<?> request =  TestCommons.getHttpEntity("{}", "non-existing-token");
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -680,7 +682,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testAddParamAuthZ(){
 		String url = "/integration/param";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", ORG_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity("{}", ORG_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -701,7 +703,7 @@ public class IntegrationApiTest {
 		json.put("param_name", "invalid$$#Param--Name");
 		
 		String url = "/integration/param";
-		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -722,7 +724,7 @@ public class IntegrationApiTest {
 		json.remove("param_name");
 		
 		String url = "/integration/param";
-		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -743,7 +745,7 @@ public class IntegrationApiTest {
 		json.put("organization_id", 5588);
 		
 		String url = "/integration/param";
-		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -766,7 +768,7 @@ public class IntegrationApiTest {
 		assertParameterNotExists(json);
 		//----------------------------------------------------------
 		String url = "/integration/param";
-		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -797,7 +799,7 @@ public class IntegrationApiTest {
 		assertParameterExists(json);
 		//----------------------------------------------------------
 		String url = "/integration/param";
-		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -822,7 +824,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testDeleteParamAuthN(){
 		String url = "/integration/param";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", "non-existing-token");
+		HttpEntity<?> request =  TestCommons.getHttpEntity("{}", "non-existing-token");
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -842,7 +844,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testDeleteParamAuthZ(){
 		String url = "/integration/param";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", ORG_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity("{}", ORG_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -864,7 +866,7 @@ public class IntegrationApiTest {
 		json.put("param_name", "invalid$$#Param--Name");
 		
 		String url = "/integration/param";
-		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -887,7 +889,7 @@ public class IntegrationApiTest {
 		json.put("organization_id", 5588);
 		
 		String url = "/integration/param";
-		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -913,7 +915,7 @@ public class IntegrationApiTest {
 		assertParameterExists(json);
 		//----------------------------------------------------------
 		String url = "/integration/param";
-		HttpEntity request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity(json.toString(), NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -1010,7 +1012,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testGetIntegrationModuleAuthN(){
 		String url = "/integration/module/all";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", "non-existing-token");
+		HttpEntity<?> request =  TestCommons.getHttpEntity("{}", "non-existing-token");
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -1030,7 +1032,7 @@ public class IntegrationApiTest {
 	@Test
 	public void testGetIntegrationModuleAuthZ(){
 		String url = "/integration/module/all";
-		HttpEntity request =  TestCommons.getHttpEntity("{}", ORG_ADMIN_TOKEN);
+		HttpEntity<?> request =  getHttpEntity("{}", ORG_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -1038,7 +1040,7 @@ public class IntegrationApiTest {
 						, request
 						, String.class);
 		
-		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
 	
 	
@@ -1055,7 +1057,7 @@ public class IntegrationApiTest {
 		//----------------------------------------------------------------			
 		
 		String url = "/integration/module/all";
-		HttpEntity request =  TestCommons.getHttpEntity("", NASNAV_ADMIN_TOKEN);
+		HttpEntity<?> request =  TestCommons.getHttpEntity("", NASNAV_ADMIN_TOKEN);
 		
 		ResponseEntity<String> response = 
 				template.exchange(url
@@ -1119,25 +1121,36 @@ public class IntegrationApiTest {
 
 	
 	@Test
-	public void testGetIntegrationDictNoAuthN() {
-		
-	}
-	
-	
-	
-	
-	@Test
 	public void testGetIntegrationDictNoAuthZ() {
+		String url = "/integration/dictionary";
+		HttpEntity<?> request =  getHttpEntity("{}", "NON_EXISTING_TOKEN");
 		
+		ResponseEntity<String> response = 
+				template.exchange(url
+						, GET
+						, request
+						, String.class);
+		
+		assertEquals(UNAUTHORIZED, response.getStatusCode());
 	}
 	
 	
 	
 	
 	
+	
 	@Test
-	public void testGetIntegrationErrorsNoAuthN() {
+	public void testGetIntegrationDictNoAuthN() {
+		String url = "/integration/dictionary";
+		HttpEntity<?> request =  getHttpEntity("{}", ORG_EMP_TOKEN);
 		
+		ResponseEntity<String> response = 
+				template.exchange(url
+						, GET
+						, request
+						, String.class);
+		
+		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
 	
 	
@@ -1146,7 +1159,34 @@ public class IntegrationApiTest {
 	
 	@Test
 	public void testGetIntegrationErrorsNoAuthZ() {
+		String url = "/integration/errors";
+		HttpEntity<?> request =  getHttpEntity("{}", "NON_EXISTING_TOKEN");
 		
+		ResponseEntity<String> response = 
+				template.exchange(url
+						, GET
+						, request
+						, String.class);
+		
+		assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void testGetIntegrationErrorsNoAuthN() {
+		String url = "/integration/errors";
+		HttpEntity<?> request =  getHttpEntity("{}", ORG_EMP_TOKEN);
+		
+		ResponseEntity<String> response = 
+				template.exchange(url
+						, GET
+						, request
+						, String.class);
+		
+		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
 	
 	

@@ -2,6 +2,7 @@ package com.nasnav.integration;
 
 import static com.nasnav.commons.utils.EntityUtils.failSafeFunction;
 import static com.nasnav.commons.utils.StringUtils.anyBlankOrNull;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.nullableToString;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_EVENT_HANDLE_GENERAL_ERROR;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_EXTERNAL_SHOP_NOT_FOUND;
@@ -25,6 +26,7 @@ import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static com.nasnav.integration.enums.MappingType.SHOP;
 import static java.lang.String.format;
 import static java.time.Duration.ofMillis;
+import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static reactor.core.scheduler.Schedulers.boundedElastic;
@@ -47,6 +49,11 @@ import javax.annotation.PostConstruct;
 import org.jboss.logging.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -116,9 +123,11 @@ import reactor.core.scheduler.Scheduler;
 
 @Service
 public class IntegrationServiceImpl implements IntegrationService {
-	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 120L;
+	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 2880L;
 
-	public static  long REQUEST_TIMEOUT_SEC = 180L;
+	private static final Integer MAX_ERROR_PG_SIZE = 500;
+
+	public static  long REQUEST_TIMEOUT_SEC = 300L;
 
 	private final Logger logger = Logger.getLogger(getClass());
 	
@@ -1487,7 +1496,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 	@Override
-	public List<IntegrationDictionaryDTO> getIntegrationDictionary(GetIntegrationDictParam param) {
+	public Page<IntegrationDictionaryDTO> getIntegrationDictionary(GetIntegrationDictParam param) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -1498,9 +1507,132 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 	@Override
-	public List<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param) {
-		// TODO Auto-generated method stub
-		return null;
+	public Page<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param) {
+		GetIntegrationErrorParam rectifiedParams = rectifyGetIntegrationErrorsParams(param);
+		
+		Pageable pageable = createErrorPageSpecs(rectifiedParams);
+		
+		Page<IntegrationEventFailureEntity> failuresPage = Page.empty();
+		
+		if(isBlankOrNull(param.getEvent_type())) {
+			failuresPage = findFailuresByOrg(rectifiedParams, pageable);
+		}else {
+			failuresPage = findFailuresByOrgAndType(rectifiedParams, pageable);
+		}
+				
+		return toPageOfIntegrationErrorDTO(failuresPage);
+	}
+
+
+
+
+
+
+	private Pageable createErrorPageSpecs(GetIntegrationErrorParam rectifiedParams) {
+		return
+			PageRequest.of(
+					rectifiedParams.getPage_num() - 1
+					, rectifiedParams.getPage_size()
+					, Sort.by("createdAt").descending());
+	}
+
+
+
+
+
+
+	private Page<IntegrationEventFailureEntity> findFailuresByOrgAndType(GetIntegrationErrorParam rectifiedParams,
+			Pageable pageable) {
+		return
+			eventFailureRepo
+				.findByOrganizationIdAndEventType(
+					rectifiedParams.getOrg_id()
+					, rectifiedParams.getEvent_type()
+					, pageable);
+	}
+
+
+
+
+
+
+	private Page<IntegrationEventFailureEntity> findFailuresByOrg(GetIntegrationErrorParam rectifiedParams,
+			Pageable pageable) {
+		return
+			eventFailureRepo
+				.findByOrganizationId(
+					rectifiedParams.getOrg_id()
+					, pageable);
+	}
+
+
+
+
+
+
+
+
+	private GetIntegrationErrorParam rectifyGetIntegrationErrorsParams(GetIntegrationErrorParam param) {
+		Long orgId = ofNullable(param.getOrg_id()).orElse(0L);
+		Integer pageSize = 
+				ofNullable(param.getPage_size())
+					.map(this::capErrorPageSize)
+					.orElse(MAX_ERROR_PG_SIZE);
+		Integer pageNum = ofNullable(param.getPage_num()).map(this::capErrorPageNum).orElse(1);
+		
+		GetIntegrationErrorParam rect = new GetIntegrationErrorParam();
+		rect.setOrg_id(orgId);
+		rect.setPage_size(pageSize);
+		rect.setPage_num(pageNum);
+		
+		return rect;
+	}
+
+
+	
+	
+	
+	private Integer capErrorPageSize(Integer pageSize) { 
+		return pageSize <= MAX_ERROR_PG_SIZE ? pageSize: MAX_ERROR_PG_SIZE;
+	}
+	
+	
+	
+	
+	
+	private Integer capErrorPageNum(Integer pageNum) {
+		return pageNum >= 1 ? pageNum : 1;
+	}
+
+
+
+
+	private Page<IntegrationErrorDTO> toPageOfIntegrationErrorDTO(Page<IntegrationEventFailureEntity> failuresPage) {
+		List<IntegrationErrorDTO> content = 
+				ofNullable(failuresPage)
+					.map(Page::getContent)
+					.orElse(emptyList())
+					.stream()
+					.map(this::toIntegrationErrorDTO)
+					.collect(toList());
+		return new PageImpl<>(content, failuresPage.getPageable(), failuresPage.getTotalElements());
+	}
+	
+	
+	
+	
+	
+	private IntegrationErrorDTO toIntegrationErrorDTO(IntegrationEventFailureEntity entity) {
+		IntegrationErrorDTO dto = new IntegrationErrorDTO();
+		
+		dto.setCreatedAt(entity.getCreatedAt());
+		dto.setEventData(entity.getEventData());
+		dto.setEventType(entity.getEventType());
+		dto.setFallbackException(entity.getFallbackException());
+		dto.setHandleException(entity.getHandleException());
+		dto.setId(entity.getId());
+		
+		return dto;
 	}
 	
 	
