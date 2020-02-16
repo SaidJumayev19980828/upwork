@@ -67,7 +67,15 @@ public abstract class AbstractElSallabEventListener<E extends Event<T,R>, T, R> 
 
 	protected RuntimeException getFailedResponseRuntimeException(ClientResponse response) {
 		return new RuntimeException(
-				format("Failed to get valid response from El-sallab API! failed response [%s] ", response.toString()));
+				format("Failed to get valid response from El-sallab API! failed response [%s] ", getResponseAsStr(response)));
+	}
+
+
+
+
+	private String getResponseAsStr(ClientResponse response) {
+		response.bodyToMono(String.class).subscribe(b -> logger.info(format(" >>> El Sallab failed response body [%s]" , b)));
+		return format("{status : %s}", response.statusCode());
 	}
 
 
