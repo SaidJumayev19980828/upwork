@@ -31,5 +31,5 @@ public class IntegrationServiceErrors {
 	public static final String ERR_FETCH_STOCK_NULL_PARAMETERS = "Failed to fetch the external stock of variant [%d] and shop [%d]!";
 	public static final String ERR_PAYMENT_ALREADY_HAS_EXT_ID = "Payment integration event is stopped for payment[%s]! Payment id already has an external id[%s] for organization[%d]!";
 	public static final String ERR_ORDER_ALREADY_HAS_EXT_ID = "Order integration event is stopped for order[%s]! order id already has an external id[%s] for organization[%d]!";
-	
+	public static final String ERR_INVALID_PAGINATION_PARAMS = "Invalid calculated imported product paging! Import Param[%s], calculated fromIndex[%d], toIndex[%d]";
 }

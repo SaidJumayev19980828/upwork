@@ -1,12 +1,14 @@
 package com.nasnav.integration.sallab;
 
 import static com.nasnav.commons.utils.EntityUtils.setOf;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INVALID_PAGINATION_PARAMS;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.AUTH_GRANT_TYPE;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_ID;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_SECRET;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.PASSWORD;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.USERNAME;
 import static com.nasnav.integration.sallab.ShopsImportEventListener.HARD_CODED_STOCK;
+import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -16,6 +18,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static reactor.core.scheduler.Schedulers.elastic;
 
 import java.math.BigDecimal;
@@ -30,6 +33,7 @@ import java.util.stream.Stream;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.MapBuilder;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.EventInfo;
 import com.nasnav.integration.events.IntegrationImportedProducts;
@@ -152,14 +156,28 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 	//TODO: pagination is disabled for now, should be done later
 	private List<Product> getProductPage(List<Product> allNeededProducts, ProductImportEventParam param) {
 		Integer fromIndex = param.getPageCount()*(param.getPageNum() -1);
-		Integer toIndex = fromIndex + param.getPageCount();
+		Integer toIndex = fromIndex + param.getPageCount() - 1;
 		toIndex = toIndex > (allNeededProducts.size() -1) ? allNeededProducts.size() -1 : toIndex;
 		
-//		return allNeededProducts.subList(fromIndex, toIndex);
-		return allNeededProducts;
+		if(isInvalidCalculatedIndices(fromIndex, toIndex, allNeededProducts.size())) {
+			throw new RuntimeBusinessException(
+					format(ERR_INVALID_PAGINATION_PARAMS, param.toString(), fromIndex, toIndex)
+					, "INVALID PARAMS: page_count, page_num"
+					, NOT_ACCEPTABLE);
+		}
+		
+		return allNeededProducts.subList(fromIndex, toIndex);
 	}
 
 
+
+
+
+
+	private boolean isInvalidCalculatedIndices(Integer fromIndex, Integer toIndex, int size) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 
 
 
