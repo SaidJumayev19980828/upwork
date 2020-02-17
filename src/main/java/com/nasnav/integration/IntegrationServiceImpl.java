@@ -72,7 +72,6 @@ import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.IntegrationDictionaryDTO;
 import com.nasnav.dto.IntegrationErrorDTO;
-import com.nasnav.dto.IntegrationErrorPage;
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.IntegrationProductImportDTO;
@@ -80,6 +79,7 @@ import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ResponsePage;
 import com.nasnav.dto.ShopJsonDTO;
+import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.enums.IntegrationParam;
@@ -1497,7 +1497,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 	@Override
-	public IntegrationErrorPage<IntegrationDictionaryDTO> getIntegrationDictionary(GetIntegrationDictParam param) {
+	public ResponsePage<IntegrationDictionaryDTO> getIntegrationDictionary(GetIntegrationDictParam param) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -1508,7 +1508,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 	@Override
-	public IntegrationErrorPage<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param) {
+	public ResponsePage<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param) {
 		GetIntegrationErrorParam rectifiedParams = rectifyGetIntegrationErrorsParams(param);
 		
 		Pageable pageable = createErrorPageSpecs(rectifiedParams);
@@ -1575,6 +1575,10 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	private GetIntegrationErrorParam rectifyGetIntegrationErrorsParams(GetIntegrationErrorParam param) {
 		Long orgId = ofNullable(param.getOrg_id()).orElse(0L);
+		if(securityService.currentUserHasRole(Roles.ORGANIZATION_ADMIN)) {
+			orgId = securityService.getCurrentUserOrganizationId();
+		}
+				
 		Integer pageSize = 
 				ofNullable(param.getPage_size())
 					.map(this::capErrorPageSize)
@@ -1594,7 +1598,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	
 	private Integer capErrorPageSize(Integer pageSize) { 
-		return pageSize <= MAX_ERROR_PG_SIZE ? pageSize: MAX_ERROR_PG_SIZE;
+		return pageSize > MAX_ERROR_PG_SIZE ? MAX_ERROR_PG_SIZE: pageSize;
 	}
 	
 	
@@ -1616,7 +1620,26 @@ public class IntegrationServiceImpl implements IntegrationService {
 					.stream()
 					.map(this::toIntegrationErrorDTO)
 					.collect(toList());
-		return new ResponsePage<>(content, failuresPage.getPageable(), failuresPage.getTotalElements());
+		
+		return createErrorResponsePage(failuresPage, content);
+	}
+
+
+
+
+
+
+	private ResponsePage<IntegrationErrorDTO>  createErrorResponsePage(Page<IntegrationEventFailureEntity> failuresPage,
+			List<IntegrationErrorDTO> content) {
+		ResponsePage<IntegrationErrorDTO> response = new ResponsePage<>();
+		
+		response.setContent(content);
+		response.setPageSize( failuresPage.getPageable().getPageSize());
+		response.setPageNumber( failuresPage.getPageable().getPageNumber());
+		response.setTotalElements( failuresPage.getTotalElements());
+		response.setTotalPages(failuresPage.getTotalPages());
+		
+		return response;
 	}
 	
 	

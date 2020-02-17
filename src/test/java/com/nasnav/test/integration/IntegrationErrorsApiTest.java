@@ -20,7 +20,6 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
@@ -32,6 +31,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.nasnav.NavBox;
 import com.nasnav.dto.IntegrationErrorDTO;
 import com.nasnav.dto.ResponsePage;
@@ -163,10 +163,10 @@ public class IntegrationErrorsApiTest {
 	private void assertValidResponse(ResponseEntity<String> response)
 			throws IOException, JsonParseException, JsonMappingException {
 		ResponsePage<IntegrationErrorDTO> page = readGetIntegrationErrorsResponse(response); 
-		assertEquals(PAGE_SIZE, page.getSize());
-		assertEquals(PAGE_NUM, page.getNumber());
-		assertEquals(5, page.getTotalElements());
-		assertEquals(3, page.getTotalPages());
+		assertEquals(PAGE_SIZE, page.getPageSize().intValue());
+		assertEquals(PAGE_NUM, page.getPageNumber().intValue());
+		assertEquals(5, page.getTotalElements().intValue());
+		assertEquals(3, page.getTotalPages().intValue());
 		
 		List<IntegrationErrorDTO> errors = page.getContent();		
 		assertTrue(allErrorsAreSince2Days(errors));
@@ -187,6 +187,7 @@ public class IntegrationErrorsApiTest {
 	private ResponsePage<IntegrationErrorDTO> readGetIntegrationErrorsResponse(ResponseEntity<String> response)
 			throws IOException, JsonParseException, JsonMappingException {
 		ObjectMapper mapper = new ObjectMapper();
+		mapper.registerModule(new JSR310Module());
 		TypeReference<ResponsePage<IntegrationErrorDTO>> typeRef = 
 				new TypeReference<ResponsePage<IntegrationErrorDTO>>() {};
 		return mapper.readValue(response.getBody(), typeRef);

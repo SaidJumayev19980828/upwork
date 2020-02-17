@@ -4,31 +4,48 @@ import static java.util.Collections.emptyList;
 
 import java.util.List;
 
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
+import lombok.Data;
 
+
+@Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class ResponsePage<T> extends PageImpl<T> {
-
+public class ResponsePage<T> {
+	private Long totalElements;
+	private Integer pageNumber;
+	private Integer pageSize;
+	private List<T> content;
+	private Integer totalPages;
+	
+	
 	
 	
 	public ResponsePage() {
-		this(emptyList());
+		totalElements = 0L;
+		pageNumber = 0;
+		pageSize = 0;
+		content  = emptyList();		
 	}
 	
 	
-	public ResponsePage(List<T> content) {
-		super(content);
+	
+	public ResponsePage(List<T> content, Integer pageSize, Integer pageNumber) {
+		this.content = content;
+		this.pageSize = pageSize;
+		this.pageNumber = pageNumber;
 	}
 	
 	
-	public ResponsePage(List<T> content, ResponsePageable pageable, long total) {
-		super(content, (Pageable)pageable, total);
+	
+	public ResponsePage(Page<T> page) {
+		this.content = page.getContent();
+		this.pageSize = page.getSize();
+		this.pageNumber = page.getNumber();
+		this.totalElements = page.getTotalElements();
+		this.totalPages = page.getTotalPages();
 	}
-		
-
 }
