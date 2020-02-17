@@ -13,6 +13,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import java.io.IOException;
 import java.util.List;
 
+import org.assertj.core.util.Arrays;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,9 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.web.util.UriBuilder;
+import org.springframework.web.util.UriBuilderFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -134,7 +138,14 @@ public class IntegrationErrorsApiTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void testGetIntegrationErrors() throws JsonParseException, JsonMappingException, IOException {
 		
-		String url = "/integration/errors";
+		String url = 
+				UriComponentsBuilder
+					.fromPath("/integration/errors")
+					.queryParam("org_id", ORG_ID)
+					.queryParam("page_size", PAGE_SIZE)
+					.queryParam("page_num", PAGE_NUM)
+					.build()
+					.toString();
 		String requestJson = 
 					json()
 					 .put("org_id", ORG_ID)
@@ -165,11 +176,11 @@ public class IntegrationErrorsApiTest {
 		ResponsePage<IntegrationErrorDTO> page = readGetIntegrationErrorsResponse(response); 
 		assertEquals(PAGE_SIZE, page.getPageSize().intValue());
 		assertEquals(PAGE_NUM, page.getPageNumber().intValue());
-		assertEquals(5, page.getTotalElements().intValue());
+		assertEquals(6, page.getTotalElements().intValue());
 		assertEquals(3, page.getTotalPages().intValue());
 		
 		List<IntegrationErrorDTO> errors = page.getContent();		
-		assertTrue(allErrorsAreSince2Days(errors));
+		assertTrue(allErrorsAreSince4Days(errors));
 	}
 
 
@@ -177,8 +188,10 @@ public class IntegrationErrorsApiTest {
 
 
 
-	private boolean allErrorsAreSince2Days(List<IntegrationErrorDTO> errors) {
-		return errors.stream().allMatch(err -> err.getCreatedAt().isAfter(now().minusDays(2)));
+	private boolean allErrorsAreSince4Days(List<IntegrationErrorDTO> errors) {
+		return errors
+				.stream()
+				.allMatch(err -> err.getCreatedAt().isAfter(now().minusDays(4)));
 	}
 	
 	

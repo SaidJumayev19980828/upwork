@@ -1635,7 +1635,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		
 		response.setContent(content);
 		response.setPageSize( failuresPage.getPageable().getPageSize());
-		response.setPageNumber( failuresPage.getPageable().getPageNumber());
+		response.setPageNumber( failuresPage.getPageable().getPageNumber() + 1);
 		response.setTotalElements( failuresPage.getTotalElements());
 		response.setTotalPages(failuresPage.getTotalPages());
 		
