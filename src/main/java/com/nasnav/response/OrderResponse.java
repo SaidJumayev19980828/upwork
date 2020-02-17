@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.enumerations.OrderFailedStatus;
-import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.dto.OrderRepresentationObject;
 
 import lombok.Data;
@@ -24,17 +23,11 @@ public class OrderResponse  extends BaseResponse implements Serializable {
 
 	private static final long serialVersionUID = -2071547898771698563L;
 
-	@JsonProperty
+	@JsonIgnore
     private boolean success;
-	
+
 	@JsonIgnore
 	private HttpStatus code;
-	
-	
-	// set property name to order_id as per API requirements
-	@JsonIgnore
-    private OrdersEntity entity;
-	
 
     // set property name to order_id as per API requirements
     @JsonProperty(value = "order_id")
@@ -42,7 +35,7 @@ public class OrderResponse  extends BaseResponse implements Serializable {
     private Long orderId;
 
     // set property name to price as per API requirements
-    @JsonProperty(value = "price")
+    @JsonProperty(value = "order_total")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private BigDecimal price;
     
@@ -51,7 +44,7 @@ public class OrderResponse  extends BaseResponse implements Serializable {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     OrderFailedStatus status;
 
-    @JsonIgnore
+    @JsonProperty(value = "orders")
     private List<OrderRepresentationObject> orders;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -74,23 +67,15 @@ public class OrderResponse  extends BaseResponse implements Serializable {
     }
 
     public OrderResponse(Long orderId, BigDecimal price) {
-        this.success = true;
         this.orderId = orderId;
         this.price = price;
         code = HttpStatus.OK;
     }
-    
-    public OrderResponse(OrdersEntity entity) {
-        this.success = true;
-        this.entity = entity;
+
+    public OrderResponse(List<OrderRepresentationObject> orders, BigDecimal total) {
+        this.orders = orders;
+        this.price = total;
         code = HttpStatus.OK;
     }
-
-    public OrderResponse(DetailedOrderRepObject detailedOrder) {
-        this.success = true;
-        this.detailedOrder = detailedOrder;
-        code = HttpStatus.OK;
-    }
-
 
 }

@@ -90,15 +90,21 @@ insert into public.orders(id,user_id,created_at, updated_at, organization_id,sta
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1002, 'product_2',101, 201, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1003, 'product_3',101, 201, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1004, 'product_4',101, 201, 99001, now(), now());
 
 -- variants for each product
 insert into public.product_variants(id, "name" , product_id ) values(310001, 'var' 	, 1001);
 insert into public.product_variants(id, "name" , product_id ) values(310002, 'var' 	, 1002);
+insert into public.product_variants(id, "name" , product_id ) values(310003, 'var' 	, 1003);
+insert into public.product_variants(id, "name" , product_id ) values(310004, 'var' 	, 1004);
 
 
 -- inserting stocks
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(601, 502, 0, now(), now(), 99001, 0.0, 310001);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(602, 502, 0, now(), now(), 99001, 0.0, 310002);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(603, 503, 0, now(), now(), 99001, 0.0, 310003);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(604, 503, 0, now(), now(), 99001, 0.0, 310004);
 
 
 -- insert order items

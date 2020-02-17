@@ -23,8 +23,6 @@ public interface OrderService {
 
 	public OrderResponse updateExistingOrder(OrderJsonDto orderJson) throws BusinessException;
 
-	public OrderResponse handleOrder(OrderJsonDto orderJson) throws BusinessException;
-
 	public DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
 
 	public OrderValue getOrderValue(OrdersEntity orderEntity);
