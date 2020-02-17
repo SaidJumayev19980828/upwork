@@ -647,7 +647,7 @@ public class MicrosoftDynamicsIntegrationTest {
 										, OrderResponse.class);
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
-		Long orderId = response.getBody().getOrderId();
+		Long orderId = response.getBody().getOrders().get(0).getId();
 		Optional<IntegrationMappingEntity> orderMappingAfterOrderCreation = 
 				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, ORDER.getValue(), orderId.toString());
 		assertFalse(orderMappingAfterOrderCreation.isPresent());

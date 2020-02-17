@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.nasnav.dto.OrderRepresentationObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -169,7 +170,7 @@ public class OrderServiceTest {
 										, OrderResponse.class);
 
 		// get the returned orderId
-		long orderId = response.getBody().getOrderId();
+		long orderId = response.getBody().getOrders().get(0).getId();
 		
 		//---------------------------------------------------------------
 		
@@ -264,16 +265,62 @@ public class OrderServiceTest {
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(itemPrice.multiply(new BigDecimal(orderQuantity)), body.getPrice());
-		assertNotNull(body.getOrderId());
+		Long orderId = body.getOrders().get(0).getId();
+		assertNotNull(orderId);
 		
-		OrdersEntity order = orderRepository.findById(body.getOrderId()).get();
+		OrdersEntity order = orderRepository.findById(orderId).get();
 		assertEquals("user1", order.getName());
 		assertNotNull(order.getAddress());		
 	}
 
 
 
+	@Test
+	public void createNewMultiStoreOrder()  {
+		UserEntity persistentUser = userRepository.getByEmailAndOrganizationId("user1@nasnav.com", 99001L);
 
+		prepareStockForTest(601L, 4, new BigDecimal(600));
+		prepareStockForTest(602L, 4, new BigDecimal(1200));
+		prepareStockForTest(603L, 4, new BigDecimal(200));
+		prepareStockForTest(604L, 4, new BigDecimal(700));
+
+		String requestBody = "{\"basket\": [{\"quantity\": 1,\"stock_id\": 601,\"unit\": \"kg\"}," +
+										   "{\"quantity\": 1,\"stock_id\": 602,\"unit\": \"kg\"}," +
+										   "{ \"quantity\": 1,\"stock_id\": 603,\"unit\": \"kg\"}," +
+										   "{ \"quantity\": 1,\"stock_id\": 604,\"unit\": \"kg\"}]," +
+										   "\"delivery_address\": \"Somewhere behind a grocery store\"}";
+		ResponseEntity<OrderResponse> response = template.postForEntity("/order/create"
+						, TestCommons.getHttpEntity(requestBody, persistentUser.getAuthenticationToken()), OrderResponse.class);
+
+		System.out.println("--------response------\n" + response.getBody());
+		//---------------------------------------------------------------
+		/*ObjectMapper mapper = new ObjectMapper();
+		OrderResponse body = mapper.readValue(response.getBody(), OrderResponse.class);*/
+		List<OrderRepresentationObject> orders = response.getBody().getOrders();
+
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(new BigDecimal(2700).setScale(2), response.getBody().getPrice());
+		assertEquals(2, orders.size());
+
+		OrderRepresentationObject firstOrder = orders.get(0);
+		OrderRepresentationObject secondOrder = orders.get(1);
+
+		assertEquals(new BigDecimal(1800).setScale(2), firstOrder.getPrice());
+		assertEquals(502, firstOrder.getShopId().intValue());
+		assertOrderUserInfo(firstOrder.getId());
+
+		assertEquals(new BigDecimal(900).setScale(2), secondOrder.getPrice());
+		assertEquals(503, secondOrder.getShopId().intValue());
+		assertOrderUserInfo(secondOrder.getId());
+
+	}
+
+	private void assertOrderUserInfo(Long orderId) {
+		assertNotNull(orderId);
+		OrdersEntity order = orderRepository.findById(orderId).get();
+		assertEquals("user1", order.getName());
+		assertNotNull(order.getAddress());
+	}
 
 
 	private StocksEntity prepareStockForTest(Long stockId, Integer stockQuantity, BigDecimal itemPrice) {
@@ -404,7 +451,7 @@ public class OrderServiceTest {
 
 		// get the returned orderId
 		OrderResponse body = readOrderReponse(response);
-		long orderId = body.getOrderId();
+		long orderId = body.getOrders().get(0).getId();
 		
 		//---------------------------------------------------------------
 		
