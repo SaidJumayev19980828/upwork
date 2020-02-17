@@ -204,6 +204,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		settings.setHeaderExtractionEnabled(true);
 		settings.setProcessor(rowProcessor);		
 		settings.setProcessorErrorHandler(rowParsingErrHandler);
+		settings.setMaxCharsPerColumn(-1);
 		return settings;
 	}
 

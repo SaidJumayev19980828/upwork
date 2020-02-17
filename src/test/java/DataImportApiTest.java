@@ -93,11 +93,17 @@ public class DataImportApiTest {
 	
 	private static final Long TEST_UPDATE_SHOP = 100004L;
 
+	@Value("classpath:/files/large_description.txt")
+	private Resource largeDescription;
+
 	@Value("classpath:/files/product__list_upload_variants.csv")
     private Resource csvFileVariants;
 
 	@Value("classpath:/files/product__list_upload.csv")
     private Resource csvFile;
+
+	@Value("classpath:/files/product__list_upload_large_column.csv")
+	private Resource csvFileLargeColumn;
 	
 	@Value("classpath:/files/product__list_upload_variants_with_variant_id.csv")
 	private Resource csvFileVariantsWithVariantId;
@@ -495,8 +501,30 @@ public class DataImportApiTest {
         ExpectedSavedData expected = getExpectedNewOnlyAndUpdatedStocks();
         assertProductDataImported(TEST_UPDATE_SHOP, expected);            
 	}
-	
-	
+
+
+
+	@Test
+	public void uploadProductCSVLargeColumnTest() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+
+		ProductDataCount before = countProductData();
+
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileLargeColumn, importProperties);
+
+		result.andExpect(status().is(200));
+
+		ProductDataCount after = countProductData();
+		assertExpectedRowNumInserted(before, after, 2);
+
+
+		ExpectedSavedData expected = getExpectedAllNewData();
+		expected.setDescriptions(setOf(TestCommons.readResource(largeDescription), "too hard"));
+		assertProductDataImported(TEST_IMPORT_SHOP, expected);
+
+	}
+
 
 
 	private void assertProductUpdatedDataSavedWithoutStock() {
@@ -724,8 +752,8 @@ public class DataImportApiTest {
         assertProductDataImported(TEST_UPDATE_SHOP, expected);
         assertProductUpdatedDataSavedWithStock();        
 	}
-	
-	
+
+
 	
 	
 
