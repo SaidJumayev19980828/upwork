@@ -156,8 +156,8 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 	//TODO: pagination is disabled for now, should be done later
 	private List<Product> getProductPage(List<Product> allNeededProducts, ProductImportEventParam param) {
 		Integer fromIndex = param.getPageCount()*(param.getPageNum() -1);
-		Integer toIndex = fromIndex + param.getPageCount() - 1;
-		toIndex = toIndex > (allNeededProducts.size() -1) ? allNeededProducts.size() -1 : toIndex;
+		Integer toIndex = fromIndex + param.getPageCount();
+		toIndex = toIndex > allNeededProducts.size() ? allNeededProducts.size() : toIndex;
 		
 		if(isInvalidCalculatedIndices(fromIndex, toIndex, allNeededProducts.size())) {
 			throw new RuntimeBusinessException(
@@ -174,9 +174,8 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 
 
 
-	private boolean isInvalidCalculatedIndices(Integer fromIndex, Integer toIndex, int size) {
-		// TODO Auto-generated method stub
-		return false;
+	private boolean isInvalidCalculatedIndices(Integer fromIndex, Integer toIndex, int bufferSize) {
+		return fromIndex > toIndex || toIndex > bufferSize;
 	}
 
 

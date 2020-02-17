@@ -138,30 +138,26 @@ public class ElSallabIntegrationTest {
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/El_sallab_integration_products_import_test_data.sql","/sql/el_sallab_tags_insert.sql", "/sql/el_sallab_brands_insert.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void importProductsTest() throws Throwable {
-		int productCount = 2;
-		int variantCount = 5;
-		int productTagsCount = productCount*3;
-		int extaAttrCount = variantCount*5;
-		int stockCount = variantCount;
+		Count expected = new Count();
+		expected.products = 2L;
+		expected.variants = 5L;
+		expected.tags = expected.products*3;
+		expected.extraAttr = expected.variants*5;
+		expected.stocks = expected.variants;
+		expected.pages = 1;
 		
-		long countVariantsBefore = variantRepo.count();
-		long countProductsBefore = productRepo.count();
-		long countShopsBefore = shopsRepo.count();
-		long countBrandsBefore = brandRepo.count();		
-		long productTagsBefore = countProductTags();		
-		Long extraAttrBefore = countProductExtraAttr();
-		Long stockCountBefore = stocksRepo.count();
+		Count countBefore = new Count();
+		countBefore.variants = variantRepo.count();
+		countBefore.products = productRepo.count();
+		countBefore.shops = shopsRepo.count();
+		countBefore.brands = brandRepo.count();		
+		countBefore.tags = countProductTags();		
+		countBefore.extraAttr = countProductExtraAttr();
+		countBefore.stocks = stocksRepo.count();
 		
 		//------------------------------------------------		
 		//call product import api
-		JSONObject requestJson = 
-				json()
-					.put("dryrun", false)
-					.put("update_product", true)
-					.put("update_stocks", true)
-					.put("currency", 1)
-					.put("encoding", "UTF-8")
-					.put("page_count", 100);
+		JSONObject requestJson = createImportProductRequest();
 		
 		HttpEntity<Object> request = getHttpEntity(requestJson.toString(), "hijkllm");
         ResponseEntity<Integer> response = template.exchange("/integration/import/products", POST, request, Integer.class);       
@@ -171,6 +167,71 @@ public class ElSallabIntegrationTest {
         Thread.sleep(2000);
 		//------------------------------------------------
 		//test the mock api was called
+		verifyMockServerCalls((int)expected.variants, 1);
+		
+		//------------------------------------------------
+		//test imported brands were created
+		//test the imported products were created
+		
+		assertDataImported(expected, countBefore, response);
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/El_sallab_integration_products_import_test_data.sql","/sql/el_sallab_tags_insert.sql", "/sql/el_sallab_brands_insert.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void importProductsWithPaginationTest() throws Throwable {
+		Count expected = new Count();
+		expected.products = 1L;
+		expected.variants = 2L;
+		expected.tags = expected.products*3;
+		expected.extraAttr = expected.variants*5;
+		expected.stocks = expected.variants;
+		expected.pages = 3;
+		
+		Count countBefore = new Count();
+		countBefore.variants = variantRepo.count();
+		countBefore.products = productRepo.count();
+		countBefore.shops = shopsRepo.count();
+		countBefore.brands = brandRepo.count();		
+		countBefore.tags = countProductTags();		
+		countBefore.extraAttr = countProductExtraAttr();
+		countBefore.stocks = stocksRepo.count();
+		
+		//------------------------------------------------		
+		//call product import api
+		JSONObject requestJson = createImportProductRequest();
+		requestJson.put("page_count", "2");
+		requestJson.put("page_num", "1");
+		
+		HttpEntity<Object> request = getHttpEntity(requestJson.toString(), "hijkllm");
+        ResponseEntity<Integer> response = template.exchange("/integration/import/products", POST, request, Integer.class);       
+
+		//------------------------------------------------
+
+        Thread.sleep(2000);
+		//------------------------------------------------
+		//test the mock api was called
+		verifyMockServerCalls((int)expected.variants, 0);
+		
+		//------------------------------------------------
+		//test imported brands were created
+		//test the imported products were created
+		
+		assertDataImported(expected, countBefore, response);
+	}
+
+
+
+
+
+
+
+
+	private void verifyMockServerCalls(Integer variantCount, Integer additionalPageCount) throws AssertionError {
 		if(usingMockServer) {
 			mockServerRule.getClient().verify(
 				      request()
@@ -184,49 +245,74 @@ public class ElSallabIntegrationTest {
 				        .withMethod("GET")
 				        .withPath("/services/data/v44.0/query/.+")
 				        .withHeader("Authorization", "Bearer "+MOCK_SERVER_AUTH_TOKEN),
-				      VerificationTimes.exactly(1)
+				      VerificationTimes.exactly(additionalPageCount)
 				    );
 			
 			mockServerRule.getClient().verify(
 				      request()
 				        .withMethod("GET")
 				        .withPath("/ElSallab.Webservice/SallabService.svc/getItemPriceBreakdown"),
-				      VerificationTimes.exactly(5)
+				      VerificationTimes.exactly(variantCount)
 				    );
 			
 			mockServerRule.getClient().verify(
 				      request()
 				        .withMethod("GET")
 				        .withPath("/ElSallab.Webservice/SallabService.svc/getItemStockBalance"),
-				      VerificationTimes.exactly(5)
+				      VerificationTimes.exactly(variantCount)
 				    );
 			
 		}
-		//------------------------------------------------
-		//test imported brands were created
-		//test the imported products were created
-		
+	}
+
+
+
+
+
+
+
+
+	private JSONObject createImportProductRequest() {
+		JSONObject requestJson = 
+				json()
+					.put("dryrun", false)
+					.put("update_product", true)
+					.put("update_stocks", true)
+					.put("currency", 1)
+					.put("encoding", "UTF-8")
+					.put("page_count", 100);
+		return requestJson;
+	}
+
+
+
+
+
+
+
+
+	private void assertDataImported(Count expected, Count countBefore, ResponseEntity<Integer> response) {
 		long countProductsAfter = productRepo.count();
 		long countVariantsAfter = variantRepo.count();
 		long countShopsAfter = shopsRepo.count();
-		long shopsCount = 1;
+		long shopsCount = 1L;
 		long countBrandsAfter = brandRepo.count();
 		long productTagsAfter = countProductTags();		
-		Long extraAttrAfter = countProductExtraAttr();
-		Long stockCountAfter = stocksRepo.count();
+		long extraAttrAfter = countProductExtraAttr();
+		long stockCountAfter = stocksRepo.count();
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertNotEquals("products were imported", 0L, countProductsAfter - countProductsBefore);
+		assertNotEquals("products were imported", 0L, countProductsAfter - countBefore.products);
 		if(usingMockServer) {
-			assertEquals("assert brands were imported", 0L, countBrandsAfter - countBrandsBefore);
+			assertEquals("assert brands were imported", 0L, countBrandsAfter - countBefore.brands);
 			assertTrue("all imported products have integration mapping" , allProductHaveMapping());
-			assertEquals("check total number of pages to import", 1, response.getBody().intValue());
-			assertEquals("check number of imported products" , productCount, countProductsAfter - countProductsBefore);
-			assertEquals("check number of imported variants" , variantCount, countVariantsAfter - countVariantsBefore);
-			assertEquals("check number of imported shops" , shopsCount, countShopsAfter - countShopsBefore);
-			assertEquals("check the number of added product tags", productTagsCount , productTagsAfter - productTagsBefore);
-			assertEquals("check the number of added extra-attributes", extaAttrCount , extraAttrAfter- extraAttrBefore);
-			assertEquals("check the number of added stocks", stockCount , stockCountAfter- stockCountBefore);
+			assertEquals("check total number of pages to import", expected.pages, response.getBody().intValue());
+			assertEquals("check number of imported products" , expected.products, countProductsAfter - countBefore.products);
+			assertEquals("check number of imported variants" , expected.variants, countVariantsAfter - countBefore.variants);
+			assertEquals("check number of imported shops" , shopsCount, countShopsAfter - countBefore.shops);
+			assertEquals("check the number of added product tags", expected.tags , productTagsAfter - countBefore.tags);
+			assertEquals("check the number of added extra-attributes", expected.extraAttr , extraAttrAfter- countBefore.extraAttr);
+			assertEquals("check the number of added stocks", expected.stocks , stockCountAfter- countBefore.stocks);
 		}
 	}
 
@@ -284,4 +370,16 @@ public class ElSallabIntegrationTest {
 	}
 	
 
+}
+
+
+class Count{
+	public long variants;
+	public long products;
+	public long shops;
+	public long brands;		
+	public long tags;		
+	public long extraAttr;
+	public long stocks;
+	public long pages;
 }

@@ -742,7 +742,10 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	private IntegrationImportedProducts getProductsFromExternalSystem(Long orgId, IntegrationProductImportDTO metadata)
 			throws Throwable, InvalidIntegrationEventException {
-		ProductImportEventParam importParam = new ProductImportEventParam(metadata.getPageNum(), metadata.getPageCount());
+		Integer pageCount = recitfyPageCount(metadata.getPageCount());
+		Integer pageNum = recitfyPageNum(metadata.getPageNum());
+		
+		ProductImportEventParam importParam = new ProductImportEventParam(pageNum, pageCount);
 		ProductsImportEvent event = new ProductsImportEvent(orgId, importParam);
 		
 		IntegrationImportedProducts importedProducts = 
@@ -761,6 +764,23 @@ public class IntegrationServiceImpl implements IntegrationService {
 		return importedProducts;
 	}
 
+	
+	
+	
+	private Integer recitfyPageCount(Integer value) {
+		return ofNullable(value)
+				.map(val -> val <= 0? 1: val)
+				.orElse(1000);
+	}
+
+	
+	
+	
+	private Integer recitfyPageNum(Integer value) {
+		return ofNullable(value)
+				.map(val -> val <= 0? 1: val)
+				.orElse(1);
+	}
 
 	
 	
