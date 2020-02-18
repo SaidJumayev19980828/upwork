@@ -14,12 +14,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nasnav.dto.IntegrationDictionaryDTO;
+import com.nasnav.dto.IntegrationErrorDTO;
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.IntegrationProductImportDTO;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
+import com.nasnav.dto.ResponsePage;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
+import com.nasnav.request.GetIntegrationDictParam;
+import com.nasnav.request.GetIntegrationErrorParam;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -175,5 +180,36 @@ public class IntegrationController {
     @PostMapping(value = "/import/products", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public Integer importProdcuts(@RequestHeader (value = "User-Token") String userToken,@RequestBody IntegrationProductImportDTO metadata)  throws Throwable {
 		return integrationSrv.importOrganizationProducts(metadata);
+    }
+	
+	
+	
+	
+	
+	@ApiOperation(value = "get the integration dictionary - mapping between values nasnav and external systems"
+			, nickname = "GetIntegrationDictionary", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "/dictionary", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponsePage<IntegrationDictionaryDTO> getDictionary(@RequestHeader (value = "User-Token") String userToken, GetIntegrationDictParam param )  throws Throwable {
+		return integrationSrv.getIntegrationDictionary(param);
+    }
+	
+	
+	
+	
+	@ApiOperation(value = "get the integration errors"
+			, nickname = "GetIntegrationErrors", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "/errors", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponsePage<IntegrationErrorDTO> getErrors(@RequestHeader (value = "User-Token") String userToken, GetIntegrationErrorParam param )  throws Throwable {
+		return integrationSrv.getIntegrationErrors(param);
     }
 }
