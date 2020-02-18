@@ -2,7 +2,6 @@ package com.nasnav.persistence;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -26,6 +25,7 @@ import com.nasnav.dto.ShopRepresentationObject;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.EqualsAndHashCode.Exclude;
 
 @Table(name = "shops")
 @Entity
@@ -92,6 +92,8 @@ public class ShopsEntity implements BaseEntity{
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "organization_id", nullable = false)
     @JsonIgnore
+    @Exclude
+    @lombok.ToString.Exclude
     private OrganizationEntity organizationEntity;
 
 

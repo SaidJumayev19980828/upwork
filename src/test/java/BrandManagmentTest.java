@@ -1,9 +1,13 @@
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.service.BrandService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -43,6 +47,8 @@ public class BrandManagmentTest {
     private DataSource datasource;
     @Autowired
     private TestRestTemplate template;
+    @Autowired
+    private BrandService brandSvc;
 
     @Before
     public void setup(){
@@ -105,16 +111,9 @@ public class BrandManagmentTest {
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
-    @Test
-    public void createBrandInvalidNameTest() {
-        String body = "{\"operation\":\"create\", \"name\":\"12Alfa Romero#\"}";
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
-        map.add("properties", body);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
-        ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
-        Assert.assertEquals(406, response.getStatusCode().value());
-    }
-
+    
+    
+    
     @Test
     public void createBrandInvalidPnameTest() {
         String body = "{\"operation\":\"create\", \"name\":\"Alfa Romero\", \"p_name\":\"12Alfa Romero#\"}";
@@ -124,6 +123,9 @@ public class BrandManagmentTest {
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
+    
+    
+    
 
     @Test
     public void createBrandInvalidFilesTest() {
@@ -144,7 +146,7 @@ public class BrandManagmentTest {
         map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
-        Assert.assertEquals(406, response.getStatusCode().value());
+        Assert.assertEquals(200, response.getStatusCode().value());
     }
 
     @Test
@@ -216,6 +218,20 @@ public class BrandManagmentTest {
         map.add("properties", body);
         HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
+        Assert.assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void updateBrandPname() throws IOException {
+        String body = "{\"operation\":\"update\", \"brand_id\": 101, \"name\":\"Alfa Romero\", \"p_name\":\"p-name\"}";
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+        map.add("properties", body);
+        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
+        LinkedHashMap mapRes = (LinkedHashMap) response.getBody();
+        Organization_BrandRepresentationObject brand = brandSvc.getBrandById(((Integer) mapRes.get("brand_id")).longValue());
+
+        Assert.assertEquals("p-name", brand.getPname());
         Assert.assertEquals(200, response.getStatusCode().value());
     }
 

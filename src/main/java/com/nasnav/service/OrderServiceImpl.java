@@ -63,24 +63,14 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.UserRepository;
-import com.nasnav.dto.BasketItem;
-import com.nasnav.dto.BasketItemDTO;
-import com.nasnav.dto.BasketItemDetails;
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.OrderJsonDto;
-import com.nasnav.dto.ShippingAddress;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.Roles;
@@ -122,6 +112,9 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	private SecurityService securityService;
+
+	@Autowired
+	private ShopsRepository shopsRepo;
 
 	private Map<OrderStatus, Set<OrderStatus>> nextOrderStatusSet;
 	private Set<OrderStatus> orderStatusForCustomers;
@@ -200,22 +193,27 @@ public class OrderServiceImpl implements OrderService {
 	}
 	
 	
-	
-	
-	
-	@Override
-	public OrderResponse handleOrder(OrderJsonDto orderJson) throws BusinessException {
+	public OrderResponse createNewOrder(OrderJsonDto orderJson) throws BusinessException {
 
-		validateOrder(orderJson);
+		validateOrderCreation(orderJson);
 
-		if (isNewOrderToBeCreated(orderJson)) {
-			return createNewOrderAndBasketItems(orderJson);
-		} else {
-			return updateOrder(orderJson);
-		}
+		Map<Long, List<BasketItemDTO>> groupedBaskets = groupBasketsByShops(orderJson.getBasket());
+
+		List<OrderRepresentationObject> ordersList = new ArrayList<>();
+		for(Long shopId : groupedBaskets.keySet())
+			ordersList.add(createNewOrderAndBasketItems(orderJson, groupedBaskets.get(shopId), shopId));
+		return new OrderResponse(ordersList, (ordersList.stream()
+													   .map(order -> order.getPrice())
+													   .reduce(ZERO, BigDecimal::add)));
 	}
-	
-	
+
+	public OrderResponse updateExistingOrder(OrderJsonDto orderJson) throws BusinessException {
+
+		validateOrderUpdate(orderJson);
+
+		return updateOrder(orderJson);
+	}
+
 	
 	
 
@@ -250,7 +248,15 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private void validateOrderUpdate(OrderJsonDto order) throws BusinessException {		
+	private void validateOrderUpdate(OrderJsonDto order) throws BusinessException {
+
+		List<String> possibleStatusList = getPossibleOrderStatus();
+		if(!possibleStatusList.contains( order.getStatus() ))
+			throwInvalidOrderException(ERR_INVALID_ORDER_STATUS);
+
+		if( !isNewOrder(order) && isNullOrZero(order.getId()) )
+			throwInvalidOrderException(ERR_UPDATED_ORDER_WITH_NO_ID);
+
 		if(isCustomerUser()) {
 			validateOrderUpdateForUser(order);
 		}else {
@@ -402,6 +408,8 @@ public class OrderServiceImpl implements OrderService {
 		if ( isNullOrEmpty(order.getBasket()) ) {
 			throwInvalidOrderException(ERR_NEW_ORDER_WITH_EMPTY_BASKET);
 		}
+
+		validateBasketItems(order);
 	}
 
 
@@ -435,13 +443,34 @@ public class OrderServiceImpl implements OrderService {
 		for(BasketItemDTO item: basket) {
 			validateBasketItem(item);
 		}
-		
-						
-		if( countShops(basket) > 1) {
+
+
+		/*if( countShops(basket) > 1) {
 			throwInvalidOrderException(ERR_ITEMS_FROM_MULTIPLE_SHOPS);
-		}
+		}*/
 	}
-	
+
+
+	private Map<Long, List<BasketItemDTO>> groupBasketsByShops(List<BasketItemDTO> baskets) {
+
+		Map<Long,List<StocksEntity>> shopStocksMap = baskets.stream()
+				.map(basket -> stockRepository.getOne(basket.getStockId()))
+				.collect(groupingBy(stock -> stock.getShopsEntity().getId()));
+
+		Map<Long, List<BasketItemDTO>> groupedBaskets = new HashMap<>();
+
+		for(Long shopId : shopStocksMap.keySet()) {
+			List<Long> stocks = shopStocksMap.get(shopId).stream().map(StocksEntity::getId).collect(Collectors.toList());
+
+			List<BasketItemDTO> shopBaskets= baskets.stream()
+													.filter(basket -> stocks.contains(basket.getStockId()))
+												    .collect(Collectors.toList());
+
+			groupedBaskets.put(shopId, shopBaskets);
+		}
+
+		return groupedBaskets;
+	}
 	
 	
 	
@@ -549,33 +578,35 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 
-	private OrderResponse createNewOrderAndBasketItems(OrderJsonDto order) throws BusinessException {
+	private OrderRepresentationObject createNewOrderAndBasketItems(OrderJsonDto order, List<BasketItemDTO> basketItems, Long shopId) throws BusinessException {
 		
-		OrdersEntity orderEntity = createNewOrderEntity(order);
+		OrdersEntity orderEntity = createNewOrderEntity(order, basketItems, shopId);
 		orderEntity = ordersRepository.save(orderEntity);
 
-		addItemsToBasket(order, orderEntity);
 
-		OrderResponse orderResponse = new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
-		orderResponse.setCode(HttpStatus.CREATED);
-		return orderResponse;
+		addItemsToBasket(basketItems, orderEntity);
+
+		OrderRepresentationObject orderRepObj = new OrderRepresentationObject(orderEntity.getId(), orderEntity.getShopsEntity().getId(),
+																				orderEntity.getAmount(), basketItems, HttpStatus.CREATED);
+		orderRepObj.setItems(basketItems);
+		return orderRepObj;
 	}
 	
 	
 	
 	
 
-	private OrdersEntity createNewOrderEntity(OrderJsonDto order) {
+	private OrdersEntity createNewOrderEntity(OrderJsonDto order, List<BasketItemDTO> basketItems, Long shopId) {
 		BaseUserEntity user = securityService.getCurrentUser();
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
-		ShopsEntity shop = getOrderShop(order);
+		ShopsEntity shop = shopsRepo.findById(shopId).get();
 
 		OrdersEntity orderEntity = new OrdersEntity();
 		
 		String address = ofNullable(order.getAddress())
 								.orElse( getUserAddressAsStr());
 		orderEntity.setAddress(address);
-		orderEntity.setAmount( calculateOrderTotalValue(order) );
+		orderEntity.setAmount( calculateBasketTotalValue(basketItems) );
 		// TODO ordersEntity.setPayment_type(payment_type);
 		orderEntity.setShopsEntity(shop);
 		orderEntity.setStatus( OrderStatus.NEW.getValue() );
@@ -749,7 +780,16 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+	private void addItemsToBasket(List<BasketItemDTO> basketItems, OrdersEntity orderEntity) throws BusinessException {
+		if(basketItems == null) {
+			return;
+		}
 
+		for (BasketItemDTO basketItem : basketItems) {
+			BasketsEntity itemEntity = toBasketEntity(basketItem, orderEntity);
+			basketRepository.save(itemEntity);
+		}
+	}
 
 
 	private void addItemsToBasket(OrderJsonDto orderJsonDto, OrdersEntity orderEntity) throws BusinessException {
@@ -799,9 +839,17 @@ public class OrderServiceImpl implements OrderService {
 					.map(this::getBasketItemValue)
 					.reduce(BigDecimal.ZERO, BigDecimal::add);
 	}
-	
-	
-	
+
+
+	private BigDecimal calculateBasketTotalValue(List<BasketItemDTO> basket) {
+		if(basket == null) {
+			return BigDecimal.ZERO;
+		}
+
+		return basket.stream()
+				.map(this::getBasketItemValue)
+				.reduce(BigDecimal.ZERO, BigDecimal::add);
+	}
 	
 	
 	

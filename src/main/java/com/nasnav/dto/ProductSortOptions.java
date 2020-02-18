@@ -4,7 +4,7 @@ import lombok.Getter;
 
 public enum ProductSortOptions {
 
-    ID("id"),NAME("name"),P_NAME("pname"),PRICE("price");
+    ID("id"),NAME("name"),P_NAME("pname"),PRICE("price"), CREATION_DATE("creationDate"), UPDATE_DATE("updateDate");
 
     @Getter
     private String value;

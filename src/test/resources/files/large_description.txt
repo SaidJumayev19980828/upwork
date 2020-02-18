@@ -1,0 +1,185 @@
+<ul class="a-unordered-list a-vertical a-spacing-none">
+   <li><span class="a-list-item">PERFORMANCE: 1.8GHz dual-core Intel Core i5 processor with Turbo Boost up to 2.9GHz, the MacBook Air gets the job done ultrafast no matter the task.</span></li>
+   <li><span class="a-list-item">STORAGE: The provided 256GB SSD storage is up to 17x faster than a 5400-rpm laptop hard drive. The MacBook Air flash storage also allows for up to 12 hours of unplugged power efficiency. Includes 8GB of memory.</span></li>
+   <li><span class="a-list-item">GRAPHICS: MacBook Air displays Intel HD Graphics 6000 all on a 13.3 Inch retina display with a 1440 x 900 pixel resolution.</span></li>
+   <li><span class="a-list-item">POWER: Utilize Apple apps and features such as Siri, Finder, Spotlight, Photos, iMovie, Garage Band, Safari, iTunes, Keynote, Pages, Numbers, Messages and more. Pair your Mac system with other Apple devices for seamless use.</span></li>
+   <li><span class="a-list-item">CONNECT: Connected by a Thunderbolt 2 port, Mac Book Air also features two USB 3 ports so you can go from laptop to workstation with a just a few connections.</span></li>
+   <li><span class="a-list-item">Max Memory: 8 GB </span></li>
+ </ul>
+ <div id="btf-content-31_feature_div" class="">
+ <div id="btfContent31_feature_div" class="feature" data-feature-name="btfContent31" data-cel-widget="btfContent31_feature_div">
+ <div id="tech-specs-desktop" class="a-section a-spacing-double-large">
+ <div class="a-section a-spacing-double-large tech-specs-section">
+ <div class="a-section">
+ <div class="a-row">
+ <div class="a-column a-span6">
+ <table id="tech-specs-table-left" class="a-bordered tech-spec-theme">
+ <tbody>
+ <tr>
+ <td class="a-text-bold">Display</td>
+ <td>13.3-inch (diagonal) LED-backlit glossy widescreen display,1440-by-900 resolution with support for millions of colors, 16:10 aspect ratio</td>
+ </tr>
+ <tr>
+ <td class="a-text-bold">Processor</td>
+ <td>1.8GHz dual-core Intel Core i5, Turbo Boost up to 2.9GHz, with 3MB shared L3 cache</td>
+ </tr>
+ <tr>
+ <td class="a-text-bold">Graphics and Video Support</td>
+ <td>Intel HD Graphics 6000</td>
+ </tr>
+ <tr>
+ <td class="a-text-bold">Charging and Expansion</td>
+ <td>Two USB 3 ports (up to 5 Gbps), Thunderbolt 2 port (up to 20 Gbps), MagSafe 2 power port, SDXC card slot</td>
+ </tr>
+ <tr>
+ <td class="a-text-bold">Wireless</td>
+ <td>802.11ac Wi-Fi wireless networking; IEEE 802.11a/b/g/n compatible. Bluetooth 4.0 wireless technology</td>
+ </tr>
+ </tbody>
+ </table>
+ </div>
+ <div class="a-column a-span6 a-span-last">
+ <table id="tech-specs-table-right" class="a-bordered tech-spec-theme">
+ <tbody>
+ <tr>
+ <td class="a-text-bold">In the Box</td>
+ <td>MacBook Air, Power adapter, AC wall plug, Power cord</td>
+ </tr>
+ <tr>
+ <td class="a-text-bold">Height</td>
+ <td>0.11–0.68 inch (0.3–1.7 cm)</td>
+ </tr>
+ <tr>
+ <td class="a-text-bold">Width</td>
+ <td>12.8 inches (32.5 cm)</td>
+ </tr>
+ <tr>
+ <td class="a-text-bold">Depth</td>
+ <td>8.94 inches (22.7 cm)</td>
+ </tr>
+ <tr>
+ <td class="a-text-bold">Weight</td>
+ <td>2.96 pounds (1.35 kg)</td>
+ </tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <div id="btf-content-32_feature_div" class="">
+ <div id="btfContent32_feature_div" class="feature" data-feature-name="btfContent32" data-cel-widget="btfContent32_feature_div"></div>
+ </div>
+ <div id="btf-content-33_feature_div" class="">
+ <div id="btfContent33_feature_div" class="feature" data-feature-name="btfContent33" data-cel-widget="btfContent33_feature_div"></div>
+ </div>
+ <div id="btf-content-34_feature_div" class="">
+ <div id="btfContent34_feature_div" class="feature" data-feature-name="btfContent34" data-cel-widget="btfContent34_feature_div"></div>
+ </div>
+ <div id="btf-content-35_feature_div" class="">
+ <div id="btfContent35_feature_div" class="feature" data-feature-name="btfContent35" data-cel-widget="btfContent35_feature_div"></div>
+ </div>
+ <div id="btf-content-36_feature_div" class="">
+ <div id="btfContent36_feature_div" class="feature" data-feature-name="btfContent36" data-cel-widget="btfContent36_feature_div"></div>
+ </div>
+ <div id="btf-content-37_feature_div" class="">
+ <div id="btfContent37_feature_div" class="feature" data-feature-name="btfContent37" data-cel-widget="btfContent37_feature_div"></div>
+ </div>
+ <div id="btf-content-38_feature_div" class="">
+ <div id="btfContent38_feature_div" class="feature" data-feature-name="btfContent38" data-cel-widget="btfContent38_feature_div"></div>
+ </div>
+ <div id="btf-content-39_feature_div" class="">
+ <div id="btfContent39_feature_div" class="feature" data-feature-name="btfContent39" data-cel-widget="btfContent39_feature_div"></div>
+ </div>
+ <div id="btf-content-40_feature_div" class="">
+ <div id="btfContent40_feature_div" class="feature" data-feature-name="btfContent40" data-cel-widget="btfContent40_feature_div"></div>
+ </div>
+ <div id="btf-content-41_feature_div" class="">
+ <div id="btfContent41_feature_div" class="feature" data-feature-name="btfContent41" data-cel-widget="btfContent41_feature_div"></div>
+ </div>
+ <div id="btf-content-42_feature_div" class="">
+ <div id="btfContent42_feature_div" class="feature" data-feature-name="btfContent42" data-cel-widget="btfContent42_feature_div"></div>
+ </div>
+ <div id="btf-content-43_feature_div" class="">
+ <div id="btfContent43_feature_div" class="feature" data-feature-name="btfContent43" data-cel-widget="btfContent43_feature_div"></div>
+ </div>
+ <div id="btf-content-44_feature_div" class="">
+ <div id="btfContent44_feature_div" class="feature" data-feature-name="btfContent44" data-cel-widget="btfContent44_feature_div"></div>
+ </div>
+ <div id="btf-content-45_feature_div" class="">
+ <div id="btfContent45_feature_div" class="feature" data-feature-name="btfContent45" data-cel-widget="btfContent45_feature_div"></div>
+ </div>
+ <div id="btf-content-46_feature_div" class="">
+ <div id="btfContent46_feature_div" class="feature" data-feature-name="btfContent46" data-cel-widget="btfContent46_feature_div"></div>
+ </div>
+ <div id="btf-content-47_feature_div" class="">
+ <div id="btfContent47_feature_div" class="feature" data-feature-name="btfContent47" data-cel-widget="btfContent47_feature_div"></div>
+ </div>
+ <div id="btf-content-48_feature_div" class="">
+ <div id="btfContent48_feature_div" class="feature" data-feature-name="btfContent48" data-cel-widget="btfContent48_feature_div"></div>
+ </div>
+ <div id="btf-content-49_feature_div" class="">
+ <div id="btfContent49_feature_div" class="feature" data-feature-name="btfContent49" data-cel-widget="btfContent49_feature_div"></div>
+ </div>
+ <div id="btf-content-50_feature_div" class="">
+ <div id="btfContent50_feature_div" class="feature" data-feature-name="btfContent50" data-cel-widget="btfContent50_feature_div"></div>
+ </div>
+ <div id="btf-content-51_feature_div" class="">
+ <div id="btfContent51_feature_div" class="feature" data-feature-name="btfContent51" data-cel-widget="btfContent51_feature_div"></div>
+ </div>
+ <div id="btf-content-52_feature_div" class="">
+ <div id="btfContent52_feature_div" class="feature" data-feature-name="btfContent52" data-cel-widget="btfContent52_feature_div"></div>
+ </div>
+ <div id="btf-content-53_feature_div" class="">
+ <div id="btfContent53_feature_div" class="feature" data-feature-name="btfContent53" data-cel-widget="btfContent53_feature_div"></div>
+ </div>
+ <div id="btf-content-54_feature_div" class="">
+ <div id="btfContent54_feature_div" class="feature" data-feature-name="btfContent54" data-cel-widget="btfContent54_feature_div"></div>
+ </div>
+ <div id="btf-content-55_feature_div" class="">
+ <div id="btfContent55_feature_div" class="feature" data-feature-name="btfContent55" data-cel-widget="btfContent55_feature_div"></div>
+ </div>
+ <div id="btf-content-56_feature_div" class="">
+ <div id="btfContent56_feature_div" class="feature" data-feature-name="btfContent56" data-cel-widget="btfContent56_feature_div"></div>
+ </div>
+ <div id="btf-content-57_feature_div" class="">
+ <div id="btfContent57_feature_div" class="feature" data-feature-name="btfContent57" data-cel-widget="btfContent57_feature_div"></div>
+ </div>
+ <div id="btf-content-58_feature_div" class="">
+ <div id="btfContent58_feature_div" class="feature" data-feature-name="btfContent58" data-cel-widget="btfContent58_feature_div"></div>
+ </div>
+ <div id="btf-content-59_feature_div" class="">
+ <div id="btfContent59_feature_div" class="feature" data-feature-name="btfContent59" data-cel-widget="btfContent59_feature_div"></div>
+ </div>
+ <div id="btf-content-60_feature_div" class="">
+ <div id="btfContent60_feature_div" class="feature" data-feature-name="btfContent60" data-cel-widget="btfContent60_feature_div"></div>
+ </div>
+ <div id="btf-content-61_feature_div" class="">
+ <div id="btfContent61_feature_div" class="feature" data-feature-name="btfContent61" data-cel-widget="btfContent61_feature_div"></div>
+ </div>
+ <div id="btf-content-62_feature_div" class="">
+ <div id="btfContent62_feature_div" class="feature" data-feature-name="btfContent62" data-cel-widget="btfContent62_feature_div"></div>
+ </div>
+ <div id="btf-content-63_feature_div" class="">
+ <div id="btfContent63_feature_div" class="feature" data-feature-name="btfContent63" data-cel-widget="btfContent63_feature_div"></div>
+ </div>
+ <div id="btf-content-64_feature_div" class="">
+ <div id="btfContent64_feature_div" class="feature" data-feature-name="btfContent64" data-cel-widget="btfContent64_feature_div"></div>
+ </div>
+ <div id="btf-content-65_feature_div" class="">
+ <div id="btfContent65_feature_div" class="feature" data-feature-name="btfContent65" data-cel-widget="btfContent65_feature_div"></div>
+ </div>
+ <div id="sponsoredProducts2_feature_div" class="feature" data-feature-name="sponsoredProducts2" data-cel-widget="sponsoredProducts2_feature_div"></div>
+ <div id="ask-btf_feature_div" class="">
+ <div id="cf-ask-cel" class="celwidget" data-cel-widget="cf-ask-cel">
+ <div id="Ask"></div>
+ <div id="ask_lazy_load_div">
+ <div id="ask-btf-container" class="celwidget" data-cel-widget="ask-btf-desktop">
+ <div class="askInlineWidget"></div>
+ </div>
+ </div>
+ </div>
+ </div>

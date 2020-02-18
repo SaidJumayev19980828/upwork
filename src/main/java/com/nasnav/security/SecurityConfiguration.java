@@ -1,6 +1,12 @@
 package com.nasnav.security;
 
 
+import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
+import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
+import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
+import static com.nasnav.enumerations.Roles.STORE_ADMIN;
+import static com.nasnav.enumerations.Roles.STORE_MANAGER;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -21,6 +27,7 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
@@ -33,7 +40,6 @@ import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import com.nasnav.enumerations.Roles;
-import static com.nasnav.enumerations.Roles.*;
 import com.nasnav.security.oauth2.CustomOAuth2UserService;
 import com.nasnav.security.oauth2.OAuth2AuthenticationFailureHandler;
 import com.nasnav.security.oauth2.OAuth2AuthenticationSuccessHandler;
@@ -100,6 +106,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/integration/module/enable"							, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 						patternOf( "/integration/module/**"								, setOf(NASNAV_ADMIN)),
 						patternOf( "/integration/param/**"								, setOf(NASNAV_ADMIN)),
+						patternOf( "/integration/dictionary"							, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+						patternOf( "/integration/errors"								, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 						patternOf( "/integration/**"									, setOf(NASNAV_ADMIN)),
 						patternOf( "/**")
 						);
@@ -138,6 +146,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     public SecurityConfiguration(final AuthenticationProvider authenticationProvider) {
         super();
+        
+        //allow created threads to inherit the parent thread security context
+        SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
+        
         this.provider = authenticationProvider;        
         
         List<RequestMatcher> protectedrequestMatcherList = permissions.stream().map(this::toAntPathRequestMatcher).collect(Collectors.toList());

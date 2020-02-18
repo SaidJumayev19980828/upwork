@@ -1,8 +1,8 @@
 package com.nasnav.controller;
 
-import com.nasnav.dto.*;
-import com.nasnav.request.ProductSearchParam;
-import com.nasnav.service.*;
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -14,15 +14,26 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nasnav.dto.CategoryRepresentationObject;
+import com.nasnav.dto.ExtraAttributesRepresentationObject;
+import com.nasnav.dto.OrganizationRepresentationObject;
+import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductsResponse;
+import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.request.ProductSearchParam;
+import com.nasnav.service.BrandService;
+import com.nasnav.service.CategoryService;
+import com.nasnav.service.OrganizationService;
+import com.nasnav.service.ProductService;
+import com.nasnav.service.ShopService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-
-import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/navbox")
@@ -66,16 +77,22 @@ public class NavboxController {
 			@ApiResponse(code = 400, message = "Missing parameter. Either org_id or p_name is required", response = OrganizationRepresentationObject.class) })
 	public @ResponseBody OrganizationRepresentationObject getOrganizationByName(
 			@RequestParam(name = "p_name", required = false) String organizationName,
-			@RequestParam(name = "org_id", required = false) Long organizationId) throws BusinessException {
+			@RequestParam(name = "org_id", required = false) Long organizationId,
+			@RequestParam(name = "url", required = false) String url) throws BusinessException {
 
-		if (organizationName == null && organizationId == null)
-			throw new BusinessException("Provide org_id or p_name request params", null, HttpStatus.BAD_REQUEST);
+		if (organizationName == null && organizationId == null && url == null)
+			throw new BusinessException("Provide org_id or p_name or url request params", null, HttpStatus.BAD_REQUEST);
 
 		if (organizationName != null)
 			return organizationService.getOrganizationByName(organizationName);
 
+		if (url != null) {
+			Long orgId = organizationService.getOrganizationByDomain(url);
+			return organizationService.getOrganizationById(orgId);
+		}
 		return organizationService.getOrganizationById(organizationId);
 	}
+
 
 	@ApiOperation(value = "Get selected organization's shops", nickname = "orgShops")
 	@ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
@@ -167,8 +184,9 @@ public class NavboxController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
 	})
 	@GetMapping(value="/tags",produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getTags(@RequestParam(name = "org_id", required = false) Long organizationId) throws BusinessException {
-		List<TagsRepresentationObject> response = categoryService.getOrganizationTags(organizationId);
+	public ResponseEntity<?> getTags(@RequestParam(name = "org_id") Long organizationId,
+									 @RequestParam(value = "category_name", required = false) String categoryName) throws BusinessException {
+		List<TagsRepresentationObject> response = categoryService.getOrganizationTags(organizationId, categoryName);
 		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
@@ -186,5 +204,20 @@ public class NavboxController {
 											  @RequestParam(name = "radius", required = false) Double radius,
 											  @RequestParam(name = "name", required = false) String name) throws BusinessException {
 		return shopService.getLocationShops(organizationId, longitude, lattitude, radius, name);
+	}
+
+
+
+	@ApiOperation(value = "Identify Organization by its domain", nickname = "orgId")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
+	})
+	@GetMapping(value="/orgid",produces=MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> getOrganizationByDomain(@RequestParam(name = "url") String url) throws BusinessException {
+
+		Long orgId = organizationService.getOrganizationByDomain(url);
+
+		return new ResponseEntity<>("{\"id\":"+orgId+"}", HttpStatus.OK);
 	}
 }

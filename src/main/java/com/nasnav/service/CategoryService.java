@@ -1,5 +1,9 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.toList;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,7 +37,6 @@ import com.nasnav.dto.TagsDTO;
 import com.nasnav.dto.TagsLinkDTO;
 import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.CategoriesEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.TagGraphEdgesEntity;
@@ -67,8 +70,6 @@ public class CategoryService {
     private OrganizationRepository orgRepo;
     
     
-    @Autowired
-    private TagsRepository tagsRepo;
 
     @Autowired
     public CategoryService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository,
@@ -78,19 +79,6 @@ public class CategoryService {
         this.productRepository = productRepository;
     }
 
-    public CategoryRepresentationObject getOrganizationCategories(Long organizationId) {
-
-        List<BrandsEntity> brandsEntities = brandsRepository.findByOrganizationEntity_Id(organizationId);
-
-        if(brandsEntities!=null && !brandsEntities.isEmpty()){
-            List<String> categories = new ArrayList<>(brandsEntities.size());
-
-//            brandsEntities.forEach(brandsEntity -> categories.add(brandsEntity.getCategories()));
-        }
-
-        //TODO brands table fix of categories Varchar [] to bigint []
-        return null;
-    }
     
     
     
@@ -118,13 +106,14 @@ public class CategoryService {
         return categoriesEntityList
         			.stream()
 					.map(category -> (CategoryRepresentationObject) category.getRepresentation())
-					.collect(Collectors.toList());
+					.sorted(comparing(CategoryRepresentationObject::getName))
+					.collect(toList());
     }
     
     
     
 
-    public ResponseEntity createCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
+    public ResponseEntity<CategoryResponse> createCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
         if (categoryJson.getName() == null) {
             throw new BusinessException("MISSING_PARAM: name", "No category name is provided", HttpStatus.NOT_ACCEPTABLE);
         } else if (!StringUtils.validateName(categoryJson.getName())) {
@@ -144,10 +133,10 @@ public class CategoryService {
         }
         categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
         categoryRepository.save(categoriesEntity);
-        return new ResponseEntity(new CategoryResponse(categoriesEntity.getId()), HttpStatus.OK);
+        return new ResponseEntity<CategoryResponse>(new CategoryResponse(categoriesEntity.getId()), HttpStatus.OK);
     }
 
-    public ResponseEntity updateCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
+    public ResponseEntity<CategoryResponse> updateCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
         if (categoryJson.getId() == null) {
             throw new BusinessException("MISSING_PARAM: ID", "No category ID is provided", HttpStatus.NOT_ACCEPTABLE);
         }
@@ -177,10 +166,10 @@ public class CategoryService {
         }
         categoriesEntity.setUpdatedAt(LocalDateTime.now());
         categoryRepository.save(categoriesEntity);
-        return new ResponseEntity(new CategoryResponse(categoriesEntity.getId()), HttpStatus.OK);
+        return new ResponseEntity<CategoryResponse>(new CategoryResponse(categoriesEntity.getId()), HttpStatus.OK);
     }
 
-    public ResponseEntity deleteCategory(Long categoryId) throws BusinessException {
+    public ResponseEntity<CategoryResponse> deleteCategory(Long categoryId) throws BusinessException {
         if (!categoryRepository.findById(categoryId).isPresent()){
             throw new BusinessException("EntityNotFound: category",
                     "No category entity found with provided ID", HttpStatus.NOT_ACCEPTABLE);
@@ -203,7 +192,7 @@ public class CategoryService {
                     "There are still children " +childrenCategoriesIds+" assigned to this category", HttpStatus.CONFLICT);
         }
         categoryRepository.delete(categoriesEntity);
-        return new ResponseEntity(new CategoryResponse(categoriesEntity.getId()),HttpStatus.OK);
+        return new ResponseEntity<CategoryResponse>(new CategoryResponse(categoriesEntity.getId()),HttpStatus.OK);
     }
 
 
@@ -211,11 +200,17 @@ public class CategoryService {
 
 
 
-    public List<TagsRepresentationObject> getOrganizationTags(Long orgId) {
-        return orgTagsRepo.findByOrganizationEntity_Id(orgId)
-                .stream()
-                .map(tag ->(TagsRepresentationObject) tag.getRepresentation())
-                .collect(Collectors.toList());
+    public List<TagsRepresentationObject> getOrganizationTags(Long orgId, String categoryName) {
+        List<TagsEntity> tagsEntities;
+        if(isBlankOrNull(categoryName)) {
+        	tagsEntities = orgTagsRepo.findByOrganizationEntity_Id(orgId);
+        }else {
+        	tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_Id(categoryName, orgId);
+        }
+        return tagsEntities
+        			.stream()
+                    	.map(tag ->(TagsRepresentationObject) tag.getRepresentation())
+                    	.collect(toList());
     }
 
     public List<TagsRepresentationObject> getOrganizationTagsTree(Long orgId) throws BusinessException {

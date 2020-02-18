@@ -31,12 +31,27 @@ public class OrdersController {
 
     @Autowired
     private OrderService orderService;
-    
+
+
+	@ApiOperation(value = "Create an order", nickname = "orderCreation", code = 201)
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "Order created"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+	})
+	@PostMapping(value = "create",
+			produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+			consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	public OrderResponse createOrder(@RequestHeader(name = "User-Token") String userToken,
+									 @RequestBody OrderJsonDto orderJson) throws BusinessException {
+
+		return orderService.createNewOrder(orderJson);
+	}
     
 	
-    @ApiOperation(value = "Create or update an order", nickname = "orderUpdate", code = 201)
+    @ApiOperation(value = "Update an order", nickname = "orderUpdate")
     @ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "Order created or updated"),
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Order updated"),
             @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
@@ -49,7 +64,7 @@ public class OrdersController {
             @RequestBody OrderJsonDto orderJson)
             		throws BusinessException {
     	
-    	return orderService.handleOrder(orderJson);        
+    	return orderService.updateExistingOrder(orderJson);
     }
     
     

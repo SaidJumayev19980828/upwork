@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.nasnav.dto.OrderRepresentationObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -127,7 +128,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------
 		
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stock.getId(), stock.getQuantity()));
-		ResponseEntity<String> response = template.postForEntity("/order/update"
+		ResponseEntity<String> response = template.postForEntity("/order/create"
 															, TestCommons.getHttpEntity(request.toString(), "XX")
 															, String.class);
 		
@@ -145,7 +146,7 @@ public class OrderServiceTest {
 	public void addNewOrderWithEmptyBasket() {
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW);
 		ResponseEntity<OrderResponse> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 										, TestCommons.getHttpEntity(request.toString(), "123")
 										, OrderResponse.class);
 		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
@@ -164,12 +165,12 @@ public class OrderServiceTest {
 				
 		JSONObject request = createOrderRequestWithBasketItems(NEW, item(stock.getId(), stock.getQuantity()));
 		ResponseEntity<OrderResponse> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 										, TestCommons.getHttpEntity(request.toString(), "123")
 										, OrderResponse.class);
 
 		// get the returned orderId
-		long orderId = response.getBody().getOrderId();
+		long orderId = response.getBody().getOrders().get(0).getId();
 		
 		//---------------------------------------------------------------
 		
@@ -225,7 +226,7 @@ public class OrderServiceTest {
 		// try updating with a non-existing stock id
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(9845757332L, 4));
 		ResponseEntity<String> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 										, TestCommons.getHttpEntity(request.toString(), "123")
 										, String.class);
 		
@@ -252,7 +253,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stocksEntity.getId(), orderQuantity));
 		ResponseEntity<String> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 										, TestCommons.getHttpEntity( request.toString(), persistentUser.getAuthenticationToken())
 										, String.class);
 		
@@ -264,16 +265,62 @@ public class OrderServiceTest {
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(itemPrice.multiply(new BigDecimal(orderQuantity)), body.getPrice());
-		assertNotNull(body.getOrderId());
+		Long orderId = body.getOrders().get(0).getId();
+		assertNotNull(orderId);
 		
-		OrdersEntity order = orderRepository.findById(body.getOrderId()).get();
+		OrdersEntity order = orderRepository.findById(orderId).get();
 		assertEquals("user1", order.getName());
 		assertNotNull(order.getAddress());		
 	}
 
 
 
+	@Test
+	public void createNewMultiStoreOrder()  {
+		UserEntity persistentUser = userRepository.getByEmailAndOrganizationId("user1@nasnav.com", 99001L);
 
+		prepareStockForTest(601L, 4, new BigDecimal(600));
+		prepareStockForTest(602L, 4, new BigDecimal(1200));
+		prepareStockForTest(603L, 4, new BigDecimal(200));
+		prepareStockForTest(604L, 4, new BigDecimal(700));
+
+		String requestBody = "{\"basket\": [{\"quantity\": 1,\"stock_id\": 601,\"unit\": \"kg\"}," +
+										   "{\"quantity\": 1,\"stock_id\": 602,\"unit\": \"kg\"}," +
+										   "{ \"quantity\": 1,\"stock_id\": 603,\"unit\": \"kg\"}," +
+										   "{ \"quantity\": 1,\"stock_id\": 604,\"unit\": \"kg\"}]," +
+										   "\"delivery_address\": \"Somewhere behind a grocery store\"}";
+		ResponseEntity<OrderResponse> response = template.postForEntity("/order/create"
+						, TestCommons.getHttpEntity(requestBody, persistentUser.getAuthenticationToken()), OrderResponse.class);
+
+		System.out.println("--------response------\n" + response.getBody());
+		//---------------------------------------------------------------
+		/*ObjectMapper mapper = new ObjectMapper();
+		OrderResponse body = mapper.readValue(response.getBody(), OrderResponse.class);*/
+		List<OrderRepresentationObject> orders = response.getBody().getOrders();
+
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(new BigDecimal(2700).setScale(2), response.getBody().getPrice());
+		assertEquals(2, orders.size());
+
+		OrderRepresentationObject firstOrder = orders.get(0);
+		OrderRepresentationObject secondOrder = orders.get(1);
+
+		assertEquals(new BigDecimal(1800).setScale(2), firstOrder.getPrice());
+		assertEquals(502, firstOrder.getShopId().intValue());
+		assertOrderUserInfo(firstOrder.getId());
+
+		assertEquals(new BigDecimal(900).setScale(2), secondOrder.getPrice());
+		assertEquals(503, secondOrder.getShopId().intValue());
+		assertOrderUserInfo(secondOrder.getId());
+
+	}
+
+	private void assertOrderUserInfo(Long orderId) {
+		assertNotNull(orderId);
+		OrdersEntity order = orderRepository.findById(orderId).get();
+		assertEquals("user1", order.getName());
+		assertNotNull(order.getAddress());
+	}
 
 
 	private StocksEntity prepareStockForTest(Long stockId, Integer stockQuantity, BigDecimal itemPrice) {
@@ -302,7 +349,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stockId , orderQuantity));
 		ResponseEntity<String> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 										, TestCommons.getHttpEntity( request.toString(), persistentUser.getAuthenticationToken())
 										, String.class);
 		
@@ -398,13 +445,13 @@ public class OrderServiceTest {
 		
 		// create a new order, then take it's order id and try to make an update using it
 		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stock.getId(), stock.getQuantity()));
-		ResponseEntity<String> response = template.postForEntity("/order/update"
+		ResponseEntity<String> response = template.postForEntity("/order/create"
 														, TestCommons.getHttpEntity(request.toString(), persistentUser.getAuthenticationToken())
 														, String.class);
 
 		// get the returned orderId
 		OrderResponse body = readOrderReponse(response);
-		long orderId = body.getOrderId();
+		long orderId = body.getOrders().get(0).getId();
 		
 		//---------------------------------------------------------------
 		
@@ -849,7 +896,7 @@ public class OrderServiceTest {
 		JSONObject request = createOrderUpdateRequestWithNonExistingStock();
 		
 		ResponseEntity<String> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 									, TestCommons.getHttpEntity(request.toString(), "123")
 									, String.class);
 		
@@ -865,7 +912,7 @@ public class OrderServiceTest {
 		JSONObject request = createOrderUpdateRequestWithInvalidQuantity();
 		
 		ResponseEntity<String> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 									, TestCommons.getHttpEntity(request.toString(), "123")
 									, String.class);
 		
@@ -1453,7 +1500,7 @@ public class OrderServiceTest {
 		JSONObject updateRequest = createOrderRequestWithBasketItems(NEW);
 		
 		ResponseEntity<String> updateResponse = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 										, TestCommons.getHttpEntity(updateRequest.toString(), userToken)
 										, String.class);
 		System.out.println("----------response-----------------\n" + updateResponse);

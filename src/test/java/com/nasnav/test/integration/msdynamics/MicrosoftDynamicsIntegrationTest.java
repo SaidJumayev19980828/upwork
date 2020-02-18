@@ -21,6 +21,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.JsonBody.json;
 import static org.mockserver.verify.VerificationTimes.exactly;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.OK;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -101,6 +103,7 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	private static final Long ORG_ID = 99001L;
 	private static final String USER_MAPPING = "CUSTOMER";
+	private static final String EXISTING_SHOP_ID = "502";
 	
 	
 	@Value("classpath:/json/ms_dynamics_integratoin_test/expected_order_request.json")
@@ -293,8 +296,9 @@ public class MicrosoftDynamicsIntegrationTest {
 					.put("page_count", count);
 		
 		HttpEntity<Object> request = getHttpEntity(requestJson.toString(), "hijkllm");
-        ResponseEntity<Integer> response = template.exchange("/integration/import/products", HttpMethod.POST, request, Integer.class);       
-        		
+        ResponseEntity<String> response = template.exchange("/integration/import/products", HttpMethod.POST, request, String.class);       
+        
+        assertEquals(OK, response.getStatusCode());
 		//------------------------------------------------
 		//test the mock api was called
 		if(usingMockServer) {
@@ -319,7 +323,7 @@ public class MicrosoftDynamicsIntegrationTest {
 			assertEquals("shops were imported", extShopsJson.length() - countShopsBefore, countShopsAfter - countShopsBefore);
 			assertEquals("assert brands were imported", 3L, brandRepo.count());
 			assertTrue("all imported products have integration mapping" , allProductHaveMapping());
-			assertEquals("check number of remaining pages to import", 0, response.getBody().intValue());
+			assertEquals("check number of remaining pages to import", 0, Integer.valueOf(response.getBody()).intValue());
 		}
 	}
 	
@@ -640,12 +644,12 @@ public class MicrosoftDynamicsIntegrationTest {
 		//---------------------------------------------------------------
 		JSONObject request = createOrderRequestWithBasketItems(NEW, item(stockId, orderQuantity));
 		ResponseEntity<OrderResponse> response = 
-				template.postForEntity("/order/update"
+				template.postForEntity("/order/create"
 										, getHttpEntity( request.toString(), token)
 										, OrderResponse.class);
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
-		Long orderId = response.getBody().getOrderId();
+		Long orderId = response.getBody().getOrders().get(0).getId();
 		Optional<IntegrationMappingEntity> orderMappingAfterOrderCreation = 
 				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, ORDER.getValue(), orderId.toString());
 		assertFalse(orderMappingAfterOrderCreation.isPresent());
@@ -751,5 +755,58 @@ public class MicrosoftDynamicsIntegrationTest {
 		integrationInfo.setIntegrationParameters(params);
 		
 		integrationService.registerIntegrationModule(integrationInfo);
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_Test_Data_Insert_Existing_Shops.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void testImportShopsWithExistingShopName() throws Throwable {
+
+		long countBefore = shopsRepo.count();
+		
+		//------------------------------------------------		
+		//push shop import event and wait for it
+		HttpEntity<Object> request = getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/integration/import/shops", GET, request, String.class);
+        ObjectMapper mapper = new ObjectMapper();       
+        List<Long> importedShops = mapper.readValue(response.getBody().getBytes(), new TypeReference<List<Long>>(){});
+		
+		//------------------------------------------------
+		//test the mock api was called
+		if(usingMockServer) {
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("GET")
+				        .withPath("/api/stores"),
+				      VerificationTimes.exactly(1)
+				    );
+		}
+		//------------------------------------------------
+		//test the imported shops were created
+		JSONArray extShopsJson = getExpectedShopsJson();
+		
+		long countAfter = shopsRepo.count();
+					
+		assertEquals(OK, response.getStatusCode());
+		assertEquals("new stores were imported except for the existing one", extShopsJson.length() - 1, countAfter - countBefore);
+		assertTrue("all imported stores id's have integration mapping" , allShopIdsHaveMapping(importedShops));
+		assertExistingShopHadMapping();
+	}
+
+
+
+
+
+
+	private void assertExistingShopHadMapping() {
+		Optional<IntegrationMappingEntity> mapping = mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, "SHOP", EXISTING_SHOP_ID);
+		assertEquals("exsting shop had mapping" , "FOoscar", mapping.get().getRemoteValue());
 	}
 }

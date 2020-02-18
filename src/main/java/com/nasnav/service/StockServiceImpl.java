@@ -300,6 +300,7 @@ public class StockServiceImpl implements StockService {
 
 	private Long validateShopExists(StockUpdateDTO req) throws BusinessException {
 		Long shopId = req.getShopId();
+		System.out.println(">>>>>>>>>" + shopRepo.findAll());
 		if(!shopRepo.existsById(shopId)) {
 			throw new BusinessException(
 					String.format("No shop exists with id[%d]!", shopId)

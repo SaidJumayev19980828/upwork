@@ -4,6 +4,9 @@ import java.time.Duration;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+import com.nasnav.dto.IntegrationDictionaryDTO;
+import com.nasnav.dto.IntegrationErrorDTO;
+import com.nasnav.dto.ResponsePage;
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.IntegrationProductImportDTO;
@@ -14,6 +17,8 @@ import com.nasnav.integration.events.Event;
 import com.nasnav.integration.events.EventResult;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.integration.model.ImportedShop;
+import com.nasnav.request.GetIntegrationDictParam;
+import com.nasnav.request.GetIntegrationErrorParam;
 
 import reactor.core.publisher.Mono;
 
@@ -158,4 +163,9 @@ public interface IntegrationService {
 	 * push the event again after the given delay.
 	 * */
 	<E extends Event<T, R> ,T,R> void retryEvent(E event, BiConsumer<E, Throwable> onError, Duration delay, Integer maxRetryCount);
+	
+	
+	ResponsePage<IntegrationDictionaryDTO> getIntegrationDictionary(GetIntegrationDictParam param) throws BusinessException;
+	
+	ResponsePage<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param) throws BusinessException;
 }

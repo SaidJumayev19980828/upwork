@@ -10,6 +10,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.ExtraAttributesRepresentationObject;
 
@@ -40,9 +43,11 @@ public class ExtraAttributesEntity implements BaseEntity {
     private String iconUrl;
 
     @Column(name = "created_at")
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
     
     
