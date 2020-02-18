@@ -101,6 +101,9 @@ public class DataImportApiTest {
 
 	@Value("classpath:/files/product__list_upload.csv")
     private Resource csvFile;
+	
+	@Value("classpath:/files/product__list_upload_missing_features.csv")
+    private Resource csvFileMissingFeatures;
 
 	@Value("classpath:/files/product__list_upload_large_column.csv")
 	private Resource csvFileLargeColumn;
@@ -370,6 +373,32 @@ public class DataImportApiTest {
 
         ExpectedSavedData expected = getExpectedAllNewData();
         assertProductDataImported(TEST_IMPORT_SHOP, expected);
+       
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void uploadProductCSVNewDataWithMissingFeaturesTest() throws IOException, Exception {
+        JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		importProperties.put("update_product", true);
+
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileMissingFeatures, importProperties);
+
+		result.andExpect(status().is(200));
+
+		ProductEntity product = variantRepo.findById(310001L).get().getProductEntity();
+		assertEquals("Squishy shoes", product.getName());
+
+        Optional<IntegrationMappingEntity> mapping = 
+        		integrationMappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(
+        				99001L
+        				, PRODUCT_VARIANT.getValue()
+        				, "4");
+        assertTrue(mapping.isPresent());
        
 	}
 	

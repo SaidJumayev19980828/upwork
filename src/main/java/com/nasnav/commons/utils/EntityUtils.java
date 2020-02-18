@@ -1,5 +1,7 @@
 package com.nasnav.commons.utils;
 
+import static java.util.Arrays.asList;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,22 +47,22 @@ public class EntityUtils {
 	
 	
 	public static boolean areEqual(Object... elements){
-		List elementList =  Arrays.asList(elements);
-		Set elementSet = new HashSet<>(elementList);
+		List<Object> elementList =  Arrays.asList(elements);
+		Set<Object> elementSet = new HashSet<>(elementList);
 		return  elementSet.size() == 1;
 	}
 	
 	
 	
 	public static boolean anyIsNull(Object... elements){
-		List elementList =  Arrays.asList(elements);
+		List<Object> elementList =  Arrays.asList(elements);
 		return elementList.stream().anyMatch(e -> e == null);
 	}
 	
 	
 	
 	public static boolean allIsNull(Object... elements){
-		List elementList =  Arrays.asList(elements);
+		List<Object> elementList =  Arrays.asList(elements);
 		return elementList.stream().allMatch(e -> e == null);
 	}
 	
@@ -74,7 +76,7 @@ public class EntityUtils {
 	
 	
 	
-	public static boolean isNullOrEmpty(Collection collection) {
+	public static boolean isNullOrEmpty(Collection<?> collection) {
 		return collection == null || collection.isEmpty();
 	}
 	
@@ -102,8 +104,10 @@ public class EntityUtils {
 	
 	
 	public static <T> Boolean collectionContainsAnyOf(Collection<T> collection, T... objects) {
-		List<T> objectList = Arrays.asList(objects);
-		return objectList.stream().anyMatch(collection::contains);
+		List<T> objectList = asList(objects);
+		return objectList
+				.stream()
+				.anyMatch(collection::contains);
 	}
 	
 	
@@ -134,14 +138,18 @@ public class EntityUtils {
 
 
 	public static boolean noneIsNull(Object... elements) {
-		List elementList =  Arrays.asList(elements);
-		return elementList.stream().noneMatch(Objects::isNull);
+		List<?> elementList =  asList(elements);
+		return elementList
+				.stream()
+				.noneMatch(Objects::isNull);
 	}
 
 
 	public static boolean nonIsEmpty(Collection<?> ... collections) {
-		List<Collection> elementList =  Arrays.asList(collections);
-		return elementList.stream().noneMatch(Collection::isEmpty);
+		List<Collection<?>> elementList =  Arrays.asList(collections);
+		return elementList
+				.stream()
+				.noneMatch(c -> c == null || c.isEmpty());
 	}
 }
 

@@ -18,6 +18,8 @@ import com.univocity.parsers.common.Context;
 import com.univocity.parsers.common.processor.BeanListProcessor;
 import com.univocity.parsers.common.record.Record;
 
+import lombok.AllArgsConstructor;
+
 
 
 
@@ -85,7 +87,11 @@ public class ProductCsvRowProcessor<T extends CsvRow> extends BeanListProcessor<
 		return orgVariantFeatures
 				.stream()
 				.filter(feature -> isFeatureNameInCsvHeaders(headers, feature))
-				.collect(toMap(ProductFeaturesEntity::getName, feature -> getFeatureValueFromCsvRecord(record, feature)));			
+				.map(feature -> new FeatureValuePair(feature, getFeatureValueFromCsvRecord(record, feature)))
+				.filter(pair -> pair.value != null)
+				.collect(
+						toMap(pair -> pair.feature.getName()
+							, pair -> pair.value));			
 	}
 
 
@@ -104,4 +110,12 @@ public class ProductCsvRowProcessor<T extends CsvRow> extends BeanListProcessor<
 		return record.getString(headerName);
 	}
 
+}
+
+
+
+@AllArgsConstructor
+class FeatureValuePair{
+	public ProductFeaturesEntity feature;
+	public String value;
 }
