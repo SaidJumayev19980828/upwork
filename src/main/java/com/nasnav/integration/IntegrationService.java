@@ -165,7 +165,7 @@ public interface IntegrationService {
 	<E extends Event<T, R> ,T,R> void retryEvent(E event, BiConsumer<E, Throwable> onError, Duration delay, Integer maxRetryCount);
 	
 	
-	ResponsePage<IntegrationDictionaryDTO> getIntegrationDictionary(GetIntegrationDictParam param);
+	ResponsePage<IntegrationDictionaryDTO> getIntegrationDictionary(GetIntegrationDictParam param) throws BusinessException;
 	
-	ResponsePage<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param);
+	ResponsePage<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param) throws BusinessException;
 }

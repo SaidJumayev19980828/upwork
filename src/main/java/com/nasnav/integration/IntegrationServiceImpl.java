@@ -19,6 +19,8 @@ import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.E
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_NO_PRODUCT_DATA_RETURNED;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_ORG_NOT_EXISTS;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_SHOP_IMPORT_FAILED;
+import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
+import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.integration.enums.IntegrationParam.DISABLED;
 import static com.nasnav.integration.enums.IntegrationParam.INTEGRATION_MODULE;
 import static com.nasnav.integration.enums.IntegrationParam.MAX_REQUEST_RATE;
@@ -27,8 +29,10 @@ import static com.nasnav.integration.enums.MappingType.SHOP;
 import static java.lang.String.format;
 import static java.time.Duration.ofMillis;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static reactor.core.scheduler.Schedulers.boundedElastic;
 
 import java.io.PrintWriter;
@@ -79,7 +83,6 @@ import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ResponsePage;
 import com.nasnav.dto.ShopJsonDTO;
-import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.enums.IntegrationParam;
@@ -126,7 +129,7 @@ import reactor.core.scheduler.Scheduler;
 public class IntegrationServiceImpl implements IntegrationService {
 	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 2880L;
 
-	private static final Integer MAX_ERROR_PG_SIZE = 500;
+	private static final Integer MAX_PG_SIZE = 500;
 
 	public static  long REQUEST_TIMEOUT_SEC = 300L;
 
@@ -1497,9 +1500,79 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 	@Override
-	public ResponsePage<IntegrationDictionaryDTO> getIntegrationDictionary(GetIntegrationDictParam param) {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponsePage<IntegrationDictionaryDTO> getIntegrationDictionary(GetIntegrationDictParam param) throws BusinessException {
+		verifyGetIntegrationDictParam(param);
+
+		GetIntegrationDictParam rectifiedParams = rectifyGetIntegrationDictParams(param);
+		
+		Pageable pageable = createDictPageSpecs(rectifiedParams);
+		
+		Page<IntegrationMappingEntity> dictPage = Page.empty();
+		
+		if(isNull(param.getDict_type())) {
+			dictPage = findMappingByOrg(rectifiedParams, pageable);
+		}else {
+			dictPage = findMappingByOrgAndType(rectifiedParams, pageable);
+		}
+				
+		return toPageOfIntegrationDictDTO(dictPage);
+	}
+
+
+
+
+
+
+	private GetIntegrationDictParam rectifyGetIntegrationDictParams(GetIntegrationDictParam param) {
+		Long orgId = ofNullable(param.getOrg_id()).orElse(0L);
+		if(securityService.currentUserHasRole(ORGANIZATION_ADMIN)) {
+			orgId = securityService.getCurrentUserOrganizationId();
+		}
+				
+		Integer pageSize = 
+				ofNullable(param.getPage_size())
+					.map(this::capResponsePageSize)
+					.orElse(MAX_PG_SIZE);
+		Integer pageNum = 
+				ofNullable(param.getPage_num())
+					.map(this::capErrorPageNum)
+					.orElse(1);
+		
+		GetIntegrationDictParam rect = new GetIntegrationDictParam();
+		rect.setOrg_id(orgId);
+		rect.setPage_size(pageSize);
+		rect.setPage_num(pageNum);
+		rect.setDict_type(param.getDict_type());
+		
+		return rect;
+	}
+	
+	
+	
+	private Pageable createDictPageSpecs(GetIntegrationDictParam rectifiedParams) {
+		return
+			PageRequest.of(
+					rectifiedParams.getPage_num() - 1
+					, rectifiedParams.getPage_size()
+					, Sort.by("id").descending());
+	}
+
+
+
+
+
+
+	private void verifyGetIntegrationDictParam(GetIntegrationDictParam param) throws BusinessException {
+		Long currentUserOrgId = securityService.getCurrentUserOrganizationId();
+		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
+		Long orgId = param.getOrg_id();
+		
+		if(!isNasnavAdmin && !Objects.equals(currentUserOrgId, orgId)) {
+			throw new BusinessException(
+					format("Current User cannot view Dictionary of Organization[]", orgId)
+					, "INVALID PARAM: org_id"
+					, FORBIDDEN);			
+		}		
 	}
 
 
@@ -1508,7 +1581,9 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 	@Override
-	public ResponsePage<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param) {
+	public ResponsePage<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param) throws BusinessException {
+		verifyGetIntegrationErrorsParam(param);
+		
 		GetIntegrationErrorParam rectifiedParams = rectifyGetIntegrationErrorsParams(param);
 		
 		Pageable pageable = createErrorPageSpecs(rectifiedParams);
@@ -1522,6 +1597,25 @@ public class IntegrationServiceImpl implements IntegrationService {
 		}
 				
 		return toPageOfIntegrationErrorDTO(failuresPage);
+	}
+
+
+
+
+
+
+	private void verifyGetIntegrationErrorsParam(GetIntegrationErrorParam param) throws BusinessException {
+		Long currentUserOrgId = securityService.getCurrentUserOrganizationId();
+		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
+		Long orgId = param.getOrg_id();
+		
+		if(!isNasnavAdmin && !Objects.equals(currentUserOrgId, orgId)) {
+			throw new BusinessException(
+					format("Current User cannot view errors of Organization[]", orgId)
+					, "INVALID PARAM: org_id"
+					, FORBIDDEN);
+			
+		}
 	}
 
 
@@ -1565,7 +1659,32 @@ public class IntegrationServiceImpl implements IntegrationService {
 					rectifiedParams.getOrg_id()
 					, pageable);
 	}
+	
+	
+	
+	
+	
+	private Page<IntegrationMappingEntity> findMappingByOrg(GetIntegrationDictParam rectifiedParams,
+			Pageable pageable) {
+		return
+			mappingRepo
+				.findByOrganizationId(
+					rectifiedParams.getOrg_id()
+					, pageable);
+	}
 
+	
+	
+	
+	private Page<IntegrationMappingEntity> findMappingByOrgAndType(GetIntegrationDictParam rectifiedParams,
+			Pageable pageable) {
+		return
+			mappingRepo
+				.findByOrganizationIdAndMappingType_typeName(
+					rectifiedParams.getOrg_id()
+					, rectifiedParams.getDict_type().getValue()
+					, pageable);
+	}
 
 
 
@@ -1575,15 +1694,18 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	private GetIntegrationErrorParam rectifyGetIntegrationErrorsParams(GetIntegrationErrorParam param) {
 		Long orgId = ofNullable(param.getOrg_id()).orElse(0L);
-		if(securityService.currentUserHasRole(Roles.ORGANIZATION_ADMIN)) {
+		if(securityService.currentUserHasRole(ORGANIZATION_ADMIN)) {
 			orgId = securityService.getCurrentUserOrganizationId();
 		}
 				
 		Integer pageSize = 
 				ofNullable(param.getPage_size())
-					.map(this::capErrorPageSize)
-					.orElse(MAX_ERROR_PG_SIZE);
-		Integer pageNum = ofNullable(param.getPage_num()).map(this::capErrorPageNum).orElse(1);
+					.map(this::capResponsePageSize)
+					.orElse(MAX_PG_SIZE);
+		Integer pageNum = 
+				ofNullable(param.getPage_num())
+					.map(this::capErrorPageNum)
+					.orElse(1);
 		
 		GetIntegrationErrorParam rect = new GetIntegrationErrorParam();
 		rect.setOrg_id(orgId);
@@ -1597,8 +1719,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	
 	
-	private Integer capErrorPageSize(Integer pageSize) { 
-		return pageSize > MAX_ERROR_PG_SIZE ? MAX_ERROR_PG_SIZE: pageSize;
+	private Integer capResponsePageSize(Integer pageSize) { 
+		return pageSize > MAX_PG_SIZE ? MAX_PG_SIZE: pageSize;
 	}
 	
 	
@@ -1621,23 +1743,51 @@ public class IntegrationServiceImpl implements IntegrationService {
 					.map(this::toIntegrationErrorDTO)
 					.collect(toList());
 		
-		return createErrorResponsePage(failuresPage, content);
+		return createResponsePage(failuresPage, content);
+	}
+	
+	
+	
+	
+	private ResponsePage<IntegrationDictionaryDTO> toPageOfIntegrationDictDTO(Page<IntegrationMappingEntity> dictPage) {
+		List<IntegrationDictionaryDTO> content = 
+				ofNullable(dictPage)
+					.map(Page::getContent)
+					.orElse(emptyList())
+					.stream()
+					.map(this::toIntegrationDictionaryDTO)
+					.collect(toList());
+		
+		return createResponsePage(dictPage, content);
+	}
+
+	
+	
+	
+	private IntegrationDictionaryDTO toIntegrationDictionaryDTO(IntegrationMappingEntity entity) {
+		IntegrationDictionaryDTO dto = new IntegrationDictionaryDTO();
+		
+		dto.setOrgId(entity.getOrganizationId());
+		dto.setLocalValue(entity.getLocalValue());
+		dto.setRemoteValue(entity.getRemoteValue());
+		dto.setTypeName(entity.getMappingTypeName());
+		
+		return dto;
 	}
 
 
 
 
 
-
-	private ResponsePage<IntegrationErrorDTO>  createErrorResponsePage(Page<IntegrationEventFailureEntity> failuresPage,
-			List<IntegrationErrorDTO> content) {
-		ResponsePage<IntegrationErrorDTO> response = new ResponsePage<>();
+	private <T,E> ResponsePage<T>  createResponsePage(Page<E> entityPage,
+			List<T> content) {
+		ResponsePage<T> response = new ResponsePage<>();
 		
 		response.setContent(content);
-		response.setPageSize( failuresPage.getPageable().getPageSize());
-		response.setPageNumber( failuresPage.getPageable().getPageNumber() + 1);
-		response.setTotalElements( failuresPage.getTotalElements());
-		response.setTotalPages(failuresPage.getTotalPages());
+		response.setPageSize( entityPage.getPageable().getPageSize());
+		response.setPageNumber( entityPage.getPageable().getPageNumber() + 1);
+		response.setTotalElements( entityPage.getTotalElements());
+		response.setTotalPages(entityPage.getTotalPages());
 		
 		return response;
 	}

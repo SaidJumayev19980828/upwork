@@ -2,6 +2,8 @@ package com.nasnav.dao;
 
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -44,4 +46,8 @@ public interface IntegrationMappingRepository extends JpaRepository<IntegrationM
 			, @Param("type")IntegrationMappingTypeEntity typeId
 			, @Param("remoteValue") String remoteValue);
 
+	Page<IntegrationMappingEntity> findByOrganizationId(Long orgId, Pageable pageable);
+
+	Page<IntegrationMappingEntity> findByOrganizationIdAndMappingType_typeName(Long orgId, String mappingtype,
+			Pageable pageable);
 }
