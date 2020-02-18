@@ -1,0 +1,70 @@
+package com.nasnav.persistence;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.dto.ShopFloorDTO;
+import com.nasnav.dto.ShopSectionsDTO;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+import org.hibernate.annotations.CreationTimestamp;
+
+import javax.persistence.*;
+import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Table(name = "shop_floors")
+@Entity
+@Data
+@EqualsAndHashCode(callSuper=false)
+public class ShopFloorsEntity implements BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "number")
+    private Integer number;
+
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "created_at")
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    @CreationTimestamp
+    private LocalDateTime updatedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shop360_id", nullable = false)
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private ShopThreeSixtyEntity shopThreeSixtyEntity;
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organization_id", nullable = false)
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private OrganizationEntity organizationEntity;
+
+    @OneToMany(mappedBy = "shopFloorsEntity")
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<ShopSectionsEntity> shopSections;
+
+    @Override
+    public BaseRepresentationObject getRepresentation() {
+        ShopFloorDTO floor = new ShopFloorDTO();
+        floor.setNumber(getNumber());
+        floor.setName(getName());
+        floor.setShopSections(getShopSections().stream().map(section -> (ShopSectionsDTO) section.getRepresentation()).collect(Collectors.toSet()));
+        return floor;
+    }
+}
