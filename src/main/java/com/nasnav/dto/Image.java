@@ -1,20 +1,24 @@
 package com.nasnav.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@AllArgsConstructor
 @Data
 public class Image {
 
     private String url;
 
-    @JsonProperty("thumb_url")
-    private String thumb;
+    private ImageUrl thumb;
 
-    @JsonProperty("resized_url")
-    private String resized;
+    private ImageUrl resized;
 
-    private String small;
+    private ImageUrl small;
+
+    public Image(String url) {
+        this.url = url;
+    }
+
 }

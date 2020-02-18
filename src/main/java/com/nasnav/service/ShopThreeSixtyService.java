@@ -46,8 +46,8 @@ public class ShopThreeSixtyService {
     // ! custom modifier to deal with mailformed json data in shop360s !
     private String getJsonDataStringSerlizable(String oldJsonDataString) {
         String jsonDataString = oldJsonDataString;
-        if (jsonDataString.startsWith("---'") && jsonDataString.endsWith("'"))
-            jsonDataString = jsonDataString.substring(3, jsonDataString.length()-2);
+        if (jsonDataString.startsWith("--- '") && jsonDataString.endsWith("'\n"))
+            jsonDataString = jsonDataString.substring(jsonDataString.indexOf("'")+1,jsonDataString.lastIndexOf("'"));
         return jsonDataString.replaceAll("\n", "");
     }
 

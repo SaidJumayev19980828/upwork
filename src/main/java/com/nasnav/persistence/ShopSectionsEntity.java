@@ -1,11 +1,7 @@
 package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dto.BaseRepresentationObject;
-import com.nasnav.dto.Image;
-import com.nasnav.dto.ShopScenesDTO;
-import com.nasnav.dto.ShopSectionsDTO;
+import com.nasnav.dto.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -71,17 +67,22 @@ public class ShopSectionsEntity implements BaseEntity {
     public BaseRepresentationObject getRepresentation() {
         ShopSectionsDTO section = new ShopSectionsDTO();
 
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            section.setImage(mapper.readValue(getImage(), Image.class));
-        } catch (IOException e) {
-
-        }
-
         section.setId(getId());
         section.setName(getName());
         section.setShopScenes(getShopScenes().stream().map(scene -> (ShopScenesDTO) scene.getRepresentation()).collect(Collectors.toSet()));
 
+        if (getImage() != null)
+            section.setImage(createImage(getImage()));
+
         return section;
+    }
+
+    private Image createImage(String imageFile) {
+        String pathUri = "/uploads/shop_section/image/" + getId() + "/";
+        Image image = new Image(pathUri+imageFile,
+                                new ImageUrl(pathUri+"thumb_"+imageFile),
+                         null,
+                                new ImageUrl(pathUri+"small_"+imageFile));
+        return image;
     }
 }
