@@ -273,6 +273,28 @@ public class ProductsController {
 
 		return  productImgService.updateProductImageBulk(zip, csv, metaData);
     }
+	
+	
+	
+	
+	
+	@ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Images imported successfully"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+	@ResponseStatus(HttpStatus.OK)
+	@PostMapping(value = "image/bulk/url",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public List<ProductImageUpdateResponse> importProductImagesBulkViaUrl(
+            @RequestPart(name="imgs_barcode_csv", required=false )  MultipartFile csv,
+            @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData)
+            		throws BusinessException {
+
+		return  productImgService.updateProductImageBulkViaUrl(csv, metaData);
+    }
 
 	
 	

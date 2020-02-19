@@ -30,5 +30,8 @@ public interface ProductImageService {
 	public List<ProductImgDetailsDTO> getProductImgs(Long productId) throws BusinessException;
 
 	Map<Long,String> getProductsCoverImages(List<Long> productIds);
+
+	public List<ProductImageUpdateResponse> updateProductImageBulkViaUrl(MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData)  throws BusinessException;
 	
 }

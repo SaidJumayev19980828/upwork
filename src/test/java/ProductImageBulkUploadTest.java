@@ -4,7 +4,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,11 +38,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.FilesRepository;
-import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ProductImagesRepository;
-import com.nasnav.dao.ProductRepository;
 import com.nasnav.persistence.FileEntity;
-import com.nasnav.persistence.ProductImagesEntity;
 import com.nasnav.security.AuthenticationFilter;
 
 import net.jcip.annotations.NotThreadSafe;

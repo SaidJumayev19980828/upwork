@@ -1141,4 +1141,16 @@ public class ProductImageServiceImpl implements ProductImageService {
 	}
 
 
+
+
+
+
+	@Override
+	public List<ProductImageUpdateResponse> updateProductImageBulkViaUrl(MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
 }
