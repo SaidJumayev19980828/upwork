@@ -1,3 +1,4 @@
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -405,7 +406,7 @@ public class ProductImageApiTest {
 		
 		assertEquals(imgMetaData.get("product_id"), imgEntity.getProductEntity().getId());
 		
-		Supplier variantIdGetter = () -> Optional.ofNullable(imgEntity.getProductVariantsEntity())
+		Supplier<?> variantIdGetter = () -> Optional.ofNullable(imgEntity.getProductVariantsEntity())
 												.map(ProductVariantsEntity::getId)
 												.orElse(null);
 		
@@ -418,7 +419,7 @@ public class ProductImageApiTest {
 
 
 
-	private void assertOptionalFieldSaved(String fieldName, JSONObject imgMetaData, Supplier getter) {
+	private void assertOptionalFieldSaved(String fieldName, JSONObject imgMetaData, Supplier<?> getter) {
 		if(fieldName == null)
 			assertNull(getter.get());
 		else
@@ -510,7 +511,6 @@ public class ProductImageApiTest {
 	private void assertFileSavedToDb(String fileName, Long orgId, String expectedUrl, Path expectedPath) {
 		FileEntity file = filesRepo.findByUrl(expectedUrl);	
 		OrganizationEntity org = orgRepo.findOneById(orgId);
-		ProductImagesEntity img = imgRepo.findByUri(expectedUrl).get();
 		 
 		 assertNotNull("File meta-data was saved to database", file);
 		 assertEquals(expectedPath.toString().replace("\\", "/"), file.getLocation());
@@ -817,12 +817,14 @@ public class ProductImageApiTest {
 	
 	
 	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_API_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getProductImagesTest() throws JsonParseException, JsonMappingException, IOException {
 		BaseUserEntity user = empUserRepo.getById(69L);
 		Long productId = 1008L;
 		Set<ProductImgDetailsDTO> expectedData = getExpectedProductImgs(productId);
 		
-		HttpEntity request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity("" , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/images?product_id=" + productId
@@ -833,7 +835,7 @@ public class ProductImageApiTest {
 		ObjectMapper mapper = new ObjectMapper();
 		Set<ProductImgDetailsDTO> fetched = mapper.readValue(response.getBody(), new TypeReference<Set<ProductImgDetailsDTO>>(){});
 		
-		assertEquals(2L, fetched.size());
+		assertEquals(3L, fetched.size());
 		assertEquals(expectedData, fetched);
 	}
 
@@ -846,8 +848,10 @@ public class ProductImageApiTest {
 		
 		ProductImgDetailsDTO img1 = new ProductImgDetailsDTO(45001L, productId, null, "cool_img.png", 7, 0);
 		ProductImgDetailsDTO img2 = new ProductImgDetailsDTO(45002L, productId, 310008L, "cool_img.png", 7, 0);
+		ProductImgDetailsDTO img3 = new ProductImgDetailsDTO(45003L, null	  , 310008L, "cool_img.png", 7, 0);
 		expected.add(img1);
 		expected.add(img2);
+		expected.add(img3);
 		
 		return expected;
 	}
@@ -860,7 +864,7 @@ public class ProductImageApiTest {
 	public void getProductImagesNoAuthZTest() throws JsonParseException, JsonMappingException, IOException {
 		Long productId = 1008L;
 		
-		HttpEntity request =  TestCommons.getHttpEntity("" , "NOT-EXISTING_TOKEN");
+		HttpEntity<?> request =  TestCommons.getHttpEntity("" , "NOT-EXISTING_TOKEN");
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/images?product_id=" + productId
@@ -880,7 +884,7 @@ public class ProductImageApiTest {
 		BaseUserEntity user = empUserRepo.getById(70L);
 		Long productId = 1008L;
 		
-		HttpEntity request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
+		HttpEntity<?> request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/images?product_id=" + productId
@@ -900,7 +904,7 @@ public class ProductImageApiTest {
 		BaseUserEntity user = empUserRepo.getById(68L);
 		Long productId = 1008L;
 		
-		HttpEntity request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
+		HttpEntity<?> request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/images?product_id=" + productId
@@ -919,7 +923,7 @@ public class ProductImageApiTest {
 		BaseUserEntity user = empUserRepo.getById(68L);
 		Long productId = 105487845408L;
 		
-		HttpEntity request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
+		HttpEntity<?> request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/images?product_id=" + productId

@@ -13,10 +13,13 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANN
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
 import static java.util.Optional.empty;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -24,10 +27,12 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -1070,10 +1075,31 @@ public class ProductImageServiceImpl implements ProductImageService {
 	public List<ProductImgDetailsDTO> getProductImgs(Long productId) throws BusinessException {
 		validateProductToFetchItsImgs(productId);
 		
-		return productImagesRepository.findByProductEntity_Id(productId)
-									.stream()
-									.map(this::toProductImgDetailsDTO)
-									.collect(Collectors.toList());
+		return getProductAndVariantsImageEntities(productId)
+				.stream()
+				.map(this::toProductImgDetailsDTO)
+				.collect(Collectors.toList());
+	}
+
+
+
+
+
+
+	private Set<ProductImagesEntity> getProductAndVariantsImageEntities(Long productId) {
+		
+		Set<Long> variandIds = 
+				productRepository
+					.findById(productId)
+					.map(ProductEntity::getProductVariants)
+					.orElse(emptySet()).stream()
+					.map(ProductVariantsEntity::getId)
+					.collect(toSet());
+		
+		Set<ProductImagesEntity> imgs = new HashSet<>();
+		imgs.addAll(productImagesRepository.findByProductEntity_Id(productId));
+		imgs.addAll(productImagesRepository.findByProductVariantsEntity_IdInOrderByPriority(variandIds));
+		return imgs;
 	}
 	
 	
@@ -1094,14 +1120,19 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private ProductImgDetailsDTO toProductImgDetailsDTO(ProductImagesEntity entity) {
-		Long variantId = Optional.ofNullable(entity.getProductVariantsEntity())
+		Long variantId = 
+				ofNullable(entity.getProductVariantsEntity())
 				.map(ProductVariantsEntity::getId)
+				.orElse(null);
+		Long productId =
+				ofNullable(entity.getProductEntity())
+				.map(ProductEntity::getId)
 				.orElse(null);
 		
 		ProductImgDetailsDTO dto = new ProductImgDetailsDTO();
 		dto.setImageId(entity.getId());
 		dto.setPriority(entity.getPriority());
-		dto.setProductId(entity.getProductEntity().getId());
+		dto.setProductId(productId);
 		dto.setType(entity.getType());
 		dto.setUri(entity.getUri());		
 		dto.setVariantId(variantId);		

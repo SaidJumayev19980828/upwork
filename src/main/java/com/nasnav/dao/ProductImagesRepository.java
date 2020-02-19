@@ -2,6 +2,7 @@ package com.nasnav.dao;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.repository.CrudRepository;
 
@@ -24,4 +25,5 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 	List<ProductImagesEntity> findByPriorityAndProductEntity_IdInOrderByPriority(int priority, List<Long> productIds);
 
 	List<ProductImagesEntity> findByProductEntity_IdInOrderByPriority(List<Long> productIds);
+	List<ProductImagesEntity> findByProductVariantsEntity_IdInOrderByPriority(Set<Long> variandIds);
 }
