@@ -532,6 +532,76 @@ public class ProductImageServiceImpl implements ProductImageService {
 		
 		return responses;
 	}
+	
+	
+	
+	
+	
+	
+	private List<ProductImageUpdateResponse> saveImgsBulkFromUrls( @Valid MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {		
+		List<String> errors = new ArrayList<>();
+		List<ProductImageUpdateResponse> responses = new ArrayList<>();
+		
+		Map<String, List<ImportedImage>> imgsGroupedByUrl = getImporteImagesFromUrls(csv, metaData);
+		
+		for(String url : imgsGroupedByUrl.keySet()) {
+			saveSingleImgToAllItsVariants(url, imgsGroupedByUrl, errors, responses);
+		}
+		
+		if(!errors.isEmpty()) {
+			rollbackImgBulkImport(responses);
+			throwExceptionWithErrorList(errors);
+		}
+		
+		return responses;
+	}
+
+
+
+
+
+
+	private Map<String, List<ImportedImage>> getImporteImagesFromUrls(@Valid MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
+		List<ImportedImage> allImportedImgs = fetchImgsToImportFromUrls(csv, metaData);
+		Map<String, List<ImportedImage>> groupedByFile = 
+				allImportedImgs
+				.stream()
+				.collect(groupingBy(ImportedImage::getZipFileName));
+		return groupedByFile;
+	}
+
+
+
+
+
+
+	private List<ImportedImage> fetchImgsToImportFromUrls(@Valid MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {				
+		List<String> errors = new ArrayList<>();		
+		Map<String,List<ProductImageUpdateIdentifier>> fileIdentifiersMap = createFileToVariantsMap(csv);
+		
+		List<ImportedImage> imgs = readImgsFromUrls(fileIdentifiersMap, errors);
+		
+		if(!errors.isEmpty()) {
+			String errorsJson = getErrorMsgAsJson(errors);
+			throw new BusinessException(ERR_IMPORTING_IMGS, errorsJson , HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		return imgs;
+	}
+
+
+
+
+
+
+	private List<ImportedImage> readImgsFromUrls(
+			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap, List<String> errors) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 
 
@@ -1157,6 +1227,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 	public List<ProductImageUpdateResponse> updateProductImageBulkViaUrl(MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
 		validateImageBulkMetadata(metaData);
-		return null;
+		return saveImgsBulkFromUrls(csv, metaData);
 	}
 }
