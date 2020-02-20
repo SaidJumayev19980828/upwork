@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
-public class TagsDTO {
+public class TagsDTO extends BaseJsonDTO{
 
     private Long id;
     @JsonProperty(value = "category_id")
@@ -14,5 +14,14 @@ public class TagsDTO {
     private String metadata;
     @JsonProperty(required = true)
     private String operation;
+    @JsonProperty(value = "graph_id")
+    private Integer graphId;
 
+    @Override
+    protected void initRequiredProperties() { }
+
+    public void setGraphId(Integer graphId) {
+        setPropertyAsUpdated("graphId");
+        this.graphId = graphId;
+    }
 }

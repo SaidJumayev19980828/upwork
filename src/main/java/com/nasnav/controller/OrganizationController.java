@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import javax.validation.Valid;
@@ -173,10 +174,10 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "tag", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity createOrganizationTag(@RequestHeader (value = "User-Token") String userToken,
-                                         @RequestBody TagsDTO tagDTO) throws BusinessException {
+    public TagResponse createOrganizationTag(@RequestHeader (value = "User-Token") String userToken,
+                                         @RequestBody TagsDTO tagDTO) throws BusinessException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         TagsEntity tag = categoryService.createOrgTag(tagDTO);
-        return new ResponseEntity(new TagResponse(tag.getId()),HttpStatus.OK);
+        return new TagResponse(tag.getId());
     }
 
     @ApiOperation(value = "Delete Organization tag", nickname = "orgTagDeletion", code = 200)
@@ -200,7 +201,7 @@ public class OrganizationController {
     })
     @PostMapping(value = "tag/link", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity createTagChildren(@RequestHeader (value = "User-Token") String userToken,
-                                            @RequestBody TagsLinkDTO tagsLinks) throws BusinessException {
+                                            @RequestBody List<TagsLinkDTO> tagsLinks) throws BusinessException {
         categoryService.createTagEdges(tagsLinks);
         return new ResponseEntity(new JSONObject("{\"Message\":\"Children created successfully\"}").toString(),HttpStatus.OK);
     }
@@ -214,7 +215,7 @@ public class OrganizationController {
     })
     @DeleteMapping(value = "tag/link", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity deleteTagChildren(@RequestHeader (value = "User-Token") String userToken,
-                                            @RequestBody TagsLinkDTO tagsLinks) throws BusinessException {
+                                            @RequestBody List<TagsLinkDTO> tagsLinks) throws BusinessException {
         categoryService.deleteTagLink(tagsLinks);
         return new ResponseEntity(new JSONObject("{\"Message\":\"Children removed from parent successfully\"}").toString(),HttpStatus.OK);
     }
