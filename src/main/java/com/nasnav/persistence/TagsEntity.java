@@ -18,11 +18,7 @@ import java.util.Set;
 @Table(name = "tags")
 @Entity
 @Data
-@DiscriminatorValue("1")
-@SQLDelete(sql = "UPDATE tags SET removed = 1 WHERE id = ?")
-@Loader(namedQuery = "findTagById")
-@NamedQuery(name = "findTagById", query = "SELECT p FROM TagsEntity p WHERE p.id=?1 AND p.removed = 0")
-@Where(clause = "removed = 0")
+
 @EqualsAndHashCode(callSuper=false)
 public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
 

@@ -588,12 +588,49 @@ public class CategoryManagmentTest {
 
     @Test
     public void deleteProductTagsMissingTagId() {
-        String body = "{\"products_ids\":[1005], \"tags_ids\":[5006]}";
+        String body = "{\"products_ids\":[1005]}";
 
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.exchange("/product/tag", HttpMethod.DELETE, json, String.class);
 
         Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteTagSuccess() {
+        HttpEntity<Object> json = TestCommons.getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5005", HttpMethod.DELETE, json, String.class);
+
+        Assert.assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteTagMissingTag() {
+        HttpEntity<Object> json = TestCommons.getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5009", HttpMethod.DELETE, json, String.class);
+
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteTagWithLinkedTags() {
+        HttpEntity<Object> json = TestCommons.getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5001", HttpMethod.DELETE, json, String.class);
+        Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void deleteTagWithLinkedProducts() {
+
+        // adding tag to product first
+        String body = "{\"products_ids\":[1006], \"tags_ids\":[5005]}";
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        template.exchange("/product/tag", HttpMethod.POST, json, String.class);
+
+        // trying to delete tag
+        json = TestCommons.getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5005", HttpMethod.DELETE, json, String.class);
+        Assert.assertEquals(200, response.getStatusCode().value());
     }
 
 
