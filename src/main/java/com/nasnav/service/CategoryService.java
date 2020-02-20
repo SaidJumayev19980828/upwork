@@ -517,11 +517,10 @@ public class CategoryService {
         if (!tags.isEmpty())
             throw new BusinessException("There are tags Linked to this tag!","NOT_EMPTY:tags Links",HttpStatus.NOT_ACCEPTABLE);
 
-        List<Long> products = productRepository.getProductIdsByTagsList(Collections.singletonList(tagId));
-        if (!products.isEmpty())
-            throw new BusinessException("There are products "+ products +" connected to this tag!","NOT_EMPTY:products",HttpStatus.NOT_ACCEPTABLE);
+        productRepository.detachProductsFromTag(tagId);
 
         orgTagsRepo.delete(tag);
+
         return new TagResponse(tag.getId());
     }
 

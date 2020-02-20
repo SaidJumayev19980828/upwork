@@ -6,9 +6,11 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.nasnav.dto.Pair;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.persistence.ProductEntity;
 
@@ -80,6 +82,12 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
     @Query(value = "select t.tag_id from Product_tags t where t.product_id = :id", nativeQuery = true)
     List<BigInteger> getTagsByProductId(@Param("id") Long id);
+
+    @Query(value = "delete from Product_tags where tag_id = :tag_id", nativeQuery = true)
+    @Transactional
+    @Modifying
+    void detachProductsFromTag(@Param("tag_id") Long tagId);
+
 	List<ProductEntity> findByNameAndOrganizationId(String name, Long orgId);
 }
 
