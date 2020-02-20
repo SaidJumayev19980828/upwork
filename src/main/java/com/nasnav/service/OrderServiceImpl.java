@@ -257,6 +257,11 @@ public class OrderServiceImpl implements OrderService {
 		if( !isNewOrder(order) && isNullOrZero(order.getId()) )
 			throwInvalidOrderException(ERR_UPDATED_ORDER_WITH_NO_ID);
 
+		if(isNewOrder(order)){
+			if (order.getBasket() != null)
+				validateBasketItems(order);
+		}
+
 		if(isCustomerUser()) {
 			validateOrderUpdateForUser(order);
 		}else {
