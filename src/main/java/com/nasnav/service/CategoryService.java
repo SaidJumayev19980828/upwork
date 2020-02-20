@@ -1,8 +1,13 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.EntityUtils.copyNonNullProperties;
+import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
@@ -12,12 +17,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
-import com.nasnav.commons.utils.EntityUtils;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedAcyclicGraph;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,9 +31,7 @@ import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.CategoriesRepository;
 import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.OrganizationThemeRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.SocialRepository;
 import com.nasnav.dao.TagGraphEdgesRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.CategoryDTO;
@@ -254,70 +256,144 @@ public class CategoryService {
         return orgTags;
     }
 
-    private List<Long> getTagsEdgesSubList(List<TagGraphEdgesEntity> e, Long id) {
-        return e.stream().filter(tag -> tag.getChildId().equals(id)).map(tag -> tag.getParentId()).collect(Collectors.toList());
+    
+    
+    
+    private List<Long> getTagsEdgesSubList(List<TagGraphEdgesEntity> edges, Long id) {
+        return edges
+        		.stream()
+        		.filter(tag -> tag.getChildId().equals(id))
+        		.map(tag -> tag.getParentId())
+        		.collect(toList());
     }
 
-    private List<TagsRepresentationObject> getOrgTagsSubList(List<TagsRepresentationObject> e, List<Long> ids) {
-        return e.stream().filter(tag -> ids.contains(tag.getId())).collect(Collectors.toList());
+    
+    
+    
+    private List<TagsRepresentationObject> getOrgTagsSubList(List<TagsRepresentationObject> edges, List<Long> ids) {
+        return edges.stream()
+        		.filter(tag -> ids.contains(tag.getId()))
+        		.collect(toList());
     }
 
 
 
+    
 
-    public TagsEntity createOrgTag(TagsDTO tagDTO) throws BusinessException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        OrganizationEntity org = securityService.getCurrentUserOrganization();
+    public TagsEntity createOrUpdateTag(TagsDTO tagDTO) throws BusinessException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        validateTagDto(tagDTO);
+        
+        String operation = tagDTO.getOperation();
+        
         TagsEntity entity = null;
-        if(tagDTO.getOperation() == null)
-            throw new BusinessException("MISSING PARAM: operation", "", HttpStatus.NOT_ACCEPTABLE);
-        else if (tagDTO.getOperation().equals("create"))
-            entity = verifyAndGetTagsEntityForCreate(tagDTO, org);
-
-        else if(tagDTO.getOperation().equals("update")) {
-            if (tagDTO.getId() == null)
-                throw new BusinessException("MISSING PARAM: id", "id is required to update tag", HttpStatus.NOT_ACCEPTABLE);
-
-            entity = orgTagsRepo.findByIdAndOrganizationEntity_Id(tagDTO.getId(), org.getId());
-            if (entity == null)
-                throw new BusinessException("INVALID PARAM: id", "No tag exists in the organization with provided id", HttpStatus.NOT_ACCEPTABLE);
-        } else {
-            throw new BusinessException("INVALID PARAM: operation", "unsupported operation" + tagDTO.getOperation(), HttpStatus.NOT_ACCEPTABLE);
-        }
-
-        EntityUtils.copyNonNullProperties(tagDTO, entity);
-
-        if (tagDTO.isUpdated("graphId")) {
-            if(tagDTO.getGraphId() == null) {
-                if (tagEdgesRepo.getTagsLinks(Collections.singletonList(tagDTO.getId())).size() > 0)
-                    throw new BusinessException("Can't set graph_id to null while the tag is linked to other tags !",
-                            "INVALID_PARAM: graph_id", HttpStatus.NOT_ACCEPTABLE);
-                entity.setGraphId(null);
-            }
-            else
-                entity.setGraphId(org.getId().intValue()); // TODO will change to tagDTO.getGraphId() when we support MultiGraph per org
-        }
+        if(Objects.equals(operation, "create")) {
+        	entity = createNewTag(tagDTO);
+        }else {
+        	entity = updateTag(tagDTO);
+        }    
 
         return orgTagsRepo.save(entity);
     }
 
-    private TagsEntity verifyAndGetTagsEntityForCreate(TagsDTO tagDTO, OrganizationEntity org) throws BusinessException {
-        TagsEntity entity = null;
-        CategoriesEntity category = null;
-        if (tagDTO.getCategoryId() == null)
-            throw new BusinessException("MISSING PARAM: category_id", "category_id is required to create tag", HttpStatus.NOT_ACCEPTABLE);
-        if (!categoryRepository.findById(tagDTO.getCategoryId()).isPresent())
-            throw new BusinessException("INVALID PARAM: category_id", "No category exists with provided id", HttpStatus.NOT_ACCEPTABLE);
 
-        category = categoryRepository.findById(tagDTO.getCategoryId()).get();
-        entity = new TagsEntity();
+
+
+
+	private TagsEntity updateTag(TagsDTO tagDTO)
+			throws BusinessException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+		TagsEntity entity;
+		OrganizationEntity org = securityService.getCurrentUserOrganization();
+		entity = orgTagsRepo
+					.findByIdAndOrganizationEntity_Id(tagDTO.getId(), org.getId())
+					.orElseThrow(() -> new BusinessException(
+											"INVALID PARAM: id"
+											, "No tag exists in the organization with provided id"
+											, NOT_ACCEPTABLE));
+		
+		copyNonNullProperties(tagDTO, entity);
+
+		if (tagDTO.isUpdated("graphId")) {
+			Integer graphId = tagDTO.getGraphId() != null? org.getId().intValue() : null;
+			entity.setGraphId(graphId);            	
+		}
+		return entity;
+	}
+
+
+
+
+
+	private void validateTagDto(TagsDTO tagDTO) throws BusinessException {
+		String operation = tagDTO.getOperation();
+        Long categoryId = tagDTO.getCategoryId();
+        
+        if( isBlankOrNull(operation)) {
+        	throw new BusinessException("MISSING PARAM: operation", "", NOT_ACCEPTABLE);
+        }else if(Objects.equals(operation, "create")) {
+        	if (categoryId == null) {
+            	throw new BusinessException("MISSING PARAM: category_id", "category_id is required to create tag", NOT_ACCEPTABLE);
+            }else if (tagDTO.getName() == null) {
+            	throw new BusinessException("MISSING PARAM: name", "name is required to create tag", NOT_ACCEPTABLE);
+            }
+            
+        }else if(Objects.equals(operation, "update")) {
+			 if (tagDTO.getId() == null) {
+				 throw new BusinessException("MISSING PARAM: id", "id is required to update tag", NOT_ACCEPTABLE);
+			 }  
+			 if (isNullGraphIdForTagWithRelations(tagDTO)) {
+			         throw new BusinessException(
+			        		 		"Can't set graph_id to null while the tag is linked to other tags !"
+			        		 		, "INVALID_PARAM: graph_id"
+			        		 		, NOT_ACCEPTABLE);
+			 }
+        }else {
+            throw new BusinessException("INVALID PARAM: operation", "unsupported operation" + tagDTO.getOperation(), NOT_ACCEPTABLE);
+        }
+	}
+
+
+
+
+
+	private boolean isNullGraphIdForTagWithRelations(TagsDTO tagDTO) {
+		Integer tagLinksCount = 
+				tagEdgesRepo
+				 .getTagsLinks(singletonList(tagDTO.getId()))
+				 .size();
+		return tagDTO.isUpdated("graphId") 
+				 && tagDTO.getGraphId() == null 
+				 &&  tagLinksCount > 0;
+	}
+        
+        
+        
+        
+
+    private TagsEntity createNewTag(TagsDTO tagDTO) throws BusinessException {
+    	OrganizationEntity org = securityService.getCurrentUserOrganization();
+    	CategoriesEntity category = 
+        		categoryRepository
+        			.findById(tagDTO.getCategoryId())
+        			.orElseThrow(() -> new BusinessException("INVALID PARAM: category_id", "No category exists with provided id", NOT_ACCEPTABLE));
+
+    	String alias = ofNullable(tagDTO.getAlias()).orElse(tagDTO.getName());
+       
+    	TagsEntity entity = new TagsEntity();
         entity.setOrganizationEntity(org);
         entity.setCategoriesEntity(category);
-        if (tagDTO.getAlias() == null)
-            tagDTO.setAlias(categoryRepository.findById(tagDTO.getCategoryId()).get().getName());
-        else
-            entity.setPname(StringUtils.encodeUrl(tagDTO.getAlias()));
+        entity.setName(tagDTO.getName());
+        entity.setAlias(alias);
+        entity.setPname(encodeUrl(tagDTO.getName()));
+        entity.setGraphId(tagDTO.getGraphId());
+        entity.setMetadata(tagDTO.getMetadata());
+        if(tagDTO.getGraphId() != null) {
+        	entity.setGraphId(org.getId().intValue()); // TODO will change to tagDTO.getGraphId() when we support MultiGraph per org
+        }
+        
         return entity;
     }
+    
+    
 
     public void createTagEdges(List<TagsLinkDTO> tagsLinksDTOs) throws BusinessException{
 
@@ -421,7 +497,7 @@ public class CategoryService {
         if (tagsLinks.getParentId() == null)
             throw new BusinessException("MISSING PARAM: parent_id", "Required parent_id is missing", HttpStatus.NOT_ACCEPTABLE);
 
-        if (orgTagsRepo.findByIdAndOrganizationEntity_Id(tagsLinks.getParentId(), orgId) == null)
+        if (!orgTagsRepo.findByIdAndOrganizationEntity_Id(tagsLinks.getParentId(), orgId).isPresent())
             throw new BusinessException("INVALID PARAM: parent_id", "Provided parent_id doesn't match any existing tag", HttpStatus.NOT_ACCEPTABLE);
     }
 
@@ -432,10 +508,10 @@ public class CategoryService {
 
     public TagResponse deleteOrgTag(Long tagId) throws BusinessException {
         Long orgId = securityService.getCurrentUserOrganizationId();
-        TagsEntity tag = orgTagsRepo.findByIdAndOrganizationEntity_Id(tagId, orgId);
-
-        if (tag == null)
-            throw new BusinessException("Provided tag_id doesn't match any existing tag","INVALID_PARAM: tag_id", HttpStatus.NOT_ACCEPTABLE);
+        TagsEntity tag = 
+        		orgTagsRepo
+					.findByIdAndOrganizationEntity_Id(tagId, orgId)
+					.orElseThrow(() -> new BusinessException("Provided tag_id doesn't match any existing tag","INVALID_PARAM: tag_id", HttpStatus.NOT_ACCEPTABLE));
 
         List<TagGraphEdgesEntity> tags = tagEdgesRepo.getTagsLinks(Collections.singletonList(tagId));
         if (!tags.isEmpty())

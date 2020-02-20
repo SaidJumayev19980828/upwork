@@ -369,7 +369,7 @@ public class CategoryManagmentTest {
         Assert.assertEquals(200, response.getStatusCode().value());
 
         TagsEntity tag = orgTagsRepo.findById(5005L).get();
-        assertEquals(99001, tag.getGraphId().intValue());
+        assertEquals("for now graph_id values are either null or organization id", 99001, tag.getGraphId().intValue());
 
 
         body = "{\"operation\":\"update\",  \"id\":5005, \"graph_id\":null}";
