@@ -20,6 +20,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -968,15 +969,22 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private void validateUpdateImageBulkRequest(@Valid MultipartFile zip, @Valid MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
+		validateImageBulkMetadata(metaData);
+		validateImgBulkZip(zip);
+	}
+
+
+
+
+
+
+	private void validateImageBulkMetadata(ProductImageBulkUpdateDTO metaData) throws BusinessException {
 		if(metaData.getPriority() == null || metaData.getType() == null) {
 			throw new BusinessException(
 					"Missing required metadata parameters, required parameters are [type, priority]!"
 					, "MISSING PARAM"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
-		
-		
-		validateImgBulkZip(zip);
 	}
 
 
@@ -1148,9 +1156,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	@Override
 	public List<ProductImageUpdateResponse> updateProductImageBulkViaUrl(MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
-		// TODO Auto-generated method stub
+		validateImageBulkMetadata(metaData);
 		return null;
 	}
-
-
 }
