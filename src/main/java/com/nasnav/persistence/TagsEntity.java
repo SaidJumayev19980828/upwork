@@ -45,6 +45,9 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
     @Column(name = "removed")
     private int removed;
 
+    @Column(name = "graph_id")
+    private Integer graphId;
+
     @ManyToOne
     @JoinColumn(name = "category_id", referencedColumnName = "id")
     @JsonIgnore
@@ -70,6 +73,7 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
         obj.setPname(getPname());
         obj.setMetadata(getMetadata());
         obj.setCategoryId(categoriesEntity.getId());
+        obj.setGraphId(getGraphId());
         
         return obj;
     }

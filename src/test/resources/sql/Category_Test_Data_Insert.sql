@@ -45,12 +45,12 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1008, 'product_8',102, 202, 99002, now(), now());
 
 
-insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5001,'tag_1', 'tag_1', 201, 99001, '');
-insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5002,'tag_2', 'tag_2', 202, 99001, '');
-insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5003,'tag_3', 'tag_3', 203, 99001, '');
-insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5004,'tag_4', 'tag_4', 204, 99001, '');
+insert into Tags(id, name, alias, category_id, organization_id, metadata, graph_id) values(5001,'tag_1', 'tag_1', 201, 99001, '', 99001);
+insert into Tags(id, name, alias, category_id, organization_id, metadata, graph_id) values(5002,'tag_2', 'tag_2', 202, 99001, '', 99001);
+insert into Tags(id, name, alias, category_id, organization_id, metadata, graph_id) values(5003,'tag_3', 'tag_3', 203, 99001, '', 99001);
+insert into Tags(id, name, alias, category_id, organization_id, metadata, graph_id) values(5004,'tag_4', 'tag_4', 204, 99001, '', 99001);
 insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5005,'tag_5', 'tag_5', 205, 99001, '');
-insert into Tags(id, name, alias, category_id, organization_id, metadata) values(5006,'tag_6', 'tag_6', 206, 99001, '');
+insert into Tags(id, name, alias, category_id, organization_id, metadata, graph_id) values(5006,'tag_6', 'tag_6', 206, 99001, '', 99001);
 
 insert into tag_graph_edges(id, parent_id, child_id) values(5002, 5001, 5002);
 insert into tag_graph_edges(id, parent_id, child_id) values(5003, 5001, 5003);
