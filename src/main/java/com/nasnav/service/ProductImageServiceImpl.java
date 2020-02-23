@@ -599,7 +599,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private List<ImportedImage> readImgsFromUrls(
 			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap, List<String> errors) {
-		// TODO Auto-generated method stub
+		
 		return null;
 	}
 

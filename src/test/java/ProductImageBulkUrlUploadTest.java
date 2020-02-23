@@ -1,6 +1,9 @@
+import static com.nasnav.security.AuthenticationFilter.TOKEN_HEADER;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.MediaType.IMAGE_PNG;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
@@ -34,6 +37,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.FilesRepository;
@@ -61,7 +65,7 @@ public class ProductImageBulkUrlUploadTest {
 	private static final String OTHER_ORG_ADMIN_TOKEN = "131415";
 	
 	private static final String TEST_ZIP_DIR = "src/test/resources/img_bulk_zip";
-	private static final String TEST_CSV = "img_bulk_barcode.csv";
+	private static final String TEST_CSV = "img_bulk_url_barcode.csv";
 	private static final String TEST_CSV_NON_EXISTING_BARCODE = "img_bulk_non_existing_barcode.csv";
 	private static final String TEST_CSV_MULTI_BARCODE_PER_PATH = "img_bulk_multi_barcode_same_path.csv";
 	private static final String TEST_CSV_INCOMPLETE = "img_bulk_barcode_incomplete.csv";
@@ -236,9 +240,34 @@ public class ProductImageBulkUrlUploadTest {
 	             .andReturn()
 	             .getResponse()
 	             .getContentAsString();
-
-		assertImgsImported(response);
+		
+		assertImgsImported(response);		
 	}
+	
+	
+	
+	
+	
+
+	/**
+	 * just a test that the local test server is returning static test images for the 
+	 * rest of tests.
+	 * */
+	@Test
+	public void getImgFromLocalServerTest() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
+		
+		ResultActions result = 
+			    mockMvc.perform(MockMvcRequestBuilders.get("/static/test_photo_2.png"))
+			    		.andExpect(status().is(200))
+			    		.andExpect(content().contentTypeCompatibleWith(IMAGE_PNG));
+	             
+		byte [] res = result.andReturn().getResponse().getContentAsByteArray();
+		System.out.println(">>>" + res.length);
+	}
+	
+	
 	
 	
 	
@@ -452,7 +481,7 @@ public class ProductImageBulkUrlUploadTest {
 		    					.multipart(PRODUCT_IMG_BULK_URL)
 				                 .file(csvPart)
 				                 .part(jsonPart)
-				                 .header(AuthenticationFilter.TOKEN_HEADER, userToken));
+				                 .header(TOKEN_HEADER, userToken));
 		return result;
 	}
 	
