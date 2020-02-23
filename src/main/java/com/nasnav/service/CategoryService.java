@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.nasnav.dto.*;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedAcyclicGraph;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,12 +35,6 @@ import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.TagGraphEdgesRepository;
 import com.nasnav.dao.TagsRepository;
-import com.nasnav.dto.CategoryDTO;
-import com.nasnav.dto.CategoryRepresentationObject;
-import com.nasnav.dto.Pair;
-import com.nasnav.dto.TagsDTO;
-import com.nasnav.dto.TagsLinkDTO;
-import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.CategoriesEntity;
 import com.nasnav.persistence.OrganizationEntity;
@@ -395,9 +390,18 @@ public class CategoryService {
     
     
 
-    public void createTagEdges(List<TagsLinkDTO> tagsLinksDTOs) throws BusinessException{
+    public void createTagEdges(TagsLinksCreationDTO tagsLinksCreationDTO) throws BusinessException{
 
         OrganizationEntity org = securityService.getCurrentUserOrganization();
+
+        if (tagsLinksCreationDTO.isClearTree())
+            clearTagsTree(org.getId());
+
+        List<TagsLinkDTO> tagsLinksDTOs = tagsLinksCreationDTO.getTagsLinks();
+
+        if(tagsLinksDTOs == null || tagsLinksDTOs.isEmpty())
+            return;
+
         for(TagsLinkDTO tagsLinks : tagsLinksDTOs) {
             validateTagLinkDTO(tagsLinks, org.getId()); // validating each tagsLinksDTO has existing parent and a list of children
         }
@@ -522,6 +526,16 @@ public class CategoryService {
         orgTagsRepo.delete(tag);
 
         return new TagResponse(tag.getId());
+    }
+
+    private void clearTagsTree(Long orgId) {
+        List<TagGraphEdgesEntity> tagsEdges = tagEdgesRepo.findByOrganizationId(orgId);
+        tagEdgesRepo.deleteAll(tagsEdges);
+        List<TagsEntity> tags = orgTagsRepo.findByOrganizationEntity_Id(orgId);
+        for(TagsEntity tag : tags) {
+            tag.setGraphId(null);
+            orgTagsRepo.save(tag);
+        }
     }
 
 }

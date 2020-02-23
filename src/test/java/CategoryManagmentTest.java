@@ -6,6 +6,7 @@ import java.util.Set;
 
 import javax.sql.DataSource;
 
+import com.nasnav.dao.TagGraphEdgesRepository;
 import com.nasnav.persistence.TagsEntity;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
@@ -69,6 +70,9 @@ public class CategoryManagmentTest {
 
     @Autowired
     private TagsRepository orgTagsRepo;
+
+    @Autowired
+    private TagGraphEdgesRepository tagEdgesRepo;
 
     @Before
     public void setup() {
@@ -418,7 +422,7 @@ public class CategoryManagmentTest {
 
     @Test
     public void createTagsLinkSuccess() {
-        String body = "[{\"parent_id\":5001, \"children_ids\":[5004, 5005]}, {\"parent_id\":5004, \"children_ids\":[5005]}]";
+        String body = "{\"tags_links\":[{\"parent_id\":5001, \"children_ids\":[5004, 5005]}, {\"parent_id\":5004, \"children_ids\":[5005]}]}";
 
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag/link", json, String.class);
@@ -428,7 +432,7 @@ public class CategoryManagmentTest {
 
     @Test
     public void createTagsLinkMissingChildId() { // creates top level tag (add graph_id to each parent)
-        String body = "[{\"parent_id\":5003}]";
+        String body = "{\"tags_links\":[{\"parent_id\":5003}]}";
 
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag/link", json, String.class);
@@ -438,7 +442,7 @@ public class CategoryManagmentTest {
 
     @Test
     public void createTagsLinkInvalidChildId() {
-        String body = "[{\"parent_id\":5003, \"children_ids\":[5007]}]";
+        String body = "{\"tags_links\":[{\"parent_id\":5003, \"children_ids\":[5007]}]}";
 
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag/link", json, String.class);
@@ -617,6 +621,22 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity("hijkllm");
         ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5001", HttpMethod.DELETE, json, String.class);
         Assert.assertEquals(406, response.getStatusCode().value());
+    }
+
+    @Test
+    public void clearTagsLink() {
+        String body = "{\"clear_tree\":true}";
+
+        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag/link", json, String.class);
+
+
+        for(TagsEntity tag : orgTagsRepo.findByOrganizationEntity_Id(99001L)) {
+            assertTrue(tag.getGraphId() == null);
+        }
+        assertTrue(tagEdgesRepo.findByOrganizationId(99001L).isEmpty());
+
+        Assert.assertEquals(200, response.getStatusCode().value());
     }
 
     @Test
