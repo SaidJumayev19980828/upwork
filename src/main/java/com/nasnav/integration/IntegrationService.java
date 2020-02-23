@@ -2,15 +2,16 @@ package com.nasnav.integration;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 import com.nasnav.dto.IntegrationDictionaryDTO;
 import com.nasnav.dto.IntegrationErrorDTO;
-import com.nasnav.dto.ResponsePage;
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.IntegrationProductImportDTO;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
+import com.nasnav.dto.ResponsePage;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
@@ -35,6 +36,12 @@ public interface IntegrationService {
 	void addMappedValue(Long orgId, MappingType type, String localValue, String remoteValue) throws BusinessException;
 	String getRemoteMappedValue(Long orgId, MappingType type, String localValue);
 	String getLocalMappedValue(Long orgId, MappingType type, String externalValue);
+	
+	
+	/**
+	 * @return a map of the external value and its corresponding local value
+	 * */
+	Map<String,String> getLocalMappedValues(Long orgId, MappingType type, List<String> externalValues);
 	
 	/**
 	 * import the organization shops from an external system using the organization integration module.

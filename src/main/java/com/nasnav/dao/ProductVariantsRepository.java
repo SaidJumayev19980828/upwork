@@ -25,4 +25,8 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
 	@Query("SELECT variant FROM ProductVariantsEntity variant INNER JOIN FETCH variant.productEntity prod where prod.organizationId = :orgId")
 	List<ProductVariantsEntity> findByOrganizationId(@Param("orgId") Long orgId);
+	
+	List<ProductVariantsEntity> findByIdIn(List<Long> idList);
+	
+	List<ProductVariantsEntity> findByBarcodeIn(List<String> barcodeList);
 }
