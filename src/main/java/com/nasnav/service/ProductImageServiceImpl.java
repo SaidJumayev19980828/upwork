@@ -20,6 +20,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.io.IOException;
@@ -78,6 +79,8 @@ import com.sun.istack.logging.Logger;
 import com.univocity.parsers.common.record.Record;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
+
+import reactor.core.publisher.Flux;
 
 
 
@@ -504,8 +507,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 	public List<ProductImageUpdateResponse> updateProductImageBulk(@Valid MultipartFile zip, @Valid MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {		
 		validateUpdateImageBulkRequest(zip, csv, metaData);
-		
-		return saveImgsBulk(zip, csv, metaData);
+		List<ImportedImage> importedImgs = extractImgsToImport(zip, csv, metaData);
+		return saveImgsBulk(importedImgs);
 	}
 
 	
@@ -514,12 +517,11 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private List<ProductImageUpdateResponse> saveImgsBulk(@Valid MultipartFile zip, @Valid MultipartFile csv,
-			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {		
+	private List<ProductImageUpdateResponse> saveImgsBulk(List<ImportedImage> importedImgs) throws BusinessException {		
 		List<String> errors = new ArrayList<>();
 		List<ProductImageUpdateResponse> responses = new ArrayList<>();
 		
-		Map<String, List<ImportedImage>> imgsGroupedByFile = getFileToImgsMetatDataMap(zip, csv, metaData);
+		Map<String, List<ImportedImage>> imgsGroupedByFile = groupImagesByPath(importedImgs);
 		
 		for(String fileName : imgsGroupedByFile.keySet()) {
 			saveSingleImgToAllItsVariants(fileName, imgsGroupedByFile, errors, responses);
@@ -538,40 +540,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	
 	
-	private List<ProductImageUpdateResponse> saveImgsBulkFromUrls( @Valid MultipartFile csv,
-			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {		
-		List<String> errors = new ArrayList<>();
-		List<ProductImageUpdateResponse> responses = new ArrayList<>();
-		
-		Map<String, List<ImportedImage>> imgsGroupedByUrl = getImporteImagesFromUrls(csv, metaData);
-		
-		for(String url : imgsGroupedByUrl.keySet()) {
-			saveSingleImgToAllItsVariants(url, imgsGroupedByUrl, errors, responses);
-		}
-		
-		if(!errors.isEmpty()) {
-			rollbackImgBulkImport(responses);
-			throwExceptionWithErrorList(errors);
-		}
-		
-		return responses;
-	}
-
-
-
-
-
-
-	private Map<String, List<ImportedImage>> getImporteImagesFromUrls(@Valid MultipartFile csv,
-			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
-		List<ImportedImage> allImportedImgs = fetchImgsToImportFromUrls(csv, metaData);
-		Map<String, List<ImportedImage>> groupedByFile = 
-				allImportedImgs
-				.stream()
-				.collect(groupingBy(ImportedImage::getZipFileName));
-		return groupedByFile;
-	}
-
 
 
 
@@ -580,13 +548,13 @@ public class ProductImageServiceImpl implements ProductImageService {
 	private List<ImportedImage> fetchImgsToImportFromUrls(@Valid MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {				
 		List<String> errors = new ArrayList<>();		
-		Map<String,List<ProductImageUpdateIdentifier>> fileIdentifiersMap = createFileToVariantsMap(csv);
+		Map<String,List<ProductImageUpdateIdentifier>> fileIdentifiersMap = createFileToVariantIdsMap(csv);
 		
-		List<ImportedImage> imgs = readImgsFromUrls(fileIdentifiersMap, errors);
+		List<ImportedImage> imgs = readImgsFromUrls(fileIdentifiersMap);
 		
 		if(!errors.isEmpty()) {
 			String errorsJson = getErrorMsgAsJson(errors);
-			throw new BusinessException(ERR_IMPORTING_IMGS, errorsJson , HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new BusinessException(ERR_IMPORTING_IMGS, errorsJson , INTERNAL_SERVER_ERROR);
 		}
 		
 		return imgs;
@@ -598,8 +566,12 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private List<ImportedImage> readImgsFromUrls(
-			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap, List<String> errors) {
+			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
+		//get list of variants id's, external id's, and barcodes
 		
+		Map<String, ProductVariantsEntity> idToVariantMap = getIdToVariantMap(fileIdentifiersMap);
+		//get id-to-variant entities for each of the id's
+		//for each url, get image from url, then create ImportedImage instance. 
 		return null;
 	}
 
@@ -608,14 +580,25 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private Map<String, List<ImportedImage>> getFileToImgsMetatDataMap(MultipartFile zip, MultipartFile csv,
-			ProductImageBulkUpdateDTO metaData) throws BusinessException {
-		List<ImportedImage> allImportedImgs = extractImgsToImport(zip, csv, metaData);
-		Map<String, List<ImportedImage>> groupedByFile = 
-				allImportedImgs
+	private Map<String, ProductVariantsEntity> getIdToVariantMap(
+			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
+		Flux.fromStream(fileIdentifiersMap.values().stream().flatMap(List::stream))					
+			.map(ProductImageUpdateIdentifier::getVariantId)
+			.window(1000)
+			.
+					;
+		return null;
+	}
+
+
+
+
+
+
+	private Map<String, List<ImportedImage>> groupImagesByPath( List<ImportedImage> allImportedImgs) throws BusinessException {
+		return allImportedImgs
 				.stream()
-				.collect(groupingBy(ImportedImage::getZipFileName));
-		return groupedByFile;
+				.collect(groupingBy(ImportedImage::getPath));
 	}
 
 
@@ -711,7 +694,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
 		List<ImportedImage> imgs = new ArrayList<>();		
 		List<String> errors = new ArrayList<>();		
-		Map<String,List<ProductImageUpdateIdentifier>> fileIdentifiersMap = createFileToVariantsMap(csv);
+		Map<String,List<ProductImageUpdateIdentifier>> fileIdentifiersMap = createFileToVariantIdsMap(csv);
 		
 		try(ZipInputStream stream = new ZipInputStream(zip.getInputStream())){	
 			
@@ -982,7 +965,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	
 
-	private Map<String, List<ProductImageUpdateIdentifier>> createFileToVariantsMap(MultipartFile csv) throws BusinessException {
+	private Map<String, List<ProductImageUpdateIdentifier>> createFileToVariantIdsMap(MultipartFile csv) throws BusinessException {
 		if(csv == null ||csv.isEmpty())
 			return new HashMap<>();		
 
@@ -1224,9 +1207,11 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	@Override
+	@Transactional(rollbackFor = Throwable.class)
 	public List<ProductImageUpdateResponse> updateProductImageBulkViaUrl(MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
 		validateImageBulkMetadata(metaData);
-		return saveImgsBulkFromUrls(csv, metaData);
+		List<ImportedImage> importedImgs = fetchImgsToImportFromUrls(csv, metaData);;
+		return saveImgsBulk(importedImgs);
 	}
 }
