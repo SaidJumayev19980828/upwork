@@ -103,6 +103,7 @@ public class EntityUtils {
 	
 	
 	
+	@SafeVarargs
 	public static <T> Boolean collectionContainsAnyOf(Collection<T> collection, T... objects) {
 		List<T> objectList = asList(objects);
 		return objectList

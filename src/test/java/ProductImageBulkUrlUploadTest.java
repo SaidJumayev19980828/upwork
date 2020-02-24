@@ -17,8 +17,10 @@ import java.util.stream.Stream;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockserver.junit.MockServerRule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -37,13 +39,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.persistence.FileEntity;
-import com.nasnav.security.AuthenticationFilter;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -89,10 +89,15 @@ public class ProductImageBulkUrlUploadTest {
 	private ProductImagesRepository imgRepo;
 	
 	
+	@Autowired
+	private ImageBulkUrlUploadTestCommon testCommons;
 	
 	@Autowired
 	private  MockMvc mockMvc;
 	
+	
+	@Rule
+	public MockServerRule mockServerRule = new MockServerRule(this);
 	
 	
 	@Before
@@ -196,7 +201,6 @@ public class ProductImageBulkUrlUploadTest {
 		
 		assertTrue(errorResponse.has("error"));
 		assertEquals(1, errors.length());
-		
 		
 		assertNoImgsImported();
 	}

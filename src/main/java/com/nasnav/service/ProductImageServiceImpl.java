@@ -1,5 +1,7 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
+import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CSV_PARSE_FAILURE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING_IMGS;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING_IMG_FILE;
@@ -7,6 +9,7 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_IMG_DA
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_IMG_IMPORT_RESPONSE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUCT_EXISTS_WITH_BARCODE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUCT_EXISTS_WITH_ID;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_VARIANT_FOUND;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMG_BULK_IMPORT;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_READ_ZIP;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_MODIFY_PRODUCT;
@@ -21,11 +24,15 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
+import static org.apache.commons.lang3.ArrayUtils.toPrimitive;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -39,6 +46,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -71,6 +79,7 @@ import com.nasnav.dto.ProductImageUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateIdentifier;
 import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.ProductEntity;
@@ -80,7 +89,6 @@ import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.service.model.ImportedImage;
 import com.sun.istack.logging.Logger;
-import com.sun.mail.iap.ByteArray;
 import com.univocity.parsers.common.record.Record;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
@@ -95,6 +103,8 @@ import reactor.netty.http.client.HttpClient;
 @Service
 public class ProductImageServiceImpl implements ProductImageService {
 	
+	private static final int PRODUCT_IMAGE = 7;
+
 	private static final String NO_IMG_FOUND_URL = "no_img_found.jpg";
 
 	private Logger logger = Logger.getLogger(ProductService.class);
@@ -582,7 +592,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		return Flux
 				.fromIterable(fileIdentifiersMap.entrySet())
 				.map(this::toVariantIdentifierAndUrlPair)
-				.window(20)
+				.window(20)		//get the images in batches of 20 per second
 				.delayElements(Duration.ofSeconds(1))
 				.flatMap(pair -> toImportedImages(pair, metaData, variantCache))
 				.buffer()
@@ -593,14 +603,16 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-
+	/**
+	 * Pre-fetch The product variants of the images from the database and cache them.
+	 * @return a cache of ProductVariantsEntity
+	 * */
 	private VariantCache createVariantCache(Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
 		Map<String, ProductVariantsEntity> idToVariantMap = getIdToVariantMap(fileIdentifiersMap);
 		Map<String, ProductVariantsEntity> externalIdToVariantMap = getExternalIdToVariantMap(fileIdentifiersMap);
 		Map<String, ProductVariantsEntity> barcodeToVariantMap = getBarcodeToVariantMap(fileIdentifiersMap);
 		
-		VariantCache variantCache = new VariantCache(idToVariantMap, externalIdToVariantMap, barcodeToVariantMap);
-		return variantCache;
+		return new VariantCache(idToVariantMap, externalIdToVariantMap, barcodeToVariantMap);
 	}
 
 
@@ -617,13 +629,99 @@ public class ProductImageServiceImpl implements ProductImageService {
 	private Flux<ImportedImage> toImportedImages(Flux<VariantIdentifierAndUrlPair> imgDetails
 			, ProductImageBulkUpdateDTO metaData
 			, VariantCache variantCache){
-		WebClient client = buildWebClient();
-		client.get()
-			.uri("/")
-			.retrieve()
-			.bodyToFlux(ByteArray.class);
+		WebClient client = buildWebClient();		
 		return imgDetails
-				.flatMap();
+				.flatMap(details -> toImportedImage(details, metaData, variantCache, client));
+	}
+	
+	
+	
+	
+	
+	private Flux<ImportedImage> toImportedImage(VariantIdentifierAndUrlPair imgDetails
+			, ProductImageBulkUpdateDTO metaData
+			, VariantCache variantCache
+			, WebClient client) {
+		String url = imgDetails.getUrl();
+		if(StringUtils.isBlankOrNull(url)) {
+			throw new RuntimeBusinessException("Empty url was provided!", "INVALID PARAM:csv", NOT_ACCEPTABLE);
+		}		
+		String httpUrl = !url.startsWith("http://") ? "http://" + url : url;
+		
+		Flux<MultipartFile> imgFile = readImageDataFromUrl(client, httpUrl);
+		
+		List<ProductImageUpdateIdentifier> variantIdentifiers = imgDetails.getIdentifier(); 
+		Flux<ProductImageUpdateDTO> importedImgsMetaData = createImgsMetaData(metaData, variantCache, variantIdentifiers);
+			
+		return Flux.zip(imgFile, importedImgsMetaData, (file, mData) -> new  ImportedImage(file, mData, url));
+	}
+
+
+
+
+
+
+	private Flux<ProductImageUpdateDTO> createImgsMetaData(ProductImageBulkUpdateDTO metaData,
+			VariantCache variantCache, List<ProductImageUpdateIdentifier> variantIdentifiers) {
+		return Flux.fromIterable(variantIdentifiers)
+					.map(identifier -> getProductVariant(identifier, variantCache))
+					.map(variant -> creatImgMetaData(metaData, variant));
+	}
+
+
+
+
+
+
+	private Flux<MultipartFile> readImageDataFromUrl(WebClient client, String httpUrl) {
+		return client
+				.get()
+				.uri(httpUrl)
+				.retrieve()
+				.bodyToFlux(Byte.class)
+				.buffer()
+				.map(bytes -> readUrlAsMultipartFile(httpUrl, bytes));
+	}
+	
+	
+	
+	
+	
+	private ProductImageUpdateDTO creatImgMetaData(ProductImageBulkUpdateDTO metaData, ProductVariantsEntity variant) {
+		Long variantId = variant.getId();
+		Long productId = variant.getProductEntity().getId();
+		
+		ProductImageUpdateDTO imgMetaData = new ProductImageUpdateDTO();
+		imgMetaData.setOperation(CREATE);
+		imgMetaData.setPriority(metaData.getPriority());
+		imgMetaData.setType(metaData.getType());	
+		
+		if(Objects.equals(metaData.getType(), PRODUCT_IMAGE)) {
+			imgMetaData.setProductId(productId);
+		}else {
+			imgMetaData.setVariantId(variantId);
+		}
+		
+		return imgMetaData;		
+	}
+	
+	
+	
+	
+	private ProductVariantsEntity getProductVariant(ProductImageUpdateIdentifier identifier, VariantCache cache) {
+		String variantId = identifier.getVariantId();
+		String externalId = identifier.getExternalId();
+		String barcode = identifier.getBarcode();	
+		return Stream
+				.of(  cache.getIdToVariantMap().get(variantId)
+					, cache.getExternalIdToVariantMap().get(externalId)
+					, cache.getBarcodeToVariantMap().get(barcode))
+				.filter(Objects::nonNull)
+				.findFirst()
+				.orElseThrow(() -> new RuntimeBusinessException(
+										format(ERR_NO_VARIANT_FOUND, variantId, externalId, barcode)
+										, "INVALID PARAM: csv"
+										, HttpStatus.NOT_ACCEPTABLE));
 	}
 	
 	
@@ -633,8 +731,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
 		return 
 			Flux
-			.fromStream(fileIdentifiersMap.values().stream().flatMap(List::stream))					
-			.map(ProductImageUpdateIdentifier::getExternalId)
+			.fromStream(fileIdentifiersMap.values().stream().flatMap(List::stream))	
+			.filter(identifier -> isNotBlankOrNull(identifier.getBarcode()))
+			.map(ProductImageUpdateIdentifier::getBarcode)
 			.window(1000)
 			.flatMap(this::getVariantsByBarcode)
 			.collectMap(ProductVariantsEntity::getBarcode, variant -> variant)
@@ -650,7 +749,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
 		return 
 			Flux
-			.fromStream(fileIdentifiersMap.values().stream().flatMap(List::stream))					
+			.fromStream(fileIdentifiersMap.values().stream().flatMap(List::stream))	
+			.filter(identifier -> isNotBlankOrNull(identifier.getExternalId()))
 			.map(ProductImageUpdateIdentifier::getExternalId)
 			.window(1000)
 			.flatMap(this::getVariantsByExternalId)
@@ -667,7 +767,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
 		return 
 			Flux
-			.fromStream(fileIdentifiersMap.values().stream().flatMap(List::stream))					
+			.fromStream(fileIdentifiersMap.values().stream().flatMap(List::stream))	
+			.filter(identifier -> isNotBlankOrNull(identifier.getVariantId()))
 			.map(ProductImageUpdateIdentifier::getVariantId)
 			.window(1000)
 			.flatMap(this::getVariantsById)
@@ -704,10 +805,11 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	
 	private Flux<ProductVariantsEntity> getVariantsByBarcode(Flux<String> barcodeList){
+		Long orgId = securityService.getCurrentUserOrganizationId();
 		return 
 			barcodeList
 			.buffer()
-			.flatMapIterable(productVariantsRepository::findByBarcodeIn);
+			.flatMapIterable(barcodes -> productVariantsRepository.findByOrganizationIdAndBarcodeIn(orgId, barcodes));
 	}
 	
 	
@@ -1079,6 +1181,22 @@ public class ProductImageServiceImpl implements ProductImageService {
 		
 		return new CommonsMultipartFile(fileItem);
 	}
+	
+	
+	
+	
+	
+	private MultipartFile readUrlAsMultipartFile(String httpUrl, List<Byte> bytes){
+		try {
+			String fileName = Paths.get(new URI(httpUrl)).getFileName().toString();
+			FileItem fileItem = createFileItem(fileName);
+			readIntoFileItem(bytes, fileItem);			
+			return new CommonsMultipartFile(fileItem);
+		} catch (IOException | URISyntaxException e) {
+			logger.logException(e, Level.SEVERE);
+			throw new RuntimeException(e);
+		}		
+	}
 
 
 
@@ -1090,6 +1208,15 @@ public class ProductImageServiceImpl implements ProductImageService {
 		while ((len = stream.read(buffer)) > 0) {
             fos.write(buffer, 0, len);
         }
+	}
+	
+	
+	
+	
+	private void readIntoFileItem(List<Byte> bytes, FileItem fileItem) throws IOException {		
+		OutputStream fos = fileItem.getOutputStream();
+		Byte[] bytesArr = bytes.stream().toArray(Byte[]::new);
+		fos.write(toPrimitive(bytesArr));
 	}
 
 
