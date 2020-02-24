@@ -2,8 +2,7 @@ import static com.nasnav.security.AuthenticationFilter.TOKEN_HEADER;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.springframework.http.MediaType.IMAGE_PNG;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
@@ -39,11 +38,13 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.persistence.FileEntity;
+import com.nasnav.test.bulkimport.img.ImageBulkUrlUploadTestCommon;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -66,13 +67,12 @@ public class ProductImageBulkUrlUploadTest {
 	
 	private static final String TEST_ZIP_DIR = "src/test/resources/img_bulk_zip";
 	private static final String TEST_CSV = "img_bulk_url_barcode.csv";
-	private static final String TEST_CSV_NON_EXISTING_BARCODE = "img_bulk_non_existing_barcode.csv";
-	private static final String TEST_CSV_MULTI_BARCODE_PER_PATH = "img_bulk_multi_barcode_same_path.csv";
-	private static final String TEST_CSV_INCOMPLETE = "img_bulk_barcode_incomplete.csv";
-	private static final String TEST_CSV_VARIANT_ID_EXISTING_VARIANT = "img_bulk_exist_variant_id_exist_variant.csv";
-	private static final String TEST_CSV_EXTERNAL_ID_EXISTING_MAPPING = "img_bulk_exist_external_id_exist_mapping.csv";
-	private static final String TEST_CSV_VARIANT_ID_NO_VARIANT = "img_bulk_exist_variant_id_no_variant.csv";
-	private static final String TEST_CSV_EXTERNAL_ID_NO_MAPPING = "img_bulk_exist_external_id_no_mapping.csv";
+	private static final String TEST_CSV_NON_EXISTING_BARCODE = "img_bulk_url_non_existing_barcode.csv";
+	private static final String TEST_CSV_MULTI_BARCODE_PER_PATH = "img_bulk_url_multi_barcode_same_path.csv";
+	private static final String TEST_CSV_VARIANT_ID_EXISTING_VARIANT = "img_bulk_url_exist_variant_id_exist_variant.csv";
+	private static final String TEST_CSV_EXTERNAL_ID_EXISTING_MAPPING = "img_bulk_url_exist_external_id_exist_mapping.csv";
+	private static final String TEST_CSV_VARIANT_ID_NO_VARIANT = "img_bulk_url_exist_variant_id_no_variant.csv";
+	private static final String TEST_CSV_EXTERNAL_ID_NO_MAPPING = "img_bulk_url_exist_external_id_no_mapping.csv";
 	
 	
 	
@@ -97,11 +97,23 @@ public class ProductImageBulkUrlUploadTest {
 	
 	
 	@Rule
-	public MockServerRule mockServerRule = new MockServerRule(this);
+	public MockServerRule mockServerRule = new MockServerRule(this,8188);
+	
+	
+	private String serverUrl;
 	
 	
 	@Before
-	public void setup() throws IOException {		
+	public void setup() throws Exception {		
+		assertRequiredDirectoriesExists();
+		
+		
+		serverUrl = testCommons.initImgsMockServer(mockServerRule);
+	}
+
+
+
+	private void assertRequiredDirectoriesExists() throws IOException {
 		this.basePath = Paths.get(basePathStr);
 		
 		System.out.println("Test Files Base Path  >>>> " + basePath.toAbsolutePath());
@@ -113,7 +125,6 @@ public class ProductImageBulkUrlUploadTest {
 		try(Stream<Path> files = Files.list(basePath)){
 			assertEquals(0L, files.count());
 		}
-		
 	}
 	
 	
@@ -191,17 +202,11 @@ public class ProductImageBulkUrlUploadTest {
 
 		String response =
 				performFileUpload(TEST_CSV_NON_EXISTING_BARCODE, jsonBytes, USER_TOKEN)
-	             .andExpect(status().is(500))
+	             .andExpect(status().is(406))
 	             .andReturn()
 	             .getResponse()
 	             .getContentAsString();
 
-		JSONObject errorResponse = new JSONObject(response);
-		JSONArray errors = new JSONArray( errorResponse.getString("error") );
-		
-		assertTrue(errorResponse.has("error"));
-		assertEquals(1, errors.length());
-		
 		assertNoImgsImported();
 	}
 	
@@ -214,18 +219,11 @@ public class ProductImageBulkUrlUploadTest {
 		
 		String response = 
 				performFileUpload(TEST_CSV, jsonBytes, OTHER_ORG_ADMIN_TOKEN)
-	             .andExpect(status().is(500))
+	             .andExpect(status().is(406))
 	             .andReturn()
 	             .getResponse()
 	             .getContentAsString();
 
-		JSONObject errorResponse = new JSONObject(response);
-		JSONArray errors = new JSONArray( errorResponse.getString("error") );
-		
-		assertTrue(errorResponse.has("error"));
-		assertEquals(2, errors.length());
-		
-		
 		assertNoImgsImported();
 	}
 	
@@ -262,13 +260,16 @@ public class ProductImageBulkUrlUploadTest {
 		
 		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
-		ResultActions result = 
-			    mockMvc.perform(MockMvcRequestBuilders.get("/static/test_photo_2.png"))
-			    		.andExpect(status().is(200))
-			    		.andExpect(content().contentTypeCompatibleWith(IMAGE_PNG));
-	             
-		byte [] res = result.andReturn().getResponse().getContentAsByteArray();
-		System.out.println(">>>" + res.length);
+		WebClient client = WebClient.builder().baseUrl(serverUrl).build();
+		client
+		 .get()
+		 .uri("/static/test_photo_2.png")
+		 .exchange()
+		 .doOnNext(res -> assertEquals(OK, res.statusCode()))
+		 .flatMapMany(res -> res.bodyToMono(byte[].class))
+		 .subscribe(body -> System.out.println(">>>" + body.length));
+		
+		Thread.sleep(1000);
 	}
 	
 	
@@ -297,49 +298,26 @@ public class ProductImageBulkUrlUploadTest {
 	
 	
 	@Test
-	public void updateImgBulkWithIncompleteCSVTest() throws IOException, Exception {
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_bulk_API_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void updateImgBulkDuplicatePathForVariantsOfSameProductTest() throws IOException, Exception {
 		
 		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		String response = 
-				performFileUpload(TEST_CSV_INCOMPLETE, jsonBytes, USER_TOKEN)
+				performFileUpload(TEST_CSV_MULTI_BARCODE_PER_PATH, jsonBytes, USER_TOKEN)
 	             .andExpect(status().is(200))
 	             .andReturn()
 	             .getResponse()
 	             .getContentAsString();
 
-		assertImgsImported(response);
+		assertSameImgImportedForProductWithNoDuplicates(response);
 	}
 	
 	
 	
-
 	
-	
-	@Test
-	public void updateImgBulkTestEmptyImgFile() throws IOException, Exception {
-		
-		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
-		
-		String response = 
-				performFileUpload(TEST_CSV, jsonBytes, USER_TOKEN)
-	             .andExpect(status().is(500))
-	             .andReturn()
-	             .getResponse()
-	             .getContentAsString();
 
-		JSONObject errorResponse = new JSONObject(response);
-		JSONArray errors = new JSONArray( errorResponse.getString("error") );
-		
-		assertTrue(errorResponse.has("error"));
-		assertEquals(1, errors.length());
-		
-		
-		assertNoImgsImported();
-	}
-
-
-	
 	
 	
 	@Test
@@ -384,7 +362,7 @@ public class ProductImageBulkUrlUploadTest {
 		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 
 		performFileUpload(TEST_CSV_VARIANT_ID_NO_VARIANT, jsonBytes, USER_TOKEN)
-				.andExpect(status().is(500));
+				.andExpect(status().is(406));
 
 		assertNoImgsImported();
 	}
@@ -397,7 +375,7 @@ public class ProductImageBulkUrlUploadTest {
 		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 
 		performFileUpload(TEST_CSV_EXTERNAL_ID_NO_MAPPING, jsonBytes, USER_TOKEN)
-				.andExpect(status().is(500));
+				.andExpect(status().is(406));
 
 		assertNoImgsImported();
 	}
@@ -424,6 +402,34 @@ public class ProductImageBulkUrlUploadTest {
 						.distinct()
 						.collect(toList());
 		assertEquals("a single image was imported for the product and its variants, so they all should reference the same url"
+						, 1, urls.size());
+	}
+	
+	
+	
+	
+	
+	private void assertSameImgImportedForProductWithNoDuplicates(String response) {
+		JSONArray responseJson = new JSONArray(response);
+		assertEquals(
+				"import 1 images"
+				, 1
+				, responseJson.length());				
+		
+		assertEquals( 1L, imgRepo.count());		
+		
+		IntStream.range(0, responseJson.length())
+				.mapToObj(responseJson::getJSONObject)
+				.forEach(this::assertImageUploaded);
+		
+		List<String> urls = 
+				IntStream.range(0, responseJson.length())
+						.mapToObj(responseJson::getJSONObject)
+						.map(obj -> obj.getString("image_url"))
+						.distinct()
+						.collect(toList());
+		assertEquals("a 2 duplicate images was imported for variants of the same product, the duplicates shouldn't be imported if"
+					+ " it is a product image"
 						, 1, urls.size());
 	}
 	
@@ -509,18 +515,6 @@ public class ProductImageBulkUrlUploadTest {
 		jsonPart.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 		return jsonPart;
 	}
-	
-	
-	
-	
-	private MockMultipartFile createZipPart(String zipFileName) throws IOException {
-		Path zip = Paths.get(TEST_ZIP_DIR).resolve(zipFileName).toAbsolutePath();
-		assertTrue(Files.exists(zip));
-		byte[] zipData = Files.readAllBytes(zip);		
-		MockMultipartFile zipPart = new MockMultipartFile("imgs_zip", zipFileName, "application/zip", zipData);
-		return zipPart;
-	}
-	
 	
 	
 	

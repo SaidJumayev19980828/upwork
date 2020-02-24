@@ -24,15 +24,11 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static org.apache.commons.lang3.ArrayUtils.toPrimitive;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -96,6 +92,7 @@ import com.univocity.parsers.csv.CsvParserSettings;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
 
@@ -525,7 +522,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	public List<ProductImageUpdateResponse> updateProductImageBulk(@Valid MultipartFile zip, @Valid MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {		
 		validateUpdateImageBulkRequest(zip, csv, metaData);
-		List<ImportedImage> importedImgs = extractImgsToImport(zip, csv, metaData);
+		Set<ImportedImage> importedImgs = new HashSet<>(extractImgsToImport(zip, csv, metaData));
 		return saveImgsBulk(importedImgs);
 	}
 
@@ -534,8 +531,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 
 
-
-	private List<ProductImageUpdateResponse> saveImgsBulk(List<ImportedImage> importedImgs) throws BusinessException {		
+	@Override
+	public List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs) throws BusinessException {		
 		List<String> errors = new ArrayList<>();
 		List<ProductImageUpdateResponse> responses = new ArrayList<>();
 		
@@ -563,12 +560,12 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private List<ImportedImage> fetchImgsToImportFromUrls(@Valid MultipartFile csv,
+	private Set<ImportedImage> fetchImgsToImportFromUrls(@Valid MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {				
 		List<String> errors = new ArrayList<>();		
 		Map<String,List<ProductImageUpdateIdentifier>> fileIdentifiersMap = createFileToVariantIdsMap(csv);
 		
-		List<ImportedImage> imgs = readImgsFromUrls(fileIdentifiersMap, metaData);
+		Set<ImportedImage> imgs = readImgsFromUrls(fileIdentifiersMap, metaData);
 		
 		if(!errors.isEmpty()) {
 			String errorsJson = getErrorMsgAsJson(errors);
@@ -583,7 +580,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private List<ImportedImage> readImgsFromUrls(
+	private Set<ImportedImage> readImgsFromUrls(
 			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap
 			, ProductImageBulkUpdateDTO metaData) {
 		
@@ -595,7 +592,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 				.window(20)		//get the images in batches of 20 per second
 				.delayElements(Duration.ofSeconds(1))
 				.flatMap(pair -> toImportedImages(pair, metaData, variantCache))
+				.distinct()
 				.buffer()
+				.map(HashSet::new)
 				.blockFirst();
 	}
 
@@ -648,14 +647,23 @@ public class ProductImageServiceImpl implements ProductImageService {
 		}		
 		String httpUrl = !url.startsWith("http://") ? "http://" + url : url;
 		
-		Flux<MultipartFile> imgFile = readImageDataFromUrl(client, httpUrl);
+		Mono<MultipartFile> imgFile = readImageDataFromUrl(client, httpUrl);
 		
 		List<ProductImageUpdateIdentifier> variantIdentifiers = imgDetails.getIdentifier(); 
 		Flux<ProductImageUpdateDTO> importedImgsMetaData = createImgsMetaData(metaData, variantCache, variantIdentifiers);
 			
-		return Flux.zip(imgFile, importedImgsMetaData, (file, mData) -> new  ImportedImage(file, mData, url));
+		return Flux
+				.zip(imgFile, importedImgsMetaData.buffer(), (file, mDataList) ->  combineImageFileAndMetaData(file, mDataList, url))
+				.flatMap(importedImg -> importedImg) ;
 	}
 
+	
+	
+	
+	private Flux<ImportedImage> combineImageFileAndMetaData(MultipartFile file, List<ProductImageUpdateDTO> mDataList, String url){
+		return Flux.fromIterable(mDataList)
+				 .map(mData -> new ImportedImage(file, mData, url));
+	}
 
 
 
@@ -673,13 +681,12 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private Flux<MultipartFile> readImageDataFromUrl(WebClient client, String httpUrl) {
+	private Mono<MultipartFile> readImageDataFromUrl(WebClient client, String httpUrl) {
 		return client
 				.get()
 				.uri(httpUrl)
 				.retrieve()
-				.bodyToFlux(Byte.class)
-				.buffer()
+				.bodyToMono(byte[].class)
 				.map(bytes -> readUrlAsMultipartFile(httpUrl, bytes));
 	}
 	
@@ -721,7 +728,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 				.orElseThrow(() -> new RuntimeBusinessException(
 										format(ERR_NO_VARIANT_FOUND, variantId, externalId, barcode)
 										, "INVALID PARAM: csv"
-										, HttpStatus.NOT_ACCEPTABLE));
+										, NOT_ACCEPTABLE));
 	}
 	
 	
@@ -861,7 +868,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private Map<String, List<ImportedImage>> groupImagesByPath( List<ImportedImage> allImportedImgs) throws BusinessException {
+	private Map<String, List<ImportedImage>> groupImagesByPath( Set<ImportedImage> allImportedImgs) throws BusinessException {
 		return allImportedImgs
 				.stream()
 				.collect(groupingBy(ImportedImage::getPath));
@@ -1186,13 +1193,14 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	
 	
-	private MultipartFile readUrlAsMultipartFile(String httpUrl, List<Byte> bytes){
+	private MultipartFile readUrlAsMultipartFile(String httpUrl, byte[] bytes){
 		try {
-			String fileName = Paths.get(new URI(httpUrl)).getFileName().toString();
+			String[] parts = httpUrl.split("/");
+			String fileName = parts[parts.length - 1];
 			FileItem fileItem = createFileItem(fileName);
 			readIntoFileItem(bytes, fileItem);			
 			return new CommonsMultipartFile(fileItem);
-		} catch (IOException | URISyntaxException e) {
+		} catch (IOException e) {
 			logger.logException(e, Level.SEVERE);
 			throw new RuntimeException(e);
 		}		
@@ -1213,10 +1221,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	
 	
-	private void readIntoFileItem(List<Byte> bytes, FileItem fileItem) throws IOException {		
+	private void readIntoFileItem(byte[] bytes, FileItem fileItem) throws IOException {		
 		OutputStream fos = fileItem.getOutputStream();
-		Byte[] bytesArr = bytes.stream().toArray(Byte[]::new);
-		fos.write(toPrimitive(bytesArr));
+		fos.write(bytes);
 	}
 
 
@@ -1501,7 +1508,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	public List<ProductImageUpdateResponse> updateProductImageBulkViaUrl(MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
 		validateImageBulkMetadata(metaData);
-		List<ImportedImage> importedImgs = fetchImgsToImportFromUrls(csv, metaData);;
+		Set<ImportedImage> importedImgs = fetchImgsToImportFromUrls(csv, metaData);;
 		return saveImgsBulk(importedImgs);
 	}
 	

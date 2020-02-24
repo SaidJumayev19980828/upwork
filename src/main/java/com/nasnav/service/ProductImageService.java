@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.validation.Valid;
 
@@ -13,25 +14,28 @@ import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
+import com.nasnav.service.model.ImportedImage;
 
 public interface ProductImageService {
 	
-	public ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException;
+	ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException;
 	
-	public ProductImageDeleteResponse deleteImage(Long imgId) throws BusinessException;
+	ProductImageDeleteResponse deleteImage(Long imgId) throws BusinessException;
 	
-	public List<ProductImageUpdateResponse> updateProductImageBulk(
+	List<ProductImageUpdateResponse> updateProductImageBulk(
 			@Valid MultipartFile zip
 			,@Valid MultipartFile csv
 			,@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException;
 
 	String getProductCoverImage(Long productId);
 
-	public List<ProductImgDetailsDTO> getProductImgs(Long productId) throws BusinessException;
+	List<ProductImgDetailsDTO> getProductImgs(Long productId) throws BusinessException;
 
 	Map<Long,String> getProductsCoverImages(List<Long> productIds);
 
-	public List<ProductImageUpdateResponse> updateProductImageBulkViaUrl(MultipartFile csv,
+	List<ProductImageUpdateResponse> updateProductImageBulkViaUrl(MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData)  throws BusinessException;
+	
+	List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs) throws BusinessException;
 	
 }
