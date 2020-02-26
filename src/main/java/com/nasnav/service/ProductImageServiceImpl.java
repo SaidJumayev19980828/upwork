@@ -920,8 +920,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 		String path;
 		ProductImageUpdateIdentifier identifier;
 		for(Record record:csvRecords) {
-			path = normalizeZipPath(record.getString(3));
-			identifier = new ProductImageUpdateIdentifier(record.getString(0), record.getString(1), record.getString(2));
+			path = normalizeZipPath(record.getString("path"));
+			identifier = new ProductImageUpdateIdentifier(record.getString("variant_id"), record.getString("external_id"), record.getString("barcode"));
 
 			if (identifiersMap.get(path) == null)
 				identifiersMap.put(path, new ArrayList<>());
@@ -935,12 +935,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private String normalizeZipPath(String path) {
-		String normalized = path ;
-		if(path.startsWith("/")) {
-			normalized = path.replaceFirst("/", "");
-		}
-			
-		return normalized;
+		return ofNullable(path)
+				.map(p -> p.startsWith("/")? p.replaceFirst("/", "") : p)
+				.orElse("") ;
 	}
 
 
