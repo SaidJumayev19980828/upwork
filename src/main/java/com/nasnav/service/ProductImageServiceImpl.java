@@ -1026,11 +1026,10 @@ public class ProductImageServiceImpl implements ProductImageService {
 		}
 		
 		Map<Long,String> productImgs = productImagesRepository
-											.findByProductEntity_IdInOrderByPriority(productIds)
+											.findByProductsIds(productIds)
 											.stream()
 											.filter(Objects::nonNull)
-											.filter(this::isProductCoverImage)
-											.collect( groupingBy(img -> img.getProductEntity().getId()))
+											.collect( groupingBy(img -> getImageProductId(img)))
 											.entrySet()
 											.stream()
 											.map(this::getProductCoverImageUrlMapEntry)
@@ -1041,7 +1040,19 @@ public class ProductImageServiceImpl implements ProductImageService {
 		
 		return productImgs;
 	}
-	
+
+	private Long getImageProductId(ProductImagesEntity img)  {
+		Long defaultVariantId = Optional.ofNullable(img)
+				.map(ProductImagesEntity::getProductVariantsEntity)
+				.map(ProductVariantsEntity::getProductEntity)
+				.map(ProductEntity::getId)
+				.orElse(-1L);
+
+		return Optional.ofNullable(img)
+					   .map(ProductImagesEntity::getProductEntity)
+					   .map(ProductEntity::getId)
+					   .orElse(defaultVariantId);
+	}
 
 	
 	
@@ -1049,7 +1060,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 	private Map.Entry<Long, String> getProductCoverImageUrlMapEntry(Map.Entry<Long, List<ProductImagesEntity>> mapEntry){
 		String uri = Optional.ofNullable(mapEntry.getValue())
 							.map(List::stream)
-							.map(s -> s.sorted( comparing(ProductImagesEntity::getId)))
+							.map(s -> s.sorted( comparing(ProductImagesEntity::getPriority)
+												.thenComparing(ProductImagesEntity::getId)))
 							.flatMap(s -> s.findFirst())
 							.map(ProductImagesEntity::getUri)
 							.orElse(NO_IMG_FOUND_URL);
