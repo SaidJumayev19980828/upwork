@@ -19,7 +19,7 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
 	void deleteByProductEntity_Id(Long productId);
 
-	Optional<ProductVariantsEntity> findByBarcodeAndProductEntity_OrganizationId(String barcode, Long orgId);
+	List<ProductVariantsEntity> findByBarcodeAndProductEntity_OrganizationId(String barcode, Long orgId);
 
 	Optional<ProductVariantsEntity> findByIdAndProductEntity_OrganizationId(Long id, Long orgId);
 

@@ -20,6 +20,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -797,13 +798,18 @@ public class ProductImageServiceImpl implements ProductImageService {
 			}
 			else {
 				throw new BusinessException("Provided external_id("+identifier.getExternalId()+") doesn't match any mapped value!",
-						"INVALID_PARAM: external_id", HttpStatus.NOT_ACCEPTABLE);
+						"INVALID_PARAM: external_id", NOT_ACCEPTABLE);
 			}
 				
 		}
 
 		if ( !variant.isPresent() && identifier.getBarcode() != null) {
-			variant = productVariantsRepository.findByBarcodeAndProductEntity_OrganizationId(identifier.getBarcode(), orgId);
+			variant =
+					productVariantsRepository
+						.findByBarcodeAndProductEntity_OrganizationId(identifier.getBarcode(), orgId)
+						.stream()
+						.sorted(comparing(ProductVariantsEntity::getId))
+						.findFirst();
 		}
 		
 		ProductImageUpdateDTO variantMetaData = 
@@ -813,9 +819,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 		if(variantMetaData == null) {
 			throw new BusinessException(
-					String.format(ERR_NO_PRODUCT_EXISTS_WITH_BARCODE, identifier.getBarcode(), orgId)
+					format(ERR_NO_PRODUCT_EXISTS_WITH_BARCODE, identifier.getBarcode(), orgId)
 					, "INVALID PARAM:imgs_zip"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
 		
 		return
