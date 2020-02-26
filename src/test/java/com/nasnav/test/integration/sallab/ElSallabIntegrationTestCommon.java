@@ -41,6 +41,10 @@ public class ElSallabIntegrationTestCommon {
     @Value("classpath:/json/el_sallab_integration_test/get_next_products_response.json")
     private Resource nextProductsResponseJson;
     
+    
+    @Value("classpath:/static/static/kitako/test_photo_1.png")   
+    private Resource img1;
+    
 
 	public  String initElSallabMockServer(MockServerRule mockServerRule) throws Exception {		
 		prepareMockRequests(mockServerRule);
@@ -59,6 +63,7 @@ public class ElSallabIntegrationTestCommon {
 		mockGetAuthRequest(mockServerRule);
 		mockGetPriceRequest(mockServerRule);
 		mockGetItemStockRequest(mockServerRule);
+		mockGetImgRequest(mockServerRule);
 	}
 	
 	
@@ -66,6 +71,24 @@ public class ElSallabIntegrationTestCommon {
 
 	
 	
+	private void mockGetImgRequest(MockServerRule mockServerRule) throws IOException {
+	    byte[] img = readImgFile(img1);
+		 mockServerRule.getClient()
+			.when(
+				request().withMethod("GET")
+						.withPath("/services/data/v36.0/sobjects/Attachment/.+/Body"))
+			.respond(
+					response().withBody(img) 
+							  .withStatusCode(200))
+				;
+	}
+
+
+
+
+
+
+
 	private  void mockGetProductsRequest(MockServerRule mockServerRule) throws IOException {
 		String productsResponse = readJsonFile(productsResponseJson);
     	 mockServerRule.getClient()
@@ -161,5 +184,13 @@ public class ElSallabIntegrationTestCommon {
 		String productsResponse = new String( Files.readAllBytes(resource.getFile().toPath()) );
 		return productsResponse;
 	}
+	
+	
+	
+
+	private byte[] readImgFile(Resource resource) throws IOException {
+		return Files.readAllBytes(resource.getFile().toPath());
+	}
+	
 	
 }

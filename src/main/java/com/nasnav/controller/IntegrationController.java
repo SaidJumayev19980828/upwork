@@ -1,5 +1,7 @@
 package com.nasnav.controller;
 
+import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE;
+
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +50,7 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @PostMapping(value = "module", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "module", produces = APPLICATION_JSON_UTF8_VALUE, consumes = APPLICATION_JSON_UTF8_VALUE)
     public void registerIntegrationModule(@RequestHeader (value = "User-Token") String userToken,
                                              @RequestBody OrganizationIntegrationInfoDTO integrationInfo)  throws BusinessException {
 		integrationSrv.registerIntegrationModule(integrationInfo);
@@ -65,7 +67,7 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @DeleteMapping(value = "module", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @DeleteMapping(value = "module", produces = APPLICATION_JSON_UTF8_VALUE, consumes = APPLICATION_JSON_UTF8_VALUE)
     public void removeIntegrationModule(@RequestHeader (value = "User-Token") String userToken,
     										@RequestParam("organization_id") Long organizationId)  throws BusinessException {
 		integrationSrv.removeIntegrationModule(organizationId);
@@ -83,7 +85,7 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @GetMapping(value = "module/all", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "module/all", produces = APPLICATION_JSON_UTF8_VALUE)
     public List<OrganizationIntegrationInfoDTO> getAllIntegrationModules(@RequestHeader (value = "User-Token") String userToken)  throws BusinessException {
 		return integrationSrv.getAllIntegrationModules();
     }
@@ -132,7 +134,7 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @PostMapping(value = "param", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "param", produces = APPLICATION_JSON_UTF8_VALUE, consumes = APPLICATION_JSON_UTF8_VALUE)
     public void saveIntegrationParamModule(@RequestHeader (value = "User-Token") String userToken,
                                              @RequestBody IntegrationParamDTO param)  throws BusinessException {
 		integrationSrv.addIntegrationParam(param);
@@ -149,7 +151,7 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @DeleteMapping(value = "param", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @DeleteMapping(value = "param", produces = APPLICATION_JSON_UTF8_VALUE, consumes = APPLICATION_JSON_UTF8_VALUE)
     public void deleteIntegrationParam(@RequestHeader (value = "User-Token") String userToken,
                                              @RequestBody IntegrationParamDeleteDTO param)  throws BusinessException {
 		integrationSrv.deleteIntegrationParam(param);
@@ -164,7 +166,7 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @GetMapping(value = "/import/shops", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "/import/shops", produces = APPLICATION_JSON_UTF8_VALUE, consumes = APPLICATION_JSON_UTF8_VALUE)
     public List<Long> importShops(@RequestHeader (value = "User-Token") String userToken)  throws Throwable {
 		return integrationSrv.importShops();
     }
@@ -178,7 +180,7 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @PostMapping(value = "/import/products", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "/import/products", produces = APPLICATION_JSON_UTF8_VALUE, consumes = APPLICATION_JSON_UTF8_VALUE)
     public Integer importProdcuts(@RequestHeader (value = "User-Token") String userToken,@RequestBody IntegrationProductImportDTO metadata)  throws Throwable {
 		return integrationSrv.importOrganizationProducts(metadata);
     }
@@ -194,7 +196,7 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @GetMapping(value = "/dictionary", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "/dictionary", produces = APPLICATION_JSON_UTF8_VALUE)
     public ResponsePage<IntegrationDictionaryDTO> getDictionary(@RequestHeader (value = "User-Token") String userToken, GetIntegrationDictParam param )  throws Throwable {
 		return integrationSrv.getIntegrationDictionary(param);
     }
@@ -209,7 +211,7 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @GetMapping(value = "/errors", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "/errors", produces = APPLICATION_JSON_UTF8_VALUE)
     public ResponsePage<IntegrationErrorDTO> getErrors(@RequestHeader (value = "User-Token") String userToken, GetIntegrationErrorParam param )  throws Throwable {
 		return integrationSrv.getIntegrationErrors(param);
     }
@@ -223,7 +225,7 @@ public class IntegrationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @PostMapping(value = "/import/product_images", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "/import/product_images", produces = APPLICATION_JSON_UTF8_VALUE, consumes = APPLICATION_JSON_UTF8_VALUE)
     public ResponsePage<Void> importProdcutImages(@RequestHeader (value = "User-Token") String userToken,@RequestBody IntegrationImageImportDTO metadata)  throws Throwable {
 		return integrationSrv.importProductImages(metadata);
     }

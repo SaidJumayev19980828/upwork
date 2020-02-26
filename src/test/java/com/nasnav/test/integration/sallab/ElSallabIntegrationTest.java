@@ -5,6 +5,7 @@ import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_ID;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_SECRET;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.PASSWORD;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.USERNAME;
+import static com.nasnav.service.ProductImageService.PRODUCT_IMAGE;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static org.junit.Assert.assertEquals;
@@ -41,12 +42,12 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.nasnav.NavBox;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.IntegrationMappingRepository;
+import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
-import com.nasnav.dto.ResponsePage;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.ProductVariantsEntity;
@@ -63,6 +64,7 @@ public class ElSallabIntegrationTest {
 	
 	private static final String SALLAB_SERVER_URL = "https://azizsallab--DevSanbox.cs80.my.salesforce.com";    
     private static final String SALLAB_SEVER_URL_2 = "http://41.33.113.70";
+    private static final String IMG_SERVER_URL = "https://azizsallab.my.salesforce.com";
     private static final String AUTH_SERVER_URL = "https://test.salesforce.com";
     private static final String MOCK_SERVER_URL = "http://127.0.0.1";
     private static final String MOCK_SERVER_AUTH_TOKEN = "00D250000009BEF!AQcAQHE4mvVZ6hmXm7_4y1s26_FIG0yMMVvq58ecs1GshIRcQE2l5d40r_NR8AJA5g.gko2fNdCctisUWg4cOIGhqnK9xMma";
@@ -107,6 +109,9 @@ public class ElSallabIntegrationTest {
 	@Autowired
 	private StockRepository stocksRepo;
 	
+	@Autowired
+	private ProductImagesRepository imgRepo;
+	
 	@Rule
 	 public MockServerRule mockServerRule = new MockServerRule(this);
 	
@@ -118,14 +123,16 @@ public class ElSallabIntegrationTest {
 		String serverFullUrl = SALLAB_SERVER_URL;
 		String server2FullUrl = SALLAB_SEVER_URL_2;
 		String authServerUrl = AUTH_SERVER_URL;
+		String imgServerUrl = IMG_SERVER_URL;
 		
 		if(usingMockServer) {
 			serverFullUrl = testCommons.initElSallabMockServer(mockServerRule);
 			server2FullUrl = serverFullUrl;
 			authServerUrl = serverFullUrl;
+			imgServerUrl = serverFullUrl;
 		}
 		
-		registerIntegrationModule(serverFullUrl, server2FullUrl, authServerUrl);
+		registerIntegrationModule(serverFullUrl, server2FullUrl, authServerUrl, imgServerUrl);
 	}
 	
 	
@@ -230,14 +237,16 @@ public class ElSallabIntegrationTest {
 	
 	@Test
 	public void imagesImportTest() throws InterruptedException {
-		Long imgsCountBefore  = 0L;
+		Long imgsCountBefore  = imgRepo.count();
 		//------------------------------------------------		
 		//call product import api
 		JSONObject requestJson = createImportImagesRequest();
+		requestJson.put("page_count", "2");
+		requestJson.put("page_num", "1");
 		
 		HttpEntity<Object> request = getHttpEntity(requestJson.toString(), "hijkllm");
         ResponseEntity<String> response = template.exchange("/integration/import/product_images", POST, request, String.class);       
-
+        
 		//------------------------------------------------
 
         Thread.sleep(2000);
@@ -249,8 +258,8 @@ public class ElSallabIntegrationTest {
 		//test imported brands were created
 		//test the imported products were created
 		
-//		assertDataImported(expected, countBefore, response);
-
+        Long imgsCountAfter  = imgRepo.count();
+        assertEquals(2, imgsCountAfter - imgsCountBefore);
 	}
 	
 	
@@ -258,8 +267,11 @@ public class ElSallabIntegrationTest {
 	
 	
 	private JSONObject createImportImagesRequest() {
-		// TODO Auto-generated method stub
-		return null;
+		return json()
+				.put("page_num", 1)
+				.put("page_count", 500)
+				.put("type", PRODUCT_IMAGE)
+				.put("priority", 0);
 	}
 
 
@@ -407,11 +419,12 @@ public class ElSallabIntegrationTest {
 	
 	
 	
-	private void registerIntegrationModule(String serverFullUrl, String server2FullUrl, String authServerUrl) throws BusinessException {
+	private void registerIntegrationModule(String serverFullUrl, String server2FullUrl, String authServerUrl, String imgServerUrl) throws BusinessException {
 		Map<String,String> params = new HashMap<>();
 		params.put("SERVER_URL", serverFullUrl);
 		params.put("SERVER_2_URL", server2FullUrl);
 		params.put("AUTH_SERVER_URL", authServerUrl);
+		params.put("IMG_SERVER_URL", imgServerUrl);
 		params.put(AUTH_GRANT_TYPE.getValue(), "password");
 		params.put(CLIENT_ID.getValue(), "3MVG98_Psg5cppyZgL4kzqXARpsy8tyvcM1d8DwhODOxPiDTnqaf71BGU2cmzBpvf8l_myMTql31bhVa.ar8V");
 		params.put(CLIENT_SECRET.getValue(), "4085100268240543918");
