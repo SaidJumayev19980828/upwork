@@ -1,5 +1,7 @@
 package com.nasnav.service;
 
+import static java.util.stream.Collectors.toList;
+
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Objects;
@@ -107,6 +109,14 @@ public class OrganizationService {
         this.employeeUserRepository = employeeUserRepository;
         this.organizationImagesRepository = organizationImagesRepository;
     }
+
+    public List<OrganizationRepresentationObject> listOrganizations() {
+        return organizationRepository.findAll()
+                            .stream()
+                            .map(org -> (OrganizationRepresentationObject) org.getRepresentation())
+                            .collect(toList());
+    }
+
 
     public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
         OrganizationEntity organizationEntity = organizationRepository.findByPname(organizationName);
