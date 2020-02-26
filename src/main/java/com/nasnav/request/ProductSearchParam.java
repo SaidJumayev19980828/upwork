@@ -8,6 +8,7 @@ import com.nasnav.dto.ProductSortOptions;
 import lombok.Data;
 import lombok.ToString;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -25,6 +26,8 @@ public class ProductSearchParam {
     public Integer count;
     public ProductSortOptions sort;
     public SortOrder order;
+    public BigDecimal minPrice;
+    public BigDecimal maxPrice;
 
     public void setSort(String sort) {
         this.sort = ProductSortOptions.valueOf(sort.toUpperCase());
