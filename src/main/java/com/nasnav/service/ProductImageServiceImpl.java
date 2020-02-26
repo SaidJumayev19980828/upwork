@@ -100,8 +100,6 @@ import reactor.netty.http.client.HttpClient;
 @Service
 public class ProductImageServiceImpl implements ProductImageService {
 	
-	private static final int PRODUCT_IMAGE = 7;
-
 	private static final String NO_IMG_FOUND_URL = "no_img_found.jpg";
 
 	private Logger logger = Logger.getLogger(ProductService.class);
@@ -532,6 +530,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	@Override
+	@Transactional(rollbackFor = Throwable.class)
 	public List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs) throws BusinessException {		
 		List<String> errors = new ArrayList<>();
 		List<ProductImageUpdateResponse> responses = new ArrayList<>();

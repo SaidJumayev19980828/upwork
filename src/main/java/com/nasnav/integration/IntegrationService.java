@@ -7,6 +7,7 @@ import java.util.function.BiConsumer;
 
 import com.nasnav.dto.IntegrationDictionaryDTO;
 import com.nasnav.dto.IntegrationErrorDTO;
+import com.nasnav.dto.IntegrationImageImportDTO;
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.IntegrationProductImportDTO;
@@ -175,4 +176,6 @@ public interface IntegrationService {
 	ResponsePage<IntegrationDictionaryDTO> getIntegrationDictionary(GetIntegrationDictParam param) throws BusinessException;
 	
 	ResponsePage<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param) throws BusinessException;
+	
+	ResponsePage<Void> importProductImages(IntegrationImageImportDTO param)throws BusinessException;
 }

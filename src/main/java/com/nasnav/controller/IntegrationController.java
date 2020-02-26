@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nasnav.dto.IntegrationDictionaryDTO;
 import com.nasnav.dto.IntegrationErrorDTO;
+import com.nasnav.dto.IntegrationImageImportDTO;
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.IntegrationProductImportDTO;
@@ -211,5 +212,19 @@ public class IntegrationController {
     @GetMapping(value = "/errors", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponsePage<IntegrationErrorDTO> getErrors(@RequestHeader (value = "User-Token") String userToken, GetIntegrationErrorParam param )  throws Throwable {
 		return integrationSrv.getIntegrationErrors(param);
+    }
+	
+	
+	
+	
+	@ApiOperation(value = "import the product image from external system", nickname = "ProductImagesImport", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "/import/product_images", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponsePage<Void> importProdcutImages(@RequestHeader (value = "User-Token") String userToken,@RequestBody IntegrationImageImportDTO metadata)  throws Throwable {
+		return integrationSrv.importProductImages(metadata);
     }
 }

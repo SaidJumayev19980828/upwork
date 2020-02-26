@@ -77,6 +77,7 @@ import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.IntegrationDictionaryDTO;
 import com.nasnav.dto.IntegrationErrorDTO;
+import com.nasnav.dto.IntegrationImageImportDTO;
 import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.IntegrationProductImportDTO;
@@ -1842,6 +1843,17 @@ public class IntegrationServiceImpl implements IntegrationService {
 				.stream()
 				.filter(mapping -> mapping.getRemoteValue() != null)
 				.collect(toMap(IntegrationMappingEntity::getRemoteValue, IntegrationMappingEntity::getLocalValue));
+	}
+
+
+
+
+
+
+	@Override
+	public ResponsePage<Void> importProductImages(IntegrationImageImportDTO param) throws BusinessException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 	

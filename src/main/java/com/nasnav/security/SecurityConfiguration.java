@@ -6,6 +6,7 @@ import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.Roles.STORE_ADMIN;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
+import static java.util.Arrays.asList;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -77,7 +78,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     //	universal patterns like "/**" must always be the last one.
     //- to created a pattern use one of the overloads of "patternOf" method, each adds
     //	more fine grained control of the permission (by HttpMethod, by roles) 
-	private  List<AuthPattern> permissions = Arrays.asList(
+	private  List<AuthPattern> permissions = asList(
 						//url pattern	-------------------------	Method	------------	Roles
 					    patternOf( "/order/**"),
 						patternOf( "/stock/**"	 										, getNonCustomersRoles() ),
@@ -102,6 +103,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/upload/**"											, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/integration/import/shops"							, setOf(ORGANIZATION_MANAGER)),
 						patternOf( "/integration/import/products"						, setOf(ORGANIZATION_MANAGER)),
+						patternOf( "/integration/import/product_images"					, setOf(ORGANIZATION_MANAGER)),
 						patternOf( "/integration/module/disable"						, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 						patternOf( "/integration/module/enable"							, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 						patternOf( "/integration/module/**"								, setOf(NASNAV_ADMIN)),

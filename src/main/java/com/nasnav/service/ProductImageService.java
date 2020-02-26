@@ -18,6 +18,8 @@ import com.nasnav.service.model.ImportedImage;
 
 public interface ProductImageService {
 	
+	static final int PRODUCT_IMAGE = 7;
+
 	ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException;
 	
 	ProductImageDeleteResponse deleteImage(Long imgId) throws BusinessException;

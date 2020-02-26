@@ -46,6 +46,7 @@ import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
+import com.nasnav.dto.ResponsePage;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.ProductVariantsEntity;
@@ -225,7 +226,77 @@ public class ElSallabIntegrationTest {
 	}
 
 
+	
+	
+	@Test
+	public void imagesImportTest() throws InterruptedException {
+		Long imgsCountBefore  = 0L;
+		//------------------------------------------------		
+		//call product import api
+		JSONObject requestJson = createImportImagesRequest();
+		
+		HttpEntity<Object> request = getHttpEntity(requestJson.toString(), "hijkllm");
+        ResponseEntity<String> response = template.exchange("/integration/import/product_images", POST, request, String.class);       
 
+		//------------------------------------------------
+
+        Thread.sleep(2000);
+		//------------------------------------------------
+		//test the mock api was called
+        verifyImageImportMockServerCalls(1);
+		
+		//------------------------------------------------
+		//test imported brands were created
+		//test the imported products were created
+		
+//		assertDataImported(expected, countBefore, response);
+
+	}
+	
+	
+	
+	
+	
+	private JSONObject createImportImagesRequest() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+
+
+
+
+
+
+	private void verifyImageImportMockServerCalls(Integer additionalPageCount) {
+		if(usingMockServer) {
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("GET")
+				        .withPath("/services/data/v44.0/query"),
+				      VerificationTimes.exactly(1)
+				    );
+			
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("GET")
+				        .withPath("/services/data/v44.0/query/.+")
+				        .withHeader("Authorization", "Bearer "+MOCK_SERVER_AUTH_TOKEN),
+				      VerificationTimes.exactly(additionalPageCount)
+				    );
+			
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("GET")
+				        .withPath("/services/data/v44.0/query/.+")
+				        .withHeader("Authorization", "Bearer "+MOCK_SERVER_AUTH_TOKEN),
+				      VerificationTimes.exactly(additionalPageCount)
+				    );
+	   }
+	}
+	
+	
 
 
 
