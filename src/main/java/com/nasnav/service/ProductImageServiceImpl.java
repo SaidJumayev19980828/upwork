@@ -24,7 +24,6 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.io.IOException;
@@ -84,6 +83,7 @@ import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.service.model.ImportedImage;
+import com.nasnav.service.model.VariantIdentifierAndUrlPair;
 import com.sun.istack.logging.Logger;
 import com.univocity.parsers.common.record.Record;
 import com.univocity.parsers.csv.CsvParser;
@@ -561,19 +561,11 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private Set<ImportedImage> fetchImgsToImportFromUrls(@Valid MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {				
-		List<String> errors = new ArrayList<>();		
+				
 		Map<String,List<ProductImageUpdateIdentifier>> fileIdentifiersMap = createFileToVariantIdsMap(csv);
 		
-		Set<ImportedImage> imgs = readImgsFromUrls(fileIdentifiersMap, metaData);
-		
-		if(!errors.isEmpty()) {
-			String errorsJson = getErrorMsgAsJson(errors);
-			throw new BusinessException(ERR_IMPORTING_IMGS, errorsJson , INTERNAL_SERVER_ERROR);
-		}
-		
-		return imgs;
+		return readImgsFromUrls(fileIdentifiersMap, metaData);
 	}
-
 
 
 
@@ -595,6 +587,26 @@ public class ProductImageServiceImpl implements ProductImageService {
 				.buffer()
 				.map(HashSet::new)
 				.blockFirst();
+	}
+	
+	
+	
+	
+	@Override
+	public Flux<ImportedImage> readImgsFromUrls(
+			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap
+			, ProductImageBulkUpdateDTO metaData
+			, WebClient client) {
+		
+		VariantCache variantCache = createVariantCache(fileIdentifiersMap);
+		
+		return Flux
+				.fromIterable(fileIdentifiersMap.entrySet())
+				.map(this::toVariantIdentifierAndUrlPair)
+				.window(20)		//get the images in batches of 20 per second
+				.delayElements(Duration.ofSeconds(1))
+				.flatMap(pair -> toImportedImages(pair, metaData, variantCache, client))
+				.distinct();
 	}
 
 
@@ -628,6 +640,17 @@ public class ProductImageServiceImpl implements ProductImageService {
 			, ProductImageBulkUpdateDTO metaData
 			, VariantCache variantCache){
 		WebClient client = buildWebClient();		
+		return toImportedImages(imgDetails, metaData, variantCache, client);
+	}
+	
+	
+	
+	
+	
+	private Flux<ImportedImage> toImportedImages(Flux<VariantIdentifierAndUrlPair> imgDetails
+			, ProductImageBulkUpdateDTO metaData
+			, VariantCache variantCache
+			, WebClient client){
 		return imgDetails
 				.flatMap(details -> toImportedImage(details, metaData, variantCache, client));
 	}
@@ -1542,14 +1565,4 @@ class VariantCache{
 	private Map<String, ProductVariantsEntity> idToVariantMap;
 	private Map<String, ProductVariantsEntity> externalIdToVariantMap;
 	private Map<String, ProductVariantsEntity> barcodeToVariantMap; 
-}
-
-
-
-
-@AllArgsConstructor
-@Data
-class VariantIdentifierAndUrlPair{
-	private String url;
-	private List<ProductImageUpdateIdentifier> identifier;
 }

@@ -18,6 +18,7 @@ public class IntegrationImageImportDTO {
 	private Integer pageCount;
 	private Integer type;
 	private Integer priority;
+	private Boolean ignoreErrors;
 	
 	public IntegrationImageImportDTO() {
 		this.priority= 0;

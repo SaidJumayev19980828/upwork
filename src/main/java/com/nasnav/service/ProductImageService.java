@@ -7,14 +7,18 @@ import java.util.Set;
 import javax.validation.Valid;
 
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.nasnav.dto.ProductImageBulkUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateDTO;
+import com.nasnav.dto.ProductImageUpdateIdentifier;
 import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.service.model.ImportedImage;
+
+import reactor.core.publisher.Flux;
 
 public interface ProductImageService {
 	
@@ -39,5 +43,8 @@ public interface ProductImageService {
 			@Valid ProductImageBulkUpdateDTO metaData)  throws BusinessException;
 	
 	List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs) throws BusinessException;
+
+	Flux<ImportedImage> readImgsFromUrls(Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap,
+			ProductImageBulkUpdateDTO metaData, WebClient client);
 	
 }

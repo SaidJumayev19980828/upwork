@@ -3,6 +3,11 @@ package com.nasnav.integration.sallab;
 import static com.nasnav.integration.enums.IntegrationParam.AUTH_SERVER_URL;
 import static com.nasnav.integration.enums.IntegrationParam.SERVER_2_URL;
 import static com.nasnav.integration.enums.IntegrationParam.SERVER_URL;
+import static com.nasnav.integration.sallab.ElSallabIntegrationParams.AUTH_GRANT_TYPE;
+import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_ID;
+import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_SECRET;
+import static com.nasnav.integration.sallab.ElSallabIntegrationParams.PASSWORD;
+import static com.nasnav.integration.sallab.ElSallabIntegrationParams.USERNAME;
 import static java.lang.String.format;
 import static org.springframework.http.HttpStatus.OK;
 import static reactor.core.publisher.Mono.error;
@@ -14,6 +19,7 @@ import com.nasnav.integration.IntegrationEventListener;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.Event;
 import com.nasnav.integration.sallab.webclient.SallabWebClient;
+import com.nasnav.integration.sallab.webclient.dto.AuthenticationData;
 
 import reactor.core.publisher.Mono;
 
@@ -76,6 +82,20 @@ public abstract class AbstractElSallabEventListener<E extends Event<T,R>, T, R> 
 	private String getResponseAsStr(ClientResponse response) {
 		response.bodyToMono(String.class).subscribe(b -> logger.info(format(" >>> El Sallab failed response body [%s]" , b)));
 		return format("{status : %s}", response.statusCode());
+	}
+
+
+
+
+	protected AuthenticationData getAuthData(Long orgId) {
+		
+		String grantType = integrationService.getIntegrationParamValue(orgId, AUTH_GRANT_TYPE.getValue());
+		String clientId = integrationService.getIntegrationParamValue(orgId, CLIENT_ID.getValue());
+		String clientSecret = integrationService.getIntegrationParamValue(orgId, CLIENT_SECRET.getValue());
+		String username = integrationService.getIntegrationParamValue(orgId, USERNAME.getValue());
+		String password = integrationService.getIntegrationParamValue(orgId, PASSWORD.getValue());
+		
+		return new AuthenticationData(grantType, clientId, clientSecret, username, password);
 	}
 
 

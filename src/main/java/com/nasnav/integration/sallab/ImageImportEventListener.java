@@ -1,0 +1,353 @@
+package com.nasnav.integration.sallab;
+
+import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
+import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INVALID_PAGINATION_PARAMS;
+import static com.nasnav.integration.enums.IntegrationParam.IMG_SERVER_URL;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Stream.concat;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import com.nasnav.dto.ProductImageBulkUpdateDTO;
+import com.nasnav.dto.ProductImageUpdateIdentifier;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.enums.IntegrationParam;
+import com.nasnav.integration.events.EventInfo;
+import com.nasnav.integration.events.ImagesImportEvent;
+import com.nasnav.integration.events.data.ImageImportParam;
+import com.nasnav.integration.events.data.ImportedImagesPage;
+import com.nasnav.integration.sallab.webclient.SallabWebClient;
+import com.nasnav.integration.sallab.webclient.dto.AuthenticationData;
+import com.nasnav.integration.sallab.webclient.dto.AuthenticationResponse;
+import com.nasnav.integration.sallab.webclient.dto.Product;
+import com.nasnav.integration.sallab.webclient.dto.ProductsResponse;
+import com.nasnav.service.model.ImportedImage;
+import com.nasnav.service.model.VariantIdentifierAndUrlPair;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
+
+public class ImageImportEventListener extends AbstractElSallabEventListener<ImagesImportEvent, ImageImportParam, ImportedImagesPage> {
+
+	private static final String IMG_URL_TEMPLATE = "/services/data/v36.0/sobjects/Attachment/%s/Body";
+	
+	
+	
+	public ImageImportEventListener(IntegrationService integrationService) {
+		super(integrationService);
+	}
+
+	
+	
+	
+	@Override
+	protected Mono<ImportedImagesPage> handleEventAsync(EventInfo<ImageImportParam> event) {
+		Long orgId = event.getOrganizationId();
+		
+		ImageImportParam param = event.getEventData();
+		AuthenticationData authData = getAuthData(orgId);
+		
+		SallabWebClient client = getWebClient(orgId);
+		return client
+				.authenticate(authData)
+			 	.flatMap(this::throwExceptionIfNotOk)
+			 	.flatMap(res -> res.bodyToMono(AuthenticationResponse.class))
+			 	.map(res -> getImgWebClient(res, orgId))
+			 	.flatMap(imgClient -> Pair.of(fetchProductsFromExternalSystem(param, imgClient.getAuthToken(), orgId), imgClient))
+			 	.flatMap(pair -> getImagesUsingUrls((FetchedProductsDataWithTotal)pair.getLeft(), param, pair.getRight()));
+	}
+	
+	
+	
+	
+	private WebClientWithAuthToken getImgWebClient(AuthenticationResponse response, Long orgId) {
+		String token = response.getAccessToken();
+		return new WebClientWithAuthToken(token, buildImageWebClient(orgId, token));
+	}
+	
+	
+	
+	private Mono<ImportedImagesPage> getImagesUsingUrls(FetchedProductsDataWithTotal products, ImageImportParam param, SallabWebClient client){
+		Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap = getUrlToProductMapping(products);
+		ProductImageBulkUpdateDTO metaData = createImageImportMetaData(param);
+		Flux<ImportedImage> imgs = 
+				integrationService
+				 .getIntegrationUtils()
+				 .readImgsFromUrls(fileIdentifiersMap, metaData, client);
+		return Mono.just(new ImportedImagesPage(products.getTotalElements(), imgs));
+	}
+	
+	
+	
+	
+	private ProductImageBulkUpdateDTO createImageImportMetaData(ImageImportParam param) {
+		ProductImageBulkUpdateDTO metadata = new ProductImageBulkUpdateDTO();
+		metadata.setPriority(param.getPriority());
+		metadata.setType(param.getType());
+		return metadata;
+	}
+
+
+
+
+	private Map<String, List<ProductImageUpdateIdentifier>> getUrlToProductMapping(FetchedProductsData products) {
+		return products
+		  .getProducts()
+		  .stream()
+		  .map(this::toVariantIdentifierAndUrlPair)
+		  .filter(this::isValidVariantIdentifierAndUrlPair)
+		  .collect( toMap(VariantIdentifierAndUrlPair::getUrl
+				    		 , VariantIdentifierAndUrlPair::getIdentifier
+				    		 , (list1, list2) -> concat(list1.stream(), list2.stream()).collect(toList())
+				    		 ));
+	}
+
+	
+	
+	
+	private boolean isValidVariantIdentifierAndUrlPair(VariantIdentifierAndUrlPair pair) {
+		return noneIsNull(pair, pair.getUrl(), pair.getIdentifier());
+	}
+	
+	
+	
+	
+	
+	private VariantIdentifierAndUrlPair toVariantIdentifierAndUrlPair(Product product) {
+		ProductImageUpdateIdentifier ids = getIdentifiers(product);
+		String imgUrl = createImgUrl(product);
+		return new VariantIdentifierAndUrlPair(imgUrl, asList(ids));
+	}
+
+
+	
+	
+
+	private String createImgUrl(Product product) {
+		return format(IMG_URL_TEMPLATE, product.getIconAttachmentId());
+	}
+
+
+	
+	
+
+
+	private ProductImageUpdateIdentifier getIdentifiers(Product product) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+
+
+	private Mono<FetchedProductsData>  fetchProductsFromExternalSystem(ImageImportParam param, String authToken, Long orgId) {
+		SallabWebClient client = getWebClient(orgId);
+
+		return 
+				client
+				.getProducts(authToken)
+				.flatMap(this::throwExceptionIfNotOk)
+				.flatMap(prodRes -> prodRes.bodyToMono(ProductsResponse.class))
+				.flatMap(prodRes -> toFetchedProductsData(prodRes, param, orgId, authToken));
+	}
+
+	
+	
+	
+	
+	private Mono<FetchedProductsData> toFetchedProductsData(ProductsResponse productsResponse, ImageImportParam param, Long orgId, String authToken) {
+		Mono<Integer> totalPages = calculateTotalPages(productsResponse, param);		
+		Mono<ProductPage> page = getProductsData(productsResponse, param, orgId, authToken);
+		
+		return Mono.zip(totalPages
+						, page
+						, (totPages, productsPage) -> new FetchedProductsDataWithTotal(totPages, productsPage, orgId, authToken) );
+	}
+
+
+
+
+
+
+	private Mono<ProductPage> getProductsData(ProductsResponse productsResponse, ImageImportParam param,
+			Long orgId, String authToken) {
+		
+		Flux<Product> allProducts = getAllRequiredProducts(param, productsResponse, orgId, authToken);
+
+		return getProductPageMono(allProducts, param, productsResponse.getTotalSize());
+	}
+	
+
+
+
+	private Mono<ProductPage> getProductPageMono(Flux<Product> allNeededProducts, ImageImportParam param, Integer total) {
+		return allNeededProducts
+				.buffer()
+				.single()
+				.map( bufferedProducts -> getProductPage(bufferedProducts, param))
+				.map( pageProducts -> new ProductPage(total, pageProducts));
+	}
+	
+	
+	
+	
+	//TODO: pagination is disabled for now, should be done later
+	private List<Product> getProductPage(List<Product> allNeededProducts, ImageImportParam param) {
+		Integer fromIndex = param.getPageCount()*(param.getPageNum() -1);
+		Integer toIndex = fromIndex + param.getPageCount();
+		toIndex = toIndex > allNeededProducts.size() ? allNeededProducts.size() : toIndex;
+		
+		if(isInvalidCalculatedIndices(fromIndex, toIndex, allNeededProducts.size())) {
+			throw new RuntimeBusinessException(
+					format(ERR_INVALID_PAGINATION_PARAMS, param.toString(), fromIndex, toIndex)
+					, "INVALID PARAMS: page_count, page_num"
+					, NOT_ACCEPTABLE);
+		}
+		
+		return allNeededProducts.subList(fromIndex, toIndex);
+	}
+
+
+
+
+
+
+	private boolean isInvalidCalculatedIndices(Integer fromIndex, Integer toIndex, int bufferSize) {
+		return fromIndex > toIndex || toIndex > bufferSize;
+	}
+
+
+
+
+	/**
+	 * El sallab api returns products in linked-list style, each response provides a batch of products and  an url for the next batch.
+	 * so, we need to traverse and buffer products until we get the required page.
+	 * */
+	private Flux<Product> getAllRequiredProducts(ImageImportParam param, ProductsResponse response, Long orgId, String authToken) {
+		return getRemainingProductsFromApiIfNeeded(param, new AccumlatedProductsResponse(response, orgId, authToken))
+					.flatMapIterable(accProducts -> accProducts.getBuffer());
+	}
+	
+	
+	
+	
+	
+	/**
+	 * recursive function to get products from the API's using the linked-list style of it.
+	 * */
+	private Mono<AccumlatedProductsResponse> getRemainingProductsFromApiIfNeeded(ImageImportParam param, AccumlatedProductsResponse response) {
+		Integer neededBufferSize = param.getPageCount()*param.getPageNum();
+		
+		if( !response.isDone() && neededBufferSize > response.getBuffer().size()) {
+			return	getProductsUsingWebAPI(response)
+						.flatMap(newRes -> getRemainingProductsFromApiIfNeeded(
+												param
+												, new AccumlatedProductsResponse(newRes, response)) );
+		}
+		
+		return Mono.just(response);
+	}
+	
+	
+	
+	
+	private Mono<ProductsResponse> getProductsUsingWebAPI(AccumlatedProductsResponse response){
+		Long orgId = response.getOrgId();
+		String url = response.getResponse().getNextRecordsUrl();
+		String authToken = response.getAuthToken();
+		
+		SallabWebClient client = getWebClient(orgId);
+		return client
+				.getProductsNextRecords(authToken, url)
+				.flatMap(this::throwExceptionIfNotOk)
+				.flatMap(prodRes -> prodRes.bodyToMono(ProductsResponse.class));				
+	}
+	
+	
+	
+	
+	private Mono<Integer>  calculateTotalPages(ProductsResponse productsResponse, ImageImportParam param) {
+		Integer totalProducts = ofNullable(productsResponse)
+									.map(ProductsResponse::getTotalSize)
+									.orElse(0);
+		Integer productsPerPage = param.getPageCount();
+		
+		return Mono.just( (int) Math.ceil( totalProducts.doubleValue()/ productsPerPage.doubleValue()));
+	}
+	
+	
+	
+	
+	
+	private WebClient buildImageWebClient(Long orgId, String token) {
+		String baseUrl = integrationService.getIntegrationParamValue(orgId, IMG_SERVER_URL.getValue());
+		return WebClient
+        		.builder()
+                .clientConnector(new ReactorClientHttpConnector(
+                        HttpClient.create().wiretap(true)
+                ))
+                .defaultHeader("Authorization", "Bearer "+token)
+                .baseUrl(baseUrl)
+                .build();
+	}
+	
+	
+	
+	@Override
+	protected ImagesImportEvent handleError(ImagesImportEvent event, Throwable t) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+}
+
+
+
+
+@Data
+class FetchedProductsDataWithTotal extends FetchedProductsData{
+	private Integer totalElements;
+	
+	public FetchedProductsDataWithTotal(Integer totPages, ProductPage page, Long orgId, String authToken) {
+		super(totPages, page.getProducts(), orgId, authToken);
+		this.totalElements = page.getTotal();		
+	}
+
+}
+
+
+
+
+@Data
+@AllArgsConstructor
+class ProductPage{
+	private Integer total;
+	private List<Product> products;
+}
+
+
+
+
+@Data
+@AllArgsConstructor
+class WebClientWithAuthToken {
+	private String authToken;
+	private WebClient client;
+}
+

@@ -178,4 +178,6 @@ public interface IntegrationService {
 	ResponsePage<IntegrationErrorDTO> getIntegrationErrors(GetIntegrationErrorParam param) throws BusinessException;
 	
 	ResponsePage<Void> importProductImages(IntegrationImageImportDTO param)throws BusinessException;
+	
+	IntegrationUtils getIntegrationUtils();
 }

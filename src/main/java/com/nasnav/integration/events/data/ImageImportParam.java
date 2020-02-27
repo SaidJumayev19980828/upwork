@@ -16,4 +16,7 @@ import lombok.NoArgsConstructor;
 public class ImageImportParam{
 	private Integer type;
 	private Integer priority;
+	private Boolean ignoreErrors;
+	private Integer pageNum;
+	private Integer PageCount;
 }

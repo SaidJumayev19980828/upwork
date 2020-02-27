@@ -29,6 +29,7 @@ import static com.nasnav.integration.enums.MappingType.SHOP;
 import static java.lang.String.format;
 import static java.time.Duration.ofMillis;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -91,11 +92,14 @@ import com.nasnav.integration.enums.IntegrationParam;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.Event;
 import com.nasnav.integration.events.EventResult;
+import com.nasnav.integration.events.ImagesImportEvent;
 import com.nasnav.integration.events.IntegrationImportedProducts;
 import com.nasnav.integration.events.ProductsImportEvent;
 import com.nasnav.integration.events.ShopImportedProducts;
 import com.nasnav.integration.events.ShopsImportEvent;
 import com.nasnav.integration.events.StockFetchEvent;
+import com.nasnav.integration.events.data.ImageImportParam;
+import com.nasnav.integration.events.data.ImportedImagesPage;
 import com.nasnav.integration.events.data.ProductImportEventParam;
 import com.nasnav.integration.events.data.ShopsFetchParam;
 import com.nasnav.integration.events.data.StockEventParam;
@@ -114,6 +118,7 @@ import com.nasnav.request.GetIntegrationErrorParam;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.DataImportService;
 import com.nasnav.service.OrganizationService;
+import com.nasnav.service.ProductImageService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.ShopService;
 import com.nasnav.service.StockService;
@@ -175,6 +180,12 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	@Autowired
 	private StockService stockService;
+	
+	@Autowired
+	private ProductImageService imgService;
+	
+	@Autowired
+	private IntegrationUtils integrationUtils;
 	
 	
 	private Map<Long, OrganizationIntegrationInfo> orgIntegration;
@@ -897,6 +908,13 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	
 	private void onProductImportError(ProductsImportEvent event, Throwable t) {
+		logger.error(t,t);
+		throw getIntegrationRuntimeException("Failed to import products from external system of organization [%d]!", event.getOrganizationId());
+	}
+	
+	
+	
+	private void onImagesImportError(ImagesImportEvent event, Throwable t) {
 		logger.error(t,t);
 		throw getIntegrationRuntimeException("Failed to import products from external system of organization [%d]!", event.getOrganizationId());
 	}
@@ -1852,11 +1870,72 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	@Override
 	public ResponsePage<Void> importProductImages(IntegrationImageImportDTO param) throws BusinessException {
-		// TODO Auto-generated method stub
-		return null;
+		Integer pageCount = recitfyPageCount(param.getPageCount());
+		Integer pageNum = recitfyPageNum(param.getPageNum());
+		
+		ImportedImagesPage imgsPage = importImagesFromExternalSystem(param, pageCount, pageNum);
+		
+		imgService.saveImgsBulk(imgsPage.getImages());
+		
+		return createImageImportResponse(pageCount, pageNum, imgsPage);
+	}
+
+
+
+
+
+
+	private ImportedImagesPage importImagesFromExternalSystem(IntegrationImageImportDTO param, Integer pageCount, Integer pageNum) throws InvalidIntegrationEventException {
+		ImagesImportEvent event = createImageImportEvent(param, pageCount, pageNum);
+		
+		return	pushIntegrationEvent(event, this::onImagesImportError)
+					.blockOptional(Duration.ofMinutes(PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN))
+					.map(EventResult::getReturnedData)
+					.orElse(new ImportedImagesPage(0,emptySet()));
+	}
+
+
+
+
+
+
+	private ImagesImportEvent createImageImportEvent(IntegrationImageImportDTO param, Integer pageCount,
+			Integer pageNum) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ImageImportParam importParam = new ImageImportParam();
+		importParam.setIgnoreErrors(param.getIgnoreErrors());
+		importParam.setPageCount(pageCount);
+		importParam.setPageNum(pageNum);
+		importParam.setPriority(param.getPriority());
+		importParam.setType(param.getType());
+		
+		return new ImagesImportEvent(orgId, importParam);
+	}
+
+
+
+
+
+
+	private ResponsePage<Void> createImageImportResponse(Integer pageCount, Integer pageNum,
+			ImportedImagesPage imgsPage) {
+		Integer totalElements = imgsPage.getTotal();
+		ResponsePage<Void> response = new ResponsePage<>();
+		response.setContent(emptyList());
+		response.setPageNumber(pageNum);
+		response.setPageSize(pageCount);
+		response.setTotalElements(imgsPage.getTotal().longValue());
+		response.setTotalPages((int)(totalElements/pageCount));
+		return response;
 	}
 	
 	
+	
+	
+	@Override
+	public IntegrationUtils getIntegrationUtils() {
+		return integrationUtils;
+	}
 
 }
 
