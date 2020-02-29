@@ -13,6 +13,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.OK;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -236,6 +237,8 @@ public class ElSallabIntegrationTest {
 	
 	
 	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/El_sallab_integration_Test_Images_Insert.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void imagesImportTest() throws InterruptedException {
 		Long imgsCountBefore  = imgRepo.count();
 		//------------------------------------------------		
@@ -251,6 +254,7 @@ public class ElSallabIntegrationTest {
 
         Thread.sleep(2000);
 		//------------------------------------------------
+        assertEquals(OK, response.getStatusCode());
 		//test the mock api was called
         verifyImageImportMockServerCalls(1);
 		

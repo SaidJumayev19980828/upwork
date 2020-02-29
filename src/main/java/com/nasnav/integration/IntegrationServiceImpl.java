@@ -41,7 +41,9 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -62,6 +64,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -83,6 +86,7 @@ import com.nasnav.dto.IntegrationParamDTO;
 import com.nasnav.dto.IntegrationParamDeleteDTO;
 import com.nasnav.dto.IntegrationProductImportDTO;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
+import com.nasnav.dto.ProductImageBulkUpdateDTO;
 import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ResponsePage;
 import com.nasnav.dto.ShopJsonDTO;
@@ -99,7 +103,7 @@ import com.nasnav.integration.events.ShopImportedProducts;
 import com.nasnav.integration.events.ShopsImportEvent;
 import com.nasnav.integration.events.StockFetchEvent;
 import com.nasnav.integration.events.data.ImageImportParam;
-import com.nasnav.integration.events.data.ImportedImagesPage;
+import com.nasnav.integration.events.data.ImportedImagesUrlMappingPage;
 import com.nasnav.integration.events.data.ProductImportEventParam;
 import com.nasnav.integration.events.data.ShopsFetchParam;
 import com.nasnav.integration.events.data.StockEventParam;
@@ -122,6 +126,7 @@ import com.nasnav.service.ProductImageService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.ShopService;
 import com.nasnav.service.StockService;
+import com.nasnav.service.model.ImportedImage;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -1873,11 +1878,22 @@ public class IntegrationServiceImpl implements IntegrationService {
 		Integer pageCount = recitfyPageCount(param.getPageCount());
 		Integer pageNum = recitfyPageNum(param.getPageNum());
 		
+		
 		ImportedImagesPage imgsPage = importImagesFromExternalSystem(param, pageCount, pageNum);
 		
 		imgService.saveImgsBulk(imgsPage.getImages());
 		
 		return createImageImportResponse(pageCount, pageNum, imgsPage);
+	}
+	
+	
+	
+	
+	private ProductImageBulkUpdateDTO createImageImportMetaData(IntegrationImageImportDTO param) {
+		ProductImageBulkUpdateDTO metadata = new ProductImageBulkUpdateDTO();
+		metadata.setPriority(param.getPriority());
+		metadata.setType(param.getType());
+		return metadata;
 	}
 
 
@@ -1886,12 +1902,41 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 	private ImportedImagesPage importImagesFromExternalSystem(IntegrationImageImportDTO param, Integer pageCount, Integer pageNum) throws InvalidIntegrationEventException {
-		ImagesImportEvent event = createImageImportEvent(param, pageCount, pageNum);
+		ProductImageBulkUpdateDTO metaData = createImageImportMetaData(param);
+		//we can't chain the IntegrationUtils.readImgsFromUrls to url-to-product Mono , because this mono is 
+		//fetched in another thread, and it doesn't provide security context in other threads 
+		//and readImgsFromUrls needs it.
+		ImportedImagesUrlMappingPage urlToIdMappingPage = getImgsUrlFromExternalSystem(param, pageCount, pageNum);
 		
-		return	pushIntegrationEvent(event, this::onImagesImportError)
+		return	getImportedImagesPage(urlToIdMappingPage, metaData)
 					.blockOptional(Duration.ofMinutes(PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN))
-					.map(EventResult::getReturnedData)
-					.orElse(new ImportedImagesPage(0,emptySet()));
+					.orElse(new ImportedImagesPage(0, emptySet()));
+	}
+
+
+
+
+
+
+	private ImportedImagesUrlMappingPage getImgsUrlFromExternalSystem(IntegrationImageImportDTO param,
+			Integer pageCount, Integer pageNum) throws InvalidIntegrationEventException {
+		ImagesImportEvent event = createImageImportEvent(param, pageCount, pageNum);
+		return pushIntegrationEvent(event, this::onImagesImportError)
+				.map(EventResult::getReturnedData)
+				.blockOptional(Duration.ofMinutes(PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN))
+				.orElse(new ImportedImagesUrlMappingPage(0, Collections.emptyMap(), WebClient.builder().build()));
+	}
+	
+	
+	
+	
+	private Mono<ImportedImagesPage> getImportedImagesPage(ImportedImagesUrlMappingPage mappingPage, ProductImageBulkUpdateDTO metaData){		
+		return integrationUtils
+				.readImgsFromUrls(mappingPage.getFileIdentifiersMap(), metaData, mappingPage.getImgsWebClient())
+				.buffer()
+				.map(HashSet::new)
+				.single()
+				.map(imgs -> new ImportedImagesPage(mappingPage.getTotal(), imgs));
 	}
 
 
@@ -1919,12 +1964,12 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	private ResponsePage<Void> createImageImportResponse(Integer pageCount, Integer pageNum,
 			ImportedImagesPage imgsPage) {
-		Integer totalElements = imgsPage.getTotal();
+		Integer totalElements = imgsPage.getTotalElements();
 		ResponsePage<Void> response = new ResponsePage<>();
 		response.setContent(emptyList());
 		response.setPageNumber(pageNum);
 		response.setPageSize(pageCount);
-		response.setTotalElements(imgsPage.getTotal().longValue());
+		response.setTotalElements(imgsPage.getTotalElements().longValue());
 		response.setTotalPages((int)(totalElements/pageCount));
 		return response;
 	}
@@ -1960,4 +2005,14 @@ class EventHandling<E extends Event<T,R>, T, R>{
 class ProductImportInputData{
 	private ProductImportMetadata metadata;
 	private List<ProductImportDTO> products;
+}
+
+
+
+
+@Data
+@AllArgsConstructor
+class ImportedImagesPage{
+	private Integer totalElements;
+	private Set<ImportedImage> images;
 }

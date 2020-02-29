@@ -1,5 +1,6 @@
 package com.nasnav.integration.sallab;
 
+import static com.nasnav.commons.utils.EntityUtils.anyIsNonNull;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INVALID_PAGINATION_PARAMS;
 import static com.nasnav.integration.enums.IntegrationParam.IMG_SERVER_URL;
@@ -11,11 +12,10 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -23,11 +23,10 @@ import com.nasnav.dto.ProductImageBulkUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateIdentifier;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
-import com.nasnav.integration.enums.IntegrationParam;
 import com.nasnav.integration.events.EventInfo;
 import com.nasnav.integration.events.ImagesImportEvent;
 import com.nasnav.integration.events.data.ImageImportParam;
-import com.nasnav.integration.events.data.ImportedImagesPage;
+import com.nasnav.integration.events.data.ImportedImagesUrlMappingPage;
 import com.nasnav.integration.sallab.webclient.SallabWebClient;
 import com.nasnav.integration.sallab.webclient.dto.AuthenticationData;
 import com.nasnav.integration.sallab.webclient.dto.AuthenticationResponse;
@@ -38,11 +37,12 @@ import com.nasnav.service.model.VariantIdentifierAndUrlPair;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
-public class ImageImportEventListener extends AbstractElSallabEventListener<ImagesImportEvent, ImageImportParam, ImportedImagesPage> {
+public class ImageImportEventListener extends AbstractElSallabEventListener<ImagesImportEvent, ImageImportParam, ImportedImagesUrlMappingPage> {
 
 	private static final String IMG_URL_TEMPLATE = "/services/data/v36.0/sobjects/Attachment/%s/Body";
 	
@@ -56,7 +56,7 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 	
 	
 	@Override
-	protected Mono<ImportedImagesPage> handleEventAsync(EventInfo<ImageImportParam> event) {
+	protected Mono<ImportedImagesUrlMappingPage> handleEventAsync(EventInfo<ImageImportParam> event) {
 		Long orgId = event.getOrganizationId();
 		
 		ImageImportParam param = event.getEventData();
@@ -68,10 +68,21 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 			 	.flatMap(this::throwExceptionIfNotOk)
 			 	.flatMap(res -> res.bodyToMono(AuthenticationResponse.class))
 			 	.map(res -> getImgWebClient(res, orgId))
-			 	.flatMap(imgClient -> Pair.of(fetchProductsFromExternalSystem(param, imgClient.getAuthToken(), orgId), imgClient))
-			 	.flatMap(pair -> getImagesUsingUrls((FetchedProductsDataWithTotal)pair.getLeft(), param, pair.getRight()));
+			 	.flatMap(imgClient -> getProductAndClientPair(param, imgClient, orgId))
+			 	.map(pair -> getUrlToProductMappingPage((FetchedProductsDataWithTotal)pair.getProducts(), pair.getClient()));
 	}
 	
+	
+	
+	
+	private Mono<FetchedProductsDataAndWebClientPair> getProductAndClientPair(
+			 		ImageImportParam param
+			 		, WebClientWithAuthToken imgClient
+			 		, Long orgId){
+		Mono<FetchedProductsData> productsMono = fetchProductsFromExternalSystem(param, imgClient.getAuthToken(), orgId); 
+		return Mono.zip( productsMono, Mono.just(imgClient.getClient())
+				 	, (prod, client) -> new FetchedProductsDataAndWebClientPair(prod, client));
+	}
 	
 	
 	
@@ -82,25 +93,16 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 	
 	
 	
-	private Mono<ImportedImagesPage> getImagesUsingUrls(FetchedProductsDataWithTotal products, ImageImportParam param, SallabWebClient client){
+	private ImportedImagesUrlMappingPage getUrlToProductMappingPage(FetchedProductsDataWithTotal products, WebClient client){
+		Integer total = products.getTotalElements();
 		Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap = getUrlToProductMapping(products);
-		ProductImageBulkUpdateDTO metaData = createImageImportMetaData(param);
-		Flux<ImportedImage> imgs = 
-				integrationService
-				 .getIntegrationUtils()
-				 .readImgsFromUrls(fileIdentifiersMap, metaData, client);
-		return Mono.just(new ImportedImagesPage(products.getTotalElements(), imgs));
+		
+		return new ImportedImagesUrlMappingPage(total , fileIdentifiersMap, client);
 	}
 	
 	
 	
 	
-	private ProductImageBulkUpdateDTO createImageImportMetaData(ImageImportParam param) {
-		ProductImageBulkUpdateDTO metadata = new ProductImageBulkUpdateDTO();
-		metadata.setPriority(param.getPriority());
-		metadata.setType(param.getType());
-		return metadata;
-	}
 
 
 
@@ -121,7 +123,10 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 	
 	
 	private boolean isValidVariantIdentifierAndUrlPair(VariantIdentifierAndUrlPair pair) {
-		return noneIsNull(pair, pair.getUrl(), pair.getIdentifier());
+		return noneIsNull(pair, pair.getUrl(), pair.getIdentifier()) 
+				&& pair.getIdentifier()
+						.stream()
+						.allMatch(ids -> anyIsNonNull(ids.getBarcode(), ids.getExternalId(), ids.getVariantId()));
 	}
 	
 	
@@ -148,8 +153,7 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 
 
 	private ProductImageUpdateIdentifier getIdentifiers(Product product) {
-		// TODO Auto-generated method stub
-		return null;
+		return new ProductImageUpdateIdentifier(null, product.getItemNoC(), product.getItemNoC());
 	}
 
 
@@ -321,6 +325,7 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 
 
 @Data
+@EqualsAndHashCode(callSuper= true)
 class FetchedProductsDataWithTotal extends FetchedProductsData{
 	private Integer totalElements;
 	
@@ -351,3 +356,12 @@ class WebClientWithAuthToken {
 	private WebClient client;
 }
 
+
+
+
+@Data
+@AllArgsConstructor
+class FetchedProductsDataAndWebClientPair{
+	private FetchedProductsData products;
+	private WebClient client;
+}

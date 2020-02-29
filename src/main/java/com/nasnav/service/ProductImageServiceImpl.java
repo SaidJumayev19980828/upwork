@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CSV_PARSE_FAILURE;
@@ -94,6 +95,7 @@ import lombok.Data;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
+import reactor.util.function.Tuple3;
 
 
 
@@ -575,15 +577,18 @@ public class ProductImageServiceImpl implements ProductImageService {
 			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap
 			, ProductImageBulkUpdateDTO metaData) {
 		
-		VariantCache variantCache = createVariantCache(fileIdentifiersMap);
+		Mono<VariantCache> variantCacheMono = createVariantCache(fileIdentifiersMap);
 		
-		return Flux
-				.fromIterable(fileIdentifiersMap.entrySet())
-				.map(this::toVariantIdentifierAndUrlPair)
-				.window(20)		//get the images in batches of 20 per second
-				.delayElements(Duration.ofSeconds(1))
-				.flatMap(pair -> toImportedImages(pair, metaData, variantCache))
-				.distinct()
+		return variantCacheMono
+				.flatMapMany( variantCache ->
+						Flux
+						.fromIterable(fileIdentifiersMap.entrySet())
+						.map(this::toVariantIdentifierAndUrlPair)
+						.window(20)		//get the images in batches of 20 per second
+						.delayElements(Duration.ofSeconds(1))
+						.flatMap(pair -> toImportedImages(pair, metaData, variantCache))
+						.distinct()
+				)
 				.buffer()
 				.map(HashSet::new)
 				.blockFirst();
@@ -598,8 +603,22 @@ public class ProductImageServiceImpl implements ProductImageService {
 			, ProductImageBulkUpdateDTO metaData
 			, WebClient client) {
 		
-		VariantCache variantCache = createVariantCache(fileIdentifiersMap);
+		Mono<VariantCache> variantCacheMono = createVariantCache(fileIdentifiersMap);
 		
+		return variantCacheMono
+				.flatMapMany( variantCache -> 
+					fetchImportedImagesInBatches(fileIdentifiersMap, metaData, client, variantCache)
+				);
+	}
+
+
+
+
+
+
+	private Flux<ImportedImage> fetchImportedImagesInBatches(
+			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap, ProductImageBulkUpdateDTO metaData,
+			WebClient client, VariantCache variantCache) {
 		return Flux
 				.fromIterable(fileIdentifiersMap.entrySet())
 				.map(this::toVariantIdentifierAndUrlPair)
@@ -617,11 +636,22 @@ public class ProductImageServiceImpl implements ProductImageService {
 	 * Pre-fetch The product variants of the images from the database and cache them.
 	 * @return a cache of ProductVariantsEntity
 	 * */
-	private VariantCache createVariantCache(Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
-		Map<String, ProductVariantsEntity> idToVariantMap = getIdToVariantMap(fileIdentifiersMap);
-		Map<String, ProductVariantsEntity> externalIdToVariantMap = getExternalIdToVariantMap(fileIdentifiersMap);
-		Map<String, ProductVariantsEntity> barcodeToVariantMap = getBarcodeToVariantMap(fileIdentifiersMap);
+	private Mono<VariantCache> createVariantCache(Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
+		Mono<Map<String, ProductVariantsEntity>> idToVariantMap = getIdToVariantMap(fileIdentifiersMap);
+		Mono<Map<String, ProductVariantsEntity>> externalIdToVariantMap = getExternalIdToVariantMap(fileIdentifiersMap);
+		Mono<Map<String, ProductVariantsEntity>> barcodeToVariantMap = getBarcodeToVariantMap(fileIdentifiersMap);
 		
+		return Mono.zip(idToVariantMap, externalIdToVariantMap, barcodeToVariantMap)
+				.map(this::createVariantCacheFromTuple);
+	}
+	
+	
+	
+	
+	private VariantCache createVariantCacheFromTuple(Tuple3<Map<String, ProductVariantsEntity>, Map<String, ProductVariantsEntity>, Map<String, ProductVariantsEntity>> tuple) {
+		Map<String, ProductVariantsEntity> idToVariantMap = tuple.getT1();
+		Map<String, ProductVariantsEntity> externalIdToVariantMap = tuple.getT2();
+		Map<String, ProductVariantsEntity> barcodeToVariantMap = tuple.getT3();
 		return new VariantCache(idToVariantMap, externalIdToVariantMap, barcodeToVariantMap);
 	}
 
@@ -664,10 +694,11 @@ public class ProductImageServiceImpl implements ProductImageService {
 			, VariantCache variantCache
 			, WebClient client) {
 		String url = imgDetails.getUrl();
-		if(StringUtils.isBlankOrNull(url)) {
-			throw new RuntimeBusinessException("Empty url was provided!", "INVALID PARAM:csv", NOT_ACCEPTABLE);
+		if(isBlankOrNull(url)) {
+			return Flux.empty();
 		}		
-		String httpUrl = !url.startsWith("http://") ? "http://" + url : url;
+		
+//		String httpUrl = !url.startsWith("http://") ? "http://" + url : url;
 		
 		Mono<MultipartFile> imgFile = readImageDataFromUrl(client, httpUrl);
 		
@@ -756,7 +787,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 
 
-	private Map<String, ProductVariantsEntity> getBarcodeToVariantMap(
+	private Mono<Map<String, ProductVariantsEntity>> getBarcodeToVariantMap(
 			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
 		return 
 			Flux
@@ -765,8 +796,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 			.map(ProductImageUpdateIdentifier::getBarcode)
 			.window(1000)
 			.flatMap(this::getVariantsByBarcode)
-			.collectMap(ProductVariantsEntity::getBarcode, variant -> variant)
-			.block();
+			.collectMap(ProductVariantsEntity::getBarcode, variant -> variant);
 	}
 
 
@@ -774,7 +804,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private Map<String, ProductVariantsEntity> getExternalIdToVariantMap(
+	private Mono<Map<String, ProductVariantsEntity>> getExternalIdToVariantMap(
 			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
 		return 
 			Flux
@@ -783,8 +813,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 			.map(ProductImageUpdateIdentifier::getExternalId)
 			.window(1000)
 			.flatMap(this::getVariantsByExternalId)
-			.collectMap(variant-> variant.externalId, variant -> variant.variant)
-			.block();
+			.collectMap(variant-> variant.externalId, variant -> variant.variant);
 	}
 
 
@@ -792,7 +821,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private Map<String, ProductVariantsEntity> getIdToVariantMap(
+	private Mono<Map<String, ProductVariantsEntity>> getIdToVariantMap(
 			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
 		return 
 			Flux
@@ -801,8 +830,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 			.map(ProductImageUpdateIdentifier::getVariantId)
 			.window(1000)
 			.flatMap(this::getVariantsById)
-			.collectMap(this::getIdAsString, variant -> variant)
-			.block();
+			.collectMap(this::getIdAsString, variant -> variant);
 	}
 
 	
