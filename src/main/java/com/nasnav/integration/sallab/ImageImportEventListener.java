@@ -12,14 +12,12 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.nasnav.dto.ProductImageBulkUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateIdentifier;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
@@ -32,7 +30,6 @@ import com.nasnav.integration.sallab.webclient.dto.AuthenticationData;
 import com.nasnav.integration.sallab.webclient.dto.AuthenticationResponse;
 import com.nasnav.integration.sallab.webclient.dto.Product;
 import com.nasnav.integration.sallab.webclient.dto.ProductsResponse;
-import com.nasnav.service.model.ImportedImage;
 import com.nasnav.service.model.VariantIdentifierAndUrlPair;
 
 import lombok.AllArgsConstructor;
@@ -108,10 +105,12 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 
 
 	private Map<String, List<ProductImageUpdateIdentifier>> getUrlToProductMapping(FetchedProductsData products) {
+		Long orgId = products.getOrgId();
+		String baseUrl = integrationService.getIntegrationParamValue(orgId, IMG_SERVER_URL.getValue());
 		return products
 		  .getProducts()
 		  .stream()
-		  .map(this::toVariantIdentifierAndUrlPair)
+		  .map(product -> toVariantIdentifierAndUrlPair(product, baseUrl))
 		  .filter(this::isValidVariantIdentifierAndUrlPair)
 		  .collect( toMap(VariantIdentifierAndUrlPair::getUrl
 				    		 , VariantIdentifierAndUrlPair::getIdentifier
@@ -133,9 +132,9 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 	
 	
 	
-	private VariantIdentifierAndUrlPair toVariantIdentifierAndUrlPair(Product product) {
+	private VariantIdentifierAndUrlPair toVariantIdentifierAndUrlPair(Product product, String baseUrl) {
 		ProductImageUpdateIdentifier ids = getIdentifiers(product);
-		String imgUrl = createImgUrl(product);
+		String imgUrl = createImgUrl(product, baseUrl);
 		return new VariantIdentifierAndUrlPair(imgUrl, asList(ids));
 	}
 
@@ -143,8 +142,8 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 	
 	
 
-	private String createImgUrl(Product product) {
-		return format(IMG_URL_TEMPLATE, product.getIconAttachmentId());
+	private String createImgUrl(Product product, String baseUrl) {
+		return format(baseUrl + IMG_URL_TEMPLATE, product.getIconAttachmentId());
 	}
 
 
@@ -298,15 +297,13 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 	
 	
 	
-	private WebClient buildImageWebClient(Long orgId, String token) {
-		String baseUrl = integrationService.getIntegrationParamValue(orgId, IMG_SERVER_URL.getValue());
+	private WebClient buildImageWebClient(Long orgId, String token) {		
 		return WebClient
         		.builder()
                 .clientConnector(new ReactorClientHttpConnector(
                         HttpClient.create().wiretap(true)
                 ))
                 .defaultHeader("Authorization", "Bearer "+token)
-                .baseUrl(baseUrl)
                 .build();
 	}
 	

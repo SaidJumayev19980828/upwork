@@ -1,5 +1,6 @@
 package com.nasnav.commons.utils;
 
+import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 
 import java.util.ArrayList;
@@ -137,14 +138,13 @@ public class StringUtils extends org.springframework.util.StringUtils{
 	
 	
 	public static String nullSafe(String string) {
-		return Optional.ofNullable(string)
+		return ofNullable(string)
 				       .orElse("");
 	}
 	
 	
 	public static boolean anyBlankOrNull(String... strings) {
-		return Arrays
-				.asList(strings)
+		return asList(strings)
 				.stream()
 				.anyMatch(StringUtils::isBlankOrNull);			
 	}
@@ -153,9 +153,28 @@ public class StringUtils extends org.springframework.util.StringUtils{
 	
 	
 	public static boolean anyNotBlankOrNull(String... strings) {
-		return Arrays
-				.asList(strings)
+		return asList(strings)
 				.stream()
 				.anyMatch(StringUtils::isNotBlankOrNull);			
+	}
+	
+	
+	
+	public static boolean endsWithAnyOf(String string, String...suffixes) {
+		String str = ofNullable(string).orElse("");
+		return asList(suffixes)
+				.stream()
+				.filter(Objects::nonNull)
+				.anyMatch(suffix -> str.endsWith(suffix));
+	}
+	
+	
+	
+	public static boolean endsWithAnyOfAndIgnoreCase(String string, String...suffixes) {
+		String str = ofNullable(string).orElse("");
+		return asList(suffixes)
+				.stream()
+				.filter(Objects::nonNull)
+				.anyMatch(suffix -> str.toLowerCase().endsWith(suffix.toLowerCase()));
 	}
 }

@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.StringUtils.endsWithAnyOfAndIgnoreCase;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
@@ -103,6 +104,8 @@ import reactor.util.function.Tuple3;
 public class ProductImageServiceImpl implements ProductImageService {
 	
 	private static final String NO_IMG_FOUND_URL = "no_img_found.jpg";
+
+	private static final String[] SUPPORTED_IMG_FORMATS = {".png", ".jpg", ".jpeg"};
 
 	private Logger logger = Logger.getLogger(ProductService.class);
 	
@@ -697,8 +700,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 		if(isBlankOrNull(url)) {
 			return Flux.empty();
 		}		
-		
-//		String httpUrl = !url.startsWith("http://") ? "http://" + url : url;
+		//TODO: try to use reflection to check if the webclient have a base url or not.
+		//until this is done; webclients are assumed to have no base url and all URL's are assumed to be absolute.
+		String httpUrl = !url.startsWith("http://") ? "http://" + url : url;
 		
 		Mono<MultipartFile> imgFile = readImageDataFromUrl(client, httpUrl);
 		
@@ -1245,8 +1249,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	private MultipartFile readUrlAsMultipartFile(String httpUrl, byte[] bytes){
 		try {
-			String[] parts = httpUrl.split("/");
-			String fileName = parts[parts.length - 1];
+			String fileName = createImageFileNameFromUrl(httpUrl);
 			FileItem fileItem = createFileItem(fileName);
 			readIntoFileItem(bytes, fileItem);			
 			return new CommonsMultipartFile(fileItem);
@@ -1254,6 +1257,18 @@ public class ProductImageServiceImpl implements ProductImageService {
 			logger.logException(e, Level.SEVERE);
 			throw new RuntimeException(e);
 		}		
+	}
+
+
+
+
+
+
+	private String createImageFileNameFromUrl(String httpUrl) {
+		String[] parts = httpUrl.split("/");
+		String lastPart = parts[parts.length - 1];
+		return endsWithAnyOfAndIgnoreCase(lastPart, SUPPORTED_IMG_FORMATS) ? 
+				lastPart: "img.png";
 	}
 
 

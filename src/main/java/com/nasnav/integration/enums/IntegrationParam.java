@@ -9,7 +9,8 @@ public enum IntegrationParam {
 	, SERVER_URL ("SERVER_URL")
 	, SERVER_2_URL ("SERVER_2_URL")
 	, AUTH_SERVER_URL ("AUTH_SERVER_URL")
-	, IMG_SERVER_URL ("IMG_SERVER_URL");
+	, IMG_SERVER_URL ("IMG_SERVER_URL")
+	, IMG_AUTH_SERVER_URL("IMG_AUTH_SERVER_URL");
 	
 	@Getter
 	private String value;

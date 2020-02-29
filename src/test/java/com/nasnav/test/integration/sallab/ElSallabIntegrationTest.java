@@ -15,6 +15,8 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.OK;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +29,7 @@ import org.junit.runner.RunWith;
 import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -51,6 +54,7 @@ import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.enums.IntegrationParam;
 import com.nasnav.persistence.ProductVariantsEntity;
 
 
@@ -66,6 +70,7 @@ public class ElSallabIntegrationTest {
 	private static final String SALLAB_SERVER_URL = "https://azizsallab--DevSanbox.cs80.my.salesforce.com";    
     private static final String SALLAB_SEVER_URL_2 = "http://41.33.113.70";
     private static final String IMG_SERVER_URL = "https://azizsallab.my.salesforce.com";
+    private static final String IMG_AUTH_SERVER_URL = "https://login.salesforce.com";
     private static final String AUTH_SERVER_URL = "https://test.salesforce.com";
     private static final String MOCK_SERVER_URL = "http://127.0.0.1";
     private static final String MOCK_SERVER_AUTH_TOKEN = "00D250000009BEF!AQcAQHE4mvVZ6hmXm7_4y1s26_FIG0yMMVvq58ecs1GshIRcQE2l5d40r_NR8AJA5g.gko2fNdCctisUWg4cOIGhqnK9xMma";
@@ -113,6 +118,13 @@ public class ElSallabIntegrationTest {
 	@Autowired
 	private ProductImagesRepository imgRepo;
 	
+
+	@Value("${files.basepath}")
+	private String basePathStr;
+
+	private Path basePath;
+
+	
 	@Rule
 	 public MockServerRule mockServerRule = new MockServerRule(this);
 	
@@ -121,19 +133,45 @@ public class ElSallabIntegrationTest {
 	
 	@Before
 	public void init() throws Exception {			
+		initIntegrationModules();		
+	}
+
+
+
+
+
+
+
+
+	private void printDummyImageSavePath() {
+		this.basePath = Paths.get(basePathStr);
+		
+		System.out.println("Test Files Base Path  >>>> " + basePath.toAbsolutePath());
+	}
+
+
+
+
+
+
+
+
+	private void initIntegrationModules() throws Exception, BusinessException {
 		String serverFullUrl = SALLAB_SERVER_URL;
 		String server2FullUrl = SALLAB_SEVER_URL_2;
 		String authServerUrl = AUTH_SERVER_URL;
 		String imgServerUrl = IMG_SERVER_URL;
+		String imgAuthServerUrl = IMG_AUTH_SERVER_URL;
 		
 		if(usingMockServer) {
 			serverFullUrl = testCommons.initElSallabMockServer(mockServerRule);
 			server2FullUrl = serverFullUrl;
 			authServerUrl = serverFullUrl;
 			imgServerUrl = serverFullUrl;
+			imgAuthServerUrl = serverFullUrl;
 		}
 		
-		registerIntegrationModule(serverFullUrl, server2FullUrl, authServerUrl, imgServerUrl);
+		registerIntegrationModule(serverFullUrl, server2FullUrl, authServerUrl, imgServerUrl, imgAuthServerUrl);
 	}
 	
 	
@@ -240,6 +278,8 @@ public class ElSallabIntegrationTest {
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/El_sallab_integration_Test_Images_Insert.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void imagesImportTest() throws InterruptedException {
+		printDummyImageSavePath();
+		
 		Long imgsCountBefore  = imgRepo.count();
 		//------------------------------------------------		
 		//call product import api
@@ -256,7 +296,7 @@ public class ElSallabIntegrationTest {
 		//------------------------------------------------
         assertEquals(OK, response.getStatusCode());
 		//test the mock api was called
-        verifyImageImportMockServerCalls(1);
+        verifyImageImportMockServerCalls(2,1);
 		
 		//------------------------------------------------
 		//test imported brands were created
@@ -285,7 +325,7 @@ public class ElSallabIntegrationTest {
 
 
 
-	private void verifyImageImportMockServerCalls(Integer additionalPageCount) {
+	private void verifyImageImportMockServerCalls(Integer variantCount, Integer additionalPageCount) {
 		if(usingMockServer) {
 			mockServerRule.getClient().verify(
 				      request()
@@ -294,20 +334,20 @@ public class ElSallabIntegrationTest {
 				      VerificationTimes.exactly(1)
 				    );
 			
-			mockServerRule.getClient().verify(
-				      request()
-				        .withMethod("GET")
-				        .withPath("/services/data/v44.0/query/.+")
-				        .withHeader("Authorization", "Bearer "+MOCK_SERVER_AUTH_TOKEN),
-				      VerificationTimes.exactly(additionalPageCount)
-				    );
+//			mockServerRule.getClient().verify(
+//				      request()
+//				        .withMethod("GET")
+//				        .withPath("/services/data/v44.0/query/.+")
+//				        .withHeader("Authorization", "Bearer "+MOCK_SERVER_AUTH_TOKEN),
+//				      VerificationTimes.exactly(additionalPageCount)
+//				    );
 			
 			mockServerRule.getClient().verify(
 				      request()
 				        .withMethod("GET")
-				        .withPath("/services/data/v44.0/query/.+")
+				        .withPath("/services/data/v36.0/sobjects/Attachment/.+/Body")
 				        .withHeader("Authorization", "Bearer "+MOCK_SERVER_AUTH_TOKEN),
-				      VerificationTimes.exactly(additionalPageCount)
+				      VerificationTimes.exactly(variantCount)
 				    );
 	   }
 	}
@@ -423,17 +463,20 @@ public class ElSallabIntegrationTest {
 	
 	
 	
-	private void registerIntegrationModule(String serverFullUrl, String server2FullUrl, String authServerUrl, String imgServerUrl) throws BusinessException {
+	private void registerIntegrationModule(String serverFullUrl, String server2FullUrl, String authServerUrl, String imgServerUrl, String imgAuthServerUrl) throws BusinessException {
 		Map<String,String> params = new HashMap<>();
 		params.put("SERVER_URL", serverFullUrl);
 		params.put("SERVER_2_URL", server2FullUrl);
 		params.put("AUTH_SERVER_URL", authServerUrl);
 		params.put("IMG_SERVER_URL", imgServerUrl);
+		params.put(IntegrationParam.IMG_AUTH_SERVER_URL.getValue(), imgAuthServerUrl);
 		params.put(AUTH_GRANT_TYPE.getValue(), "password");
 		params.put(CLIENT_ID.getValue(), "3MVG98_Psg5cppyZgL4kzqXARpsy8tyvcM1d8DwhODOxPiDTnqaf71BGU2cmzBpvf8l_myMTql31bhVa.ar8V");
 		params.put(CLIENT_SECRET.getValue(), "4085100268240543918");
 		params.put(USERNAME.getValue(), "mzaklama@elsallab.com.devsanbox");
 		params.put(PASSWORD.getValue(), "CloudzLab001tBHMDjhBGvDRsmWMrfog0oHG7");
+		params.put(IntegrationParam.IMG_SERVER_USERNAME.getValue(), "mzaklama@elsallab.com");
+		params.put(IntegrationParam.IMG_SERVER_PASSWORD.getValue(), "CloudzLab001rMVQgFDbydbFQ4PLEUYycvn0");
 		
 		OrganizationIntegrationInfoDTO integrationInfo = new OrganizationIntegrationInfoDTO();
 		integrationInfo.setIntegrationModule("com.nasnav.integration.sallab.ElSallabIntegrationModule");
