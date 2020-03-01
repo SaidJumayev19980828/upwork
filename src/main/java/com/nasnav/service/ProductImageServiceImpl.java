@@ -3,6 +3,7 @@ package com.nasnav.service;
 import static com.nasnav.commons.utils.StringUtils.endsWithAnyOfAndIgnoreCase;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
+import static com.nasnav.commons.utils.StringUtils.startsWithAnyOfAndIgnoreCase;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CSV_PARSE_FAILURE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING_IMGS;
@@ -702,7 +703,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		}		
 		//TODO: try to use reflection to check if the webclient have a base url or not.
 		//until this is done; webclients are assumed to have no base url and all URL's are assumed to be absolute.
-		String httpUrl = !url.startsWith("http://") ? "http://" + url : url;
+		String httpUrl = !startsWithAnyOfAndIgnoreCase(url, "http://", "https://") ? "http://" + url : url;
 		
 		Mono<MultipartFile> imgFile = readImageDataFromUrl(client, httpUrl);
 		

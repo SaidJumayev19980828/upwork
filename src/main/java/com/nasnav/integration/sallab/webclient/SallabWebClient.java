@@ -23,11 +23,13 @@ public class SallabWebClient {
     private final WebClient client ;
     private final WebClient client2;
     private final WebClient authWebClient;
+    private final WebClient imgAuthWebClient;
 
-    public SallabWebClient(String baseUrl, String baseUrl2, String authServerUrl) {
+    public SallabWebClient(String baseUrl, String baseUrl2, String authServerUrl, String imgAuthServerUrl) {
     	client = buildWebClient(baseUrl);
     	client2 = buildWebClient(baseUrl2);
-        authWebClient = buildWebClient(authServerUrl);        
+        authWebClient = buildWebClient(authServerUrl);    
+        imgAuthWebClient = buildWebClient(imgAuthServerUrl);  
     }
 
 
@@ -49,6 +51,16 @@ public class SallabWebClient {
     public Mono<ClientResponse> authenticate(AuthenticationData authData) {//testing account
     	String uri = buildAuthUri(authData);
         return authWebClient
+                .post()
+                .uri(uri)
+                .exchange();                
+    }
+    
+    
+    
+    public Mono<ClientResponse> authenticateImgServer(AuthenticationData authData) {//testing account
+    	String uri = buildAuthUri(authData);
+        return imgAuthWebClient
                 .post()
                 .uri(uri)
                 .exchange();                

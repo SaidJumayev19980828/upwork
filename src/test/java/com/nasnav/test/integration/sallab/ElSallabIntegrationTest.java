@@ -1,5 +1,7 @@
 package com.nasnav.test.integration.sallab;
 
+import static com.nasnav.integration.enums.IntegrationParam.IMG_SERVER_PASSWORD;
+import static com.nasnav.integration.enums.IntegrationParam.IMG_SERVER_USERNAME;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.AUTH_GRANT_TYPE;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_ID;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_SECRET;
@@ -75,8 +77,8 @@ public class ElSallabIntegrationTest {
     private static final String MOCK_SERVER_URL = "http://127.0.0.1";
     private static final String MOCK_SERVER_AUTH_TOKEN = "00D250000009BEF!AQcAQHE4mvVZ6hmXm7_4y1s26_FIG0yMMVvq58ecs1GshIRcQE2l5d40r_NR8AJA5g.gko2fNdCctisUWg4cOIGhqnK9xMma";
     
-  private static final String SERVER_URL = MOCK_SERVER_URL;
-//  private static final String SERVER_URL = SALLAB_SERVER_URL;
+//  private static final String SERVER_URL = MOCK_SERVER_URL;
+  private static final String SERVER_URL = SALLAB_SERVER_URL;
   
     private static final boolean usingMockServer = SERVER_URL.equals(MOCK_SERVER_URL);
 	
@@ -475,8 +477,8 @@ public class ElSallabIntegrationTest {
 		params.put(CLIENT_SECRET.getValue(), "4085100268240543918");
 		params.put(USERNAME.getValue(), "mzaklama@elsallab.com.devsanbox");
 		params.put(PASSWORD.getValue(), "CloudzLab001tBHMDjhBGvDRsmWMrfog0oHG7");
-		params.put(IntegrationParam.IMG_SERVER_USERNAME.getValue(), "mzaklama@elsallab.com");
-		params.put(IntegrationParam.IMG_SERVER_PASSWORD.getValue(), "CloudzLab001rMVQgFDbydbFQ4PLEUYycvn0");
+		params.put(IMG_SERVER_USERNAME.getValue(), "mzaklama@elsallab.com");
+		params.put(IMG_SERVER_PASSWORD.getValue(), "CloudzLab001rMVQgFDbydbFQ4PLEUYycvn0");
 		
 		OrganizationIntegrationInfoDTO integrationInfo = new OrganizationIntegrationInfoDTO();
 		integrationInfo.setIntegrationModule("com.nasnav.integration.sallab.ElSallabIntegrationModule");

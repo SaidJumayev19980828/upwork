@@ -1,6 +1,9 @@
 package com.nasnav.integration.sallab;
 
 import static com.nasnav.integration.enums.IntegrationParam.AUTH_SERVER_URL;
+import static com.nasnav.integration.enums.IntegrationParam.IMG_AUTH_SERVER_URL;
+import static com.nasnav.integration.enums.IntegrationParam.IMG_SERVER_PASSWORD;
+import static com.nasnav.integration.enums.IntegrationParam.IMG_SERVER_USERNAME;
 import static com.nasnav.integration.enums.IntegrationParam.SERVER_2_URL;
 import static com.nasnav.integration.enums.IntegrationParam.SERVER_URL;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.AUTH_GRANT_TYPE;
@@ -41,7 +44,8 @@ public abstract class AbstractElSallabEventListener<E extends Event<T,R>, T, R> 
 			String serverUrl = integrationService.getIntegrationParamValue(orgId, SERVER_URL.getValue());
 			String server2Url = integrationService.getIntegrationParamValue(orgId, SERVER_2_URL.getValue());
 			String authServerUrl = integrationService.getIntegrationParamValue(orgId, AUTH_SERVER_URL.getValue());
-			client = new SallabWebClient(serverUrl, server2Url, authServerUrl);
+			String imgAuthServerUrl = integrationService.getIntegrationParamValue(orgId, IMG_AUTH_SERVER_URL.getValue());
+			client = new SallabWebClient(serverUrl, server2Url, authServerUrl, imgAuthServerUrl);
 		}
 		
 		return client;
@@ -94,6 +98,20 @@ public abstract class AbstractElSallabEventListener<E extends Event<T,R>, T, R> 
 		String clientSecret = integrationService.getIntegrationParamValue(orgId, CLIENT_SECRET.getValue());
 		String username = integrationService.getIntegrationParamValue(orgId, USERNAME.getValue());
 		String password = integrationService.getIntegrationParamValue(orgId, PASSWORD.getValue());
+		
+		return new AuthenticationData(grantType, clientId, clientSecret, username, password);
+	}
+	
+	
+	
+	
+	protected AuthenticationData getImgServerAuthData(Long orgId) {
+		
+		String grantType = integrationService.getIntegrationParamValue(orgId, AUTH_GRANT_TYPE.getValue());
+		String clientId = integrationService.getIntegrationParamValue(orgId, CLIENT_ID.getValue());
+		String clientSecret = integrationService.getIntegrationParamValue(orgId, CLIENT_SECRET.getValue());
+		String username = integrationService.getIntegrationParamValue(orgId, IMG_SERVER_USERNAME.getValue());
+		String password = integrationService.getIntegrationParamValue(orgId, IMG_SERVER_PASSWORD.getValue());
 		
 		return new AuthenticationData(grantType, clientId, clientSecret, username, password);
 	}

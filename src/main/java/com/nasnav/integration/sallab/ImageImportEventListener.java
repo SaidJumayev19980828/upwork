@@ -107,15 +107,16 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 	private Map<String, List<ProductImageUpdateIdentifier>> getUrlToProductMapping(FetchedProductsData products) {
 		Long orgId = products.getOrgId();
 		String baseUrl = integrationService.getIntegrationParamValue(orgId, IMG_SERVER_URL.getValue());
-		return products
-		  .getProducts()
-		  .stream()
-		  .map(product -> toVariantIdentifierAndUrlPair(product, baseUrl))
-		  .filter(this::isValidVariantIdentifierAndUrlPair)
-		  .collect( toMap(VariantIdentifierAndUrlPair::getUrl
-				    		 , VariantIdentifierAndUrlPair::getIdentifier
-				    		 , (list1, list2) -> concat(list1.stream(), list2.stream()).collect(toList())
-				    		 ));
+		return 
+				products
+				  .getProducts()
+				  .stream()
+				  .map(product -> toVariantIdentifierAndUrlPair(product, baseUrl))
+				  .filter(this::isValidVariantIdentifierAndUrlPair)
+				  .collect( toMap(VariantIdentifierAndUrlPair::getUrl
+						    		 , VariantIdentifierAndUrlPair::getIdentifier
+						    		 , (list1, list2) -> concat(list1.stream(), list2.stream()).collect(toList())
+						    		 ));
 	}
 
 	
@@ -297,7 +298,13 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 	
 	
 	
-	private WebClient buildImageWebClient(Long orgId, String token) {		
+	private WebClient buildImageWebClient(Long orgId, String token) {
+		AuthenticationData authData = getImgServerAuthData(orgId);
+		client
+			.authenticateImgServer(authData)
+		 	.flatMap(this::throwExceptionIfNotOk)
+		 	.flatMap(res -> res.bodyToMono(AuthenticationResponse.class))
+		 	.map(res -> getImgWebClient(res, orgId));
 		return WebClient
         		.builder()
                 .clientConnector(new ReactorClientHttpConnector(
