@@ -1,5 +1,10 @@
 package com.nasnav.controller;
 
+import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
@@ -7,7 +12,6 @@ import java.util.List;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -68,8 +72,8 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @PostMapping(value = "info",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+            produces = APPLICATION_JSON_UTF8_VALUE,
+            consumes = APPLICATION_JSON_UTF8_VALUE)
     public ProductUpdateResponse updateProduct(           
             @RequestBody String productJson)
             		throws BusinessException {
@@ -87,8 +91,8 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @DeleteMapping(
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+            produces = APPLICATION_JSON_UTF8_VALUE,
+            consumes = APPLICATION_JSON_UTF8_VALUE)
     public ProductUpdateResponse deleteProduct(           
             @RequestParam("product_id") Long productId)
             		throws BusinessException {
@@ -107,8 +111,8 @@ public class ProductsController {
     })
 	@ResponseStatus(HttpStatus.OK)
 	@PostMapping(value = "image",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+            produces = APPLICATION_JSON_UTF8_VALUE,
+            consumes = MULTIPART_FORM_DATA_VALUE)
     public ProductImageUpdateResponse updateProductImage(
             @RequestPart("image") @Valid MultipartFile file,
             @RequestPart("properties") @Valid ProductImageUpdateDTO imgMetaData)
@@ -128,7 +132,7 @@ public class ProductsController {
     })
 	@ResponseStatus(HttpStatus.OK)
 	@GetMapping(value = "images",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+            produces = APPLICATION_JSON_UTF8_VALUE)
     public List<ProductImgDetailsDTO> getProductImages(
     		@RequestHeader (value = "User-Token") String userToken, @RequestParam("product_id") Long productId)
             throws BusinessException {
@@ -149,7 +153,7 @@ public class ProductsController {
     })
 	@ResponseStatus(HttpStatus.OK)
 	@DeleteMapping(value = "image",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+            produces = APPLICATION_JSON_UTF8_VALUE)
     public ProductImageDeleteResponse deleteProductImage(@RequestParam("image_id") @Valid Long imageId)
             		throws BusinessException {
 		return  productImgService.deleteImage(imageId);
@@ -166,7 +170,7 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
-    @GetMapping(value = "bundles", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "bundles", produces = APPLICATION_JSON_UTF8_VALUE)
     public BundleResponse getBundles( BundleSearchParam params)
             		throws BusinessException {
 		return productService.getBundles(params);
@@ -183,8 +187,8 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @PostMapping(value = "bundle",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+            produces = APPLICATION_JSON_UTF8_VALUE,
+            consumes = APPLICATION_JSON_UTF8_VALUE)
     public ProductUpdateResponse updateBundle(           
             @RequestBody String productJson)
             		throws BusinessException {
@@ -202,8 +206,8 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @DeleteMapping(value = "bundle",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+            produces = APPLICATION_JSON_UTF8_VALUE,
+            consumes = APPLICATION_JSON_UTF8_VALUE)
     public ProductUpdateResponse deleteBundle(           
             @RequestParam("product_id") Long productId)
             		throws BusinessException {
@@ -221,8 +225,8 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @PostMapping(value = "bundle/element",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+            produces = APPLICATION_JSON_UTF8_VALUE,
+            consumes = APPLICATION_JSON_UTF8_VALUE)
 	@ResponseStatus(HttpStatus.OK)
     public void updateBundleElement(           
             @RequestBody BundleElementUpdateDTO element)
@@ -243,8 +247,8 @@ public class ProductsController {
     })
 	@ResponseStatus(HttpStatus.OK)
 	@PostMapping(value = "variant",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE
-            ,consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+            produces = APPLICATION_JSON_UTF8_VALUE
+            ,consumes = APPLICATION_JSON_UTF8_VALUE)
     public VariantUpdateResponse updateProductVariant(@RequestBody VariantUpdateDTO variant)
             		throws BusinessException {
 		return  productService.updateVariant(variant);
@@ -263,15 +267,39 @@ public class ProductsController {
     })
 	@ResponseStatus(HttpStatus.OK)
 	@PostMapping(value = "image/bulk",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+            produces = APPLICATION_JSON_UTF8_VALUE,
+            consumes = MULTIPART_FORM_DATA_VALUE)
     public List<ProductImageUpdateResponse> importProductImagesBulk(
+    		@RequestHeader (value = "User-Token") String userToken,
             @RequestPart("imgs_zip") @Valid MultipartFile zip,
             @RequestPart(name="imgs_barcode_csv", required=false )  MultipartFile csv,
             @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData)
             		throws BusinessException {
 
 		return  productImgService.updateProductImageBulk(zip, csv, metaData);
+    }
+	
+	
+	
+	
+	
+	@ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Images imported successfully"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+	@ResponseStatus(HttpStatus.OK)
+	@PostMapping(value = "image/bulk/url",
+            produces = APPLICATION_JSON_UTF8_VALUE,
+            consumes = MULTIPART_FORM_DATA_VALUE)
+    public List<ProductImageUpdateResponse> importProductImagesBulkViaUrl(
+    		@RequestHeader (value = "User-Token") String userToken,
+            @RequestPart(name="imgs_barcode_csv", required=false )  MultipartFile csv,
+            @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData)
+            		throws BusinessException {
+
+		return  productImgService.updateProductImageBulkViaUrl(csv, metaData);
     }
 
 	
@@ -286,7 +314,7 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @ResponseStatus(HttpStatus.OK)
-    @PostMapping(value = "tag", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "tag", consumes = APPLICATION_JSON_UTF8_VALUE)
     public void updateProductTags(@RequestHeader("User-Token") String token,
                                             @RequestBody ProductTagDTO productTagDTO ) throws BusinessException {
         productService.updateProductTags(productTagDTO);
@@ -302,7 +330,7 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(OK)
     @DeleteMapping(value = "tag", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public void deleteProductTags(@RequestHeader("User-Token") String token,
                                             @RequestBody ProductTagDTO productTagDTO ) throws BusinessException {
@@ -319,7 +347,7 @@ public class ProductsController {
         ByteArrayOutputStream s = csvDataImportService.generateImagesCsvTemplate();
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/csv"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Csv_Template.csv")
+                .header(CONTENT_DISPOSITION, "attachment; filename=Csv_Template.csv")
                 .body(s.toString());
     }
 }

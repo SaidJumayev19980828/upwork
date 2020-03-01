@@ -1,0 +1,3 @@
+variant_id,external_id,barcode,path
+"",7,,http://127.0.0.1:8188/static/kitako/test_photo_1.png
+"",,ABCDEFG123,http://127.0.0.1:8188/static/test_photo_2.png

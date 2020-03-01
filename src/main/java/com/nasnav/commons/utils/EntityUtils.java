@@ -60,6 +60,12 @@ public class EntityUtils {
 	}
 	
 	
+	public static boolean anyIsNonNull(Object... elements){
+		List<Object> elementList =  asList(elements);
+		return elementList.stream().anyMatch(Objects::nonNull);
+	}
+	
+	
 	
 	public static boolean allIsNull(Object... elements){
 		List<Object> elementList =  Arrays.asList(elements);
@@ -103,6 +109,7 @@ public class EntityUtils {
 	
 	
 	
+	@SafeVarargs
 	public static <T> Boolean collectionContainsAnyOf(Collection<T> collection, T... objects) {
 		List<T> objectList = asList(objects);
 		return objectList

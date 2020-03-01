@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -19,6 +20,9 @@ public interface IntegrationMappingRepository extends JpaRepository<IntegrationM
 
 	Optional<IntegrationMappingEntity> findByOrganizationIdAndMappingType_typeNameAndRemoteValue(Long orgId,
 			String value, String remoteValue);
+	
+	List<IntegrationMappingEntity> findByOrganizationIdAndMappingType_typeNameAndRemoteValueIn(Long orgId,
+			String value, List<String> remoteValues);
 	
 	Optional<IntegrationMappingEntity> findByOrganizationIdAndMappingType_typeNameAndRemoteValueIgnoreCase(Long orgId
 			, String value, String externalShopId);
