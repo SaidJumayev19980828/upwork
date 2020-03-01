@@ -1,6 +1,5 @@
 package com.nasnav.service;
 
-import static com.nasnav.commons.utils.StringUtils.endsWithAnyOfAndIgnoreCase;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.startsWithAnyOfAndIgnoreCase;
@@ -23,6 +22,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
+import static java.util.logging.Level.SEVERE;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -43,6 +43,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -52,6 +54,10 @@ import javax.validation.Valid;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypeException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -743,8 +749,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 		return client
 				.get()
 				.uri(httpUrl)
-				.retrieve()
-				.bodyToMono(byte[].class)
+				.exchange()
+				.flatMap(res -> res.bodyToMono(byte[].class))				
 				.map(bytes -> readUrlAsMultipartFile(httpUrl, bytes));
 	}
 	
@@ -1250,12 +1256,13 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	private MultipartFile readUrlAsMultipartFile(String httpUrl, byte[] bytes){
 		try {
-			String fileName = createImageFileNameFromUrl(httpUrl);
+			String extension = getFileExtension(bytes);
+			String fileName = createImageFileNameFromUrl(httpUrl, extension);
 			FileItem fileItem = createFileItem(fileName);
 			readIntoFileItem(bytes, fileItem);			
 			return new CommonsMultipartFile(fileItem);
 		} catch (IOException e) {
-			logger.logException(e, Level.SEVERE);
+			logger.logException(e, SEVERE);
 			throw new RuntimeException(e);
 		}		
 	}
@@ -1265,11 +1272,43 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private String createImageFileNameFromUrl(String httpUrl) {
+	private String getFileExtension(byte[] bytes) {		
+		try {
+			String contentType = new Tika().detect(bytes);
+			TikaConfig config = TikaConfig.getDefaultConfig();
+			MimeType mimeType = config.getMimeRepository().forName(contentType);
+			String extension = mimeType.getExtension();
+			return extension;
+		} catch (MimeTypeException e) {
+			logger.logException(e, Level.WARNING);
+			return "png";
+		}		
+	}
+
+
+
+
+
+
+	private String createImageFileNameFromUrl(String httpUrl, String extension) {
 		String[] parts = httpUrl.split("/");
 		String lastPart = parts[parts.length - 1];
-		return endsWithAnyOfAndIgnoreCase(lastPart, SUPPORTED_IMG_FORMATS) ? 
-				lastPart: "img.png";
+		
+		return urlPartHasExtension(lastPart) ? 
+				lastPart: "img" + extension;
+	}
+
+
+
+
+
+
+	private boolean urlPartHasExtension(String lastPart) {
+		String patternStr = "([^\\s]+(\\.(?i)(.+))$)";
+		Pattern pattern = Pattern.compile(patternStr);
+		Matcher matcher = pattern.matcher(lastPart);
+		boolean hasExtension = matcher.matches();
+		return hasExtension;
 	}
 
 
@@ -1590,6 +1629,7 @@ public class ProductImageServiceImpl implements ProductImageService {
                 ))
                 .build();
 	}
+	
 }
 
 

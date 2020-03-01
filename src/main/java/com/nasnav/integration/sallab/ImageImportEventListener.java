@@ -11,11 +11,17 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.web.reactive.function.BodyExtractors.toDataBuffers;
 
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.web.reactive.function.BodyExtractors;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.nasnav.dto.ProductImageUpdateIdentifier;
@@ -57,11 +63,12 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 		Long orgId = event.getOrganizationId();
 		
 		ImageImportParam param = event.getEventData();
-		AuthenticationData authData = getAuthData(orgId);
 		
 		SallabWebClient client = getWebClient(orgId);
+		AuthenticationData authData = getImgServerAuthData(orgId);
+		
 		return client
-				.authenticate(authData)
+				.authenticateImgServer(authData)
 			 	.flatMap(this::throwExceptionIfNotOk)
 			 	.flatMap(res -> res.bodyToMono(AuthenticationResponse.class))
 			 	.map(res -> getImgWebClient(res, orgId))
@@ -76,10 +83,21 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 			 		ImageImportParam param
 			 		, WebClientWithAuthToken imgClient
 			 		, Long orgId){
-		Mono<FetchedProductsData> productsMono = fetchProductsFromExternalSystem(param, imgClient.getAuthToken(), orgId); 
+		SallabWebClient client = getWebClient(orgId);
+		AuthenticationData authData = getAuthData(orgId);
+		
+		Mono<FetchedProductsData> productsMono = 
+			client
+			.authenticate(authData)
+			.flatMap(this::throwExceptionIfNotOk)
+		 	.flatMap(res -> res.bodyToMono(AuthenticationResponse.class))
+			.map(AuthenticationResponse::getAccessToken)
+			.flatMap(authToken -> fetchProductsFromExternalSystem(param, authToken, orgId));
+		
 		return Mono.zip( productsMono, Mono.just(imgClient.getClient())
-				 	, (prod, client) -> new FetchedProductsDataAndWebClientPair(prod, client));
+				 	, (prod, imgWebClient) -> new FetchedProductsDataAndWebClientPair(prod, imgWebClient));
 	}
+	
 	
 	
 	
@@ -161,7 +179,6 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 
 	private Mono<FetchedProductsData>  fetchProductsFromExternalSystem(ImageImportParam param, String authToken, Long orgId) {
 		SallabWebClient client = getWebClient(orgId);
-
 		return 
 				client
 				.getProducts(authToken)
@@ -299,17 +316,13 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 	
 	
 	private WebClient buildImageWebClient(Long orgId, String token) {
-		AuthenticationData authData = getImgServerAuthData(orgId);
-		client
-			.authenticateImgServer(authData)
-		 	.flatMap(this::throwExceptionIfNotOk)
-		 	.flatMap(res -> res.bodyToMono(AuthenticationResponse.class))
-		 	.map(res -> getImgWebClient(res, orgId));
+		
 		return WebClient
         		.builder()
                 .clientConnector(new ReactorClientHttpConnector(
                         HttpClient.create().wiretap(true)
                 ))
+                .filter(contentTypeInterceptor())
                 .defaultHeader("Authorization", "Bearer "+token)
                 .build();
 	}
@@ -320,6 +333,23 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 	protected ImagesImportEvent handleError(ImagesImportEvent event, Throwable t) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	
+	
+
+	/**
+	 * webclient interceptor that overrides the response headers ...
+	 * */
+	private ExchangeFilterFunction contentTypeInterceptor() {
+	    return ExchangeFilterFunction.ofResponseProcessor(clientResponse -> 
+	        Mono.just(
+	        		ClientResponse
+	        			.from(clientResponse)
+	        			.headers(headers -> headers.remove(HttpHeaders.CONTENT_TYPE)) //override the content type
+	        			.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE) 
+	        			.body(clientResponse.body(toDataBuffers()) ) // copy the body as bytes with no processing
+	        			.build()));
 	}
 
 
