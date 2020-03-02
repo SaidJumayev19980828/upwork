@@ -7,6 +7,10 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_FILE_U
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMPORT_MISSING_PARAM;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_SHOP_ID_NOT_EXIST;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_CHANGE_OTHER_ORG_SHOP;
+import static com.nasnav.enumerations.ImageCsvTemplateType.EMPTY;
+import static com.nasnav.enumerations.ImageCsvTemplateType.PRODUCTS_WITH_NO_IMGS;
+import static java.util.Arrays.asList;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 import java.io.ByteArrayInputStream;
@@ -21,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -44,6 +49,7 @@ import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ProductListImportDTO;
+import com.nasnav.enumerations.ImageCsvTemplateType;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.EmployeeUserEntity;
@@ -110,7 +116,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	
 	private final Set<String> csvBaseHeaders = new HashSet<String>(fieldToColumnHeaderMapping.values());
 	
-	
+	private final List<String> IMG_CSV_BASE_HEADERS = asList("variant_id","external_id","barcode","image_file");
 
 	@Transactional(rollbackFor = Throwable.class)
 	public ProductListImportResponse importProductListFromCSV(@Valid MultipartFile file,
@@ -380,6 +386,8 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 		return csvResult;
 	}
+	
+	
 
 	@Override
 	public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException{		
@@ -400,7 +408,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 					.stream()
 					.map(ProductFeaturesEntity::getName)
 					.sorted()
-					.collect(Collectors.toList());
+					.collect(toList());
 		
 		List<String> baseHeaders = new ArrayList<>(csvBaseHeaders);
 		baseHeaders.addAll(features);
@@ -411,10 +419,37 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	
 
 	@Override
-	public ByteArrayOutputStream generateImagesCsvTemplate() throws IOException{
-		List<String> headers = Arrays.asList(new String[]{"variant_id","external_id","barcode","image_file"});
+	public ByteArrayOutputStream generateImagesCsvTemplate(ImageCsvTemplateType type) throws IOException{
+		ImageCsvTemplateType templateType = ofNullable(type).orElse(EMPTY);
+		if(templateType.equals(PRODUCTS_WITH_NO_IMGS)) {
+			return generateImagesCsvTemplateForProductsWithNoImgs();
+		}			
+		else {
+			return generateEmptyImagesCsvTemplate();
+		}
+	}
+	
+	
+	
+	
+	private ByteArrayOutputStream generateImagesCsvTemplateForProductsWithNoImgs() {
+		List<String> headers = new ArrayList<>();
+		headers.addAll(IMG_CSV_BASE_HEADERS);
+		headers.add("product_name");
+		
+		Long orgId = security.getCurrentUserOrganizationId();
+		//get variants of products with no images(variant id - barcode - external id)
+		//build the csv
+		//convert the csv to byte array
+		
+		return new ByteArrayOutputStream();
+	}
 
-		return writeCsvHeaders(headers);
+
+
+
+	private ByteArrayOutputStream generateEmptyImagesCsvTemplate() throws IOException {
+		return writeCsvHeaders(IMG_CSV_BASE_HEADERS);
 	}
 }
 

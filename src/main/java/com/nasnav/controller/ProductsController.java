@@ -12,6 +12,7 @@ import java.util.List;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +35,7 @@ import com.nasnav.dto.ProductImageUpdateDTO;
 import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.dto.ProductTagDTO;
 import com.nasnav.dto.VariantUpdateDTO;
+import com.nasnav.enumerations.ImageCsvTemplateType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.response.BundleResponse;
@@ -343,11 +345,13 @@ public class ProductsController {
 
     @GetMapping(value = "/image/bulk/template")
     @ResponseBody
-    public ResponseEntity<String> generateCsvTemplate(@RequestHeader("User-Token") String token) throws IOException {
-        ByteArrayOutputStream s = csvDataImportService.generateImagesCsvTemplate();
+    public ResponseEntity<String> generateCsvTemplate(@RequestHeader("User-Token") String token
+    		, @Param("type") ImageCsvTemplateType type) throws IOException {
+        ByteArrayOutputStream s = csvDataImportService.generateImagesCsvTemplate(type);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/csv"))
                 .header(CONTENT_DISPOSITION, "attachment; filename=Csv_Template.csv")
                 .body(s.toString());
     }
+    
 }
