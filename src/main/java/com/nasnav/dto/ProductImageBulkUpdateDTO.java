@@ -9,11 +9,15 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @ApiModel(value = "Images import meta data")
 public class ProductImageBulkUpdateDTO{
 	private Integer type;
 	private Integer priority;
+	private Boolean ignoreErrors;
+	
+	public ProductImageBulkUpdateDTO() {
+		ignoreErrors = false;
+	}
 }

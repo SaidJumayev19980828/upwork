@@ -369,6 +369,21 @@ public class ProductImageBulkUrlUploadTest {
 
 	
 	
+	@Test
+	public void updateImgBulkTestExistVariantIdNoVariantButIgnoreErrors() throws Exception {
+		byte[] jsonBytes = 
+				createDummyUploadRequest()
+					.put("ignore_errors", true)
+					.toString()
+					.getBytes();
+
+		performFileUpload(TEST_CSV_VARIANT_ID_NO_VARIANT, jsonBytes, USER_TOKEN)
+				.andExpect(status().is(200));
+
+		assertNoImgsImported();
+	}
+	
+	
 	
 	@Test
 	public void updateImgBulkTestExistExternalIdNoMapping() throws Exception {

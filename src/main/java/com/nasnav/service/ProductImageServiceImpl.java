@@ -601,7 +601,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 				)
 				.buffer()
 				.map(HashSet::new)
-				.blockFirst();
+				.single(new HashSet<>())
+				.blockOptional()
+				.orElse(new HashSet<>());
 	}
 	
 	
@@ -736,7 +738,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 	private Flux<ProductImageUpdateDTO> createImgsMetaData(ProductImageBulkUpdateDTO metaData,
 			VariantCache variantCache, List<ProductImageUpdateIdentifier> variantIdentifiers) {
 		return Flux.fromIterable(variantIdentifiers)
-					.map(identifier -> getProductVariant(identifier, variantCache))
+					.map(identifier -> getProductVariant(identifier, variantCache, metaData))
+					.filter(Optional::isPresent)
+					.map(Optional::get)
 					.map(variant -> creatImgMetaData(metaData, variant));
 	}
 
@@ -779,20 +783,26 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	
 	
-	private ProductVariantsEntity getProductVariant(ProductImageUpdateIdentifier identifier, VariantCache cache) {
+	private Optional<ProductVariantsEntity> getProductVariant(ProductImageUpdateIdentifier identifier, VariantCache cache, ProductImageBulkUpdateDTO metaData) {
 		String variantId = identifier.getVariantId();
 		String externalId = identifier.getExternalId();
 		String barcode = identifier.getBarcode();	
-		return Stream
+		Optional<ProductVariantsEntity> variant =
+				Stream
 				.of(  cache.getIdToVariantMap().get(variantId)
 					, cache.getExternalIdToVariantMap().get(externalId)
 					, cache.getBarcodeToVariantMap().get(barcode))
 				.filter(Objects::nonNull)
-				.findFirst()
-				.orElseThrow(() -> new RuntimeBusinessException(
-										format(ERR_NO_VARIANT_FOUND, variantId, externalId, barcode)
-										, "INVALID PARAM: csv"
-										, NOT_ACCEPTABLE));
+				.findFirst();
+		
+		if(!metaData.getIgnoreErrors() && !variant.isPresent()) {
+			throw new RuntimeBusinessException(
+					format(ERR_NO_VARIANT_FOUND, variantId, externalId, barcode)
+					, "INVALID PARAM: csv"
+					, NOT_ACCEPTABLE);
+		}
+		
+		return variant;
 	}
 	
 	
