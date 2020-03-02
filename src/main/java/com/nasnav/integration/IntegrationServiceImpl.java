@@ -1893,6 +1893,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		ProductImageBulkUpdateDTO metadata = new ProductImageBulkUpdateDTO();
 		metadata.setPriority(param.getPriority());
 		metadata.setType(param.getType());
+		metadata.setIgnoreErrors(param.getIgnoreErrors());
 		return metadata;
 	}
 
