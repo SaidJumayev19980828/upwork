@@ -40,7 +40,7 @@ public class PaymentControllerRave {
             MastercardSession session) {
         this.ordersRepository = ordersRepository;
         this.paymentsRepository = paymentsRepository;
-        this.account = new RaveAccount(Tools.getPropertyForAccount("rave"));
+//        this.account = new RaveAccount(Tools.getPropertyForAccount("rave"));
     }
 
     @ApiIgnore
