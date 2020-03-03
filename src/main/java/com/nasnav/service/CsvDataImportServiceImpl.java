@@ -25,9 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 
@@ -46,9 +44,11 @@ import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.MapBuilder;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ProductImgsCustomRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ProductListImportDTO;
+import com.nasnav.dto.VariantWithNoImagesDTO;
 import com.nasnav.enumerations.ImageCsvTemplateType;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
@@ -62,6 +62,7 @@ import com.univocity.parsers.common.ParsingContext;
 import com.univocity.parsers.common.RowProcessorErrorHandler;
 import com.univocity.parsers.common.fields.ColumnMapping;
 import com.univocity.parsers.common.processor.BeanListProcessor;
+import com.univocity.parsers.common.processor.BeanWriterProcessor;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
 import com.univocity.parsers.csv.CsvWriter;
@@ -93,6 +94,9 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	@Autowired
 	private DataImportService dataImportService;
 	
+	@Autowired
+	private ProductImgsCustomRepository productImgsCustomRepo;
+	
 	
 	private Logger logger = Logger.getLogger(getClass());
 
@@ -113,10 +117,19 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 				.getMap();
 	
 	
+	private final Map<String,String> fieldToImgsTemplateColumnHeaderMapping = 
+			MapBuilder.<String, String>map()
+				.put("variantId", "variant_id")
+				.put("externalId", "external_id")
+				.put("barcode", "barcode")
+				.put("productName", "product_name")
+				.getMap();
+	
+	
 	
 	private final Set<String> csvBaseHeaders = new HashSet<String>(fieldToColumnHeaderMapping.values());
 	
-	private final List<String> IMG_CSV_BASE_HEADERS = asList("variant_id","external_id","barcode","image_file");
+	public static final List<String> IMG_CSV_BASE_HEADERS = asList("variant_id","external_id","barcode","image_file");
 
 	@Transactional(rollbackFor = Throwable.class)
 	public ProductListImportResponse importProductListFromCSV(@Valid MultipartFile file,
@@ -227,7 +240,29 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		rowProcessor.setStrictHeaderValidationEnabled(true);
 		return rowProcessor;
 	}
+	
+	
+	
+	
+	private BeanWriterProcessor<VariantWithNoImagesDTO> createImgsTemplateRowProcessor() {
+		
+		ColumnMapping mapper = createImgCsvAttrToColMapping();		
+		
+		BeanWriterProcessor<VariantWithNoImagesDTO> rowProcessor = new BeanWriterProcessor<>(VariantWithNoImagesDTO.class);
+		rowProcessor.setColumnMapper(mapper);
+		rowProcessor.setStrictHeaderValidationEnabled(true);
+		return rowProcessor;
+	}
 
+
+
+
+
+	private ColumnMapping createImgCsvAttrToColMapping() {
+		ColumnMapping mapping = new ColumnMapping();
+		mapping.attributesToColumnNames(fieldToImgsTemplateColumnHeaderMapping);		
+		return mapping;
+	}
 
 
 
@@ -438,11 +473,36 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		headers.add("product_name");
 		
 		Long orgId = security.getCurrentUserOrganizationId();
-		//get variants of products with no images(variant id - barcode - external id)
-		//build the csv
-		//convert the csv to byte array
+		List<VariantWithNoImagesDTO> variants = productImgsCustomRepo.getProductsWithNoImages(orgId);
 		
-		return new ByteArrayOutputStream();
+		return buildProductWithNoImgsCsv(headers, variants);
+	}
+
+
+
+
+	private ByteArrayOutputStream buildProductWithNoImgsCsv(List<String> headers,
+			List<VariantWithNoImagesDTO> variants) {
+		BeanWriterProcessor<VariantWithNoImagesDTO> processor = createImgsTemplateRowProcessor();
+		CsvWriterSettings settings = createWritterSettings(processor);
+		
+		ByteArrayOutputStream csvResult = new ByteArrayOutputStream();
+		Writer outputWriter = new OutputStreamWriter(csvResult);
+		CsvWriter writer = new CsvWriter(outputWriter, settings);
+		
+		writer.writeHeaders(headers.stream().toArray(String[]::new));
+		writer.processRecordsAndClose(variants);
+				
+		return csvResult;
+	}
+	
+	
+	
+	private CsvWriterSettings createWritterSettings(BeanWriterProcessor<VariantWithNoImagesDTO> rowProcessor) {
+		CsvWriterSettings settings = new CsvWriterSettings();
+		settings.setRowWriterProcessor(rowProcessor);		
+		settings.setMaxCharsPerColumn(-1);
+		return settings;
 	}
 
 

@@ -31,7 +31,10 @@ public class ProductImgsCustomRepository {
 	
 	
 	
-	
+	/**
+	 * @return for each product with no images -neither for the product itself or any of its variants-, return one of its variants
+	 * with the minimum id.
+	 * */
 	public List<VariantWithNoImagesDTO> getProductsWithNoImages(Long orgId){
 		try {
 			String sql = readResource(productWithNoImgsSqlFile);

@@ -795,7 +795,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 				.filter(Objects::nonNull)
 				.findFirst();
 		
-		if(!metaData.getIgnoreErrors() && !variant.isPresent()) {
+		Boolean isIgnoreErrors = ofNullable(metaData.getIgnoreErrors()).orElse(false);
+		if(!isIgnoreErrors && !variant.isPresent()) {
 			throw new RuntimeBusinessException(
 					format(ERR_NO_VARIANT_FOUND, variantId, externalId, barcode)
 					, "INVALID PARAM: csv"

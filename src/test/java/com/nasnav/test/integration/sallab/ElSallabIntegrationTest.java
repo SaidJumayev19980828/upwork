@@ -77,8 +77,8 @@ public class ElSallabIntegrationTest {
     private static final String MOCK_SERVER_URL = "http://127.0.0.1";
     private static final String MOCK_SERVER_AUTH_TOKEN = "00D250000009BEF!AQcAQHE4mvVZ6hmXm7_4y1s26_FIG0yMMVvq58ecs1GshIRcQE2l5d40r_NR8AJA5g.gko2fNdCctisUWg4cOIGhqnK9xMma";
     
-//    private static final String SERVER_URL = MOCK_SERVER_URL;
-  private static final String SERVER_URL = SALLAB_SERVER_URL;
+    private static final String SERVER_URL = MOCK_SERVER_URL;
+//  private static final String SERVER_URL = SALLAB_SERVER_URL;
   
     private static final boolean usingMockServer = SERVER_URL.equals(MOCK_SERVER_URL);
 	
