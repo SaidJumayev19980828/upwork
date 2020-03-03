@@ -7,9 +7,9 @@ import java.util.HashMap;
 @Component
 public class ActiveSessions {
 
-    private HashMap<String, Session> sessions = new HashMap<>();
+    private HashMap<String, MastercardSession> sessions = new HashMap<>();
 
-    public void add(Session session) {
+    public void add(MastercardSession session) {
         sessions.put(session.getSessionId(), session);
     }
 

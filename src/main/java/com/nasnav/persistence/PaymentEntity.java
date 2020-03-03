@@ -72,11 +72,11 @@ public class PaymentEntity extends DefaultBusinessEntity<Long> {
 
     @Column(name = "object")
     private String object;
-    
-    
-    
-    
-    @Transient
+
+	@Column(name = "user_id", nullable = false)
+	private Long userId;
+
+	@Transient
     @Setter(NONE)
     private PaymentEntity previousState;
     

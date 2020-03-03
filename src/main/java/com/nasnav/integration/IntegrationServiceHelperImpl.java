@@ -22,8 +22,11 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.nasnav.dao.UserRepository;
+import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,11 +46,6 @@ import com.nasnav.integration.events.data.OrderItemData;
 import com.nasnav.integration.events.data.PaymentData;
 import com.nasnav.integration.exceptions.ExternalOrderIdNotFound;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
-import com.nasnav.persistence.BasketsEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.PaymentEntity;
-import com.nasnav.persistence.StocksEntity;
 import com.nasnav.service.SecurityService;
 
 @Service
@@ -67,6 +65,9 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 	
 	@Autowired
 	SecurityService securityService;
+
+	@Autowired
+	UserRepository userRepository;
 
 	@Override
 	public void pushCustomerCreationEvent(CustomerData customer, Long orgId) {
@@ -238,11 +239,15 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 
 
 	private Long getOrgId(PaymentEntity payment) {
-		return ofNullable(payment)
-				.map(PaymentEntity::getOrdersEntity)
-				.map(OrdersEntity::getOrganizationEntity)
-				.map(OrganizationEntity::getId)
-				.orElseGet(() -> securityService.getCurrentUserOrganizationId());
+		Optional<Long> userId =
+				ofNullable(payment).map(PaymentEntity::getUserId);
+		if (userId.isPresent()) {
+			Optional<UserEntity> user =  userRepository.findById(userId.get());
+			if (user.isPresent()) {
+				return user.get().getOrganizationId();
+			}
+		}
+		return securityService.getCurrentUserOrganizationId();
 	}
 
 
@@ -259,8 +264,8 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 		data.setCurrency(currency);
 		data.setExcutionTime(executionTime);
 		data.setId(payment.getId());
-		data.setOrderId(payment.getOrdersEntity().getId());
-		data.setUserId(payment.getOrdersEntity().getUserId());
+//		data.setOrderId(payment.getOrdersEntity().getId());     // Payment can cover multiple orders now
+		data.setUserId(payment.getUserId());
 		data.setValue(amount);
 		data.setOrganizationId(orgId);
 		

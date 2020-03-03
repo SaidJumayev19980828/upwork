@@ -1,0 +1,58 @@
+<html>
+<head>
+    <script type="text/javascript" src="http://flw-pms-dev.eu-west-1.elasticbeanstalk.com/flwv3-pug/getpaidx/api/flwpbf-inline.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function(event) {
+            document.getElementById("submit").addEventListener("click", function(e) {
+                var PBFKey = "$public_key";
+
+                getpaidSetup({
+                    PBFPubKey: PBFKey,
+                    custom_description: "Pay Internet",
+                    custom_logo: "logo_url.jpg",
+                    custom_title: "Communique Global System",
+                    customer_email: "user@example.com",
+                    customer_firstname: "John",
+                    customer_lastname: "Smith",
+                    customer_phone: "12121212",
+                    country: "NG",
+                    amount: $order_amount,
+                    currency: "$order_currency",
+                    txref: "$order_id",
+//                    integrity_hash: "",
+                    onclose: function() {},
+                    callback: function(response) {
+                        var flw_ref = response.tx.flwRef; // collect flwRef returned and pass to a server page to complete status check.
+                        console.log("This is the response returned after a charge", response);
+                        if (
+                            response.tx.chargeResponseCode == "00" ||
+                            response.tx.chargeResponseCode == "0"
+                        ) {
+                            // redirect to a success page
+                            window.location.href = "$success_url" + "?flwref=" + flw_ref;
+                        } else {
+                            // redirect to a failure page.
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+
+</head>
+<body>
+
+<h4>JSON</h4>
+<div style="width: 90%"><pre>$rawJSON</pre></div>
+<br>
+<h4>Order ID: $order_id</h4>
+<h4>Total Price: $order_amount $order_currency</h4>
+<br>
+
+
+<form>
+    <button type="button" style="cursor:pointer;" value="Pay Now" id="submit">Pay Now</button>
+</form>
+
+</body>
+</html>

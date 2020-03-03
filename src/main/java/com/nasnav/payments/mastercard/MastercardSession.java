@@ -3,8 +3,10 @@ package com.nasnav.payments.mastercard;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.enumerations.PaymentStatus;
+import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.Account;
+import com.nasnav.payments.misc.Tools;
 import com.nasnav.persistence.*;
 import com.nasnav.service.OrderService;
 import lombok.Getter;
@@ -21,22 +23,27 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.nasnav.enumerations.TransactionCurrency.*;
 
-public class Session {
+@Service
+public class MastercardSession {
+
+    public static TransactionCurrency DEFAULT_CURRENCY_IF_NOT_SPECIFIED = EGP;
 
     private Logger classLogger;
 
+    @Getter
     private final OrderService orderService;
 
     private final PaymentsRepository paymentsRepository;
@@ -44,20 +51,21 @@ public class Session {
     private final OrdersRepository ordersRepository;
 
     @Getter
-    private Account merchantAccount;
+    private MastercardAccount merchantAccount;
 
     private String sessionId;
     private String orderUid;
 
-    private OrdersEntity order = null;
+//    private OrdersEntity order = null;
+    private ArrayList<OrdersEntity> includedOrders = null;
     private OrderService.OrderValue orderValue = null;
 
-    protected Session(Account account, OrderService orderService, PaymentsRepository paymentsRepository, OrdersRepository ordersRepository) {
+    public MastercardSession(MastercardAccount account, OrderService orderService, PaymentsRepository paymentsRepository, OrdersRepository ordersRepository) {
         this.merchantAccount = account;
         this.orderService = orderService;
         this.paymentsRepository = paymentsRepository;
         this.ordersRepository = ordersRepository;
-        classLogger = LogManager.getLogger("Payment:" + merchantAccount.getIdentifier());
+        classLogger = LogManager.getLogger("Payment:" + merchantAccount.getAccountId());
     }
 
     private String readInputStream(InputStream stream) {
@@ -69,10 +77,10 @@ public class Session {
         if (sessionId == null || !sessionId.equals(this.sessionId)) {
             throw new BusinessException("Invalid or empty session ID", "MISSING_SESSION_ID", HttpStatus.NOT_ACCEPTABLE);
         }
-        if (this.order == null || this.orderValue == null) {
+        if (this.includedOrders == null || this.orderValue == null) {
             throw new BusinessException("Order not assigned to session", "MISSING_ORDER", HttpStatus.NOT_ACCEPTABLE);
         }
-        String transactionId = "PAY-" + order.getId() + "-" + Long.toString(new Date().getTime());
+        String transactionId = "PAY-" + this.orderUid;
         try {
             // Prepare the request
             HttpClient client= HttpClientBuilder.create().build();
@@ -102,18 +110,21 @@ public class Session {
             int status = response.getStatusLine().getStatusCode();
             if (status > 299) {
                 String errorResponse = readInputStream(response.getEntity().getContent());
-                classLogger.error("Attempt to execute payment for order {} failed. Error provided: {}", order.getId(), errorResponse);
+                classLogger.error("Attempt to execute payment for order {} failed. Error provided: {}", this.orderUid, errorResponse);
                 throw new BusinessException("Unable to communicate with payment gateway", "PAYMENT_UNRECOGNIZED_RESPONSE", HttpStatus.BAD_GATEWAY);
             }
 
             String responseReceived = readInputStream(response.getEntity().getContent());
             this.sessionId = null; // disable current session as it is used up
 
-            List<PaymentEntity> paymentOpt = paymentsRepository.findRecentByOrdersEntity_Id(this.order.getId());
-            PaymentEntity payment = paymentOpt.size() > 0 ? paymentOpt.get(0) : new PaymentEntity();
-            payment.setOperator(merchantAccount.getIdentifier());
+            Optional<PaymentEntity> paymentOpt = paymentsRepository.findByUid(this.orderUid);
+            if (!paymentOpt.isPresent()) {
+                classLogger.error("No payment matches UID: {}", this.orderUid);
+                throw new BusinessException("Unable to execute payment, no matching UID", "INTERNAL_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            PaymentEntity payment = paymentOpt.get();
+            payment.setOperator(merchantAccount.getAccountId());
             payment.setObject(responseReceived);
-            payment.setOrdersEntity(this.order);
             payment.setUid(transactionId);
             payment.setExecuted(new Date());
             payment.setAmount(this.orderValue.amount);
@@ -127,13 +138,15 @@ public class Session {
                     // payment successful
                     payment.setStatus(PaymentStatus.PAID);
                     paymentsRepository.saveAndFlush(payment);
-                    classLogger.info("Payment successful for order: {}, payment ID: {}", order.getId(), payment.getId());
-                    ordersRepository.setPaymentStatusForOrder(this.order.getId(), PaymentStatus.PAID.getValue(), new Date());
+                    for (OrdersEntity order: this.includedOrders) {
+                        classLogger.info("Payment successful for order: {}, payment ID: {}", order.getId(), payment.getId());
+                        ordersRepository.setPaymentStatusForOrder(order.getId(), PaymentStatus.PAID.getValue(), new Date());
+                    }
                 } else {
                     // payment unsuccessful
                     payment.setStatus(PaymentStatus.FAILED);
                     paymentsRepository.saveAndFlush(payment);
-                    classLogger.info("Payment failed for order: {}, payment ID: {}", order.getId(), payment.getId());
+                    classLogger.info("Payment failed for order: {}, payment ID: {}", this.orderUid, payment.getId());
                     throw new BusinessException("Payment failed", "PAYMENT_FAILED", HttpStatus.PAYMENT_REQUIRED);
                 }
             } catch (JSONException ex) {
@@ -147,17 +160,17 @@ public class Session {
         }
     }
 
-    public boolean verifyAndStore(String orderUid, String paymentIndicator) throws BusinessException {
+    public void verifyAndStore(String orderUid, String paymentIndicator) throws BusinessException {
 
         Optional<PaymentEntity> paymentOpt = paymentsRepository.findByUid(orderUid);
         if (!paymentOpt.isPresent()) {
-            classLogger.warn("No payment associated with order {}", this.order.getId());
+            classLogger.warn("No payment associated with order {}", orderUid);
             throw new BusinessException("There is no initiated payment associated with the order", "INVALID_INPUT", HttpStatus.NOT_ACCEPTABLE);
         }
         PaymentEntity payment = paymentOpt.get();
         JSONObject json = new JSONObject(payment.getObject());
         if (!json.has("successIndicator")) {
-            classLogger.error("Payment {} for order {} does not contain successIndicator!", payment.getId(), this.order.getId());
+            classLogger.error("Payment {} for order {} does not contain successIndicator!", payment.getId(), orderUid);
             throw new BusinessException("Payment for order does not contain successIndicator", "INTERNAL_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
         }
         if (new Date().getTime() - payment.getExecuted().getTime() > 300000) {  // limit confirmation to 5 minutes
@@ -170,35 +183,31 @@ public class Session {
         }
         if (json.getString("successIndicator").equals(paymentIndicator)) {
 //            payment.setOrdersEntity(this.order);
+            for (OrdersEntity oe: this.includedOrders) {
+                oe.setPaymentStatus(PaymentStatus.PAID);
+                oe.setPaymentEntity(payment);
+                ordersRepository.save(oe);
+            }
+            ordersRepository.flush();
             payment.setUid("CFM-" + payment.getUid());
             payment.setExecuted(new Date());
             payment.setStatus(PaymentStatus.PAID);
             paymentsRepository.saveAndFlush(payment);
-            ordersRepository.setPaymentStatusForOrder(this.order.getId(), PaymentStatus.PAID.getValue(), payment.getExecuted());
-            return true;
+            return;
         }
         throw new BusinessException("Provided payment code does not match successIndicator", "INTVALID_CODE", HttpStatus.CONFLICT);
     }
 
-    public boolean initialize(OrdersEntity orderEntity) throws BusinessException {
 
-        this.order = orderEntity;
-        if (this.order == null) {
-            throw new BusinessException("Order does not exist", "MISSING_ORDER", HttpStatus.NOT_ACCEPTABLE);
-        }
 
-        this.orderValue = orderService.getOrderValue(this.order);
-        if (this.orderValue.currency == UNSPECIFIED) {
-            classLogger.error("Cannot process order {} which contains items in different currencies", order.getId());
-            throw new BusinessException("Cannot process order which contains items in different currencies", "ERROR_MIXED_CURRENCIES", HttpStatus.NOT_ACCEPTABLE);
-        }
-        if (this.orderValue.currency == null) {
-            this.orderValue.currency = USD;
-            classLogger.info("No currency specified for order {}, assuming EGP", order.getId());
-        }
+    public boolean initialize(ArrayList<OrdersEntity> orders) throws BusinessException {
+
+        this.includedOrders = orders;
+        this.orderUid = Tools.getOrderUid(orders, classLogger);
+        this.orderValue = Tools.getTotalOrderValue(orders, orderService, classLogger);
+        long userId = orders.get(0).getUserId();
 
         JSONObject order = new JSONObject();
-        orderUid = Long.toString(orderEntity.getId()) + "-" + Long.toString(new Date().getTime());
         order.put("id", orderUid);
         order.put("currency", orderValue.currency);
         order.put("amount", orderValue.amount);
@@ -219,6 +228,7 @@ public class Session {
             request.setEntity(requestEntity);
             request.setHeader("Authorization", "Basic " + getAuthString());
 //System.out.println(merchantAccount.getMerchantId() + " : " + this.orderValue.currency.toString() + " : " + data.toString());
+//System.out.println(request.getURI());
             HttpResponse response = client.execute(request);
             int status = response.getStatusLine().getStatusCode();
             if (status > 299) {
@@ -234,15 +244,20 @@ public class Session {
             sessionId = jsonSession.getString("id");
             if ("SUCCESS".equalsIgnoreCase(result) && "SUCCESS".equalsIgnoreCase(updateStatus)) {
                 PaymentEntity payment = new PaymentEntity();
-                payment.setOperator(merchantAccount.getIdentifier());
-                payment.setOrdersEntity(this.order);
+                payment.setOperator(merchantAccount.getAccountId());
                 payment.setUid(orderUid);
                 payment.setExecuted(new Date());
                 payment.setStatus(PaymentStatus.STARTED);
                 payment.setAmount(orderValue.amount);
                 payment.setCurrency(orderValue.currency);
                 payment.setObject("{\"successIndicator\": \"" + indicator + "\"}");
+                payment.setUserId(userId);
                 paymentsRepository.saveAndFlush(payment);
+                for (OrdersEntity oe: this.includedOrders) {
+//System.out.println("###" + payment + " : " + oe);
+                    oe.setPaymentEntity(payment);
+                    ordersRepository.saveAndFlush(oe);
+                }
                 return true;
             }
             classLogger.error("Unable to set up hosted session, response: {}", jsonResult.toString());
@@ -275,4 +290,10 @@ public class Session {
     public OrderService.OrderValue getOrderValue() {
         return orderValue;
     }
+
+
+
+
+
+
 }

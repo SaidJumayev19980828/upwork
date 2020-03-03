@@ -104,6 +104,11 @@ public class OrdersEntity implements BaseEntity{
 	@OneToMany(mappedBy = "ordersEntity", cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
     private Set<BasketsEntity> basketsEntity;
 
+	@ManyToOne(cascade = CascadeType.MERGE)
+	@JoinColumn(name = "payment_id", referencedColumnName = "id")
+	private PaymentEntity paymentEntity;
+
+
 	@Override
 	public BaseRepresentationObject getRepresentation() {
 		OrderRepresentationObject orderRepresentationObject = new OrderRepresentationObject();

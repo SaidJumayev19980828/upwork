@@ -3,7 +3,7 @@ package com.nasnav.enumerations;
 import lombok.Getter;
 
 public enum TransactionCurrency {
-    UNSPECIFIED(-1), EGP(1), USD(2);
+    UNSPECIFIED(-1), EGP(1), USD(2), NGN(10);
 
     @Getter
     private int value;
