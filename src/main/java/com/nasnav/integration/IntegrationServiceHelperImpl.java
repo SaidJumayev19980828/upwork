@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
@@ -68,6 +69,10 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 
 	@Autowired
 	UserRepository userRepository;
+	
+	
+	@Autowired
+	OrdersRepository orderRepo;
 
 	@Override
 	public void pushCustomerCreationEvent(CustomerData customer, Long orgId) {
@@ -239,15 +244,12 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 
 
 	private Long getOrgId(PaymentEntity payment) {
-		Optional<Long> userId =
-				ofNullable(payment).map(PaymentEntity::getUserId);
-		if (userId.isPresent()) {
-			Optional<UserEntity> user =  userRepository.findById(userId.get());
-			if (user.isPresent()) {
-				return user.get().getOrganizationId();
-			}
-		}
-		return securityService.getCurrentUserOrganizationId();
+		return
+			ofNullable(payment)
+			.map(PaymentEntity::getUserId)
+			.flatMap(userRepository::findById)
+			.map(UserEntity::getOrganizationId)
+			.orElseGet(() -> securityService.getCurrentUserOrganizationId());
 	}
 
 
@@ -260,16 +262,30 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 		LocalDateTime executionTime = getExecutionTime(payment);
 		BigDecimal amount = getAmount(payment);
 		Long orgId = getOrganizationId(payment);
+		Long orderId = getFirstOrderId(payment);
 		
 		data.setCurrency(currency);
 		data.setExcutionTime(executionTime);
 		data.setId(payment.getId());
-//		data.setOrderId(payment.getOrdersEntity().getId());     // Payment can cover multiple orders now
+		data.setOrderId(orderId);     // Payment can cover multiple orders now
 		data.setUserId(payment.getUserId());
 		data.setValue(amount);
 		data.setOrganizationId(orgId);
 		
 		return data;
+	}
+
+
+
+
+
+	private Long getFirstOrderId(PaymentEntity payment) {
+		return orderRepo
+				.findByPaymentEntity_IdOrderById(payment.getId())
+				.stream()
+				.findFirst()
+				.map(OrdersEntity::getId)
+				.orElse(-1L);
 	}
 
 
