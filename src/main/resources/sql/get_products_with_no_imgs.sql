@@ -30,6 +30,7 @@ from
 		products prod
 	where
 		organization_id = ?
+		and removed = 0
 except (
 	select
 		imgs.product_id
