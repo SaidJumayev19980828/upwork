@@ -14,6 +14,7 @@ import static java.math.BigDecimal.ZERO;
 import static java.time.Duration.ofSeconds;
 import static java.time.LocalDateTime.now;
 import static java.util.Collections.emptySet;
+import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 
 import java.math.BigDecimal;
@@ -25,15 +26,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.UserRepository;
-import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.CustomerCreateEvent;
@@ -47,6 +47,12 @@ import com.nasnav.integration.events.data.OrderItemData;
 import com.nasnav.integration.events.data.PaymentData;
 import com.nasnav.integration.exceptions.ExternalOrderIdNotFound;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
+import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.PaymentEntity;
+import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.SecurityService;
 
 @Service
@@ -195,6 +201,7 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 		data.setUserId(order.getUserId());
 		data.setItems(getOrderItems(order));
 		data.setOrganizationId(order.getOrganizationEntity().getId());
+		data.setPaymentData( createPaymentData(order.getPaymentEntity()));
 		return data;
 	}
 
@@ -232,10 +239,13 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 	@Override
 	@Transactional
 	public void pushPaymentEvent(PaymentEntity payment){
-		PaymentData data = createPaymentData(payment);		
+		Optional<PaymentData> data = createPaymentData(payment);	
+		if(!data.isPresent()) {
+			return;
+		}
 		Long orgId = getOrgId(payment);
 		
-		PaymentCreateEvent event = new PaymentCreateEvent(orgId, data, this::savePaymentExternalId);
+		PaymentCreateEvent event = new PaymentCreateEvent(orgId, data.get(), this::savePaymentExternalId);
 		pushPaymentEvent(event);
 	}
 
@@ -256,36 +266,26 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 
 	
 
-	private PaymentData createPaymentData(PaymentEntity payment) {
+	private Optional<PaymentData> createPaymentData(PaymentEntity payment) {
+		//in case of cash-on-delivery, payment can be null
+		if(payment == null) {
+			return empty();
+		}
+		
 		PaymentData data = new PaymentData();
 		String currency = getCurrency(payment);
 		LocalDateTime executionTime = getExecutionTime(payment);
 		BigDecimal amount = getAmount(payment);
 		Long orgId = getOrganizationId(payment);
-		Long orderId = getFirstOrderId(payment);
 		
 		data.setCurrency(currency);
 		data.setExcutionTime(executionTime);
 		data.setId(payment.getId());
-		data.setOrderId(orderId);     // Payment can cover multiple orders now
 		data.setUserId(payment.getUserId());
 		data.setValue(amount);
 		data.setOrganizationId(orgId);
 		
-		return data;
-	}
-
-
-
-
-
-	private Long getFirstOrderId(PaymentEntity payment) {
-		return orderRepo
-				.findByPaymentEntity_IdOrderById(payment.getId())
-				.stream()
-				.findFirst()
-				.map(OrdersEntity::getId)
-				.orElse(-1L);
+		return Optional.of(data);
 	}
 
 

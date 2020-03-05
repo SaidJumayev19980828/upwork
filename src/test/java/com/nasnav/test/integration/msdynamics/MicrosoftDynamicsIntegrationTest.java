@@ -80,7 +80,6 @@ import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.OrderResponse;
-import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.model.Item;
 
 @RunWith(SpringRunner.class)
@@ -398,12 +397,15 @@ public class MicrosoftDynamicsIntegrationTest {
 		//create order
 		String token = "123eerd";
 		
+		
 		Long orderId = createNewOrder(token); 
+		PaymentEntity payment = createDummyPayment(orderId);
 		confirmOrder(token, orderId);
 		//---------------------------------------------------------------		
 		Thread.sleep(3000);
 		//---------------------------------------------------------------		
-		assertOrderIntegration(orderId); 					
+		assertOrderIntegration(orderId); 
+		assertPaymentIntegration(payment);
 	}
 
 	
@@ -577,15 +579,16 @@ public class MicrosoftDynamicsIntegrationTest {
 				.put("what_is_this?", "dummy_payment_obj");
 		
 		payment.setOperator("UPG");
-		payment.setOrdersEntity(order);
 		payment.setUid("MLB-<MerchantReference>");
 		payment.setExecuted(new Date());
 		payment.setObject(paymentObj.toString());
 		payment.setAmount(new BigDecimal("600"));
 		payment.setCurrency(EGP);
 		payment.setStatus(PAID);
+		payment.setUserId(order.getUserId());
 		
-		payment= paymentRepo.save(payment);
+		payment= paymentRepo.saveAndFlush(payment);
+		order.setPaymentEntity(payment);
 		return payment;
 	}
 
@@ -626,10 +629,10 @@ public class MicrosoftDynamicsIntegrationTest {
 		
 		ResponseEntity<String> updateResponse = 
 				template.postForEntity("/order/update"
-										, TestCommons.getHttpEntity( updateRequest.toString(), token)
+										, getHttpEntity( updateRequest.toString(), token)
 										, String.class);
 		
-		assertEquals(HttpStatus.OK, updateResponse.getStatusCode());
+		assertEquals(OK, updateResponse.getStatusCode());
 	}
 
 
