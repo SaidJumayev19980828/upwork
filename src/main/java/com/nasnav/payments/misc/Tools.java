@@ -105,6 +105,9 @@ public class Tools {
 		}
 		try (final InputStream stream =
 				     Tools.class.getClass().getResourceAsStream(file)) {
+System.out.println(" USER DIR: " + System.getProperty("user.dir"));
+System.out.println(" FILE: " + file);
+System.out.println(" STRAM: " + stream);
 			Properties props = new Properties();
 			props.load(stream);
 			return props;
