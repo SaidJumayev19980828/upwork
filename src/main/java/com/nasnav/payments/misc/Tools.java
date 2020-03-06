@@ -5,6 +5,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.mastercard.MastercardSession;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.service.OrderService;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 
@@ -90,7 +91,7 @@ public class Tools {
 	}
 
 
-	public static Properties getPropertyForAccount(String accountName) {
+	public static Properties getPropertyForAccount(String accountName, Logger logger) {
 		String file = null;
 		if ("misr".equalsIgnoreCase(accountName)) {
 			file = "/provider.banquemisr.properties";
@@ -99,6 +100,7 @@ public class Tools {
 		} else if ("rave".equalsIgnoreCase(accountName)) {
 			file = "/provider.rave.properties";
 		} else {
+			logger.warn("Unknown account: {}", accountName);
 			return null;
 		}
 		try (final InputStream stream =
@@ -107,6 +109,7 @@ public class Tools {
 			props.load(stream);
 			return props;
 		} catch (IOException e) {
+			logger.error("Unable to load account property file: {}", file);
 			return null;
 		}
 	}

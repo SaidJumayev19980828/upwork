@@ -48,7 +48,7 @@ public class PaymentControllerUpg {
     public ResponseEntity<?> testMezza(@PathVariable (name = "accountName") String accountName, @RequestParam(name = "order_id") String ordersList) throws BusinessException {
         ArrayList<OrdersEntity> orders = Tools.getOrdersFromString(ordersRepository, ordersList, ",");
 
-        Properties props = Tools.getPropertyForAccount(accountName);
+        Properties props = Tools.getPropertyForAccount(accountName, upgLogger);
         if (props == null) {
             throw new BusinessException("Unknown payment account",null,HttpStatus.NOT_ACCEPTABLE);
         }
@@ -66,7 +66,7 @@ public class PaymentControllerUpg {
     public ResponseEntity<?> upgGetData(@PathVariable (name = "accountName") String accountName, @RequestParam(name = "order_id") String ordersList) throws BusinessException {
         ArrayList<OrdersEntity> orders = Tools.getOrdersFromString(ordersRepository, ordersList, ",");
 
-        Properties props = Tools.getPropertyForAccount(accountName);
+        Properties props = Tools.getPropertyForAccount(accountName, upgLogger);
         if (props == null) {
             throw new BusinessException("Unknown payment account",null,HttpStatus.NOT_ACCEPTABLE);
         }

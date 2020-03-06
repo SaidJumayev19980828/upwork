@@ -110,7 +110,7 @@ public class PaymentControllerMastercard {
         OrderSessionResponse response = new OrderSessionResponse();
         response.setSuccess(false);
 
-        Properties props = Tools.getPropertyForAccount(accountName);
+        Properties props = Tools.getPropertyForAccount(accountName, mastercardLogger);
         if (props == null) {
             throw new BusinessException("Unknown payment account",null,HttpStatus.NOT_ACCEPTABLE);
         }
