@@ -1,5 +1,6 @@
 package com.nasnav.payments.misc;
 
+import com.nasnav.AppConfig;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.mastercard.MastercardSession;
@@ -9,6 +10,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -91,7 +94,7 @@ public class Tools {
 	}
 
 
-	public static Properties getPropertyForAccount(String accountName, Logger logger) {
+	public static Properties getPropertyForAccount(String accountName, Logger logger, String propertiesDir) {
 		String file = null;
 		if ("misr".equalsIgnoreCase(accountName)) {
 			file = "/provider.banquemisr.properties";
@@ -103,9 +106,16 @@ public class Tools {
 			logger.warn("Unknown account: {}", accountName);
 			return null;
 		}
-		try (final InputStream stream =
-				     Tools.class.getClass().getResourceAsStream(file)) {
+		try  {
+			InputStream stream =
+					Tools.class.getClass().getResourceAsStream(file);
+			if (stream == null) {
+				stream = new FileInputStream(new File(
+					propertiesDir + file
+				));
+			}
 System.out.println(" USER DIR: " + System.getProperty("user.dir"));
+System.out.println(" PROP DIR: " + propertiesDir);
 System.out.println(" FILE: " + file);
 System.out.println(" STRAM: " + stream);
 			Properties props = new Properties();

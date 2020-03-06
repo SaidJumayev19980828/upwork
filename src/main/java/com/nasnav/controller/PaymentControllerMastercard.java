@@ -2,6 +2,7 @@ package com.nasnav.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.AppConfig;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dto.OrderSessionResponse;
@@ -32,6 +33,9 @@ public class PaymentControllerMastercard {
     private final OrdersRepository ordersRepository;
 
     private final MastercardSession session;
+
+    @Autowired
+    private AppConfig config;
 
     @Autowired
     public PaymentControllerMastercard(
@@ -110,7 +114,7 @@ public class PaymentControllerMastercard {
         OrderSessionResponse response = new OrderSessionResponse();
         response.setSuccess(false);
 
-        Properties props = Tools.getPropertyForAccount(accountName, mastercardLogger);
+        Properties props = Tools.getPropertyForAccount(accountName, mastercardLogger, config.paymentPropertiesDir);
         if (props == null) {
             throw new BusinessException("Unknown payment account",null,HttpStatus.NOT_ACCEPTABLE);
         }

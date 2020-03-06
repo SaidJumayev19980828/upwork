@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+import com.nasnav.AppConfig;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.exceptions.BusinessException;
@@ -34,6 +35,9 @@ public class PaymentControllerUpg {
     private final UpgSession session;
 
     @Autowired
+    private AppConfig config;
+
+    @Autowired
     public PaymentControllerUpg(
             OrdersRepository ordersRepository,
             PaymentsRepository paymentsRepository,
@@ -48,7 +52,7 @@ public class PaymentControllerUpg {
     public ResponseEntity<?> testMezza(@PathVariable (name = "accountName") String accountName, @RequestParam(name = "order_id") String ordersList) throws BusinessException {
         ArrayList<OrdersEntity> orders = Tools.getOrdersFromString(ordersRepository, ordersList, ",");
 
-        Properties props = Tools.getPropertyForAccount(accountName, upgLogger);
+        Properties props = Tools.getPropertyForAccount(accountName, upgLogger, config.paymentPropertiesDir);
         if (props == null) {
             throw new BusinessException("Unknown payment account",null,HttpStatus.NOT_ACCEPTABLE);
         }
@@ -66,7 +70,7 @@ public class PaymentControllerUpg {
     public ResponseEntity<?> upgGetData(@PathVariable (name = "accountName") String accountName, @RequestParam(name = "order_id") String ordersList) throws BusinessException {
         ArrayList<OrdersEntity> orders = Tools.getOrdersFromString(ordersRepository, ordersList, ",");
 
-        Properties props = Tools.getPropertyForAccount(accountName, upgLogger);
+        Properties props = Tools.getPropertyForAccount(accountName, upgLogger, config.paymentPropertiesDir);
         if (props == null) {
             throw new BusinessException("Unknown payment account",null,HttpStatus.NOT_ACCEPTABLE);
         }
