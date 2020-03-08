@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import org.mockserver.junit.MockServerRule;
+import org.mockserver.model.JsonSchemaBody;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,8 @@ public class IntegrationTestCommon {
 	
 	public static final String DUMMY_CUSTOMER_ID = "UNR-023517";
 	public static final String DUMMY_PAYMENT_ID  = "UNR-168360";
+	private static final String PAYMENT_BODY_SCHEMA = 
+			"{type: 'object', properties: { 'SalesId': { 'type': 'string' }, 'PaymDet': { 'type': 'array' } }}";;
 
 
 	public  final String mockServerUrl = "http://127.0.0.1";
@@ -264,7 +267,8 @@ public class IntegrationTestCommon {
 		mockServerRule.getClient()
 				.when(
 					request().withMethod("PUT")
-							.withPath("/api/Payment"))
+							.withPath("/api/Payment")
+							.withBody(new JsonSchemaBody(PAYMENT_BODY_SCHEMA)))
 				.respond(
 						response().withBody(DUMMY_PAYMENT_ID) 
 								  .withStatusCode(200))

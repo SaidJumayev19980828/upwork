@@ -76,15 +76,18 @@ public class OrderConfirmEventListener extends AbstractMSDynamicsEventListener<O
 	 * */
 	private Mono<String> createPaymentForOrderAndReturnOrderId(String orderExtId, OrderData order) {
 		Long orgId = order.getOrganizationId();
-		return Mono
+		Mono<String> paymentExtIdMono =
+				Mono
 				.justOrEmpty(getPaymentData(order))
 				.map(data -> createPaymentRequest(orderExtId, data))
 				.flatMap(requestData -> 
 							getWebClient(orgId)
 							 .createPayment(requestData))
 				.flatMap(this::throwExceptionIfNotOk)
-				.map(res -> {return orderExtId;})
-				.defaultIfEmpty(orderExtId);
+				.flatMap(res -> res.bodyToMono(String.class))
+				.defaultIfEmpty("-1");
+		
+		return Mono.zip(paymentExtIdMono, Mono.just(orderExtId), (paymentId, orderId) -> orderId);
 	}
 	
 	
