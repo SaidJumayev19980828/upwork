@@ -346,9 +346,10 @@ public class ProductsController {
     @GetMapping(value = "/image/bulk/template")
     @ResponseBody
     public ResponseEntity<String> generateCsvTemplate(@RequestHeader("User-Token") String token
-    		, @Param("type") ImageCsvTemplateType type) throws IOException {
+    		, @RequestParam(name="type", required = false) ImageCsvTemplateType type) throws IOException {
         ByteArrayOutputStream s = csvDataImportService.generateImagesCsvTemplate(type);
-        return ResponseEntity.ok()
+        return ResponseEntity
+        		.ok()
                 .contentType(MediaType.parseMediaType("text/csv"))
                 .header(CONTENT_DISPOSITION, "attachment; filename=Csv_Template.csv")
                 .body(s.toString());

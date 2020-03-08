@@ -32,7 +32,7 @@ import lombok.Setter;
 @EntityListeners(PaymentEntityListener.class)
 @Table(name = "payments")
 @EqualsAndHashCode(callSuper=false)
-public class PaymentEntity extends DefaultBusinessEntity<Long> {
+public class PaymentEntity {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

@@ -14,10 +14,16 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PR
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_NOT_EXISTS;
 import static java.lang.String.format;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -76,6 +82,7 @@ import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.BundleDTO;
 import com.nasnav.dto.BundleElementUpdateDTO;
+import com.nasnav.dto.ExtraAttributeDTO;
 import com.nasnav.dto.Pair;
 import com.nasnav.dto.ProductBaseInfo;
 import com.nasnav.dto.ProductDetailsDTO;
@@ -193,18 +200,24 @@ public class ProductService {
 
 
 	public ProductDetailsDTO getProduct(Long productId, Long shopId) throws BusinessException{
+		ProductEntity product =
+				productRepository
+					.findById( ofNullable(productId).orElse(-1L) )
+					.orElseThrow(() -> 
+						new BusinessException(
+								format(ERR_PRODUCT_NOT_EXISTS, productId)
+								, "INVALID PARAM: product_id"
+								, NOT_FOUND));
 
-		Optional<ProductEntity> optionalProduct = productRepository.findById(productId);
-		if (!optionalProduct.isPresent()) {
-			return null;
-		}
-
-		ProductEntity product = optionalProduct.get();
 		List<ProductVariantsEntity> productVariants = getProductVariants(product);
 
 		return createProductDetailsDTO(product, shopId, productVariants);
 	}
 
+	
+	
+	
+	
 	private ProductDetailsDTO createProductDetailsDTO(ProductEntity product, Long shopId, List<ProductVariantsEntity> productVariants) throws BusinessException {
 
 		List<VariantDTO> variantsDTOList = getVariantsList(productVariants, product.getId(), shopId);
@@ -216,16 +229,16 @@ public class ProductService {
 			productDTO.setVariants(variantsDTOList);
 			if (variantsDTOList != null && variantsDTOList.size() > 1)
 				productDTO.setMultipleVariants(true);
-			productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
-			productDTO.setBundleItems( getBundleItems(product));
-			productDTO.setImages( getProductImages(product.getId() ) );
-			productDTO.setTags(tagsDTOList);
+				productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
+				productDTO.setBundleItems( getBundleItems(product));
+				productDTO.setImages( getProductImages(product.getId() ) );
+				productDTO.setTags(tagsDTOList);
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e );
 			throw new BusinessException(
-					String.format(ERR_PRODUCT_READ_FAIL, product.getId())
+					format(ERR_PRODUCT_READ_FAIL, product.getId())
 					,"INTERNAL SERVER ERROR"
-					, HttpStatus.INTERNAL_SERVER_ERROR);
+					, INTERNAL_SERVER_ERROR);
 		}
 
 		return productDTO;
@@ -268,7 +281,7 @@ public class ProductService {
 		return productVariants.stream()
 				.map(variant -> createVariantDto(shopId, variant))
 				.filter( variant -> !variant.getStocks().isEmpty())
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 
 
@@ -281,10 +294,38 @@ public class ProductService {
 		variantObj.setStocks( getStockList(variant, shopId) );
 		variantObj.setVariantFeatures( getVariantFeaturesValues(variant) );
 		variantObj.setImages( getProductVariantImages(variant.getId()) );
+		variantObj.setExtraAttributes( getExtraAttributesList(variant));
 		return variantObj;
 	}
 
 
+
+
+	private List<ExtraAttributeDTO> getExtraAttributesList(ProductVariantsEntity variant) {
+		return variant
+				.getExtraAttributes()
+				.stream()
+				.filter(attr -> nonNull(attr.getExtraAttribute()))
+				.map(this::toExtraAttributeDTO)
+				.collect(toList());
+	}
+
+
+	
+	
+	
+	private ExtraAttributeDTO toExtraAttributeDTO(ProductExtraAttributesEntity entity) {
+		ExtraAttributeDTO dto = new ExtraAttributeDTO();
+		ExtraAttributesEntity extraAttrEntity = entity.getExtraAttribute();
+		dto.setId(extraAttrEntity.getId());
+		dto.setIconUrl(extraAttrEntity.getIconUrl());
+		dto.setName(extraAttrEntity.getName());
+		dto.setType(extraAttrEntity.getType());
+		dto.setValue(entity.getValue());
+		return dto;
+	}
+	
+	
 
 
 	private Map<String,String> getVariantFeaturesValues(ProductVariantsEntity variant) {
@@ -327,13 +368,14 @@ public class ProductService {
 		List<VariantFeatureDTO> features = new ArrayList<>();
 
 		if(productVariants != null ) {
-			features =  productVariants
+			features =  
+					productVariants
 					.stream()
 					.filter(this::hasFeatures)
 					.map(this::extractVariantFeatures)
 					.flatMap(List::stream)
 					.distinct()
-					.collect(Collectors.toList());
+					.collect(toList());
 		}
 
 		return features;
@@ -345,7 +387,8 @@ public class ProductService {
 	private List<VariantFeatureDTO> extractVariantFeatures(ProductVariantsEntity variant){
 		JacksonJsonParser parser = new JacksonJsonParser();
 		Map<String, Object> keyValueMap =  parser.parseMap(variant.getFeatureSpec());
-		return keyValueMap.keySet()
+		return keyValueMap
+				.keySet()
 				.stream()
 				.map(Integer::parseInt)
 				.map(productFeaturesRepository::findById)
@@ -370,9 +413,10 @@ public class ProductService {
 		List<ProductImagesEntity> productImages = productImagesRepository.findByProductEntity_IdOrderByPriority(productId);
 
 		if (productImages != null && !productImages.isEmpty()) {
-			return productImages.stream()
+			return productImages
+					.stream()
 					.map(ProductImgDTO::new)
-					.collect(Collectors.toSet());
+					.collect(toSet());
 		}
 		return null;
 	}
@@ -384,10 +428,12 @@ public class ProductService {
 
 		List<ProductImgDTO> variantImagesArray = new ArrayList<>();
 		if (variantImages != null && !variantImages.isEmpty()) {
-			variantImagesArray = variantImages.stream()
-					.filter(img-> img != null)
+			variantImagesArray = 
+					variantImages
+					.stream()
+					.filter(Objects::nonNull)
 					.map(ProductImgDTO::new)
-					.collect(Collectors.toList());
+					.collect(toList());
 		}
 
 		return variantImagesArray;
@@ -400,10 +446,11 @@ public class ProductService {
 
 		List<StocksEntity> stocks = stockService.getVariantStockForShop(variant, shopId);
 
-		return	stocks.stream()
+		return	stocks
+				.stream()
 				.filter(stock -> stock != null)
 				.map(StockDTO::new)
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 
 
@@ -430,12 +477,14 @@ public class ProductService {
 			if (params.tags != null) {
 				int oldProductCount = products.size();
 				products = products.stream()
-						.filter(product -> productRepository.getTagsByProductId(product.getId())
-								.stream()
-								.mapToLong(BigInteger::longValue).boxed()
-								.collect(Collectors.toList())
-								.containsAll(params.tags))
-						.collect(Collectors.toList());
+						.filter(product -> 
+									productRepository
+									.getTagsByProductId(product.getId())
+									.stream()
+									.mapToLong(BigInteger::longValue).boxed()
+									.collect(Collectors.toList())
+									.containsAll(params.tags))
+						.collect(toList());
 				productsCount = productsCount - oldProductCount + products.size();
 			}
 		}
@@ -515,14 +564,16 @@ public class ProductService {
 
 			if (stocks != null && !stocks.isEmpty()) {
 
-			List<Long> productsIds = stocks.stream()
-											.filter(stock -> stock.getProductVariantsEntity() != null)
-											.map(stock -> stock.getProductVariantsEntity())
-											.filter(var -> var != null)
-											.map(var -> var.getProductEntity())
-											.filter(prod -> prod != null)
-											.map(prod -> prod.getId())
-											.collect(Collectors.toList());
+			List<Long> productsIds = 
+					stocks
+					.stream()
+					.filter(stock -> stock.getProductVariantsEntity() != null)
+					.map(stock -> stock.getProductVariantsEntity())
+					.filter(Objects::nonNull)
+					.map(var -> var.getProductEntity())
+					.filter(Objects::nonNull)
+					.map(prod -> prod.getId())
+					.collect(toList());
 
 				Expression<String> parentExpression = root.get("id");
 				predicates.add(parentExpression.in(productsIds));

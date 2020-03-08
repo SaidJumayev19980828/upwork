@@ -1,5 +1,8 @@
 package com.nasnav.persistence;
 
+import static com.nasnav.enumerations.PaymentStatus.UNPAID;
+import static java.time.LocalDateTime.now;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -124,8 +127,8 @@ public class OrdersEntity implements BaseEntity{
 	}
 
 	public OrdersEntity() {
-		this.paymentStatus = PaymentStatus.UNPAID.getValue();
-		this.creationDate = LocalDateTime.now();
+		this.paymentStatus = UNPAID.getValue();
+		this.creationDate = now();
 		basketsEntity = new HashSet<>();
 	}
 	

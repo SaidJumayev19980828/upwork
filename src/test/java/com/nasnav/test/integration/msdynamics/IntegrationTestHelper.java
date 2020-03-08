@@ -50,15 +50,16 @@ public class IntegrationTestHelper {
 				.put("what_is_this?", "dummy_payment_obj");
 		
 		payment.setOperator("UPG");
-		payment.setOrdersEntity(order);
 		payment.setUid("MLB-<MerchantReference>");
 		payment.setExecuted(new Date());
 		payment.setObject(paymentObj.toString());
 		payment.setAmount(new BigDecimal("600"));
 		payment.setCurrency(EGP);
 		payment.setStatus(PAID);
+		payment.setUserId(order.getUserId());
 		
 		payment= paymentRepo.save(payment);
+		order.setPaymentEntity(payment);
 		return payment;
 	}
 }

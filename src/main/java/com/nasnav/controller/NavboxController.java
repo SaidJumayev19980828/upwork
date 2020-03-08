@@ -1,5 +1,12 @@
 package com.nasnav.controller;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
@@ -64,13 +71,17 @@ public class NavboxController {
 		Organization_BrandRepresentationObject brandRepresentationObject = brandService.getBrandById(brandId);
 
 		if (brandRepresentationObject == null)
-			throw new BusinessException("Brand not found", null, HttpStatus.NOT_FOUND);
+			throw new BusinessException("Brand not found", null, NOT_FOUND);
 
-		return new ResponseEntity<>(brandRepresentationObject, HttpStatus.OK);
+		return new ResponseEntity<>(brandRepresentationObject, OK);
 	}
 
+	
+	
+	
+	
 	@ResponseStatus(value = HttpStatus.OK)
-	@GetMapping(value = "/organization", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	@GetMapping(value = "/organization", produces = APPLICATION_JSON_UTF8_VALUE)
 	@ApiOperation(value = "Get organization's info by name", notes = "Searches organization by either org_id or p_name", response = OrganizationRepresentationObject.class)
 	@ApiResponses({ @ApiResponse(code = 200, message = "Success", response = OrganizationRepresentationObject.class),
 			@ApiResponse(code = 404, message = "Not found. No data for the supplied parameter", response = OrganizationRepresentationObject.class),
@@ -81,7 +92,7 @@ public class NavboxController {
 			@RequestParam(name = "url", required = false) String url) throws BusinessException {
 
 		if (organizationName == null && organizationId == null && url == null)
-			throw new BusinessException("Provide org_id or p_name or url request params", null, HttpStatus.BAD_REQUEST);
+			throw new BusinessException("Provide org_id or p_name or url request params", null, BAD_REQUEST);
 
 		if (organizationName != null)
 			return organizationService.getOrganizationByName(organizationName);
@@ -93,6 +104,9 @@ public class NavboxController {
 		return organizationService.getOrganizationById(organizationId);
 	}
 
+	
+	
+	
 
 	@ApiOperation(value = "Get selected organization's shops", nickname = "orgShops")
 	@ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
@@ -101,19 +115,26 @@ public class NavboxController {
 	public ResponseEntity<?> getShopsByOrganization(@RequestParam(name = "org_id") Long orgId)
 			throws BusinessException {
 
-		return new ResponseEntity<>(shopService.getOrganizationShops(orgId), HttpStatus.OK);
+		return new ResponseEntity<>(shopService.getOrganizationShops(orgId), OK);
 	}
 
+	
+	
+	
+	
 	@ApiOperation(value = "Get specific shop's info", nickname = "shopInfo")
 	@ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 404, message = "No shop matching the supplied ID found"), })
 	@GetMapping("/shop")
 	public ResponseEntity<?> getShopById(@RequestParam(name = "shop_id") Long shopId) throws BusinessException {
 
-		return new ResponseEntity<>(shopService.getShopById(shopId), HttpStatus.OK);
+		return new ResponseEntity<>(shopService.getShopById(shopId), OK);
 	}
 
 
+	
+	
+	
 	@ApiOperation(value = "Get list of products", nickname = "productList")
 	@ApiResponses(value = {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
@@ -125,47 +146,59 @@ public class NavboxController {
 		ProductsResponse productsResponse = productService.getProducts(productSearchParam);
 
 		if (productsResponse == null)
-			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+			return new ResponseEntity<>(NO_CONTENT);
 
-		return new ResponseEntity<>(productsResponse, HttpStatus.OK);
+		return new ResponseEntity<>(productsResponse, OK);
 	}
 
 
+	
+	
+	
 	@ApiOperation(value = "Get information about a specific product", nickname = "productInfo")
 	@ApiResponses(value = {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 404, message = "Product does not exist")
 			})
-	@GetMapping(value="/product",produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getProduct(@RequestParam(name = "product_id") Long productId,
+	@GetMapping(value="/product",produces=APPLICATION_JSON_VALUE)
+	public ProductDetailsDTO getProduct(@RequestParam(name = "product_id") Long productId,
 										@RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
 
-		ProductDetailsDTO response = productService.getProduct(productId, shopId);
-		return response == null ? new ResponseEntity<>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(response, HttpStatus.OK);
+		return productService.getProduct(productId, shopId);
 	}
 
+	
+	
+	
 	@ApiOperation(value = "Get information about a specific Organization's extra attributes", nickname = "organizationInfo")
 	@ApiResponses(value = {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 204, message = "Attributes does not exist")
 	})
-	@GetMapping(value="/attributes",produces=MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value="/attributes",produces=APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getOrganizationAttributes(@RequestParam(name = "org_id", required = false) Long organizationId) throws BusinessException {
 		List<ExtraAttributesRepresentationObject> response = organizationService.getOrganizationExtraAttributesById(organizationId);
-		return response.size() == 0 ? new ResponseEntity<>(HttpStatus.NO_CONTENT) : new ResponseEntity<>(response, HttpStatus.OK);
+		return response.size() == 0 ? new ResponseEntity<>(NO_CONTENT) : new ResponseEntity<>(response, HttpStatus.OK);
 	}
 
+	
+	
+	
+	
 	@ApiOperation(value = "Get information about categories", nickname = "categories")
 	@ApiResponses(value = {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
 	})
-	@GetMapping(value="/categories",produces=MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value="/categories",produces=APPLICATION_JSON_VALUE)
 	public List<CategoryRepresentationObject> getCategories(@RequestParam(name = "org_id", required = false) Long organizationId,
 										   @RequestParam(name = "category_id", required = false) Long categoryId) throws BusinessException {
 		return categoryService.getCategories(organizationId, categoryId);
 	}
 
+	
+	
+	
 
 	@ApiOperation(value = "Get information about organization tags tree", nickname = "tagsTree")
 	@ApiResponses(value = {
@@ -178,6 +211,10 @@ public class NavboxController {
 		return response;
 	}
 
+	
+	
+	
+	
 	@ApiOperation(value = "Get information about all organiaztion tags", nickname = "tags")
 	@ApiResponses(value = {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
@@ -191,6 +228,9 @@ public class NavboxController {
 	}
 
 
+	
+	
+	
 
 	@ApiOperation(value = "Get list of nearby shops by location", nickname = "locationShops")
 	@ApiResponses(value = {
@@ -207,6 +247,8 @@ public class NavboxController {
 	}
 
 
+	
+	
 
 	@ApiOperation(value = "Identify Organization by its domain", nickname = "orgId")
 	@ApiResponses(value = {

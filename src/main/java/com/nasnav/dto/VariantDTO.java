@@ -23,6 +23,8 @@ public class VariantDTO extends BaseRepresentationObject {
 	//want it to be inserted twice
 	@JsonIgnore
 	private Map<String,String> variantFeatures;
+	
+	private List<ExtraAttributeDTO> extraAttributes;
 
 	// used to insert the variant features key-value pairs into the
 	// generated JSON of VariantDTO

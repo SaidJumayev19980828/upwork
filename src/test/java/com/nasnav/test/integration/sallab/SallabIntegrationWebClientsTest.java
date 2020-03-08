@@ -157,7 +157,7 @@ public class SallabIntegrationWebClientsTest {
         	.authenticate(data)
         	.doOnNext(res -> waiter.assertEquals(res.statusCode(), OK))
         	.flatMap(res -> res.bodyToMono(AuthenticationResponse.class))
-        	.flatMap(res -> client.getProductsNextRecords(res.getAccessToken(), "01g25000014iC4QAAU-2000"))
+        	.flatMap(res -> client.getProductsNextRecords(res.getAccessToken(), "/services/data/v44.0/query/01g25000014iC4QAAU-2000"))
         	.flatMap(prodRes -> prodRes.bodyToMono(ProductsResponse.class))
         	.subscribe(onResponse);
         

@@ -8,12 +8,17 @@ import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static com.nasnav.integration.enums.MappingType.SHOP;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
+import static java.util.Arrays.asList;
 import static java.util.logging.Level.SEVERE;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.apache.commons.beanutils.BeanUtils;
 
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
@@ -21,13 +26,19 @@ import com.nasnav.integration.events.EventInfo;
 import com.nasnav.integration.events.OrderConfirmEvent;
 import com.nasnav.integration.events.data.OrderData;
 import com.nasnav.integration.events.data.OrderItemData;
+import com.nasnav.integration.events.data.PaymentData;
+import com.nasnav.integration.exceptions.ExternalOrderIdNotFound;
+import com.nasnav.integration.microsoftdynamics.webclient.dto.Payment;
+import com.nasnav.integration.microsoftdynamics.webclient.dto.PaymentDetails;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.SalesOrder;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.SalesOrderItem;
 
 import reactor.core.publisher.Mono;
 
 public class OrderConfirmEventListener extends AbstractMSDynamicsEventListener<OrderConfirmEvent, OrderData, String> {
-
+	private static final String PAYMENT_METHOD = "Credit_CHE";
+	
+	
 	public OrderConfirmEventListener(IntegrationService integrationService) {
 		super(integrationService);
 	}
@@ -51,14 +62,101 @@ public class OrderConfirmEventListener extends AbstractMSDynamicsEventListener<O
 				.createSalesOrder(requestData)
 				.flatMap(this::throwExceptionIfNotOk)
 				.flatMap(res -> res.bodyToMono(String.class))
-				.map(paymentId -> paymentId.replace("\"", ""));
+				.map(orderExtId -> orderExtId.replace("\"", ""))
+				.flatMap(orderExtId -> createPaymentForOrderAndReturnOrderId(orderExtId, order));
 	}
 
 	
 	
 	
 	
+	/**
+	 * @return if the order has a payment ; create a payment for the order with the same amount.
+	 * return the order id in all cases
+	 * */
+	private Mono<String> createPaymentForOrderAndReturnOrderId(String orderExtId, OrderData order) {
+		Long orgId = order.getOrganizationId();
+		Mono<String> paymentExtIdMono =
+				Mono
+				.justOrEmpty(getPaymentData(order))
+				.map(data -> createPaymentRequest(orderExtId, data))
+				.flatMap(requestData -> 
+							getWebClient(orgId)
+							 .createPayment(requestData))
+				.flatMap(this::throwExceptionIfNotOk)
+				.flatMap(res -> res.bodyToMono(String.class))
+				.defaultIfEmpty("-1");
+		
+		return Mono.zip(paymentExtIdMono, Mono.just(orderExtId), (paymentId, orderId) -> orderId);
+	}
 	
+	
+	
+	
+	
+	private Optional<PaymentData> getPaymentData(OrderData order) {
+		Optional<PaymentData> paymentData = order.getPaymentData();
+		return paymentData
+				.map(data -> modifyPaymentData(data, order));
+	}
+	
+	
+	
+	
+	
+	private PaymentData modifyPaymentData(PaymentData data, OrderData order) {
+		PaymentData copy = copyPaymentData(data);
+		copy.setId(null);
+		copy.setValue(order.getTotalValue());
+		return copy;
+	}
+	
+	
+	
+	
+	
+	private PaymentData copyPaymentData(PaymentData data) {		
+		try {
+			return (PaymentData)BeanUtils.cloneBean(data);
+		} catch (IllegalAccessException | InstantiationException | InvocationTargetException
+				| NoSuchMethodException e) {
+			throw new RuntimeException(e);
+		}
+	} 
+
+
+
+
+	private Payment createPaymentRequest(String extOrderId, PaymentData data) {
+		Payment payment = new Payment();
+		
+		if(extOrderId == null) {
+			logger.severe(format("Null external order id for payment event[%s]", data.toString()));
+			throw new ExternalOrderIdNotFound(data.getOrderId(), data.getOrganizationId());
+		}
+		
+		List<PaymentDetails> paymentDetails = createPaymentDetails(data, extOrderId);
+		payment.setPaymentDetails(paymentDetails);
+		payment.setSalesId(extOrderId);
+		
+		return payment;
+	}
+	
+	
+	
+	
+	
+	private List<PaymentDetails> createPaymentDetails(PaymentData data, String salesId) {
+		PaymentDetails details = new PaymentDetails();
+		details.setAmount(data.getValue());
+		details.setSalesId(salesId);
+		details.setPaymentMethod(PAYMENT_METHOD);		
+		return asList(details);
+	}
+
+
+
+
 	private void validateOrderEvent(EventInfo<OrderData> event) {
 		OrderData order = event.getEventData();
 		Long orgId = event.getOrganizationId();

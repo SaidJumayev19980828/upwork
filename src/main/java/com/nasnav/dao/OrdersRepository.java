@@ -59,4 +59,6 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	Long countByOrganizationEntity_id(long orgId);
 
 	Long countByShopsEntity_id(Long shopId);
+
+	List<OrdersEntity> findByPaymentEntity_idOrderById(Long id);
 }
