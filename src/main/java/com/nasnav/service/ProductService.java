@@ -21,6 +21,7 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -35,14 +36,13 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Order;
-import javax.persistence.criteria.Path;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import javax.persistence.criteria.*;
 
+import com.nasnav.integration.events.data.StockEventParam;
+import com.nasnav.integration.microsoftdynamics.webclient.dto.Stocks;
+import com.nasnav.integration.sallab.webclient.dto.Product;
+import com.nasnav.persistence.*;
+import lombok.Data;
 import org.apache.commons.beanutils.BeanUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -93,18 +93,6 @@ import com.nasnav.dto.VariantFeatureDTO;
 import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.BundleEntity;
-import com.nasnav.persistence.ExtraAttributesEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductExtraAttributesEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ProductImagesEntity;
-import com.nasnav.persistence.ProductTypes;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.TagsEntity;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.response.BundleResponse;
@@ -410,24 +398,32 @@ public class ProductService {
 	public ProductsResponse getProducts(ProductSearchParam requestParams) throws BusinessException, InvocationTargetException, IllegalAccessException {
 		ProductSearchParam params = getProductSearchParams(requestParams);
 
-		List<ProductEntity> products = null;
+		List<StocksEntity> products = null;
 		Long productsCount = null;
 
 		CriteriaBuilder builder = em.getCriteriaBuilder();
-		CriteriaQuery<ProductEntity> query = builder.createQuery(ProductEntity.class);
-		Root<ProductEntity> root = query.from(ProductEntity.class);
+		CriteriaQuery<StocksEntity> query = builder.createQuery(StocksEntity.class);
 
-		Predicate[] predicatesArr = getProductQueryPredicates(params, builder, root);
-		Order orderBy = getProductQueryOrderBy(params, builder, root);
+		GetQuery getQuery = new GetQuery(params, builder, query).invoke();
+
+		CriteriaQuery<Long> cqCount = builder.createQuery(Long.class);
+		cqCount.select(builder.count(getQuery.getStocksRoot())).where(getQuery.getPredicatesArr());
+
+		productsCount = em.createQuery(cqCount).getSingleResult();
+
+		Fetch<ProductVariantsEntity, ProductEntity> productsJoin = getQuery.getProductsJoin();
+		Predicate predicatesArr = getQuery.getPredicatesArr();
+		Order orderBy = getProductQueryOrderBy(params, builder, (Join)productsJoin);
 
 		if (predicatesArr != null) {
 			query.where(predicatesArr);
+
 			if (orderBy != null)
 				query.orderBy(orderBy);
-			productsCount = (long) em.createQuery(query).getResultList().size();
+
 			products =  em.createQuery(query).setMaxResults(params.count).setFirstResult(params.start).getResultList();
 
-			if (params.tags != null) {
+			/*if (params.tags != null) {
 				int oldProductCount = products.size();
 				products = products.stream()
 						.filter(product -> productRepository.getTagsByProductId(product.getId())
@@ -437,10 +433,10 @@ public class ProductService {
 								.containsAll(params.tags))
 						.collect(Collectors.toList());
 				productsCount = productsCount - oldProductCount + products.size();
-			}
+			}*/
 		}
 
-		return getProductsResponse(products, params.order.getValue(), params.sort.toString(), productsCount);
+		return getProductResponseFromStocks(products, params.order.getValue(), params.sort.toString(), productsCount);
 	}
 
 
@@ -466,6 +462,9 @@ public class ProductService {
 		if (params.org_id == null && params.shop_id == null)
 			throw new BusinessException("Shop Id or Organization Id shall be provided", null, HttpStatus.BAD_REQUEST);
 
+		if (params.minPrice != null && params.minPrice.compareTo(BigDecimal.ZERO) < 0)
+			params.minPrice = BigDecimal.ZERO;
+
 		if (params.start == null)
 			params.start = defaultStart;
 
@@ -484,57 +483,7 @@ public class ProductService {
 		return count == null ? defaultCount : count < 1000 ? count : 1000;
 	}
 
-	private Predicate[] getProductQueryPredicates(ProductSearchParam params, CriteriaBuilder builder, Root<ProductEntity> root) {
-		List<Predicate> predicates = new ArrayList<>();
-
-		if(params.org_id != null)
-			predicates.add( builder.equal(root.get("organizationId"), params.org_id) );
-
-		if(params.brand_id != null)
-			predicates.add( builder.equal(root.get("brandId"), params.brand_id) );
-
-		if(params.category_id != null)
-			predicates.add( builder.equal(root.get("categoryId"), params.category_id) );
-
-		if(params.name != null) {
-			Predicate searchInName = builder.like(builder.lower(root.get("name")), "%" + params.name.toLowerCase() + "%");
-			Predicate searchInDescription = builder.like(builder.lower(root.get("description")), "%" + params.name.toLowerCase() + "%");
-			predicates.add(builder.or(searchInName, searchInDescription));
-		}
-
-		if(params.tags != null) {
-			List<Long> productIds = productRepository.getProductIdsByTagsList(params.tags);
-			if (productIds == null || productIds.isEmpty())
-				return null;
-			Expression<String> parentExpression = root.get("id");
-			predicates.add(parentExpression.in(productIds) );
-		}
-
-		if(params.shop_id != null && params.org_id == null) {
-			List<StocksEntity> stocks = stockRepository.findByShopsEntity_Id(params.shop_id);
-
-			if (stocks != null && !stocks.isEmpty()) {
-
-			List<Long> productsIds = stocks.stream()
-											.filter(stock -> stock.getProductVariantsEntity() != null)
-											.map(stock -> stock.getProductVariantsEntity())
-											.filter(var -> var != null)
-											.map(var -> var.getProductEntity())
-											.filter(prod -> prod != null)
-											.map(prod -> prod.getId())
-											.collect(Collectors.toList());
-
-				Expression<String> parentExpression = root.get("id");
-				predicates.add(parentExpression.in(productsIds));
- 			} else
- 				return null;
-		}
-
-		Predicate[] predicatesArr = predicates.stream().toArray( Predicate[]::new);
-		return predicatesArr;
-	}
-
-	private Order getProductQueryOrderBy(ProductSearchParam params, CriteriaBuilder builder, Root<ProductEntity> root) {
+	private Order getProductQueryOrderBy(ProductSearchParam params, CriteriaBuilder builder, Join root) {
 		if (!params.sort.getValue().equals("price")) {
 			Path orderByAttr = root.get(params.sort.getValue());
 			Order orderBy = builder.asc(orderByAttr);
@@ -588,7 +537,32 @@ public class ProductService {
 
 		List<ProductRepresentationObject> productsRep =
 				products.stream()
-						.map(prod -> getProductRepresentation(prod, productCoverImages))
+					  .map(prod -> getProductRepresentation(prod, productCoverImages))
+					  .collect(Collectors.toList());
+
+		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE)
+			sortByPrice(productsRep, order);
+
+		return new ProductsResponse(productsCount, productsRep);
+
+	}
+
+	private ProductsResponse getProductResponseFromStocks(List<StocksEntity> stocks, String order,
+														  String sort, Long productsCount) {
+		if(stocks == null)
+			return new ProductsResponse();
+
+		List<Long> productIdList = stocks.stream()
+				.map(StocksEntity::getProductVariantsEntity)
+				.map(ProductVariantsEntity::getProductEntity)
+				.map(ProductEntity::getId)
+				.collect(Collectors.toList());
+
+		Map<Long, String> productCoverImages = imgService.getProductsCoverImages(productIdList);
+
+		List<ProductRepresentationObject> productsRep =
+				stocks.stream()
+						.map(s -> getProductRepresentationFromStock(s, productCoverImages))
 						.collect(Collectors.toList());
 
 		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE)
@@ -1276,6 +1250,22 @@ public class ProductService {
 		return count;
 	}
 
+	private Long getProductQueryCount(GetQuery getQuery) {
+		CriteriaBuilder cb = getQuery.getBuilder();
+		CriteriaQuery<Long> cqCount = cb.createQuery(Long.class);
+		Root<StocksEntity> entityRoot = cqCount.from(getQuery.getQuery().getResultType());
+		cqCount.select(cb.count(entityRoot)).where(getQuery.getPredicatesArr());
+		return em.createQuery(cqCount).getSingleResult();/*
+
+
+		CriteriaBuilder cb = getQuery.getBuilder();
+
+		CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+		countQuery.select(cb.count(countQuery.from(StocksEntity.class))).where(getQuery.getPredicatesArr());
+
+		return em.createQuery(countQuery).getSingleResult();*/
+	}
+
 
 
 
@@ -1819,13 +1809,9 @@ public class ProductService {
 	}
 
 	private ProductRepresentationObject getProductRepresentation(ProductEntity product) {
+
 		ProductRepresentationObject productRep = new ProductRepresentationObject();
-		productRep.setId( product.getId());
-		productRep.setName(product.getName());
-		productRep.setPname( product.getPname());
-		productRep.setBrandId( product.getBrandId());
-		productRep.setCategoryId( product.getCategoryId());
-		productRep.setBarcode( product.getBarcode());
+		setProductProperties(productRep, product);
 		productRep.setMultipleVariants( product.getProductVariants().size() > 1);
 
 		List<TagsRepresentationObject> productTags = getProductTagsDTOList(product.getId());
@@ -1837,13 +1823,7 @@ public class ProductService {
 
 		if(stockExists) {
 			StocksEntity defaultStock = defaultStockOpt.get();
-			productRep.setPrice( defaultStock.getPrice() );
-			productRep.setDiscount( defaultStock.getDiscount() );
-			productRep.setStockId( defaultStock.getId());
-			productRep.setDefaultVariantFeatures( defaultStock.getProductVariantsEntity().getFeatureSpec());
-			if (defaultStock.getCurrency() != null) {
-				productRep.setCurrency( defaultStock.getCurrency().ordinal() );
-			}
+			setProductStockProperties(productRep, defaultStock);
 		}
 		productRep.setAvailable(stockExists);
 		productRep.setHidden(!stockExists);
@@ -1851,8 +1831,39 @@ public class ProductService {
 		return productRep;
 	}
 
+	private ProductRepresentationObject getProductRepresentationFromStock(StocksEntity stock) {
+		ProductVariantsEntity variant = stock.getProductVariantsEntity();
+		ProductEntity product = variant.getProductEntity();
 
+		ProductRepresentationObject productRep = new ProductRepresentationObject();
 
+		setProductProperties(productRep, product);
+
+		setProductStockProperties(productRep, stock);
+
+		productRep.setTags(getProductTagsDTOList(product.getId()));
+
+		return productRep;
+	}
+
+	private void setProductProperties(ProductRepresentationObject productRep, ProductEntity product) {
+		productRep.setId(product.getId());
+		productRep.setName(product.getName());
+		productRep.setPname(product.getPname());
+		productRep.setBrandId(product.getBrandId());
+		productRep.setCategoryId(product.getCategoryId());
+		productRep.setBarcode(product.getBarcode());
+	}
+
+	private void setProductStockProperties(ProductRepresentationObject productRep, StocksEntity stock) {
+		productRep.setPrice(stock.getPrice());
+		productRep.setDiscount(stock.getDiscount());
+		productRep.setStockId(stock.getId());
+		productRep.setDefaultVariantFeatures(stock.getProductVariantsEntity().getFeatureSpec());
+		if (stock.getCurrency() != null) {
+			productRep.setCurrency( stock.getCurrency().ordinal() );
+		}
+	}
 
 
 
@@ -1862,6 +1873,11 @@ public class ProductService {
 		return rep;
 	}
 
+	private ProductRepresentationObject getProductRepresentationFromStock(StocksEntity stock, Map<Long, String> productCoverImgs) {
+		ProductRepresentationObject rep = getProductRepresentationFromStock(stock);
+		setAdditionalInfo(rep, productCoverImgs);
+		return rep;
+	}
 
 
 
@@ -1981,5 +1997,92 @@ public class ProductService {
 		}
 
 		return tagsMap;
+	}
+
+	@Data
+	private class GetQuery {
+		private ProductSearchParam params;
+		private CriteriaBuilder builder;
+		private CriteriaQuery<StocksEntity> query;
+		private Fetch<ProductVariantsEntity, ProductEntity> productsJoin;
+		private Predicate predicatesArr;
+		private Root<StocksEntity> stocksRoot;
+
+		public GetQuery(ProductSearchParam params, CriteriaBuilder builder, CriteriaQuery<StocksEntity> query) {
+			this.params = params;
+			this.builder = builder;
+			this.query = query;
+		}
+
+		public Fetch<ProductVariantsEntity, ProductEntity> getProductsJoin() {
+			return productsJoin;
+		}
+
+		public Predicate getPredicatesArr() {
+			return predicatesArr;
+		}
+
+		public GetQuery invoke() {
+			stocksRoot = query.from(StocksEntity.class);
+			Fetch<StocksEntity, OrganizationEntity> organizationsJoin = stocksRoot.fetch("organizationEntity");
+			Fetch<StocksEntity, ProductVariantsEntity> variantsJoin = stocksRoot.fetch("productVariantsEntity");
+			Fetch<ProductVariantsEntity, ProductExtraAttributesEntity> productExtraAttributesJoin = variantsJoin.fetch("extraAttributes", JoinType.LEFT);
+			Fetch<ProductExtraAttributesEntity, ExtraAttributesEntity> extraAttributesJoin = productExtraAttributesJoin.fetch("extraAttribute", JoinType.LEFT);
+			productsJoin = variantsJoin.fetch("productEntity", JoinType.LEFT);
+			Fetch<ProductEntity, TagsEntity> tagsJoin = productsJoin.fetch("tags", JoinType.LEFT);
+			Fetch<TagsEntity, CategoriesEntity> categoriesJoin = tagsJoin.fetch("categoriesEntity");
+
+			predicatesArr = getProductQueryPredicates(params, builder, stocksRoot, productsJoin, tagsJoin);
+			return this;
+		}
+
+		private Predicate getProductQueryPredicates(ProductSearchParam params, CriteriaBuilder builder, Root<StocksEntity> stocksRoot,
+														Fetch productFetch, Fetch tagsFetch) {
+			Predicate predicate = builder.conjunction();
+
+			Join productJoin = (Join) productFetch;
+			Join tagsJoin = (Join) tagsFetch;
+			if(params.org_id != null)
+				predicate = builder.and( builder.equal(stocksRoot.get("organizationEntity").get("id"), params.org_id) );
+
+			if(params.brand_id != null)
+				predicate = builder.and( builder.equal(productJoin.get("brandId"), params.brand_id) );
+
+			if(params.category_id != null)
+				predicate = builder.and( builder.equal(productJoin.get("categoryId"), params.category_id) );
+
+			if(params.name != null) {
+				Predicate searchInName = builder.like(builder.lower(productJoin.get("name")), "%" + params.name.toLowerCase() + "%");
+				Predicate searchInDescription = builder.like(builder.lower(productJoin.get("description")), "%" + params.name.toLowerCase() + "%");
+				predicate = builder.and(builder.or(searchInName, searchInDescription));
+			}
+
+			if(params.tags != null) {
+				Expression<String> parentExpression = tagsJoin.get("id");
+				predicate = builder.and(parentExpression.in(params.tags) );
+			}
+
+			if(params.shop_id != null && params.org_id == null) {
+				List<StocksEntity> stocks = stockRepository.findByShopsEntity_Id(params.shop_id);
+
+				if (stocks != null && !stocks.isEmpty()) {
+
+				List<Long> productsIds = stocks.stream()
+												.filter(stock -> stock.getProductVariantsEntity() != null)
+												.map(stock -> stock.getProductVariantsEntity())
+												.filter(var -> var != null)
+												.map(var -> var.getProductEntity())
+												.filter(prod -> prod != null)
+												.map(prod -> prod.getId())
+												.collect(Collectors.toList());
+
+				Expression<String> parentExpression = productJoin.get("id");
+					predicate = builder.and(parentExpression.in(productsIds));
+				 } else
+					 return null;
+			}
+
+			return predicate;
+		}
 	}
 }
