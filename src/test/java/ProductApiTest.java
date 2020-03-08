@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.nasnav.response.ProductsDeleteResponse;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -135,7 +136,7 @@ public class ProductApiTest {
 
 		validateCreatedProductResponse(response);
 
-		Long id = response.getBody().getProductIds().get(0);
+		Long id = response.getBody().getProductId();
 		ProductEntity saved  = productRepository.findById(id).get();
 
 		validateCreatedProductData(product, saved, id, user.getOrganizationId());
@@ -147,8 +148,8 @@ public class ProductApiTest {
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		ProductUpdateResponse body = response.getBody();
 		assertTrue( body.isSuccess());
-		assertNotEquals(body.getProductIds().get(0) , Long.valueOf(0L));
-		assertTrue(productRepository.existsById(body.getProductIds().get(0)));
+		assertNotEquals(body.getProductId() , Long.valueOf(0L));
+		assertTrue(productRepository.existsById(body.getProductId()));
 	}
 
 
@@ -179,7 +180,7 @@ public class ProductApiTest {
 
 		validateCreatedProductResponse(response);
 
-		Long savedId = response.getBody().getProductIds().get(0);
+		Long savedId = response.getBody().getProductId();
 		ProductEntity saved  = productRepository.findById(savedId).get();
 
 		//modified properties should equal to new values
@@ -253,7 +254,7 @@ public class ProductApiTest {
 
 		validateCreatedProductResponse(response);
 
-		Long id = response.getBody().getProductIds().get(0);
+		Long id = response.getBody().getProductId();
 		ProductEntity saved  = productRepository.findById(id).get();
 
 		product.put("p_name","test-product"); //set the expected pname , it will be compared against the generated one in the entity
@@ -273,7 +274,7 @@ public class ProductApiTest {
 
 		ResponseEntity<String> response = postInvalidProductData(user, product);
 
-		Long id = new JSONObject(response.getBody()).getJSONArray("product_ids").getLong(0);
+		Long id = new JSONObject(response.getBody()).getLong("product_id");
 		ProductEntity saved  = productRepository.findById(id).get();
 
 		validateCreatedProductData(product, saved, id, user.getOrganizationId());
@@ -580,7 +581,7 @@ public class ProductApiTest {
 	private void assertExpectedResponse(Long productId, ResponseEntity<String> response)
 			throws IOException, JsonParseException, JsonMappingException {
 		ObjectMapper mapper = new ObjectMapper();
-		ProductUpdateResponse body = mapper.readValue(response.getBody(), ProductUpdateResponse.class);
+		ProductsDeleteResponse body = mapper.readValue(response.getBody(), ProductsDeleteResponse.class);
 
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertTrue(body.isSuccess());

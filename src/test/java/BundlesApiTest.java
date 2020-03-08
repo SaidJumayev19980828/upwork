@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.nasnav.response.ProductsDeleteResponse;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -298,7 +299,7 @@ public class BundlesApiTest {
 		
 		validateCreatedProductResponse(response);
 		
-		Long id = response.getBody().getProductIds().get(0);
+		Long id = response.getBody().getProductId();
 		BundleEntity saved  = bundleRepo.findById(id).get();	
 		
 		validateCreatedBundleData(bundle, saved, id, user.getOrganizationId());
@@ -310,8 +311,8 @@ public class BundlesApiTest {
 		assertEquals(HttpStatus.OK, response.getStatusCode());	
 		ProductUpdateResponse body = response.getBody();
 		assertTrue( body.isSuccess());
-		assertNotEquals(body.getProductIds().get(0) , Long.valueOf(0L));
-		assertTrue(bundleRepo.existsById(body.getProductIds().get(0)));
+		assertNotEquals(body.getProductId() , Long.valueOf(0L));
+		assertTrue(bundleRepo.existsById(body.getProductId()));
 	}
 	
 	
@@ -372,7 +373,7 @@ public class BundlesApiTest {
 		assertNotNull("assert bundle has a virtual stock", stockId);
 
 		BaseUserEntity user = empUserRepo.getById(69L); 
-		ResponseEntity<ProductUpdateResponse> response = deleteBundle(bundleId, user);
+		ResponseEntity<ProductsDeleteResponse> response = deleteBundle(bundleId, user);
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(bundleId, response.getBody().getProductIds().get(0));
@@ -392,13 +393,13 @@ public class BundlesApiTest {
 
 
 
-	private ResponseEntity<ProductUpdateResponse> deleteBundle(Long bundleId, BaseUserEntity user) {
+	private ResponseEntity<ProductsDeleteResponse> deleteBundle(Long bundleId, BaseUserEntity user) {
 		HttpEntity request =  TestCommons.getHttpEntity("" ,user.getAuthenticationToken());
-		ResponseEntity<ProductUpdateResponse> response = 
+		ResponseEntity<ProductsDeleteResponse> response =
 				template.exchange("/product/bundle?product_id=" + bundleId
 						, HttpMethod.DELETE
 						, request
-						, ProductUpdateResponse.class);
+						, ProductsDeleteResponse.class);
 		return response;
 	}
 	

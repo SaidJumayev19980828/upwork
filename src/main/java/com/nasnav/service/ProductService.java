@@ -2,8 +2,7 @@ package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.nonIsEmpty;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
-import static com.nasnav.commons.utils.StringUtils.encodeUrl;
-import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_BUNDLE_ITEM;
@@ -43,6 +42,7 @@ import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.response.*;
 import org.apache.commons.beanutils.BeanUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -107,11 +107,6 @@ import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.request.ProductSearchParam;
-import com.nasnav.response.BundleResponse;
-import com.nasnav.response.ProductImageDeleteResponse;
-import com.nasnav.response.ProductImageUpdateResponse;
-import com.nasnav.response.ProductUpdateResponse;
-import com.nasnav.response.VariantUpdateResponse;
 import com.sun.istack.logging.Logger;
 
 @Service
@@ -652,7 +647,7 @@ public class ProductService {
 		ProductEntity entity = prepareProdcutEntity(rootNode, user,isBundle);
 		ProductEntity saved = productRepository.save(entity);
 
-		return new ProductUpdateResponse(true, Collections.singletonList(saved.getId()));
+		return new ProductUpdateResponse(true, saved.getId());
 	}
 
 
@@ -811,11 +806,11 @@ public class ProductService {
 
 
 
-	public ProductUpdateResponse deleteProduct(List<Long> productIds) throws BusinessException {
+	public ProductsDeleteResponse deleteProduct(List<Long> productIds) throws BusinessException {
 
 		for(Long productId : productIds) {
 			if(!productRepository.existsById(productId)) {
-				return new ProductUpdateResponse(true, Collections.singletonList(productId)); //if the product doesn't exists, then..mission accomplished!
+				return new ProductsDeleteResponse(true, Collections.singletonList(productId)); //if the product doesn't exists, then..mission accomplished!
 			}
 
 			validateProductToDelete(productId);
@@ -830,7 +825,7 @@ public class ProductService {
 				throw new BusinessException(format(ERR_PRODUCT_DELETE_FAILED, productId), "INVAILID PARAM:product_id", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		}
-		return new ProductUpdateResponse(true, productIds);
+		return new ProductsDeleteResponse(true, productIds);
 	}
 
 
@@ -898,7 +893,7 @@ public class ProductService {
 
 
 
-	public ProductUpdateResponse deleteBundle(Long bundleId) throws BusinessException {
+	public ProductsDeleteResponse deleteBundle(Long bundleId) throws BusinessException {
 		validateBundleToDelete(bundleId);
 
 		return deleteProduct(Collections.singletonList(bundleId));
@@ -1827,8 +1822,8 @@ public class ProductService {
 		productRep.setBrandId( product.getBrandId());
 		productRep.setCategoryId( product.getCategoryId());
 		productRep.setBarcode( product.getBarcode());
-		productRep.setCreationDate(product.getCreationDate().toString());
-		productRep.setUpdateDate(product.getUpdateDate().toString());
+		productRep.setCreationDate(Optional.ofNullable(product.getCreationDate().toString()).orElse(null));
+		productRep.setUpdateDate(Optional.ofNullable(product.getUpdateDate().toString()).orElse(null));
 		productRep.setMultipleVariants( product.getProductVariants().size() > 1);
 
 		List<TagsRepresentationObject> productTags = getProductTagsDTOList(product.getId());
