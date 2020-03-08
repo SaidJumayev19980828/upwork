@@ -298,7 +298,7 @@ public class BundlesApiTest {
 		
 		validateCreatedProductResponse(response);
 		
-		Long id = response.getBody().getProductId();
+		Long id = response.getBody().getProductIds().get(0);
 		BundleEntity saved  = bundleRepo.findById(id).get();	
 		
 		validateCreatedBundleData(bundle, saved, id, user.getOrganizationId());
@@ -310,8 +310,8 @@ public class BundlesApiTest {
 		assertEquals(HttpStatus.OK, response.getStatusCode());	
 		ProductUpdateResponse body = response.getBody();
 		assertTrue( body.isSuccess());
-		assertNotEquals(body.getProductId() , Long.valueOf(0L));
-		assertTrue(bundleRepo.existsById(body.getProductId()));
+		assertNotEquals(body.getProductIds().get(0) , Long.valueOf(0L));
+		assertTrue(bundleRepo.existsById(body.getProductIds().get(0)));
 	}
 	
 	
@@ -375,7 +375,7 @@ public class BundlesApiTest {
 		ResponseEntity<ProductUpdateResponse> response = deleteBundle(bundleId, user);
 		
 		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertEquals(bundleId, response.getBody().getProductId());		
+		assertEquals(bundleId, response.getBody().getProductIds().get(0));
 		assertFalse("assert bundle doesn't exists", bundleRepo.existsById(bundleId));
 	}
 	

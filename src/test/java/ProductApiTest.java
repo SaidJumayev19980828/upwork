@@ -10,11 +10,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.json.JSONObject;
@@ -71,18 +67,18 @@ import net.jcip.annotations.NotThreadSafe;
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Products_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class ProductApiTest {
-	
+
 	@Autowired
 	private TestRestTemplate template;
 
-	
-	@Autowired 
+
+	@Autowired
 	private EmployeeUserRepository empUserRepo;
-	
+
 	@Autowired
 	private ProductRepository productRepository;
-	
-	
+
+
 	@Autowired
 	private ProductVariantsRepository variantRepo;
 
@@ -93,15 +89,15 @@ public class ProductApiTest {
 
 	@Autowired
 	private ProductImagesRepository imgRepo;
-	
-	
+
+
 	@Autowired
 	private JdbcTemplate jdbc;
-	
-	
+
+
 	@Autowired
 	private BasketRepository basketRepo;
-	
+
 	@Autowired
 	private TagsRepository tagsRepo;
 
@@ -109,93 +105,93 @@ public class ProductApiTest {
 	@Test
 	public void createProductUserWithNoRightsTest() throws JsonProcessingException {
 		BaseUserEntity user = empUserRepo.getById(68L);
-		
-		JSONObject productJson = createNewDummyProduct();		
-		
+
+		JSONObject productJson = createNewDummyProduct();
+
 		HttpEntity<?> request =  getHttpEntity(productJson.toString() , user.getAuthenticationToken());
-		
-		ResponseEntity<String> response = 
+
+		ResponseEntity<String> response =
 				template.exchange("/product/info"
 						, HttpMethod.POST
 						, request
 						, String.class);
-		
+
 		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-		
+
 		JSONObject body = new JSONObject(response.getBody());
 		assertFalse(body.getBoolean("success"));
 	}
-	
-	
-	
-	
+
+
+
+
 	@Test
 	public void createProductTest() throws JsonProcessingException{
 		BaseUserEntity user = empUserRepo.getById(69L);
-		
+
 		JSONObject product = createNewDummyProduct();
-		
-		ResponseEntity<ProductUpdateResponse> response = postProductData(user, product);		
-		
+
+		ResponseEntity<ProductUpdateResponse> response = postProductData(user, product);
+
 		validateCreatedProductResponse(response);
-		
-		Long id = response.getBody().getProductId();
-		ProductEntity saved  = productRepository.findById(id).get();	
-		
+
+		Long id = response.getBody().getProductIds().get(0);
+		ProductEntity saved  = productRepository.findById(id).get();
+
 		validateCreatedProductData(product, saved, id, user.getOrganizationId());
 	}
-	
-	
+
+
 
 	private void validateCreatedProductResponse(ResponseEntity<ProductUpdateResponse> response) {
-		assertEquals(HttpStatus.OK, response.getStatusCode());	
+		assertEquals(HttpStatus.OK, response.getStatusCode());
 		ProductUpdateResponse body = response.getBody();
 		assertTrue( body.isSuccess());
-		assertNotEquals(body.getProductId() , Long.valueOf(0L));
-		assertTrue(productRepository.existsById(body.getProductId()));
+		assertNotEquals(body.getProductIds().get(0) , Long.valueOf(0L));
+		assertTrue(productRepository.existsById(body.getProductIds().get(0)));
 	}
-	
-	
-	
-	
+
+
+
+
 	@Test
-	public void updateProductTest() throws JsonProcessingException{		
+	public void updateProductTest() throws JsonProcessingException{
 		BaseUserEntity user = empUserRepo.getById(69L);
 		Long id = 1001L;
-		ProductEntity originalProduct =  productRepository.findById(id).get();		
-		
-		
+		ProductEntity originalProduct =  productRepository.findById(id).get();
+
+
 		//modify some fields for existing product in the test data, only the fields added to the JSON will be changed
 		JSONObject product = new JSONObject();
 		product.put("operation", Operation.UPDATE.getValue());
-		product.put("product_id",id);  
+		product.put("product_id",id);
 		product.put("barcode","UPDATEDbARcODE");
 		product.put("name","updated product");
 		product.put("brand_id", JSONObject.NULL);
-		
+
 		HttpEntity<?> request =  TestCommons.getHttpEntity(product.toString() , user.getAuthenticationToken());
-		
-		ResponseEntity<ProductUpdateResponse> response = 
+
+		ResponseEntity<ProductUpdateResponse> response =
 				template.exchange("/product/info"
 						, HttpMethod.POST
 						, request
-						, ProductUpdateResponse.class);	
-		
+						, ProductUpdateResponse.class);
+
 		validateCreatedProductResponse(response);
-		
-		Long savedId = response.getBody().getProductId();
-		ProductEntity saved  = productRepository.findById(savedId).get();	
-		
+
+		Long savedId = response.getBody().getProductIds().get(0);
+		ProductEntity saved  = productRepository.findById(savedId).get();
+
 		//modified properties should equal to new values
 		assertEquals(id , saved.getId());
 		assertEquals(product.getString("name"), saved.getName());
 		assertEquals(product.getString("barcode"), saved.getBarcode());
 		assertNull(saved.getBrandId());
-		
+
 		//original values should remain the same
 		assertEquals("updated-product", saved.getPname());
 		assertEquals(originalProduct.getDescription(), saved.getDescription());
-		assertEquals(user.getOrganizationId() , saved.getOrganizationId()); 
+		assertEquals(user.getOrganizationId() , saved.getOrganizationId());
 	}
 
 
@@ -204,20 +200,20 @@ public class ProductApiTest {
 
 	private ResponseEntity<ProductUpdateResponse> postProductData(BaseUserEntity user, JSONObject productJson)
 			throws JsonProcessingException {
-		
+
 		HttpEntity<?> request =  TestCommons.getHttpEntity(productJson.toString() , user.getAuthenticationToken());
-		
-		ResponseEntity<ProductUpdateResponse> response = 
+
+		ResponseEntity<ProductUpdateResponse> response =
 				template.exchange("/product/info"
 						, HttpMethod.POST
 						, request
 						, ProductUpdateResponse.class);
 		return response;
 	}
-	
-	
-	
-	
+
+
+
+
 	private void validateCreatedProductData(JSONObject product, ProductEntity saved, Long id, Long userOrgId) {
 		assertEquals(id , saved.getId());
 		assertEquals(product.get("name"), saved.getName());
@@ -227,8 +223,8 @@ public class ProductApiTest {
 		assertEquals(product.get("brand_id"), saved.getBrandId());
 		assertEquals(userOrgId, saved.getOrganizationId()); //the new product takes the organization of the user 
 	}
-	
-	
+
+
 
 	private JSONObject createNewDummyProduct() {
 		JSONObject product = new JSONObject();
@@ -239,185 +235,185 @@ public class ProductApiTest {
 		product.put("description", "Testing creating/updating product");
 		product.put("barcode", "BAR12345CODE");
 		product.put("brand_id", 101L);
-		
+
 		return product;
 	}
-	
-	
-	
-	
+
+
+
+
 	@Test
 	public void createProdcutDefaultPnameTest() throws JsonProcessingException{
 		BaseUserEntity user = empUserRepo.getById(69L);
-		
+
 		JSONObject product = createNewDummyProduct();
 		product.put("p_name",JSONObject.NULL);  //set pname to null, so that it will be auto-generated from product name
-		
-		ResponseEntity<ProductUpdateResponse> response = postProductData(user, product);		
-		
+
+		ResponseEntity<ProductUpdateResponse> response = postProductData(user, product);
+
 		validateCreatedProductResponse(response);
-		
-		Long id = response.getBody().getProductId();
+
+		Long id = response.getBody().getProductIds().get(0);
 		ProductEntity saved  = productRepository.findById(id).get();
-		
+
 		product.put("p_name","test-product"); //set the expected pname , it will be compared against the generated one in the entity
-		
+
 		validateCreatedProductData(product, saved, id, user.getOrganizationId());
 	}
-	
-	
-	
-	
+
+
+
+
 	@Test
 	public void createProdcutNullBrand() throws JsonProcessingException{
 		BaseUserEntity user = empUserRepo.getById(69L);
-		
+
 		JSONObject product = createNewDummyProduct();
-		product.put("brand_id", JSONObject.NULL);  
-		
-		ResponseEntity<String> response = postInvalidProductData(user, product);	
-		
-		Long id = new JSONObject(response.getBody()).getLong("product_id");
+		product.put("brand_id", JSONObject.NULL);
+
+		ResponseEntity<String> response = postInvalidProductData(user, product);
+
+		Long id = new JSONObject(response.getBody()).getJSONArray("product_ids").getLong(0);
 		ProductEntity saved  = productRepository.findById(id).get();
-		
+
 		validateCreatedProductData(product, saved, id, user.getOrganizationId());
 	}
-	
-	
-	
-	
+
+
+
+
 	@Test
 	public void createProdcutNonExistingBrand() throws JsonProcessingException{
 		BaseUserEntity user = empUserRepo.getById(69L);
-		
+
 		JSONObject product = createNewDummyProduct();
-		product.put("brand_id", 99999L);  
-		
-		ResponseEntity<String> response = postInvalidProductData(user, product);		
-		
+		product.put("brand_id", 99999L);
+
+		ResponseEntity<String> response = postInvalidProductData(user, product);
+
 		validateErrorResponse(response);
 	}
-	
-	
-	
+
+
+
 	@Test
 	public void createProdcutInvalidBrand() throws JsonProcessingException{
 		BaseUserEntity user = empUserRepo.getById(69L);
-		
+
 		JSONObject product = createNewDummyProduct();
 		product.put("brand_id", 102L); // this brand is for another organization 
-		
-		ResponseEntity<String> response = postInvalidProductData(user, product);		
-		
+
+		ResponseEntity<String> response = postInvalidProductData(user, product);
+
 		validateErrorResponse(response);
 	}
 
-	
-	
+
+
 	@Test
 	public void createProdcutNullName() throws JsonProcessingException{
 		BaseUserEntity user = empUserRepo.getById(69L);
-		
+
 		JSONObject product = createNewDummyProduct();
-		product.put("name", JSONObject.NULL);  
-		
-		ResponseEntity<String> response = postInvalidProductData(user, product);		
-		
+		product.put("name", JSONObject.NULL);
+
+		ResponseEntity<String> response = postInvalidProductData(user, product);
+
 		validateErrorResponse(response);
 	}
-	
-	
-	
-	
+
+
+
+
 	@Test
 	public void updateProdcutNonExistingOperationField() throws JsonProcessingException{
 		BaseUserEntity user = empUserRepo.getById(69L);
-		
+
 		JSONObject product = createNewDummyProduct();
-		product.remove("operation"); 
-		
-		ResponseEntity<String> response = postInvalidProductData(user, product);		
-		
+		product.remove("operation");
+
+		ResponseEntity<String> response = postInvalidProductData(user, product);
+
 		validateErrorResponse(response);
 	}
-	
-	
-	
+
+
+
 	@Test
 	public void createProdcutNonExistingNameField() throws JsonProcessingException{
 		BaseUserEntity user = empUserRepo.getById(69L);
-		
+
 		JSONObject product = createNewDummyProduct();
-		product.remove("name"); 
-		
-		ResponseEntity<String> response = postInvalidProductData(user, product);		
-		
+		product.remove("name");
+
+		ResponseEntity<String> response = postInvalidProductData(user, product);
+
 		validateErrorResponse(response);
 	}
-	
-	
 
-	
-	
-	
+
+
+
+
+
 	@Test
 	public void createProdcutNonExistingBrandIdField() throws JsonProcessingException{
 		BaseUserEntity user = empUserRepo.getById(69L);
-		
+
 		JSONObject product = createNewDummyProduct();
-		product.remove("brand_id"); 
-		
-		ResponseEntity<String> response = postInvalidProductData(user, product);		
-		
+		product.remove("brand_id");
+
+		ResponseEntity<String> response = postInvalidProductData(user, product);
+
 		validateErrorResponse(response);
 	}
-	
-	
-	
-	
+
+
+
+
 	@Test
 	public void updateProdcutNonExistingIdField() throws JsonProcessingException{
 		BaseUserEntity user = empUserRepo.getById(69L);
-		
+
 		JSONObject product = createNewDummyProduct();
 		product.put("operation", Operation.UPDATE.getValue());
-		product.remove("product_id"); 
-		
-		ResponseEntity<String> response = postInvalidProductData(user, product);		
-		
+		product.remove("product_id");
+
+		ResponseEntity<String> response = postInvalidProductData(user, product);
+
 		validateErrorResponse(response);
 	}
-	
+
 
 
 	private void validateErrorResponse(ResponseEntity<String> response) {
-		JSONObject body = new JSONObject(response.getBody()); 
-		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());		
+		JSONObject body = new JSONObject(response.getBody());
+
+		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
 		assertTrue(body.has("message"));
 		assertTrue(body.has("error"));
 	}
-	
+
 
 
 	private ResponseEntity<String> postInvalidProductData(BaseUserEntity user, JSONObject productJson)
-			throws JsonProcessingException {				
-		
+			throws JsonProcessingException {
+
 		HttpEntity<?> request =  getHttpEntity(productJson.toString() , user.getAuthenticationToken());
-		
-		ResponseEntity<String> response = 
+
+		ResponseEntity<String> response =
 				template.exchange("/product/info"
 						, HttpMethod.POST
 						, request
 						, String.class);
 		return response;
-	} 
-	
-	
-	
-	
-	
-	
+	}
+
+
+
+
+
+
 	@Test
 	public void deleteProductTest() throws JsonParseException, JsonMappingException, IOException {
 		BaseUserEntity user = empUserRepo.getById(69L);
@@ -425,15 +421,27 @@ public class ProductApiTest {
 
 		assertTrue(productRepository.existsById(productId)); //assert product exists before delete
 		assertNotEquals("product had images", 0, imgRepo.findByProductEntity_Id(productId).size());
-		
-		ResponseEntity<String> response = deleteProduct(user, productId);		
-		
+
+		ResponseEntity<String> response = deleteProduct(user, productId);
+
 		assertExpectedResponse(productId, response);
 		assertFalse(productRepository.existsById(productId));
 
 		assertProductImagesNotDeleted(productId);
 	}
 
+
+	@Test
+	public void deleteMultipleProductsTest() throws JsonParseException, JsonMappingException, IOException {
+		BaseUserEntity user = empUserRepo.getById(69L);
+		List<Long> productIds = new ArrayList<>();
+		productIds.add(1008L);
+		productIds.add(1007L);
+
+		ResponseEntity<String> response = deleteMultipleProducts(user, productIds);
+
+		assertEquals(200, response.getStatusCodeValue());
+	}
 
 
 
@@ -573,10 +581,10 @@ public class ProductApiTest {
 			throws IOException, JsonParseException, JsonMappingException {
 		ObjectMapper mapper = new ObjectMapper();
 		ProductUpdateResponse body = mapper.readValue(response.getBody(), ProductUpdateResponse.class);
-		
+
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertTrue(body.isSuccess());
-		assertEquals(productId, body.getProductId());
+		assertEquals(productId, body.getProductIds().get(0));
 	}
 
 
@@ -650,77 +658,77 @@ public class ProductApiTest {
 	private Long countProductWithId(Long productId) {
 		return jdbc.queryForObject("select count(*) from public.products where id = " + productId, Long.class);
 	}
-	
-	
-	
+
+
+
 	@Test
 	public void deleteProductInvalidUserRoleTest() {
 		BaseUserEntity user = empUserRepo.getById(68L); //this user has NASNAV_ADMIN Role
-		
-		Long productId = 1006L; 
-		
+
+		Long productId = 1006L;
+
 		assertTrue(productRepository.existsById(productId)); //assert product exists before delete
-		
-		ResponseEntity<String> response = deleteProduct(user, productId);		
-		
+
+		ResponseEntity<String> response = deleteProduct(user, productId);
+
 		JSONObject body = new JSONObject(response.getBody());
-		
+
 		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-		assertFalse(body.getBoolean("success"));			
+		assertFalse(body.getBoolean("success"));
 	}
-	
-	
-	
+
+
+
 	@Test
 	public void deleteProductInvalidUserOrgTest() {
 		EmployeeUserEntity user = empUserRepo.getById(69L); //set another organization for the user
 		user.setOrganizationId(99001L);
 		empUserRepo.save(user);
-		
-		Long productId = 1006L; 
-		
+
+		Long productId = 1006L;
+
 		assertTrue(productRepository.existsById(productId)); //assert product exists before delete
-		
+
 		ResponseEntity<String> response = deleteProduct(user, productId);
-		
+
 		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
 	}
-	
-	
-	
+
+
+
 	@Test
 	public void deleteProductNonExistingUserTest() {
-		
-		Long productId = 1006L; 
-		
+
+		Long productId = 1006L;
+
 		assertTrue(productRepository.existsById(productId)); //assert product exists before delete
-		
+
 		HttpEntity<?> request =  TestCommons.getHttpEntity("" ,"InvalidToken");
-		
-		ResponseEntity<String> response = 
+
+		ResponseEntity<String> response =
 				template.exchange("/product?product_id=" + productId
 						, HttpMethod.DELETE
 						, request
 						, String.class);
-		
+
 		JSONObject body = new JSONObject(response.getBody());
-		
+
 		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
 		assertFalse(body.getBoolean("success"));
 	}
-	
-	
+
+
 	@Test
 	public void deleteProductHasStocksTest() throws JsonParseException, JsonMappingException, IOException {
 		BaseUserEntity user = empUserRepo.getById(69L);
-		
+
 		Long productId = 1006L;
 		List<StocksEntity> stocks = stockRepo.findByProductIdAndShopsId(productId, 502L);
-		
+
 		assertNotEquals("assert product had stocks", 0L, stocks.size());
 		assertTrue("assert product exists before delete", productRepository.existsById(productId));
 		//---------------------------------------------------------------------
-		ResponseEntity<String> response = deleteProduct(user, productId);		
+		ResponseEntity<String> response = deleteProduct(user, productId);
 
 		//---------------------------------------------------------------------
 		assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -777,18 +785,18 @@ public class ProductApiTest {
 	}
 
 
-	
-	
+
+
 	@Test
 	public void deleteProductInBundleTest() throws JsonParseException, JsonMappingException, IOException {
 		BaseUserEntity user = empUserRepo.getById(69L);
-		
-		Long productId = 1003L; 
-		
+
+		Long productId = 1003L;
+
 		assertTrue("assert product exists before delete", productRepository.existsById(productId));
 		//---------------------------------------------------------------------
 		ResponseEntity<String> response = deleteProduct(user, productId);
-		
+
 		//---------------------------------------------------------------------
 		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
 		assertTrue("assert product was NOT deleted", productRepository.existsById(productId));
@@ -809,7 +817,7 @@ public class ProductApiTest {
 		assertTrue("assert product exists before delete", productRepository.existsById(productId));
 		//---------------------------------------------------------------------
 		ResponseEntity<String> response = deleteProduct(user, productId);
-		
+
 		//---------------------------------------------------------------------
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertFalse("assert product was deleted", productRepository.existsById(productId));
@@ -818,18 +826,32 @@ public class ProductApiTest {
 
 
 
+	private ResponseEntity<String> deleteMultipleProducts(BaseUserEntity user, List<Long> productIds) {
+		HttpEntity<?> request =  getHttpEntity("" , user.getAuthenticationToken());
+
+		String queryParams = "";
+		for(Long id : productIds) {
+			queryParams += "&product_id="+id;
+		}
+
+		ResponseEntity<String> response =
+				template.exchange("/product?"+ queryParams.substring(1)
+						, HttpMethod.DELETE
+						, request
+						, String.class);
+		return response;
+	}
+
 	private ResponseEntity<String> deleteProduct(BaseUserEntity user, Long productId) {
 		HttpEntity<?> request =  getHttpEntity("" , user.getAuthenticationToken());
-		
-		ResponseEntity<String> response = 
+
+		ResponseEntity<String> response =
 				template.exchange("/product?product_id=" + productId
 						, HttpMethod.DELETE
 						, request
 						, String.class);
 		return response;
 	}
-	
-	
 	
 	
 	

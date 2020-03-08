@@ -652,7 +652,7 @@ public class ProductService {
 		ProductEntity entity = prepareProdcutEntity(rootNode, user,isBundle);
 		ProductEntity saved = productRepository.save(entity);
 
-		return new ProductUpdateResponse(true, saved.getId());
+		return new ProductUpdateResponse(true, Collections.singletonList(saved.getId()));
 	}
 
 
@@ -811,25 +811,26 @@ public class ProductService {
 
 
 
-	public ProductUpdateResponse deleteProduct(Long productId) throws BusinessException {
+	public ProductUpdateResponse deleteProduct(List<Long> productIds) throws BusinessException {
 
-		if(!productRepository.existsById(productId)) {
-			return new ProductUpdateResponse(true, productId); //if the product doesn't exists, then..mission accomplished!
+		for(Long productId : productIds) {
+			if(!productRepository.existsById(productId)) {
+				return new ProductUpdateResponse(true, Collections.singletonList(productId)); //if the product doesn't exists, then..mission accomplished!
+			}
+
+			validateProductToDelete(productId);
+
+			try {
+				transactions.deleteProduct(productId);
+			} catch (DataIntegrityViolationException e) {
+				logger.log(Level.SEVERE, e.getMessage(), e);
+				throw new BusinessException(format(ERR_PRODUCT_STILL_USED, productId), "INVAILID PARAM:product_id", HttpStatus.NOT_ACCEPTABLE);
+			} catch (Throwable e) {
+				logger.log(Level.SEVERE, e.getMessage(), e);
+				throw new BusinessException(format(ERR_PRODUCT_DELETE_FAILED, productId), "INVAILID PARAM:product_id", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
 		}
-
-		validateProductToDelete(productId);
-
-		try {
-			transactions.deleteProduct(productId);
-		}catch(DataIntegrityViolationException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			throw new BusinessException( format(ERR_PRODUCT_STILL_USED, productId), "INVAILID PARAM:product_id", HttpStatus.NOT_ACCEPTABLE);
-		}catch(Throwable e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			throw new BusinessException( format(ERR_PRODUCT_DELETE_FAILED , productId), "INVAILID PARAM:product_id", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-
-		return new ProductUpdateResponse(true, productId);
+		return new ProductUpdateResponse(true, productIds);
 	}
 
 
@@ -900,7 +901,7 @@ public class ProductService {
 	public ProductUpdateResponse deleteBundle(Long bundleId) throws BusinessException {
 		validateBundleToDelete(bundleId);
 
-		return deleteProduct(bundleId);
+		return deleteProduct(Collections.singletonList(bundleId));
 	}
 
 
@@ -1826,6 +1827,8 @@ public class ProductService {
 		productRep.setBrandId( product.getBrandId());
 		productRep.setCategoryId( product.getCategoryId());
 		productRep.setBarcode( product.getBarcode());
+		productRep.setCreationDate(product.getCreationDate().toString());
+		productRep.setUpdateDate(product.getUpdateDate().toString());
 		productRep.setMultipleVariants( product.getProductVariants().size() > 1);
 
 		List<TagsRepresentationObject> productTags = getProductTagsDTOList(product.getId());

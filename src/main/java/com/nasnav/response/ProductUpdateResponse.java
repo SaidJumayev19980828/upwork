@@ -18,5 +18,5 @@ import lombok.NoArgsConstructor;
 public class ProductUpdateResponse {
 	
 	private boolean success;
-	private Long productId;
+	private List<Long> productIds;
 }

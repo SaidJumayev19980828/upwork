@@ -85,7 +85,7 @@ public class ProductsController {
 	
 	
 	
-	@ApiOperation(value = "deletes a product", nickname = "product delete", code = 201)
+	@ApiOperation(value = "deletes list of products", nickname = "product delete", code = 201)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Product Deleted"),
             @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
@@ -96,9 +96,9 @@ public class ProductsController {
             produces = APPLICATION_JSON_UTF8_VALUE,
             consumes = APPLICATION_JSON_UTF8_VALUE)
     public ProductUpdateResponse deleteProduct(           
-            @RequestParam("product_id") Long productId)
+            @RequestParam("product_id") List<Long> productIds)
             		throws BusinessException {
-		return productService.deleteProduct(productId);
+		return productService.deleteProduct(productIds);
     }
 	
 	

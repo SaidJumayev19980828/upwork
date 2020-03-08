@@ -297,7 +297,7 @@ public class DataImportServiceImpl implements DataImportService {
     private Long saveProductDto(ProductUpdateDTO dto) throws BusinessException {
         String productDtoJson = getProductDtoJson(dto);
         ProductUpdateResponse productResponse = productService.updateProduct(productDtoJson, false);
-        Long productId = productResponse.getProductId();
+        Long productId = productResponse.getProductIds().get(0);
         return productId;
     }
 
