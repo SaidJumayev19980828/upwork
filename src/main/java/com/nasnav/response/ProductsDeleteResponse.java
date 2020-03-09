@@ -1,5 +1,7 @@
 package com.nasnav.response;
 
+import java.util.List;
+
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
@@ -13,8 +15,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class ProductUpdateResponse {
-	
-	private boolean success;
-	private Long productId;
+public class ProductsDeleteResponse {
+
+    private boolean success;
+    private List<Long> productIds;
 }

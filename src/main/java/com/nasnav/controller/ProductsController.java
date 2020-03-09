@@ -11,6 +11,7 @@ import java.util.List;
 
 import javax.validation.Valid;
 
+import com.nasnav.response.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
@@ -38,11 +39,6 @@ import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.enumerations.ImageCsvTemplateType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.BundleSearchParam;
-import com.nasnav.response.BundleResponse;
-import com.nasnav.response.ProductImageDeleteResponse;
-import com.nasnav.response.ProductImageUpdateResponse;
-import com.nasnav.response.ProductUpdateResponse;
-import com.nasnav.response.VariantUpdateResponse;
 import com.nasnav.service.CsvDataImportService;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.service.ProductService;
@@ -85,7 +81,7 @@ public class ProductsController {
 	
 	
 	
-	@ApiOperation(value = "deletes a product", nickname = "product delete", code = 201)
+	@ApiOperation(value = "deletes list of products", nickname = "product delete", code = 201)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Product Deleted"),
             @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
@@ -95,10 +91,10 @@ public class ProductsController {
     @DeleteMapping(
             produces = APPLICATION_JSON_UTF8_VALUE,
             consumes = APPLICATION_JSON_UTF8_VALUE)
-    public ProductUpdateResponse deleteProduct(           
-            @RequestParam("product_id") Long productId)
+    public ProductsDeleteResponse deleteProduct(
+            @RequestParam("product_id") List<Long> productIds)
             		throws BusinessException {
-		return productService.deleteProduct(productId);
+		return productService.deleteProduct(productIds);
     }
 	
 	
@@ -210,7 +206,7 @@ public class ProductsController {
     @DeleteMapping(value = "bundle",
             produces = APPLICATION_JSON_UTF8_VALUE,
             consumes = APPLICATION_JSON_UTF8_VALUE)
-    public ProductUpdateResponse deleteBundle(           
+    public ProductsDeleteResponse deleteBundle(
             @RequestParam("product_id") Long productId)
             		throws BusinessException {
 		return productService.deleteBundle(productId);

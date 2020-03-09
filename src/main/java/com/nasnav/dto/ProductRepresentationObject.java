@@ -27,4 +27,6 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private boolean hidden;
     private String defaultVariantFeatures;
     private List<TagsRepresentationObject> tags;
+    private String creationDate;
+    private String updateDate;
 }
