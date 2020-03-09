@@ -1,5 +1,9 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
+import static com.nasnav.commons.utils.StringUtils.startsWithAnyOfAndIgnoreCase;
+import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CSV_PARSE_FAILURE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING_IMGS;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING_IMG_FILE;
@@ -7,6 +11,7 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_IMG_DA
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_IMG_IMPORT_RESPONSE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUCT_EXISTS_WITH_BARCODE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUCT_EXISTS_WITH_ID;
+import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_VARIANT_FOUND;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMG_BULK_IMPORT;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_READ_ZIP;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_MODIFY_PRODUCT;
@@ -17,12 +22,16 @@ import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
+import static java.util.logging.Level.SEVERE;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.time.Duration;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +43,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -42,10 +54,15 @@ import javax.validation.Valid;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypeException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -53,6 +70,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
@@ -65,6 +83,7 @@ import com.nasnav.dto.ProductImageUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateIdentifier;
 import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.ProductEntity;
@@ -73,10 +92,18 @@ import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.service.model.ImportedImage;
+import com.nasnav.service.model.VariantIdentifierAndUrlPair;
 import com.sun.istack.logging.Logger;
 import com.univocity.parsers.common.record.Record;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
+import reactor.util.function.Tuple3;
 
 
 
@@ -84,6 +111,8 @@ import com.univocity.parsers.csv.CsvParserSettings;
 public class ProductImageServiceImpl implements ProductImageService {
 	
 	private static final String NO_IMG_FOUND_URL = "no_img_found.jpg";
+
+	private static final String[] SUPPORTED_IMG_FORMATS = {".png", ".jpg", ".jpeg"};
 
 	private Logger logger = Logger.getLogger(ProductService.class);
 	
@@ -503,8 +532,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 	public List<ProductImageUpdateResponse> updateProductImageBulk(@Valid MultipartFile zip, @Valid MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {		
 		validateUpdateImageBulkRequest(zip, csv, metaData);
-		
-		return saveImgsBulk(zip, csv, metaData);
+		Set<ImportedImage> importedImgs = new HashSet<>(extractImgsToImport(zip, csv, metaData));
+		return saveImgsBulk(importedImgs);
 	}
 
 	
@@ -512,13 +541,13 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 
 
-
-	private List<ProductImageUpdateResponse> saveImgsBulk(@Valid MultipartFile zip, @Valid MultipartFile csv,
-			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {		
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs) throws BusinessException {		
 		List<String> errors = new ArrayList<>();
 		List<ProductImageUpdateResponse> responses = new ArrayList<>();
 		
-		Map<String, List<ImportedImage>> imgsGroupedByFile = getFileToImgsMetatDataMap(zip, csv, metaData);
+		Map<String, List<ImportedImage>> imgsGroupedByFile = groupImagesByPath(importedImgs);
 		
 		for(String fileName : imgsGroupedByFile.keySet()) {
 			saveSingleImgToAllItsVariants(fileName, imgsGroupedByFile, errors, responses);
@@ -531,20 +560,390 @@ public class ProductImageServiceImpl implements ProductImageService {
 		
 		return responses;
 	}
+	
+	
+	
+	
+	
+	
+
+
+
+
+
+	private Set<ImportedImage> fetchImgsToImportFromUrls(@Valid MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {				
+				
+		Map<String,List<ProductImageUpdateIdentifier>> fileIdentifiersMap = createFileToVariantIdsMap(csv);
+		
+		return readImgsFromUrls(fileIdentifiersMap, metaData);
+	}
+
+
+
+
+
+	private Set<ImportedImage> readImgsFromUrls(
+			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap
+			, ProductImageBulkUpdateDTO metaData) {
+		
+		Mono<VariantCache> variantCacheMono = createVariantCache(fileIdentifiersMap);
+		
+		return variantCacheMono
+				.flatMapMany( variantCache ->
+						Flux
+						.fromIterable(fileIdentifiersMap.entrySet())
+						.map(this::toVariantIdentifierAndUrlPair)
+						.window(20)		//get the images in batches of 20 per second
+						.delayElements(Duration.ofSeconds(1))
+						.flatMap(pair -> toImportedImages(pair, metaData, variantCache))
+						.distinct()
+				)
+				.buffer()
+				.map(HashSet::new)
+				.single(new HashSet<>())
+				.blockOptional()
+				.orElse(new HashSet<>());
+	}
+	
+	
+	
+	
+	@Override
+	public Flux<ImportedImage> readImgsFromUrls(
+			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap
+			, ProductImageBulkUpdateDTO metaData
+			, WebClient client) {
+		
+		Mono<VariantCache> variantCacheMono = createVariantCache(fileIdentifiersMap);
+		
+		return variantCacheMono
+				.flatMapMany( variantCache -> 
+					fetchImportedImagesInBatches(fileIdentifiersMap, metaData, client, variantCache)
+				);
+	}
 
 
 
 
 
 
-	private Map<String, List<ImportedImage>> getFileToImgsMetatDataMap(MultipartFile zip, MultipartFile csv,
-			ProductImageBulkUpdateDTO metaData) throws BusinessException {
-		List<ImportedImage> allImportedImgs = extractImgsToImport(zip, csv, metaData);
-		Map<String, List<ImportedImage>> groupedByFile = 
-				allImportedImgs
+	private Flux<ImportedImage> fetchImportedImagesInBatches(
+			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap, ProductImageBulkUpdateDTO metaData,
+			WebClient client, VariantCache variantCache) {
+		return Flux
+				.fromIterable(fileIdentifiersMap.entrySet())
+				.map(this::toVariantIdentifierAndUrlPair)
+				.window(20)		//get the images in batches of 20 per second
+				.delayElements(Duration.ofSeconds(1))
+				.flatMap(pair -> toImportedImages(pair, metaData, variantCache, client))
+				.distinct();
+	}
+
+
+
+
+
+	/**
+	 * Pre-fetch The product variants of the images from the database and cache them.
+	 * @return a cache of ProductVariantsEntity
+	 * */
+	private Mono<VariantCache> createVariantCache(Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
+		Mono<Map<String, ProductVariantsEntity>> idToVariantMap = getIdToVariantMap(fileIdentifiersMap);
+		Mono<Map<String, ProductVariantsEntity>> externalIdToVariantMap = getExternalIdToVariantMap(fileIdentifiersMap);
+		Mono<Map<String, ProductVariantsEntity>> barcodeToVariantMap = getBarcodeToVariantMap(fileIdentifiersMap);
+		
+		return Mono.zip(idToVariantMap, externalIdToVariantMap, barcodeToVariantMap)
+				.map(this::createVariantCacheFromTuple);
+	}
+	
+	
+	
+	
+	private VariantCache createVariantCacheFromTuple(Tuple3<Map<String, ProductVariantsEntity>, Map<String, ProductVariantsEntity>, Map<String, ProductVariantsEntity>> tuple) {
+		Map<String, ProductVariantsEntity> idToVariantMap = tuple.getT1();
+		Map<String, ProductVariantsEntity> externalIdToVariantMap = tuple.getT2();
+		Map<String, ProductVariantsEntity> barcodeToVariantMap = tuple.getT3();
+		return new VariantCache(idToVariantMap, externalIdToVariantMap, barcodeToVariantMap);
+	}
+
+
+
+
+	
+	private VariantIdentifierAndUrlPair toVariantIdentifierAndUrlPair(Map.Entry<String, List<ProductImageUpdateIdentifier>> ent) {
+		return new VariantIdentifierAndUrlPair(ent.getKey(), ent.getValue());
+	}
+	
+	
+	
+	
+	private Flux<ImportedImage> toImportedImages(Flux<VariantIdentifierAndUrlPair> imgDetails
+			, ProductImageBulkUpdateDTO metaData
+			, VariantCache variantCache){
+		WebClient client = buildWebClient();		
+		return toImportedImages(imgDetails, metaData, variantCache, client);
+	}
+	
+	
+	
+	
+	
+	private Flux<ImportedImage> toImportedImages(Flux<VariantIdentifierAndUrlPair> imgDetails
+			, ProductImageBulkUpdateDTO metaData
+			, VariantCache variantCache
+			, WebClient client){
+		return imgDetails
+				.flatMap(details -> toImportedImage(details, metaData, variantCache, client));
+	}
+	
+	
+	
+	
+	
+	private Flux<ImportedImage> toImportedImage(VariantIdentifierAndUrlPair imgDetails
+			, ProductImageBulkUpdateDTO metaData
+			, VariantCache variantCache
+			, WebClient client) {
+		String url = imgDetails.getUrl();
+		if(isBlankOrNull(url)) {
+			return Flux.empty();
+		}		
+		//TODO: try to use reflection to check if the webclient have a base url or not.
+		//until this is done; webclients are assumed to have no base url and all URL's are assumed to be absolute.
+		String httpUrl = !startsWithAnyOfAndIgnoreCase(url, "http://", "https://") ? "http://" + url : url;
+		
+		Mono<MultipartFile> imgFile = readImageDataFromUrl(client, httpUrl);
+		
+		List<ProductImageUpdateIdentifier> variantIdentifiers = imgDetails.getIdentifier(); 
+		Flux<ProductImageUpdateDTO> importedImgsMetaData = createImgsMetaData(metaData, variantCache, variantIdentifiers);
+			
+		return Flux
+				.zip(imgFile, importedImgsMetaData.buffer(), (file, mDataList) ->  combineImageFileAndMetaData(file, mDataList, url))
+				.flatMap(importedImg -> importedImg) ;
+	}
+
+	
+	
+	
+	private Flux<ImportedImage> combineImageFileAndMetaData(MultipartFile file, List<ProductImageUpdateDTO> mDataList, String url){
+		return Flux.fromIterable(mDataList)
+				 .map(mData -> new ImportedImage(file, mData, url));
+	}
+
+
+
+
+
+	private Flux<ProductImageUpdateDTO> createImgsMetaData(ProductImageBulkUpdateDTO metaData,
+			VariantCache variantCache, List<ProductImageUpdateIdentifier> variantIdentifiers) {
+		return Flux.fromIterable(variantIdentifiers)
+					.map(identifier -> getProductVariant(identifier, variantCache, metaData))
+					.filter(Optional::isPresent)
+					.map(Optional::get)
+					.map(variant -> creatImgMetaData(metaData, variant));
+	}
+
+
+
+
+
+
+	private Mono<MultipartFile> readImageDataFromUrl(WebClient client, String httpUrl) {
+		return client
+				.get()
+				.uri(httpUrl)
+				.exchange()
+				.flatMap(res -> res.bodyToMono(byte[].class))				
+				.map(bytes -> readUrlAsMultipartFile(httpUrl, bytes));
+	}
+	
+	
+	
+	
+	
+	private ProductImageUpdateDTO creatImgMetaData(ProductImageBulkUpdateDTO metaData, ProductVariantsEntity variant) {
+		Long variantId = variant.getId();
+		Long productId = variant.getProductEntity().getId();
+		
+		ProductImageUpdateDTO imgMetaData = new ProductImageUpdateDTO();
+		imgMetaData.setOperation(CREATE);
+		imgMetaData.setPriority(metaData.getPriority());
+		imgMetaData.setType(metaData.getType());	
+		
+		if(Objects.equals(metaData.getType(), PRODUCT_IMAGE)) {
+			imgMetaData.setProductId(productId);
+		}else {
+			imgMetaData.setVariantId(variantId);
+		}
+		
+		return imgMetaData;		
+	}
+	
+	
+	
+	
+	private Optional<ProductVariantsEntity> getProductVariant(ProductImageUpdateIdentifier identifier, VariantCache cache, ProductImageBulkUpdateDTO metaData) {
+		String variantId = identifier.getVariantId();
+		String externalId = identifier.getExternalId();
+		String barcode = identifier.getBarcode();	
+		Optional<ProductVariantsEntity> variant =
+				Stream
+				.of(  cache.getIdToVariantMap().get(variantId)
+					, cache.getExternalIdToVariantMap().get(externalId)
+					, cache.getBarcodeToVariantMap().get(barcode))
+				.filter(Objects::nonNull)
+				.findFirst();
+		
+		Boolean isIgnoreErrors = ofNullable(metaData.getIgnoreErrors()).orElse(false);
+		if(!isIgnoreErrors && !variant.isPresent()) {
+			throw new RuntimeBusinessException(
+					format(ERR_NO_VARIANT_FOUND, variantId, externalId, barcode)
+					, "INVALID PARAM: csv"
+					, NOT_ACCEPTABLE);
+		}
+		
+		return variant;
+	}
+	
+	
+
+
+	private Mono<Map<String, ProductVariantsEntity>> getBarcodeToVariantMap(
+			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
+		return 
+			Flux
+			.fromStream(fileIdentifiersMap.values().stream().flatMap(List::stream))	
+			.filter(identifier -> isNotBlankOrNull(identifier.getBarcode()))
+			.map(ProductImageUpdateIdentifier::getBarcode)
+			.window(1000)
+			.flatMap(this::getVariantsByBarcode)
+			.collectMap(ProductVariantsEntity::getBarcode, variant -> variant);
+	}
+
+
+
+
+
+
+	private Mono<Map<String, ProductVariantsEntity>> getExternalIdToVariantMap(
+			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
+		return 
+			Flux
+			.fromStream(fileIdentifiersMap.values().stream().flatMap(List::stream))	
+			.filter(identifier -> isNotBlankOrNull(identifier.getExternalId()))
+			.map(ProductImageUpdateIdentifier::getExternalId)
+			.window(1000)
+			.flatMap(this::getVariantsByExternalId)
+			.collectMap(variant-> variant.externalId, variant -> variant.variant);
+	}
+
+
+
+
+
+
+	private Mono<Map<String, ProductVariantsEntity>> getIdToVariantMap(
+			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
+		return 
+			Flux
+			.fromStream(fileIdentifiersMap.values().stream().flatMap(List::stream))	
+			.filter(identifier -> isNotBlankOrNull(identifier.getVariantId()))
+			.map(ProductImageUpdateIdentifier::getVariantId)
+			.window(1000)
+			.flatMap(this::getVariantsById)
+			.collectMap(this::getIdAsString, variant -> variant);
+	}
+
+	
+	
+	
+	
+	
+	private Flux<ProductVariantsEntity> getVariantsById(Flux<String> idList){
+		return 
+			idList
+			.map(Long::valueOf)
+			.buffer()
+			.flatMapIterable(productVariantsRepository::findByIdIn);
+	}
+	
+	
+	
+	
+	
+	private Flux<ProductVariantsEntityWithExternalId> getVariantsByExternalId(Flux<String> idList){		
+		return 
+			idList
+			.buffer()
+			.flatMapIterable(this::getProductVariantFromExternalIdIn);
+	}
+	
+	
+	
+	
+	
+	private Flux<ProductVariantsEntity> getVariantsByBarcode(Flux<String> barcodeList){
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		return 
+			barcodeList
+			.buffer()
+			.flatMapIterable(barcodes -> productVariantsRepository.findByOrganizationIdAndBarcodeIn(orgId, barcodes));
+	}
+	
+	
+	
+	
+	private List<ProductVariantsEntityWithExternalId> getProductVariantFromExternalIdIn(List<String> extIdList){
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		Map<String,String> mapping = integrationService.getLocalMappedValues(orgId, PRODUCT_VARIANT, extIdList);
+		Map<String,String> localToExtIdMapping = 
+				mapping
+				.entrySet()
 				.stream()
-				.collect(groupingBy(ImportedImage::getZipFileName));
-		return groupedByFile;
+				.collect(toMap(Map.Entry::getValue, Map.Entry::getKey));
+		
+		List<Long> variantIds = 
+				localToExtIdMapping
+				.keySet()
+				.stream()
+				.map(Long::valueOf)
+				.collect(toList());
+		
+		return 
+			productVariantsRepository
+				.findByIdIn(variantIds)
+				.stream()
+				.map(variant -> toProductVariantEntityWithExtId(localToExtIdMapping, variant))
+				.collect(toList());
+	}
+
+
+
+
+
+
+	private ProductVariantsEntityWithExternalId toProductVariantEntityWithExtId(Map<String, String> localToExtIdMapping,
+			ProductVariantsEntity variant) {
+		String extId = localToExtIdMapping.get(String.valueOf(variant.getId()));
+		return new ProductVariantsEntityWithExternalId(variant , extId);
+	}
+	
+	
+	
+	
+	private String getIdAsString(ProductVariantsEntity variant) {
+		return String.valueOf(variant.getId());
+	}
+
+
+
+
+
+	private Map<String, List<ImportedImage>> groupImagesByPath( Set<ImportedImage> allImportedImgs) throws BusinessException {
+		return allImportedImgs
+				.stream()
+				.collect(groupingBy(ImportedImage::getPath));
 	}
 
 
@@ -586,12 +985,12 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private MultipartFile getMulitpartFile(Map<String, List<ImportedImage>> groupedByFile, String fileName) {
-		MultipartFile file = groupedByFile.get(fileName)
-										.stream()
-										.map(ImportedImage::getImage)
-										.findFirst()
-										.orElse(null);
-		return file;
+		return groupedByFile
+				.get(fileName)
+				.stream()
+				.map(ImportedImage::getImage)
+				.findFirst()
+				.orElse(null);
 	}
 
 
@@ -640,7 +1039,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
 		List<ImportedImage> imgs = new ArrayList<>();		
 		List<String> errors = new ArrayList<>();		
-		Map<String,List<ProductImageUpdateIdentifier>> fileIdentifiersMap = createFileToVariantsMap(csv);
+		Map<String,List<ProductImageUpdateIdentifier>> fileIdentifiersMap = createFileToVariantIdsMap(csv);
 		
 		try(ZipInputStream stream = new ZipInputStream(zip.getInputStream())){	
 			
@@ -797,13 +1196,18 @@ public class ProductImageServiceImpl implements ProductImageService {
 			}
 			else {
 				throw new BusinessException("Provided external_id("+identifier.getExternalId()+") doesn't match any mapped value!",
-						"INVALID_PARAM: external_id", HttpStatus.NOT_ACCEPTABLE);
+						"INVALID_PARAM: external_id", NOT_ACCEPTABLE);
 			}
 				
 		}
 
 		if ( !variant.isPresent() && identifier.getBarcode() != null) {
-			variant = productVariantsRepository.findByBarcodeAndProductEntity_OrganizationId(identifier.getBarcode(), orgId);
+			variant =
+					productVariantsRepository
+						.findByBarcodeAndProductEntity_OrganizationId(identifier.getBarcode(), orgId)
+						.stream()
+						.sorted(comparing(ProductVariantsEntity::getId))
+						.findFirst();
 		}
 		
 		ProductImageUpdateDTO variantMetaData = 
@@ -813,9 +1217,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 		if(variantMetaData == null) {
 			throw new BusinessException(
-					String.format(ERR_NO_PRODUCT_EXISTS_WITH_BARCODE, identifier.getBarcode(), orgId)
+					format(ERR_NO_PRODUCT_EXISTS_WITH_BARCODE, identifier.getBarcode(), orgId)
 					, "INVALID PARAM:imgs_zip"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
 		
 		return
@@ -855,11 +1259,72 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	
 	private MultipartFile readZipEntryAsMultipartFile(ZipInputStream stream, ZipEntry zipEntry) throws Exception {
-		FileItem fileItem = createFileItem(zipEntry);
-		
+		String fileName = zipEntry.getName();
+		FileItem fileItem = createFileItem(fileName);		
 		readIntoFileItem(stream, fileItem);
 		
 		return new CommonsMultipartFile(fileItem);
+	}
+	
+	
+	
+	
+	
+	private MultipartFile readUrlAsMultipartFile(String httpUrl, byte[] bytes){
+		try {
+			String extension = getFileExtension(bytes);
+			String fileName = createImageFileNameFromUrl(httpUrl, extension);
+			FileItem fileItem = createFileItem(fileName);
+			readIntoFileItem(bytes, fileItem);			
+			return new CommonsMultipartFile(fileItem);
+		} catch (IOException e) {
+			logger.logException(e, SEVERE);
+			throw new RuntimeException(e);
+		}		
+	}
+
+
+
+
+
+
+	private String getFileExtension(byte[] bytes) {		
+		try {
+			String contentType = new Tika().detect(bytes);
+			TikaConfig config = TikaConfig.getDefaultConfig();
+			MimeType mimeType = config.getMimeRepository().forName(contentType);
+			String extension = mimeType.getExtension();
+			return extension;
+		} catch (MimeTypeException e) {
+			logger.logException(e, Level.WARNING);
+			return "png";
+		}		
+	}
+
+
+
+
+
+
+	private String createImageFileNameFromUrl(String httpUrl, String extension) {
+		String[] parts = httpUrl.split("/");
+		String lastPart = parts[parts.length - 1];
+		
+		return urlPartHasExtension(lastPart) ? 
+				lastPart: "img" + extension;
+	}
+
+
+
+
+
+
+	private boolean urlPartHasExtension(String lastPart) {
+		String patternStr = "([^\\s]+(\\.(?i)(.+))$)";
+		Pattern pattern = Pattern.compile(patternStr);
+		Matcher matcher = pattern.matcher(lastPart);
+		boolean hasExtension = matcher.matches();
+		return hasExtension;
 	}
 
 
@@ -873,12 +1338,19 @@ public class ProductImageServiceImpl implements ProductImageService {
             fos.write(buffer, 0, len);
         }
 	}
+	
+	
+	
+	
+	private void readIntoFileItem(byte[] bytes, FileItem fileItem) throws IOException {		
+		OutputStream fos = fileItem.getOutputStream();
+		fos.write(bytes);
+	}
 
 
 
 
-	private FileItem createFileItem(ZipEntry zipEntry) {
-		String fileName = zipEntry.getName();		
+	private FileItem createFileItem(String fileName) {				
 		DiskFileItemFactory factory = new DiskFileItemFactory();
 		factory.setSizeThreshold(1024*1024);
 		FileItem fileItem = factory.createItem("image", "image/jpeg", false, fileName);
@@ -911,7 +1383,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	
 
-	private Map<String, List<ProductImageUpdateIdentifier>> createFileToVariantsMap(MultipartFile csv) throws BusinessException {
+	private Map<String, List<ProductImageUpdateIdentifier>> createFileToVariantIdsMap(MultipartFile csv) throws BusinessException {
 		if(csv == null ||csv.isEmpty())
 			return new HashMap<>();		
 
@@ -920,8 +1392,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 		String path;
 		ProductImageUpdateIdentifier identifier;
 		for(Record record:csvRecords) {
-			path = normalizeZipPath(record.getString(3));
-			identifier = new ProductImageUpdateIdentifier(record.getString(0), record.getString(1), record.getString(2));
+			path = normalizeZipPath(record.getString("path"));
+			identifier = new ProductImageUpdateIdentifier(record.getString("variant_id"), record.getString("external_id"), record.getString("barcode"));
 
 			if (identifiersMap.get(path) == null)
 				identifiersMap.put(path, new ArrayList<>());
@@ -935,12 +1407,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private String normalizeZipPath(String path) {
-		String normalized = path ;
-		if(path.startsWith("/")) {
-			normalized = path.replaceFirst("/", "");
-		}
-			
-		return normalized;
+		return ofNullable(path)
+				.map(p -> p.startsWith("/")? p.replaceFirst("/", "") : p)
+				.orElse("") ;
 	}
 
 
@@ -968,15 +1437,22 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private void validateUpdateImageBulkRequest(@Valid MultipartFile zip, @Valid MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
+		validateImageBulkMetadata(metaData);
+		validateImgBulkZip(zip);
+	}
+
+
+
+
+
+
+	private void validateImageBulkMetadata(ProductImageBulkUpdateDTO metaData) throws BusinessException {
 		if(metaData.getPriority() == null || metaData.getType() == null) {
 			throw new BusinessException(
 					"Missing required metadata parameters, required parameters are [type, priority]!"
 					, "MISSING PARAM"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
-		
-		
-		validateImgBulkZip(zip);
 	}
 
 
@@ -1153,4 +1629,49 @@ public class ProductImageServiceImpl implements ProductImageService {
 	}
 
 
+
+
+
+
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public List<ProductImageUpdateResponse> updateProductImageBulkViaUrl(MultipartFile csv,
+			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
+		validateImageBulkMetadata(metaData);
+		Set<ImportedImage> importedImgs = fetchImgsToImportFromUrls(csv, metaData);;
+		return saveImgsBulk(importedImgs);
+	}
+	
+	
+	
+	
+	
+	private WebClient buildWebClient() {
+		return WebClient
+        		.builder()
+                .clientConnector(new ReactorClientHttpConnector(
+                        HttpClient.create().wiretap(true)
+                ))
+                .build();
+	}
+	
+}
+
+
+
+
+@AllArgsConstructor
+class ProductVariantsEntityWithExternalId {
+	public ProductVariantsEntity variant;
+	public String externalId;
+}
+
+
+
+@AllArgsConstructor
+@Data
+class VariantCache{    
+	private Map<String, ProductVariantsEntity> idToVariantMap;
+	private Map<String, ProductVariantsEntity> externalIdToVariantMap;
+	private Map<String, ProductVariantsEntity> barcodeToVariantMap; 
 }

@@ -4,7 +4,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,11 +38,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.FilesRepository;
-import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ProductImagesRepository;
-import com.nasnav.dao.ProductRepository;
 import com.nasnav.persistence.FileEntity;
-import com.nasnav.persistence.ProductImagesEntity;
 import com.nasnav.security.AuthenticationFilter;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -100,6 +96,10 @@ public class ProductImageBulkUploadTest {
 
 	private static final String TEST_CSV_EXTERNAL_ID_NO_MAPPING = "img_bulk_exist_external_id_no_mapping.csv";
 
+	private static final String TEST_CSV_MISSING_PATH = "img_bulk_barcode_missing_path.csv";
+	
+	private static final String TEST_ZIP_UPLOADED_WITH_CSV_MISSING_PATH = "img_bulk_upload_with_csv_missing_path.zip";
+	
 
 	@Value("${files.basepath}")
 	private String basePathStr;
@@ -524,6 +524,27 @@ public class ProductImageBulkUploadTest {
 
 		assertNoImgsImported();
 	}
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkWithCSVWithMissingPathTest() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
+		
+		String response = 
+				performFileUpload(TEST_ZIP_UPLOADED_WITH_CSV_MISSING_PATH, TEST_CSV_MISSING_PATH, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(200))
+	             .andReturn()
+	             .getResponse()
+	             .getContentAsString();
+
+		assertOneImgImported(response);
+	}
+	
+	
+	
 
 	private void assertImgsImported(String response) {
 		JSONArray responseJson = new JSONArray(response);
@@ -533,6 +554,22 @@ public class ProductImageBulkUploadTest {
 				, responseJson.length());				
 		
 		assertEquals( 2L, imgRepo.count());		
+		
+		IntStream.range(0, responseJson.length())
+				.mapToObj(responseJson::getJSONObject)
+				.forEach(this::assertImageUploaded);
+	}
+	
+	
+	
+	private void assertOneImgImported(String response) {
+		JSONArray responseJson = new JSONArray(response);
+		assertEquals(
+				"import 1 images, images with no path are ignored"
+				, 1
+				, responseJson.length());				
+		
+		assertEquals( 1L, imgRepo.count());		
 		
 		IntStream.range(0, responseJson.length())
 				.mapToObj(responseJson::getJSONObject)

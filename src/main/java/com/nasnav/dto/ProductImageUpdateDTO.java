@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.constatnts.EntityConstants.Operation;
 
+import io.swagger.annotations.ApiModel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -12,6 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
+@ApiModel(value = "Image update meta data")
 public class ProductImageUpdateDTO extends BaseJsonDTO {
 	
 	private Long productId;

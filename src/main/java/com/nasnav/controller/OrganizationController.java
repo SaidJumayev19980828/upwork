@@ -201,7 +201,7 @@ public class OrganizationController {
     })
     @PostMapping(value = "tag/link", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity createTagChildren(@RequestHeader (value = "User-Token") String userToken,
-                                            @RequestBody List<TagsLinkDTO> tagsLinks) throws BusinessException {
+                                            @RequestBody TagsLinksCreationDTO tagsLinks) throws BusinessException {
         categoryService.createTagEdges(tagsLinks);
         return new ResponseEntity(new JSONObject("{\"Message\":\"Children created successfully\"}").toString(),HttpStatus.OK);
     }

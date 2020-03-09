@@ -1,5 +1,8 @@
 package com.nasnav.controller;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,7 +10,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.dto.ProductListImportDTO;
@@ -17,9 +27,6 @@ import com.nasnav.service.CsvDataImportService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponses;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 
 @RestController
@@ -43,6 +50,7 @@ public class DataImportContoller {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ProductListImportResponse importProductList(
+    		@RequestHeader("User-Token") String token,
             @RequestPart("csv") @Valid MultipartFile file,
             @RequestPart("properties") @Valid ProductListImportDTO importMetaData)
             		throws BusinessException {

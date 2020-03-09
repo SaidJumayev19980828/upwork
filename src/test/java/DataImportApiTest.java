@@ -659,8 +659,11 @@ public class DataImportApiTest {
 	public void getImageUploadCsvTemplate() {
 		String[] expectedImageHeaders = {"variant_id","external_id","barcode","image_file"};
 		
-		HttpEntity<Object> request = TestCommons.getHttpEntity("","131415");
-		ResponseEntity<String> res = template.exchange("/product/image/bulk/template", HttpMethod.GET, request ,String.class);
+		HttpEntity<Object> request = getHttpEntity("","131415");
+		ResponseEntity<String> res = 
+				template
+					.exchange(
+						"/product/image/bulk/template", GET, request ,String.class);
 		
 		String[] headers = res.getBody()
 								.replace(System.lineSeparator(), "")

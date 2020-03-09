@@ -2,20 +2,18 @@ package com.nasnav.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.AppConfig;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dto.OrderSessionResponse;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.payments.UpgLightbox;
-import com.nasnav.payments.misr.MisrAccount;
-import com.nasnav.payments.misr.MisrSession;
-import com.nasnav.payments.mastercard.PaymentService;
-import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.payments.mastercard.MastercardSession;
+import com.nasnav.payments.misc.HTMLConfigurer;
+import com.nasnav.payments.misc.Tools;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -23,88 +21,47 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
-import java.util.Optional;
+import java.util.Properties;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
-@RequestMapping("/payment/misr")
-public class MisrPaymentController {
+@RequestMapping("/payment/mcard")
+public class PaymentControllerMastercard {
 
-    private static final Logger misrLogger = LogManager.getLogger("Payment:MISR");
-
-    private final PaymentService paymentService;
+    private static final Logger mastercardLogger = LogManager.getLogger("Payment:MCARD");
 
     private final OrdersRepository ordersRepository;
 
-    private final PaymentsRepository paymentsRepository;
-
-    private final MisrSession session;
-
-    private MisrAccount account;
+    private final MastercardSession session;
 
     @Autowired
-    public MisrPaymentController(
-            PaymentService paymentService,
+    private AppConfig config;
+
+    @Autowired
+    public PaymentControllerMastercard(
             OrdersRepository ordersRepository,
             PaymentsRepository paymentsRepository,
-            MisrSession session) {
-        this.paymentService = paymentService;
+            MastercardSession session) {
         this.ordersRepository = ordersRepository;
-        this.paymentsRepository = paymentsRepository;
+//        this.paymentsRepository = paymentsRepository;
         this.session = session;
-        this.account = new MisrAccount();
-        account.setup();
     }
+
+//	@ApiIgnore
+//    @GetMapping(value = "/test/payment",produces=MediaType.TEXT_HTML_VALUE)
+//    public ResponseEntity<?> testPayment(@RequestParam(name = "order_id") String orderList) throws BusinessException {
+//        String initResult = initPayment(orderList).getBody().toString();
+//        return new ResponseEntity<>(paymentService.getConfiguredHtml(initResult, "static/session.html", account), HttpStatus.OK);
+//    }
 
     @ApiIgnore
-    @GetMapping(value = "/test/payment",produces= MediaType.TEXT_HTML_VALUE)
-    public ResponseEntity<?> testPayment(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
-        String initResult = initPayment(orderId).getBody().toString();
-        return new ResponseEntity<>(paymentService.getConfiguredHtml(initResult, "static/session.html", account), HttpStatus.OK);
+    @GetMapping(value = "/{accountName}/test/lightbox",produces=MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<?> testLightbox(@PathVariable (name = "accountName") String accountName, @RequestParam(name = "order_id") String orderList) throws BusinessException {
+        String initResult = initPayment(accountName, orderList).getBody().toString();
+        return new ResponseEntity<>(HTMLConfigurer.getConfiguredHtml(initResult, "static/mastercard-lightbox.html"), HttpStatus.OK);
     }
 
-    @ApiIgnore
-    @GetMapping(value = "/test/lightbox",produces=MediaType.TEXT_HTML_VALUE)
-    public ResponseEntity<?> testLightbox(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
-        String initResult = initPayment(orderId).getBody().toString();
-        return new ResponseEntity<>(paymentService.getConfiguredHtml(initResult, "static/misr-lightbox.html", account), HttpStatus.OK);
-    }
-
-    @ApiIgnore
-    @GetMapping(value = "/test/upglightbox",produces=MediaType.TEXT_HTML_VALUE)
-    public ResponseEntity<?> testMezza(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
-        Optional<OrdersEntity> orderOpt = ordersRepository.findById(orderId);
-        if(!orderOpt.isPresent()) {
-            throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
-        }
-        UpgLightbox lightbox = new UpgLightbox();
-        JSONObject data = lightbox.getJsonConfig(orderOpt.get(), account);
-        String testPage = lightbox.getConfiguredHtml(data,"static/upg-lightbox.html", account.getUpgCallbackUrl());
-
-//        String initResult = initPayment(orderId).getBody().toString();
-        return new ResponseEntity<>(testPage, HttpStatus.OK);
-    }
-
-    @GetMapping(value = "/upg/init")
-    public ResponseEntity<?> upgGetData(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
-        Optional<OrdersEntity> orderOpt = ordersRepository.findById(orderId);
-        if(!orderOpt.isPresent()) {
-            throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
-        }
-        UpgLightbox lightbox = new UpgLightbox();
-        JSONObject data = lightbox.getJsonConfig(orderOpt.get(), account);
-        return new ResponseEntity<>(data.toString(), HttpStatus.OK);
-    }
-
-    @PostMapping(value = "/upg/callback")
-    public ResponseEntity<?> upgCallback(@RequestBody String content) {
-        misrLogger.info("Received payment confirmation: {}", content);
-        UpgLightbox lightbox = new UpgLightbox();
-        return lightbox.callback(content, ordersRepository, paymentsRepository, account, misrLogger);
-    }
-
-
-    @ApiOperation(value = "Execute the payment after setup and user's data collection", nickname = "misrExecute")
+    @ApiOperation(value = "Execute the payment after setup and user's data collection", nickname = "mastercardExecute")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Payment completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Some data missing, unable to execute"),
@@ -122,7 +79,7 @@ public class MisrPaymentController {
         }
     }
 
-    @ApiOperation(value = "Verify that the payment initiated via lightbox has successfully completed", nickname = "misrVerify")
+    @ApiOperation(value = "Verify that the payment initiated via lightbox has successfully completed", nickname = "mastercardVerify")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Payment session set up"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid input data, for example order_uid"),
@@ -144,7 +101,7 @@ public class MisrPaymentController {
         }
     }
 
-    @ApiOperation(value = "Execute the payment after setup and user data collection", nickname = "misrExecute")
+    @ApiOperation(value = "Execute the payment after setup and user data collection", nickname = "mastercardInit")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Payment session set up"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid input data"),
@@ -152,31 +109,38 @@ public class MisrPaymentController {
             @io.swagger.annotations.ApiResponse(code = 502, message = "Unable to communicate with the payment gateway"),
     })
 
-    @PostMapping(value = "/initialize")
-    public ResponseEntity<?> initPayment(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
-        Optional<OrdersEntity> orderOpt = ordersRepository.findById(orderId);
-        if(!orderOpt.isPresent()) {
-            throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
-        }
-        OrdersEntity order = orderOpt.get();
+    @PostMapping(value = "/{accountName}/initialize")
+    public ResponseEntity<?> initPayment(@PathVariable (name = "accountName") String accountName, @RequestParam(name = "order_id") String orderList) throws BusinessException {
         OrderSessionResponse response = new OrderSessionResponse();
         response.setSuccess(false);
 
-        if (session.initialize(order)) {
+        Properties props = Tools.getPropertyForAccount(accountName, mastercardLogger, config.paymentPropertiesDir);
+        if (props == null) {
+            throw new BusinessException("Unknown payment account",null,HttpStatus.NOT_ACCEPTABLE);
+        }
+        session.getMerchantAccount().init(props);
+        mastercardLogger.info("Setting up payment for order(s): {} via processor: {}", orderList, session.getMerchantAccount().getMerchantId());
+
+        if (session.initialize(Tools.getOrdersFromString(ordersRepository, orderList, ","))) {
             try {
                 response.setOrderRef(session.getOrderRef());
                 response.setOrderRef(session.getOrderRef());
                 response.setSessionId(session.getSessionId());
                 response.setMerchantId(session.getMerchantId());
+                response.setApiVersion(session.getMerchantAccount().getApiVersion());
+                response.setBaseUrl(session.getMerchantAccount().getBaseUrl());
+                response.setSuccessUrl("/payment/mcard/verify");
 
                 if (session.getOrderValue() != null) {
                     response.setOrderCurrency(session.getOrderValue().currency);
                     response.setOrderAmount(session.getOrderValue().amount);
                 }
-                response.setExecuteUrl("/payment/misr/execute");
+                // TODO :  look into
+                response.setExecuteUrl("/payment/mcard/execute");
                 response.setSuccess(true);
             } catch(Exception ex){
                 ex.printStackTrace();
+                throw new BusinessException("Unable to set up payment session",null,HttpStatus.INTERNAL_SERVER_ERROR);
             }
             ObjectMapper oMap = new ObjectMapper();
             String result = "{}";
@@ -186,9 +150,9 @@ public class MisrPaymentController {
                 e.printStackTrace();
             }
             return new ResponseEntity<>(result, HttpStatus.OK);
+        } else {
+            throw new BusinessException("Unable to initialize Mastercard payment session",null,HttpStatus.BAD_GATEWAY);
         }
-
-        throw new BusinessException("Unable to initialize MISR payment session",null,HttpStatus.BAD_GATEWAY);
     }
 
  }

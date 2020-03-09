@@ -7,6 +7,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.OK;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -49,7 +50,7 @@ public class ProductImportEventListener extends AbstractMSDynamicsEventListener<
 		
 		return getWebClient(event.getOrganizationId())
 				.getProducts(param.getPageCount(), param.getPageNum())
-				.filter( res -> res.statusCode() == HttpStatus.OK)
+				.filter( res -> res.statusCode() == OK)
 				.flatMap(this::throwExceptionIfNotOk)
 				.flatMap(res -> res.bodyToMono(ProductsResponse.class))
 				.map(res -> new ProductResponseWithOrgId(res, event.getOrganizationId()))

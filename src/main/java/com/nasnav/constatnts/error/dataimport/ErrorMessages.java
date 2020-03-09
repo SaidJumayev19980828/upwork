@@ -28,4 +28,5 @@ public class ErrorMessages {
 	public static final String ERR_USER_CANNOT_MODIFY_PRODUCT ="User with email [%s] have no rights to modify products from organization of id[%d]!";
 	public static final String ERR_PRODUCT_DB_SAVE = "Failed to save imported product into the database";
 	public static final String ERR_TAGS_NOT_FOUND = "tags with names %s were not found for organization[%d]";
+	public static final String ERR_NO_VARIANT_FOUND = "No Variant exists with id[%s] , or external id [%s], or barcode [%s]!";
 }

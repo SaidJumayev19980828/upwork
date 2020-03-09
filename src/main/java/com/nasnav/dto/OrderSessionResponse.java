@@ -21,14 +21,14 @@ public class OrderSessionResponse {
 //    @JsonProperty("successIndicator")
 //    private String successIndicator;
 
+    @JsonProperty("api_version")
+    private String apiVersion;
+
     @JsonProperty("merchant")
     private String merchantId;
 
-    @JsonProperty("order_uid")
+    @JsonProperty("order_id")
     private String orderRef;
-
-//    @JsonProperty("basket")
-//    private List<OrderSessionBasket> basket;
 
     @JsonProperty("order_amount")
     private BigDecimal orderAmount;
@@ -39,7 +39,13 @@ public class OrderSessionResponse {
     @JsonProperty("execute_url")
     private String executeUrl;
 
+    @JsonProperty("success_url")
+    private String successUrl;
+
     @JsonProperty("session_id")
     private String sessionId;
+
+    @JsonProperty("base_url")
+    private String baseUrl;
 
 }

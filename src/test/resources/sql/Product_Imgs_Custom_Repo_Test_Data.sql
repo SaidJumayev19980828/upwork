@@ -1,0 +1,106 @@
+----------------------------inserting dummy data----------------------------
+
+--inserting organizations
+INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001, 'organization_1', now(), now());
+INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());
+
+--inserting brands
+INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (101, 202, 'brand_1', now(), now(), 99002);
+INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (102, 201, 'brand_2', now(), now(), 99001);
+
+--inserting categories
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (201, 'category_1', now(), now());
+INSERT INTO public.categories(id, name, created_at, updated_at) VALUES (202, 'category_2', now(), now());
+
+--inserting shops
+INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (501, 'shop_1', 102, now(), now(), 99002);
+INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (502, 'shop_2', 101, now(), now(), 99001);
+
+--insering users
+INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+VALUES (68, now(), now(), 'testuser1@nasnav.com', 99001, '101112',  502);
+INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+VALUES (69, now(), now(), 'testuser2@nasnav.com', 99002, '131415',  501);
+INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
+VALUES (70, now(), now(), 'testuser3@nasnav.com', 99001, 'fssdfdsf', 502);
+
+
+--inserting Roles
+insert into roles(id, name, created_at, updated_at, organization_id) values(1, 'NASNAV_ADMIN', now(), now(), 99001);
+insert into roles(id, name, created_at, updated_at, organization_id) values(2, 'ORGANIZATION_ADMIN', now(), now(), 99001);
+insert into roles(id, name, created_at, updated_at, organization_id) values(4, 'ORGANIZATION_EMPLOYEE', now(), now(), 99001);
+insert into roles(id, name, created_at, updated_at, organization_id) values(5, 'STORE_EMPLOYEE', now(), now(), 99001);
+insert into roles(id, name, created_at, updated_at, organization_id) values(3, 'CUSTOMER', now(), now(), 99001);
+
+
+--inserting Roles EmployeeUsers relations
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (20, 68, 1, now(), now());
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (21, 68, 2, now(), now());
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (22, 69, 2, now(), now());
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (23, 70, 5, now(), now());
+
+
+--inserting products
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, barcode) VALUES (1002, 'product_2',101, 201, 99001, now(), now(),'123456789');
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1003, 'product_3',101, 202, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1004, 'product_4',102, 201, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1005, 'product_5',102, 202, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1006, 'product_6',102, 201, 99002, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1007, 'product_7',101, 202, 99002, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1008, 'product_8',102, 202, 99002, now(), now());
+
+
+
+-- variants for each product
+insert into public.product_variants(id, "name" , product_id ) values(310001, 'var' 	, 1001);
+insert into public.product_variants(id, "name" , product_id ) values(310002, 'var' 	, 1001);
+insert into public.product_variants(id, "name" , product_id, barcode ) values(310003, 'var' 	, 1003, 'barcody');
+insert into public.product_variants(id, "name" , product_id ) values(310004, 'var' 	, 1004);
+insert into public.product_variants(id, "name" , product_id, barcode ) values(310005, 'var' 	, 1005 , 'ABC_barcodak');
+insert into public.product_variants(id, "name" , product_id ) values(310006, 'var' 	, 1006);
+insert into public.product_variants(id, "name" , product_id ) values(310007, 'var' 	, 1007);
+insert into public.product_variants(id, "name" , product_id ) values(310008, 'var' 	, 1008);
+
+
+
+--inserting stocks
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(601, 502, 6, now(), now(), 99002, 600.00, 310001);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(602, 501, 8, now(), now(), 99001, 1200.0, 310002);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(603, 501, 4, now(), now(), 99002, 200.00, 310003);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(604, 502, 6, now(), now(), 99001, 700.00, 310004);
+
+
+
+--INSERT dummy images
+INSERT INTO public.files(organization_id, url, "location", mimetype, orig_filename)VALUES(99001, '99001/img1.jpg', '/dummy_loc1.jpg', 'image/jpeg', 'dummy_loc.jpg');
+INSERT INTO public.files(organization_id, url, "location", mimetype, orig_filename)VALUES(99001, '99001/img2.jpg', '/dummy_loc2.jpg', 'image/jpeg', 'dummy_loc.jpg');
+INSERT INTO public.files(organization_id, url, "location", mimetype, orig_filename)VALUES(99001, '99001/img3.jpg', '/dummy_loc3.jpg', 'image/jpeg', 'dummy_loc.jpg');
+INSERT INTO public.files(organization_id, url, "location", mimetype, orig_filename)VALUES(99001, '99001/cover_img.jpg', '/dummy_loc4.jpg', 'image/jpeg', 'dummy_loc.jpg');
+INSERT INTO public.files(organization_id, url, "location", mimetype, orig_filename)VALUES(99001, '99001/cover_img2.jpg', '/dummy_loc5.jpg', 'image/jpeg', 'dummy_loc.jpg');
+INSERT INTO public.files(organization_id, url, "location", mimetype, orig_filename)VALUES(99001, '99001/cover_img3.jpg', '/dummy_loc6.jpg', 'image/jpeg', 'dummy_loc.jpg');
+
+
+INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(1001, 310001, 7, 1, '99001/img1.jpg');
+INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(1001, 310002, 7, 1, '99001/img2.jpg');
+INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(1001, null, 7, 1, '99001/img3.jpg');
+INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(1001, null, 7, 0, '99001/cover_img.jpg');
+INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(1001, null, 7, 0, '99001/cover_img2.jpg');
+INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(1002, null, 7, 0, '99001/cover_img3.jpg');
+INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(null, 310004, 7, 0, '99001/cover_img3.jpg');
+
+
+
+-- integration Mapping types
+INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67001, 'PRODUCT_VARIANT');
+INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67002, 'SHOP');
+INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67003, 'ORDER');
+INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67004, 'CUSTOMER');
+INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67005, 'PAYMENT');
+
+
+-- insert integration mapping
+INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) 
+	VALUES(67001, '310003', 'ABC444ss', 99001);
+INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) 
+	VALUES(67001, '310005', 'ABC123ss', 99001) ;

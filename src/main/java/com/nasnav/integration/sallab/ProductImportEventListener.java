@@ -2,11 +2,6 @@ package com.nasnav.integration.sallab;
 
 import static com.nasnav.commons.utils.EntityUtils.setOf;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INVALID_PAGINATION_PARAMS;
-import static com.nasnav.integration.sallab.ElSallabIntegrationParams.AUTH_GRANT_TYPE;
-import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_ID;
-import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_SECRET;
-import static com.nasnav.integration.sallab.ElSallabIntegrationParams.PASSWORD;
-import static com.nasnav.integration.sallab.ElSallabIntegrationParams.USERNAME;
 import static com.nasnav.integration.sallab.ShopsImportEventListener.HARD_CODED_STOCK;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -467,26 +462,10 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 
 
 
-	private AuthenticationData getAuthData(Long orgId) {
-		
-		String grantType = integrationService.getIntegrationParamValue(orgId, AUTH_GRANT_TYPE.getValue());
-		String clientId = integrationService.getIntegrationParamValue(orgId, CLIENT_ID.getValue());
-		String clientSecret = integrationService.getIntegrationParamValue(orgId, CLIENT_SECRET.getValue());
-		String username = integrationService.getIntegrationParamValue(orgId, USERNAME.getValue());
-		String password = integrationService.getIntegrationParamValue(orgId, PASSWORD.getValue());
-		
-		return new AuthenticationData(grantType, clientId, clientSecret, username, password);
-	}
-
-
-
-
-
-
 	@Override
 	protected ProductsImportEvent handleError(ProductsImportEvent event, Throwable t) {
 		// TODO Auto-generated method stub
-		return null;
+		return event;
 	}
 
 }

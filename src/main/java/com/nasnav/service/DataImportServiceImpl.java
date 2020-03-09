@@ -22,6 +22,7 @@ import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -421,8 +422,14 @@ public class DataImportServiceImpl implements DataImportService {
                 variantEnt = variantRepo.findByIdAndProductEntity_OrganizationId(Long.parseLong(localMappingId), orgId);
         }
 
-        if (variantEnt == null && isNotBlankOrNull(row.getBarcode()))
-            variantEnt = variantRepo.findByBarcodeAndProductEntity_OrganizationId(row.getBarcode(), orgId);
+        if (variantEnt == null && isNotBlankOrNull(row.getBarcode())) {
+        	variantEnt = variantRepo
+		    				.findByBarcodeAndProductEntity_OrganizationId(row.getBarcode(), orgId)
+		    				.stream()
+		    				.sorted(comparing(ProductVariantsEntity::getId))
+		    				.findFirst();
+        }
+            
 
         if (variantEnt != null && variantEnt.isPresent()) {
             modifyProductDataForUpdate(data, row, variantEnt.get());

@@ -1,34 +1,23 @@
 package com.nasnav.commons.utils;
 
+import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Random;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.exceptions.EntityValidationException;
-import com.nasnav.response.UserApiResponse;
-import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
-
 import com.nasnav.response.UserApiResponse;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.*;
-
-import org.springframework.http.HttpStatus;
 
 
 public class StringUtils extends org.springframework.util.StringUtils{
-	private static Random random;
-
 	public static boolean patternMatcher(String input, String regex) {
 		if (input == null) {
 			return false;
@@ -67,8 +56,8 @@ public class StringUtils extends org.springframework.util.StringUtils{
 		if (object instanceof String) {
 			return ((String) object).isEmpty();
 		}
-		if (object instanceof Collection) {
-			return ((Collection) object).isEmpty();
+		if (object instanceof Collection<?>) {
+			return ((Collection<?>) object).isEmpty();
 		}
 		return false;
 	}
@@ -137,14 +126,13 @@ public class StringUtils extends org.springframework.util.StringUtils{
 	
 	
 	public static String nullSafe(String string) {
-		return Optional.ofNullable(string)
+		return ofNullable(string)
 				       .orElse("");
 	}
 	
 	
 	public static boolean anyBlankOrNull(String... strings) {
-		return Arrays
-				.asList(strings)
+		return asList(strings)
 				.stream()
 				.anyMatch(StringUtils::isBlankOrNull);			
 	}
@@ -153,9 +141,49 @@ public class StringUtils extends org.springframework.util.StringUtils{
 	
 	
 	public static boolean anyNotBlankOrNull(String... strings) {
-		return Arrays
-				.asList(strings)
+		return asList(strings)
 				.stream()
 				.anyMatch(StringUtils::isNotBlankOrNull);			
+	}
+	
+	
+	
+	public static boolean endsWithAnyOf(String string, String...suffixes) {
+		String str = ofNullable(string).orElse("");
+		return asList(suffixes)
+				.stream()
+				.filter(Objects::nonNull)
+				.anyMatch(suffix -> str.endsWith(suffix));
+	}
+	
+	
+	
+	public static boolean endsWithAnyOfAndIgnoreCase(String string, String...suffixes) {
+		String str = ofNullable(string).orElse("");
+		return asList(suffixes)
+				.stream()
+				.filter(Objects::nonNull)
+				.anyMatch(suffix -> str.toLowerCase().endsWith(suffix.toLowerCase()));
+	}
+	
+	
+	
+	public static boolean startsWithAnyOf(String string, String...preffixes) {
+		String str = ofNullable(string).orElse("");
+		return asList(preffixes)
+				.stream()
+				.filter(Objects::nonNull)
+				.anyMatch(prefix -> str.startsWith(prefix));
+	}
+	
+	
+	
+	
+	public static boolean startsWithAnyOfAndIgnoreCase(String string, String...preffixes) {
+		String str = ofNullable(string).orElse("");
+		return asList(preffixes)
+				.stream()
+				.filter(Objects::nonNull)
+				.anyMatch(prefix -> str.toLowerCase().startsWith(prefix.toLowerCase()));
 	}
 }

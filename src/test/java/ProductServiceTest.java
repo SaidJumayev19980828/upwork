@@ -1,12 +1,16 @@
+import static com.nasnav.commons.utils.EntityUtils.setOf;
 import static java.lang.Math.random;
+import static java.lang.String.format;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpStatus.OK;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -29,6 +33,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
+import com.nasnav.dao.ExtraAttributesRepository;
 import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
@@ -39,9 +44,11 @@ import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductsResponse;
+import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.FileEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductImagesEntity;
 import com.nasnav.persistence.ProductTypes;
@@ -58,6 +65,9 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 public class ProductServiceTest {
 
+	private static final String DUMMY_EXTRA_ATTR_VALUE = "Indeed";
+	private static final String DUMMY_EXTRA_ATTR_NAME = "Very Cool Special feature";
+	private static final String DUMMY_EXTRA_ATTR_ICON = "cool_icon.png";
 	private static final String PRODUCT_IMG_URL = "my_cool_img.jpg";
 	private static final String PRODUCT_DESC = "Some description";
 	public static final int BUNDLE_ITEM_MIN_QUANTITY = 1;
@@ -95,6 +105,9 @@ public class ProductServiceTest {
 	
 	@Autowired
 	private ProductImagesRepository imgRepository;
+	
+	@Autowired
+	private ExtraAttributesRepository extraAttributeRepository;
 	
 	private final String PRODUCT_NAME = "LIPSTICK";
 	private final String PRODUCT_P_NAME = "LIPSTICK PRODUCT";
@@ -243,6 +256,21 @@ public class ProductServiceTest {
 	
 	
 	
+	private void assertValidResponseWithExtraAttr(ProductTestData testData, ResponseEntity<String> response) {
+		JSONObject productDetails = new JSONObject(response.getBody());
+		JSONObject variant = productDetails.getJSONArray("variants").getJSONObject(0);
+		JSONArray expectedStocks = createExpectedStocks( testData.stocksEntities);
+		JSONArray stocks = variant.getJSONArray("stocks");
+		
+
+		assertProductDetailsRetrieved(response, productDetails);	
+		assertVariantDetailRetrievedWithExtraAttr(variant);
+		assertTrue( stocks.similar(expectedStocks));
+	}
+	
+	
+	
+	
 	
 	private void assertValidResponseWithoutStocks(ProductTestData testData, ResponseEntity<String> response) {
 		JSONObject productDetails = new JSONObject(response.getBody());
@@ -269,6 +297,28 @@ public class ProductServiceTest {
 		testData.productFeaturesEntity_2 = createDummyFeature2(org);
 		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);		
 		testData.productVariantsEntity = createDummyVariant(testData.productEntity, testData.spec);
+		testData.shopEntities = createDummyShops(org, 1);
+		testData.stocksEntities = createDummyStocks(testData.productVariantsEntity, org, testData.shopEntities);
+		
+		return testData;
+	}
+	
+	
+	
+	
+	
+	private ProductTestData createProductTestDataWithExtraAttr() {
+		ProductTestData testData = new ProductTestData();
+		
+		OrganizationEntity org = organizationRepository.findOneById(99001L);		
+		
+		testData.productEntity = createDummyProduct();		
+		testData.imgFile = createProductImageFile(org);
+		testData.img = createProductImage(testData.productEntity);
+		testData.productFeaturesEntity_1 = createDummyFeature1(org);
+		testData.productFeaturesEntity_2 = createDummyFeature2(org);
+		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);		
+		testData.productVariantsEntity = createDummyVariantWithExtraAttributes(testData.productEntity, testData.spec);
 		testData.shopEntities = createDummyShops(org, 1);
 		testData.stocksEntities = createDummyStocks(testData.productVariantsEntity, org, testData.shopEntities);
 		
@@ -425,6 +475,40 @@ public class ProductServiceTest {
 	
 	
 	
+	private ProductVariantsEntity createDummyVariantWithExtraAttributes(ProductEntity productEntity, String spec) {
+		ProductVariantsEntity variant = createDummyVariant(productEntity, spec);
+		Set<ProductExtraAttributesEntity> extraAttributes = createDummyExtraAttr(variant);
+		extraAttributes.forEach(variant::addExtraAttribute);
+		return productVariantsRepository.save(variant);
+	}
+	
+	
+	
+	
+	private Set<ProductExtraAttributesEntity> createDummyExtraAttr(ProductVariantsEntity variant) {
+		ProductExtraAttributesEntity productExtraAttr = new ProductExtraAttributesEntity();
+		ExtraAttributesEntity extraAttr = createDummyExtraAttrDef(variant);
+		productExtraAttr.setExtraAttribute(extraAttr);
+		productExtraAttr.setVariant(variant);
+		productExtraAttr.setValue(DUMMY_EXTRA_ATTR_VALUE);
+		return setOf(productExtraAttr);
+	}
+
+
+
+
+	private ExtraAttributesEntity createDummyExtraAttrDef(ProductVariantsEntity variant) {
+		ExtraAttributesEntity extraAttr = new ExtraAttributesEntity();
+		extraAttr.setIconUrl(DUMMY_EXTRA_ATTR_ICON);
+		extraAttr.setName(DUMMY_EXTRA_ATTR_NAME);
+		extraAttr.setOrganizationId(variant.getProductEntity().getOrganizationId());
+		extraAttr.setType(null);
+		return extraAttributeRepository.save(extraAttr);
+	}
+
+
+
+
 	private List<ShopsEntity> createDummyShops(OrganizationEntity org, int shopsNum) {
 		return IntStream.range(0, shopsNum)
 				.mapToObj(i -> createDummyShop(org))				
@@ -501,9 +585,23 @@ public class ProductServiceTest {
 	
 	
 	
+	private void assertVariantDetailRetrievedWithExtraAttr(JSONObject variant) {
+		assertEquals(PRODUCT_FEATURE_1_VALUE, variant.getString(PRODUCT_FEATURE_1_P_NAME));
+		assertEquals(PRODUCT_FEATURE_2_VALUE, variant.getString(PRODUCT_FEATURE_2_P_NAME));
+		assertEquals(PRODUCT_VARIANT_BARCODE, variant.getString("barcode"));
+		
+		JSONObject extraAttr = variant.getJSONArray("extra_attributes").getJSONObject(0);
+		assertEquals(DUMMY_EXTRA_ATTR_NAME, extraAttr.getString("name"));
+		assertEquals(JSONObject.NULL, extraAttr.get("type"));
+		assertEquals(DUMMY_EXTRA_ATTR_VALUE, extraAttr.getString("value"));
+		assertEquals(DUMMY_EXTRA_ATTR_ICON, extraAttr.getString("icon_url"));
+	}
+	
+	
+	
 
 	private void assertProductDetailsRetrieved(ResponseEntity<String> response, JSONObject product) {
-		assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
+		assertEquals(OK, response.getStatusCode());
 		assertEquals(PRODUCT_NAME, product.getString("name"));
 		assertEquals(PRODUCT_P_NAME, product.getString("p_name"));
 		assertEquals(PRODUCT_PRODUCT_BARCODE, product.getString("barcode"));		
@@ -823,6 +921,29 @@ public class ProductServiceTest {
 						, 1, images.length());
 	}
 
+	
+	
+	
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void getProductWithVariantsWithExtraAttributes() {
+
+		ProductTestData testData = createProductTestDataWithExtraAttr();
+
+		//-----------------------------------------
+		ResponseEntity<String> response = template.getForEntity(
+				format("/navbox/product?product_id=%d&shop_id=%d"
+						,testData.productEntity.getId(), testData.shopEntities.get(0).getId()),
+				String.class);
+		//-----------------------------------------
+		System.out.println( "product with extra attributes >>> " +response.getBody());
+		
+		assertValidResponseWithExtraAttr(testData, response);
+		
+		//-----------------------------------------
+		cleanInsertedData(testData);
+	}
 
 
 }

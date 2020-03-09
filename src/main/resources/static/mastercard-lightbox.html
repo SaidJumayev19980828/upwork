@@ -1,9 +1,9 @@
 <html>
 <head>
-    <script src="https://qnbalahli.test.gateway.mastercard.com/checkout/version/$api_version/checkout.js"
+    <script src="$base_url/checkout/version/$api_version/checkout.js"
             data-error="errorCallback"
             data-cancel="cancelCallback"
-            data-complete="/payment/qnb/verify?order_uid=$order_id"
+            data-complete="$success_url?order_uid=$order_id"
     ></script>
 
     <script type="text/javascript">
@@ -17,7 +17,6 @@
         Checkout.configure({
             merchant: '$merchant',
             order: {
-                description: "$description",
                 id: "$order_id"
             },
             interaction: {
@@ -47,7 +46,7 @@
 <div style="width: 90%"><pre>$rawJSON</pre></div>
 <br>
 <h4>Order ID: $order_id</h4>
-<h4>Total Price: $amount $currency</h4>
+<h4>Total Price: $order_amount $order_currency</h4>
 <br>
 
 <input type="button" value="Pay with Lightbox" onclick="Checkout.showLightbox();" />

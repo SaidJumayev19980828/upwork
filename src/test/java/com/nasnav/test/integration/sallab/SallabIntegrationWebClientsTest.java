@@ -62,6 +62,7 @@ public class SallabIntegrationWebClientsTest {
     private static final String SALLAB_SEVER_URL_2 = "http://41.33.113.70";
     private static final String AUTH_SERVER_URL = "https://test.salesforce.com";
     private static final String MOCK_SERVER_URL = "http://127.0.0.1";
+    private static final String IMG_AUTH_SERVER_URL = "https://login.salesforce.com";
     
   private static final String SERVER_URL = MOCK_SERVER_URL;
 //  private static final String SERVER_URL = SALLAB_SERVER_URL;
@@ -91,14 +92,16 @@ public class SallabIntegrationWebClientsTest {
     	String serverFullUrl  = SALLAB_SERVER_URL;
     	String server2FullUrl = SALLAB_SEVER_URL_2;
     	String authServerUrl = AUTH_SERVER_URL;
+    	String imgAuthServerUrl = IMG_AUTH_SERVER_URL;
     	
     	if(usingMockServer) {
 			serverFullUrl = testCommons.initElSallabMockServer(mockServerRule);
 			server2FullUrl = serverFullUrl;
 			authServerUrl = serverFullUrl;
+			imgAuthServerUrl = serverFullUrl;
 		}
     	
-        client = new SallabWebClient(serverFullUrl, server2FullUrl,  authServerUrl);
+        client = new SallabWebClient(serverFullUrl, server2FullUrl,  authServerUrl, imgAuthServerUrl);
         data = new AuthenticationData("password", "3MVG98_Psg5cppyZgL4kzqXARpsy8tyvcM1d8DwhODOxPiDTnqaf71BGU2cmzBpvf8l_myMTql31bhVa.ar8V",
                 "4085100268240543918", "mzaklama@elsallab.com.devsanbox", "CloudzLab001tBHMDjhBGvDRsmWMrfog0oHG7");
     }
@@ -154,7 +157,7 @@ public class SallabIntegrationWebClientsTest {
         	.authenticate(data)
         	.doOnNext(res -> waiter.assertEquals(res.statusCode(), OK))
         	.flatMap(res -> res.bodyToMono(AuthenticationResponse.class))
-        	.flatMap(res -> client.getProductsNextRecords(res.getAccessToken(), "01g25000014iC4QAAU-2000"))
+        	.flatMap(res -> client.getProductsNextRecords(res.getAccessToken(), "/services/data/v44.0/query/01g25000014iC4QAAU-2000"))
         	.flatMap(prodRes -> prodRes.bodyToMono(ProductsResponse.class))
         	.subscribe(onResponse);
         

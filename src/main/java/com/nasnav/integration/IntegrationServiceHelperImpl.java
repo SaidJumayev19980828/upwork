@@ -14,6 +14,7 @@ import static java.math.BigDecimal.ZERO;
 import static java.time.Duration.ofSeconds;
 import static java.time.LocalDateTime.now;
 import static java.util.Collections.emptySet;
+import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 
 import java.math.BigDecimal;
@@ -22,6 +23,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -30,6 +32,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.CustomerCreateEvent;
@@ -48,6 +52,7 @@ import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.SecurityService;
 
 @Service
@@ -67,6 +72,13 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 	
 	@Autowired
 	SecurityService securityService;
+
+	@Autowired
+	UserRepository userRepository;
+	
+	
+	@Autowired
+	OrdersRepository orderRepo;
 
 	@Override
 	public void pushCustomerCreationEvent(CustomerData customer, Long orgId) {
@@ -189,6 +201,7 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 		data.setUserId(order.getUserId());
 		data.setItems(getOrderItems(order));
 		data.setOrganizationId(order.getOrganizationEntity().getId());
+		data.setPaymentData( createPaymentData(order.getPaymentEntity()));
 		return data;
 	}
 
@@ -226,10 +239,13 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 	@Override
 	@Transactional
 	public void pushPaymentEvent(PaymentEntity payment){
-		PaymentData data = createPaymentData(payment);		
+		Optional<PaymentData> data = createPaymentData(payment);	
+		if(!data.isPresent()) {
+			return;
+		}
 		Long orgId = getOrgId(payment);
 		
-		PaymentCreateEvent event = new PaymentCreateEvent(orgId, data, this::savePaymentExternalId);
+		PaymentCreateEvent event = new PaymentCreateEvent(orgId, data.get(), this::savePaymentExternalId);
 		pushPaymentEvent(event);
 	}
 
@@ -238,18 +254,24 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 
 
 	private Long getOrgId(PaymentEntity payment) {
-		return ofNullable(payment)
-				.map(PaymentEntity::getOrdersEntity)
-				.map(OrdersEntity::getOrganizationEntity)
-				.map(OrganizationEntity::getId)
-				.orElseGet(() -> securityService.getCurrentUserOrganizationId());
+		return
+			ofNullable(payment)
+			.map(PaymentEntity::getUserId)
+			.flatMap(userRepository::findById)
+			.map(UserEntity::getOrganizationId)
+			.orElseGet(() -> securityService.getCurrentUserOrganizationId());
 	}
 
 
 
 	
 
-	private PaymentData createPaymentData(PaymentEntity payment) {
+	private Optional<PaymentData> createPaymentData(PaymentEntity payment) {
+		//in case of cash-on-delivery, payment can be null
+		if(payment == null) {
+			return empty();
+		}
+		
 		PaymentData data = new PaymentData();
 		String currency = getCurrency(payment);
 		LocalDateTime executionTime = getExecutionTime(payment);
@@ -259,12 +281,11 @@ public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
 		data.setCurrency(currency);
 		data.setExcutionTime(executionTime);
 		data.setId(payment.getId());
-		data.setOrderId(payment.getOrdersEntity().getId());
-		data.setUserId(payment.getOrdersEntity().getUserId());
+		data.setUserId(payment.getUserId());
 		data.setValue(amount);
 		data.setOrganizationId(orgId);
 		
-		return data;
+		return Optional.of(data);
 	}
 
 

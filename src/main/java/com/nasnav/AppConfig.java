@@ -20,7 +20,7 @@ public class AppConfig {
     @Value("${email.recoveryurl}") public String mailRecoveryUrl = "";
     @Value("${email.port}")        public int    mailHostPort;
     @Value("${email.ssl}")         public boolean mailUseSSL;
-
+    @Value("${paymnet.properties_dir}") public String paymentPropertiesDir = "";
     /**
      * Register password encoder bean
      *

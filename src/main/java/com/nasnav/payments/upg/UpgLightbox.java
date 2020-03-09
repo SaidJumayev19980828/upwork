@@ -1,16 +1,20 @@
-package com.nasnav.payments;
+package com.nasnav.payments.upg;
 
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.TransactionCurrency;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.payments.misc.Tools;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
+import com.nasnav.service.OrderService;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -19,12 +23,13 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,8 +37,8 @@ public class UpgLightbox {
 
 	private static DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
-	public ResponseEntity<?> callback(String content, OrdersRepository ordersRepository, PaymentsRepository paymentsRepository, Account account, Logger upgLogger) {
-		long orderId = -1;
+	public ResponseEntity<?> callback(String content, OrdersRepository ordersRepository, PaymentsRepository paymentsRepository, UpgAccount account, OrderService orderService, Logger upgLogger) throws BusinessException {
+		ArrayList<OrdersEntity> orders = new ArrayList<>();
 		JSONObject jsonObject = null;
 		try {
 			jsonObject = new JSONObject(content);
@@ -44,44 +49,58 @@ public class UpgLightbox {
 		}
 		// get the order id from merchant reference
 		String ref = jsonObject.getString("MerchantReference");
+		ResponseEntity response = null;
 		try {
-			orderId = Long.parseLong(ref.substring(0, ref.indexOf('-')));
+			String orderList = ref.substring(0, ref.indexOf('-'));
+			for (String num: orderList.split("\\.")) {
+				long orderId = Long.parseLong(num);
+				Optional<OrdersEntity> oo = ordersRepository.findById(orderId);
+				if (!oo.isPresent()) {
+					upgLogger.error("Order: {} does not exist", orderId);
+					response = new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to find applicable order\"}", HttpStatus.BAD_REQUEST);
+				} else {
+					orders.add(oo.get());
+				}
+			}
 		} catch (Exception ex) { ; }
-		if (orderId < 0) {
+		if (orders.size() <= 0) {
 			upgLogger.error("Unable to retrieve order ID from the reference: {}", ref);
 			return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to process Order ID\"}", HttpStatus.BAD_GATEWAY);
 		}
-		Optional<OrdersEntity> oo = ordersRepository.findById(orderId);
-		if (!oo.isPresent()) {
-			upgLogger.error("Order: {} does not exist", orderId);
-			return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to find applicable order\"}", HttpStatus.BAD_REQUEST);
-		}
-
-		PaymentEntity payment = UpgLightbox.verifyPayment(jsonObject, oo.get(), upgLogger, account);
-		if (payment != null) {
-			paymentsRepository.saveAndFlush(payment);
-			ordersRepository.setPaymentStatusForOrder(orderId, PaymentStatus.PAID.getValue(), payment.getExecuted());
-			return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
-		} else {
+		PaymentEntity payment = UpgLightbox.verifyPayment(jsonObject, orders, upgLogger, account, orderService);
+		if (payment == null) {
 			return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to verify payment confirmation\"}", HttpStatus.BAD_REQUEST);
 		}
+		paymentsRepository.saveAndFlush(payment);
+
+		for (OrdersEntity o : orders) {
+			o.setPaymentStatus(PaymentStatus.PAID);
+			o.setUpdateDate(LocalDateTime.now());
+			o.setPaymentEntity(payment);
+			ordersRepository.save(o);
+		}
+		ordersRepository.flush();
+		return response == null ? new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK) : response;
 	}
 
-	public JSONObject getJsonConfig(OrdersEntity order, Account account) {
+	public JSONObject getJsonConfig(ArrayList<OrdersEntity> orders, UpgAccount account, OrderService orderService, Logger upgLogger) throws BusinessException {
 		Date now = new Date();
+		String orderUid = Tools.getOrderUid(orders, upgLogger);
+		OrderService.OrderValue orderValue = Tools.getTotalOrderValue(orders, orderService, upgLogger);
+
 		JSONObject result = new JSONObject();
 		result.put("PaymentMethodFromLightBox", 0);
 //		result.put("Currency", Integer.toString(818));     // only EGP support right now
-		result.put("AmountTrxn", order.getAmount().multiply(new BigDecimal(100)).intValue()); // amount in cents
+		result.put("AmountTrxn", orderValue.amount.multiply(new BigDecimal(100)).intValue()); // amount in cents
 //		result.put("OrderId", Long.toString(order.getId()));  // Gateway fails on sending orderId
 		result.put("MID", account.getUpgMerchantId());
 		result.put("TID", account.getUpgTerminalId());
 		result.put("TrxDateTime", dateFormat.format(now));
-		result.put("MerchantReference", order.getId() + "-" + now.getTime());
+		result.put("MerchantReference", orderUid);
 //		result.put("ReturnUrl", "/");
 
 		JSONObject chash = new JSONObject();
-		chash.put("Amount", order.getAmount().multiply(new BigDecimal(100)).intValue()); // amount in cents
+		chash.put("Amount", orderValue.amount.multiply(new BigDecimal(100)).intValue()); // amount in cents
 		chash.put("MerchantId", account.getUpgMerchantId());
 		chash.put("TerminalId", account.getUpgTerminalId());
 		chash.put("DateTimeLocalTrxn", dateFormat.format(now));
@@ -90,7 +109,7 @@ public class UpgLightbox {
 		return result;
 	}
 
-	public static PaymentEntity verifyPayment(JSONObject json, OrdersEntity order, Logger upgLogger, Account account) {
+	public static PaymentEntity verifyPayment(JSONObject json, ArrayList<OrdersEntity> orders, Logger upgLogger, UpgAccount account, OrderService orderService) throws BusinessException {
 //System.out.println("Received: " + json.toString(2));
 		JSONObject verifier = new JSONObject();
 		for (String param: new String[] {"TxnDate", "Amount", "Currency", "PaidThrough"}) {
@@ -109,19 +128,33 @@ public class UpgLightbox {
 		try {
 			paidAmount = Long.parseLong(json.getString("Amount"));
 		} catch (Exception ex) {;}
-		if (order.getAmount().longValue() * 100 != paidAmount) {
-			upgLogger.error("Paid amount: {} does not equal order {} amount: {}", json.getString("Amount"), order.getId(), order.getAmount());
+		StringBuilder orderList = new StringBuilder();
+		OrderService.OrderValue orderValue = Tools.getTotalOrderValue(orders, orderService, upgLogger);
+/*
+		for (OrdersEntity order : orders) {
+
+			orderAmount += order.getAmount().longValue() * 100;
+System.out.println("Order: " + order.getId() + " : " + order.getAmount() + " sum: " + orderAmount);
+			if (orderList.length() > 0) {
+				orderList.append(',');
+			}
+			orderList.append(order.getId());
+		}
+*/
+		if (orderValue.amount.movePointRight(2).longValue() != paidAmount) {
+			upgLogger.error("Paid amount: {} does not equal order {} amount: {}", json.getString("Amount"), orderList.toString(), orderValue.amount.movePointRight(2));
 			return null;
 		}
 		PaymentEntity payment = new PaymentEntity();
-		payment.setOperator("UPG");
-		payment.setOrdersEntity(order);
-		payment.setUid("MLB-" + json.getString("MerchantReference"));
+		payment.setOperator(account.getAccountId());
+//payment.setOrdersEntity(order);
+		payment.setUid("CFM-" + json.getString("MerchantReference"));
 		payment.setExecuted(new Date());
 		payment.setStatus(PaymentStatus.PAID);
 		payment.setAmount(new BigDecimal(paidAmount).movePointLeft(2));
 		payment.setCurrency(TransactionCurrency.EGP);
 		payment.setObject(json.toString());
+		payment.setUserId(orders.get(0).getUserId());
 		return payment;
 	}
 
@@ -143,8 +176,8 @@ public class UpgLightbox {
 			Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
 			SecretKeySpec secret_key = new SecretKeySpec(keyBytes, "HmacSHA256");
 			sha256_HMAC.init(secret_key);
-			return Hex.encodeHexString(sha256_HMAC.doFinal(concat.getBytes("UTF-8")));
-		} catch (NoSuchAlgorithmException | InvalidKeyException | UnsupportedEncodingException | DecoderException ex) {
+			return Hex.encodeHexString(sha256_HMAC.doFinal(concat.getBytes(StandardCharsets.UTF_8)));
+		} catch (NoSuchAlgorithmException | InvalidKeyException | DecoderException ex) {
 			// TODO
 			ex.printStackTrace();
 		}

@@ -1,7 +1,5 @@
 package com.nasnav.response;
 
-import java.util.List;
-
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 

@@ -1,6 +1,7 @@
 package com.nasnav.controller;
 
 import com.nasnav.dto.CategoryDTO;
+import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.CategoryService;
 import com.nasnav.dto.OrganizationDTO;
@@ -14,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/admin")
@@ -71,6 +74,17 @@ public class AdminController {
 			throw new BusinessException("MISSING_PRARM: Category_id", "",HttpStatus.NOT_ACCEPTABLE);
 		}
 		return categoryService.deleteCategory(categoryId);
+	}
+
+	@ApiOperation(value = "list all organizations", nickname = "orgList", code = 200)
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+			@io.swagger.annotations.ApiResponse(code = 404, message = "no organizations found"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to list organizations"),
+	})
+	@GetMapping(value = "list_organizations", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	public List<OrganizationRepresentationObject> listOrganizations(@RequestHeader (value = "User-Token") String userToken) throws BusinessException {
+		return organizationService.listOrganizations();
 	}
 
 }

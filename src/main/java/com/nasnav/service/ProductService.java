@@ -2,8 +2,7 @@ package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.nonIsEmpty;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
-import static com.nasnav.commons.utils.StringUtils.encodeUrl;
-import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_BUNDLE_ITEM;
@@ -14,10 +13,16 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PR
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_NOT_EXISTS;
 import static java.lang.String.format;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -38,6 +43,7 @@ import java.util.stream.Collectors;
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.*;
 
+import com.nasnav.response.*;
 import com.nasnav.integration.events.data.StockEventParam;
 import com.nasnav.integration.microsoftdynamics.webclient.dto.Stocks;
 import com.nasnav.integration.sallab.webclient.dto.Product;
@@ -76,6 +82,7 @@ import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.BundleDTO;
 import com.nasnav.dto.BundleElementUpdateDTO;
+import com.nasnav.dto.ExtraAttributeDTO;
 import com.nasnav.dto.Pair;
 import com.nasnav.dto.ProductBaseInfo;
 import com.nasnav.dto.ProductDetailsDTO;
@@ -95,11 +102,6 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.request.ProductSearchParam;
-import com.nasnav.response.BundleResponse;
-import com.nasnav.response.ProductImageDeleteResponse;
-import com.nasnav.response.ProductImageUpdateResponse;
-import com.nasnav.response.ProductUpdateResponse;
-import com.nasnav.response.VariantUpdateResponse;
 import com.sun.istack.logging.Logger;
 
 @Service
@@ -181,17 +183,23 @@ public class ProductService {
 
 
 	public ProductDetailsDTO getProduct(Long productId, Long shopId) throws BusinessException{
+		ProductEntity product =
+				productRepository
+					.findById( ofNullable(productId).orElse(-1L) )
+					.orElseThrow(() ->
+						new BusinessException(
+								format(ERR_PRODUCT_NOT_EXISTS, productId)
+								, "INVALID PARAM: product_id"
+								, NOT_FOUND));
 
-		Optional<ProductEntity> optionalProduct = productRepository.findById(productId);
-		if (!optionalProduct.isPresent()) {
-			return null;
-		}
-
-		ProductEntity product = optionalProduct.get();
 		List<ProductVariantsEntity> productVariants = getProductVariants(product);
 
 		return createProductDetailsDTO(product, shopId, productVariants);
 	}
+
+
+
+
 
 	private ProductDetailsDTO createProductDetailsDTO(ProductEntity product, Long shopId, List<ProductVariantsEntity> productVariants) throws BusinessException {
 
@@ -204,16 +212,16 @@ public class ProductService {
 			productDTO.setVariants(variantsDTOList);
 			if (variantsDTOList != null && variantsDTOList.size() > 1)
 				productDTO.setMultipleVariants(true);
-			productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
-			productDTO.setBundleItems( getBundleItems(product));
-			productDTO.setImages( getProductImages(product.getId() ) );
-			productDTO.setTags(tagsDTOList);
+				productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
+				productDTO.setBundleItems( getBundleItems(product));
+				productDTO.setImages( getProductImages(product.getId() ) );
+				productDTO.setTags(tagsDTOList);
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			logger.log(Level.SEVERE, e.getMessage(), e );
 			throw new BusinessException(
-					String.format(ERR_PRODUCT_READ_FAIL, product.getId())
+					format(ERR_PRODUCT_READ_FAIL, product.getId())
 					,"INTERNAL SERVER ERROR"
-					, HttpStatus.INTERNAL_SERVER_ERROR);
+					, INTERNAL_SERVER_ERROR);
 		}
 
 		return productDTO;
@@ -256,7 +264,7 @@ public class ProductService {
 		return productVariants.stream()
 				.map(variant -> createVariantDto(shopId, variant))
 				.filter( variant -> !variant.getStocks().isEmpty())
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 
 
@@ -269,7 +277,35 @@ public class ProductService {
 		variantObj.setStocks( getStockList(variant, shopId) );
 		variantObj.setVariantFeatures( getVariantFeaturesValues(variant) );
 		variantObj.setImages( getProductVariantImages(variant.getId()) );
+		variantObj.setExtraAttributes( getExtraAttributesList(variant));
 		return variantObj;
+	}
+
+
+
+
+	private List<ExtraAttributeDTO> getExtraAttributesList(ProductVariantsEntity variant) {
+		return variant
+				.getExtraAttributes()
+				.stream()
+				.filter(attr -> nonNull(attr.getExtraAttribute()))
+				.map(this::toExtraAttributeDTO)
+				.collect(toList());
+	}
+
+
+
+
+
+	private ExtraAttributeDTO toExtraAttributeDTO(ProductExtraAttributesEntity entity) {
+		ExtraAttributeDTO dto = new ExtraAttributeDTO();
+		ExtraAttributesEntity extraAttrEntity = entity.getExtraAttribute();
+		dto.setId(extraAttrEntity.getId());
+		dto.setIconUrl(extraAttrEntity.getIconUrl());
+		dto.setName(extraAttrEntity.getName());
+		dto.setType(extraAttrEntity.getType());
+		dto.setValue(entity.getValue());
+		return dto;
 	}
 
 
@@ -315,13 +351,14 @@ public class ProductService {
 		List<VariantFeatureDTO> features = new ArrayList<>();
 
 		if(productVariants != null ) {
-			features =  productVariants
+			features =
+					productVariants
 					.stream()
 					.filter(this::hasFeatures)
 					.map(this::extractVariantFeatures)
 					.flatMap(List::stream)
 					.distinct()
-					.collect(Collectors.toList());
+					.collect(toList());
 		}
 
 		return features;
@@ -333,7 +370,8 @@ public class ProductService {
 	private List<VariantFeatureDTO> extractVariantFeatures(ProductVariantsEntity variant){
 		JacksonJsonParser parser = new JacksonJsonParser();
 		Map<String, Object> keyValueMap =  parser.parseMap(variant.getFeatureSpec());
-		return keyValueMap.keySet()
+		return keyValueMap
+				.keySet()
 				.stream()
 				.map(Integer::parseInt)
 				.map(productFeaturesRepository::findById)
@@ -358,9 +396,10 @@ public class ProductService {
 		List<ProductImagesEntity> productImages = productImagesRepository.findByProductEntity_IdOrderByPriority(productId);
 
 		if (productImages != null && !productImages.isEmpty()) {
-			return productImages.stream()
+			return productImages
+					.stream()
 					.map(ProductImgDTO::new)
-					.collect(Collectors.toSet());
+					.collect(toSet());
 		}
 		return null;
 	}
@@ -372,10 +411,12 @@ public class ProductService {
 
 		List<ProductImgDTO> variantImagesArray = new ArrayList<>();
 		if (variantImages != null && !variantImages.isEmpty()) {
-			variantImagesArray = variantImages.stream()
-					.filter(img-> img != null)
+			variantImagesArray =
+					variantImages
+					.stream()
+					.filter(Objects::nonNull)
 					.map(ProductImgDTO::new)
-					.collect(Collectors.toList());
+					.collect(toList());
 		}
 
 		return variantImagesArray;
@@ -388,10 +429,11 @@ public class ProductService {
 
 		List<StocksEntity> stocks = stockService.getVariantStockForShop(variant, shopId);
 
-		return	stocks.stream()
+		return	stocks
+				.stream()
 				.filter(stock -> stock != null)
 				.map(StockDTO::new)
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 
 
@@ -785,25 +827,26 @@ public class ProductService {
 
 
 
-	public ProductUpdateResponse deleteProduct(Long productId) throws BusinessException {
+	public ProductsDeleteResponse deleteProduct(List<Long> productIds) throws BusinessException {
 
-		if(!productRepository.existsById(productId)) {
-			return new ProductUpdateResponse(true, productId); //if the product doesn't exists, then..mission accomplished!
+		for(Long productId : productIds) {
+			if(!productRepository.existsById(productId)) {
+				return new ProductsDeleteResponse(true, Collections.singletonList(productId)); //if the product doesn't exists, then..mission accomplished!
+			}
+
+			validateProductToDelete(productId);
+
+			try {
+				transactions.deleteProduct(productId);
+			} catch (DataIntegrityViolationException e) {
+				logger.log(Level.SEVERE, e.getMessage(), e);
+				throw new BusinessException(format(ERR_PRODUCT_STILL_USED, productId), "INVAILID PARAM:product_id", HttpStatus.NOT_ACCEPTABLE);
+			} catch (Throwable e) {
+				logger.log(Level.SEVERE, e.getMessage(), e);
+				throw new BusinessException(format(ERR_PRODUCT_DELETE_FAILED, productId), "INVAILID PARAM:product_id", HttpStatus.INTERNAL_SERVER_ERROR);
+			}
 		}
-
-		validateProductToDelete(productId);
-
-		try {
-			transactions.deleteProduct(productId);
-		}catch(DataIntegrityViolationException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			throw new BusinessException( format(ERR_PRODUCT_STILL_USED, productId), "INVAILID PARAM:product_id", HttpStatus.NOT_ACCEPTABLE);
-		}catch(Throwable e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			throw new BusinessException( format(ERR_PRODUCT_DELETE_FAILED , productId), "INVAILID PARAM:product_id", HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-
-		return new ProductUpdateResponse(true, productId);
+		return new ProductsDeleteResponse(true, productIds);
 	}
 
 
@@ -871,10 +914,10 @@ public class ProductService {
 
 
 
-	public ProductUpdateResponse deleteBundle(Long bundleId) throws BusinessException {
+	public ProductsDeleteResponse deleteBundle(Long bundleId) throws BusinessException {
 		validateBundleToDelete(bundleId);
 
-		return deleteProduct(bundleId);
+		return deleteProduct(Collections.singletonList(bundleId));
 	}
 
 
@@ -1248,22 +1291,6 @@ public class ProductService {
 				.where(predicatesArr);
 		Long count = em.createQuery(countQuery).getSingleResult();
 		return count;
-	}
-
-	private Long getProductQueryCount(GetQuery getQuery) {
-		CriteriaBuilder cb = getQuery.getBuilder();
-		CriteriaQuery<Long> cqCount = cb.createQuery(Long.class);
-		Root<StocksEntity> entityRoot = cqCount.from(getQuery.getQuery().getResultType());
-		cqCount.select(cb.count(entityRoot)).where(getQuery.getPredicatesArr());
-		return em.createQuery(cqCount).getSingleResult();/*
-
-
-		CriteriaBuilder cb = getQuery.getBuilder();
-
-		CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
-		countQuery.select(cb.count(countQuery.from(StocksEntity.class))).where(getQuery.getPredicatesArr());
-
-		return em.createQuery(countQuery).getSingleResult();*/
 	}
 
 
@@ -1809,7 +1836,6 @@ public class ProductService {
 	}
 
 	private ProductRepresentationObject getProductRepresentation(ProductEntity product) {
-
 		ProductRepresentationObject productRep = new ProductRepresentationObject();
 		setProductProperties(productRep, product);
 		productRep.setMultipleVariants( product.getProductVariants().size() > 1);
@@ -1823,7 +1849,13 @@ public class ProductService {
 
 		if(stockExists) {
 			StocksEntity defaultStock = defaultStockOpt.get();
-			setProductStockProperties(productRep, defaultStock);
+			productRep.setPrice( defaultStock.getPrice() );
+			productRep.setDiscount( defaultStock.getDiscount() );
+			productRep.setStockId( defaultStock.getId());
+			productRep.setDefaultVariantFeatures( defaultStock.getProductVariantsEntity().getFeatureSpec());
+			if (defaultStock.getCurrency() != null) {
+				productRep.setCurrency( defaultStock.getCurrency().ordinal() );
+			}
 		}
 		productRep.setAvailable(stockExists);
 		productRep.setHidden(!stockExists);
@@ -1853,6 +1885,9 @@ public class ProductService {
 		productRep.setBrandId(product.getBrandId());
 		productRep.setCategoryId(product.getCategoryId());
 		productRep.setBarcode(product.getBarcode());
+		productRep.setCreationDate(Optional.ofNullable(product.getCreationDate().toString()).orElse(null));
+		productRep.setUpdateDate(Optional.ofNullable(product.getUpdateDate().toString()).orElse(null));
+
 	}
 
 	private void setProductStockProperties(ProductRepresentationObject productRep, StocksEntity stock) {

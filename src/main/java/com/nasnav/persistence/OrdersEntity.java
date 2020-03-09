@@ -1,5 +1,8 @@
 package com.nasnav.persistence;
 
+import static com.nasnav.enumerations.PaymentStatus.UNPAID;
+import static java.time.LocalDateTime.now;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -104,6 +107,11 @@ public class OrdersEntity implements BaseEntity{
 	@OneToMany(mappedBy = "ordersEntity", cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
     private Set<BasketsEntity> basketsEntity;
 
+	@ManyToOne(cascade = CascadeType.MERGE)
+	@JoinColumn(name = "payment_id", referencedColumnName = "id")
+	private PaymentEntity paymentEntity;
+
+
 	@Override
 	public BaseRepresentationObject getRepresentation() {
 		OrderRepresentationObject orderRepresentationObject = new OrderRepresentationObject();
@@ -119,8 +127,8 @@ public class OrdersEntity implements BaseEntity{
 	}
 
 	public OrdersEntity() {
-		this.paymentStatus = PaymentStatus.UNPAID.getValue();
-		this.creationDate = LocalDateTime.now();
+		this.paymentStatus = UNPAID.getValue();
+		this.creationDate = now();
 		basketsEntity = new HashSet<>();
 	}
 	
