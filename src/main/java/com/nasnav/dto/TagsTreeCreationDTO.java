@@ -6,10 +6,10 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class TagsLinksCreationDTO {
+public class TagsTreeCreationDTO {
     @JsonProperty(value = "clear_tree")
     private boolean clearTree;
 
-    @JsonProperty(value = "tags_links")
-    private List<TagsLinkDTO> tagsLinks;
+    @JsonProperty(value = "nodes")
+    private List<TagsTreeNodeDTO> treeNodes;
 }

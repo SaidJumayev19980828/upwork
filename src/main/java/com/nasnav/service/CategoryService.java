@@ -3,6 +3,7 @@ package com.nasnav.service;
 import static com.nasnav.commons.utils.EntityUtils.copyNonNullProperties;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
@@ -27,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.BrandsRepository;
@@ -38,11 +40,10 @@ import com.nasnav.dao.TagGraphNodeRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.CategoryDTO;
 import com.nasnav.dto.CategoryRepresentationObject;
-import com.nasnav.dto.Pair;
 import com.nasnav.dto.TagsDTO;
-import com.nasnav.dto.TagsLinkDTO;
-import com.nasnav.dto.TagsLinksCreationDTO;
 import com.nasnav.dto.TagsRepresentationObject;
+import com.nasnav.dto.TagsTreeCreationDTO;
+import com.nasnav.dto.TagsTreeNodeDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.CategoriesEntity;
@@ -53,8 +54,6 @@ import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.CategoryResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.TagResponse;
-
-import lombok.Data;
 
 @Service
 public class CategoryService {
@@ -412,34 +411,29 @@ public class CategoryService {
     
 
     
-    
-    public void createTagEdges(TagsLinksCreationDTO tagsLinksCreationDTO) throws BusinessException{
+    @Transactional(rollbackFor = Throwable.class)
+    public void createTagTree(TagsTreeCreationDTO tagsTreeDTO) throws BusinessException{
 
-        if (tagsLinksCreationDTO.isClearTree()) {
-        	clearTagsTree();
-        }
+        List<TagsTreeNodeDTO> tree = tagsTreeDTO.getTreeNodes();
 
-        List<TagsLinkDTO> tagsLinksDTOs = tagsLinksCreationDTO.getTagsLinks();
-
-        if(tagsLinksDTOs == null || tagsLinksDTOs.isEmpty()) {
+        if(tree == null || tree.isEmpty()) {
         	return;
         }
 
-        tagsLinksDTOs.forEach(this::validateTagLinkDTO);
-
+        
         Map<Long, TagsEntity> tagsMap = createOrgTagsMap();        
         
-       
-        buildNewTagGraph(tagsLinksDTOs, tagsMap);        
-        persistTagGraph(tagsLinksDTOs, tagsMap);
+        clearTagsTree();
+        buildNewTagGraph(tree, tagsMap);        
+        persistTagGraph(tree, tagsMap);
     }
 
 
 
 
 
-	private void persistTagGraph(List<TagsLinkDTO> tagsLinksDTOs, Map<Long, TagsEntity> tagsMap) {
-		for(TagsLinkDTO tagsLinks : tagsLinksDTOs) {
+	private void persistTagGraph(List<TagsTreeNodeDTO> tagsLinksDTOs, Map<Long, TagsEntity> tagsMap) {
+		for(TagsTreeNodeDTO tagsLinks : tagsLinksDTOs) {
         	Long parentId = tagsLinks.getParentId();
         	setTagGraphId(tagsMap, parentId);
         	
@@ -454,36 +448,68 @@ public class CategoryService {
 
 
 
-	private void buildNewTagGraph(List<TagsLinkDTO> tagsLinksDTOs, Map<Long, TagsEntity> tagsMap)
+	private void buildNewTagGraph(List<TagsTreeNodeDTO> tree, Map<Long, TagsEntity> tagsMap)
 			throws BusinessException {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		List<TagGraphNodeEntity> currentTagNodes = tagNodesRepo.findByTag_OrganizationEntity_Id(orgId);
-		List<TagGraphEdgesEntity> tagsEdges = tagEdgesRepo.findByOrganizationId(orgId); 
-		
-		DirectedAcyclicGraph<TagGraphNodeEntity, DefaultEdge> tagsGraph = createCurrentStateTagsGraph(tagsMap, tagsEdges, currentTagNodes);
+		tree.forEach(node -> createTagSubTree(node, tagsMap));
+	}
 
-        for(TagsLinkDTO tagsLinks : tagsLinksDTOs) {
-            Long parentId = tagsLinks.getParentId();
-            List<Long> childrenIds = getTagChildren(tagsLinks);
-            
-            for (Long childId : childrenIds) { 
-                try {
-                    validateTagEdge(tagsMap, tagsEdges, parentId, childId);
-                    tagsGraph.addEdge(tagsMap.get(childId), tagsMap.get(parentId));                       
-                } catch (IllegalArgumentException e) {
-                    throw new BusinessException("Cycle Detected !",
-                            "Creating a link between id " + childId + " and " + parentId + " would induce a cycle",
-                            NOT_ACCEPTABLE);
-                }
-            }
-        }
+
+
+	
+	
+	private TagGraphNodeEntity createTagSubTree(TagsTreeNodeDTO node, Map<Long, TagsEntity> tagsMap) {
+		List<TagGraphNodeEntity> childrenNodes = createSubTreesForChildrenNodes(node, tagsMap);		
+		TagGraphNodeEntity	savedNode = persistTagTreeNode(node, tagsMap);
+		
+		childrenNodes
+		 .stream()
+		 .map(child -> new TagGraphEdgesEntity(savedNode, child))
+		 .forEach(tagEdgesRepo::save);
+		
+		return savedNode;
 	}
 
 
 
 
 
-	private List<Long> getTagChildren(TagsLinkDTO tagsLinks) {
+	private TagGraphNodeEntity persistTagTreeNode(TagsTreeNodeDTO node, Map<Long, TagsEntity> tagsMap) {
+		return ofNullable(node)
+				.map(TagsTreeNodeDTO::getTagId)
+				.map(tagsMap::get)
+				.map(TagGraphNodeEntity::new)
+				.map(tagNodesRepo::save)
+				.orElseThrow(() -> 
+					new RuntimeBusinessException(
+							format("Failed to create Tree node for tag with id[%d]!", node.getTagId())
+							, "INVALID PARAM: nodes"
+							, NOT_ACCEPTABLE));
+	}
+
+
+
+
+
+	private List<TagGraphNodeEntity> createSubTreesForChildrenNodes(TagsTreeNodeDTO node,
+			Map<Long, TagsEntity> tagsMap) {
+		return ofNullable(node)
+				.map(TagsTreeNodeDTO::getChildren)
+				.orElse(emptyList())
+				.stream()
+				.map(child -> createTagSubTree(child, tagsMap))
+				.collect(toList());
+	}
+	
+	
+	
+	private  TagGraphNodeEntity toTagGraphNodeEntity(TagsEntity tag) {
+		return new TagGraphNodeEntity(tag);
+	}
+	
+	
+
+
+	private List<Long> getTagChildren(TagsTreeNodeDTO tagsLinks) {
 		return ofNullable(tagsLinks.getChildrenIds())
 				.orElse(emptyList());
 	}
@@ -554,8 +580,8 @@ public class CategoryService {
     
     
     
-    public boolean deleteTagLink(List<TagsLinkDTO> tagsLinksDTOs) throws BusinessException {
-        for(TagsLinkDTO tagsLinks : tagsLinksDTOs) {
+    public boolean deleteTagLink(List<TagsTreeNodeDTO> tagsLinksDTOs) throws BusinessException {
+        for(TagsTreeNodeDTO tagsLinks : tagsLinksDTOs) {
             validateTagLinkDTO(tagsLinks);
             validateChildrenIds(tagsLinks);
 
@@ -579,20 +605,20 @@ public class CategoryService {
     
     
     
-    private void validateTagLinkDTO(TagsLinkDTO tagsLinks){
+    private void validateTagLinkDTO(TagsTreeNodeDTO tagTreeNode){
     	Long orgId = securityService.getCurrentUserOrganizationId();
     	
-        if (tagsLinks.getParentId() == null)
+        if (tagTreeNode.getParentId() == null)
             throw new RuntimeBusinessException("MISSING PARAM: parent_id", "Required parent_id is missing", NOT_ACCEPTABLE);
 
-        if (!orgTagsRepo.findByIdAndOrganizationEntity_Id(tagsLinks.getParentId(), orgId).isPresent())
+        if (!orgTagsRepo.findByIdAndOrganizationEntity_Id(tagTreeNode.getParentId(), orgId).isPresent())
             throw new RuntimeBusinessException("INVALID PARAM: parent_id", "Provided parent_id doesn't match any existing tag", NOT_ACCEPTABLE);
     }
 
     
     
     
-    private void validateChildrenIds(TagsLinkDTO tagsLinks) throws BusinessException {
+    private void validateChildrenIds(TagsTreeNodeDTO tagsLinks) throws BusinessException {
         if (tagsLinks.getChildrenIds() == null)
             throw new BusinessException("MISSING PARAM: children_ids", "Required children_ids are missing", NOT_ACCEPTABLE);
     }

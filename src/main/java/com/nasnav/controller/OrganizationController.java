@@ -200,9 +200,9 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "tag/link", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity createTagChildren(@RequestHeader (value = "User-Token") String userToken,
-                                            @RequestBody TagsLinksCreationDTO tagsLinks) throws BusinessException {
-        categoryService.createTagEdges(tagsLinks);
+    public ResponseEntity createTagTree(@RequestHeader (value = "User-Token") String userToken,
+                                            @RequestBody TagsTreeCreationDTO tree) throws BusinessException {
+        categoryService.createTagTree(tree);
         return new ResponseEntity(new JSONObject("{\"Message\":\"Children created successfully\"}").toString(),HttpStatus.OK);
     }
 
@@ -215,7 +215,7 @@ public class OrganizationController {
     })
     @DeleteMapping(value = "tag/link", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity deleteTagChildren(@RequestHeader (value = "User-Token") String userToken,
-                                            @RequestBody List<TagsLinkDTO> tagsLinks) throws BusinessException {
+                                            @RequestBody List<TagsTreeNodeDTO> tagsLinks) throws BusinessException {
         categoryService.deleteTagLink(tagsLinks);
         return new ResponseEntity(new JSONObject("{\"Message\":\"Children removed from parent successfully\"}").toString(),HttpStatus.OK);
     }
