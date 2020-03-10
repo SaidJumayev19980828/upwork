@@ -1,5 +1,7 @@
 package com.nasnav.controller;
 
+import static org.springframework.http.HttpStatus.OK;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
@@ -193,31 +195,18 @@ public class OrganizationController {
         return new ResponseEntity(tag, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Add children to parent tag", nickname = "addTagsLinks", code = 200)
+    @ApiOperation(value = "create a new tag tree", nickname = "createTagTree", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @PostMapping(value = "tag/link", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity createTagTree(@RequestHeader (value = "User-Token") String userToken,
+    @PostMapping(value = "tag/tree", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(OK)
+    public void createTagTree(@RequestHeader (value = "User-Token") String userToken,
                                             @RequestBody TagsTreeCreationDTO tree) throws BusinessException {
         categoryService.createTagTree(tree);
-        return new ResponseEntity(new JSONObject("{\"Message\":\"Children created successfully\"}").toString(),HttpStatus.OK);
     }
 
-
-    @ApiOperation(value = "Delete children from parent tag", nickname = "deleteTagsLinks", code = 200)
-    @ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
-            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
-            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
-    })
-    @DeleteMapping(value = "tag/link", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity deleteTagChildren(@RequestHeader (value = "User-Token") String userToken,
-                                            @RequestBody List<TagsTreeNodeDTO> tagsLinks) throws BusinessException {
-        categoryService.deleteTagLink(tagsLinks);
-        return new ResponseEntity(new JSONObject("{\"Message\":\"Children removed from parent successfully\"}").toString(),HttpStatus.OK);
-    }
 
 }
