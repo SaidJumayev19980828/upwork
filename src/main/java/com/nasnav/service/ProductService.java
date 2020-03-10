@@ -446,7 +446,7 @@ public class ProductService {
 		CriteriaBuilder builder = em.getCriteriaBuilder();
 		CriteriaQuery<StocksEntity> query = builder.createQuery(StocksEntity.class);
 
-		GetQuery getQuery = new GetQuery(params, builder, query).invoke();
+		ProductQuery getQuery = new ProductQuery(params, builder, query).invoke();
 
 		CriteriaQuery<Long> cqCount = builder.createQuery(Long.class);
 		cqCount.select(builder.count(getQuery.getStocksRoot())).where(getQuery.getPredicatesArr());
@@ -2035,7 +2035,7 @@ public class ProductService {
 	}
 
 	@Data
-	private class GetQuery {
+	private class ProductQuery {
 		private ProductSearchParam params;
 		private CriteriaBuilder builder;
 		private CriteriaQuery<StocksEntity> query;
@@ -2043,7 +2043,7 @@ public class ProductService {
 		private Predicate predicatesArr;
 		private Root<StocksEntity> stocksRoot;
 
-		public GetQuery(ProductSearchParam params, CriteriaBuilder builder, CriteriaQuery<StocksEntity> query) {
+		public ProductQuery(ProductSearchParam params, CriteriaBuilder builder, CriteriaQuery<StocksEntity> query) {
 			this.params = params;
 			this.builder = builder;
 			this.query = query;
@@ -2057,7 +2057,7 @@ public class ProductService {
 			return predicatesArr;
 		}
 
-		public GetQuery invoke() {
+		public ProductQuery invoke() {
 			stocksRoot = query.from(StocksEntity.class);
 			Fetch<StocksEntity, OrganizationEntity> organizationsJoin = stocksRoot.fetch("organizationEntity");
 			Fetch<StocksEntity, ProductVariantsEntity> variantsJoin = stocksRoot.fetch("productVariantsEntity");
