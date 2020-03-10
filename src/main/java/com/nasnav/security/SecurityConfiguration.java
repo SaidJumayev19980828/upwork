@@ -80,6 +80,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     //	more fine grained control of the permission (by HttpMethod, by roles) 
 	private  List<AuthPattern> permissions = asList(
 						//url pattern	-------------------------	Method	------------	Roles
+						patternOf("/360view/**"					,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
 					    patternOf( "/order/**"),
 						patternOf( "/stock/**"	 										, getNonCustomersRoles() ),
 						patternOf( "/shop/**"											, setOf(ORGANIZATION_MANAGER, STORE_MANAGER) ),
@@ -118,7 +119,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
    
     private List<AuthPattern> PUBLIC_URLS =
             Arrays.asList(
-					    patternOf("/360view/**")
+					    patternOf("/360view/**"							, HttpMethod.GET)
             			, patternOf("/navbox/**")
                         , patternOf("/user/recover")
                         , patternOf("/user/login/**")

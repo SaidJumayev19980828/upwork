@@ -4,14 +4,19 @@ import com.nasnav.dao.ProductPositionsRepository;
 import com.nasnav.dao.ShopFloorsRepository;
 import com.nasnav.dao.ShopThreeSixtyRepository;
 import com.nasnav.dto.ShopFloorDTO;
+import com.nasnav.dto.ShopThreeSixtyDTO;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.ProductPositionEntity;
 import com.nasnav.persistence.ShopThreeSixtyEntity;
+import com.nasnav.response.ShopResponse;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -77,5 +82,34 @@ public class ShopThreeSixtyService {
         return floors;
     }
 
+    public List<ShopThreeSixtyDTO> getThreeSixtyShops(Long shopId) {
+        return null;
+    }
 
+    public ShopResponse updateThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
+        if (shopThreeSixtyDTO.getId() == null)
+            return createThreeSixtyShop(shopThreeSixtyDTO);
+        else
+            return modifyThreeSixtyShop(shopThreeSixtyDTO);
+    }
+
+    private ShopResponse createThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) {
+        ShopThreeSixtyEntity entity = new ShopThreeSixtyEntity();
+        return saveShopThreeSixtyEntity(entity, shopThreeSixtyDTO.getName());
+    }
+
+    private ShopResponse modifyThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
+        Optional<ShopThreeSixtyEntity> optionalEntity = shop360Repo.findById(shopThreeSixtyDTO.getId());
+        if (!optionalEntity.isPresent())
+            throw new BusinessException("Provided shop_id doesn't match any existing shop360s","INVALID_PARAM: id",
+                    HttpStatus.NOT_ACCEPTABLE);
+        ShopThreeSixtyEntity entity = optionalEntity.get();
+        return saveShopThreeSixtyEntity(entity, shopThreeSixtyDTO.getName());
+    }
+
+    private ShopResponse saveShopThreeSixtyEntity(ShopThreeSixtyEntity entity, String shopName) {
+        entity.setSceneName(shopName);
+        shop360Repo.save(entity);
+        return new ShopResponse(entity.getId(), HttpStatus.OK);
+    }
 }

@@ -1,5 +1,8 @@
 package com.nasnav.controller;
 
+import com.nasnav.dto.ShopThreeSixtyDTO;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.response.ShopResponse;
 import com.nasnav.service.ShopThreeSixtyService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
@@ -41,14 +44,21 @@ public class ShopThreeSixtyController {
 
 
 
-    @ApiOperation(value = "Get information about shop 360 sections", nickname = "getShop360Sections")
+    @ApiOperation(value = "Get list of shop360s of specific shop", nickname = "getShop360Shops")
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
-    @GetMapping(value = "/sections", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity getShop360Sections(@RequestParam("shop_id") Long shopId) {
-        Map<String, List> res = new HashMap<>();
-        res.put("floors", shop360Svc.getSections(shopId));
-        return new ResponseEntity<>(res, HttpStatus.OK);
+    @GetMapping(value = "/shops", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public List getShop360Shops(@RequestParam("shop_id") Long shopId) {
+        return shop360Svc.getThreeSixtyShops(shopId);
     }
 
+
+    @ApiOperation(value = "Create/Update shop360", nickname = "updateShop360")
+    @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
+    @PostMapping(value = "/shops", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ShopResponse updateThreeSixtyShop(@RequestHeader("User-Token") String userToken,
+                                        @RequestParam ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
+        return shop360Svc.updateThreeSixtyShop(shopThreeSixtyDTO);
+    }
 }
