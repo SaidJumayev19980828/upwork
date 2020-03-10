@@ -18,13 +18,24 @@ public interface TagGraphEdgesRepository extends CrudRepository<TagGraphEdgesEnt
     List<TagGraphEdgesEntity> findByChildIdIn(Set<Long> childrenIds);
     List<TagGraphEdgesEntity> findByParentIdIsNotNullAndChildId(Long childId);
     TagGraphEdgesEntity findByParentIdIsNullAndChildId(Long childId);
-    @Query(nativeQuery = true)
-    List<Pair> getTagsLinks(@Param("childIds") Set<Long> childIds);
 
-    @Query(value = "select t from TagGraphEdgesEntity t where t.parentId in :ids or t.childId in :ids")
+    
+    @Query(value = "select edge from TagGraphEdgesEntity edge "
+    		+ " left join edge.parent parentNode "
+    		+ " left join parentNode.tag parentTag "
+    		+ " left join edge.child childNode "
+    		+ " left join childNode.tag childTag "
+    		+ " where parentTag.id in :ids or childTag.id in :ids")
     List<TagGraphEdgesEntity> getTagsLinks(@Param("ids") List<Long> ids);
 
-    @Query(value = "select * from tag_graph_edges e where e.parent_id in (select t.id from tags t where organization_id = :orgId)" +
-            " or e.child_id in (select t.id from Tags t where organization_id = :orgId)", nativeQuery = true)
+    
+    @Query("select edge from TagGraphEdgesEntity edge "
+    		+ " left join edge.parent parentNode "
+    		+ " left join parentNode.tag parentTag "
+    		+ " left join parentTag.organizationEntity parentTagOrg"
+    		+ " left join edge.child childNode "
+    		+ " left join childNode.tag childTag "
+    		+ " left join childTag.organizationEntity childTagOrg"
+    		+ " where parentTagOrg.id = :orgId or childTagOrg.id = :orgId")
     List<TagGraphEdgesEntity> findByOrganizationId(@Param("orgId") Long orgId);
 }

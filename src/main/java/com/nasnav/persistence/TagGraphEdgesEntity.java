@@ -1,38 +1,39 @@
 package com.nasnav.persistence;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.nasnav.dto.Pair;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import javax.persistence.*;
-
-@SqlResultSetMapping(
-        name = "TagsEdgesPair",
-        classes = @ConstructorResult(
-                targetClass = Pair.class,
-                columns = {
-                        @ColumnResult(name = "parent_id", type = long.class),
-                        @ColumnResult(name = "child_id", type = long.class)
-                }))
-@NamedNativeQuery(
-        name = "TagGraphEdgesEntity.getTagsLinks",
-        query = "SELECT t.parent_id, t.child_id FROM tag_graph_edges t WHERE t.child_id in :childIds",
-        resultSetMapping = "TagsEdgesPair"
-)
 
 @Table(name = "tag_graph_edges")
 @Entity
 @Data
+@NoArgsConstructor
 public class TagGraphEdgesEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="child_id")
-    private Long childId;
+    @ManyToOne
+    @JoinColumn(name="child_id")
+    private TagGraphNodeEntity child;
 
-    @Column(name="parent_id")
-    private Long parentId;
+    @ManyToOne
+    @JoinColumn(name="parent_id")
+    private TagGraphNodeEntity parent;
+    
+    
+    public TagGraphEdgesEntity(TagGraphNodeEntity parent, TagGraphNodeEntity child) {
+    	this.parent = parent;
+    	this.child = child;
+    }
 
 }

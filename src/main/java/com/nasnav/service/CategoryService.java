@@ -34,6 +34,7 @@ import com.nasnav.dao.CategoriesRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.TagGraphEdgesRepository;
+import com.nasnav.dao.TagGraphNodeRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.CategoryDTO;
 import com.nasnav.dto.CategoryRepresentationObject;
@@ -47,10 +48,13 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.CategoriesEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.TagGraphEdgesEntity;
+import com.nasnav.persistence.TagGraphNodeEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.CategoryResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.TagResponse;
+
+import lombok.Data;
 
 @Service
 public class CategoryService {
@@ -69,6 +73,9 @@ public class CategoryService {
 
     @Autowired
     private TagGraphEdgesRepository tagEdgesRepo;
+    
+    @Autowired
+    private TagGraphNodeRepository tagNodesRepo;
 
     @Autowired
     private SecurityService securityService;
@@ -265,8 +272,14 @@ public class CategoryService {
     private List<Long> getTagsEdgesSubList(List<TagGraphEdgesEntity> edges, Long id) {
         return edges
         		.stream()
-        		.filter(tag -> tag.getChildId().equals(id))
-        		.map(tag -> tag.getParentId())
+        		.filter(tag -> 
+        				ofNullable(tag)
+        				.map(TagGraphEdgesEntity::getChild)
+        				.map(TagGraphNodeEntity::getId)
+        				.orElse(-1L)
+        				.equals(id))
+        		.map(TagGraphEdgesEntity::getParent)
+        		.map(TagGraphNodeEntity::getId)
         		.collect(toList());
     }
 
@@ -415,9 +428,9 @@ public class CategoryService {
         tagsLinksDTOs.forEach(this::validateTagLinkDTO);
 
         Map<Long, TagsEntity> tagsMap = createOrgTagsMap();        
-        List<Pair> tagsEdges = tagEdgesRepo.getTagsLinks(tagsMap.keySet()); 
+        
        
-        buildNewTagGraph(tagsLinksDTOs, tagsMap, tagsEdges);        
+        buildNewTagGraph(tagsLinksDTOs, tagsMap);        
         persistTagGraph(tagsLinksDTOs, tagsMap);
     }
 
@@ -431,7 +444,7 @@ public class CategoryService {
         	setTagGraphId(tagsMap, parentId);
         	
         	for (Long childId : getTagChildren(tagsLinks)) {
-	        	 addTagsLink(parentId, childId);	             
+	        	 persistTagsLink(parentId, childId, tagsMap);	             
 	             setTagGraphId(tagsMap, childId);
         	}
         }
@@ -441,9 +454,13 @@ public class CategoryService {
 
 
 
-	private void buildNewTagGraph(List<TagsLinkDTO> tagsLinksDTOs, Map<Long, TagsEntity> tagsMap, List<Pair> tagsEdges)
+	private void buildNewTagGraph(List<TagsLinkDTO> tagsLinksDTOs, Map<Long, TagsEntity> tagsMap)
 			throws BusinessException {
-		DirectedAcyclicGraph<TagsEntity, DefaultEdge> tagsGraph = createCurrentStateTagsGraph(tagsMap, tagsEdges);
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		List<TagGraphNodeEntity> currentTagNodes = tagNodesRepo.findByTag_OrganizationEntity_Id(orgId);
+		List<TagGraphEdgesEntity> tagsEdges = tagEdgesRepo.findByOrganizationId(orgId); 
+		
+		DirectedAcyclicGraph<TagGraphNodeEntity, DefaultEdge> tagsGraph = createCurrentStateTagsGraph(tagsMap, tagsEdges, currentTagNodes);
 
         for(TagsLinkDTO tagsLinks : tagsLinksDTOs) {
             Long parentId = tagsLinks.getParentId();
@@ -475,36 +492,23 @@ public class CategoryService {
 
 
 
-	private void validateTagEdge(Map<Long, TagsEntity> tagsMap, List<Pair> tagsEdges, Long parentId, Long childId)
+	private void validateTagEdge(Map<Long, TagsEntity> tagsMap, List<TagGraphEdgesEntity> tagsEdges, Long parentId, Long childId)
 			throws BusinessException {
 		if (tagsMap.get(childId) == null)
 		    throw new BusinessException("INVALID_PARAM: child_id",
 		            "Provided child_id(" + childId + ") doesn't match any existing tag", NOT_ACCEPTABLE);
-
-		if (tagsEdges.contains(new Pair(parentId, childId)))
-		    throw new BusinessException("INVALID_PARAM",
-		            "Tag link with parent_id " + parentId + " and child_id " + childId + " already exist!", HttpStatus.NOT_ACCEPTABLE);
 	}
+	
+	
 
 
 
 
-
-	private DirectedAcyclicGraph<TagsEntity, DefaultEdge> createCurrentStateTagsGraph(Map<Long, TagsEntity> tagsMap,
-			List<Pair> tagsEdges) {
-		List<TagsEntity> orgTags = tagsMap.values().stream().collect(toList());
-        
-        DirectedAcyclicGraph<TagsEntity, DefaultEdge> tagsGraph = new DirectedAcyclicGraph<>(DefaultEdge.class);
-        for (TagsEntity tag : orgTags) {
-        	tagsGraph.addVertex(tag);
-        }
-
-        for (Pair edge : tagsEdges) {
-        	if (tagsMap.get(edge.getFirst()) != null) {
-        		tagsGraph.addEdge(tagsMap.get(edge.getSecond()), tagsMap.get(edge.getFirst()));
-        	}
-        }
-            
+	private DirectedAcyclicGraph<TagGraphNodeEntity, DefaultEdge> createCurrentStateTagsGraph(Map<Long, TagsEntity> tagsMap,
+			List<TagGraphEdgesEntity> tagsEdges, List<TagGraphNodeEntity> currentTagNodes) {
+        DirectedAcyclicGraph<TagGraphNodeEntity, DefaultEdge> tagsGraph = new DirectedAcyclicGraph<>(DefaultEdge.class);        
+        currentTagNodes.forEach(tagsGraph::addVertex);
+        tagsEdges.forEach(edge -> tagsGraph.addEdge(edge.getChild(), edge.getParent()));            
 		return tagsGraph;
 	}
 
@@ -524,10 +528,16 @@ public class CategoryService {
 
 	
 	
-    private void addTagsLink(Long parentId, Long childId) {
-        TagGraphEdgesEntity edge = new TagGraphEdgesEntity();
-        edge.setChildId(childId);
-        edge.setParentId(parentId);
+	
+	
+    private void persistTagsLink(Long parentId, Long childId, Map<Long, TagsEntity> tagsMap) {        
+        TagsEntity parentTag = tagsMap.get(parentId);
+        TagsEntity childTag = tagsMap.get(childId);
+        
+        TagGraphNodeEntity parentNode = new TagGraphNodeEntity(parentTag);
+        TagGraphNodeEntity childeNode = new TagGraphNodeEntity(childTag);
+        
+        TagGraphEdgesEntity edge = new TagGraphEdgesEntity(parentNode, childeNode);
         tagEdgesRepo.save(edge);
     }
 
@@ -624,3 +634,5 @@ public class CategoryService {
     }
 
 }
+
+
