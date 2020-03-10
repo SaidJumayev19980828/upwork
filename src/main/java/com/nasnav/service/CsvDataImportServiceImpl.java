@@ -123,6 +123,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 				.put("externalId", "external_id")
 				.put("barcode", "barcode")
 				.put("productName", "product_name")
+				.put("productId", "product_id")
 				.getMap();
 	
 	
@@ -471,6 +472,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		List<String> headers = new ArrayList<>();
 		headers.addAll(IMG_CSV_BASE_HEADERS);
 		headers.add("product_name");
+		headers.add("product_id");
 		
 		Long orgId = security.getCurrentUserOrganizationId();
 		List<VariantWithNoImagesDTO> variants = productImgsCustomRepo.getProductsWithNoImages(orgId);
