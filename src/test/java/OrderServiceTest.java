@@ -1569,7 +1569,54 @@ public class OrderServiceTest {
 					, countBefore - countAfter
 					, countAllBefore - countAllAfter);
 	}
-	
+
+	@Test
+	public void testOrderListDeletion() {
+		ResponseEntity<String> response = template.exchange("/order?order_ids=330035&order_ids=330037",
+				HttpMethod.DELETE,
+				new HttpEntity<>(TestCommons.getHeaders("131415")),
+				String.class);
+		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(14, orderRepository.findAll().size());
+	}
+
+	@Test
+	public void testOrderListDeletionUnAuthorized() {
+		ResponseEntity<String> response = template.exchange("/order?order_ids=330035&order_ids=330037",
+				HttpMethod.DELETE,
+				new HttpEntity<>(TestCommons.getHeaders("sdrf8s")),
+				String.class);
+		assertEquals(403, response.getStatusCodeValue());
+	}
+
+	@Test
+	public void testOrderListDeletionUnAuthenticated() {
+		ResponseEntity<String> response = template.exchange("/order?order_ids=330035&order_ids=330037",
+				HttpMethod.DELETE,
+				new HttpEntity<>(TestCommons.getHeaders("13141")),
+				String.class);
+		assertEquals(401, response.getStatusCodeValue());
+	}
+
+	@Test
+	public void testOrderListDeletionOrderInDifferentOrg() {
+		ResponseEntity<String> response = template.exchange("/order?order_ids=330033&order_ids=330037",
+				HttpMethod.DELETE,
+				new HttpEntity<>(TestCommons.getHeaders("131415")),
+				String.class);
+		assertEquals(406, response.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void testOrderListDeletionNotNewOrder() {
+		ResponseEntity<String> response = template.exchange("/order?order_ids=330038&order_ids=330037",
+				HttpMethod.DELETE,
+				new HttpEntity<>(TestCommons.getHeaders("131415")),
+				String.class);
+		assertEquals(406, response.getStatusCodeValue());
+	}
+
 }
 
 

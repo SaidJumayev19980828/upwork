@@ -132,4 +132,15 @@ public class OrdersController {
 		
     	 this.orderService.deleteCurrentOrders();    	
     }
+
+
+	@ApiOperation(value = "delete list of orders", nickname = "deleteOrders", code = 200)
+	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
+	@DeleteMapping( produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
+	public void deleteOrders(@RequestHeader(name = "User-Token") String userToken,
+							 @RequestParam("order_ids") List<Long> orderIds) throws BusinessException {
+
+		this.orderService.deleteOrders(orderIds);
+	}
 }

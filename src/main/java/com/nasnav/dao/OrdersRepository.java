@@ -61,4 +61,14 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	Long countByShopsEntity_id(Long shopId);
 
 	List<OrdersEntity> findByPaymentEntity_idOrderById(Long id);
+
+	@Query(value = "select o from OrdersEntity o where o.id in :orderIds ")
+	List<OrdersEntity> getListOfNewOrders(@Param("orderIds") List<Long> orderIds);
+
+    @Transactional
+    @Modifying
+    @Query("delete from OrdersEntity o where o.status = :status and o.id in :orderIds and o.organizationEntity.id = :orgId")
+    void deleteByStatusAndIdInAndOrgId(@Param("status") Integer status,
+                                       @Param("orderIds") List<Long> orderIds,
+                                       @Param("orgId") Long orgId);
 }
