@@ -1,13 +1,14 @@
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.POST;
 
 import java.util.List;
 import java.util.Set;
 
 import javax.sql.DataSource;
 
-import com.nasnav.dao.TagGraphEdgesRepository;
-import com.nasnav.persistence.TagsEntity;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.alg.cycle.CycleDetector;
@@ -39,8 +40,10 @@ import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
 import com.nasnav.controller.AdminController;
 import com.nasnav.dao.CategoryRepository;
+import com.nasnav.dao.TagGraphEdgesRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.TagsRepresentationObject;
+import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.CategoryResponse;
 import com.nasnav.service.CategoryService;
 import com.nasnav.test.commons.TestCommons;
@@ -138,6 +141,9 @@ public class CategoryManagmentTest {
         Assert.assertTrue(200 == response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void createCategoryMissingNameTest() {
         String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\", \"operation\": \"create\"}";
@@ -146,6 +152,9 @@ public class CategoryManagmentTest {
         Assert.assertTrue(406 == response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void createCategoryInvalidNameTest() {
         String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes#$\", \"operation\": \"create\"}";
@@ -154,6 +163,9 @@ public class CategoryManagmentTest {
         Assert.assertTrue(406 == response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void createCategoryNonExistingParentTest() {
         String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 200}";
@@ -162,6 +174,9 @@ public class CategoryManagmentTest {
         Assert.assertTrue(406 == response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void updateCategorySuccessTest() {
         String body = "{\"id\":201,\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
@@ -170,6 +185,9 @@ public class CategoryManagmentTest {
         Assert.assertTrue(200 == response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void updateCategoryNoIdTest() {
         String body = "{\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
@@ -178,6 +196,10 @@ public class CategoryManagmentTest {
         Assert.assertTrue(406 == response.getStatusCode().value());
     }
 
+    
+    
+    
+    
     @Test
     public void updateCategoryNoEntityTest() {
         String body = "{\"id\":2000009,\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
@@ -186,6 +208,10 @@ public class CategoryManagmentTest {
         Assert.assertTrue(406 == response.getStatusCode().value());
     }
 
+    
+    
+    
+    
     @Test
     public void updateCategoryInvalidNameTest() {
         String body = "{\"id\":202,\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes#$\", \"operation\": \"update\"}";
@@ -194,6 +220,9 @@ public class CategoryManagmentTest {
         Assert.assertTrue(406 == response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void updateCategoryNonExistingParentTest() {
         String body = "{\"id\":202,\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 200}";
@@ -202,6 +231,9 @@ public class CategoryManagmentTest {
         Assert.assertTrue(406 == response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void deleteCategorySuccessTest() {
         //create a category
@@ -216,6 +248,10 @@ public class CategoryManagmentTest {
         Assert.assertTrue(200 == deleteResponse.getStatusCode().value());
     }
 
+    
+    
+    
+    
     @Test
     public void deleteCategoryMissingIdTest() {
         HttpHeaders header = TestCommons.getHeaders("abcdefg");
@@ -224,6 +260,9 @@ public class CategoryManagmentTest {
         Assert.assertTrue(400 == deleteResponse.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void deleteCategoryMissingCategoryTest() {
         HttpHeaders header = TestCommons.getHeaders("abcdefg");
@@ -232,6 +271,9 @@ public class CategoryManagmentTest {
         Assert.assertTrue(406 == deleteResponse.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void deleteCategoryUsedCategoryTest() {
         HttpHeaders header = TestCommons.getHeaders("abcdefg");
@@ -241,6 +283,8 @@ public class CategoryManagmentTest {
     }
 
 
+    
+    
     @Test
     public void categoriesDAGCycles() throws Exception {
         DirectedAcyclicGraph graph = createGraph();
@@ -420,95 +464,49 @@ public class CategoryManagmentTest {
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void createTagsLinkSuccess() {
         String body = "{\"tags_links\":[{\"parent_id\":5001, \"children_ids\":[5004, 5005]}, {\"parent_id\":5004, \"children_ids\":[5005]}]}";
 
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.postForEntity("/organization/tag/link", json, String.class);
+        ResponseEntity<String> response = template.postForEntity("/organization/tag/tree", json, String.class);
 
         Assert.assertEquals(200, response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void createTagsLinkMissingChildId() { // creates top level tag (add graph_id to each parent)
         String body = "{\"tags_links\":[{\"parent_id\":5003}]}";
 
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.postForEntity("/organization/tag/link", json, String.class);
+        ResponseEntity<String> response = template.postForEntity("/organization/tag/tree", json, String.class);
 
         Assert.assertEquals(200, response.getStatusCode().value());
     }
 
+    
+    
     @Test
     public void createTagsLinkInvalidChildId() {
         String body = "{\"tags_links\":[{\"parent_id\":5003, \"children_ids\":[5007]}]}";
 
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.postForEntity("/organization/tag/link", json, String.class);
+        ResponseEntity<String> response = template.postForEntity("/organization/tag/tree", json, String.class);
 
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
-    @Test
-    public void deleteTopLevelTagsLinkMissingId() {
-        String body = "[{\"parent_id\":null, \"children_ids\":null}]";
+    
 
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/organization/tag/link", HttpMethod.DELETE, json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
-    }
+    
 
-    @Test
-    public void deleteTopLevelTagsLinkInvalidId() {
-        String body = "[{\"parent_id\":null, \"children_ids\":[5002]}]";
-
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/organization/tag/link", HttpMethod.DELETE, json, String.class);
-
-        Assert.assertEquals(406, response.getStatusCode().value());
-    }
-
-    @Test
-    public void deleteTagsLinkMissingChildId() {
-        String body = "[{\"parent_id\":5001}]";
-
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/organization/tag/link", HttpMethod.DELETE, json, String.class);
-
-        Assert.assertEquals(406, response.getStatusCode().value());
-    }
-
-    @Test
-    public void deleteTagsLinkInvalidChildId() {
-        String body = "[{\"parent_id\":5001, \"children_ids\":[5008]}]";
-
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/organization/tag/link", HttpMethod.DELETE, json, String.class);
-
-        Assert.assertEquals(406, response.getStatusCode().value());
-    }
-
-    @Test
-    public void deleteTagsLinkSuccess() {
-        String body = "[{\"parent_id\":5001, \"children_ids\":[5002]}, {\"parent_id\":5001, \"children_ids\":[5003]}]";
-
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/organization/tag/link", HttpMethod.DELETE, json, String.class);
-
-        Assert.assertEquals(200, response.getStatusCode().value());
-    }
-
-    @Test
-    public void deleteTagsLinkNonExistingLink() {
-        String body = "[{\"parent_id\":5001, \"children_ids\":[5004]}]";
-
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/organization/tag/link", HttpMethod.DELETE, json, String.class);
-
-        Assert.assertEquals(406, response.getStatusCode().value());
-    }
 
     @Test
     public void addProductTagsSuccess() {
@@ -520,6 +518,9 @@ public class CategoryManagmentTest {
         Assert.assertEquals(200, response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void addProductTagsMissingProducts() {
         String body = "{\"tags_ids\":[5004, 5006]}";
@@ -540,6 +541,9 @@ public class CategoryManagmentTest {
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void addProductTagsInvalidProduct() {
         String body = "{\"products_ids\":[1009], \"tags_ids\":[5004, 5006]}";
@@ -550,6 +554,9 @@ public class CategoryManagmentTest {
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void addProductTagsInvalidTag() {
         String body = "{\"products_ids\":[1002], \"tags_ids\":[5009, 5006]}";
@@ -560,6 +567,9 @@ public class CategoryManagmentTest {
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void deleteProductTagsSuccess() {
         String body = "{\"products_ids\":[1006], \"tags_ids\":[5006]}";
@@ -570,6 +580,9 @@ public class CategoryManagmentTest {
         Assert.assertEquals(200, response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void deleteProductTagsNonExistingLink() {
         String body = "{\"products_ids\":[1005], \"tags_ids\":[5006]}";
@@ -580,6 +593,9 @@ public class CategoryManagmentTest {
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void deleteProductTagsMissingProductId() {
         String body = "{\"tags_ids\":[5006]}";
@@ -590,6 +606,10 @@ public class CategoryManagmentTest {
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
+    
+    
+    
+    
     @Test
     public void deleteProductTagsMissingTagId() {
         String body = "{\"products_ids\":[1005]}";
@@ -600,6 +620,10 @@ public class CategoryManagmentTest {
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
+    
+    
+    
+    
     @Test
     public void deleteTagSuccess() {
         HttpEntity<Object> json = TestCommons.getHttpEntity("hijkllm");
@@ -608,6 +632,8 @@ public class CategoryManagmentTest {
         Assert.assertEquals(200, response.getStatusCode().value());
     }
 
+    
+    
     @Test
     public void deleteTagMissingTag() {
         HttpEntity<Object> json = TestCommons.getHttpEntity("hijkllm");
@@ -616,6 +642,9 @@ public class CategoryManagmentTest {
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
+    
+    
+    
     @Test
     public void deleteTagWithLinkedTags() {
         HttpEntity<Object> json = TestCommons.getHttpEntity("hijkllm");
@@ -623,33 +652,21 @@ public class CategoryManagmentTest {
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
-    @Test
-    public void clearTagsLink() {
-        String body = "{\"clear_tree\":true}";
-
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.postForEntity("/organization/tag/link", json, String.class);
-
-
-        for(TagsEntity tag : orgTagsRepo.findByOrganizationEntity_Id(99001L)) {
-            assertTrue(tag.getGraphId() == null);
-        }
-        assertTrue(tagEdgesRepo.findByOrganizationId(99001L).isEmpty());
-
-        Assert.assertEquals(200, response.getStatusCode().value());
-    }
-
+    
+    
+    
+    
     @Test
     public void deleteTagWithLinkedProducts() {
 
         // adding tag to product first
-        String body = "{\"products_ids\":[1006], \"tags_ids\":[5005]}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        template.exchange("/product/tag", HttpMethod.POST, json, String.class);
+        String body = "{\"products_ids\":[1006], \"tags_ids\":[5007]}";
+        HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
+        template.exchange("/product/tag", POST, json, String.class);
 
         // trying to delete tag
-        json = TestCommons.getHttpEntity("hijkllm");
-        ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5005", HttpMethod.DELETE, json, String.class);
+        json = getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5007", DELETE, json, String.class);
         Assert.assertEquals(200, response.getStatusCode().value());
     }
 
@@ -668,6 +685,9 @@ public class CategoryManagmentTest {
         }
         return l;
     }
+    
+    
+    
 
     private DirectedAcyclicGraph createGraph() {
         DirectedAcyclicGraph<String, DefaultEdge> graph = new DirectedAcyclicGraph<>(DefaultEdge.class);
