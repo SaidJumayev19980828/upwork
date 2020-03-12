@@ -4,6 +4,8 @@ import com.nasnav.dao.ProductPositionsRepository;
 import com.nasnav.dao.ShopFloorsRepository;
 import com.nasnav.dao.ShopThreeSixtyRepository;
 import com.nasnav.dto.ShopFloorDTO;
+import com.nasnav.dto.ShopJsonDataDTO;
+import com.nasnav.dto.ShopProductPositionsDTO;
 import com.nasnav.dto.ShopThreeSixtyDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.ProductPositionEntity;
@@ -82,8 +84,9 @@ public class ShopThreeSixtyService {
         return floors;
     }
 
-    public List<ShopThreeSixtyDTO> getThreeSixtyShops(Long shopId) {
-        return null;
+    public ShopThreeSixtyDTO getThreeSixtyShops(Long shopId) {
+        ShopThreeSixtyEntity entity = shop360Repo.findByShopsEntity_Id(shopId);
+        return entity != null ? (ShopThreeSixtyDTO) entity.getRepresentation() : null;
     }
 
     public ShopResponse updateThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
@@ -110,6 +113,56 @@ public class ShopThreeSixtyService {
     private ShopResponse saveShopThreeSixtyEntity(ShopThreeSixtyEntity entity, String shopName) {
         entity.setSceneName(shopName);
         shop360Repo.save(entity);
+        return new ShopResponse(entity.getId(), HttpStatus.OK);
+    }
+
+
+    public ShopResponse updateThreeSixtyShopJsonData(ShopJsonDataDTO dataDTO) throws BusinessException {
+        validateJsonData(dataDTO);
+
+        Optional<ShopThreeSixtyEntity> entity = shop360Repo.findById(dataDTO.getView360Id());
+
+        if (!entity.isPresent())
+            throw new BusinessException("Provide view360_id doesn't match any existing shop",
+                    "INVALID_PARAM: view360_id", HttpStatus.NOT_ACCEPTABLE);
+
+        ShopThreeSixtyEntity shopEntity = entity.get();
+
+        if (dataDTO.getType().equals("web"))
+            shopEntity.setWebJsonData(dataDTO.getJson());
+        else if (dataDTO.getType().equals("mobile"))
+            shopEntity.setMobileJsonData(dataDTO.getJson());
+        else
+            throw new BusinessException("Provide type "+dataDTO.getType()+" is invalid",
+                    "INVALID_PARAM: type", HttpStatus.NOT_ACCEPTABLE);
+
+        shop360Repo.save(shopEntity);
+        return new ShopResponse(shopEntity.getId(), HttpStatus.OK);
+    }
+
+    private void validateJsonData(ShopJsonDataDTO dataDTO) throws BusinessException {
+        if (dataDTO.getView360Id() == null)
+            throw new BusinessException("Must provide view360_id of JsonData",
+                    "MISSING_PARAM: view360_id", HttpStatus.NOT_ACCEPTABLE);
+
+        if (dataDTO.getType() == null)
+            throw new BusinessException("Must provide type for JsonData (web or mobile)",
+                    "MISSING_PARAM: type", HttpStatus.NOT_ACCEPTABLE);
+
+    }
+
+
+    public ShopResponse updateThreeSixtyShopProductPositions(ShopProductPositionsDTO productPositionsDTO) throws BusinessException {
+        ProductPositionEntity entity = productPosRepo.findByShopsThreeSixtyEntity_Id(productPositionsDTO.getView360Id());
+
+        if (entity == null)
+            throw new BusinessException("Provide view360_id doesn't match any existing shop",
+                    "INVALID_PARAM: view360_id", HttpStatus.NOT_ACCEPTABLE);
+
+
+        entity.setPositionsJsonData(productPositionsDTO.getProductPositions());
+
+        productPosRepo.save(entity);
         return new ShopResponse(entity.getId(), HttpStatus.OK);
     }
 }

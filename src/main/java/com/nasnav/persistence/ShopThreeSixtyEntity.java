@@ -3,6 +3,7 @@ package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.dto.ShopThreeSixtyDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -59,6 +60,9 @@ public class ShopThreeSixtyEntity implements BaseEntity{
 
     @Override
     public BaseRepresentationObject getRepresentation() {
-        return null;
+        ShopThreeSixtyDTO shopDTO = new ShopThreeSixtyDTO();
+        shopDTO.setId(getId());
+        shopDTO.setName(getSceneName());
+        return shopDTO;
     }
 }

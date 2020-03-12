@@ -1,5 +1,7 @@
 package com.nasnav.controller;
 
+import com.nasnav.dto.ShopJsonDataDTO;
+import com.nasnav.dto.ShopProductPositionsDTO;
 import com.nasnav.dto.ShopThreeSixtyDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ShopResponse;
@@ -43,12 +45,22 @@ public class ShopThreeSixtyController {
     }
 
 
+    @ApiOperation(value = "Get information about shop 360 sections", nickname = "getShop360Sections")
+    @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
+    @GetMapping(value = "/sections", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity getShop360Sections(@RequestParam("shop_id") Long shopId) {
+        Map<String, List> res = new HashMap<>();
+        res.put("floors", shop360Svc.getSections(shopId));
+        return new ResponseEntity<>(res, HttpStatus.OK);
+    }
 
-    @ApiOperation(value = "Get list of shop360s of specific shop", nickname = "getShop360Shops")
+
+    @ApiOperation(value = "Get shop360s of specific shop", nickname = "getShop360s")
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @GetMapping(value = "/shops", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public List getShop360Shops(@RequestParam("shop_id") Long shopId) {
+    public ShopThreeSixtyDTO getShop360Shops(@RequestParam("shop_id") Long shopId) {
         return shop360Svc.getThreeSixtyShops(shopId);
     }
 
@@ -58,7 +70,29 @@ public class ShopThreeSixtyController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @PostMapping(value = "/shops", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopResponse updateThreeSixtyShop(@RequestHeader("User-Token") String userToken,
-                                        @RequestParam ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
+                                             @RequestBody ShopThreeSixtyDTO shopThreeSixtyDTO)
+            throws BusinessException {
         return shop360Svc.updateThreeSixtyShop(shopThreeSixtyDTO);
+    }
+
+
+    @ApiOperation(value = "Create/Update shop360 json data", nickname = "updateShop360JsonData")
+    @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
+    @PostMapping(value = "/json_data", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ShopResponse updateThreeSixtyShopJsonData(@RequestHeader("User-Token") String userToken,
+                                                     @RequestBody ShopJsonDataDTO jsonDataDTO)
+            throws BusinessException {
+        return shop360Svc.updateThreeSixtyShopJsonData(jsonDataDTO);
+    }
+
+    @ApiOperation(value = "Create/Update shop360 product positions", nickname = "updateShop360ProductPositions")
+    @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
+    @PostMapping(value = "/product_positions", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ShopResponse updateThreeSixtyShopProductPositions(@RequestHeader("User-Token") String userToken,
+                                                     @RequestBody ShopProductPositionsDTO jsonDTO)
+            throws BusinessException {
+        return shop360Svc.updateThreeSixtyShopProductPositions(jsonDTO);
     }
 }
