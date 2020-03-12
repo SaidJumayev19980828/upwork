@@ -1246,18 +1246,14 @@ public class OrderServiceImpl implements OrderService {
 	public void deleteOrders(List<Long> orderIds) throws BusinessException {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 
-		if (!securityService.currentUserHasRole(ORGANIZATION_MANAGER) &&
-				!securityService.currentUserHasRole(ORGANIZATION_ADMIN))
-			throw new BusinessException("User has no access to this api!", "", HttpStatus.FORBIDDEN);
-
 		validateOrdersDeletionIds(orderIds, orgId);
 
-		basketRepository.deleteByOrderIdIn(orderIds);
+		basketRepository.deleteByOrderIdInAndOrganizationIdAndStatus(orderIds, orgId, NEW.getValue());
 		ordersRepository.deleteByStatusAndIdInAndOrgId( NEW.getValue(), orderIds, orgId);
 	}
 
 	private void validateOrdersDeletionIds(List<Long> orderIds, Long orgId) throws BusinessException {
-		List<OrdersEntity> orders = ordersRepository.getListOfNewOrders(orderIds);
+		List<OrdersEntity> orders = ordersRepository.getNewOrders(orderIds);
 
 		for(OrdersEntity order : orders) {
 			if (!order.getOrganizationEntity().getId().equals(orgId))

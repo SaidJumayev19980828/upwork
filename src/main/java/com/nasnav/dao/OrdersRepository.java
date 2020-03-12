@@ -62,8 +62,8 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 
 	List<OrdersEntity> findByPaymentEntity_idOrderById(Long id);
 
-	@Query(value = "select o from OrdersEntity o where o.id in :orderIds ")
-	List<OrdersEntity> getListOfNewOrders(@Param("orderIds") List<Long> orderIds);
+	@Query(value = "select o from OrdersEntity o join OrganizationEntity org on o.organizationEntity = org where o.id in :orderIds ")
+	List<OrdersEntity> getNewOrders(@Param("orderIds") List<Long> orderIds);
 
     @Transactional
     @Modifying

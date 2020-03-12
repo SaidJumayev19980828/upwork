@@ -80,6 +80,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     //	more fine grained control of the permission (by HttpMethod, by roles) 
 	private  List<AuthPattern> permissions = asList(
 						//url pattern	-------------------------	Method	------------	Roles
+						patternOf( "/order"						,HttpMethod.DELETE  , setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 					    patternOf( "/order/**"),
 						patternOf( "/stock/**"	 										, getNonCustomersRoles() ),
 						patternOf( "/shop/**"											, setOf(ORGANIZATION_MANAGER, STORE_MANAGER) ),
