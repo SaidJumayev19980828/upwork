@@ -7,8 +7,6 @@ import java.util.List;
 
 @Data
 public class TagsTreeCreationDTO {
-    @JsonProperty(value = "clear_tree")
-    private boolean clearTree;
 
     @JsonProperty(value = "nodes")
     private List<TagsTreeNodeDTO> treeNodes;

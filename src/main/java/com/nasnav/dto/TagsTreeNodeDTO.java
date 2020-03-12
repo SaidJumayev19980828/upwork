@@ -11,6 +11,6 @@ public class TagsTreeNodeDTO {
     @JsonProperty("tag_id")
     private Long tagId;
         
-    @JsonProperty(value = "children_nodes")
+    @JsonProperty(value = "children")
     private List<TagsTreeNodeDTO> children;
 }

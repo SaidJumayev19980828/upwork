@@ -1,6 +1,12 @@
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
+import static com.nasnav.test.commons.TestCommons.json;
+import static com.nasnav.test.commons.TestCommons.jsonArray;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.POST;
 
@@ -41,6 +47,7 @@ import com.nasnav.NavBox;
 import com.nasnav.controller.AdminController;
 import com.nasnav.dao.CategoryRepository;
 import com.nasnav.dao.TagGraphEdgesRepository;
+import com.nasnav.dao.TagGraphNodeRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.persistence.TagsEntity;
@@ -76,6 +83,9 @@ public class CategoryManagmentTest {
 
     @Autowired
     private TagGraphEdgesRepository tagEdgesRepo;
+    
+    @Autowired
+    private TagGraphNodeRepository tagNodesRepo;
 
     @Before
     public void setup() {
@@ -312,7 +322,7 @@ public class CategoryManagmentTest {
         ResponseEntity<List> tags = template.getForEntity("/navbox/tags?org_id=99001", List.class);
 
         assertTrue(!tags.getBody().isEmpty());
-        assertEquals(6, tags.getBody().size());
+        assertEquals(7, tags.getBody().size());
         System.out.println(tags.getBody().toString());
     }
 
@@ -431,7 +441,7 @@ public class CategoryManagmentTest {
         Assert.assertEquals(200, response.getStatusCode().value());
 
         tag = orgTagsRepo.findById(5005L).get();
-        assertEquals(null, tag.getGraphId());
+        assertNull(tag.getGraphId());
     }
 
     @Test
@@ -468,10 +478,52 @@ public class CategoryManagmentTest {
     
     
     @Test
-    public void createTagsLinkSuccess() {
-        String body = "{\"tags_links\":[{\"parent_id\":5001, \"children_ids\":[5004, 5005]}, {\"parent_id\":5004, \"children_ids\":[5005]}]}";
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_3.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void createTagsTreeSuccess() {
+    	long countNodesBefore =  tagNodesRepo.count();
+    	long countEdgesBefore =  tagEdgesRepo.count();
+    	
+    	assertEquals("In this test, we assume that the nodes table is empty", 0L, countNodesBefore);
+    	assertEquals("In this test, we assume that the edges table is empty", 0L, countEdgesBefore);
+    	
+    	String body = createValidTagTreeRequestBody();
 
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag/tree", json, String.class);
+
+        long countNodesAfter =  tagNodesRepo.count();
+    	long countEdgesAfter =  tagEdgesRepo.count();
+    	
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(3L, countNodesAfter);
+        assertEquals(1L, countEdgesAfter);
+    }
+
+
+
+
+
+	private String createValidTagTreeRequestBody() {
+		return	json()
+        		 .put("nodes"
+        			, jsonArray()
+        				 .put(createTagTreeNode(
+        						 	5003L, 
+        						 	asList(createTagTreeNode(5004L, null))))
+        				 .put(createTagTreeNode(5005L, null))
+        					    )        		 		
+        		 .toString();
+	}
+
+    
+    
+    
+    @Test
+    public void createTagsTreeMissingChildId() { // creates top level tag (add graph_id to each parent)
+        String body = "{\"tags_links\":[{\"tag_id\":5003}]}";
+
+        HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag/tree", json, String.class);
 
         Assert.assertEquals(200, response.getStatusCode().value());
@@ -480,28 +532,38 @@ public class CategoryManagmentTest {
     
     
     
-    @Test
-    public void createTagsLinkMissingChildId() { // creates top level tag (add graph_id to each parent)
-        String body = "{\"tags_links\":[{\"parent_id\":5003}]}";
-
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.postForEntity("/organization/tag/tree", json, String.class);
-
-        Assert.assertEquals(200, response.getStatusCode().value());
-    }
-
-    
     
     @Test
-    public void createTagsLinkInvalidChildId() {
-        String body = "{\"tags_links\":[{\"parent_id\":5003, \"children_ids\":[5007]}]}";
+    public void createTagsTreeInvalidChildId() {
+        String body = 
+        		json()
+        		 .put("nodes"
+        			, jsonArray()
+        				 .put(createTagTreeNode(
+        						 	5003L, 
+        						 	asList(createTagTreeNode(5008L, null))))
+        					    )
+        		 .toString();
 
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag/tree", json, String.class);
 
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
+    
+    
+    
+    
+    private JSONObject createTagTreeNode(Long tagId, List<JSONObject> children) {
+    	JSONArray childrenArr = new JSONArray();
+    	ofNullable(children)
+    	.orElse(emptyList())
+    	.forEach(childrenArr::put);
+    	return json()
+    			.put("tag_id", tagId)
+			    .put("children", childrenArr);
+    }
     
 
 
@@ -626,8 +688,8 @@ public class CategoryManagmentTest {
     
     @Test
     public void deleteTagSuccess() {
-        HttpEntity<Object> json = TestCommons.getHttpEntity("hijkllm");
-        ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5005", HttpMethod.DELETE, json, String.class);
+        HttpEntity<Object> json = getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5005", DELETE, json, String.class);
 
         Assert.assertEquals(200, response.getStatusCode().value());
     }

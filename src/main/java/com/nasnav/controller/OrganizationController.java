@@ -7,23 +7,38 @@ import java.util.List;
 
 import javax.validation.Valid;
 
-import com.nasnav.dto.*;
-import com.nasnav.persistence.TagsEntity;
-import com.nasnav.response.ProductImageUpdateResponse;
-import com.nasnav.response.TagResponse;
-import com.nasnav.service.CategoryService;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.dto.BrandDTO;
+import com.nasnav.dto.OrganizationDTO;
+import com.nasnav.dto.OrganizationImageUpdateDTO;
+import com.nasnav.dto.ProductFeatureDTO;
+import com.nasnav.dto.ProductFeatureUpdateDTO;
+import com.nasnav.dto.TagsDTO;
+import com.nasnav.dto.TagsTreeCreationDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
+import com.nasnav.response.ProductImageUpdateResponse;
+import com.nasnav.response.TagResponse;
+import com.nasnav.service.CategoryService;
 import com.nasnav.service.OrganizationService;
 
 import io.swagger.annotations.Api;
@@ -54,13 +69,13 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
-    public ResponseEntity updateOrganizationData(@RequestHeader (value = "User-Token") String userToken,
+    public ResponseEntity<OrganizationResponse> updateOrganizationData(@RequestHeader (value = "User-Token") String userToken,
                                                  @RequestPart("properties") String jsonString,
                                                  @RequestPart(value = "logo", required = false) @Valid MultipartFile file) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         OrganizationDTO.OrganizationModificationDTO json = mapper.readValue(jsonString, OrganizationDTO.OrganizationModificationDTO.class);
         OrganizationResponse response = orgService.updateOrganizationData(userToken, json, file);
-        return new ResponseEntity(response, response.getHttpStatus());
+        return new ResponseEntity<OrganizationResponse>(response, response.getHttpStatus());
     }
 
 
@@ -75,8 +90,8 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @GetMapping(value = "brands", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity getOrganizationBrands(@RequestParam(value = "org_id") Long orgId) {
-        return new ResponseEntity(orgService.getOrganizationBrands(orgId), HttpStatus.OK);
+    public ResponseEntity<List<?>> getOrganizationBrands(@RequestParam(value = "org_id") Long orgId) {
+        return new ResponseEntity<List<?>>(orgService.getOrganizationBrands(orgId), HttpStatus.OK);
     }
 
 
@@ -91,15 +106,14 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "brand", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
-    public ResponseEntity updateBrandData(@RequestHeader (value = "User-Token") String userToken,
+    public ResponseEntity<OrganizationResponse> updateBrandData(@RequestHeader (value = "User-Token") String userToken,
                                                  @RequestPart("properties") String jsonString,
                                                  @RequestPart(value = "logo", required = false) @Valid MultipartFile logo,
                                                  @RequestPart(value = "banner", required = false) @Valid MultipartFile banner) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        OrganizationResponse response = null;
         BrandDTO json = mapper.readValue(jsonString, BrandDTO.class);
         OrganizationResponse res = orgService.validateAndUpdateBrand(json, logo, banner);
-        return new ResponseEntity(res, res.getHttpStatus());
+        return new ResponseEntity<OrganizationResponse>(res, res.getHttpStatus());
     }
 
 
@@ -189,10 +203,10 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @DeleteMapping(value = "tag", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity deleteOrganizationTag(@RequestHeader (value = "User-Token") String userToken,
+    public ResponseEntity<TagResponse> deleteOrganizationTag(@RequestHeader (value = "User-Token") String userToken,
                                                 @RequestParam (value = "tag_id")Long tagId) throws BusinessException {
         TagResponse tag = categoryService.deleteOrgTag(tagId);
-        return new ResponseEntity(tag, HttpStatus.OK);
+        return new ResponseEntity<TagResponse>(tag, HttpStatus.OK);
     }
 
     
@@ -207,9 +221,10 @@ public class OrganizationController {
     })
     @PostMapping(value = "tag/tree", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(OK)
-    public void createTagTree(@RequestHeader (value = "User-Token") String userToken,
+    public ResponseEntity<Void> createTagTree(@RequestHeader (value = "User-Token") String userToken,
                                             @RequestBody TagsTreeCreationDTO tree) throws BusinessException {
         categoryService.createTagTree(tree);
+        return ResponseEntity.ok().build();
     }
 
 

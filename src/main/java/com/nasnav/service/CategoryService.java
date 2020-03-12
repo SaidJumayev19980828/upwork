@@ -417,7 +417,6 @@ public class CategoryService {
         if(tree == null || tree.isEmpty()) {
         	return;
         }
-
         
         Map<Long, TagsEntity> tagsMap = createOrgTagsMap();        
         
@@ -457,6 +456,7 @@ public class CategoryService {
 
 
 	private TagGraphNodeEntity persistTagTreeNode(TagsTreeNodeDTO node, Map<Long, TagsEntity> tagsMap) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
 		return ofNullable(node)
 				.map(TagsTreeNodeDTO::getTagId)
 				.map(tagsMap::get)
@@ -464,7 +464,7 @@ public class CategoryService {
 				.map(tagNodesRepo::save)
 				.orElseThrow(() -> 
 					new RuntimeBusinessException(
-							format("Failed to create Tree node for tag with id[%d]!", node.getTagId())
+							format("Failed to create Tree node for tag with id[%d]! Maybe it doesn;t exists for organization[%d]!", node.getTagId(), orgId)
 							, "INVALID PARAM: nodes"
 							, NOT_ACCEPTABLE));
 	}
