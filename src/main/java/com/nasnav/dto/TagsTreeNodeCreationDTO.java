@@ -6,11 +6,11 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class TagsTreeNodeDTO {
+public class TagsTreeNodeCreationDTO {
 
     @JsonProperty("tag_id")
     private Long tagId;
         
     @JsonProperty(value = "children")
-    private List<TagsTreeNodeDTO> children;
+    private List<TagsTreeNodeCreationDTO> children;
 }

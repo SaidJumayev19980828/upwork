@@ -1,3 +1,4 @@
+import static com.nasnav.test.commons.TestCommons.getHeaders;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static com.nasnav.test.commons.TestCommons.jsonArray;
@@ -11,18 +12,9 @@ import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.POST;
 
 import java.util.List;
-import java.util.Set;
 
-import javax.sql.DataSource;
-
-import org.jgrapht.Graph;
-import org.jgrapht.Graphs;
-import org.jgrapht.alg.cycle.CycleDetector;
-import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.graph.DirectedAcyclicGraph;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,8 +64,6 @@ public class CategoryManagmentTest {
     private TestRestTemplate template;
     @Autowired
     private CategoryRepository categoryRepository;
-    @Autowired
-    private DataSource datasource;
 
     @Autowired
     private CategoryService service;
@@ -148,7 +138,7 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
         categoryRepository.deleteById(response.getBody().getCategoryId());
-        Assert.assertTrue(200 == response.getStatusCode().value());
+        assertTrue(200 == response.getStatusCode().value());
     }
 
     
@@ -159,7 +149,7 @@ public class CategoryManagmentTest {
         String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\", \"operation\": \"create\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
-        Assert.assertTrue(406 == response.getStatusCode().value());
+        assertTrue(406 == response.getStatusCode().value());
     }
 
     
@@ -170,7 +160,7 @@ public class CategoryManagmentTest {
         String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes#$\", \"operation\": \"create\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
-        Assert.assertTrue(406 == response.getStatusCode().value());
+        assertTrue(406 == response.getStatusCode().value());
     }
 
     
@@ -181,7 +171,7 @@ public class CategoryManagmentTest {
         String body = "{\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 200}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
-        Assert.assertTrue(406 == response.getStatusCode().value());
+        assertTrue(406 == response.getStatusCode().value());
     }
 
     
@@ -192,7 +182,7 @@ public class CategoryManagmentTest {
         String body = "{\"id\":201,\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
-        Assert.assertTrue(200 == response.getStatusCode().value());
+        assertTrue(200 == response.getStatusCode().value());
     }
 
     
@@ -203,7 +193,7 @@ public class CategoryManagmentTest {
         String body = "{\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
-        Assert.assertTrue(406 == response.getStatusCode().value());
+        assertTrue(406 == response.getStatusCode().value());
     }
 
     
@@ -215,7 +205,7 @@ public class CategoryManagmentTest {
         String body = "{\"id\":2000009,\"logo\":\"categories/logos/1111111111.jpg\",\"name\":\"Makeups\", \"operation\": \"update\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
-        Assert.assertTrue(406 == response.getStatusCode().value());
+        assertTrue(406 == response.getStatusCode().value());
     }
 
     
@@ -227,7 +217,7 @@ public class CategoryManagmentTest {
         String body = "{\"id\":202,\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"123Perfumes#$\", \"operation\": \"update\"}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
-        Assert.assertTrue(406 == response.getStatusCode().value());
+        assertTrue(406 == response.getStatusCode().value());
     }
 
     
@@ -238,7 +228,7 @@ public class CategoryManagmentTest {
         String body = "{\"id\":202,\"logo\":\"categories/logos/564961451_56541.jpg\",\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 200}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<Object> response = template.postForEntity("/admin/category", json, Object.class);
-        Assert.assertTrue(406 == response.getStatusCode().value());
+        assertTrue(406 == response.getStatusCode().value());
     }
 
     
@@ -250,12 +240,12 @@ public class CategoryManagmentTest {
         String body = "{\"name\":\"Perfumes\", \"operation\": \"create\",\"parent_id\": 202}";
         HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
         ResponseEntity<CategoryResponse> response = template.postForEntity("/admin/category", json, CategoryResponse.class);
-        Assert.assertTrue(200 == response.getStatusCode().value());
+        assertTrue(200 == response.getStatusCode().value());
         //delete created category
         HttpHeaders header = TestCommons.getHeaders("abcdefg");
         ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=" + response.getBody().getCategoryId(),
                 HttpMethod.DELETE, new HttpEntity<>(header), String.class);
-        Assert.assertTrue(200 == deleteResponse.getStatusCode().value());
+        assertTrue(200 == deleteResponse.getStatusCode().value());
     }
 
     
@@ -267,7 +257,7 @@ public class CategoryManagmentTest {
         HttpHeaders header = TestCommons.getHeaders("abcdefg");
         ResponseEntity<String> deleteResponse = template.exchange("/admin/category",
                 HttpMethod.DELETE, new HttpEntity<>(header), String.class);
-        Assert.assertTrue(400 == deleteResponse.getStatusCode().value());
+        assertTrue(400 == deleteResponse.getStatusCode().value());
     }
 
     
@@ -278,7 +268,7 @@ public class CategoryManagmentTest {
         HttpHeaders header = TestCommons.getHeaders("abcdefg");
         ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=209",
                 HttpMethod.DELETE, new HttpEntity<>(header), String.class);
-        Assert.assertTrue(406 == deleteResponse.getStatusCode().value());
+        assertTrue(406 == deleteResponse.getStatusCode().value());
     }
 
     
@@ -286,38 +276,18 @@ public class CategoryManagmentTest {
     
     @Test
     public void deleteCategoryUsedCategoryTest() {
-        HttpHeaders header = TestCommons.getHeaders("abcdefg");
+        HttpHeaders header = getHeaders("abcdefg");
         ResponseEntity<String> deleteResponse = template.exchange("/admin/category?category_id=202",
                 HttpMethod.DELETE, new HttpEntity<>(header), String.class);
-        Assert.assertTrue(409 == deleteResponse.getStatusCode().value());
+        assertTrue(409 == deleteResponse.getStatusCode().value());
     }
 
 
     
-    
-    @Test
-    public void categoriesDAGCycles() throws Exception {
-        DirectedAcyclicGraph graph = createGraph();
+   
 
-        CycleDetector<String, DefaultEdge> cycleDetector = new CycleDetector<String, DefaultEdge>(graph);
-        Set<String> cycleVertices = cycleDetector.findCycles();
-
-        assertTrue(!cycleDetector.detectCycles());
-        assertTrue(cycleVertices.size() == 0);
-    }
-
-    @Test
-    public void categoriesDAGCreateCycleError() throws Exception {
-        DirectedAcyclicGraph graph = createGraph();
-        try {
-            graph.addEdge("Tag#2.2", "Tag#2.1");
-            graph.addEdge("Tag#2.1", "Tag#2");
-        } catch (Exception e) {
-            assertTrue(e instanceof IllegalArgumentException);
-        }
-    }
-
-    @Test
+    @SuppressWarnings("rawtypes")
+	@Test
     public void getTags() {
         ResponseEntity<List> tags = template.getForEntity("/navbox/tags?org_id=99001", List.class);
 
@@ -326,13 +296,20 @@ public class CategoryManagmentTest {
         System.out.println(tags.getBody().toString());
     }
 
+    
+    
+    
+    @SuppressWarnings("rawtypes")
     @Test
     public void getTagsTree() {
-        ResponseEntity<List> response = template.getForEntity("/navbox/tagstree?org_id=99001", List.class);
-        List<TagsRepresentationObject> tags = response.getBody();
-        assertTrue(!tags.isEmpty());
-        assertEquals(2, tags.size());
+		ResponseEntity<List> response = template.getForEntity("/navbox/tagstree?org_id=99001", List.class);
+        List treeRoot = response.getBody();
+        assertTrue(!treeRoot.isEmpty());
+        assertEquals(3, treeRoot.size());
     }
+    
+    
+    
 
     @Test
     public void getTagsWithCategory() {
@@ -341,6 +318,9 @@ public class CategoryManagmentTest {
         System.out.println(tags.toString());
     }
 
+    
+    
+    
     @Test
     public void getTagsInvalidCategory() {
         List<TagsRepresentationObject> tags = service.getOrganizationTags(99001L, "invalid Category");
@@ -357,8 +337,8 @@ public class CategoryManagmentTest {
         JSONObject result = new JSONObject(response.getBody());
         orgTagsRepo.delete(orgTagsRepo.findById(result.getLong("tag_id")).get());
 
-        Assert.assertTrue(result.getBoolean("success") == true);
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertTrue(result.getBoolean("success") == true);
+        assertEquals(200, response.getStatusCode().value());
     }
 
     @Test
@@ -368,7 +348,7 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     @Test
@@ -378,7 +358,7 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     @Test
@@ -388,7 +368,7 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     @Test
@@ -398,7 +378,7 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     @Test
@@ -410,8 +390,8 @@ public class CategoryManagmentTest {
 
         JSONObject result = new JSONObject(response.getBody());
 
-        Assert.assertTrue(result.getBoolean("success") == true);
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertTrue(result.getBoolean("success") == true);
+        assertEquals(200, response.getStatusCode().value());
     }
 
     @Test
@@ -423,8 +403,8 @@ public class CategoryManagmentTest {
 
         JSONObject result = new JSONObject(response.getBody());
 
-        Assert.assertTrue(result.getBoolean("success") == true);
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertTrue(result.getBoolean("success") == true);
+        assertEquals(200, response.getStatusCode().value());
 
         TagsEntity tag = orgTagsRepo.findById(5005L).get();
         assertEquals("for now graph_id values are either null or organization id", 99001, tag.getGraphId().intValue());
@@ -437,8 +417,8 @@ public class CategoryManagmentTest {
 
         result = new JSONObject(response.getBody());
 
-        Assert.assertTrue(result.getBoolean("success") == true);
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertTrue(result.getBoolean("success") == true);
+        assertEquals(200, response.getStatusCode().value());
 
         tag = orgTagsRepo.findById(5005L).get();
         assertNull(tag.getGraphId());
@@ -451,7 +431,7 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     @Test
@@ -461,7 +441,7 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     @Test
@@ -471,7 +451,7 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag", json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     
@@ -526,7 +506,7 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag/tree", json, String.class);
 
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
     }
 
     
@@ -548,7 +528,7 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/organization/tag/tree", json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     
@@ -577,7 +557,7 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/product/tag", json, String.class);
 
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
     }
 
     
@@ -590,7 +570,7 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/product/tag", json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     @Test
@@ -600,7 +580,7 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/product/tag", json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     
@@ -613,7 +593,7 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/product/tag", json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     
@@ -626,7 +606,7 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
         ResponseEntity<String> response = template.postForEntity("/product/tag", json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     
@@ -636,10 +616,10 @@ public class CategoryManagmentTest {
     public void deleteProductTagsSuccess() {
         String body = "{\"products_ids\":[1006], \"tags_ids\":[5006]}";
 
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/product/tag", HttpMethod.DELETE, json, String.class);
+        HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.exchange("/product/tag", DELETE, json, String.class);
 
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
     }
 
     
@@ -649,10 +629,10 @@ public class CategoryManagmentTest {
     public void deleteProductTagsNonExistingLink() {
         String body = "{\"products_ids\":[1005], \"tags_ids\":[5006]}";
 
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/product/tag", HttpMethod.DELETE, json, String.class);
+        HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.exchange("/product/tag", DELETE, json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     
@@ -663,9 +643,9 @@ public class CategoryManagmentTest {
         String body = "{\"tags_ids\":[5006]}";
 
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/product/tag", HttpMethod.DELETE, json, String.class);
+        ResponseEntity<String> response = template.exchange("/product/tag", DELETE, json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     
@@ -677,9 +657,9 @@ public class CategoryManagmentTest {
         String body = "{\"products_ids\":[1005]}";
 
         HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/product/tag", HttpMethod.DELETE, json, String.class);
+        ResponseEntity<String> response = template.exchange("/product/tag", DELETE, json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     
@@ -691,27 +671,27 @@ public class CategoryManagmentTest {
         HttpEntity<Object> json = getHttpEntity("hijkllm");
         ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5005", DELETE, json, String.class);
 
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
     }
 
     
     
     @Test
     public void deleteTagMissingTag() {
-        HttpEntity<Object> json = TestCommons.getHttpEntity("hijkllm");
-        ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5009", HttpMethod.DELETE, json, String.class);
+        HttpEntity<Object> json = getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5009", DELETE, json, String.class);
 
-        Assert.assertEquals(406, response.getStatusCode().value());
+        assertEquals(406, response.getStatusCode().value());
     }
 
     
     
     
     @Test
-    public void deleteTagWithLinkedTags() {
-        HttpEntity<Object> json = TestCommons.getHttpEntity("hijkllm");
-        ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5001", HttpMethod.DELETE, json, String.class);
-        Assert.assertEquals(406, response.getStatusCode().value());
+    public void deleteTagInTagTree() {
+        HttpEntity<Object> json = getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5001", DELETE, json, String.class);
+        assertEquals(406, response.getStatusCode().value());
     }
 
     
@@ -729,47 +709,8 @@ public class CategoryManagmentTest {
         // trying to delete tag
         json = getHttpEntity("hijkllm");
         ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5007", DELETE, json, String.class);
-        Assert.assertEquals(200, response.getStatusCode().value());
+        assertEquals(200, response.getStatusCode().value());
     }
 
-
-    private JSONArray getChildren(JSONObject k, Graph g, String parent) {
-        JSONArray l = new JSONArray();
-        for (Object p : Graphs.successorListOf(g, parent)) {
-            if (Graphs.successorListOf(g, p.toString()).isEmpty()) {
-                l.put(p.toString());
-            } else {
-                JSONObject o = new JSONObject();
-                o.put(p.toString(), getChildren(k, g, p.toString()));
-                l.put(o);
-                k.put(parent, l);
-            }
-        }
-        return l;
-    }
-    
-    
-    
-
-    private DirectedAcyclicGraph createGraph() {
-        DirectedAcyclicGraph<String, DefaultEdge> graph = new DirectedAcyclicGraph<>(DefaultEdge.class);
-        graph.addVertex("Tag#1");
-        graph.addVertex("Tag#2");
-        graph.addVertex("Tag#1.1");
-        graph.addVertex("Tag#1.2");
-        graph.addVertex("Tag#2.1");
-        graph.addVertex("Tag#2.2");
-        graph.addVertex("Tag#1.1.1");
-
-        graph.addEdge("Tag#1", "Tag#1.1");
-        graph.addEdge("Tag#1", "Tag#1.2");
-        graph.addEdge("Tag#1", "Tag#2.1");
-        graph.addEdge("Tag#1.1", "Tag#1.1.1");
-        graph.addEdge("Tag#2", "Tag#2.1");
-        graph.addEdge("Tag#2", "Tag#2.2");
-        graph.addEdge("Tag#2", "Tag#1.2");
-
-        return graph;
-    }
 
 }

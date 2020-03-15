@@ -9,5 +9,5 @@ import java.util.List;
 public class TagsTreeCreationDTO {
 
     @JsonProperty(value = "nodes")
-    private List<TagsTreeNodeDTO> treeNodes;
+    private List<TagsTreeNodeCreationDTO> treeNodes;
 }
