@@ -29,7 +29,6 @@ import com.nasnav.dto.ProductDetailsDTO;
 import com.nasnav.dto.ProductsResponse;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.TagsRepresentationObject;
-import com.nasnav.dto.TagsTreeNodeDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.service.BrandService;
@@ -207,8 +206,9 @@ public class NavboxController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
 	})
 	@GetMapping(value="/tagstree",produces=MediaType.APPLICATION_JSON_VALUE)
-	public List<TagsTreeNodeDTO> getTagsTree(@RequestParam(name = "org_id", required = false) Long organizationId) throws BusinessException {
-		return categoryService.getOrganizationTagsTree(organizationId);
+	public List<TagsRepresentationObject> getTagsTree(@RequestParam(name = "org_id", required = false) Long organizationId) throws BusinessException {
+		List<TagsRepresentationObject> response = categoryService.getOrganizationTagsTree(organizationId);
+		return response;
 	}
 
 	
