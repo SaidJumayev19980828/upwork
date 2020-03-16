@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
+import com.nasnav.persistence.TagGraphEdgesEntity;
 import com.nasnav.persistence.TagGraphNodeEntity;
 
 public interface TagGraphNodeRepository extends CrudRepository<TagGraphNodeEntity, Long>{
@@ -16,4 +17,6 @@ public interface TagGraphNodeRepository extends CrudRepository<TagGraphNodeEntit
 			+ " join fetch tag.categoriesEntity category "
 			+ " where org.id = :orgId" )
 	List<TagGraphNodeEntity> findByTag_OrganizationEntity_Id(@Param("orgId")Long orgId);
+
+	List<TagGraphNodeEntity> findByTag_Id(Long tagId);
 }

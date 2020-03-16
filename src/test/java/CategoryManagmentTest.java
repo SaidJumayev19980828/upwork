@@ -11,7 +11,10 @@ import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.POST;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Predicate;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -34,6 +37,10 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
 import com.nasnav.controller.AdminController;
@@ -42,6 +49,7 @@ import com.nasnav.dao.TagGraphEdgesRepository;
 import com.nasnav.dao.TagGraphNodeRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.TagsRepresentationObject;
+import com.nasnav.dto.TagsTreeNodeDTO;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.CategoryResponse;
 import com.nasnav.service.CategoryService;
@@ -307,6 +315,40 @@ public class CategoryManagmentTest {
         assertTrue(!treeRoot.isEmpty());
         assertEquals(3, treeRoot.size());
     }
+    
+    
+    
+    
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_4.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void getTagsTreeWithNodeHavingMultipleParents() throws JsonParseException, JsonMappingException, IOException {
+		ResponseEntity<String> response = template.getForEntity("/navbox/tagstree?org_id=99001", String.class);
+		String body = response.getBody();
+		ObjectMapper mapper = new ObjectMapper();
+		TypeReference<List<TagsTreeNodeDTO>> typeReference = new TypeReference<List<TagsTreeNodeDTO>>(){};
+		List<TagsTreeNodeDTO> tree = mapper.readValue(body, typeReference);
+		long nodesNum = 
+        		tree
+        		.stream()
+        		.filter(rootNode -> hasNodeWithId(rootNode, 50016L))
+        		.count();
+				
+        assertTrue(!tree.isEmpty());        
+        assertEquals(3, tree.size());
+        assertEquals("The node with multiple parents should appear as child multiple times", 2L, nodesNum);
+    }
+
+
+
+
+
+	private boolean hasNodeWithId(TagsTreeNodeDTO node, Long id) {
+		return node
+				.children
+				.stream()
+				.anyMatch(child -> Objects.equals(child.getNodeId(), id));
+	}
     
     
     
@@ -669,7 +711,7 @@ public class CategoryManagmentTest {
     @Test
     public void deleteTagSuccess() {
         HttpEntity<Object> json = getHttpEntity("hijkllm");
-        ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5005", DELETE, json, String.class);
+        ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5007", DELETE, json, String.class);
 
         assertEquals(200, response.getStatusCode().value());
     }

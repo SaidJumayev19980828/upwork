@@ -9,7 +9,10 @@ import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.OK;
 
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
@@ -19,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.jgrapht.Graph;
@@ -185,27 +189,27 @@ public class CategoryService {
     public ResponseEntity<CategoryResponse> deleteCategory(Long categoryId) throws BusinessException {
         if (!categoryRepository.findById(categoryId).isPresent()){
             throw new BusinessException("EntityNotFound: category",
-                    "No category entity found with provided ID", HttpStatus.NOT_ACCEPTABLE);
+                    "No category entity found with provided ID", NOT_ACCEPTABLE);
         }
         CategoriesEntity categoriesEntity = categoryRepository.findById(categoryId).get();
         List<Long> productsIds = new ArrayList<>();
         if (productsIds.size() > 0){
             throw new BusinessException("NOT_EMPTY: products",
-                    "There are still products "+productsIds.toString()+" assigned to this category", HttpStatus.CONFLICT);
+                    "There are still products "+productsIds.toString()+" assigned to this category", CONFLICT);
         }
         List<Long> brandsIds = brandsRepository.getBrandsByCategoryId(categoryId.intValue());
         if (brandsIds.size() > 0){
             throw new BusinessException("NOT_EMPTY: brands",
-                    "There are still brands "+brandsIds.toString()+" assigned to this category", HttpStatus.CONFLICT);
+                    "There are still brands "+brandsIds.toString()+" assigned to this category", CONFLICT);
         }
         List<CategoriesEntity> childrenCategories = categoryRepository.findByParentId(categoryId.intValue());
         if (childrenCategories.size() > 0){
-            List<Long> childrenCategoriesIds = childrenCategories.stream().map(category -> category.getId()).collect(Collectors.toList());
+            List<Long> childrenCategoriesIds = childrenCategories.stream().map(category -> category.getId()).collect(toList());
             throw new BusinessException("NOT_EMPTY: Category children ",
-                    "There are still children " +childrenCategoriesIds+" assigned to this category", HttpStatus.CONFLICT);
+                    "There are still children " +childrenCategoriesIds+" assigned to this category", CONFLICT);
         }
         categoryRepository.delete(categoriesEntity);
-        return new ResponseEntity<CategoryResponse>(new CategoryResponse(categoriesEntity.getId()),HttpStatus.OK);
+        return new ResponseEntity<CategoryResponse>(new CategoryResponse(categoriesEntity.getId()),OK);
     }
 
 
@@ -255,19 +259,47 @@ public class CategoryService {
         Map<Long, TagsTreeNodeDTO> nodeMap = new HashMap<>();
         List<TagsTreeNodeDTO> rootNodes = new ArrayList<>();
         while(iterator.hasNext()) {
-        	TagGraphNodeEntity nodeEntity = iterator.next();
-        	TagGraphNodeEntity parentNodeEntity = iterator.getParent(nodeEntity);
-        	
-        	TagsTreeNodeDTO node = toTagsTreeNodeDTO(nodeEntity);
-        	nodeMap.put(node.getNodeId(), node);
-        	
-        	if(parentNodeEntity == null) {
-        		rootNodes.add(node);
-        	}else {
-        		addTagTreeNodeUnderParent(parentNodeEntity, node, nodeMap);
-        	}        	
+        	TagGraphNodeEntity nodeEntity = iterator.next();        	
+        	addNodeToTree(graph, nodeMap, rootNodes, nodeEntity);        	
         }
 		return rootNodes;
+	}
+
+
+
+
+
+	private void addNodeToTree(Graph<TagGraphNodeEntity, DefaultEdge> graph, Map<Long, TagsTreeNodeDTO> nodeMap,
+			List<TagsTreeNodeDTO> rootNodes, TagGraphNodeEntity nodeEntity) {
+		Set<TagGraphNodeEntity> parentNodesEntities =  getTagTreeNodeParents(graph, nodeEntity);
+		parentNodesEntities.forEach(parent -> addNodeToTree(graph, nodeMap, rootNodes, parent));
+		
+		if(nodeMap.containsKey(nodeEntity.getId())) {
+			return;	//already processed
+		}
+		
+		TagsTreeNodeDTO node = toTagsTreeNodeDTO(nodeEntity);
+		nodeMap.put(node.getNodeId(), node);		
+		
+		if(parentNodesEntities.isEmpty()) {
+			rootNodes.add(node);
+		}else {
+			parentNodesEntities.forEach(parent -> addTagTreeNodeUnderParent(parent, node, nodeMap));        		
+		}
+	}
+
+
+
+
+
+	private Set<TagGraphNodeEntity> getTagTreeNodeParents(Graph<TagGraphNodeEntity, DefaultEdge> graph,
+			TagGraphNodeEntity nodeEntity) {
+		return graph
+		.incomingEdgesOf(nodeEntity)
+		.stream()
+		.map(graph::getEdgeSource)
+		.filter(Objects::nonNull)
+		.collect(toSet());
 	}
 
 
@@ -538,7 +570,7 @@ public class CategoryService {
 
 
 	private void validateTagToDelete(Long tagId) throws BusinessException {
-		List<TagGraphEdgesEntity> tags = tagEdgesRepo.getTagsLinks(singletonList(tagId));
+		List<TagGraphNodeEntity> tags = tagNodesRepo.findByTag_Id(tagId);
         if (!tags.isEmpty()) {
         	throw new BusinessException(
             		format("Tag[%d] Exists in the tag tree!", tagId)
