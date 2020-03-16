@@ -11,29 +11,24 @@ import javax.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
-@Table(name = "tag_graph_edges")
+@Table(name = "tag_graph_nodes")
 @Entity
 @Data
 @NoArgsConstructor
-public class TagGraphEdgesEntity {
-
-    @Id
+public class TagGraphNodeEntity {
+	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne
-    @JoinColumn(name="child_id")
-    private TagGraphNodeEntity child;
-
-    @ManyToOne
-    @JoinColumn(name="parent_id")
-    private TagGraphNodeEntity parent;
-    
-    
-    public TagGraphEdgesEntity(TagGraphNodeEntity parent, TagGraphNodeEntity child) {
-    	this.parent = parent;
-    	this.child = child;
-    }
-
+	
+	
+	@ManyToOne
+	@JoinColumn(name = "tag_id", nullable = false)
+	private TagsEntity tag;
+	
+	
+	
+	public TagGraphNodeEntity(TagsEntity tag) {
+		this.tag = tag;
+	}
+	
 }
