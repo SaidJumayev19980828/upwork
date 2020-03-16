@@ -585,8 +585,13 @@ public class CategoryService {
     
     private void clearTagsTree() {
     	Long orgId = securityService.getCurrentUserOrganizationId();
-        List<TagGraphEdgesEntity> tagsEdges = tagEdgesRepo.findByOrganizationId(orgId);
+        
+    	List<TagGraphEdgesEntity> tagsEdges = tagEdgesRepo.findByOrganizationId(orgId);
         tagEdgesRepo.deleteAll(tagsEdges);
+        
+        List<TagGraphNodeEntity> graphNodes = tagNodesRepo.findByTag_OrganizationEntity_Id(orgId);
+        tagNodesRepo.deleteAll(graphNodes);
+        
         List<TagsEntity> tags = orgTagsRepo.findByOrganizationEntity_Id(orgId);
         for(TagsEntity tag : tags) {
             tag.setGraphId(null);
