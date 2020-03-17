@@ -15,6 +15,7 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PR
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_NOT_EXISTS;
 import static java.lang.String.format;
+import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
@@ -861,7 +862,7 @@ public class ProductService {
 
 		for(Long productId : productIds) {
 			if(!productRepository.existsById(productId)) {
-				return new ProductsDeleteResponse(true, Collections.singletonList(productId)); //if the product doesn't exists, then..mission accomplished!
+				return new ProductsDeleteResponse(true, singletonList(productId)); //if the product doesn't exists, then..mission accomplished!
 			}
 
 			validateProductToDelete(productId);
@@ -2030,5 +2031,13 @@ public class ProductService {
 		}
 
 		return tagsMap;
+	}
+
+
+
+
+	public void deleteAllProducts() {
+		// TODO Auto-generated method stub
+		
 	}
 }

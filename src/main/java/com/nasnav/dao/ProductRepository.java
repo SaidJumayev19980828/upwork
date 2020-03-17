@@ -89,6 +89,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     void detachProductsFromTag(@Param("tag_id") Long tagId);
 
 	List<ProductEntity> findByNameAndOrganizationId(String name, Long orgId);
+	
+	long countByOrganizationId(long l);
 }
 
 

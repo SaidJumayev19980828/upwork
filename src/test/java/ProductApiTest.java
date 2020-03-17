@@ -6,6 +6,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
@@ -39,6 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.BasketRepository;
+import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
@@ -69,6 +74,11 @@ import net.jcip.annotations.NotThreadSafe;
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class ProductApiTest {
 
+	private static String ORG_ADMIN_TOKEN = "101112";
+	
+	private static String USER_TOKEN = "123";
+	
+	
 	@Autowired
 	private TestRestTemplate template;
 
@@ -90,6 +100,9 @@ public class ProductApiTest {
 
 	@Autowired
 	private ProductImagesRepository imgRepo;
+	
+	@Autowired
+	private BundleRepository bundleRepo;
 
 
 	@Autowired
@@ -1089,4 +1102,59 @@ public class ProductApiTest {
 				.map(ProductEntity::getTags)
 				.allMatch(Set::isEmpty);
 	}
+	
+	
+	
+	
+	@Test
+	public void deleteAllProductsNoAuthZTest() {
+		HttpEntity<?> request =  getHttpEntity("" , "NO_EXISTING_TOKEN");
+		
+		ResponseEntity<String> response = 
+				template.exchange("/product/all" ,DELETE, request, String.class);
+		
+		assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void deleteAllProductsNoAuthNTest() {
+		HttpEntity<?> request =  getHttpEntity("" , USER_TOKEN);
+		
+		ResponseEntity<String> response = 
+				template.exchange("/product/all" ,DELETE, request, String.class);
+		
+		assertEquals(FORBIDDEN, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void deleteAllProductsTest() {
+		long productCount = productRepository.countByOrganizationId(99001L);
+		long variantCount = variantRepo.countByProductEntity_OrganizationId(99001L);
+		long bundlesCount = bundleRepo.countByOrganizationId(99001L);
+		//count products before the delete
+		//count variants before the delete
+		//count bundles before the delete
+		//count new orders before the delete
+		//all should be non-zero
+		HttpEntity<?> request =  getHttpEntity("" , ORG_ADMIN_TOKEN);
+		
+		ResponseEntity<String> response = 
+				template.exchange("/product/all" ,DELETE, request, String.class);
+		
+		assertEquals(OK, response.getStatusCode());
+		
+		//count again , all should be zeros
+	}
+	
+	
 }
