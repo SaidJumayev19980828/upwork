@@ -10,6 +10,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
+import com.nasnav.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,15 +22,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nasnav.dto.CategoryRepresentationObject;
-import com.nasnav.dto.ExtraAttributesRepresentationObject;
-import com.nasnav.dto.OrganizationRepresentationObject;
-import com.nasnav.dto.Organization_BrandRepresentationObject;
-import com.nasnav.dto.ProductDetailsDTO;
-import com.nasnav.dto.ProductsResponse;
-import com.nasnav.dto.ShopRepresentationObject;
-import com.nasnav.dto.TagsRepresentationObject;
-import com.nasnav.dto.TagsTreeNodeDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.service.BrandService;
@@ -99,8 +91,10 @@ public class NavboxController {
 			return organizationService.getOrganizationByName(organizationName);
 
 		if (url != null) {
-			Long orgId = organizationService.getOrganizationByDomain(url);
-			return organizationService.getOrganizationById(orgId);
+			Pair domain = organizationService.getOrganizationAndSubdirsByUrl(url);
+			OrganizationRepresentationObject orgObj = organizationService.getOrganizationById(domain.getFirst());
+			orgObj.setSubDir(domain.getSecond());
+			return orgObj;
 		}
 		return organizationService.getOrganizationById(organizationId);
 	}
@@ -258,8 +252,8 @@ public class NavboxController {
 	@GetMapping(value="/orgid",produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getOrganizationByDomain(@RequestParam(name = "url") String url) throws BusinessException {
 
-		Long orgId = organizationService.getOrganizationByDomain(url);
+		Pair domain = organizationService.getOrganizationAndSubdirsByUrl(url);
 
-		return new ResponseEntity<>("{\"id\":"+orgId+"}", HttpStatus.OK);
+		return new ResponseEntity<>("{\"id\":" + domain.getFirst() + ", \"sub_dir\":" + domain.getSecond() + "}", HttpStatus.OK);
 	}
 }

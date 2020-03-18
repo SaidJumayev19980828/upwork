@@ -7,6 +7,8 @@ import java.util.List;
 
 import javax.validation.Valid;
 
+import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
+import com.nasnav.persistence.OrganizationPaymentGatewaysEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -57,6 +59,10 @@ public class OrganizationController {
 
     @Autowired
     private CategoryService categoryService;
+
+    @Autowired
+    private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
+
 
     public OrganizationController(OrganizationService orgService) {
         this.orgService = orgService;
@@ -227,5 +233,29 @@ public class OrganizationController {
         return ResponseEntity.ok().build();
     }
 
+
+
+    @ApiOperation(value = "Get list of payment gateways for the organization", nickname = "getGateways", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "payments", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<?> getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId) {
+
+        StringBuilder list = new StringBuilder();
+        list.append("[ ");
+        for (OrganizationPaymentGatewaysEntity gateway: orgPaymentGatewaysRep.findAllByOrganizationId(orgId)) {
+            if (list.length() > 2) {
+                list.append(", ");
+            }
+            list.append('"');
+            list.append(gateway.getGateway());
+            list.append('"');
+        }
+        list.append(" ]");
+
+        return new ResponseEntity<>(list.toString(), HttpStatus.OK);
+    }
 
 }

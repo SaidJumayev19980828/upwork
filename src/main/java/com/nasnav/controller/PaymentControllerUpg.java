@@ -2,6 +2,7 @@ package com.nasnav.controller;
 
 import com.nasnav.AppConfig;
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.upg.UpgLightbox;
@@ -38,6 +39,9 @@ public class PaymentControllerUpg {
     private AppConfig config;
 
     @Autowired
+    private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
+
+    @Autowired
     public PaymentControllerUpg(
             OrdersRepository ordersRepository,
             PaymentsRepository paymentsRepository,
@@ -48,9 +52,11 @@ public class PaymentControllerUpg {
     }
 
     @ApiIgnore
-    @GetMapping(value = "{accountName}/test/lightbox",produces=MediaType.TEXT_HTML_VALUE)
-    public ResponseEntity<?> testMezza(@PathVariable (name = "accountName") String accountName, @RequestParam(name = "order_id") String ordersList) throws BusinessException {
+    @GetMapping(value = "test/lightbox",produces=MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<?> testMezza(@RequestParam(name = "order_id") String ordersList) throws BusinessException {
         ArrayList<OrdersEntity> orders = Tools.getOrdersFromString(ordersRepository, ordersList, ",");
+
+        String accountName = Tools.getAccount(Tools.getOrdersFromString(ordersRepository, ordersList, ","), "upg", orgPaymentGatewaysRep);
 
         Properties props = Tools.getPropertyForAccount(accountName, upgLogger, config.paymentPropertiesDir);
         if (props == null) {
@@ -66,9 +72,11 @@ public class PaymentControllerUpg {
         return new ResponseEntity<>(testPage, HttpStatus.OK);
     }
 
-    @GetMapping(value = "{accountName}/initialize")
-    public ResponseEntity<?> upgGetData(@PathVariable (name = "accountName") String accountName, @RequestParam(name = "order_id") String ordersList) throws BusinessException {
+    @RequestMapping(value = "initialize")
+    public ResponseEntity<?> upgGetData(@RequestParam(name = "order_id") String ordersList) throws BusinessException {
         ArrayList<OrdersEntity> orders = Tools.getOrdersFromString(ordersRepository, ordersList, ",");
+
+        String accountName = Tools.getAccount(Tools.getOrdersFromString(ordersRepository, ordersList, ","), "upg", orgPaymentGatewaysRep);
 
         Properties props = Tools.getPropertyForAccount(accountName, upgLogger, config.paymentPropertiesDir);
         if (props == null) {
@@ -82,7 +90,7 @@ public class PaymentControllerUpg {
         return new ResponseEntity<>(data.toString(), HttpStatus.OK);
     }
 
-    @PostMapping(value = "/callback")
+    @PostMapping(value = "callback")
     public ResponseEntity<?> upgCallback(@RequestBody String content) throws BusinessException {
         upgLogger.info("Received payment confirmation: {}", content);
         UpgLightbox lightbox = new UpgLightbox();

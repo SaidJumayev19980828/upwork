@@ -129,6 +129,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/product/info"						, HttpMethod.GET)
                         , patternOf("/product/image"					, HttpMethod.GET)
                         , patternOf("/product/variant"					, HttpMethod.GET)
+		                , patternOf("/organization/payments"				, HttpMethod.GET)
                         , patternOf("/organization/brands"				, HttpMethod.GET)
                         , patternOf("/organization/products_features"	, HttpMethod.GET)
                         , patternOf("/swagger**/**")		//for development only

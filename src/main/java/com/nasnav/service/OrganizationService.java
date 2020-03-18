@@ -8,6 +8,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
+import com.nasnav.persistence.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,38 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dao.OrganizationDomainsRepository;
-import com.nasnav.dao.OrganizationImagesRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.OrganizationThemeRepository;
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.SocialRepository;
-import com.nasnav.dto.BrandDTO;
-import com.nasnav.dto.ExtraAttributesRepresentationObject;
-import com.nasnav.dto.OrganizationDTO;
-import com.nasnav.dto.OrganizationImageUpdateDTO;
-import com.nasnav.dto.OrganizationImagesRepresentationObject;
-import com.nasnav.dto.OrganizationRepresentationObject;
-import com.nasnav.dto.OrganizationThemesRepresentationObject;
-import com.nasnav.dto.Organization_BrandRepresentationObject;
-import com.nasnav.dto.ProductFeatureDTO;
-import com.nasnav.dto.ProductFeatureUpdateDTO;
-import com.nasnav.dto.SocialRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.ExtraAttributesEntity;
-import com.nasnav.persistence.OrganizationDomainsEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.OrganizationImagesEntity;
-import com.nasnav.persistence.OrganizationThemeEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.SocialEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
@@ -87,8 +59,8 @@ public class OrganizationService {
 
     @Autowired
     private OrganizationDomainsRepository orgDomainsRep;
-    
-    @Autowired 
+
+	@Autowired
     private OrganizationRepository orgRepo;
     
     @Autowired
@@ -690,7 +662,7 @@ public class OrganizationService {
         }
     }
 
-    public Long getOrganizationByDomain(String urlString) throws BusinessException {
+    public Pair getOrganizationAndSubdirsByUrl(String urlString) throws BusinessException {
         URIBuilder url = null;
 
         try {
@@ -701,27 +673,18 @@ public class OrganizationService {
         }
 
         String domain = url.getHost();
-        domain = domain.startsWith("www.") ? domain.substring(4) : domain; //getting domain
-        OrganizationDomainsEntity orgDomain = orgDomainsRep.findByDomain(domain);
-        if(orgDomain != null) {
-        	return orgDomain.getOrganizationEntity().getId();
-        }            
+	    domain = domain.startsWith("www.") ? domain.substring(4) : domain; //getting domain
 
-        domain = domain.split("\\.")[0]; // getting sub domain
-        orgDomain = orgDomainsRep.findByDomain(domain);
-        if(orgDomain != null) {
-        	return orgDomain.getOrganizationEntity().getId();
-        }
-            
+	    String subDir = null;
+	    if (url.getPath() != null && url.getPath().length() > 1) {
+		    String[] subdirectories = url.getPath().split("/");
+		    if (subdirectories.length > 1 && subdirectories[1].length() > 0) {
+		    	subDir = subdirectories[1];
+		    }
+	    }
+	    OrganizationDomainsEntity orgDom = orgDomainsRep.findByDomainAndSubdir(domain,subDir);
 
-        String[] subdirectories = url.getPath().split("/");
-        if (subdirectories.length > 0) {
-            String subDirectory = subdirectories[1];// getting first subdirectory
-            OrganizationEntity org = orgRepo.findByPname(subDirectory);
-            if (org != null)
-                return org.getId();
-        }
-
-        return 0L;
+		return (orgDom == null) ? new Pair(0L, 0L) : new Pair(orgDom.getOrganizationEntity().getId(), subDir == null ? 0L : 1L);
     }
+
 }

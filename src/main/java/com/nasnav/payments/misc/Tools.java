@@ -1,12 +1,12 @@
 package com.nasnav.payments.misc;
 
-import com.nasnav.AppConfig;
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.mastercard.MastercardSession;
 import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.OrganizationPaymentGatewaysEntity;
 import com.nasnav.service.OrderService;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 
@@ -40,6 +40,25 @@ public class Tools {
 		} catch (NumberFormatException ex) {
 			throw new BusinessException("Unable to parse orders list", "INVALID_ORDER", HttpStatus.NOT_ACCEPTABLE);
 		}
+	}
+
+	public static String getAccount(ArrayList<OrdersEntity> orders, String gateway, OrganizationPaymentGatewaysRepository gatewaysRepo) throws BusinessException {
+		long orgId = -1;
+		for (OrdersEntity order: orders) {
+			if (orgId != order.getOrganizationEntity().getId()) {
+				if (orgId < 0) {
+					orgId = order.getOrganizationEntity().getId();
+				} else {
+					throw new BusinessException("Orders belong to different organizations", "INVALID_ORDER", HttpStatus.NOT_ACCEPTABLE);
+				}
+			}
+		}
+		Optional<OrganizationPaymentGatewaysEntity> account = gatewaysRepo.findByOrganizationIdAndGateway(orgId, gateway);
+
+		if (account.isPresent()) {
+			return account.get().getAccount();
+		}
+		return null;
 	}
 
 	public static OrderService.OrderValue getTotalOrderValue(ArrayList<OrdersEntity> orders, OrderService orderService, Logger logger) throws BusinessException {
