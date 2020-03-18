@@ -362,8 +362,9 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @DeleteMapping("all")
-    public void deleteAllProducts() {
-    	productService.deleteAllProducts();
+    public void deleteAllProducts(@RequestHeader("User-Token") String token
+    		, @RequestParam(name = "confirmed",defaultValue = "false", required = true) boolean isConfirmed) throws BusinessException {
+    	productService.deleteAllProducts(isConfirmed);
     }
     
 }

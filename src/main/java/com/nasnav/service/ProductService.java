@@ -2042,7 +2042,10 @@ public class ProductService {
 
 
 
-	public void deleteAllProducts() {
+	public void deleteAllProducts(boolean isConfirmed) throws BusinessException {
+		if(!isConfirmed) {
+			throw new BusinessException("Unconfirmed Delete operation for all products!" , "UNCONFIRMED OPERATION", NOT_ACCEPTABLE);
+		}
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		
 		basketRepo.deleteByOrganizationIdAndStatus( NEW.getValue(), orgId);
