@@ -8,6 +8,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import java.lang.reflect.InvocationTargetException;
+import java.sql.SQLException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -141,7 +142,7 @@ public class NavboxController {
 			@io.swagger.annotations.ApiResponse(code = 204, message = "Empty product list"),
 			@io.swagger.annotations.ApiResponse(code = 400, message = "Invalid query parameters"), })
 	@GetMapping("/products")
-	public ResponseEntity<?> getProducts(ProductSearchParam productSearchParam) throws BusinessException, InvocationTargetException, IllegalAccessException {
+	public ResponseEntity<?> getProducts(ProductSearchParam productSearchParam) throws BusinessException, InvocationTargetException, IllegalAccessException, SQLException {
 
 		ProductsResponse productsResponse = productService.getProducts(productSearchParam);
 

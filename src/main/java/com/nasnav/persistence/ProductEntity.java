@@ -58,6 +58,11 @@ import lombok.ToString;
         query = "SELECT t.product_id, t.tag_id FROM Product_tags t WHERE t.product_id in :productsIds and t.tag_id in :tagsIds",
         resultSetMapping = "Pair"
 )
+@NamedNativeQuery(
+        name = "ProductEntity.getTagsByProductIdIn",
+        query = "select t.product_id, t.tag_id from Product_tags t where t.product_id in :ids",
+        resultSetMapping = "Pair"
+)
 
 @Entity
 @Table(name = "products")

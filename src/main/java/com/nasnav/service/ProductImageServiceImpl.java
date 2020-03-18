@@ -50,8 +50,17 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import javax.sql.DataSource;
 import javax.validation.Valid;
 
+import com.nasnav.dto.*;
+import com.nasnav.model.querydsl.sql.QProductImages;
+import com.nasnav.model.querydsl.sql.QProductVariants;
+import com.querydsl.core.types.Projections;
+import com.querydsl.sql.Configuration;
+import com.querydsl.sql.PostgreSQLTemplates;
+import com.querydsl.sql.SQLQuery;
+import com.querydsl.sql.SQLQueryFactory;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.tika.Tika;
@@ -78,10 +87,6 @@ import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dto.ProductImageBulkUpdateDTO;
-import com.nasnav.dto.ProductImageUpdateDTO;
-import com.nasnav.dto.ProductImageUpdateIdentifier;
-import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
@@ -140,6 +145,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	@Autowired
 	private IntegrationService integrationService;
+
+	@Autowired
+	private DataSource dataSource;
 
 	@Override
 	public ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
@@ -1500,21 +1508,28 @@ public class ProductImageServiceImpl implements ProductImageService {
 		if(productIds == null || productIds.isEmpty()) {
 			return new HashMap<>();
 		}
-		
-		Map<Long,String> productImgs = productImagesRepository
-											.findByProductsIds(productIds)
+		SQLQueryFactory queryFactory = new SQLQueryFactory(new Configuration(new PostgreSQLTemplates()), dataSource);
+		QProductImages image = QProductImages.productImages;
+		QProductVariants variant = QProductVariants.productVariants;
+		SQLQuery query = queryFactory.select(Projections.bean(ProductImgDTO.class, image.id, image.uri.as("url"),
+																image.type, image.productId, image.variantId, image.priority))
+									 .from(image).leftJoin(variant).on(image.variantId.eq(variant.id))
+									 .where(image.productId.in(productIds).or(variant.productId.in(productIds)))
+									 .orderBy(image.priority.asc());
+		List<ProductImgDTO> productImages = query.fetch();
+		Map<Long,String> productImgsMap = productImages
 											.stream()
 											.filter(Objects::nonNull)
-											.collect( groupingBy(img -> getImageProductId(img)))
+											.collect( groupingBy(img ->img.getProductId()))
 											.entrySet()
 											.stream()
 											.map(this::getProductCoverImageUrlMapEntry)
 											.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));	
 		productIds.stream()
-				.filter(id -> !productImgs.keySet().contains(id))
-				.forEach(id -> productImgs.put(id, NO_IMG_FOUND_URL));
+				.filter(id -> !productImgsMap.keySet().contains(id))
+				.forEach(id -> productImgsMap.put(id, NO_IMG_FOUND_URL));
 		
-		return productImgs;
+		return productImgsMap;
 	}
 
 	private Long getImageProductId(ProductImagesEntity img)  {
@@ -1533,13 +1548,13 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	
 	
-	private Map.Entry<Long, String> getProductCoverImageUrlMapEntry(Map.Entry<Long, List<ProductImagesEntity>> mapEntry){
+	private Map.Entry<Long, String> getProductCoverImageUrlMapEntry(Map.Entry<Long, List<ProductImgDTO>> mapEntry){
 		String uri = Optional.ofNullable(mapEntry.getValue())
 							.map(List::stream)
-							.map(s -> s.sorted( comparing(ProductImagesEntity::getPriority)
-												.thenComparing(ProductImagesEntity::getId)))
+							.map(s -> s.sorted( comparing(ProductImgDTO::getPriority)
+												.thenComparing(ProductImgDTO::getId)))
 							.flatMap(s -> s.findFirst())
-							.map(ProductImagesEntity::getUri)
+							.map(ProductImgDTO::getUrl)
 							.orElse(NO_IMG_FOUND_URL);
 				
 		return new AbstractMap.SimpleEntry<>(mapEntry.getKey(), uri);

@@ -18,8 +18,7 @@ import static java.lang.String.format;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -28,6 +27,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.sql.SQLException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,7 +55,9 @@ import com.nasnav.integration.sallab.webclient.dto.Product;
 import com.nasnav.persistence.*;
 import com.querydsl.core.BooleanBuilder;
 
+import com.querydsl.core.Tuple;
 import com.querydsl.core.support.FetchableQueryBase;
+import com.querydsl.core.support.QueryBase;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.sql.*;
@@ -68,6 +70,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -179,6 +183,9 @@ public class ProductService {
 	private DataSource dataSource;
 
 	@Autowired
+	private JdbcTemplate template;
+
+	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
 	                      ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
 	                      ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
@@ -248,6 +255,29 @@ public class ProductService {
 				.stream()
 				.map(tag ->(TagsRepresentationObject) tag.getRepresentation())
 				.collect(Collectors.toList());
+	}
+
+	private Map<Long,List<TagsRepresentationObject>> getProductsTagsDTOList(List<Long> productsIds) {
+		Map<Long,List<TagsRepresentationObject>> result = new HashMap<>();
+
+		List<Pair> productsTags = productRepository.getTagsByProductIdIn(productsIds);
+		List<TagsEntity> productsTagsDTOs =  orgTagRepo.findByIdIn(productsTags.stream()
+																			   .map(p -> p.getSecond())
+																			   .distinct()
+																			   .collect(toList()));
+		for (Long productId: productsIds) {
+			List<Long> productTagsIds = productsTags.stream()
+													.filter(pair -> pair.getFirst().equals(productId))
+													.map(pair -> pair.getSecond())
+													.collect(Collectors.toList());
+			List<TagsRepresentationObject> productTagsDTOs = productsTagsDTOs.stream()
+															   .filter(tag -> productTagsIds.contains(tag.getId()))
+															   .map(tag -> (TagsRepresentationObject)tag.getRepresentation())
+															   .collect(toList());
+			result.put(productId, productTagsDTOs);
+		}
+
+		return result;
 	}
 
 
@@ -450,31 +480,34 @@ public class ProductService {
 	}
 
 
-	public ProductsResponse getProducts(ProductSearchParam requestParams) throws BusinessException, InvocationTargetException, IllegalAccessException {
+	public ProductsResponse getProducts(ProductSearchParam requestParams) throws BusinessException, InvocationTargetException, IllegalAccessException, SQLException {
 		ProductSearchParam params = getProductSearchParams(requestParams);
 
-		SQLQueryFactory countQuery = new SQLQueryFactory( new Configuration(new PostgreSQLTemplates()), dataSource);
-		SQLQuery countStocks = getProductsQuery(params, countQuery);
+		SQLQuery countStocks = getProductsQuery(params);
 		Long productsCount = countStocks.fetchCount();
 
-		SQLQueryFactory query = new SQLQueryFactory( new Configuration(new PostgreSQLTemplates()), dataSource);
-		SQLQuery stocks = getProductsQuery(params, query);
-		FetchableQueryBase fetchableStocks =
-				(FetchableQueryBase) stocks.select((Expressions.template(ProductRepresentationObject.class,"*")))
-						 .limit(params.count).offset(params.start);
+		SQLQuery stocks = getProductsQuery(params);
 
-		return getProductResponseFromStocks(fetchableStocks.fetch(), productsCount);
+		stocks.select((Expressions.template(ProductRepresentationObject.class,"*")))
+				 .limit(params.count).offset(params.start);
+
+		List<ProductRepresentationObject> result = template.query(stocks.getResults().getStatement().toString(),
+				new BeanPropertyRowMapper<>(ProductRepresentationObject.class));
+
+		return getProductResponseFromStocks(result, productsCount);
 	}
 
 
 
 
 
-	private SQLQuery getProductsQuery(ProductSearchParam params, SQLQueryFactory query) {
+	private SQLQuery getProductsQuery(ProductSearchParam params) {
 		QStocks stock = QStocks.stocks;
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
 		QProductTags productTags = QProductTags.productTags;
+
+		SQLQueryFactory query = new SQLQueryFactory( new Configuration(new PostgreSQLTemplates()), dataSource);
 
 		SQLQuery productTagsQuery = getProductTagsQuery(query, productTags, params);
 
@@ -482,26 +515,30 @@ public class ProductService {
 
 		OrderSpecifier order = getProductQueryOrder(params, product, stock);
 
-		SQLQuery sqlQuery = query.select(stock.id, stock.price.as("price"), stock.discount, stock.currency,
+		SQLQuery sqlQuery = query.select(stock.id.as("stock_id"), stock.price.as("price"), stock.discount, stock.currency,
 				stock.organizationId.as("organization_id"), stock.shopId.as("shop_id"),
-				variant.barcode, variant.featureSpec, product.barcode, product.brandId.as("brand_id"), product.categoryId.as("category_id"),
-				product.description.as("description"), product.name.as("name"), product.removed, product.createdAt.as("created"), product.updatedAt,
+				variant.barcode.as("variant_barcode"), variant.featureSpec,
+				product.id, product.barcode, product.brandId.as("brand_id"),
+				product.categoryId.as("category_id"), product.description.as("description"), product.name.as("name"),
+				product.removed, product.createdAt.as("creation_date"), product.updatedAt.as("update_date"),
 				SQLExpressions.rowNumber()
 						.over()
 						.partitionBy(product.id)
 						.orderBy(stock.price).as("row_num"))
 				.from(stock)
 				.innerJoin(variant).on(stock.variantId.eq(variant.id))
-				.innerJoin(product).on(variant.productId.eq(product.id));
+				.innerJoin(product).on(variant.productId.eq(product.id))
+				.where(predicate);
+
+		if (productTagsQuery != null)
+			sqlQuery.where(product.id.in((com.querydsl.core.types.Expression<? extends Long>) productTagsQuery));
 
 		if (order != null)
 			sqlQuery.orderBy(order);
 
 		SQLQuery stocks = query.from(sqlQuery.as("total_products"))
-				.where(Expressions.numberPath(Long.class, "row_num").eq(1L).and(predicate));
+				.where(Expressions.numberPath(Long.class, "row_num").eq(1L));
 
-		if (productTagsQuery != null)
-			stocks.where(product.id.in((com.querydsl.core.types.Expression<? extends Long>) productTagsQuery));
 		return stocks;
 	}
 
@@ -532,20 +569,26 @@ public class ProductService {
 		BooleanBuilder predicate = new BooleanBuilder();
 
 		if(params.org_id != null)
-			predicate.and( Expressions.numberPath(Long.class, "organization_id").eq((params.org_id) ));
+			predicate.and( stock.organizationId.eq((params.org_id) ));
 
 		if(params.brand_id != null)
-			predicate.and( Expressions.numberPath(Long.class, "brand_id").eq(params.brand_id) );
+			predicate.and( product.brandId.eq(params.brand_id) );
 
 		if(params.category_id != null)
-			predicate.and( Expressions.numberPath(Long.class, "category_id").eq(params.category_id) );
+			predicate.and( product.categoryId.eq(params.category_id) );
+
+		if(params.minPrice != null)
+			predicate.and( stock.price.goe(params.minPrice));
+
+		if(params.maxPrice != null)
+			predicate.and( stock.price.loe(params.maxPrice));
 
 		if(params.name != null)
-			predicate.and( Expressions.stringPath("name").likeIgnoreCase("%" + params.name + "%")
-						   .or(Expressions.stringPath("description").likeIgnoreCase("%" + params.name + "%") ));
+			predicate.and( product.name.likeIgnoreCase("%" + params.name + "%")
+						   .or(product.description.likeIgnoreCase("%" + params.name + "%") ));
 
 		if(params.shop_id != null && params.org_id == null)
-			predicate.and( Expressions.numberPath(Long.class, "shop_id").eq(params.shop_id) );
+			predicate.and( stock.shopId.eq(params.shop_id) );
 
 		return predicate;
 	}
@@ -554,12 +597,12 @@ public class ProductService {
 		if (params.getTags() == null)
 			return null;
 
-		return query.select(productTags.productId)
-					.from(SQLExpressions.select(productTags.productId, productTags.tagId.count().as("count"))
+		return query.select(Expressions.numberPath(Long.class, "id"))
+					.from(SQLExpressions.select(productTags.productId.as("id"), productTags.tagId.count().as("count"))
 										.from(productTags)
 										.where(productTags.tagId.in(params.getTags()))
 										.groupBy(productTags.productId)
-										.having(productTags.tagId.count().eq((long) params.getTags().size())));
+										.having(productTags.tagId.count().eq((long) params.getTags().size())).as("productTags"));
 	}
 
 
@@ -671,7 +714,7 @@ public class ProductService {
 	}
 
 	private ProductsResponse getProductResponseFromStocks(List<ProductRepresentationObject> stocks, Long productsCount) {
-		if(stocks == null)
+		if(stocks == null || stocks.isEmpty())
 			return new ProductsResponse();
 
 		List<Long> productIdList = stocks.stream()
@@ -680,13 +723,22 @@ public class ProductService {
 
 		Map<Long, String> productCoverImages = imgService.getProductsCoverImages(productIdList);
 
-		List<ProductRepresentationObject> productsRep =
-				stocks.stream()
-						.map(s -> setAdditionalInfo(s, productCoverImages))
-						.collect(Collectors.toList());
+		Map<Long, List<TagsRepresentationObject>> productsTags = getProductsTagsDTOList(productIdList);
 
-		return new ProductsResponse(productsCount, productsRep);
+		stocks.stream()
+			.map(s -> setAdditionalInfo(s, productCoverImages))
+			.map(s -> setProductTags(s, productsTags))
+			.collect(Collectors.toList());
 
+		return new ProductsResponse(productsCount, stocks);
+
+	}
+
+	private ProductRepresentationObject setProductTags(ProductRepresentationObject product,
+													   Map<Long, List<TagsRepresentationObject>>tagsMap) {
+		List<TagsRepresentationObject> tags = tagsMap.get(product.getId());
+		product.setTags(tags);
+		return product;
 	}
 
 	private void sortByPrice(List<ProductRepresentationObject> productsRep, String order) {
@@ -700,12 +752,12 @@ public class ProductService {
 
 
 
-	private ProductRepresentationObject setAdditionalInfo(ProductRepresentationObject product, Map<Long, String> productCoverImgs) {
+	private ProductRepresentationObject setAdditionalInfo(ProductRepresentationObject product,
+														  Map<Long, String> productCoverImgs) {
 		String imgUrl = productCoverImgs.get(product.getId());
 		product.setImageUrl(imgUrl);
 		if (imgUrl.equals("no_img_found.jpg"))
 			product.setHidden(true);
-
 		return product;
 	}
 
@@ -1981,12 +2033,6 @@ public class ProductService {
 
 	private ProductRepresentationObject getProductRepresentation(ProductEntity product, Map<Long, String> productCoverImgs) {
 		ProductRepresentationObject rep = getProductRepresentation(product);
-		setAdditionalInfo(rep, productCoverImgs);
-		return rep;
-	}
-
-	private ProductRepresentationObject getProductRepresentationFromStock(StocksEntity stock, Map<Long, String> productCoverImgs) {
-		ProductRepresentationObject rep = getProductRepresentationFromStock(stock);
 		setAdditionalInfo(rep, productCoverImgs);
 		return rep;
 	}
