@@ -1253,7 +1253,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	private void validateOrdersDeletionIds(List<Long> orderIds, Long orgId) throws BusinessException {
-		List<OrdersEntity> orders = ordersRepository.getNewOrders(orderIds);
+		List<OrdersEntity> orders = ordersRepository.getOrdersIn(orderIds);
 
 		for(OrdersEntity order : orders) {
 			if (!order.getOrganizationEntity().getId().equals(orgId))

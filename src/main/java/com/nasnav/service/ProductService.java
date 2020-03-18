@@ -13,6 +13,7 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PR
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
+import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_NOT_EXISTS;
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
@@ -75,6 +76,7 @@ import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
@@ -99,6 +101,7 @@ import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.dto.VariantDTO;
 import com.nasnav.dto.VariantFeatureDTO;
 import com.nasnav.dto.VariantUpdateDTO;
+import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
@@ -144,6 +147,9 @@ public class ProductService {
 	private final ProductFeaturesRepository productFeaturesRepository;
 
 	private final StockService stockService;
+	
+	@Autowired
+	private OrdersRepository ordersRepository;
 
 	@Autowired
 	private  FileService fileService;
@@ -2037,7 +2043,11 @@ public class ProductService {
 
 
 	public void deleteAllProducts() {
-		// TODO Auto-generated method stub
+		Long orgId = securityService.getCurrentUserOrganizationId();
 		
+		basketRepo.deleteByOrganizationIdAndStatus( NEW.getValue(), orgId);
+		ordersRepository.deleteByStatusAndOrgId( NEW.getValue(), orgId);
+		productVariantsRepository.deleteAllByProductEntity_organizationId(orgId);
+		productRepository.deleteAllByOrganizationId(orgId);
 	}
 }

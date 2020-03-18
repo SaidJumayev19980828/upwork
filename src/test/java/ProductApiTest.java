@@ -1,3 +1,4 @@
+import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.util.Arrays.asList;
@@ -54,6 +55,7 @@ import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductSortOptions;
 import com.nasnav.dto.ProductsResponse;
+import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ProductEntity;
@@ -1145,17 +1147,20 @@ public class ProductApiTest {
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Products_API_Test_Data_Insert_3.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void deleteAllProductsTest() {
-		long productCountBefore = productRepository.countByOrganizationId(99001L);
-		long variantCountBefore = variantRepo.countByProductEntity_OrganizationId(99001L);
-		long bundlesCountBefore = bundleRepo.countByOrganizationId(99001L);
-		long ordersCountBefore = orderRepo.countByOrganizationEntity_id(99001L);
+		Long org = 99002L;
+		Long otherOrg = 99001L;
+		
+		long productCountBefore = productRepository.countByOrganizationId(org);
+		long variantCountBefore = variantRepo.countByProductEntity_organizationId(org);
+		long bundlesCountBefore = bundleRepo.countByOrganizationId(org);
+		long ordersCountBefore = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), org);
 		
 		assertNotEquals("all should have some data before the delete", 0L, productCountBefore + variantCountBefore + bundlesCountBefore + ordersCountBefore);
 		
-		long productCountOtherOrgBefore = productRepository.countByOrganizationId(99002L);
-		long variantCountOtherOrgBefore = variantRepo.countByProductEntity_OrganizationId(99002L);
-		long bundlesCountOtherOrgBefore = bundleRepo.countByOrganizationId(99002L);
-		long ordersCountOtherOrgBefore = orderRepo.countByOrganizationEntity_id(99002L);
+		long productCountOtherOrgBefore = productRepository.countByOrganizationId(otherOrg);
+		long variantCountOtherOrgBefore = variantRepo.countByProductEntity_organizationId(otherOrg);
+		long bundlesCountOtherOrgBefore = bundleRepo.countByOrganizationId(otherOrg);
+		long ordersCountOtherOrgBefore = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), otherOrg);
 		
 		assertNotEquals("other organization should have some data before the delete", 0L, productCountBefore + variantCountBefore + bundlesCountBefore + ordersCountBefore);
 		
@@ -1165,7 +1170,7 @@ public class ProductApiTest {
 		assertNotEquals(0L, ordersCountOtherOrgBefore);
 		
 		//----------------------------------------------------------
-		HttpEntity<?> request =  getHttpEntity("" , ORG_ADMIN_TOKEN);
+		HttpEntity<?> request =  getHttpEntity("" , "131415");
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/all" ,DELETE, request, String.class);
@@ -1173,27 +1178,27 @@ public class ProductApiTest {
 		assertEquals(OK, response.getStatusCode());
 
 		//----------------------------------------------------------
-		long productCountAfter = productRepository.countByOrganizationId(99001L);
-		long variantCountAfter = variantRepo.countByProductEntity_OrganizationId(99001L);
-		long bundlesCountAfter = bundleRepo.countByOrganizationId(99001L);
-		long ordersCountAfter = orderRepo.countByOrganizationEntity_id(99001L);
+		long productCountAfter = productRepository.countByOrganizationId(org);
+		long variantCountAfter = variantRepo.countByProductEntity_organizationId(org);
+		long bundlesCountAfter = bundleRepo.countByOrganizationId(org);
+		long ordersCountAfter = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), org);
 		
 		assertEquals(0L, productCountAfter);
 		assertEquals(0L, variantCountAfter);
 		assertEquals(0L, bundlesCountAfter);
 		assertEquals(0L, ordersCountAfter);
 		
-		long productCountOtherOrgAfter = productRepository.countByOrganizationId(99002L);
-		long variantCountOtherOrgAfter = variantRepo.countByProductEntity_OrganizationId(99002L);
-		long bundlesCountOtherOrgAfter = bundleRepo.countByOrganizationId(99002L);
-		long ordersCountOtherOrgAfter = orderRepo.countByOrganizationEntity_id(99002L);
+		long productCountOtherOrgAfter = productRepository.countByOrganizationId(otherOrg);
+		long variantCountOtherOrgAfter = variantRepo.countByProductEntity_organizationId(otherOrg);
+		long bundlesCountOtherOrgAfter = bundleRepo.countByOrganizationId(otherOrg);
+		long ordersCountOtherOrgAfter = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), otherOrg);
 		
-		assertNotEquals("other organization should have some data before the delete", 0L, productCountBefore + variantCountBefore + bundlesCountBefore + ordersCountBefore);
+		assertNotEquals("other organization should have the same data after the delete", 0L, productCountBefore + variantCountBefore + bundlesCountBefore + ordersCountBefore);
 		
-		assertNotEquals(0L, productCountOtherOrgAfter);
-		assertNotEquals(0L, variantCountOtherOrgAfter);
-		assertNotEquals(0L, bundlesCountOtherOrgAfter);
-		assertNotEquals(0L, ordersCountOtherOrgAfter);
+		assertEquals(productCountOtherOrgBefore, productCountOtherOrgAfter);
+		assertEquals(variantCountOtherOrgBefore, variantCountOtherOrgAfter);
+		assertEquals(bundlesCountOtherOrgBefore, bundlesCountOtherOrgAfter);
+		assertEquals(ordersCountOtherOrgBefore, ordersCountOtherOrgAfter);
 	}
 	
 	

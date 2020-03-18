@@ -83,17 +83,22 @@ insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organiz
 
 
 --insert bundle 
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, product_type) VALUES (1009, 'bundle',102, 202, 99002, now(), now(),1);
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, product_type) VALUES (1009, 'bundle',102, 202, 99002, now(), now(),0);
 insert into public.product_variants(id, "name" , product_id ) values(310009, 'var' 	, 1009);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(607, 502, 6, now(), now(), 99002, 600.0, 310009);
 
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, product_type) VALUES (1010, 'bundle_to_delete',102, 202, 99002, now(), now(),1);
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, product_type) VALUES (1010, 'bundle_to_delete',102, 202, 99002, now(), now(),0);
 insert into public.product_variants(id, "name" , product_id ) values(310010, 'var' 	, 1010);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(608, 502, 6, now(), now(), 99002, 600.0, 310010);
 
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, product_type, removed) VALUES (1011, 'deleted_bundle',102, 202, 99002, now(), now(),1, 1);
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, product_type, removed) VALUES (1011, 'deleted_bundle',102, 202, 99002, now(), now(),1, 0);
 insert into public.product_variants(id, "name" , product_id ) values(310011, 'var' 	, 1011);
 insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(609, 502, 6, now(), now(), 99002, 600.0, 310011);
+
+
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at, product_type, removed) VALUES (1021, 'just_another_bundle',102, 202, 99001, now(), now(),1, 0);
+insert into public.product_variants(id, "name" , product_id ) values(310021, 'var' 	, 1021);
+insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(621, 502, 6, now(), now(), 99001, 777.0, 310021);
 
 
 -- set child bundle items
@@ -103,6 +108,8 @@ insert into public.product_bundles(product_id, bundle_stock_id)
 values(1010 , 603);
 insert into public.product_bundles(product_id, bundle_stock_id)
 values(1011 , 612);
+insert into public.product_bundles(product_id, bundle_stock_id)
+values(1021 , 621);
 
 
 -- insert image for products  which should be deleted in tests
