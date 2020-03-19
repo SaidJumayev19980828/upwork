@@ -23,6 +23,7 @@ import reactor.core.publisher.Flux;
 public interface ProductImageService {
 	
 	static final int PRODUCT_IMAGE = 7;
+	public String NO_IMG_FOUND_URL = "no_img_found.jpg";
 
 	ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException;
 	

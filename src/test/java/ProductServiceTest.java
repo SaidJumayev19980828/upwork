@@ -673,6 +673,7 @@ public class ProductServiceTest {
 		System.out.println(response.getBody());
 		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
 
+		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(BUNDLE_ITEM_NUM, json.getJSONArray("bundle_items").length());
 		assertEquals(BUNDLE_ITEM_MIN_QUANTITY,
 							json.getJSONArray("variants")
@@ -787,29 +788,10 @@ public class ProductServiceTest {
 
 
 
-
-
-
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
 	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
-	public void testProductWithNoVariantIsHidden(){
-		// product #1004 with no variants .. return hidden = true and no price info
-		ResponseEntity<ProductsResponse> response =
-				template.getForEntity("/navbox/products?org_id=99001&category_id=201&brand_id=102", ProductsResponse.class);
-
-		Boolean isHidden = 	getProductFromResponse(response, 1004L).isHidden();
-
-		Assert.assertTrue(isHidden);
-	}
-
-
-
-
-	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
-	public void testProductWithSingleVariantReturnedMinimumPrice(){
+	public void testProductReturnedMinimumPrice(){
 		// product #1001 with 1 variant and two stocks .. one with price 600 and the other 400 .. return lowest price info
 		ResponseEntity<ProductsResponse> response =
 				template.getForEntity("/navbox/products?org_id=99001&category_id=201&brand_id=101", ProductsResponse.class);
@@ -817,7 +799,6 @@ public class ProductServiceTest {
 		ProductRepresentationObject product = getProductFromResponse(response, 1001L);
 
 		Assert.assertEquals( new BigDecimal("400.00"), product.getPrice());
-		Assert.assertFalse(product.isMultipleVariants());
 	}
 
 
@@ -830,7 +811,7 @@ public class ProductServiceTest {
 		System.out.println(response.getBody());
 		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		long total = json.getLong("total");
-		assertEquals("there are total 4 products with with org_id = 99001 and no brand_id filter",4 , total);
+		assertEquals("there are total 3 products with with org_id = 99001 and no brand_id filter",3 , total);
 
 
 		response = template.getForEntity("/navbox/products?org_id=99001&brand_id=101", String.class);
@@ -844,7 +825,7 @@ public class ProductServiceTest {
 		System.out.println(response.getBody());
 		json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		total = json.getLong("total");
-		assertEquals("there are 2 products with brand_id = 102", 2, total);
+		assertEquals("there are 1 product with brand_id = 102", 1, total);
 		//// finish test
 
 		//// test fields existance in both "product" and "products" apis

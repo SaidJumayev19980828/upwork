@@ -114,8 +114,6 @@ import reactor.util.function.Tuple3;
 
 @Service
 public class ProductImageServiceImpl implements ProductImageService {
-	
-	private static final String NO_IMG_FOUND_URL = "no_img_found.jpg";
 
 	private static final String[] SUPPORTED_IMG_FORMATS = {".png", ".jpg", ".jpeg"};
 
@@ -1497,7 +1495,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 							.sorted( comparing(ProductImagesEntity::getId))
 							.findFirst()
 							.map(img-> img.getUri())
-							.orElse(NO_IMG_FOUND_URL);
+							.orElse(ProductImageService.NO_IMG_FOUND_URL);
 	}
 	
 	
@@ -1527,7 +1525,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 											.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));	
 		productIds.stream()
 				.filter(id -> !productImgsMap.keySet().contains(id))
-				.forEach(id -> productImgsMap.put(id, NO_IMG_FOUND_URL));
+				.forEach(id -> productImgsMap.put(id, ProductImageService.NO_IMG_FOUND_URL));
 		
 		return productImgsMap;
 	}
@@ -1555,7 +1553,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 												.thenComparing(ProductImgDTO::getId)))
 							.flatMap(s -> s.findFirst())
 							.map(ProductImgDTO::getUrl)
-							.orElse(NO_IMG_FOUND_URL);
+							.orElse(ProductImageService.NO_IMG_FOUND_URL);
 				
 		return new AbstractMap.SimpleEntry<>(mapEntry.getKey(), uri);
 	}
