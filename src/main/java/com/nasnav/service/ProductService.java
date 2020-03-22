@@ -110,7 +110,7 @@ public class ProductService {
 	//	@Value("${products.default.count}")
 	private Integer defaultCount = 10;
 	//	@Value("${products.default.sort.attribute}")
-	private String defaultSortAttribute = "creation_date";
+	private String defaultSortAttribute = "update_date";
 	//	@Value("${products.default.order}")
 	private String defaultOrder = "desc";
 
@@ -553,8 +553,8 @@ public class ProductService {
 
 		List<Organization_BrandRepresentationObject> brands = getProductBrands(factory, baseQuery, product);
 
-		List<com.nasnav.dto.response.navbox.VariantFeatureDTO.VariantFeatureDTOList> variantsFeatures =
-				getProductVariantFeatures(factory, baseQuery, product);
+        Map<String, List<String>> variantsFeatures =
+				getProductVariantFeatures(factory, baseQuery);
 
 		ProductsFiltersResponse response = new ProductsFiltersResponse(prices, brands, variantsFeatures);
 
@@ -582,8 +582,7 @@ public class ProductService {
 	}
 
 
-	private List<com.nasnav.dto.response.navbox.VariantFeatureDTO.VariantFeatureDTOList> getProductVariantFeatures(SQLQueryFactory factory,
-																							 SQLQuery baseQuery, QProducts product) throws SQLException {
+	private Map getProductVariantFeatures(SQLQueryFactory factory, SQLQuery baseQuery) throws SQLException {
 		QProductVariants variant = QProductVariants.productVariants;
 		QProductFeatures feature = QProductFeatures.productFeatures;
 
@@ -596,19 +595,20 @@ public class ProductService {
 		SQLQuery query = factory.select(Expressions.numberTemplate(Long.class, "features_val.id"),
 										Expressions.stringTemplate("name"),
 										Expressions.stringTemplate("p_name"),
-										Expressions.stringTemplate("features_val.feature_value")).distinct()
+										Expressions.stringTemplate("features_val.feature_value").as("value")).distinct()
 								.from(featuresVal.as("features_val")).leftJoin(feature)
 								.on(feature.id.eq(Expressions.numberTemplate(Long.class, "features_val.id")));
 
-		List<com.nasnav.dto.response.navbox.VariantFeatureDTO.VariantFeatureDTOList> variantsList =
+		List<com.nasnav.dto.response.navbox.VariantFeatureDTO> variantsList =
 						template.query(query.getResults().getStatement().toString(),
-							new BeanPropertyRowMapper<>(com.nasnav.dto.response.navbox.VariantFeatureDTO.VariantFeatureDTOList.class));
+							new BeanPropertyRowMapper<>(com.nasnav.dto.response.navbox.VariantFeatureDTO.class));
 
-		return variantsList;/*variantsList.stream()
-						   .collect( groupingBy(com.nasnav.dto.response.navbox.VariantFeatureDTO.VariantFeatureDTOList::getId))
-						   .entrySet()
-						   .stream()
-						   .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));	*/
+
+		Map<String, List<String>> variantsFeaturesMap = variantsList.stream()
+						    .collect(groupingBy(com.nasnav.dto.response.navbox.VariantFeatureDTO::getName
+									, Collectors.mapping(d->d.getValue().replace("\"", ""),Collectors.toList())));
+
+		return variantsFeaturesMap;
 	}
 
 

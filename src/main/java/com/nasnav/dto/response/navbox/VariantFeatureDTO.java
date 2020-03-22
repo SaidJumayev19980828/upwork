@@ -8,10 +8,5 @@ import java.util.List;
 public class VariantFeatureDTO {
     private Long id;
     private String name;
-    private List<String> values;
-
-
-    public static class VariantFeatureDTOList extends VariantFeatureDTO {
-        private String values;
-    }
+    private String value;
 }

@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
@@ -14,5 +15,5 @@ public class ProductsFiltersResponse {
     private Prices prices;
     private List<Organization_BrandRepresentationObject> brands;
     @JsonProperty("variant_features")
-    private List<VariantFeatureDTO.VariantFeatureDTOList> variantFeatures;
+    private Map<String, List<String>> variantFeatures;
 }

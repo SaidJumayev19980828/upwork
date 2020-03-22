@@ -14,6 +14,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.nasnav.dto.ProductsFiltersResponse;
+import com.nasnav.request.ProductSearchParam;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -885,6 +887,30 @@ public class ProductServiceTest {
 	}
 
 
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void testGetProductFilters() {
+		ProductSearchParam param = new ProductSearchParam();
+		param.org_id = 99001L;
+
+		ResponseEntity<ProductsFiltersResponse> response =
+				template.getForEntity("/navbox/filters?"+param.toString(), ProductsFiltersResponse.class);
+		assertEquals(200, response.getStatusCodeValue());
+
+		JSONObject res = new JSONObject(response.getBody());
+		assertEquals(3, res.length());
+		JSONObject prices = res.getJSONObject("prices");
+		assertEquals(new BigDecimal(200).setScale(2), prices.getBigDecimal("minPrice"));
+		assertEquals(new BigDecimal(1200).setScale(2), prices.getBigDecimal("maxPrice"));
+		JSONArray brands = res.getJSONArray("brands");
+		assertTrue(!brands.isEmpty());
+
+		JSONObject variantFeatures = res.getJSONObject("variantFeatures");
+		assertTrue(!variantFeatures.isEmpty());
+
+
+	}
 
 
 

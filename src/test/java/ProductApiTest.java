@@ -887,7 +887,7 @@ public class ProductApiTest {
 	
 	
 	@Test
-	public void testGetProductsFilters() {
+	public void testGetProductsByDifferentFilters() {
 		/* try to get products by different filters */
 
 		// get by org_id only
