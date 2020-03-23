@@ -30,6 +30,8 @@ public class QOrganizationDomains extends com.querydsl.sql.RelationalPathBase<QO
 
     public final NumberPath<Long> organizationId = createNumber("organizationId", Long.class);
 
+    public final StringPath subdir = createString("subdir");
+
     public final com.querydsl.sql.ForeignKey<QOrganizations> newtableFk = createForeignKey(organizationId, "id");
 
     public QOrganizationDomains(String variable) {
@@ -60,7 +62,8 @@ public class QOrganizationDomains extends com.querydsl.sql.RelationalPathBase<QO
     public void addMetadata() {
         addMetadata(domain, ColumnMetadata.named("domain").withIndex(2).ofType(Types.VARCHAR).withSize(2147483647).notNull());
         addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
-        addMetadata(organizationId, ColumnMetadata.named("organization_id").withIndex(3).ofType(Types.BIGINT).withSize(19).notNull());
+        addMetadata(organizationId, ColumnMetadata.named("organization_id").withIndex(4).ofType(Types.BIGINT).withSize(19).notNull());
+        addMetadata(subdir, ColumnMetadata.named("subdir").withIndex(3).ofType(Types.VARCHAR).withSize(2147483647));
     }
 
 }

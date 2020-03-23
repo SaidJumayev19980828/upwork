@@ -48,6 +48,8 @@ public class QOrganizations extends com.querydsl.sql.RelationalPathBase<QOrganiz
 
     public final com.querydsl.sql.ForeignKey<QProducts> _productsOrganizationIdFkey = createInvForeignKey(id, "organization_id");
 
+    public final com.querydsl.sql.ForeignKey<QOrganizationPayments> _organizationPaymentsFk = createInvForeignKey(id, "organization_id");
+
     public final com.querydsl.sql.ForeignKey<QSubscribedUsers> _rails1038aeed15Fk = createInvForeignKey(id, "organization_id");
 
     public final com.querydsl.sql.ForeignKey<QShopSections> _rails102545b523Fk = createInvForeignKey(id, "organization_id");

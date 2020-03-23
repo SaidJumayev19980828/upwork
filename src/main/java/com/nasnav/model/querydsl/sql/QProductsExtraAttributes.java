@@ -40,9 +40,9 @@ public class QProductsExtraAttributes extends com.querydsl.sql.RelationalPathBas
 
     public final com.querydsl.sql.ForeignKey<QProductVariants> variantsExtraAttributesFk = createForeignKey(variantId, "id");
 
-    public final com.querydsl.sql.ForeignKey<QExtraAttributes> productsExtraAttributesIdFk = createForeignKey(extraAttributeId, "id");
-
     public final com.querydsl.sql.ForeignKey<QExtraAttributes> extraAttributeIdFkey = createForeignKey(extraAttributeId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QExtraAttributes> productsExtraAttributesIdFk = createForeignKey(extraAttributeId, "id");
 
     public QProductsExtraAttributes(String variable) {
         super(QProductsExtraAttributes.class, forVariable(variable), "public", "products_extra_attributes");

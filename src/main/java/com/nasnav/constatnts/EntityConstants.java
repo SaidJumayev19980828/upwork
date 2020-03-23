@@ -24,6 +24,8 @@ public final class EntityConstants {
     public static final int TOKEN_VALIDITY = 2;
     
     
+    public static final String NASNAV_DOMAIN = "nasnav.com";
+    
     public enum Operation{
     	UPDATE("update"),
     	CREATE("create"),

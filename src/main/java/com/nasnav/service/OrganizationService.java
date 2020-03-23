@@ -1,5 +1,7 @@
 package com.nasnav.service;
 
+import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 import java.net.URISyntaxException;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.commons.utils.StringUtils;
+import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.OrganizationResponse;
@@ -672,7 +675,7 @@ public class OrganizationService {
             throw new BusinessException("the provided url is mailformed","INVALID_PARAM: url", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        String domain = url.getHost();
+        String domain = ofNullable(url.getHost()).orElse("");
 	    domain = domain.startsWith("www.") ? domain.substring(4) : domain; //getting domain
 
 	    String subDir = null;
@@ -682,7 +685,13 @@ public class OrganizationService {
 		    	subDir = subdirectories[1];
 		    }
 	    }
-	    OrganizationDomainsEntity orgDom = orgDomainsRep.findByDomainAndSubdir(domain,subDir);
+	    
+	    OrganizationDomainsEntity orgDom = null;
+	    if(domain.endsWith(NASNAV_DOMAIN)) {
+	    	orgDom = orgDomainsRep.findByDomainAndSubdir(domain,subDir);
+	    }else {
+	    	orgDom = orgDomainsRep.findByDomain(domain);
+	    }    	
 
 		return (orgDom == null) ? new Pair(0L, 0L) : new Pair(orgDom.getOrganizationEntity().getId(), subDir == null ? 0L : 1L);
     }

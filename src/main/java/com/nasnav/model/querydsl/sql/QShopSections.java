@@ -44,9 +44,9 @@ public class QShopSections extends com.querydsl.sql.RelationalPathBase<QShopSect
 
     public final com.querydsl.sql.PrimaryKey<QShopSections> shopSectionsPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QOrganizations> rails102545b523Fk = createForeignKey(organizationId, "id");
-
     public final com.querydsl.sql.ForeignKey<QShopFloors> railsF2b72e42c7Fk = createForeignKey(shopFloorId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOrganizations> rails102545b523Fk = createForeignKey(organizationId, "id");
 
     public final com.querydsl.sql.ForeignKey<QScenes> _railsA66b01e057Fk = createInvForeignKey(id, "shop_section_id");
 

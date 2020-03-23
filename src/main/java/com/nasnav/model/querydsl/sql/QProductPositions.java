@@ -40,9 +40,9 @@ public class QProductPositions extends com.querydsl.sql.RelationalPathBase<QProd
 
     public final com.querydsl.sql.PrimaryKey<QProductPositions> productPositionsPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QOrganizations> railsFefa61a65aFk = createForeignKey(organizationId, "id");
-
     public final com.querydsl.sql.ForeignKey<QShop360s> rails7a3b031e76Fk = createForeignKey(shop360Id, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOrganizations> railsFefa61a65aFk = createForeignKey(organizationId, "id");
 
     public QProductPositions(String variable) {
         super(QProductPositions.class, forVariable(variable), "public", "product_positions");

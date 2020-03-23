@@ -94,9 +94,9 @@ public class QBrands extends com.querydsl.sql.RelationalPathBase<QBrands> {
 
     public final com.querydsl.sql.PrimaryKey<QBrands> brandsPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QOrganizationManagers> rails7665b5107fFk = createForeignKey(organizationManagerId, "id");
-
     public final com.querydsl.sql.ForeignKey<QOrganizations> brandsOrganizationIdFkey = createForeignKey(organizationId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOrganizationManagers> rails7665b5107fFk = createForeignKey(organizationManagerId, "id");
 
     public final com.querydsl.sql.ForeignKey<QProductsOlds> _railsF3b4d49caaFk = createInvForeignKey(id, "brand_id");
 

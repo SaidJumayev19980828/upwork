@@ -44,9 +44,9 @@ public class QTags extends com.querydsl.sql.RelationalPathBase<QTags> {
 
     public final com.querydsl.sql.PrimaryKey<QTags> tagsPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QCategories> tagsCategoryIdFkey = createForeignKey(categoryId, "id");
-
     public final com.querydsl.sql.ForeignKey<QOrganizations> tagsOrganizationIdFkey = createForeignKey(organizationId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QCategories> tagsCategoryIdFkey = createForeignKey(categoryId, "id");
 
     public final com.querydsl.sql.ForeignKey<QProductTags> _productTagsTagIdFkey = createInvForeignKey(id, "tag_id");
 

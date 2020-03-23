@@ -1162,7 +1162,7 @@ public class ProductApiTest {
 		HttpEntity<?> request =  getHttpEntity("" , "131415");
 		
 		ResponseEntity<String> response = 
-				template.exchange("/product/all" ,DELETE, request, String.class);
+				template.exchange("/product/all?confirmed=true" ,DELETE, request, String.class);
 		
 		assertEquals(OK, response.getStatusCode());
 

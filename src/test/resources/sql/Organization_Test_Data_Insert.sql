@@ -3,8 +3,9 @@ INSERT INTO public.organizations(id, name, created_at, updated_at, p_name) VALUE
 INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());
 
 --inserting organization domain
-insert into organization_domains values(1, 'fortune', 99001);
-insert into organization_domains values(2, 'fortune-egypt.com', 99001);
+INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(1, 'fortune.nasnav.com', 99001);
+INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(2, 'fortune-egypt.com', 99001);
+INSERT INTO public.organization_domains (id, "domain", organization_id, subdir) VALUES(3, 'nasnav.com', 99001, 'fortune');
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (101, 202, 'brand_1', now(), now(), 99002);

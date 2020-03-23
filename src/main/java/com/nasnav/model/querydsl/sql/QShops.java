@@ -88,11 +88,11 @@ public class QShops extends com.querydsl.sql.RelationalPathBase<QShops> {
 
     public final com.querydsl.sql.PrimaryKey<QShops> shopsPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QBuildings> shopsBuildingIdFkey = createForeignKey(buildingId, "id");
-
     public final com.querydsl.sql.ForeignKey<QBrands> shopsBrandIdFkey = createForeignKey(brandId, "id");
 
     public final com.querydsl.sql.ForeignKey<QMalls> railsFb68d12dc0Fk = createForeignKey(mallId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QBuildings> shopsBuildingIdFkey = createForeignKey(buildingId, "id");
 
     public final com.querydsl.sql.ForeignKey<QOrganizations> shopsOrganizationIdFkey = createForeignKey(organizationId, "id");
 

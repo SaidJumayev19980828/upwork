@@ -2,7 +2,8 @@ package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.nonIsEmpty;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
-import static com.nasnav.commons.utils.StringUtils.*;
+import static com.nasnav.commons.utils.StringUtils.encodeUrl;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CANNOT_DELETE_BUNDLE_ITEM;
@@ -11,16 +12,21 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_CA
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_INVALID_EXTRA_ATTR_STRING;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_DELETE_FAILED;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
+import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_NOT_EXISTS;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
 import static com.nasnav.enumerations.OrderStatus.NEW;
-import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_NOT_EXISTS;
+import static com.nasnav.service.ProductImageService.NO_IMG_FOUND_URL;
+import static com.querydsl.sql.SQLExpressions.select;
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -43,26 +49,14 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
-import javax.persistence.criteria.*;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Order;
+import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import javax.sql.DataSource;
 
-import com.nasnav.dto.*;
-import com.nasnav.model.querydsl.sql.QBrands;
-import com.nasnav.model.querydsl.sql.QProductFeatures;
-import com.nasnav.model.querydsl.sql.QProductTags;
-import com.nasnav.model.querydsl.sql.QProductVariants;
-import com.nasnav.model.querydsl.sql.QProducts;
-import com.nasnav.model.querydsl.sql.QStocks;
-import com.nasnav.response.*;
-import com.nasnav.integration.events.data.StockEventParam;
-import com.nasnav.integration.microsoftdynamics.webclient.dto.Stocks;
-import com.nasnav.integration.sallab.webclient.dto.Product;
-import com.nasnav.persistence.*;
-import com.querydsl.core.BooleanBuilder;
-
-import com.querydsl.core.types.OrderSpecifier;
-import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.sql.*;
 import org.apache.commons.beanutils.BeanUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -97,11 +91,63 @@ import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.TagsRepository;
-import com.nasnav.enumerations.OrderStatus;
+import com.nasnav.dto.BundleDTO;
+import com.nasnav.dto.BundleElementUpdateDTO;
+import com.nasnav.dto.ExtraAttributeDTO;
+import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.Pair;
+import com.nasnav.dto.Prices;
+import com.nasnav.dto.ProductBaseInfo;
+import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductImageUpdateDTO;
+import com.nasnav.dto.ProductImgDTO;
+import com.nasnav.dto.ProductRepresentationObject;
+import com.nasnav.dto.ProductSortOptions;
+import com.nasnav.dto.ProductTagDTO;
+import com.nasnav.dto.ProductUpdateDTO;
+import com.nasnav.dto.ProductsFiltersResponse;
+import com.nasnav.dto.ProductsResponse;
+import com.nasnav.dto.StockDTO;
+import com.nasnav.dto.TagsRepresentationObject;
+import com.nasnav.dto.VariantDTO;
+import com.nasnav.dto.VariantFeatureDTO;
+import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.model.querydsl.sql.QBrands;
+import com.nasnav.model.querydsl.sql.QProductFeatures;
+import com.nasnav.model.querydsl.sql.QProductTags;
+import com.nasnav.model.querydsl.sql.QProductVariants;
+import com.nasnav.model.querydsl.sql.QProducts;
+import com.nasnav.model.querydsl.sql.QStocks;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.BrandsEntity;
+import com.nasnav.persistence.BundleEntity;
+import com.nasnav.persistence.ExtraAttributesEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductExtraAttributesEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.ProductImagesEntity;
+import com.nasnav.persistence.ProductTypes;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.TagsEntity;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.request.ProductSearchParam;
+import com.nasnav.response.BundleResponse;
+import com.nasnav.response.ProductImageDeleteResponse;
+import com.nasnav.response.ProductImageUpdateResponse;
+import com.nasnav.response.ProductUpdateResponse;
+import com.nasnav.response.ProductsDeleteResponse;
+import com.nasnav.response.VariantUpdateResponse;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.sql.Configuration;
+import com.querydsl.sql.PostgreSQLTemplates;
+import com.querydsl.sql.SQLExpressions;
+import com.querydsl.sql.SQLQuery;
+import com.querydsl.sql.SQLQueryFactory;
 import com.sun.istack.logging.Logger;
 
 @Service
@@ -268,22 +314,31 @@ public class ProductService {
 		return result;
 	}
 
-	private List getProductsVariantsMultipleFlag(List<Long> productsIds) {
+	
+	
+	
+	private List<Long> filterProductsWithMultipleVariants(List<Long> productsIds) {
 		SQLQueryFactory queryFactory = new SQLQueryFactory(new Configuration(new PostgreSQLTemplates()), dataSource);
 
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
 
-		SQLQuery query = queryFactory.select(product.id)
-								.from(variant).innerJoin(product).on(product.id.eq(variant.productId))
-								.where(product.id.in(productsIds))
-								.having(variant.id.count().gt(1))
-								.groupBy(product.id);
+		SQLQuery<Long> query = 
+				queryFactory
+				.select(product.id)
+				.from(variant)
+				.innerJoin(product).on(product.id.eq(variant.productId))
+				.where(product.id.in(productsIds))
+				.having(variant.id.count().gt(1))
+				.groupBy(product.id);
 
 		return query.fetch();
 	}
 
 
+	
+	
+	
 	private List<ProductVariantsEntity> getProductVariants(ProductEntity product) throws BusinessException {
 		List<ProductVariantsEntity> productVariants = productVariantsRepository.findByProductEntity_Id(product.getId());
 		if (productVariants == null || productVariants.isEmpty()) {
@@ -295,6 +350,8 @@ public class ProductService {
 		return productVariants;
 	}
 
+	
+	
 	private List<ProductRepresentationObject> getBundleItems(ProductEntity product) {
 
 		List<Long> bundleProductsIdList = bundleRepository.getBundleItemsProductIds(product.getId());
@@ -472,9 +529,7 @@ public class ProductService {
 
 
 	private List<StockDTO> getStockList(ProductVariantsEntity variant,Long shopId)  {
-
 		List<StocksEntity> stocks = stockService.getVariantStockForShop(variant, shopId);
-
 		return	stocks
 				.stream()
 				.filter(stock -> stock != null)
@@ -486,10 +541,10 @@ public class ProductService {
 	public ProductsResponse getProducts(ProductSearchParam requestParams) throws BusinessException, InvocationTargetException, IllegalAccessException, SQLException {
 		ProductSearchParam params = getProductSearchParams(requestParams);
 
-		SQLQuery countStocks = getProductsQuery(params);
+		SQLQuery<?> countStocks = getProductsQuery(params);
 		Long productsCount = countStocks.fetchCount();
 
-		SQLQuery stocks = getProductsQuery(params);
+		SQLQuery<?> stocks = getProductsQuery(params);
 
 		stocks.select((Expressions.template(ProductRepresentationObject.class,"*")))
 				 .limit(params.count).offset(params.start);
@@ -504,7 +559,8 @@ public class ProductService {
 
 
 
-	private SQLQuery getProductsQuery(ProductSearchParam params) {
+	@SuppressWarnings("unchecked")
+	private SQLQuery<?> getProductsQuery(ProductSearchParam params) {
 		QStocks stock = QStocks.stocks;
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
@@ -512,39 +568,53 @@ public class ProductService {
 
 		SQLQueryFactory query = new SQLQueryFactory( new Configuration(new PostgreSQLTemplates()), dataSource);
 
-		SQLQuery productTagsQuery = getProductTagsQuery(query, productTags, params);
+		SQLQuery<?> productTagsQuery = getProductTagsQuery(query, productTags, params);
 
 		BooleanBuilder predicate = getQueryPredicate(params, product, stock);
 
-		OrderSpecifier order = getProductQueryOrder(params, product, stock);
+		OrderSpecifier<?> order = getProductQueryOrder(params, product, stock);
 
-		SQLQuery fromClause = getProductsBaseQuery(query, predicate);
+		SQLQuery<?> fromClause = getProductsBaseQuery(query, predicate);
 
-		SQLQuery sqlQuery = 
-				fromClause.select(stock.id.as("stock_id"), stock.quantity.as("quantity"), stock.price.as("price"),
-                stock.discount, stock.currency,
-				product.organizationId.as("organization_id"), stock.shopId.as("shop_id"),
-				variant.barcode.as("variant_barcode"), variant.featureSpec,
-				product.id, product.barcode, product.brandId.as("brand_id"),
-				product.categoryId.as("category_id"), product.description.as("description"), product.name.as("name"),
-				product.createdAt.as("creation_date"), product.updatedAt.as("update_date"),
-				SQLExpressions.rowNumber()
-						.over()
-						.partitionBy(product.id)
-						.orderBy(stock.price).as("row_num"));
+		SQLQuery<?> productsQuery = 
+				fromClause.select(
+						stock.id.as("stock_id"), 
+						stock.quantity.as("quantity"), 
+						stock.price.as("price"),
+		                stock.discount, stock.currency,
+						product.organizationId.as("organization_id"), 
+						stock.shopId.as("shop_id"),
+						variant.barcode.as("variant_barcode"), 
+						variant.featureSpec,
+						product.id, 
+						product.barcode, 
+						product.brandId.as("brand_id"),
+						product.categoryId.as("category_id"), 
+						product.description.as("description"), 
+						product.name.as("name"),
+						product.createdAt.as("creation_date"), 
+						product.updatedAt.as("update_date"),
+						SQLExpressions.rowNumber()
+								.over()
+								.partitionBy(product.id)
+								.orderBy(stock.price).as("row_num"));
 
 		if (productTagsQuery != null)
-			sqlQuery.where(product.id.in((com.querydsl.core.types.Expression<? extends Long>) productTagsQuery));
+			productsQuery.where(product.id.in((com.querydsl.core.types.Expression<? extends Long>) productTagsQuery));
 
 		if (order != null)
-			sqlQuery.orderBy(order);
+			productsQuery.orderBy(order);
 
-		SQLQuery stocks = query.from(sqlQuery.as("total_products"))
+		SQLQuery<?> stocks = 
+				query
+				.from(productsQuery.as("total_products"))
 				.where(Expressions.numberPath(Long.class, "row_num").eq(1L));
 
 		return stocks;
 	}
 
+	
+	
 	public ProductsFiltersResponse getProductAvailableFilters(ProductSearchParam param) throws BusinessException, IllegalAccessException, InvocationTargetException, SQLException {
 		ProductSearchParam finalParams = getProductSearchParams(param);
 
@@ -555,7 +625,7 @@ public class ProductService {
 
 		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock);
 
-		SQLQuery baseQuery = getProductsBaseQuery(factory, predicate);
+		SQLQuery<?> baseQuery = getProductsBaseQuery(factory, predicate);
 
 		Prices prices = getProductPrices(baseQuery,stock);
 
@@ -571,18 +641,20 @@ public class ProductService {
 
 
 
-	private Prices getProductPrices(SQLQuery baseQuery, QStocks stock) throws SQLException {
-		SQLQuery query = baseQuery.select(stock.price.min().as("minPrice"), stock.price.max().as("maxPrice"));
-
+	private Prices getProductPrices(SQLQuery<?> baseQuery, QStocks stock) throws SQLException {
+		SQLQuery<?> query = 
+				baseQuery.select(
+						stock.price.min().as("minPrice"),
+						stock.price.max().as("maxPrice"));
 		return template.queryForObject(query.getResults().getStatement().toString(), new BeanPropertyRowMapper<>(Prices.class));
 	}
 
 
 
-	private List<Organization_BrandRepresentationObject> getProductBrands(SQLQueryFactory factory, SQLQuery baseQuery, QProducts product) throws SQLException {
+	private List<Organization_BrandRepresentationObject> getProductBrands(SQLQueryFactory factory, SQLQuery<?> baseQuery, QProducts product) throws SQLException {
 		QBrands brand = QBrands.brands;
 
-		SQLQuery query = factory.select(brand.id, brand.name).from(brand)
+		SQLQuery<?> query = factory.select(brand.id, brand.name).from(brand)
 								.where(brand.id.in(baseQuery.select(product.brandId)));
 
 		return template.query(query.getResults().getStatement().toString(),
@@ -590,17 +662,23 @@ public class ProductService {
 	}
 
 
-	private Map getProductVariantFeatures(SQLQueryFactory factory, SQLQuery baseQuery) throws SQLException {
+	
+	
+	private Map<String, List<String>> getProductVariantFeatures(SQLQueryFactory factory, SQLQuery<?> baseQuery) throws SQLException {
 		QProductVariants variant = QProductVariants.productVariants;
 		QProductFeatures feature = QProductFeatures.productFeatures;
 
-		SQLQuery featuresVal =
-				factory.select(Expressions.numberTemplate(Long.class, "(json_each(text_to_json(feature_spec))).key::int8").as("id"),
-				Expressions.stringTemplate("(json_each(text_to_json(feature_spec))).value::varchar").as("feature_value"))
-				.from(baseQuery.select(variant.featureSpec).as("product_variants"))
-				.where(variant.featureSpec.isNotNull().and(variant.featureSpec.ne("'{}'")));
+		SQLQuery<?> featuresVal =
+				factory
+				.select(
+						Expressions.numberTemplate(Long.class, "(json_each(text_to_json(feature_spec))).key::int8").as("id"),
+						Expressions.stringTemplate("(json_each(text_to_json(feature_spec))).value::varchar").as("feature_value"))
+				.from(baseQuery
+						.select(variant.featureSpec).as("product_variants"))
+				.where(variant.featureSpec.isNotNull()
+						.and(variant.featureSpec.ne("'{}'")));
 
-		SQLQuery query = factory.select(Expressions.numberTemplate(Long.class, "features_val.id"),
+		SQLQuery<?> query = factory.select(Expressions.numberTemplate(Long.class, "features_val.id"),
 										Expressions.stringTemplate("name"),
 										Expressions.stringTemplate("p_name"),
 										Expressions.stringTemplate("features_val.feature_value").as("value")).distinct()
@@ -612,16 +690,17 @@ public class ProductService {
 							new BeanPropertyRowMapper<>(com.nasnav.dto.response.navbox.VariantFeatureDTO.class));
 
 
-		Map<String, List<String>> variantsFeaturesMap = variantsList.stream()
-						    .collect(groupingBy(com.nasnav.dto.response.navbox.VariantFeatureDTO::getName
-									, Collectors.mapping(d->d.getValue().replace("\"", ""),Collectors.toList())));
-
-		return variantsFeaturesMap;
+		return variantsList
+				.stream()
+				.collect(
+						groupingBy(com.nasnav.dto.response.navbox.VariantFeatureDTO::getName
+									, mapping(d -> d.getValue().replace("\"", ""), toList())));
 	}
 
 
+	
 
-	private SQLQuery getProductsBaseQuery(SQLQueryFactory query, BooleanBuilder predicate) {
+	private SQLQuery<?> getProductsBaseQuery(SQLQueryFactory query, BooleanBuilder predicate) {
 		QStocks stock = QStocks.stocks;
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
@@ -632,7 +711,7 @@ public class ProductService {
 	}
 
 
-	private OrderSpecifier getProductQueryOrder(ProductSearchParam params, QProducts product, QStocks stock) {
+	private OrderSpecifier<?> getProductQueryOrder(ProductSearchParam params, QProducts product, QStocks stock) {
 		if (params.getOrder().equals(SortOrder.DESC))
 			switch (params.getSort()) {
 				case ID : return product.id.desc();
@@ -651,9 +730,12 @@ public class ProductService {
 				case UPDATE_DATE: return product.updatedAt.asc();
 				case PRICE: return stock.price.asc();
 			}
-		return null;
+		return product.updatedAt.desc();
 	}
 
+	
+	
+	
 	private BooleanBuilder getQueryPredicate(ProductSearchParam params, QProducts product, QStocks stock) {
 		BooleanBuilder predicate = new BooleanBuilder();
 
@@ -685,18 +767,29 @@ public class ProductService {
 		return predicate;
 	}
 
+	
+	
+	
+	
 	private SQLQuery<Long> getProductTagsQuery(SQLQueryFactory query, QProductTags productTags, ProductSearchParam params) {
 		if (params.getTags() == null)
 			return null;
 
 		return query.select(Expressions.numberPath(Long.class, "id"))
-					.from(SQLExpressions.select(productTags.productId.as("id"), productTags.tagId.count().as("count"))
-										.from(productTags)
-										.where(productTags.tagId.in(params.getTags()))
-										.groupBy(productTags.productId)
-										.having(productTags.tagId.count().eq((long) params.getTags().size())).as("productTags"));
+					.from(
+							select(
+									productTags.productId.as("id")
+									, productTags.tagId.count().as("count"))
+							.from(productTags)
+							.where(productTags.tagId.in(params.getTags()))
+							.groupBy(productTags.productId)
+							.having(productTags.tagId.count().eq((long) params.getTags().size()))
+							.as("productTags"));
 	}
 
+	
+	
+	
 
 	ProductSearchParam getProductSearchParams(ProductSearchParam oldParams) throws BusinessException, InvocationTargetException, IllegalAccessException {
 		ProductSearchParam params = new ProductSearchParam();
@@ -741,21 +834,10 @@ public class ProductService {
 		return count == null ? defaultCount : count < 1000 ? count : 1000;
 	}
 
-	private Order getProductQueryOrderBy(ProductSearchParam params, CriteriaBuilder builder, Join root) {
-		if (!params.sort.getValue().equals("price")) {
-			Path orderByAttr = root.get(params.sort.getValue());
-			Order orderBy = builder.asc(orderByAttr);
-			if (params.order.equals(SortOrder.DESC)) {
-				orderBy = builder.desc(orderByAttr);
-			}
-			return orderBy;
-		}
-		return null;
-	}
-
+	
+	
 
 	private List<ProductEntity> getProductsByIds(List<Long> productsIds, String order, String sort) {
-
 		List<ProductEntity> products = null;
 
 		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.ID) {
@@ -818,7 +900,7 @@ public class ProductService {
 
 		Map<Long, List<TagsRepresentationObject>> productsTags = getProductsTagsDTOList(productIdList);
 
-		List<Long> productsVariantsCountFlag = getProductsVariantsMultipleFlag(productIdList);
+		List<Long> productsVariantsCountFlag = filterProductsWithMultipleVariants(productIdList);
 
 		stocks.stream()
 			.map(s -> setAdditionalInfo(s, productCoverImages))
@@ -859,9 +941,8 @@ public class ProductService {
 														  Map<Long, String> productCoverImgs) {
 		String imgUrl = productCoverImgs.get(product.getId());
 		product.setImageUrl(imgUrl);
-		if (imgUrl.equals(imgService.NO_IMG_FOUND_URL))
+		if (imgUrl.equals(NO_IMG_FOUND_URL))
 			product.setHidden(true);
-
 		return product;
 	}
 
@@ -2108,16 +2189,7 @@ public class ProductService {
 
 	}
 
-	private void setProductStockProperties(ProductRepresentationObject productRep, StocksEntity stock) {
-		productRep.setPrice(stock.getPrice());
-		productRep.setDiscount(stock.getDiscount());
-		productRep.setStockId(stock.getId());
-		productRep.setDefaultVariantFeatures(stock.getProductVariantsEntity().getFeatureSpec());
-		if (stock.getCurrency() != null) {
-			productRep.setCurrency( stock.getCurrency().ordinal() );
-		}
-	}
-
+	
 
 
 	private ProductRepresentationObject getProductRepresentation(ProductEntity product, Map<Long, String> productCoverImgs) {

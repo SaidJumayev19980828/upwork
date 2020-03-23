@@ -64,9 +64,9 @@ public class QOrders extends com.querydsl.sql.RelationalPathBase<QOrders> {
 
     public final com.querydsl.sql.PrimaryKey<QOrders> ordersPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QUsers> railsF868b47f6aFk = createForeignKey(userId, "id");
-
     public final com.querydsl.sql.ForeignKey<QShops> ordersShopIdFkey = createForeignKey(shopId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QUsers> railsF868b47f6aFk = createForeignKey(userId, "id");
 
     public final com.querydsl.sql.ForeignKey<QBaskets> _basketsOrderIdFkey = createInvForeignKey(id, "order_id");
 
