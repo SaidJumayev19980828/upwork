@@ -31,5 +31,7 @@ public interface OrderService {
 
 	public DetailedOrderRepObject getCurrentOrder(Integer detailsLevel) throws BusinessException;
 
+	public void deleteOrders(List<Long> orderIds) throws BusinessException;
+
 	public void deleteCurrentOrders();
 }

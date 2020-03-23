@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface OrganizationDomainsRepository extends JpaRepository<OrganizationDomainsEntity, Long> {
 
     OrganizationDomainsEntity findByDomain(String domain);
+    OrganizationDomainsEntity findByDomainAndSubdir(String domain, String subdir);
 }

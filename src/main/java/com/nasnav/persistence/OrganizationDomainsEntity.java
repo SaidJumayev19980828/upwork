@@ -28,6 +28,9 @@ public class OrganizationDomainsEntity implements BaseEntity{
     @Column(name="domain")
     private String domain;
 
+    @Column(name="subdir")
+    private String subdir;
+
     @Override
     public BaseRepresentationObject getRepresentation() {
         return null;

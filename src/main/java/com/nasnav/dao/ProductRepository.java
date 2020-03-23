@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import com.nasnav.dto.Pair;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nasnav.dto.Pair;
 import com.nasnav.persistence.ProductEntity;
 
 public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
@@ -92,6 +92,15 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     void detachProductsFromTag(@Param("tag_id") Long tagId);
 
 	List<ProductEntity> findByNameAndOrganizationId(String name, Long orgId);
+	
+	long countByOrganizationId(long l);
+	
+	
+
+	@Transactional
+    @Modifying
+    @Query( value = "update public.products set removed = 1 where organization_Id = :orgId", nativeQuery = true )
+	void deleteAllByOrganizationId(@Param("orgId")Long orgId);
 }
 
 

@@ -13,8 +13,10 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PR
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_HAS_NO_VARIANTS;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
+import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_NOT_EXISTS;
 import static java.lang.String.format;
+import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
@@ -88,12 +90,14 @@ import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.TagsRepository;
+import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.request.BundleSearchParam;
@@ -127,6 +131,9 @@ public class ProductService {
 	private final ProductFeaturesRepository productFeaturesRepository;
 
 	private final StockService stockService;
+	
+	@Autowired
+	private OrdersRepository ordersRepository;
 
 	@Autowired
 	private  FileService fileService;
@@ -513,7 +520,8 @@ public class ProductService {
 
 		SQLQuery fromClause = getProductsBaseQuery(query, predicate);
 
-		SQLQuery sqlQuery = fromClause.select(stock.id.as("stock_id"), stock.quantity.as("quantity"), stock.price.as("price"),
+		SQLQuery sqlQuery = 
+				fromClause.select(stock.id.as("stock_id"), stock.quantity.as("quantity"), stock.price.as("price"),
                 stock.discount, stock.currency,
 				product.organizationId.as("organization_id"), stock.shopId.as("shop_id"),
 				variant.barcode.as("variant_barcode"), variant.featureSpec,
@@ -1056,7 +1064,7 @@ public class ProductService {
 
 		for(Long productId : productIds) {
 			if(!productRepository.existsById(productId)) {
-				return new ProductsDeleteResponse(true, Collections.singletonList(productId)); //if the product doesn't exists, then..mission accomplished!
+				return new ProductsDeleteResponse(true, singletonList(productId)); //if the product doesn't exists, then..mission accomplished!
 			}
 
 			validateProductToDelete(productId);
@@ -2238,4 +2246,18 @@ public class ProductService {
 		return tagsMap;
 	}
 
+
+
+
+	public void deleteAllProducts(boolean isConfirmed) throws BusinessException {
+		if(!isConfirmed) {
+			throw new BusinessException("Unconfirmed Delete operation for all products!" , "UNCONFIRMED OPERATION", NOT_ACCEPTABLE);
+		}
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		
+		basketRepo.deleteByOrganizationIdAndStatus( NEW.getValue(), orgId);
+		ordersRepository.deleteByStatusAndOrgId( NEW.getValue(), orgId);
+		productVariantsRepository.deleteAllByProductEntity_organizationId(orgId);
+		productRepository.deleteAllByOrganizationId(orgId);
+	}
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dto.OrderSessionResponse;
 import com.nasnav.exceptions.BusinessException;
@@ -38,6 +39,9 @@ public class PaymentControllerMastercard {
     private AppConfig config;
 
     @Autowired
+    private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
+
+    @Autowired
     public PaymentControllerMastercard(
             OrdersRepository ordersRepository,
             PaymentsRepository paymentsRepository,
@@ -55,9 +59,9 @@ public class PaymentControllerMastercard {
 //    }
 
     @ApiIgnore
-    @GetMapping(value = "/{accountName}/test/lightbox",produces=MediaType.TEXT_HTML_VALUE)
-    public ResponseEntity<?> testLightbox(@PathVariable (name = "accountName") String accountName, @RequestParam(name = "order_id") String orderList) throws BusinessException {
-        String initResult = initPayment(accountName, orderList).getBody().toString();
+    @GetMapping(value = "test/lightbox",produces=MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<?> testLightbox(@RequestParam(name = "order_id") String orderList) throws BusinessException {
+        String initResult = initPayment(orderList).getBody().toString();
         return new ResponseEntity<>(HTMLConfigurer.getConfiguredHtml(initResult, "static/mastercard-lightbox.html"), HttpStatus.OK);
     }
 
@@ -109,10 +113,12 @@ public class PaymentControllerMastercard {
             @io.swagger.annotations.ApiResponse(code = 502, message = "Unable to communicate with the payment gateway"),
     })
 
-    @PostMapping(value = "/{accountName}/initialize")
-    public ResponseEntity<?> initPayment(@PathVariable (name = "accountName") String accountName, @RequestParam(name = "order_id") String orderList) throws BusinessException {
+    @RequestMapping(value = "initialize")
+    public ResponseEntity<?> initPayment(@RequestParam(name = "order_id") String orderList) throws BusinessException {
         OrderSessionResponse response = new OrderSessionResponse();
         response.setSuccess(false);
+
+        String accountName = Tools.getAccount(Tools.getOrdersFromString(ordersRepository, orderList, ","), "mcard", orgPaymentGatewaysRep);
 
         Properties props = Tools.getPropertyForAccount(accountName, mastercardLogger, config.paymentPropertiesDir);
         if (props == null) {

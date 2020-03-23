@@ -1,27 +1,46 @@
 package com.nasnav.controller;
 
+import static org.springframework.http.HttpStatus.OK;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import javax.validation.Valid;
 
-import com.nasnav.dto.*;
-import com.nasnav.persistence.TagsEntity;
-import com.nasnav.response.ProductImageUpdateResponse;
-import com.nasnav.response.TagResponse;
-import com.nasnav.service.CategoryService;
-import org.json.JSONObject;
+import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
+import com.nasnav.persistence.OrganizationPaymentGatewaysEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.dto.BrandDTO;
+import com.nasnav.dto.OrganizationDTO;
+import com.nasnav.dto.OrganizationImageUpdateDTO;
+import com.nasnav.dto.ProductFeatureDTO;
+import com.nasnav.dto.ProductFeatureUpdateDTO;
+import com.nasnav.dto.TagsDTO;
+import com.nasnav.dto.TagsTreeCreationDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
+import com.nasnav.response.ProductImageUpdateResponse;
+import com.nasnav.response.TagResponse;
+import com.nasnav.service.CategoryService;
 import com.nasnav.service.OrganizationService;
 
 import io.swagger.annotations.Api;
@@ -41,6 +60,10 @@ public class OrganizationController {
     @Autowired
     private CategoryService categoryService;
 
+    @Autowired
+    private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
+
+
     public OrganizationController(OrganizationService orgService) {
         this.orgService = orgService;
     }
@@ -52,13 +75,13 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
-    public ResponseEntity updateOrganizationData(@RequestHeader (value = "User-Token") String userToken,
+    public ResponseEntity<OrganizationResponse> updateOrganizationData(@RequestHeader (value = "User-Token") String userToken,
                                                  @RequestPart("properties") String jsonString,
                                                  @RequestPart(value = "logo", required = false) @Valid MultipartFile file) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         OrganizationDTO.OrganizationModificationDTO json = mapper.readValue(jsonString, OrganizationDTO.OrganizationModificationDTO.class);
         OrganizationResponse response = orgService.updateOrganizationData(userToken, json, file);
-        return new ResponseEntity(response, response.getHttpStatus());
+        return new ResponseEntity<OrganizationResponse>(response, response.getHttpStatus());
     }
 
 
@@ -73,8 +96,8 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @GetMapping(value = "brands", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity getOrganizationBrands(@RequestParam(value = "org_id") Long orgId) {
-        return new ResponseEntity(orgService.getOrganizationBrands(orgId), HttpStatus.OK);
+    public ResponseEntity<List<?>> getOrganizationBrands(@RequestParam(value = "org_id") Long orgId) {
+        return new ResponseEntity<List<?>>(orgService.getOrganizationBrands(orgId), HttpStatus.OK);
     }
 
 
@@ -89,15 +112,14 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "brand", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
-    public ResponseEntity updateBrandData(@RequestHeader (value = "User-Token") String userToken,
+    public ResponseEntity<OrganizationResponse> updateBrandData(@RequestHeader (value = "User-Token") String userToken,
                                                  @RequestPart("properties") String jsonString,
                                                  @RequestPart(value = "logo", required = false) @Valid MultipartFile logo,
                                                  @RequestPart(value = "banner", required = false) @Valid MultipartFile banner) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        OrganizationResponse response = null;
         BrandDTO json = mapper.readValue(jsonString, BrandDTO.class);
         OrganizationResponse res = orgService.validateAndUpdateBrand(json, logo, banner);
-        return new ResponseEntity(res, res.getHttpStatus());
+        return new ResponseEntity<OrganizationResponse>(res, res.getHttpStatus());
     }
 
 
@@ -187,37 +209,53 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @DeleteMapping(value = "tag", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity deleteOrganizationTag(@RequestHeader (value = "User-Token") String userToken,
+    public ResponseEntity<TagResponse> deleteOrganizationTag(@RequestHeader (value = "User-Token") String userToken,
                                                 @RequestParam (value = "tag_id")Long tagId) throws BusinessException {
         TagResponse tag = categoryService.deleteOrgTag(tagId);
-        return new ResponseEntity(tag, HttpStatus.OK);
+        return new ResponseEntity<TagResponse>(tag, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Add children to parent tag", nickname = "addTagsLinks", code = 200)
+    
+    
+    
+    
+    @ApiOperation(value = "create a new tag tree", nickname = "createTagTree", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @PostMapping(value = "tag/link", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity createTagChildren(@RequestHeader (value = "User-Token") String userToken,
-                                            @RequestBody TagsLinksCreationDTO tagsLinks) throws BusinessException {
-        categoryService.createTagEdges(tagsLinks);
-        return new ResponseEntity(new JSONObject("{\"Message\":\"Children created successfully\"}").toString(),HttpStatus.OK);
+    @PostMapping(value = "tag/tree", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(OK)
+    public ResponseEntity<Void> createTagTree(@RequestHeader (value = "User-Token") String userToken,
+                                            @RequestBody TagsTreeCreationDTO tree) throws BusinessException {
+        categoryService.createTagTree(tree);
+        return ResponseEntity.ok().build();
     }
 
 
-    @ApiOperation(value = "Delete children from parent tag", nickname = "deleteTagsLinks", code = 200)
+
+    @ApiOperation(value = "Get list of payment gateways for the organization", nickname = "getGateways", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
-            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @DeleteMapping(value = "tag/link", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity deleteTagChildren(@RequestHeader (value = "User-Token") String userToken,
-                                            @RequestBody List<TagsLinkDTO> tagsLinks) throws BusinessException {
-        categoryService.deleteTagLink(tagsLinks);
-        return new ResponseEntity(new JSONObject("{\"Message\":\"Children removed from parent successfully\"}").toString(),HttpStatus.OK);
+    @GetMapping(value = "payments", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<?> getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId) {
+
+        StringBuilder list = new StringBuilder();
+        list.append("[ ");
+        for (OrganizationPaymentGatewaysEntity gateway: orgPaymentGatewaysRep.findAllByOrganizationId(orgId)) {
+            if (list.length() > 2) {
+                list.append(", ");
+            }
+            list.append('"');
+            list.append(gateway.getGateway());
+            list.append('"');
+        }
+        list.append(" ]");
+
+        return new ResponseEntity<>(list.toString(), HttpStatus.OK);
     }
 
 }

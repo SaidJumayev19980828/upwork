@@ -1,7 +1,5 @@
 package com.nasnav.dao;
 
-import com.nasnav.persistence.OrdersEntity;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -11,6 +9,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.nasnav.persistence.OrdersEntity;
 
 
 public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
@@ -61,4 +61,21 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	Long countByShopsEntity_id(Long shopId);
 
 	List<OrdersEntity> findByPaymentEntity_idOrderById(Long id);
+
+	@Query(value = "select o from OrdersEntity o join OrganizationEntity org on o.organizationEntity = org where o.id in :orderIds ")
+	List<OrdersEntity> getOrdersIn(@Param("orderIds") List<Long> orderIds);
+
+    @Transactional
+    @Modifying
+    @Query("delete from OrdersEntity o where o.status = :status and o.id in :orderIds and o.organizationEntity.id = :orgId")
+    void deleteByStatusAndIdInAndOrgId(@Param("status") Integer status,
+                                       @Param("orderIds") List<Long> orderIds,
+                                       @Param("orgId") Long orgId);
+    
+    @Transactional
+    @Modifying
+    @Query("delete from OrdersEntity o where o.status = :status and o.organizationEntity.id = :orgId")
+    void deleteByStatusAndOrgId(@Param("status") Integer status, @Param("orgId") Long orgId);
+
+	long countByStatusAndOrganizationEntity_id(Integer value, Long org);
 }

@@ -32,9 +32,7 @@ import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.STORE_PREPARED;
-import static com.nasnav.enumerations.Roles.CUSTOMER;
-import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
-import static com.nasnav.enumerations.Roles.STORE_MANAGER;
+import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -1240,5 +1238,31 @@ public class OrderServiceImpl implements OrderService {
 		
 		basketRepository.deleteByOrderIdIn(userNewOrders);		
 		ordersRepository.deleteByStatusAndUserId( NEW.getValue(), user.getId());
+	}
+
+
+	@Override
+	@Transactional
+	public void deleteOrders(List<Long> orderIds) throws BusinessException {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+
+		validateOrdersDeletionIds(orderIds, orgId);
+
+		basketRepository.deleteByOrderIdInAndOrganizationIdAndStatus(orderIds, orgId, NEW.getValue());
+		ordersRepository.deleteByStatusAndIdInAndOrgId( NEW.getValue(), orderIds, orgId);
+	}
+
+	private void validateOrdersDeletionIds(List<Long> orderIds, Long orgId) throws BusinessException {
+		List<OrdersEntity> orders = ordersRepository.getOrdersIn(orderIds);
+
+		for(OrdersEntity order : orders) {
+			if (!order.getOrganizationEntity().getId().equals(orgId))
+				throw new BusinessException("Provided order ("+order.getId()+") doesn't belong to current organization",
+						"INVALID_PARAM: order_id", HttpStatus.NOT_ACCEPTABLE);
+			if (order.getStatus() != 0)
+				throw new BusinessException("Provided order ("+order.getId()+") is not a new order and can't be deleted",
+						"INVALID_PARAM: order_id", HttpStatus.NOT_ACCEPTABLE);
+		}
+
 	}
 }

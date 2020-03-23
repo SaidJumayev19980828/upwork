@@ -351,4 +351,20 @@ public class ProductsController {
                 .body(s.toString());
     }
     
+    
+    
+    
+    @ApiOperation(value = "Delete all products", nickname = "deleteAllProducts", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "All organization products deleted successfully"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @DeleteMapping("all")
+    public void deleteAllProducts(@RequestHeader("User-Token") String token
+    		, @RequestParam(name = "confirmed",defaultValue = "false", required = true) boolean isConfirmed) throws BusinessException {
+    	productService.deleteAllProducts(isConfirmed);
+    }
+    
 }

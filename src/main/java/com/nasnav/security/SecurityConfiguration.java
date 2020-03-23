@@ -80,11 +80,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     //	more fine grained control of the permission (by HttpMethod, by roles) 
 	private  List<AuthPattern> permissions = asList(
 						//url pattern	-------------------------	Method	------------	Roles
+						patternOf( "/order"						,HttpMethod.DELETE  , setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 					    patternOf( "/order/**"),
 						patternOf( "/stock/**"	 										, getNonCustomersRoles() ),
 						patternOf( "/shop/**"											, setOf(ORGANIZATION_MANAGER, STORE_MANAGER) ),
 						patternOf( "/user/list"),
-						patternOf("/user/info"),
+						patternOf( "/user/info"),
 						patternOf( "/user/create"										, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN, STORE_ADMIN) ),
 						patternOf( "/user/update"										, getAllRoles() ),
 						patternOf( "/product/**"					,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
@@ -98,7 +99,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/organization/image"			,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/image"			,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/products_feature"	,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
-						patternOf( "/organization/tag"									, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/organization/tag/**"								, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/tags"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/upload/**"											, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/integration/import/shops"							, setOf(ORGANIZATION_MANAGER)),
@@ -128,6 +129,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/product/info"						, HttpMethod.GET)
                         , patternOf("/product/image"					, HttpMethod.GET)
                         , patternOf("/product/variant"					, HttpMethod.GET)
+		                , patternOf("/organization/payments"				, HttpMethod.GET)
                         , patternOf("/organization/brands"				, HttpMethod.GET)
                         , patternOf("/organization/products_features"	, HttpMethod.GET)
                         , patternOf("/swagger**/**")		//for development only

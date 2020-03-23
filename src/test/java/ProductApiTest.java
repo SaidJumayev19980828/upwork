@@ -1,3 +1,4 @@
+import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.util.Arrays.asList;
@@ -6,6 +7,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
@@ -39,7 +44,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.BasketRepository;
+import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
@@ -48,6 +55,7 @@ import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductSortOptions;
 import com.nasnav.dto.ProductsResponse;
+import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ProductEntity;
@@ -69,6 +77,11 @@ import net.jcip.annotations.NotThreadSafe;
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class ProductApiTest {
 
+	private static String ORG_ADMIN_TOKEN = "101112";
+	
+	private static String USER_TOKEN = "123";
+	
+	
 	@Autowired
 	private TestRestTemplate template;
 
@@ -90,6 +103,13 @@ public class ProductApiTest {
 
 	@Autowired
 	private ProductImagesRepository imgRepo;
+	
+	
+	@Autowired
+	private OrdersRepository orderRepo;
+	
+	@Autowired
+	private BundleRepository bundleRepo;
 
 
 	@Autowired
@@ -1089,4 +1109,115 @@ public class ProductApiTest {
 				.map(ProductEntity::getTags)
 				.allMatch(Set::isEmpty);
 	}
+	
+	
+	
+	
+	@Test
+	public void deleteAllProductsNoAuthZTest() {
+		HttpEntity<?> request =  getHttpEntity("" , "NO_EXISTING_TOKEN");
+		
+		ResponseEntity<String> response = 
+				template.exchange("/product/all" ,DELETE, request, String.class);
+		
+		assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void deleteAllProductsNoAuthNTest() {
+		HttpEntity<?> request =  getHttpEntity("" , USER_TOKEN);
+		
+		ResponseEntity<String> response = 
+				template.exchange("/product/all" ,DELETE, request, String.class);
+		
+		assertEquals(FORBIDDEN, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Products_API_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void deleteAllProductsTest() {
+		Long org = 99002L;
+		Long otherOrg = 99001L;
+		
+		long productCountOtherOrgBefore = productRepository.countByOrganizationId(otherOrg);
+		long variantCountOtherOrgBefore = variantRepo.countByProductEntity_organizationId(otherOrg);
+		long bundlesCountOtherOrgBefore = bundleRepo.countByOrganizationId(otherOrg);
+		long ordersCountOtherOrgBefore = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), otherOrg);
+
+		assertTestDataExists(org, productCountOtherOrgBefore, variantCountOtherOrgBefore, bundlesCountOtherOrgBefore,
+				ordersCountOtherOrgBefore);
+		
+		//----------------------------------------------------------
+		HttpEntity<?> request =  getHttpEntity("" , "131415");
+		
+		ResponseEntity<String> response = 
+				template.exchange("/product/all" ,DELETE, request, String.class);
+		
+		assertEquals(OK, response.getStatusCode());
+
+		//----------------------------------------------------------
+		assertDataDeleted(org, otherOrg, productCountOtherOrgBefore, variantCountOtherOrgBefore,
+				bundlesCountOtherOrgBefore, ordersCountOtherOrgBefore);
+	}
+
+
+	
+
+
+	private void assertDataDeleted(Long org, Long otherOrg, long productCountOtherOrgBefore,
+			long variantCountOtherOrgBefore, long bundlesCountOtherOrgBefore, long ordersCountOtherOrgBefore) {
+		long productCountAfter = productRepository.countByOrganizationId(org);
+		long variantCountAfter = variantRepo.countByProductEntity_organizationId(org);
+		long bundlesCountAfter = bundleRepo.countByOrganizationId(org);
+		long ordersCountAfter = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), org);
+				
+		long productCountOtherOrgAfter = productRepository.countByOrganizationId(otherOrg);
+		long variantCountOtherOrgAfter = variantRepo.countByProductEntity_organizationId(otherOrg);
+		long bundlesCountOtherOrgAfter = bundleRepo.countByOrganizationId(otherOrg);
+		long ordersCountOtherOrgAfter = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), otherOrg);
+		
+		assertEquals(0L, productCountAfter);
+		assertEquals(0L, variantCountAfter);
+		assertEquals(0L, bundlesCountAfter);
+		assertEquals(0L, ordersCountAfter);
+		
+		assertEquals(productCountOtherOrgBefore, productCountOtherOrgAfter);
+		assertEquals(variantCountOtherOrgBefore, variantCountOtherOrgAfter);
+		assertEquals(bundlesCountOtherOrgBefore, bundlesCountOtherOrgAfter);
+		assertEquals(ordersCountOtherOrgBefore, ordersCountOtherOrgAfter);
+	}
+
+
+
+
+	private void assertTestDataExists(Long org, long productCountOtherOrgBefore, long variantCountOtherOrgBefore,
+			long bundlesCountOtherOrgBefore, long ordersCountOtherOrgBefore) {
+		long productCountBefore = productRepository.countByOrganizationId(org);
+		long variantCountBefore = variantRepo.countByProductEntity_organizationId(org);
+		long bundlesCountBefore = bundleRepo.countByOrganizationId(org);
+		long ordersCountBefore = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), org);
+		
+		assertNotEquals(0L, productCountBefore);
+		assertNotEquals(0L, variantCountBefore);
+		assertNotEquals(0L, bundlesCountBefore);
+		assertNotEquals(0L, ordersCountBefore);
+		
+		assertNotEquals(0L, productCountOtherOrgBefore);
+		assertNotEquals(0L, variantCountOtherOrgBefore);
+		assertNotEquals(0L, bundlesCountOtherOrgBefore);
+		assertNotEquals(0L, ordersCountOtherOrgBefore);
+	}
+	
+	
 }

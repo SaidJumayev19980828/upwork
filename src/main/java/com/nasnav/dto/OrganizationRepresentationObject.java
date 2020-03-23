@@ -30,6 +30,10 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     @JsonProperty("id")
     private Long id;
 
+    @ApiModelProperty(value = "Sub dir present in URL (e.g. nasnav.com/myshop/")
+    @JsonProperty("sub_dir")
+    private Long subDir = 0L;
+
     @ApiModelProperty(value = "Name of the organization")
     @JsonProperty("name")
     private String name;

@@ -65,6 +65,8 @@ INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(50016,5006);
 insert into tag_graph_edges(id, parent_id, child_id) values(60012, 50011, 50012);
 insert into tag_graph_edges(id, parent_id, child_id) values(60013, 50011, 50013);
 insert into tag_graph_edges(id, parent_id, child_id) values(60014, 50011, 50016);
+insert into tag_graph_edges(id, parent_id, child_id) values(60015, 50015, 50016);
+
 
 insert into product_tags(product_id, tag_id) values(1006, 5006);
 

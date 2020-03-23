@@ -92,8 +92,10 @@ public class NavboxController {
 			return organizationService.getOrganizationByName(organizationName);
 
 		if (url != null) {
-			Long orgId = organizationService.getOrganizationByDomain(url);
-			return organizationService.getOrganizationById(orgId);
+			Pair domain = organizationService.getOrganizationAndSubdirsByUrl(url);
+			OrganizationRepresentationObject orgObj = organizationService.getOrganizationById(domain.getFirst());
+			orgObj.setSubDir(domain.getSecond());
+			return orgObj;
 		}
 		return organizationService.getOrganizationById(organizationId);
 	}
@@ -213,9 +215,8 @@ public class NavboxController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
 	})
 	@GetMapping(value="/tagstree",produces=MediaType.APPLICATION_JSON_VALUE)
-	public List<TagsRepresentationObject> getTagsTree(@RequestParam(name = "org_id", required = false) Long organizationId) throws BusinessException {
-		List<TagsRepresentationObject> response = categoryService.getOrganizationTagsTree(organizationId);
-		return response;
+	public List<TagsTreeNodeDTO> getTagsTree(@RequestParam(name = "org_id", required = false) Long organizationId) throws BusinessException {
+		return categoryService.getOrganizationTagsTree(organizationId);
 	}
 
 	
@@ -265,8 +266,8 @@ public class NavboxController {
 	@GetMapping(value="/orgid",produces=MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> getOrganizationByDomain(@RequestParam(name = "url") String url) throws BusinessException {
 
-		Long orgId = organizationService.getOrganizationByDomain(url);
+		Pair domain = organizationService.getOrganizationAndSubdirsByUrl(url);
 
-		return new ResponseEntity<>("{\"id\":"+orgId+"}", HttpStatus.OK);
+		return new ResponseEntity<>("{\"id\":" + domain.getFirst() + ", \"sub_dir\":" + domain.getSecond() + "}", HttpStatus.OK);
 	}
 }

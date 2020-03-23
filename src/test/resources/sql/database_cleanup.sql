@@ -29,7 +29,13 @@ DELETE FROM public.files  where orig_filename = 'nasnav--Test_Photo.png';  -- fo
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.malls where id = 901;
-DELETE FROM public.tag_graph_edges WHERE child_id IN (select id from tags where organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.tag_graph_edges 
+WHERE child_id IN (
+	select node.id 
+	from public.tag_graph_nodes node 
+	left join tags tag on node.tag_id = tag.id 
+	where tag.organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.tag_graph_nodes where tag_id  in (select id FROM public.tags WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.organization_themes WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.tags WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_domains WHERE organization_id BETWEEN 99000 AND 99999;
