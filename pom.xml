@@ -345,30 +345,7 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>com.mysema.maven</groupId>
-                <artifactId>apt-maven-plugin</artifactId>
-                <version>1.1.3</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.querydsl</groupId>
-                        <artifactId>querydsl-apt</artifactId>
-                        <version>${querydsl.version}</version>
-                    </dependency>
-                </dependencies>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>process</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.basedir}/src/main/java/com/nasnav/model/querydsl/jpa</outputDirectory>
-                            <processor>com.querydsl.apt.jpa.JPAAnnotationProcessor</processor>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+            
             <plugin>
                 <groupId>com.querydsl</groupId>
                 <artifactId>querydsl-maven-plugin</artifactId>
@@ -387,7 +364,7 @@
                     <jdbcPassword>${db.password}</jdbcPassword>
                     <packageName>com.nasnav.model.querydsl.sql</packageName>
                     <sourceFolder>${project.basedir}/src/main/java</sourceFolder>
-                    <targetFolder>${project.basedir}/src/main/java/com/nasnav/model/querydsl/sql</targetFolder>
+                    <targetFolder>${project.basedir}/src/main/java</targetFolder>
                 </configuration>
                 <dependencies>
                     <dependency>
