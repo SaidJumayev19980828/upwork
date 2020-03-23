@@ -40,9 +40,9 @@ public class QScenes extends com.querydsl.sql.RelationalPathBase<QScenes> {
 
     public final com.querydsl.sql.PrimaryKey<QScenes> scenesPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QOrganizations> railsD232c97110Fk = createForeignKey(organizationId, "id");
-
     public final com.querydsl.sql.ForeignKey<QShopSections> railsA66b01e057Fk = createForeignKey(shopSectionId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOrganizations> railsD232c97110Fk = createForeignKey(organizationId, "id");
 
     public QScenes(String variable) {
         super(QScenes.class, forVariable(variable), "public", "scenes");

@@ -36,9 +36,9 @@ public class QBaskets extends com.querydsl.sql.RelationalPathBase<QBaskets> {
 
     public final NumberPath<Long> stockId = createNumber("stockId", Long.class);
 
-    public final com.querydsl.sql.ForeignKey<QOrders> basketsOrderIdFkey = createForeignKey(orderId, "id");
-
     public final com.querydsl.sql.ForeignKey<QStocks> basketsStockIdFkey = createForeignKey(stockId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOrders> basketsOrderIdFkey = createForeignKey(orderId, "id");
 
     public QBaskets(String variable) {
         super(QBaskets.class, forVariable(variable), "public", "baskets");

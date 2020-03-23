@@ -40,9 +40,9 @@ public class QProductImages extends com.querydsl.sql.RelationalPathBase<QProduct
 
     public final com.querydsl.sql.ForeignKey<QProductVariants> productImagesVariantIdFkey = createForeignKey(variantId, "id");
 
-    public final com.querydsl.sql.ForeignKey<QProducts> productImagesProductIdFkey = createForeignKey(productId, "id");
-
     public final com.querydsl.sql.ForeignKey<QFiles> productImagesFilesUrlKey = createForeignKey(uri, "url");
+
+    public final com.querydsl.sql.ForeignKey<QProducts> productImagesProductIdFkey = createForeignKey(productId, "id");
 
     public QProductImages(String variable) {
         super(QProductImages.class, forVariable(variable), "public", "product_images");

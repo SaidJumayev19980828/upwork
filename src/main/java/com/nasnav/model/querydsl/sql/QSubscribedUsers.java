@@ -38,9 +38,9 @@ public class QSubscribedUsers extends com.querydsl.sql.RelationalPathBase<QSubsc
 
     public final com.querydsl.sql.PrimaryKey<QSubscribedUsers> subscribedUsersPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QOrganizations> rails1038aeed15Fk = createForeignKey(organizationId, "id");
-
     public final com.querydsl.sql.ForeignKey<QShops> railsF0bd17ab86Fk = createForeignKey(shopId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOrganizations> rails1038aeed15Fk = createForeignKey(organizationId, "id");
 
     public QSubscribedUsers(String variable) {
         super(QSubscribedUsers.class, forVariable(variable), "public", "subscribed_users");

@@ -44,9 +44,9 @@ public class QProductVariants extends com.querydsl.sql.RelationalPathBase<QProdu
 
     public final com.querydsl.sql.PrimaryKey<QProductVariants> productVariantsPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QSubProducts> productVariantsSubProductIdTempFkey = createForeignKey(subProductIdTemp, "id");
-
     public final com.querydsl.sql.ForeignKey<QProducts> productVariantsProductIdFkey = createForeignKey(productId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QSubProducts> productVariantsSubProductIdTempFkey = createForeignKey(subProductIdTemp, "id");
 
     public final com.querydsl.sql.ForeignKey<QStocks> _stocksVariantIdFkey = createInvForeignKey(id, "variant_id");
 

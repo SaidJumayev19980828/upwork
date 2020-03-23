@@ -54,9 +54,9 @@ public class QWorkTimes extends com.querydsl.sql.RelationalPathBase<QWorkTimes> 
 
     public final com.querydsl.sql.PrimaryKey<QWorkTimes> workTimesPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QOrganizations> railsEed183b2b2Fk = createForeignKey(organizationId, "id");
-
     public final com.querydsl.sql.ForeignKey<QShops> railsC68a0170e4Fk = createForeignKey(shopId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOrganizations> railsEed183b2b2Fk = createForeignKey(organizationId, "id");
 
     public QWorkTimes(String variable) {
         super(QWorkTimes.class, forVariable(variable), "public", "work_times");

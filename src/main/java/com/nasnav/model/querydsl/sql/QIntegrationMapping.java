@@ -36,9 +36,9 @@ public class QIntegrationMapping extends com.querydsl.sql.RelationalPathBase<QIn
 
     public final com.querydsl.sql.PrimaryKey<QIntegrationMapping> integrationMappingPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QOrganizations> integrationMappingOrganizationIdFkey = createForeignKey(organizationId, "id");
-
     public final com.querydsl.sql.ForeignKey<QIntegrationMappingType> integrationMappingMappingTypeFkey = createForeignKey(mappingType, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOrganizations> integrationMappingOrganizationIdFkey = createForeignKey(organizationId, "id");
 
     public QIntegrationMapping(String variable) {
         super(QIntegrationMapping.class, forVariable(variable), "public", "integration_mapping");
