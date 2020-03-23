@@ -20,6 +20,7 @@ public class RaveAccount extends Account {
 
 
     public RaveAccount(Properties props) {
+        if (props == null) return; // ugly hack, for some deployemnt doesnt see this file ....
             super.setup(props);
             this.clientName = props.getProperty("rave.client_name");
             this.publicKey = props.getProperty("rave.public_key");
