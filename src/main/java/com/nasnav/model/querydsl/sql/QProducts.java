@@ -58,9 +58,9 @@ public class QProducts extends com.querydsl.sql.RelationalPathBase<QProducts> {
 
     public final com.querydsl.sql.PrimaryKey<QProducts> productsPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QOrganizations> productsOrganizationIdFkey = createForeignKey(organizationId, "id");
-
     public final com.querydsl.sql.ForeignKey<QCategories> productsCategoryIdFk = createForeignKey(categoryId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOrganizations> productsOrganizationIdFkey = createForeignKey(organizationId, "id");
 
     public final com.querydsl.sql.ForeignKey<QProductImages> _productImagesProductIdFkey = createInvForeignKey(id, "product_id");
 

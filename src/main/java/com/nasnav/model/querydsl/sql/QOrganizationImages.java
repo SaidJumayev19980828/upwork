@@ -36,9 +36,9 @@ public class QOrganizationImages extends com.querydsl.sql.RelationalPathBase<QOr
 
     public final com.querydsl.sql.PrimaryKey<QOrganizationImages> organizationImagesPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QFiles> organizationImagesUriFkey = createForeignKey(uri, "url");
-
     public final com.querydsl.sql.ForeignKey<QOrganizationImageTypes> organizationImagesTypeFk = createForeignKey(type, "id");
+
+    public final com.querydsl.sql.ForeignKey<QFiles> organizationImagesUriFkey = createForeignKey(uri, "url");
 
     public final com.querydsl.sql.ForeignKey<QOrganizations> organizationImagesOrganizationIdFkey = createForeignKey(organizationId, "id");
 

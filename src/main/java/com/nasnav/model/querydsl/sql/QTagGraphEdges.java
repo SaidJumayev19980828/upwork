@@ -32,9 +32,9 @@ public class QTagGraphEdges extends com.querydsl.sql.RelationalPathBase<QTagGrap
 
     public final com.querydsl.sql.PrimaryKey<QTagGraphEdges> tagGraphEdgesPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QTagGraphNodes> tagGraphEdgesChildFk = createForeignKey(childId, "id");
-
     public final com.querydsl.sql.ForeignKey<QTagGraphNodes> tagGraphEdgesParentFk = createForeignKey(parentId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QTagGraphNodes> tagGraphEdgesChildFk = createForeignKey(childId, "id");
 
     public QTagGraphEdges(String variable) {
         super(QTagGraphEdges.class, forVariable(variable), "public", "tag_graph_edges");

@@ -355,6 +355,7 @@
                         <goals>
                             <goal>export</goal>
                         </goals>
+                        <phase>none</phase>
                     </execution>
                 </executions>
                 <configuration>
@@ -364,7 +365,7 @@
                     <jdbcPassword>${db.password}</jdbcPassword>
                     <packageName>com.nasnav.model.querydsl.sql</packageName>
                     <sourceFolder>${project.basedir}/src/main/java</sourceFolder>
-                    <targetFolder>${project.basedir}/src/main/java</targetFolder>
+                    <targetFolder>${project.basedir}/src/main/java</targetFolder>                    
                 </configuration>
                 <dependencies>
                     <dependency>

@@ -34,9 +34,9 @@ public class QIntegrationParam extends com.querydsl.sql.RelationalPathBase<QInte
 
     public final com.querydsl.sql.PrimaryKey<QIntegrationParam> integrationParamPkey = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QOrganizations> integrationParamOrganizationIdFkey = createForeignKey(organizationId, "id");
-
     public final com.querydsl.sql.ForeignKey<QIntegrationParamType> integrationParamParamTypeFkey = createForeignKey(paramType, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOrganizations> integrationParamOrganizationIdFkey = createForeignKey(organizationId, "id");
 
     public QIntegrationParam(String variable) {
         super(QIntegrationParam.class, forVariable(variable), "public", "integration_param");

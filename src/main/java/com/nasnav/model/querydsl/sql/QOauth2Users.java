@@ -40,9 +40,9 @@ public class QOauth2Users extends com.querydsl.sql.RelationalPathBase<QOauth2Use
 
     public final com.querydsl.sql.PrimaryKey<QOauth2Users> oauth2UsersPk = createPrimaryKey(id);
 
-    public final com.querydsl.sql.ForeignKey<QOrganizations> oauth2UsersOrg = createForeignKey(organizationId, "id");
-
     public final com.querydsl.sql.ForeignKey<QUsers> oauth2UsersNasnavUser = createForeignKey(nasnavUserId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QOrganizations> oauth2UsersOrg = createForeignKey(organizationId, "id");
 
     public QOauth2Users(String variable) {
         super(QOauth2Users.class, forVariable(variable), "public", "oauth2_users");

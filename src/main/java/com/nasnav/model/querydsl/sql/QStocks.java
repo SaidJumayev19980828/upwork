@@ -48,11 +48,11 @@ public class QStocks extends com.querydsl.sql.RelationalPathBase<QStocks> {
 
     public final com.querydsl.sql.PrimaryKey<QStocks> stocksPkey = createPrimaryKey(id);
 
+    public final com.querydsl.sql.ForeignKey<QProductVariants> stocksVariantIdFkey = createForeignKey(variantId, "id");
+
     public final com.querydsl.sql.ForeignKey<QOrganizations> stocksOrganizationIdFkey = createForeignKey(organizationId, "id");
 
     public final com.querydsl.sql.ForeignKey<QShops> railsD8eb88b3bfFk = createForeignKey(shopId, "id");
-
-    public final com.querydsl.sql.ForeignKey<QProductVariants> stocksVariantIdFkey = createForeignKey(variantId, "id");
 
     public final com.querydsl.sql.ForeignKey<QBaskets> _basketsStockIdFkey = createInvForeignKey(id, "stock_id");
 
