@@ -55,10 +55,7 @@ public class Tools {
 		}
 		Optional<OrganizationPaymentGatewaysEntity> account = gatewaysRepo.findByOrganizationIdAndGateway(orgId, gateway);
 
-		if (account.isPresent()) {
-			return account.get().getAccount();
-		}
-		return null;
+		return account.map(OrganizationPaymentGatewaysEntity::getAccount).orElse(null);
 	}
 
 	public static OrderService.OrderValue getTotalOrderValue(ArrayList<OrdersEntity> orders, OrderService orderService, Logger logger) throws BusinessException {
@@ -114,7 +111,7 @@ public class Tools {
 
 
 	public static Properties getPropertyForAccount(String accountName, Logger logger, String propertiesDir) {
-		String file = null;
+		String file;
 		if ("misr".equalsIgnoreCase(accountName)) {
 			file = "/provider.banquemisr.properties";
 		} else if ("qnb".equalsIgnoreCase(accountName)) {
@@ -133,10 +130,10 @@ public class Tools {
 					propertiesDir + file
 				));
 			}
-System.out.println(" USER DIR: " + System.getProperty("user.dir"));
-System.out.println(" PROP DIR: " + propertiesDir);
-System.out.println(" FILE: " + file);
-System.out.println(" STRAM: " + stream);
+//System.out.println(" USER DIR: " + System.getProperty("user.dir"));
+//System.out.println(" PROP DIR: " + propertiesDir);
+//System.out.println(" FILE: " + file);
+//System.out.println(" STRAM: " + stream);
 			Properties props = new Properties();
 			props.load(stream);
 			return props;

@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+import com.nasnav.AppConfig;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.exceptions.BusinessException;
@@ -31,6 +32,9 @@ public class PaymentControllerRave {
 
     private final PaymentsRepository paymentsRepository;
 
+    @Autowired
+    private AppConfig config;
+
     private RaveAccount account;
 
     @Autowired
@@ -40,7 +44,7 @@ public class PaymentControllerRave {
             MastercardSession session) {
         this.ordersRepository = ordersRepository;
         this.paymentsRepository = paymentsRepository;
-//        this.account = new RaveAccount(Tools.getPropertyForAccount("rave"));
+        this.account = new RaveAccount(Tools.getPropertyForAccount("rave", reveLogger, "/"));
     }
 
     @ApiIgnore

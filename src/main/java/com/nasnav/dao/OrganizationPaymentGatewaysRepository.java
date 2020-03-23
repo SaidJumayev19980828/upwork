@@ -10,6 +10,7 @@ import java.util.Optional;
 public interface OrganizationPaymentGatewaysRepository extends JpaRepository<OrganizationPaymentGatewaysEntity, Integer> {
 
     List<OrganizationPaymentGatewaysEntity> findAllByOrganizationId(long orgId);
+    List<OrganizationPaymentGatewaysEntity> findAllByOrganizationIdIsNull();
     Optional<OrganizationPaymentGatewaysEntity> findByOrganizationIdAndGateway(long orgId, String gateway);
 
 }

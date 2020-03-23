@@ -177,7 +177,8 @@ public class OrderServiceImpl implements OrderService {
 
 		List<BasketsEntity> basketsEntity = basketRepository.findByOrdersEntity_Id(order.getId());
 		for (BasketsEntity basketEntity : basketsEntity) {
-			amount = amount.add(basketEntity.getPrice().multiply(basketEntity.getQuantity()));
+			// basket item holds a sum for all items
+			amount = amount.add(basketEntity.getPrice());
 			if (currency == null) {
 				currency = basketEntity.getStocksEntity().getCurrency();
 			} else if (currency != basketEntity.getStocksEntity().getCurrency()) {

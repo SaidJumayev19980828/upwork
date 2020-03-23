@@ -7,8 +7,14 @@ import java.util.List;
 
 import javax.validation.Valid;
 
+import com.nasnav.AppConfig;
 import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
+import com.nasnav.payments.mastercard.MastercardAccount;
+import com.nasnav.payments.misc.Tools;
+import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.OrganizationPaymentGatewaysEntity;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -53,6 +59,8 @@ import io.swagger.annotations.ApiResponses;
 @CrossOrigin("*") // allow all origins
 public class OrganizationController {
 
+    @Autowired
+    private AppConfig config;
 
     @Autowired
     private OrganizationService orgService;
@@ -62,6 +70,8 @@ public class OrganizationController {
 
     @Autowired
     private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
+
+    private Logger classLogger = LogManager.getLogger(OrganizationController.class);
 
 
     public OrganizationController(OrganizationService orgService) {
@@ -243,15 +253,33 @@ public class OrganizationController {
     @GetMapping(value = "payments", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<?> getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId) {
 
+        List<OrganizationPaymentGatewaysEntity> gateways = orgPaymentGatewaysRep.findAllByOrganizationId(orgId);
+        if (gateways == null || gateways.size() == 0) {
+            // no specific gateways defined for this org, use the default ones
+            gateways = orgPaymentGatewaysRep.findAllByOrganizationIdIsNull();
+        }
         StringBuilder list = new StringBuilder();
         list.append("[ ");
-        for (OrganizationPaymentGatewaysEntity gateway: orgPaymentGatewaysRep.findAllByOrganizationId(orgId)) {
+        for (OrganizationPaymentGatewaysEntity gateway: gateways) {
             if (list.length() > 2) {
                 list.append(", ");
             }
             list.append('"');
             list.append(gateway.getGateway());
-            list.append('"');
+            list.append("\": { ");
+
+            if ("mcard".equalsIgnoreCase(gateway.getGateway())) {
+                list.append("\"script\": \"");
+                MastercardAccount account = new MastercardAccount();
+                account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir));
+                list.append(account.getBaseUrl() + "/checkout/version/" + account.getApiVersion() + "/checkout.js");
+            } else if ("upg".equalsIgnoreCase(gateway.getGateway())) {
+                list.append("\"script\": \"");
+                UpgAccount account = new UpgAccount();
+                account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir));
+                list.append("https://upgstaging.egyptianbanks.com:3006/js/Lightbox.js");
+            }
+            list.append("\"}");
         }
         list.append(" ]");
 
