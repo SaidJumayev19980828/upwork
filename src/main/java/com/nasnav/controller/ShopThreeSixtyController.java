@@ -1,8 +1,6 @@
 package com.nasnav.controller;
 
-import com.nasnav.dto.ShopJsonDataDTO;
-import com.nasnav.dto.ShopProductPositionsDTO;
-import com.nasnav.dto.ShopThreeSixtyDTO;
+import com.nasnav.dto.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.ShopThreeSixtyService;
@@ -94,5 +92,15 @@ public class ShopThreeSixtyController {
                                                      @RequestBody ShopProductPositionsDTO jsonDTO)
             throws BusinessException {
         return shop360Svc.updateThreeSixtyShopProductPositions(jsonDTO);
+    }
+
+    @ApiOperation(value = "Create/Update shop360 sections", nickname = "updateShop360Sections")
+    @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
+    @PostMapping(value = "/sections", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ShopResponse updateThreeSixtyShopSections(@RequestHeader("User-Token") String userToken,
+                                                             @RequestBody ShopThreeSixtyRequestDTO jsonDTO)
+            throws BusinessException {
+        return shop360Svc.updateThreeSixtyShopSections(jsonDTO);
     }
 }

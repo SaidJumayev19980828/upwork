@@ -1,24 +1,23 @@
 package com.nasnav.service;
 
-import com.nasnav.dao.ProductPositionsRepository;
-import com.nasnav.dao.ShopFloorsRepository;
-import com.nasnav.dao.ShopThreeSixtyRepository;
-import com.nasnav.dto.ShopFloorDTO;
-import com.nasnav.dto.ShopJsonDataDTO;
-import com.nasnav.dto.ShopProductPositionsDTO;
-import com.nasnav.dto.ShopThreeSixtyDTO;
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.ProductPositionEntity;
-import com.nasnav.persistence.ShopThreeSixtyEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.response.ShopResponse;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.*;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,6 +32,22 @@ public class ShopThreeSixtyService {
     @Autowired
     private ShopFloorsRepository shopFloorsRepo;
 
+    @Autowired
+    private ShopSectionsRepository sectionsRepo;
+
+    @Autowired
+    private ShopScenesRepository scenesRepo;
+
+    @Autowired
+    private FilesRepository filesRepo;
+
+    @Autowired
+    private SecurityService securitySvc;
+
+    @Autowired
+    private FileService fileSvc;
+
+    private Path basePath;
 
     public String getShop360JsonInfo(Long shopId, String type) {
         ShopThreeSixtyEntity shop = shop360Repo.findByShopsEntity_Id(shopId);
@@ -164,5 +179,110 @@ public class ShopThreeSixtyService {
 
         productPosRepo.save(entity);
         return new ShopResponse(entity.getId(), HttpStatus.OK);
+    }
+
+    public ShopResponse updateThreeSixtyShopSections(ShopThreeSixtyRequestDTO jsonDTO) throws BusinessException, IOException {
+        OrganizationEntity org = securitySvc.getCurrentUserOrganization();
+
+        checkImageUrls(org.getId(),jsonDTO.getShopFloorsRequestDTO());
+        clearOldShop360Date(org.getId(), jsonDTO.getView360Id());
+        Long shopId = createShop360Floor(org, jsonDTO);
+        return new ShopResponse(shopId, HttpStatus.OK);
+    }
+
+
+    private void clearOldShop360Date(Long orgId, Long viewId) {
+        shopFloorsRepo.deleteByShopThreeSixtyEntity_IdAndOrganizationEntity_id(viewId, orgId);
+    }
+
+    private Long createShop360Floor(OrganizationEntity org, ShopThreeSixtyRequestDTO dto) {
+        ShopThreeSixtyEntity shop = shop360Repo.findById(dto.getView360Id()).get();
+        ShopFloorsEntity floor = new ShopFloorsEntity();
+        ShopFloorsRequestDTO floorDTO = dto.getShopFloorsRequestDTO();
+
+        floor.setName(floorDTO.getName());
+        floor.setNumber(floorDTO.getNumber());
+        floor.setShopThreeSixtyEntity(shop);
+        floor.setOrganizationEntity(org);
+
+        ShopFloorsEntity savedFloor = shopFloorsRepo.save(floor);
+
+        for(ShopSectionsRequestDTO sectionsDTO: floorDTO.getShopSections())
+            createShop360Section(sectionsDTO, savedFloor, shop, org);
+
+        return shop.getId();
+    }
+
+    private void createShop360Section(ShopSectionsRequestDTO dto, ShopFloorsEntity floor,
+                                      ShopThreeSixtyEntity shop, OrganizationEntity org) {
+
+        ShopSectionsEntity section = new ShopSectionsEntity();
+        section.setName(dto.getName());
+        section.setImage(dto.getImageUrl());
+        section.setShopFloorsEntity(floor);
+        section.setOrganizationEntity(org);
+        ShopSectionsEntity savedSection = sectionsRepo.save(section);
+        for(ShopScenesRequestDTO scene: dto.getShopScenes())
+            createShop360Scene(scene, savedSection, shop, org);
+
+    }
+
+    private void createShop360Scene(ShopScenesRequestDTO dto, ShopSectionsEntity section,
+                                    ShopThreeSixtyEntity shop, OrganizationEntity org) {
+        ShopScenesEntity scene = new ShopScenesEntity();
+        scene.setName(dto.getName());
+        scene.setImage(dto.getImageUrl());
+        //scene.setThumbnail();
+        //scene.setResized();
+        scene.setShopSectionsEntity(section);
+        scene.setOrganizationEntity(org);
+        scenesRepo.save(scene);
+    }
+    private void checkImageUrls(Long orgId, ShopFloorsRequestDTO dto) throws BusinessException, IOException {
+
+        List<String> urls = new ArrayList<>();
+        for(ShopSectionsRequestDTO section: dto.getShopSections()) {
+            urls.add(section.getImageUrl());
+            for(ShopScenesRequestDTO scene: section.getShopScenes()) {
+                urls.add(scene.getImageUrl());
+            }
+        }
+
+        for(String url: urls) {
+            FileEntity image = filesRepo.findByUrl(orgId + "/" + url);
+
+            if(image == null)
+                throw new BusinessException("Thie image_url("+url+") doesn't exist!",
+                        "INVALID_PARAM: image_url", HttpStatus.NOT_ACCEPTABLE);
+
+            String resized1024 = url.substring(0, url.lastIndexOf("."))
+                                 + "_resized1024" +
+                                url.substring(url.lastIndexOf("."), url.length()-1);
+
+            String resized4096 = url.substring(0, url.lastIndexOf("."))
+                    + "_resized4096" +
+                    url.substring(url.lastIndexOf("."), url.length()-1);
+
+            if(filesRepo.findByUrl(orgId + "/" + resized1024) == null)
+                resizeImage(1024, image);
+
+            if(filesRepo.findByUrl(orgId + "/" + resized4096) == null)
+                resizeImage(4096, image);
+        }
+
+    }
+
+
+    private void resizeImage(int imageSize, FileEntity image) throws IOException {
+        Path location = basePath.resolve(image.getLocation());
+
+        BufferedImage inputImage = ImageIO.read(new File(location.toString()));
+        BufferedImage outputImage = new BufferedImage(imageSize,
+                imageSize, inputImage.getType());
+
+        Graphics2D g2d = outputImage.createGraphics();
+        g2d.drawImage(inputImage, 0, 0, imageSize, imageSize, null);
+        g2d.dispose();
+        ImageIO.write(outputImage, formatName, new File(outputImagePath));
     }
 }

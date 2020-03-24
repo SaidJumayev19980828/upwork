@@ -9,4 +9,6 @@ public interface ShopFloorsRepository extends CrudRepository<ShopFloorsEntity, L
 
     List<ShopFloorsEntity> findByShopThreeSixtyEntity_Id(Long shopId);
 
+    void deleteByShopThreeSixtyEntity_IdAndOrganizationEntity_id(Long shopId, Long orgId);
+
 }
