@@ -1,5 +1,10 @@
 package com.nasnav.service;
 
+import static com.nasnav.constatnts.ConfigConstants.STATIC_FILES_URL;
+import static java.lang.String.format;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -14,8 +19,6 @@ import org.apache.tika.Tika;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -53,7 +56,7 @@ public class FileService {
 			try {
 				Files.createDirectories(basePath);
 			} catch (Exception ex) {
-				throw new BusinessException("Could not create the Base directory for storing files!", "", HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new BusinessException("Could not create the Base directory for storing files!", "", INTERNAL_SERVER_ERROR);
 			}
 		}
 	}
@@ -64,10 +67,10 @@ public class FileService {
 	public String saveFile(MultipartFile file, Long orgId) throws BusinessException {
 
 		if(orgId != null && !orgRepo.existsById(orgId)) {
-			throw new BusinessException("No Organization exists with id: " + orgId, "INVALID PARAM:org_id", HttpStatus.NOT_ACCEPTABLE);
+			throw new BusinessException("No Organization exists with id: " + orgId, "INVALID PARAM:org_id", NOT_ACCEPTABLE);
 		}
 		if(StringUtils.isBlankOrNull(file.getOriginalFilename()) ) {
-			throw new BusinessException("No file name provided!", "INVALID PARAM:file", HttpStatus.NOT_ACCEPTABLE);
+			throw new BusinessException("No file name provided!", "INVALID PARAM:file", NOT_ACCEPTABLE);
 		}
 
 		String origName = file.getOriginalFilename();
@@ -113,7 +116,7 @@ public class FileService {
 			mimeType = tika.detect(file);
 		} catch (IOException e) {
 			logger.error(e,e);
-			throw new BusinessException("Failed to parse MIME type for the file: "+ file, "INTERNAL ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new BusinessException("Failed to parse MIME type for the file: "+ file, "INTERNAL ERROR", INTERNAL_SERVER_ERROR);
 		}
 
 		return mimeType;
@@ -201,7 +204,7 @@ public class FileService {
 			file.transferTo(targetLocation);
 		} catch (IOException e) {
 			logger.error(e,e);
-			throw new BusinessException("Failed to save file Organization directory at location : " + saveDir, "FAILED TO SAVE FILE", HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new BusinessException("Failed to save file Organization directory at location : " + saveDir, "FAILED TO SAVE FILE", INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -214,7 +217,7 @@ public class FileService {
 				Files.createDirectories(saveDir);
 			} catch (IOException e) {
 				logger.error(e,e);
-				throw new BusinessException("Failed to create directory at location : " + saveDir, "FAILED TO CREATE DIRECTORY", HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new BusinessException("Failed to create directory at location : " + saveDir, "FAILED TO CREATE DIRECTORY", INTERNAL_SERVER_ERROR);
 			}
 		}
 	}
@@ -228,13 +231,13 @@ public class FileService {
 		FileEntity fileInfo = filesRepo.findByUrl(modUrl);
 
 		if(fileInfo == null) {
-			throw new BusinessException("No file exists with url: " + url, "INVALID PARAM:url", HttpStatus.NOT_ACCEPTABLE);
+			throw new BusinessException("No file exists with url: " + url, "INVALID PARAM:url", NOT_ACCEPTABLE);
 		}
 
 		Path location = basePath.resolve(fileInfo.getLocation());
 
 		if(!Files.exists(location)){
-			throw new BusinessException("No file exists with url: " + url, "INVALID PARAM:url", HttpStatus.NOT_ACCEPTABLE);
+			throw new BusinessException("No file exists with url: " + url, "INVALID PARAM:url", NOT_ACCEPTABLE);
 		}
 
 		FileUrlResource resource = null;
@@ -242,7 +245,7 @@ public class FileService {
 			resource =  new FileUrlResource(location.toUri(), fileInfo.getMimetype(), fileInfo.getOriginalFileName());
 		} catch (MalformedURLException e) {
 			logger.error(e,e);
-			throw new BusinessException("Failed to download file with url: " + url, "INTERNAL_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new BusinessException("Failed to download file with url: " + url, "INTERNAL_ERROR", INTERNAL_SERVER_ERROR);
 		}
 
 		return resource;
@@ -256,7 +259,7 @@ public class FileService {
 				.filter(u -> u.length()> 2)
 				.filter(u -> u.startsWith("/"))
 				.map(u -> u.substring(1))
-				.orElseThrow(() -> new BusinessException("Invalid URL : " + url, "INVALID PARAM:url", HttpStatus.NOT_ACCEPTABLE));
+				.orElseThrow(() -> new BusinessException("Invalid URL : " + url, "INVALID PARAM:url", NOT_ACCEPTABLE));
 	}
 
 
@@ -277,9 +280,23 @@ public class FileService {
 		} catch (IOException e) {
 			logger.error(e,e);
 			throw new BusinessException(
-					String.format("Failed to delete file with url[%s] at location [%s]", url, path.toString())
+					format("Failed to delete file with url[%s] at location [%s]", url, path.toString())
 					, "FAILURE"
-					, HttpStatus.INTERNAL_SERVER_ERROR);
+					, INTERNAL_SERVER_ERROR);
 		}
 	}
+	
+	
+	
+	
+	
+	public String getResourceInternalUrl(String url) throws BusinessException {
+		String modUrl = reformUrl(url);
+		FileEntity fileInfo = filesRepo.findByUrl(modUrl);
+		if(fileInfo == null) {
+			throw new BusinessException("No file exists with url: " + url, "INVALID PARAM:url", NOT_ACCEPTABLE);
+		}
+		return STATIC_FILES_URL + "/" + fileInfo.getLocation();
+	}
+
 }

@@ -1,6 +1,7 @@
 package com.nasnav.security;
 
 
+import static com.nasnav.constatnts.ConfigConstants.STATIC_FILES_URL;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
@@ -129,7 +130,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/product/info"						, HttpMethod.GET)
                         , patternOf("/product/image"					, HttpMethod.GET)
                         , patternOf("/product/variant"					, HttpMethod.GET)
-		                , patternOf("/organization/payments"				, HttpMethod.GET)
+		                , patternOf("/organization/payments"			, HttpMethod.GET)
                         , patternOf("/organization/brands"				, HttpMethod.GET)
                         , patternOf("/organization/products_features"	, HttpMethod.GET)
                         , patternOf("/swagger**/**")		//for development only
@@ -143,7 +144,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/static/**")
                         , patternOf("/js/**")
                         , patternOf("/css/**")
-                        , patternOf("/files/**"							, HttpMethod.GET)
+                        , patternOf("/files/**"							, HttpMethod.GET)                        
                  );
 
     AuthenticationProvider provider;
@@ -184,6 +185,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Override
     public void configure(HttpSecurity http) throws Exception {
 
+    	configureStaticResourcesUrl(http);
+    	
         permissions.forEach(pattern -> configureUrlAllowedRoles(http, pattern));
         
         http
@@ -202,6 +205,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             .formLogin().disable()
             .httpBasic().disable()
             .logout().disable();
+
         
         http
         .oauth2Login()
@@ -223,6 +227,16 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         
 	    http.cors();
     }
+
+    
+    
+    
+	private void configureStaticResourcesUrl(HttpSecurity http) throws Exception {
+		http
+        .authorizeRequests()
+        .antMatchers(HttpMethod.GET, STATIC_FILES_URL+"/**")
+        .hasIpAddress("127.0.0.1"); //only used internally by the server, the server only forwards requests to this API
+	}
     
     
     
