@@ -60,13 +60,13 @@ public class FilesController {
             @io.swagger.annotations.ApiResponse(code = 401, message = "INSUFFICIENT RIGHTS or UNAUTHENTICATED"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @GetMapping( path="**")
-	@ResponseStatus(HttpStatus.OK)
     public void downloadFile(HttpServletRequest request, HttpServletResponse resp) throws BusinessException, ServletException, IOException {
         String url = request.getRequestURI().replaceFirst("/files", "");
 		String resourceInternalUrl = fileService.getResourceInternalUrl(url);        
+		resp.setStatus(HttpStatus.OK.value());
 		
 		RequestDispatcher dispatcher = request.getRequestDispatcher(resourceInternalUrl);
-		dispatcher.forward(request, resp);		
+		dispatcher.forward(request, resp);
     }
 	
 }

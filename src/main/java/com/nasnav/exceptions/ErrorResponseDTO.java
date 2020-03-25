@@ -1,8 +1,8 @@
 package com.nasnav.exceptions;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import lombok.Data;
-import lombok.Value;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -26,6 +26,5 @@ public class ErrorResponseDTO {
 
     public ErrorResponseDTO(String message){
         this.message = message;
-        this.error = error;
     }
 }

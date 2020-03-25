@@ -8,13 +8,13 @@ import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.Roles.STORE_ADMIN;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,7 +81,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     //	more fine grained control of the permission (by HttpMethod, by roles) 
 	private  List<AuthPattern> permissions = asList(
 						//url pattern	-------------------------	Method	------------	Roles
-						patternOf( "/order"						,HttpMethod.DELETE  , setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf( "/order"							,HttpMethod.DELETE  , setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 					    patternOf( "/order/**"),
 						patternOf( "/stock/**"	 										, getNonCustomersRoles() ),
 						patternOf( "/shop/**"											, setOf(ORGANIZATION_MANAGER, STORE_MANAGER) ),
@@ -119,7 +119,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
    
    
     private List<AuthPattern> PUBLIC_URLS =
-            Arrays.asList(
+            	asList(
 					    patternOf("/360view/**")
             			, patternOf("/navbox/**")
                         , patternOf("/user/recover")
@@ -144,7 +144,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/static/**")
                         , patternOf("/js/**")
                         , patternOf("/css/**")
-                        , patternOf("/files/**"							, HttpMethod.GET)                        
+                        , patternOf("/files/**"							, HttpMethod.GET)
+                        , patternOf("/error/**"							, HttpMethod.GET)	
                  );
 
     AuthenticationProvider provider;
@@ -157,19 +158,25 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         
         this.provider = authenticationProvider;        
         
-        List<RequestMatcher> protectedrequestMatcherList = permissions.stream().map(this::toAntPathRequestMatcher).collect(Collectors.toList());
+        List<RequestMatcher> protectedrequestMatcherList = permissions.stream().map(this::toAntPathRequestMatcher).collect(toList());
         protectedUrlList = new OrRequestMatcher( protectedrequestMatcherList );
 
 
-        List<RequestMatcher> publicRequestMatcherList = PUBLIC_URLS.stream().map(this::toAntPathRequestMatcher).collect(Collectors.toList());
+        List<RequestMatcher> publicRequestMatcherList = PUBLIC_URLS.stream().map(this::toAntPathRequestMatcher).collect(toList());
         publicUrlList = new OrRequestMatcher( publicRequestMatcherList );
     }
+    
+    
+    
+    
 
     @Override
     protected void configure(final AuthenticationManagerBuilder auth) {
         auth.authenticationProvider(provider);
     }
 
+    
+    
     
     @Override
     public void configure(final WebSecurity webSecurity) {

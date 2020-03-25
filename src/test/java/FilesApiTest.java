@@ -1,14 +1,18 @@
-import static org.hamcrest.core.StringContains.containsString;
+import static com.nasnav.commons.utils.StringUtils.getFileNameSanitized;
+import static com.nasnav.security.AuthenticationFilter.TOKEN_HEADER;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static com.nasnav.security.AuthenticationFilter.TOKEN_HEADER;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -27,9 +31,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
@@ -48,7 +56,8 @@ import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.persistence.FileEntity;
 import com.nasnav.persistence.OrganizationEntity;
-
+import com.nasnav.test.commons.TestCommons;
+import com.sun.mail.iap.ByteArray;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -82,6 +91,9 @@ public class FilesApiTest {
 	
 	@Autowired
 	private  MockMvc mockMvc;
+	
+	@Autowired
+	private TestRestTemplate template;
 	
 	
 	@Before
@@ -319,23 +331,11 @@ public class FilesApiTest {
 		
 		 //--------------------------------------------
 		 //Now try to download the file
-		 
-		 MvcResult result = mockMvc.perform( 
-				 						MockMvcRequestBuilders.get("/files/"+ expectedUrl)				 								
-				 								.contentType(MediaType.ALL_VALUE)				 
-				 				)
- 								.andExpect(status().is(200))
- 								.andExpect(header().exists(HttpHeaders.CONTENT_DISPOSITION))
- 								.andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString(fileName)))
- 								.andReturn();
-	     
-		 Path downloadedFile = Files.createTempFile( StringUtils.stripFilenameExtension(fileName), ".png");
-		 InputStream in = new ByteArrayInputStream(result.getResponse().getContentAsByteArray());
-		 Files.copy(in, downloadedFile, StandardCopyOption.REPLACE_EXISTING );
-		 System.out.println("Downloaded File >>>> " + downloadedFile);
-		 
-	     assertEquals(Files.size(origFile), Files.size(downloadedFile));
-         assertEquals("image/png", result.getResponse().getContentType());
+
+ 		ResponseEntity<byte[]> response = template.exchange("/files/"+ expectedUrl, GET, getHttpEntity(""), byte[].class);
+ 		assertEquals(OK, response.getStatusCode());
+	    assertEquals(Files.size(origFile), response.getBody().length);
+	    assertEquals("image/png", response.getHeaders().getContentType().toString());
 	}
 
 
@@ -377,7 +377,7 @@ public class FilesApiTest {
 		String fileName = TEST_PHOTO;
 		Long orgId = 99001L;		
 		
-		String sanitizedFileName = StringUtils.getFileNameSanitized(fileName);		
+		String sanitizedFileName = getFileNameSanitized(fileName);		
 		String expectedUrl = orgId + "/" + sanitizedFileName;
 		
 		uploadValidTestImg(fileName, orgId, sanitizedFileName, expectedUrl);
@@ -389,13 +389,9 @@ public class FilesApiTest {
 		
 		 //--------------------------------------------
 		 //Now try to download the deleted file
-		 
-		mockMvc.perform( 
-					MockMvcRequestBuilders.get("/files/"+ expectedUrl)
-							.contentType(MediaType.ALL_VALUE)				 
-			)
-		.andExpect(status().is(406))
-		.andExpect(header().doesNotExist(HttpHeaders.CONTENT_DISPOSITION));	 
+		
+		ResponseEntity<String> response = template.exchange("/files/"+ expectedUrl, GET, getHttpEntity(""), String.class);
+		assertEquals(NOT_FOUND, response.getStatusCode());
 	}
 
 
