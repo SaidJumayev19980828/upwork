@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+import javax.cache.annotation.CacheResult;
+
 @Service
 public class BrandService {
 
@@ -18,6 +20,9 @@ public class BrandService {
         this.brandsRepository = brandsRepository;
     }
 
+    
+    
+    @CacheResult(cacheName = "brands")
     public Organization_BrandRepresentationObject getBrandById(Long brandId){
 
         Optional<BrandsEntity> brandsEntityOptional = brandsRepository.findById(brandId);

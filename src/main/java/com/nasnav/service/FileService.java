@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import javax.annotation.PostConstruct;
+import javax.cache.annotation.CacheResult;
 
 import org.apache.tika.Tika;
 import org.jboss.logging.Logger;
@@ -289,7 +290,7 @@ public class FileService {
 	
 	
 	
-	
+	@CacheResult(cacheName = "files")
 	public String getResourceInternalUrl(String url) throws BusinessException {
 		String modUrl = reformUrl(url);
 		FileEntity fileInfo = filesRepo.findByUrl(modUrl);

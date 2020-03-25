@@ -10,9 +10,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
-import com.nasnav.persistence.*;
+import javax.cache.annotation.CacheResult;
+
 import org.apache.http.client.utils.URIBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,9 +21,40 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.commons.utils.StringUtils;
-import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.dao.OrganizationDomainsRepository;
+import com.nasnav.dao.OrganizationImagesRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.OrganizationThemeRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.SocialRepository;
+import com.nasnav.dto.BrandDTO;
+import com.nasnav.dto.ExtraAttributesRepresentationObject;
+import com.nasnav.dto.OrganizationDTO;
+import com.nasnav.dto.OrganizationImageUpdateDTO;
+import com.nasnav.dto.OrganizationImagesRepresentationObject;
+import com.nasnav.dto.OrganizationRepresentationObject;
+import com.nasnav.dto.OrganizationThemesRepresentationObject;
+import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.Pair;
+import com.nasnav.dto.ProductFeatureDTO;
+import com.nasnav.dto.ProductFeatureUpdateDTO;
+import com.nasnav.dto.SocialRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.BrandsEntity;
+import com.nasnav.persistence.ExtraAttributesEntity;
+import com.nasnav.persistence.OrganizationDomainsEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.OrganizationImagesEntity;
+import com.nasnav.persistence.OrganizationThemeEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.SocialEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
@@ -92,7 +122,10 @@ public class OrganizationService {
                             .collect(toList());
     }
 
-
+    
+    
+    
+    @CacheResult(cacheName = "organizations_by_name")
     public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
         OrganizationEntity organizationEntity = organizationRepository.findByPname(organizationName);
         if (organizationEntity == null)
@@ -104,6 +137,10 @@ public class OrganizationService {
         return getOrganizationAdditionalData(organizationEntity);
     }
 
+    
+    
+    
+    @CacheResult(cacheName = "organizations_by_id")
     public OrganizationRepresentationObject getOrganizationById(Long organizationId) throws BusinessException {
         OrganizationEntity organizationEntity = organizationRepository.findOneById(organizationId);
 
@@ -113,6 +150,10 @@ public class OrganizationService {
         return getOrganizationAdditionalData(organizationEntity);
     }
 
+    
+    
+    
+    
     private OrganizationRepresentationObject getOrganizationAdditionalData(OrganizationEntity entity) {
         OrganizationRepresentationObject orgRepObj = ((OrganizationRepresentationObject) entity.getRepresentation());
 
@@ -140,6 +181,9 @@ public class OrganizationService {
         return orgRepObj;
     }
 
+    
+    
+    @CacheResult(cacheName = "organizations_extra_attributes")
     public List<ExtraAttributesRepresentationObject> getOrganizationExtraAttributesById(Long organizationId){
         List<ExtraAttributesEntity> extraAttributes = null;
         if (organizationId == null) {
@@ -665,6 +709,10 @@ public class OrganizationService {
         }
     }
 
+    
+    
+    
+    @CacheResult(cacheName = "organizations_domains")
     public Pair getOrganizationAndSubdirsByUrl(String urlString) throws BusinessException {
         URIBuilder url = null;
 

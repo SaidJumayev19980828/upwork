@@ -23,7 +23,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
+
+import javax.cache.annotation.CacheRemove;
+import javax.cache.annotation.CacheRemoveAll;
+import javax.cache.annotation.CacheResult;
 
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
@@ -35,6 +38,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nasnav.cache.CurrentOrgCacheKeyGenerator;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.CategoriesRepository;
@@ -99,7 +103,7 @@ public class CategoryService {
     
     
     
-
+//    @CacheResult(cacheName = "organizations_categories")
     public List<CategoryRepresentationObject> getCategories(Long organizationId, Long categoryId){
     	List<CategoriesEntity> categoriesEntityList = new ArrayList<>();
     	if(organizationId == null && categoryId == null) {
@@ -216,7 +220,7 @@ public class CategoryService {
 
 
 
-
+//    @CacheResult(cacheName = "organizations_tags")
     public List<TagsRepresentationObject> getOrganizationTags(Long orgId, String categoryName) {
         List<TagsEntity> tagsEntities;
         if(isBlankOrNull(categoryName)) {
@@ -234,6 +238,7 @@ public class CategoryService {
     
     
     
+    @CacheResult(cacheName = "organizations_tag_trees")
     public List<TagsTreeNodeDTO> getOrganizationTagsTree(Long orgId) throws BusinessException {
 
         OrganizationEntity org = orgRepo.getOne(orgId);
@@ -335,7 +340,7 @@ public class CategoryService {
 
 
     
-
+	@CacheRemove(cacheName = "organizations_tag_trees", cacheKeyGenerator = CurrentOrgCacheKeyGenerator.class)
     public TagsEntity createOrUpdateTag(TagsDTO tagDTO) throws BusinessException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         validateTagDto(tagDTO);
         
@@ -453,6 +458,10 @@ public class CategoryService {
 
     
     @Transactional(rollbackFor = Throwable.class)
+//    @CacheRemove(cacheName = "organizations_tag_trees", cacheKeyGenerator = CurrentOrgCacheKeyGenerator.class)
+    //TODO: should remove the value for the current organization only, but i couldn't implementa KeyGenerator that generate a matching key for  
+    //the existing one, need to understand how the key is generated when calling getTagTree, or just use spring cache annotations.
+    @CacheRemoveAll(cacheName = "organizations_tag_trees") 
     public void createTagTree(TagsTreeCreationDTO tagsTreeDTO) throws BusinessException{
 
         List<TagsTreeNodeCreationDTO> tree = tagsTreeDTO.getTreeNodes();

@@ -8,11 +8,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.cache.annotation.CacheRemove;
+import javax.cache.annotation.CacheResult;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.nasnav.cache.CurrentOrgCacheKeyGenerator;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.OrganizationImagesRepository;
 import com.nasnav.dao.ShopsRepository;
@@ -55,6 +59,8 @@ public class ShopService {
     
     
 
+    
+    @CacheResult(cacheName = "organizations_shops")
     public List<ShopRepresentationObject> getOrganizationShops(Long organizationId) throws BusinessException {
 
         List<ShopsEntity> shopsEntities = shopsRepository.findByOrganizationEntity_Id(organizationId);
@@ -73,6 +79,8 @@ public class ShopService {
     
     
 
+    
+//    @CacheResult(cacheName = "shops_by_id")
     public ShopRepresentationObject getShopById(Long shopId) throws BusinessException {
 
         Optional<ShopsEntity> shopsEntityOptional = shopsRepository.findById(shopId);
@@ -92,7 +100,7 @@ public class ShopService {
     
     
     
-
+    @CacheRemove(cacheName = "organizations_shops", cacheKeyGenerator = CurrentOrgCacheKeyGenerator.class)
     public ShopResponse shopModification(ShopJsonDTO shopJson) throws BusinessException{
         BaseUserEntity baseUser =  securityService.getCurrentUser();
         if(!(baseUser instanceof EmployeeUserEntity)) {
