@@ -3,6 +3,8 @@ package com.nasnav.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class ShopThreeSixtyRequestDTO {
 
@@ -10,5 +12,5 @@ public class ShopThreeSixtyRequestDTO {
     private Long view360Id;
 
     @JsonProperty("floors")
-    private ShopFloorsRequestDTO shopFloorsRequestDTO;
+    private List<ShopFloorsRequestDTO> shopFloorsRequestDTO;
 }

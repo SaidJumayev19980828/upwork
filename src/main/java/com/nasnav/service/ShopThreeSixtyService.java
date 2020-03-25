@@ -5,10 +5,14 @@ import com.nasnav.dto.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.ShopResponse;
+import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -16,12 +20,19 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class ShopThreeSixtyService {
+
+    @Value("${files.basepath}")
+    private String basePathStr;
+
+    @Autowired
+    private ShopsRepository shopRepo;
 
     @Autowired
     private ShopThreeSixtyRepository shop360Repo;
@@ -111,9 +122,12 @@ public class ShopThreeSixtyService {
             return modifyThreeSixtyShop(shopThreeSixtyDTO);
     }
 
-    private ShopResponse createThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) {
+    private ShopResponse createThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
+        if (shop360Repo.findById(shopThreeSixtyDTO.getId()) != null)
+            throw new BusinessException("There exists shop360 attached to this shop already!",
+                    "INVALID_PARAM: id", HttpStatus.NOT_ACCEPTABLE);
         ShopThreeSixtyEntity entity = new ShopThreeSixtyEntity();
-        return saveShopThreeSixtyEntity(entity, shopThreeSixtyDTO.getName());
+        return saveShopThreeSixtyEntity(entity, shopThreeSixtyDTO.getName(), shopThreeSixtyDTO.getShopId());
     }
 
     private ShopResponse modifyThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
@@ -122,10 +136,19 @@ public class ShopThreeSixtyService {
             throw new BusinessException("Provided shop_id doesn't match any existing shop360s","INVALID_PARAM: id",
                     HttpStatus.NOT_ACCEPTABLE);
         ShopThreeSixtyEntity entity = optionalEntity.get();
-        return saveShopThreeSixtyEntity(entity, shopThreeSixtyDTO.getName());
+        return saveShopThreeSixtyEntity(entity, shopThreeSixtyDTO.getName(), shopThreeSixtyDTO.getShopId());
     }
 
-    private ShopResponse saveShopThreeSixtyEntity(ShopThreeSixtyEntity entity, String shopName) {
+    private ShopResponse saveShopThreeSixtyEntity(ShopThreeSixtyEntity entity, String shopName, Long shopId) throws BusinessException {
+        Long orgId = securitySvc.getCurrentUserOrganizationId();
+        ShopsEntity shop = shopRepo.findByIdAndOrganizationEntity_Id(shopId, orgId);
+        if (shop == null) {
+            if (entity.getShopsEntity() == null)
+                throw new BusinessException("Must provide shop_id to attach shop360s to it",
+                        "INVALID_PARAM: shop_id", HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            entity.setShopsEntity(shop);
+        }
         entity.setSceneName(shopName);
         shop360Repo.save(entity);
         return new ShopResponse(entity.getId(), HttpStatus.OK);
@@ -191,6 +214,7 @@ public class ShopThreeSixtyService {
     }
 
 
+
     private void clearOldShop360Date(Long orgId, Long viewId) {
         shopFloorsRepo.deleteByShopThreeSixtyEntity_IdAndOrganizationEntity_id(viewId, orgId);
     }
@@ -198,17 +222,18 @@ public class ShopThreeSixtyService {
     private Long createShop360Floor(OrganizationEntity org, ShopThreeSixtyRequestDTO dto) {
         ShopThreeSixtyEntity shop = shop360Repo.findById(dto.getView360Id()).get();
         ShopFloorsEntity floor = new ShopFloorsEntity();
-        ShopFloorsRequestDTO floorDTO = dto.getShopFloorsRequestDTO();
 
-        floor.setName(floorDTO.getName());
-        floor.setNumber(floorDTO.getNumber());
-        floor.setShopThreeSixtyEntity(shop);
-        floor.setOrganizationEntity(org);
+        for(ShopFloorsRequestDTO floorDTO : dto.getShopFloorsRequestDTO()) {
+            floor.setName(floorDTO.getName());
+            floor.setNumber(floorDTO.getNumber());
+            floor.setShopThreeSixtyEntity(shop);
+            floor.setOrganizationEntity(org);
 
-        ShopFloorsEntity savedFloor = shopFloorsRepo.save(floor);
+            ShopFloorsEntity savedFloor = shopFloorsRepo.save(floor);
 
-        for(ShopSectionsRequestDTO sectionsDTO: floorDTO.getShopSections())
-            createShop360Section(sectionsDTO, savedFloor, shop, org);
+            for (ShopSectionsRequestDTO sectionsDTO : floorDTO.getShopSections())
+                createShop360Section(sectionsDTO, savedFloor, shop, org);
+        }
 
         return shop.getId();
     }
@@ -238,42 +263,41 @@ public class ShopThreeSixtyService {
         scene.setOrganizationEntity(org);
         scenesRepo.save(scene);
     }
-    private void checkImageUrls(Long orgId, ShopFloorsRequestDTO dto) throws BusinessException, IOException {
+    private void checkImageUrls(Long orgId, List<ShopFloorsRequestDTO> dto) throws BusinessException, IOException {
 
         List<String> urls = new ArrayList<>();
-        for(ShopSectionsRequestDTO section: dto.getShopSections()) {
-            urls.add(section.getImageUrl());
-            for(ShopScenesRequestDTO scene: section.getShopScenes()) {
-                urls.add(scene.getImageUrl());
+        for(ShopFloorsRequestDTO floor: dto) {
+            for(ShopSectionsRequestDTO section: floor.getShopSections()) {
+                urls.add(section.getImageUrl());
+                for (ShopScenesRequestDTO scene : section.getShopScenes()) {
+                    urls.add(scene.getImageUrl());
+                }
             }
         }
 
         for(String url: urls) {
-            FileEntity image = filesRepo.findByUrl(orgId + "/" + url);
+            FileEntity image = filesRepo.findByUrl(url);
 
             if(image == null)
                 throw new BusinessException("Thie image_url("+url+") doesn't exist!",
                         "INVALID_PARAM: image_url", HttpStatus.NOT_ACCEPTABLE);
 
-            String resized1024 = url.substring(0, url.lastIndexOf("."))
-                                 + "_resized1024" +
-                                url.substring(url.lastIndexOf("."), url.length()-1);
+            String resized1024 = insertResizedImageName(url, 1024);
 
-            String resized4096 = url.substring(0, url.lastIndexOf("."))
-                    + "_resized4096" +
-                    url.substring(url.lastIndexOf("."), url.length()-1);
+            String resized4096 = insertResizedImageName(url, 4096);
 
             if(filesRepo.findByUrl(orgId + "/" + resized1024) == null)
-                resizeImage(1024, image);
+                resizeImage(1024, image, orgId);
 
             if(filesRepo.findByUrl(orgId + "/" + resized4096) == null)
-                resizeImage(4096, image);
+                resizeImage(4096, image, orgId);
         }
 
     }
 
 
-    private void resizeImage(int imageSize, FileEntity image) throws IOException {
+    private void resizeImage(int imageSize, FileEntity image, Long orgId) throws IOException, BusinessException {
+        this.basePath = Paths.get(basePathStr);
         Path location = basePath.resolve(image.getLocation());
 
         BufferedImage inputImage = ImageIO.read(new File(location.toString()));
@@ -283,6 +307,23 @@ public class ShopThreeSixtyService {
         Graphics2D g2d = outputImage.createGraphics();
         g2d.drawImage(inputImage, 0, 0, imageSize, imageSize, null);
         g2d.dispose();
-        ImageIO.write(outputImage, formatName, new File(outputImagePath));
+
+        String imageName = insertResizedImageName(image.getOriginalFileName(), imageSize);
+        File i = new File(imageName);
+        ImageIO.write(outputImage, "jpg", i );
+
+        DiskFileItem fileItem = new DiskFileItem(imageName, "Image/jpg",
+                false, imageName, (int) i.length() , i);
+        fileItem.getOutputStream();
+
+        MultipartFile multipartFile = new CommonsMultipartFile(fileItem);
+
+        fileSvc.saveFile(multipartFile, orgId);
+    }
+
+    private String insertResizedImageName(String imageName, int size) {
+        return imageName.substring(0, imageName.lastIndexOf("."))
+                + "_resized"+ size +
+                imageName.substring(imageName.lastIndexOf("."), imageName.length());
     }
 }

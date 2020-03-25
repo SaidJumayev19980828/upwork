@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,7 +101,7 @@ public class ShopThreeSixtyController {
     @PostMapping(value = "/sections", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopResponse updateThreeSixtyShopSections(@RequestHeader("User-Token") String userToken,
                                                              @RequestBody ShopThreeSixtyRequestDTO jsonDTO)
-            throws BusinessException {
+            throws BusinessException, IOException {
         return shop360Svc.updateThreeSixtyShopSections(jsonDTO);
     }
 }

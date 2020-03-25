@@ -37,7 +37,7 @@ public class ShopSectionsEntity implements BaseEntity {
     @ToString.Exclude
     private OrganizationEntity organizationEntity;
 
-    @OneToMany(mappedBy = "shopSectionsEntity")
+    @OneToMany(mappedBy = "shopSectionsEntity", cascade = CascadeType.REMOVE)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

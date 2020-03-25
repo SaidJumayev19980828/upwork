@@ -63,6 +63,7 @@ public class ShopThreeSixtyEntity implements BaseEntity{
         ShopThreeSixtyDTO shopDTO = new ShopThreeSixtyDTO();
         shopDTO.setId(getId());
         shopDTO.setName(getSceneName());
+        shopDTO.setShopId(shopsEntity.getId());
         return shopDTO;
     }
 }
