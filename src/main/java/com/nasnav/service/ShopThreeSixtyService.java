@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.exceptions.BusinessException;
@@ -90,7 +91,7 @@ public class ShopThreeSixtyService {
             return null;
 
         ProductPositionEntity productPosition = productPosRepo.findByShopsThreeSixtyEntity_Id(shop.getId());
-        if (productPosition == null)
+        if (productPosition == null || productPosition.getPositionsJsonData() == null)
             return null;
 
         JSONObject positionsJson =  new JSONObject(getJsonDataStringSerlizable(productPosition.getPositionsJsonData()));
@@ -155,7 +156,7 @@ public class ShopThreeSixtyService {
     }
 
 
-    public ShopResponse updateThreeSixtyShopJsonData(ShopJsonDataDTO dataDTO) throws BusinessException {
+    public ShopResponse updateThreeSixtyShopJsonData(ShopJsonDataDTO dataDTO) throws BusinessException, JsonProcessingException {
         validateJsonData(dataDTO);
 
         Optional<ShopThreeSixtyEntity> entity = shop360Repo.findById(dataDTO.getView360Id());
@@ -166,10 +167,12 @@ public class ShopThreeSixtyService {
 
         ShopThreeSixtyEntity shopEntity = entity.get();
 
+        String value = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(dataDTO.getJson());
+
         if (dataDTO.getType().equals("web"))
-            shopEntity.setWebJsonData(dataDTO.getJson());
+            shopEntity.setWebJsonData(value);
         else if (dataDTO.getType().equals("mobile"))
-            shopEntity.setMobileJsonData(dataDTO.getJson());
+            shopEntity.setMobileJsonData(value);
         else
             throw new BusinessException("Provide type "+dataDTO.getType()+" is invalid",
                     "INVALID_PARAM: type", HttpStatus.NOT_ACCEPTABLE);
@@ -190,18 +193,39 @@ public class ShopThreeSixtyService {
     }
 
 
-    public ShopResponse updateThreeSixtyShopProductPositions(ShopProductPositionsDTO productPositionsDTO) throws BusinessException {
+    public ShopResponse updateThreeSixtyShopProductPositions(ShopProductPositionsDTO productPositionsDTO) throws BusinessException, JsonProcessingException {
+
+        validateProductPositionsUpdateDTO(productPositionsDTO);
+
         ProductPositionEntity entity = productPosRepo.findByShopsThreeSixtyEntity_Id(productPositionsDTO.getView360Id());
 
-        if (entity == null)
-            throw new BusinessException("Provide view360_id doesn't match any existing shop",
-                    "INVALID_PARAM: view360_id", HttpStatus.NOT_ACCEPTABLE);
+        if (entity == null) {
+            entity = new ProductPositionEntity();
+            OrganizationEntity org = securitySvc.getCurrentUserOrganization();
+            entity.setOrganizationEntity(org);
+            entity.setShopsThreeSixtyEntity(shop360Repo.findById(productPositionsDTO.getView360Id()).get());
+        }
 
+        String value = new com.fasterxml.jackson.databind.ObjectMapper()
+                .writeValueAsString(productPositionsDTO.getProductPositions());
 
-        entity.setPositionsJsonData(productPositionsDTO.getProductPositions());
+        entity.setPositionsJsonData(value);
 
         productPosRepo.save(entity);
         return new ShopResponse(entity.getId(), HttpStatus.OK);
+    }
+
+    private void validateProductPositionsUpdateDTO(ShopProductPositionsDTO productPositionsDTO) throws BusinessException {
+
+        if (productPositionsDTO.getView360Id() == null)
+            throw new BusinessException("Required parameter (view360_id) is missing!",
+                    "MISSING_PARAM: view360_id", HttpStatus.NOT_ACCEPTABLE);
+
+        Optional<ShopThreeSixtyEntity> shop = shop360Repo.findById(productPositionsDTO.getView360Id());
+
+        if (!shop.isPresent())
+            throw new BusinessException("Provided view360_id doesn't match any eixsting shop",
+                    "INVALID_PARAM: view360_id", HttpStatus.NOT_ACCEPTABLE);
     }
 
     public ShopResponse updateThreeSixtyShopSections(ShopThreeSixtyRequestDTO jsonDTO) throws BusinessException, IOException {
@@ -286,29 +310,32 @@ public class ShopThreeSixtyService {
 
             String resized4096 = insertResizedImageName(url, 4096);
 
-            if(filesRepo.findByUrl(orgId + "/" + resized1024) == null)
+            if(filesRepo.findByUrl(resized1024) == null)
                 resizeImage(1024, image, orgId);
 
-            if(filesRepo.findByUrl(orgId + "/" + resized4096) == null)
+            if(filesRepo.findByUrl(resized4096) == null)
                 resizeImage(4096, image, orgId);
         }
 
     }
 
 
-    private void resizeImage(int imageSize, FileEntity image, Long orgId) throws IOException, BusinessException {
+    private void resizeImage(int imageWidth, FileEntity image, Long orgId) throws IOException, BusinessException {
         this.basePath = Paths.get(basePathStr);
         Path location = basePath.resolve(image.getLocation());
 
         BufferedImage inputImage = ImageIO.read(new File(location.toString()));
-        BufferedImage outputImage = new BufferedImage(imageSize,
-                imageSize, inputImage.getType());
+        int imageHeight = (int) (imageWidth * (inputImage.getHeight()/(inputImage.getWidth()*1.0)));
+        BufferedImage outputImage = new BufferedImage(imageWidth,
+                imageHeight, inputImage.getType());
+
+
 
         Graphics2D g2d = outputImage.createGraphics();
-        g2d.drawImage(inputImage, 0, 0, imageSize, imageSize, null);
+        g2d.drawImage(inputImage, 0, 0, imageWidth, imageHeight, null);
         g2d.dispose();
 
-        String imageName = insertResizedImageName(image.getOriginalFileName(), imageSize);
+        String imageName = insertResizedImageName(image.getOriginalFileName(), imageWidth);
         File i = new File(imageName);
         ImageIO.write(outputImage, "jpg", i );
 
@@ -323,7 +350,7 @@ public class ShopThreeSixtyService {
 
     private String insertResizedImageName(String imageName, int size) {
         return imageName.substring(0, imageName.lastIndexOf("."))
-                + "_resized"+ size +
+                + "-resized"+ size +
                 imageName.substring(imageName.lastIndexOf("."), imageName.length());
     }
 }

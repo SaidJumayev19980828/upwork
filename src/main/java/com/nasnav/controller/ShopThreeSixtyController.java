@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nasnav.dto.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ShopResponse;
@@ -81,7 +82,7 @@ public class ShopThreeSixtyController {
     @PostMapping(value = "/json_data", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopResponse updateThreeSixtyShopJsonData(@RequestHeader("User-Token") String userToken,
                                                      @RequestBody ShopJsonDataDTO jsonDataDTO)
-            throws BusinessException {
+            throws BusinessException, JsonProcessingException {
         return shop360Svc.updateThreeSixtyShopJsonData(jsonDataDTO);
     }
 
@@ -91,7 +92,7 @@ public class ShopThreeSixtyController {
     @PostMapping(value = "/product_positions", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopResponse updateThreeSixtyShopProductPositions(@RequestHeader("User-Token") String userToken,
                                                      @RequestBody ShopProductPositionsDTO jsonDTO)
-            throws BusinessException {
+            throws BusinessException, JsonProcessingException {
         return shop360Svc.updateThreeSixtyShopProductPositions(jsonDTO);
     }
 

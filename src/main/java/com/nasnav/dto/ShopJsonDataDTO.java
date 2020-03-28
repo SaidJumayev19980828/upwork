@@ -11,6 +11,6 @@ public class ShopJsonDataDTO {
 
     private String type;
 
-    private String json;
+    private Shop360WebJsonDTO json;
 
 }
