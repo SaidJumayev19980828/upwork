@@ -2,7 +2,6 @@ package com.nasnav.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -36,10 +35,9 @@ public class ShopsController {
             @io.swagger.annotations.ApiResponse(code = 401, message = "INSUFFICIENT RIGHTS or UNAUTHENTICATED"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @PostMapping(value = "/update", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity updateShop(@RequestHeader(name = "User-Token") String userToken,
+    public ShopResponse updateShop(@RequestHeader(name = "User-Token") String userToken,
                                      @RequestBody ShopJsonDTO shopJson) throws BusinessException {
-        ShopResponse response =  shopService.shopModification(shopJson);
-        return new ResponseEntity(response, response.getHttpStatus());
+        return shopService.shopModification(shopJson);
     }
     
     

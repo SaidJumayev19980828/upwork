@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class CachingConfig 
   implements CacheManagerCustomizer<ConcurrentMapCacheManager> {
+	
  
     @Override
     public void customize(ConcurrentMapCacheManager cacheManager) {
@@ -25,6 +26,7 @@ public class CachingConfig
         		, "organizations_tag_trees"
         		, "organizations_tags"
         		, "shops_by_id"
-        		, "tag_tree"));
+        		));
     }
+    
 }

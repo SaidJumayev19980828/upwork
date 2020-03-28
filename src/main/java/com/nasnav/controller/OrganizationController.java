@@ -237,10 +237,9 @@ public class OrganizationController {
     })
     @PostMapping(value = "tag/tree", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(OK)
-    public ResponseEntity<Void> createTagTree(@RequestHeader (value = "User-Token") String userToken,
+    public void createTagTree(@RequestHeader (value = "User-Token") String userToken,
                                             @RequestBody TagsTreeCreationDTO tree) throws BusinessException {
         categoryService.createTagTree(tree);
-        return ResponseEntity.ok().build();
     }
 
 

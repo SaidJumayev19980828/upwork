@@ -53,14 +53,6 @@ import java.util.zip.ZipInputStream;
 import javax.sql.DataSource;
 import javax.validation.Valid;
 
-import com.nasnav.dto.*;
-import com.nasnav.model.querydsl.sql.QProductImages;
-import com.nasnav.model.querydsl.sql.QProductVariants;
-import com.querydsl.core.types.Projections;
-import com.querydsl.sql.Configuration;
-import com.querydsl.sql.PostgreSQLTemplates;
-import com.querydsl.sql.SQLQuery;
-import com.querydsl.sql.SQLQueryFactory;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.tika.Tika;
@@ -72,6 +64,8 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -87,9 +81,16 @@ import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dto.ProductImageBulkUpdateDTO;
+import com.nasnav.dto.ProductImageUpdateDTO;
+import com.nasnav.dto.ProductImageUpdateIdentifier;
+import com.nasnav.dto.ProductImgDTO;
+import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
+import com.nasnav.model.querydsl.sql.QProductImages;
+import com.nasnav.model.querydsl.sql.QProductVariants;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductImagesEntity;
@@ -98,6 +99,10 @@ import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.service.model.ImportedImage;
 import com.nasnav.service.model.VariantIdentifierAndUrlPair;
+import com.querydsl.sql.Configuration;
+import com.querydsl.sql.PostgreSQLTemplates;
+import com.querydsl.sql.SQLQuery;
+import com.querydsl.sql.SQLQueryFactory;
 import com.sun.istack.logging.Logger;
 import com.univocity.parsers.common.record.Record;
 import com.univocity.parsers.csv.CsvParser;
@@ -114,8 +119,6 @@ import reactor.util.function.Tuple3;
 
 @Service
 public class ProductImageServiceImpl implements ProductImageService {
-
-	private static final String[] SUPPORTED_IMG_FORMATS = {".png", ".jpg", ".jpeg"};
 
 	private Logger logger = Logger.getLogger(ProductService.class);
 	
@@ -146,6 +149,10 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	@Autowired
 	private DataSource dataSource;
+	
+	
+	@Autowired
+	private JdbcTemplate jdbc;
 
 	@Override
 	public ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
@@ -1506,43 +1513,51 @@ public class ProductImageServiceImpl implements ProductImageService {
 		if(productIds == null || productIds.isEmpty()) {
 			return new HashMap<>();
 		}
-		SQLQueryFactory queryFactory = new SQLQueryFactory(new Configuration(new PostgreSQLTemplates()), dataSource);
+		
+		SQLQueryFactory queryFactory = new SQLQueryFactory(createQueryDslConfig(), dataSource);
 		QProductImages image = QProductImages.productImages;
 		QProductVariants variant = QProductVariants.productVariants;
-		SQLQuery query = queryFactory.select(Projections.bean(ProductImgDTO.class, image.id, image.uri.as("url"),
-																image.type, image.productId, image.variantId, image.priority))
-									 .from(image).leftJoin(variant).on(image.variantId.eq(variant.id))
-									 .where(image.productId.in(productIds).or(variant.productId.in(productIds)))
-									 .orderBy(image.priority.asc());
-		List<ProductImgDTO> productImages = query.fetch();
-		Map<Long,String> productImgsMap = productImages
-											.stream()
-											.filter(Objects::nonNull)
-											.collect( groupingBy(img ->img.getProductId()))
-											.entrySet()
-											.stream()
-											.map(this::getProductCoverImageUrlMapEntry)
-											.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));	
-		productIds.stream()
-				.filter(id -> !productImgsMap.keySet().contains(id))
-				.forEach(id -> productImgsMap.put(id, ProductImageService.NO_IMG_FOUND_URL));
+		SQLQuery<?> query = 
+				queryFactory
+				 .select(image.id, image.uri.as("url"), image.type, image.productId, image.variantId, image.priority)
+				 .from(image)
+				 .leftJoin(variant).on(image.variantId.eq(variant.id))
+				 .where(image.productId.in(productIds).or(variant.productId.in(productIds)))
+				 .orderBy(image.priority.asc());
+
+		String  sqlString = query.getSQL().getSQL();
+		List<ProductImgDTO> productImages = jdbc.query(sqlString, new BeanPropertyRowMapper<>(ProductImgDTO.class));
 		
-		return productImgsMap;
+		Map<Long,String> productCoverImgsMap = 
+				productImages
+				.stream()
+				.filter(Objects::nonNull)
+				.collect(groupingBy(ProductImgDTO::getProductId))
+				.entrySet()
+				.stream()
+				.map(this::getProductCoverImageUrlMapEntry)
+				.collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+		
+		productIds
+		.stream()
+		.filter(id -> !productCoverImgsMap.keySet().contains(id))
+		.forEach(id -> productCoverImgsMap.put(id, ProductImageService.NO_IMG_FOUND_URL));
+		
+		return productCoverImgsMap;
 	}
+	
+	
+	
+	
 
-	private Long getImageProductId(ProductImagesEntity img)  {
-		Long defaultVariantId = Optional.ofNullable(img)
-				.map(ProductImagesEntity::getProductVariantsEntity)
-				.map(ProductVariantsEntity::getProductEntity)
-				.map(ProductEntity::getId)
-				.orElse(-1L);
-
-		return Optional.ofNullable(img)
-					   .map(ProductImagesEntity::getProductEntity)
-					   .map(ProductEntity::getId)
-					   .orElse(defaultVariantId);
+	private Configuration createQueryDslConfig() {
+		Configuration config = new Configuration(new PostgreSQLTemplates());
+		config.setUseLiterals(true);
+		return config;
 	}
-
+	
+	
+	
 	
 	
 	

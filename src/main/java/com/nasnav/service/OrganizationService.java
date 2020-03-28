@@ -3,6 +3,7 @@ package com.nasnav.service;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.net.URISyntaxException;
 import java.util.List;
@@ -14,6 +15,7 @@ import javax.cache.annotation.CacheResult;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -223,6 +225,10 @@ public class OrganizationService {
         return new OrganizationResponse(newOrg.getId(), 0);
     }
 
+    
+    
+    
+    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
     public OrganizationResponse updateOrganizationData(String userToken,
                                    OrganizationDTO.OrganizationModificationDTO json, MultipartFile file) throws BusinessException {
         if (json.organizationId == null) {
@@ -270,6 +276,10 @@ public class OrganizationService {
         return new OrganizationResponse();
     }
 
+    
+    
+    
+    
     public List<Organization_BrandRepresentationObject> getOrganizationBrands(Long orgId){
         List<Organization_BrandRepresentationObject> brands = null;
         if (orgId == null)
@@ -315,7 +325,11 @@ public class OrganizationService {
         brandsRepository.save(brand);
         return new OrganizationResponse(brand.getId(), 1);
     }
-
+    
+    
+    
+    
+    @CacheEvict(allEntries = true, cacheNames = {"brands"})
     public OrganizationResponse validateAndUpdateBrand(BrandDTO json, MultipartFile logo, MultipartFile banner) throws BusinessException {
         if (json.operation != null) {
             if (json.operation.equals("create"))
@@ -323,11 +337,15 @@ public class OrganizationService {
             else if (json.operation.equals("update"))
                 return updateOrganizationBrand(json, logo, banner);
             else
-                throw new BusinessException("INVALID_PARAM: operation", "", HttpStatus.NOT_ACCEPTABLE);
+                throw new BusinessException("INVALID_PARAM: operation", "", NOT_ACCEPTABLE);
         }
         else
-            throw new BusinessException("MISSING_PARAM: operation", "", HttpStatus.NOT_ACCEPTABLE);
+            throw new BusinessException("MISSING_PARAM: operation", "", NOT_ACCEPTABLE);
     }
+    
+    
+    
+    
 
     public OrganizationResponse createOrganizationBrand(BrandDTO json, MultipartFile logo, MultipartFile banner) throws BusinessException {
         BrandsEntity brand = new BrandsEntity();
@@ -551,7 +569,7 @@ public class OrganizationService {
 	}
 
 
-
+	@CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
 	public ProductImageUpdateResponse updateOrganizationImage(MultipartFile file, OrganizationImageUpdateDTO imgMetaData) throws BusinessException {
         if(imgMetaData == null)
             throw new BusinessException("No Metadata provided for organization image!", "INVALID PARAM", HttpStatus.NOT_ACCEPTABLE);

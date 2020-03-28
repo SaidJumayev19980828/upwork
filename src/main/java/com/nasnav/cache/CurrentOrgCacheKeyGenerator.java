@@ -2,7 +2,6 @@ package com.nasnav.cache;
 
 import java.lang.annotation.Annotation;
 
-import javax.cache.Caching;
 import javax.cache.annotation.CacheKeyGenerator;
 import javax.cache.annotation.CacheKeyInvocationContext;
 import javax.cache.annotation.GeneratedCacheKey;

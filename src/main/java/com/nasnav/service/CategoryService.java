@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import javax.cache.annotation.CacheRemove;
 import javax.cache.annotation.CacheRemoveAll;
 import javax.cache.annotation.CacheResult;
 
@@ -33,12 +32,12 @@ import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedAcyclicGraph;
 import org.jgrapht.traverse.BreadthFirstIterator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nasnav.cache.CurrentOrgCacheKeyGenerator;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.CategoriesRepository;
@@ -340,7 +339,7 @@ public class CategoryService {
 
 
     
-	@CacheRemove(cacheName = "organizations_tag_trees", cacheKeyGenerator = CurrentOrgCacheKeyGenerator.class)
+	@CacheEvict(allEntries = true ,cacheNames = "organizations_tag_trees")
     public TagsEntity createOrUpdateTag(TagsDTO tagDTO) throws BusinessException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         validateTagDto(tagDTO);
         

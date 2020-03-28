@@ -318,7 +318,7 @@ public class ProductService {
 	
 	
 	private List<Long> filterProductsWithMultipleVariants(List<Long> productsIds) {
-		SQLQueryFactory queryFactory = new SQLQueryFactory(new Configuration(new PostgreSQLTemplates()), dataSource);
+		SQLQueryFactory queryFactory = new SQLQueryFactory(createQueryDslConfig() , dataSource);
 
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
@@ -333,6 +333,15 @@ public class ProductService {
 				.groupBy(product.id);
 
 		return query.fetch();
+	}
+
+
+
+
+	private Configuration createQueryDslConfig() {
+		Configuration config = new Configuration(new PostgreSQLTemplates());
+		config.setUseLiterals(true);
+		return config;
 	}
 
 
@@ -542,15 +551,17 @@ public class ProductService {
 		ProductSearchParam params = getProductSearchParams(requestParams);
 
 		SQLQuery<?> countStocks = getProductsQuery(params);
-		Long productsCount = countStocks.fetchCount();
+		String countQuery = countStocks.select(SQLExpressions.countAll).getSQL().getSQL();
+		Long productsCount = template.queryForObject(countQuery, Long.class); 
 
 		SQLQuery<?> stocks = getProductsQuery(params);
 
 		stocks.select((Expressions.template(ProductRepresentationObject.class,"*")))
 				 .limit(params.count).offset(params.start);
 
-		List<ProductRepresentationObject> result = template.query(stocks.getResults().getStatement().toString(),
-				new BeanPropertyRowMapper<>(ProductRepresentationObject.class));
+		List<ProductRepresentationObject> result = 
+				template.query(stocks.getSQL().getSQL(),
+						new BeanPropertyRowMapper<>(ProductRepresentationObject.class));
 
 		return getProductResponseFromStocks(result, productsCount);
 	}
@@ -566,7 +577,8 @@ public class ProductService {
 		QProductVariants variant = QProductVariants.productVariants;
 		QProductTags productTags = QProductTags.productTags;
 
-		SQLQueryFactory query = new SQLQueryFactory( new Configuration(new PostgreSQLTemplates()), dataSource);
+		
+		SQLQueryFactory query = new SQLQueryFactory(createQueryDslConfig() , dataSource);
 
 		SQLQuery<?> productTagsQuery = getProductTagsQuery(query, productTags, params);
 
@@ -618,7 +630,7 @@ public class ProductService {
 	public ProductsFiltersResponse getProductAvailableFilters(ProductSearchParam param) throws BusinessException, IllegalAccessException, InvocationTargetException, SQLException {
 		ProductSearchParam finalParams = getProductSearchParams(param);
 
-		SQLQueryFactory factory = new SQLQueryFactory(new Configuration(new PostgreSQLTemplates()), dataSource);
+		SQLQueryFactory factory = new SQLQueryFactory(createQueryDslConfig(), dataSource);
 
 		QStocks stock = QStocks.stocks;
 		QProducts product = QProducts.products;
@@ -646,7 +658,7 @@ public class ProductService {
 				baseQuery.select(
 						stock.price.min().as("minPrice"),
 						stock.price.max().as("maxPrice"));
-		return template.queryForObject(query.getResults().getStatement().toString(), new BeanPropertyRowMapper<>(Prices.class));
+		return template.queryForObject(query.getSQL().getSQL() , new BeanPropertyRowMapper<>(Prices.class));
 	}
 
 
@@ -657,7 +669,7 @@ public class ProductService {
 		SQLQuery<?> query = factory.select(brand.id, brand.name).from(brand)
 								.where(brand.id.in(baseQuery.select(product.brandId)));
 
-		return template.query(query.getResults().getStatement().toString(),
+		return template.query(query.getSQL().getSQL(),
 				new BeanPropertyRowMapper<>(Organization_BrandRepresentationObject.class));
 	}
 
@@ -676,7 +688,7 @@ public class ProductService {
 				.from(baseQuery
 						.select(variant.featureSpec).as("product_variants"))
 				.where(variant.featureSpec.isNotNull()
-						.and(variant.featureSpec.ne("'{}'")));
+						.and(variant.featureSpec.ne("{}")));
 
 		SQLQuery<?> query = factory.select(Expressions.numberTemplate(Long.class, "features_val.id"),
 										Expressions.stringTemplate("name"),
@@ -686,7 +698,7 @@ public class ProductService {
 								.on(feature.id.eq(Expressions.numberTemplate(Long.class, "features_val.id")));
 
 		List<com.nasnav.dto.response.navbox.VariantFeatureDTO> variantsList =
-						template.query(query.getResults().getStatement().toString(),
+						template.query(query.getSQL().getSQL(),
 							new BeanPropertyRowMapper<>(com.nasnav.dto.response.navbox.VariantFeatureDTO.class));
 
 

@@ -14,8 +14,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import com.nasnav.dto.ProductsFiltersResponse;
-import com.nasnav.request.ProductSearchParam;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -27,7 +25,6 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
@@ -45,6 +42,7 @@ import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.ProductRepresentationObject;
+import com.nasnav.dto.ProductsFiltersResponse;
 import com.nasnav.dto.ProductsResponse;
 import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.FileEntity;
@@ -57,6 +55,7 @@ import com.nasnav.persistence.ProductTypes;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
+import com.nasnav.request.ProductSearchParam;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -113,7 +112,6 @@ public class ProductServiceTest {
 	
 	private final String PRODUCT_NAME = "LIPSTICK";
 	private final String PRODUCT_P_NAME = "LIPSTICK PRODUCT";
-	private final Long CATEGORY_ID = 201l;
 	private final String PRODUCT_PRODUCT_BARCODE = "BBE3343222DDF";
 	private final String PRODUCT_VARIANT_BARCODE = "11124988483838";
 	private final String PRODUCT_VARIANT_NAME = "color";
@@ -908,8 +906,6 @@ public class ProductServiceTest {
 
 		JSONObject variantFeatures = res.getJSONObject("variantFeatures");
 		assertTrue(!variantFeatures.isEmpty());
-
-
 	}
 
 
