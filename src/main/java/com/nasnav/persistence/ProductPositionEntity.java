@@ -46,7 +46,7 @@ public class ProductPositionEntity implements BaseEntity {
     private LocalDateTime updatedAt;
 
     @Column(name = "preview_json_data")
-    private String previewJsonSata;
+    private String previewJsonData;
 
     @Override
     public BaseRepresentationObject getRepresentation() {

@@ -1,21 +1,39 @@
 package com.nasnav.service;
 
-import com.nasnav.dao.ProductPositionsRepository;
-import com.nasnav.dao.ShopFloorsRepository;
-import com.nasnav.dao.ShopThreeSixtyRepository;
-import com.nasnav.dto.ShopFloorDTO;
-import com.nasnav.persistence.ProductPositionEntity;
-import com.nasnav.persistence.ShopThreeSixtyEntity;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.*;
+import com.nasnav.response.ShopResponse;
+import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
-import java.util.ArrayList;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class ShopThreeSixtyService {
+
+    @Value("${files.basepath}")
+    private String basePathStr;
+
+    @Autowired
+    private ShopsRepository shopRepo;
 
     @Autowired
     private ShopThreeSixtyRepository shop360Repo;
@@ -26,6 +44,22 @@ public class ShopThreeSixtyService {
     @Autowired
     private ShopFloorsRepository shopFloorsRepo;
 
+    @Autowired
+    private ShopSectionsRepository sectionsRepo;
+
+    @Autowired
+    private ShopScenesRepository scenesRepo;
+
+    @Autowired
+    private FilesRepository filesRepo;
+
+    @Autowired
+    private SecurityService securitySvc;
+
+    @Autowired
+    private FileService fileSvc;
+
+    private Path basePath;
 
     public String getShop360JsonInfo(Long shopId, String type) {
         ShopThreeSixtyEntity shop = shop360Repo.findByShopsEntity_Id(shopId);
@@ -57,7 +91,7 @@ public class ShopThreeSixtyService {
             return null;
 
         ProductPositionEntity productPosition = productPosRepo.findByShopsThreeSixtyEntity_Id(shop.getId());
-        if (productPosition == null)
+        if (productPosition == null || productPosition.getPositionsJsonData() == null)
             return null;
 
         JSONObject positionsJson =  new JSONObject(getJsonDataStringSerlizable(productPosition.getPositionsJsonData()));
@@ -77,5 +111,246 @@ public class ShopThreeSixtyService {
         return floors;
     }
 
+    public ShopThreeSixtyDTO getThreeSixtyShops(Long shopId) {
+        ShopThreeSixtyEntity entity = shop360Repo.findByShopsEntity_Id(shopId);
+        return entity != null ? (ShopThreeSixtyDTO) entity.getRepresentation() : null;
+    }
 
+    public ShopResponse updateThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
+        if (shopThreeSixtyDTO.getId() == null)
+            return createThreeSixtyShop(shopThreeSixtyDTO);
+        else
+            return modifyThreeSixtyShop(shopThreeSixtyDTO);
+    }
+
+    private ShopResponse createThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
+        if (shop360Repo.findById(shopThreeSixtyDTO.getId()) != null)
+            throw new BusinessException("There exists shop360 attached to this shop already!",
+                    "INVALID_PARAM: id", HttpStatus.NOT_ACCEPTABLE);
+        ShopThreeSixtyEntity entity = new ShopThreeSixtyEntity();
+        return saveShopThreeSixtyEntity(entity, shopThreeSixtyDTO.getName(), shopThreeSixtyDTO.getShopId());
+    }
+
+    private ShopResponse modifyThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
+        Optional<ShopThreeSixtyEntity> optionalEntity = shop360Repo.findById(shopThreeSixtyDTO.getId());
+        if (!optionalEntity.isPresent())
+            throw new BusinessException("Provided shop_id doesn't match any existing shop360s","INVALID_PARAM: id",
+                    HttpStatus.NOT_ACCEPTABLE);
+        ShopThreeSixtyEntity entity = optionalEntity.get();
+        return saveShopThreeSixtyEntity(entity, shopThreeSixtyDTO.getName(), shopThreeSixtyDTO.getShopId());
+    }
+
+    private ShopResponse saveShopThreeSixtyEntity(ShopThreeSixtyEntity entity, String shopName, Long shopId) throws BusinessException {
+        Long orgId = securitySvc.getCurrentUserOrganizationId();
+        ShopsEntity shop = shopRepo.findByIdAndOrganizationEntity_Id(shopId, orgId);
+        if (shop == null) {
+            if (entity.getShopsEntity() == null)
+                throw new BusinessException("Must provide shop_id to attach shop360s to it",
+                        "INVALID_PARAM: shop_id", HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            entity.setShopsEntity(shop);
+        }
+        entity.setSceneName(shopName);
+        shop360Repo.save(entity);
+        return new ShopResponse(entity.getId(), HttpStatus.OK);
+    }
+
+
+    public ShopResponse updateThreeSixtyShopJsonData(ShopJsonDataDTO dataDTO) throws BusinessException, JsonProcessingException {
+        validateJsonData(dataDTO);
+
+        Optional<ShopThreeSixtyEntity> entity = shop360Repo.findById(dataDTO.getView360Id());
+
+        if (!entity.isPresent())
+            throw new BusinessException("Provide view360_id doesn't match any existing shop",
+                    "INVALID_PARAM: view360_id", HttpStatus.NOT_ACCEPTABLE);
+
+        ShopThreeSixtyEntity shopEntity = entity.get();
+
+        String value = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(dataDTO.getJson());
+
+        if (dataDTO.getType().equals("web"))
+            shopEntity.setWebJsonData(value);
+        else if (dataDTO.getType().equals("mobile"))
+            shopEntity.setMobileJsonData(value);
+        else
+            throw new BusinessException("Provide type "+dataDTO.getType()+" is invalid",
+                    "INVALID_PARAM: type", HttpStatus.NOT_ACCEPTABLE);
+
+        shop360Repo.save(shopEntity);
+        return new ShopResponse(shopEntity.getId(), HttpStatus.OK);
+    }
+
+    private void validateJsonData(ShopJsonDataDTO dataDTO) throws BusinessException {
+        if (dataDTO.getView360Id() == null)
+            throw new BusinessException("Must provide view360_id of JsonData",
+                    "MISSING_PARAM: view360_id", HttpStatus.NOT_ACCEPTABLE);
+
+        if (dataDTO.getType() == null)
+            throw new BusinessException("Must provide type for JsonData (web or mobile)",
+                    "MISSING_PARAM: type", HttpStatus.NOT_ACCEPTABLE);
+
+    }
+
+
+    public ShopResponse updateThreeSixtyShopProductPositions(ShopProductPositionsDTO productPositionsDTO) throws BusinessException, JsonProcessingException {
+
+        validateProductPositionsUpdateDTO(productPositionsDTO);
+
+        ProductPositionEntity entity = productPosRepo.findByShopsThreeSixtyEntity_Id(productPositionsDTO.getView360Id());
+
+        if (entity == null) {
+            entity = new ProductPositionEntity();
+            OrganizationEntity org = securitySvc.getCurrentUserOrganization();
+            entity.setOrganizationEntity(org);
+            entity.setShopsThreeSixtyEntity(shop360Repo.findById(productPositionsDTO.getView360Id()).get());
+        }
+
+        String value = new com.fasterxml.jackson.databind.ObjectMapper()
+                .writeValueAsString(productPositionsDTO.getProductPositions());
+
+        entity.setPositionsJsonData(value);
+
+        productPosRepo.save(entity);
+        return new ShopResponse(entity.getId(), HttpStatus.OK);
+    }
+
+    private void validateProductPositionsUpdateDTO(ShopProductPositionsDTO productPositionsDTO) throws BusinessException {
+
+        if (productPositionsDTO.getView360Id() == null)
+            throw new BusinessException("Required parameter (view360_id) is missing!",
+                    "MISSING_PARAM: view360_id", HttpStatus.NOT_ACCEPTABLE);
+
+        Optional<ShopThreeSixtyEntity> shop = shop360Repo.findById(productPositionsDTO.getView360Id());
+
+        if (!shop.isPresent())
+            throw new BusinessException("Provided view360_id doesn't match any eixsting shop",
+                    "INVALID_PARAM: view360_id", HttpStatus.NOT_ACCEPTABLE);
+    }
+
+    public ShopResponse updateThreeSixtyShopSections(ShopThreeSixtyRequestDTO jsonDTO) throws BusinessException, IOException {
+        OrganizationEntity org = securitySvc.getCurrentUserOrganization();
+
+        checkImageUrls(org.getId(),jsonDTO.getShopFloorsRequestDTO());
+        clearOldShop360Date(org.getId(), jsonDTO.getView360Id());
+        Long shopId = createShop360Floor(org, jsonDTO);
+        return new ShopResponse(shopId, HttpStatus.OK);
+    }
+
+
+
+    private void clearOldShop360Date(Long orgId, Long viewId) {
+        shopFloorsRepo.deleteByShopThreeSixtyEntity_IdAndOrganizationEntity_id(viewId, orgId);
+    }
+
+    private Long createShop360Floor(OrganizationEntity org, ShopThreeSixtyRequestDTO dto) {
+        ShopThreeSixtyEntity shop = shop360Repo.findById(dto.getView360Id()).get();
+        ShopFloorsEntity floor = new ShopFloorsEntity();
+
+        for(ShopFloorsRequestDTO floorDTO : dto.getShopFloorsRequestDTO()) {
+            floor.setName(floorDTO.getName());
+            floor.setNumber(floorDTO.getNumber());
+            floor.setShopThreeSixtyEntity(shop);
+            floor.setOrganizationEntity(org);
+
+            ShopFloorsEntity savedFloor = shopFloorsRepo.save(floor);
+
+            for (ShopSectionsRequestDTO sectionsDTO : floorDTO.getShopSections())
+                createShop360Section(sectionsDTO, savedFloor, shop, org);
+        }
+
+        return shop.getId();
+    }
+
+    private void createShop360Section(ShopSectionsRequestDTO dto, ShopFloorsEntity floor,
+                                      ShopThreeSixtyEntity shop, OrganizationEntity org) {
+
+        ShopSectionsEntity section = new ShopSectionsEntity();
+        section.setName(dto.getName());
+        section.setImage(dto.getImageUrl());
+        section.setShopFloorsEntity(floor);
+        section.setOrganizationEntity(org);
+        ShopSectionsEntity savedSection = sectionsRepo.save(section);
+        for(ShopScenesRequestDTO scene: dto.getShopScenes())
+            createShop360Scene(scene, savedSection, shop, org);
+
+    }
+
+    private void createShop360Scene(ShopScenesRequestDTO dto, ShopSectionsEntity section,
+                                    ShopThreeSixtyEntity shop, OrganizationEntity org) {
+        ShopScenesEntity scene = new ShopScenesEntity();
+        scene.setName(dto.getName());
+        scene.setImage(dto.getImageUrl());
+        //scene.setThumbnail();
+        //scene.setResized();
+        scene.setShopSectionsEntity(section);
+        scene.setOrganizationEntity(org);
+        scenesRepo.save(scene);
+    }
+    private void checkImageUrls(Long orgId, List<ShopFloorsRequestDTO> dto) throws BusinessException, IOException {
+
+        List<String> urls = new ArrayList<>();
+        for(ShopFloorsRequestDTO floor: dto) {
+            for(ShopSectionsRequestDTO section: floor.getShopSections()) {
+                urls.add(section.getImageUrl());
+                for (ShopScenesRequestDTO scene : section.getShopScenes()) {
+                    urls.add(scene.getImageUrl());
+                }
+            }
+        }
+
+        for(String url: urls) {
+            FileEntity image = filesRepo.findByUrl(url);
+
+            if(image == null)
+                throw new BusinessException("Thie image_url("+url+") doesn't exist!",
+                        "INVALID_PARAM: image_url", HttpStatus.NOT_ACCEPTABLE);
+
+            String resized1024 = insertResizedImageName(url, 1024);
+
+            String resized4096 = insertResizedImageName(url, 4096);
+
+            if(filesRepo.findByUrl(resized1024) == null)
+                resizeImage(1024, image, orgId);
+
+            if(filesRepo.findByUrl(resized4096) == null)
+                resizeImage(4096, image, orgId);
+        }
+
+    }
+
+
+    private void resizeImage(int imageWidth, FileEntity image, Long orgId) throws IOException, BusinessException {
+        this.basePath = Paths.get(basePathStr);
+        Path location = basePath.resolve(image.getLocation());
+
+        BufferedImage inputImage = ImageIO.read(new File(location.toString()));
+        int imageHeight = (int) (imageWidth * (inputImage.getHeight()/(inputImage.getWidth()*1.0)));
+        BufferedImage outputImage = new BufferedImage(imageWidth,
+                imageHeight, inputImage.getType());
+
+
+
+        Graphics2D g2d = outputImage.createGraphics();
+        g2d.drawImage(inputImage, 0, 0, imageWidth, imageHeight, null);
+        g2d.dispose();
+
+        String imageName = insertResizedImageName(image.getOriginalFileName(), imageWidth);
+        File i = new File(imageName);
+        ImageIO.write(outputImage, "jpg", i );
+
+        DiskFileItem fileItem = new DiskFileItem(imageName, "Image/jpg",
+                false, imageName, (int) i.length() , i);
+        fileItem.getOutputStream();
+
+        MultipartFile multipartFile = new CommonsMultipartFile(fileItem);
+
+        fileSvc.saveFile(multipartFile, orgId);
+    }
+
+    private String insertResizedImageName(String imageName, int size) {
+        return imageName.substring(0, imageName.lastIndexOf("."))
+                + "-resized"+ size +
+                imageName.substring(imageName.lastIndexOf("."), imageName.length());
+    }
 }

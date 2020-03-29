@@ -32,4 +32,6 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
                                          @Param("maxLat") Double maxLat);
 
 	Optional<ShopsEntity> findByNameAndOrganizationEntity_Id(String shopName, Long orgId);
+
+	ShopsEntity findByIdAndOrganizationEntity_Id(Long id, Long orgId);
 }

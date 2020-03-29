@@ -19,7 +19,7 @@ public class OrderJsonDto{
 	@JsonProperty("order_id")
 	private Long id;
 
-	@ApiModelProperty(value = "Order status. Default = NEW", example = "CLIENT_CONFIRMED")
+	@ApiModelProperty(value = "Order status. DefaultDTO = NEW", example = "CLIENT_CONFIRMED")
 	@JsonProperty("status")
 	private String status;
 

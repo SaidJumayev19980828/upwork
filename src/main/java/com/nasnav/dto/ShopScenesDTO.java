@@ -23,9 +23,9 @@ public class ShopScenesDTO extends BaseRepresentationObject{
 
     private Image image;
 
-    /*private String resized;
+    private String resized;
 
-    private String thumbnail;*/
+    private String thumbnail;
 
     @JsonProperty("created_at")
     private LocalDateTime createdAt;

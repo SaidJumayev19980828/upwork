@@ -24,7 +24,7 @@ public class ShopScenesEntity implements BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
     @JoinColumn(name = "shop_section_id", nullable = false)
     @JsonIgnore
     @EqualsAndHashCode.Exclude
@@ -52,11 +52,11 @@ public class ShopScenesEntity implements BaseEntity {
     @Column(name = "image")
     private String image;
 
-    /*@Column(name = "resized")
+    @Column(name = "resized")
     private String resized;
 
     @Column(name = "thumbnail")
-    private String thumbnail;*/
+    private String thumbnail;
 
     @Override
     public BaseRepresentationObject getRepresentation() {
@@ -65,6 +65,8 @@ public class ShopScenesEntity implements BaseEntity {
         scene.setId(getId());
         scene.setName(getName());
         scene.setShopSectionId(getShopSectionsEntity().getId());
+        scene.setThumbnail(getThumbnail());
+        scene.setResized(getResized());
 
         if (getImage() != null)
             scene.setImage(createImage(getImage()));

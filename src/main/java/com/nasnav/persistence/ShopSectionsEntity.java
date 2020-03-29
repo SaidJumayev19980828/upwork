@@ -23,7 +23,7 @@ public class ShopSectionsEntity implements BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
     @JoinColumn(name = "shop_floor_id", nullable = false)
     @JsonIgnore
     @EqualsAndHashCode.Exclude
@@ -37,7 +37,7 @@ public class ShopSectionsEntity implements BaseEntity {
     @ToString.Exclude
     private OrganizationEntity organizationEntity;
 
-    @OneToMany(mappedBy = "shopSectionsEntity")
+    @OneToMany(mappedBy = "shopSectionsEntity", cascade = CascadeType.REMOVE)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
