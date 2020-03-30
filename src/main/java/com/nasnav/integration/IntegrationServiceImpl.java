@@ -123,6 +123,7 @@ import com.nasnav.service.ProductImageService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.ShopService;
 import com.nasnav.service.StockService;
+import com.nasnav.service.model.ImportProductContext;
 import com.nasnav.service.model.ImportedImage;
 
 import lombok.AllArgsConstructor;
@@ -826,10 +827,16 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	private void importSingleShopProducts(ProductImportInputData inputData) {
 		try {
-			dataImportService.importProducts(inputData.getProducts(), inputData.getMetadata());
+			ImportProductContext context = dataImportService.importProducts(inputData.getProducts(), inputData.getMetadata());
+			ObjectMapper mapper = new ObjectMapper();
+			String importReport = mapper.writeValueAsString(context);
+			logger.info(importReport);
 		} catch (BusinessException e) {
 			logger.error(e,e);
 			throw new RuntimeBusinessException(e);
+		} catch (JsonProcessingException e) {
+			logger.error(e,e);
+			throw new RuntimeException(e);
 		}
 	}
 	

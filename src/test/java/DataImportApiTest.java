@@ -716,7 +716,12 @@ public class DataImportApiTest {
 
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithVariantIdExistingVariant, importProperties);
 
-		result.andExpect(status().is(200));
+		String body = 
+				result
+				.andExpect(status().is(200))
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
 
 		ProductEntity product = variantRepo.findById(310001L).get().getProductEntity();
 		assertEquals("Squishy shoes", product.getName());
@@ -787,7 +792,7 @@ public class DataImportApiTest {
 	
 	
 	@Test
-	public void uploadProductCSVUpdateProductWitjMultipleTagsTest() throws IOException, Exception {
+	public void uploadProductCSVUpdateProductWithMultipleTagsTest() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);

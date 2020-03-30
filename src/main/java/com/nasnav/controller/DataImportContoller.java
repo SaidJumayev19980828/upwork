@@ -1,5 +1,7 @@
 package com.nasnav.controller;
 
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -49,13 +51,17 @@ public class DataImportContoller {
 	@PostMapping(value = "productlist",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ImportProductContext importProductList(
+    public ResponseEntity<ImportProductContext> importProductList(
     		@RequestHeader("User-Token") String token,
             @RequestPart("csv") @Valid MultipartFile file,
             @RequestPart("properties") @Valid ProductListImportDTO importMetaData)
             		throws BusinessException {
-
-		return  importService.importProductListFromCSV(file, importMetaData);
+		ImportProductContext body = importService.importProductListFromCSV(file, importMetaData); 
+		if(body.isSuccess()) {
+			return ResponseEntity.ok(body);
+		}else {
+			return new ResponseEntity<>(body, NOT_ACCEPTABLE);
+		}
     }
 	
 	
