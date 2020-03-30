@@ -55,8 +55,8 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.response.ProductListImportResponse;
 import com.nasnav.service.helpers.ProductCsvRowProcessor;
+import com.nasnav.service.model.ImportProductContext;
 import com.univocity.parsers.common.DataProcessingException;
 import com.univocity.parsers.common.ParsingContext;
 import com.univocity.parsers.common.RowProcessorErrorHandler;
@@ -133,7 +133,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	public static final List<String> IMG_CSV_BASE_HEADERS = asList("variant_id","external_id","barcode","image_file");
 
 	@Transactional(rollbackFor = Throwable.class)
-	public ProductListImportResponse importProductListFromCSV(@Valid MultipartFile file,
+	public ImportProductContext importProductListFromCSV(@Valid MultipartFile file,
 			@Valid ProductListImportDTO csvImportMetaData) throws BusinessException {
 
 		validateProductImportMetaData(csvImportMetaData);

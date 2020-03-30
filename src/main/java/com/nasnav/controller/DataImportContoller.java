@@ -22,8 +22,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.response.ProductListImportResponse;
 import com.nasnav.service.CsvDataImportService;
+import com.nasnav.service.model.ImportProductContext;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponses;
@@ -49,7 +49,7 @@ public class DataImportContoller {
 	@PostMapping(value = "productlist",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ProductListImportResponse importProductList(
+    public ImportProductContext importProductList(
     		@RequestHeader("User-Token") String token,
             @RequestPart("csv") @Valid MultipartFile file,
             @RequestPart("properties") @Valid ProductListImportDTO importMetaData)

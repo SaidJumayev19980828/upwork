@@ -52,10 +52,12 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.nasnav.NavBox;
+import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.IntegrationMappingRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.TagsRepository;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.ProductEntity;
@@ -101,6 +103,9 @@ public class DataImportApiTest {
 
 	@Value("classpath:/files/product__list_upload.csv")
     private Resource csvFile;
+	
+	@Value("classpath:/files/product__list_upload_with_new_tags.csv")
+    private Resource csvFileWithNewTags;
 	
 	@Value("classpath:/files/product__list_upload_missing_features.csv")
     private Resource csvFileMissingFeatures;
@@ -158,6 +163,12 @@ public class DataImportApiTest {
 	
 	@Autowired
 	private IntegrationMappingRepository integrationMappingRepo;
+	
+	@Autowired
+	private TagsRepository tagsRepo;
+	
+	@Autowired
+	private BrandsRepository brandsRepo;
 	
 	
 	@Test
@@ -361,15 +372,16 @@ public class DataImportApiTest {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_IMPORT_SHOP);
         
-		ProductDataCount before = countProductData();	
+		ExtendedProductDataCount before = countExtendedProductData();	
 		
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFile, importProperties);
 		
 		result.andExpect(status().is(200));
 		
-		ProductDataCount after = countProductData();		
+		ExtendedProductDataCount after = countExtendedProductData();		
 		assertExpectedRowNumInserted(before, after, 2);
-        
+		assertEquals(0, after.tags - before.tags);
+		assertEquals(0, after.brands - before.brands);
 
         ExpectedSavedData expected = getExpectedAllNewData();
         assertProductDataImported(TEST_IMPORT_SHOP, expected);
@@ -450,6 +462,16 @@ public class DataImportApiTest {
 		count.variant = variantRepo.count();
 		count.stocks = stocksRepo.count();
 		return count;
+	}
+	
+	
+	
+	private ExtendedProductDataCount countExtendedProductData() {
+		ProductDataCount count = countProductData();
+		ExtendedProductDataCount extendedCount = new ExtendedProductDataCount(count);
+		extendedCount.tags = tagsRepo.count();
+		extendedCount.brands = brandsRepo.count();
+		return extendedCount;
 	}
 	
 	
@@ -786,6 +808,48 @@ public class DataImportApiTest {
 	}
 
 
+	
+	
+	
+	
+	@Test
+	public void uploadProductCSVWithNewTagsAndBrand() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+        
+		ExtendedProductDataCount before = countExtendedProductData();	
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileWithNewTags, importProperties);
+		
+		@SuppressWarnings("unused")
+		String report = 
+				result
+				.andExpect(status().is(200))
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+		
+		ExtendedProductDataCount after = countExtendedProductData();		
+		assertExpectedRowNumInserted(before, after, 2);
+		assertEquals(2, after.tags - before.tags);
+		assertEquals(2, after.brands - before.brands);
+        
+		assertNewTagsAndBrandsImported();
+	}
+
+
+
+
+
+
+	private void assertNewTagsAndBrandsImported() {
+		Set<String> newTags= setOf("new squish", "new hill equipment");
+		Set<String> newBrands = setOf("new brand","shiny new brand");
+		assertEquals(2, tagsRepo.findByNameInAndOrganizationEntity_Id(newTags, 99001L).size());
+        assertEquals(2, brandsRepo.findByNameIn(newBrands).size());
+	}
+	
+	
 	
 	
 
@@ -1324,4 +1388,18 @@ class ProductDataCount{
 	public Long product;
 	public Long variant;
 	public Long stocks;
+}
+
+
+class ExtendedProductDataCount extends ProductDataCount{
+	public Long tags;
+	public Long brands;
+	
+	public ExtendedProductDataCount() {};
+	
+	public ExtendedProductDataCount(ProductDataCount count) {
+		this.product = count.product;
+		this.variant = count.variant;
+		this.stocks = count.stocks;
+	};
 }
