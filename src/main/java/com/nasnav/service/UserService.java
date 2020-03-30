@@ -4,6 +4,7 @@ import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.UserApiResponse;
+import org.springframework.web.servlet.view.RedirectView;
 
 public interface UserService extends CommonUserServiceInterface{
 
@@ -16,6 +17,10 @@ public interface UserService extends CommonUserServiceInterface{
      * @return User entity after saving to DB
      */
     UserApiResponse registerUser(UserDTOs.UserRegistrationObject userJson);
+
+    UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson);
+
+    RedirectView activateUserAccount(String token) throws BusinessException;
 
     public UserApiResponse updateUser(String userToken, UserDTOs.EmployeeUserUpdatingObject userJson) throws BusinessException;
 

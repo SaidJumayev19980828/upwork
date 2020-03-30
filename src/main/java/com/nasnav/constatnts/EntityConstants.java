@@ -25,7 +25,9 @@ public final class EntityConstants {
     
     
     public static final String NASNAV_DOMAIN = "nasnav.com";
-    
+
+    public static final String PROTOCOL = "https://";
+
     public enum Operation{
     	UPDATE("update"),
     	CREATE("create"),

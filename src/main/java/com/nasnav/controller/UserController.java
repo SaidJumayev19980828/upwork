@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 
 @RestController
 @RequestMapping("/user")
@@ -199,10 +200,31 @@ public class UserController {
     							.build();
     	}    	
     }
-    
-    
-    
-    
-    
-    
+
+
+    @ApiOperation(value = "Register a new user (v2)", nickname = "userRegisterV2", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 201, message = "User registered"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "v2/register",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public UserApiResponse registerUserV2(
+            @RequestBody UserDTOs.UserRegistrationObjectV2 userJson) {
+        return this.userService.registerUserV2(userJson);
+    }
+
+
+    @ApiOperation(value = "activate the user account", nickname = "userActivation")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Account activated"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @GetMapping(value = "v2/register/activate",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public RedirectView sendEmailRecovery(@RequestParam(value = "token") String token) throws BusinessException {
+        return userService.activateUserAccount(token);
+    }
 }

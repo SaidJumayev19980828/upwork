@@ -132,8 +132,8 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 
-
-	private UserApiResponse login(BaseUserEntity userEntity) throws BusinessException {
+	@Override
+	public UserApiResponse login(BaseUserEntity userEntity) throws BusinessException {
 		// generate new AuthenticationToken and perform post login updates
 		userEntity = updatePostLogin(userEntity);
 		return createSuccessLoginResponse(userEntity);

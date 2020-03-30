@@ -16,4 +16,12 @@ public final class EmailConstants {
 
     /* Represent RecoveryLink parameter to be replaced by the requester username and send at password recovery mail */
     public static final String CHANGE_PASSWORD_URL_PARAMETER = "#RecoveryLink#"; //NOSONAR
+
+    public static final String ACTIVATION_ACCOUNT_URL_PARAMETER = "#ActivationLink#";
+
+    public static final String ACCOUNT_EMAIL_PARAMETER = "#AccountEmail#";
+
+    public static final String ACTIVATION_ACCOUNT_EMAIL_SUBJECT = "NasNav Account Activation";
+
+    public static final String NEW_EMAIL_ACTIVATION_TEMPLATE = "mail_templates/new_mail_recovery_template.html";
 }

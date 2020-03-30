@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.nasnav.dao.OrganizationRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -38,6 +39,8 @@ import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
+import org.springframework.web.servlet.view.RedirectView;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -54,7 +57,8 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private CommonUserRepository commonUserRepo;
 
-	
+	@Autowired
+	private OrganizationRepository orgRepo;
 
 	@Autowired
 	public UserServiceImpl(UserRepository userRepository, MailService mailService, PasswordEncoder passwordEncoder) {
@@ -65,6 +69,77 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	AppConfig appConfig;
+
+	@Override
+	public UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
+		validateNewUserRegistration(userJson);
+
+		UserEntity user = createNewUserEntity(userJson);
+		// send activation email
+		user = generateResetPasswordToken(user);
+		sendActivationMail(user);
+		UserApiResponse api = UserApiResponse.createStatusApiResponse(user.getId(),
+				Arrays.asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
+		api.setMessages(new ArrayList<>());
+		return api;
+
+	}
+
+	private void validateNewUserRegistration(UserDTOs.UserRegistrationObjectV2 userJson) {
+		if (!userJson.confirmationFlag)
+			throw new EntityValidationException("Registration not confirmed by user!",
+					null,
+					HttpStatus.NOT_ACCEPTABLE);
+
+		StringUtils.validateNameAndEmail(userJson.name, userJson.email, userJson.getOrgId());
+
+		if (userRepository.existsByEmailAndOrgId(userJson.email, userJson.getOrgId()) != null)
+			throw new EntityValidationException("Invalid User Entity: " + ResponseStatus.EMAIL_EXISTS,
+					UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.EMAIL_EXISTS)),
+					HttpStatus.NOT_ACCEPTABLE);
+	}
+
+	private UserApiResponse sendActivationMail(UserEntity userEntity) {
+		UserApiResponse userApiResponse = new UserApiResponse();
+		try {
+			// create parameter map to replace parameter by actual UserEntity data.
+			Map<String, String> parametersMap = new HashMap<>();
+			parametersMap.put(EmailConstants.USERNAME_PARAMETER, userEntity.getName());
+			parametersMap.put(EmailConstants.ACCOUNT_EMAIL_PARAMETER, userEntity.getEmail());
+			parametersMap.put(EmailConstants.ACTIVATION_ACCOUNT_URL_PARAMETER,
+					appConfig.accountActivationUrl.concat(userEntity.getResetPasswordToken()));
+			// send Recovery mail to user
+			this.mailService.send(userEntity.getEmail(), EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT,
+					EmailConstants.NEW_EMAIL_ACTIVATION_TEMPLATE, parametersMap);
+			// set success to true after sending mail.
+			userApiResponse.setSuccess(true);
+		} catch (Exception e) {
+			userApiResponse.setSuccess(false);
+			userApiResponse.setMessages(Collections.singletonList(e.getMessage()));
+			throw new EntityValidationException("Could not send Email ", userApiResponse,
+					HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return userApiResponse;
+	}
+
+	private UserEntity createNewUserEntity(UserDTOs.UserRegistrationObjectV2 userJson) {
+		UserEntity user = new UserEntity();
+		user.setName(userJson.getName());
+		user.setEmail(userJson.getEmail());
+		user.setOrganizationId(userJson.getOrgId());
+		user.setEncryptedPassword(passwordEncoder.encode(userJson.password));
+		user = setUserTokenDeactivated(user);
+		return user;
+	}
+
+	private UserEntity setUserTokenDeactivated(UserEntity user) {
+		user.setAuthenticationToken("0000-0000-0000-0000");
+		return user;
+	}
+
+	private Boolean checkUserDeactivated(UserEntity user) {
+		return user.getAuthenticationToken().equals("0000-0000-0000-0000");
+	}
 
 	@Override
 	public UserApiResponse registerUser(UserDTOs.UserRegistrationObject userJson) {
@@ -312,51 +387,6 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
-	/*@Override
-	public UserApiResponse login(UserDTOs.UserLoginObject loginData) {
-		UserEntity userEntity = this.userRepository.getByEmailAndOrganizationId(loginData.email, loginData.getOrgId());
-
-		if (userEntity != null) {
-			// check if account needs activation
-			boolean accountNeedActivation = isUserNeedActivation(userEntity);
-			if (accountNeedActivation) {
-				UserApiResponse failedLoginResponse = EntityUtils
-						.createFailedLoginResponse(Collections.singletonList(ResponseStatus.NEED_ACTIVATION));
-				throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, HttpStatus.LOCKED);
-			}
-			// ensure that password matched
-			boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncryptedPassword());
-
-			if (passwordMatched) {
-				// check if account is locked
-				if (isAccountLocked(userEntity)) { // NOSONAR
-					UserApiResponse failedLoginResponse = EntityUtils
-							.createFailedLoginResponse(Collections.singletonList(ResponseStatus.ACCOUNT_SUSPENDED));
-					throw new EntityValidationException("ACCOUNT_SUSPENDED ", failedLoginResponse, HttpStatus.LOCKED);
-				}
-				// generate new AuthenticationToken and perform post login updates
-				userEntity = updatePostLogin(userEntity);
-				return createSuccessLoginResponse(userEntity);
-			}
-		}
-		UserApiResponse failedLoginResponse = EntityUtils
-				.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_CREDENTIALS));
-		throw new EntityValidationException("INVALID_CREDENTIALS ", failedLoginResponse, HttpStatus.UNAUTHORIZED);
-	}*/
-
-	/**
-	 * Generate new AuthenticationToken and perform post login updates.
-	 *
-	 * @param userEntity to be udpated
-	 * @return userEntity
-	 */
-	private UserEntity updatePostLogin(UserEntity userEntity) {
-		LocalDateTime currentSignInDate = userEntity.getCurrentSignInDate();
-		userEntity.setLastSignInDate(currentSignInDate);
-		userEntity.setCurrentSignInDate(LocalDateTime.now());
-		userEntity.setAuthenticationToken(generateAuthenticationToken(EntityConstants.TOKEN_LENGTH));
-		return userRepository.saveAndFlush(userEntity);
-	}
 
 	/**
 	 * generate new AuthenticationToken and ensure that this AuthenticationToken is
@@ -425,7 +455,41 @@ public class UserServiceImpl implements UserService {
 		
 		return getUserRepresentationWithUserRoles(user);
 	}
-	
+
+
+
+	@Override
+	public RedirectView activateUserAccount(String token) throws BusinessException {
+		UserEntity user = userRepository.findByResetPasswordToken(token);
+
+		checkUserActivation(user);
+
+		user.setResetPasswordToken(null);
+		String orgPname = orgRepo.findOneById(user.getOrganizationId()).getPname();
+		return redirectUser(securityService.login(user).getToken(), orgPname);
+	}
+
+	private RedirectView redirectUser(String token, String orgPname) {
+		RedirectAttributesModelMap attributes = new RedirectAttributesModelMap();
+		attributes.addAttribute("token", token);
+
+		RedirectView redirectView = new RedirectView();
+		redirectView.setUrl(EntityConstants.PROTOCOL+"www."+EntityConstants.NASNAV_DOMAIN+
+				"/"+orgPname+"/login");
+		redirectView.setAttributesMap(attributes);
+
+		return redirectView;
+	}
+
+	private void checkUserActivation(UserEntity user) throws BusinessException {
+		if (user == null)
+			throw new BusinessException("Provided token is invalid", "INVALID_PARAM: token", HttpStatus.UNAUTHORIZED);
+
+		checkResetPasswordTokenExpiry(user);
+
+		if (!checkUserDeactivated(user))
+			throw new BusinessException("Account is already activated!", "INVALID_OPERATION: token", HttpStatus.NOT_ACCEPTABLE);
+	}
 	
 	
 	
