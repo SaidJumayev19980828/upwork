@@ -212,7 +212,7 @@ public class UserController {
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public UserApiResponse registerUserV2(
-            @RequestBody UserDTOs.UserRegistrationObjectV2 userJson) {
+            @RequestBody UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException {
         return this.userService.registerUserV2(userJson);
     }
 

@@ -71,33 +71,40 @@ public class UserServiceImpl implements UserService {
 	AppConfig appConfig;
 
 	@Override
-	public UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
+	public UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException {
 		validateNewUserRegistration(userJson);
 
 		UserEntity user = createNewUserEntity(userJson);
-		// send activation email
+
 		user = generateResetPasswordToken(user);
+
 		sendActivationMail(user);
+
 		UserApiResponse api = UserApiResponse.createStatusApiResponse(user.getId(),
 				Arrays.asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
 		api.setMessages(new ArrayList<>());
 		return api;
-
 	}
 
-	private void validateNewUserRegistration(UserDTOs.UserRegistrationObjectV2 userJson) {
+	private void validateNewUserRegistration(UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException {
 		if (!userJson.confirmationFlag)
 			throw new EntityValidationException("Registration not confirmed by user!",
-					null,
-					HttpStatus.NOT_ACCEPTABLE);
+					null, HttpStatus.NOT_ACCEPTABLE);
 
 		StringUtils.validateNameAndEmail(userJson.name, userJson.email, userJson.getOrgId());
+
+		validateNewPassword(userJson.password);
+
+		if (userJson.getOrgId() == null)
+			throw new BusinessException("Required org_id is  missing!", "MISSING_PARAM: org_id", HttpStatus.NOT_ACCEPTABLE);
 
 		if (userRepository.existsByEmailAndOrgId(userJson.email, userJson.getOrgId()) != null)
 			throw new EntityValidationException("Invalid User Entity: " + ResponseStatus.EMAIL_EXISTS,
 					UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.EMAIL_EXISTS)),
 					HttpStatus.NOT_ACCEPTABLE);
 	}
+
+
 
 	private UserApiResponse sendActivationMail(UserEntity userEntity) {
 		UserApiResponse userApiResponse = new UserApiResponse();
@@ -122,6 +129,8 @@ public class UserServiceImpl implements UserService {
 		return userApiResponse;
 	}
 
+
+
 	private UserEntity createNewUserEntity(UserDTOs.UserRegistrationObjectV2 userJson) {
 		UserEntity user = new UserEntity();
 		user.setName(userJson.getName());
@@ -131,6 +140,8 @@ public class UserServiceImpl implements UserService {
 		user = setUserTokenDeactivated(user);
 		return user;
 	}
+
+
 
 	private UserEntity setUserTokenDeactivated(UserEntity user) {
 		user.setAuthenticationToken("0000-0000-0000-0000");

@@ -604,4 +604,72 @@ public class UserRegisterTest {
 		System.out.println(response.toString());
 		Assert.assertEquals( 406, response.getStatusCodeValue());
 	}
+
+
+	@Test
+	public void newUserRegisterTest() {
+		String body = "{\"name\":\"Ahmad\", \"email\":\"test@nasnav.com\", \"password\":\"password\"," +
+				      "\"org_id\": 99001, \"confirmation_flag\":true}";
+		HttpEntity<Object> userJson = TestCommons.getHttpEntity((Object)body);
+		ResponseEntity<String> response = template.postForEntity("/user/v2/register", userJson, String.class);
+
+		Assert.assertEquals( 201, response.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void newUserRegisterInvalidDataTest() {
+		String body = "{\"name\":\"123\", \"email\":\"test.com\", \"password\":\"password\"," +
+				"\"org_id\": 99001, \"confirmation_flag\":true}";
+		HttpEntity<Object> userJson = TestCommons.getHttpEntity((Object)body);
+		ResponseEntity<String> response = template.postForEntity("/user/v2/register", userJson, String.class);
+
+		Assert.assertEquals( 406, response.getStatusCodeValue());
+
+
+		body = "{\"name\":\"Ahmad\", \"email\":\"test@nasnav.com\", \"password\":\"password\"," +
+				"\"org_id\": 0, \"confirmation_flag\":true}";
+		userJson = TestCommons.getHttpEntity((Object)body);
+		response = template.postForEntity("/user/v2/register", userJson, String.class);
+
+		Assert.assertEquals( 406, response.getStatusCodeValue());
+
+
+		body = "{\"name\":\"Ahmad\", \"email\":\"test@nasnav.com\", \"password\":\"password\"," +
+				"\"org_id\": 99001, \"confirmation_flag\":fales}";
+		userJson = TestCommons.getHttpEntity((Object)body);
+		response = template.postForEntity("/user/v2/register", userJson, String.class);
+
+		Assert.assertEquals( 406, response.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void newUserRegisterMissingDataTest() {
+		String body = "{\"name\": null, \"email\":null, \"password\":\"password\"," +
+				"\"org_id\": 99001, \"confirmation_flag\":true}";
+		HttpEntity<Object> userJson = TestCommons.getHttpEntity((Object) body);
+		ResponseEntity<String> response = template.postForEntity("/user/v2/register", userJson, String.class);
+		Assert.assertEquals( 406, response.getStatusCodeValue());
+
+		body = "{\"name\":\"Ahmad\", \"email\":\"test@nasnav.com\", \"password\":\"password\"," +
+				"\"org_id\": null, \"confirmation_flag\":true}";
+		userJson = TestCommons.getHttpEntity((Object)body);
+		response = template.postForEntity("/user/v2/register", userJson, String.class);
+
+		Assert.assertEquals( 406, response.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void newUserRegisterExistingUserTest() {
+		String body = "{\"name\": \"name\", \"email\":\"user1@nasnav.com\", \"password\":\"password\"," +
+				"\"org_id\": 99001, \"confirmation_flag\":true}";
+		HttpEntity<Object> userJson = TestCommons.getHttpEntity((Object) body);
+		ResponseEntity<String> response = template.postForEntity("/user/v2/register", userJson, String.class);
+		Assert.assertEquals( 406, response.getStatusCodeValue());
+	}
+
+
+
 }
