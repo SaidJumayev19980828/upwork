@@ -10,7 +10,6 @@ import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_C
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ITEM_QUANTITY;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ORDER_STATUS;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ORDER_STATUS_UPDATE;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ITEMS_FROM_MULTIPLE_SHOPS;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_MANAGER_CANNOT_CREATE_ORDERS;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NEW_ORDER_WITH_EMPTY_BASKET;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NON_EXISTING_STOCK_ID;
@@ -32,7 +31,9 @@ import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.STORE_PREPARED;
-import static com.nasnav.enumerations.Roles.*;
+import static com.nasnav.enumerations.Roles.CUSTOMER;
+import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
+import static com.nasnav.enumerations.Roles.STORE_MANAGER;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -61,14 +62,26 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nasnav.dao.BasketRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.UserRepository;
+import com.nasnav.dto.BasketItem;
+import com.nasnav.dto.BasketItemDTO;
+import com.nasnav.dto.BasketItemDetails;
+import com.nasnav.dto.DetailedOrderRepObject;
+import com.nasnav.dto.OrderJsonDto;
+import com.nasnav.dto.OrderRepresentationObject;
+import com.nasnav.dto.ShippingAddress;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.Roles;
@@ -215,37 +228,6 @@ public class OrderServiceImpl implements OrderService {
 
 	
 	
-
-	private void validateOrder(OrderJsonDto order) throws BusinessException {
-		Long orderId = order.getId();
-		
-		List<String> possibleStatusList = getPossibleOrderStatus();
-		if(!possibleStatusList.contains( order.getStatus() )) {
-			throwInvalidOrderException(ERR_INVALID_ORDER_STATUS);
-		}		
-		
-		if( !isNewOrder(order) && isNullOrZero(order.getId()) ) {
-			throwInvalidOrderException(ERR_UPDATED_ORDER_WITH_NO_ID);
-		}		
-
-		if (isNewOrderToBeCreated(order)) {
-			validateOrderCreation(order);			
-		}		
-		
-		if( !isNullOrZero(orderId) ) {
-			validateOrderUpdate(order);			 			
-		}
-		
-		List<BasketItemDTO> basket = order.getBasket();
-		
-		if(basket!= null &&  isNewOrder(order)){
-			validateBasketItems(order);			
-		}		
-	}
-
-
-
-
 
 	private void validateOrderUpdate(OrderJsonDto order) throws BusinessException {
 
@@ -479,22 +461,6 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 
-	private Long countShops(List<BasketItemDTO> basket) {
-		List<StocksEntity> stocks = getBasketStocks(basket);
-		Long shopsCount = stocks.stream()
-								.map(StocksEntity::getShopsEntity)
-								.filter(Objects::nonNull)
-								.map(ShopsEntity::getId)
-								.distinct()
-								.count();
-		return shopsCount;
-	}
-	
-	
-	
-	
-	
-	
 	private List<StocksEntity> getBasketStocks(List<BasketItemDTO> basket) {
 		if(basket == null) {
 			return new ArrayList<>();
@@ -534,15 +500,6 @@ public class OrderServiceImpl implements OrderService {
 		if(item.getQuantity() > stockService.getStockQuantity( stocks.get() )) {
 			throwInvalidOrderException(ERR_NO_ENOUGH_STOCK);
 		}		
-	}
-	
-	
-	
-	
-	
-	private boolean isNewOrderToBeCreated(OrderJsonDto orderJson) {
-		return isNewOrder(orderJson)
-					&& isNullOrZero(orderJson.getId());
 	}
 	
 	

@@ -716,6 +716,7 @@ public class DataImportApiTest {
 
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileVariantsWithVariantIdExistingVariant, importProperties);
 
+		@SuppressWarnings("unused")
 		String body = 
 				result
 				.andExpect(status().is(200))
