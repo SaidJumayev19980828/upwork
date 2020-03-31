@@ -258,7 +258,7 @@ public class OrganizationController {
             gateways = orgPaymentGatewaysRep.findAllByOrganizationIdIsNull();
         }
         StringBuilder list = new StringBuilder();
-        list.append("[ ");
+        list.append("{ ");
         for (OrganizationPaymentGatewaysEntity gateway: gateways) {
             if (list.length() > 2) {
                 list.append(", ");
@@ -271,7 +271,7 @@ public class OrganizationController {
                 list.append("\"script\": \"");
                 MastercardAccount account = new MastercardAccount();
                 account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir));
-                list.append(account.getBaseUrl() + "/checkout/version/" + account.getApiVersion() + "/checkout.js");
+                list.append(account.getScriptUrl());
             } else if ("upg".equalsIgnoreCase(gateway.getGateway())) {
                 list.append("\"script\": \"");
                 UpgAccount account = new UpgAccount();
@@ -280,7 +280,7 @@ public class OrganizationController {
             }
             list.append("\"}");
         }
-        list.append(" ]");
+        list.append(" }");
 
         return new ResponseEntity<>(list.toString(), HttpStatus.OK);
     }

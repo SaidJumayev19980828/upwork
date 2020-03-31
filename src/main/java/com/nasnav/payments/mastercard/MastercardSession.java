@@ -84,7 +84,7 @@ public class MastercardSession {
         try {
             // Prepare the request
             HttpClient client= HttpClientBuilder.create().build();
-            HttpPut request = new HttpPut(merchantAccount.getApiUrl() + merchantAccount.getApiVersion() + "/merchant/"
+            HttpPut request = new HttpPut(merchantAccount.getApiUrl() + "/merchant/"
                     + merchantAccount.getMerchantId() + "/order/" + this.orderUid + "/transaction/" + transactionId);
 
             // Set up the payload
@@ -222,7 +222,7 @@ public class MastercardSession {
 
         try {
             HttpClient client= HttpClientBuilder.create().build();
-            HttpPost request = new HttpPost(merchantAccount.getApiUrl() + merchantAccount.getApiVersion()
+            HttpPost request = new HttpPost(merchantAccount.getApiUrl()
                     + "/merchant/" + merchantAccount.getMerchantId() +"/session");
             StringEntity requestEntity = new StringEntity(data.toString(), ContentType.APPLICATION_JSON);
             request.setEntity(requestEntity);

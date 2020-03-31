@@ -133,8 +133,8 @@ public class PaymentControllerMastercard {
                 response.setOrderRef(session.getOrderRef());
                 response.setSessionId(session.getSessionId());
                 response.setMerchantId(session.getMerchantId());
-                response.setApiVersion(session.getMerchantAccount().getApiVersion());
-                response.setBaseUrl(session.getMerchantAccount().getBaseUrl());
+                response.setApiUrl(session.getMerchantAccount().getApiUrl());
+                response.setScriptUrl(session.getMerchantAccount().getScriptUrl());
                 response.setSuccessUrl("/payment/mcard/verify");
 
                 if (session.getOrderValue() != null) {

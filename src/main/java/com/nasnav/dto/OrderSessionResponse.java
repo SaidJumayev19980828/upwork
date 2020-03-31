@@ -21,8 +21,8 @@ public class OrderSessionResponse {
 //    @JsonProperty("successIndicator")
 //    private String successIndicator;
 
-    @JsonProperty("api_version")
-    private String apiVersion;
+//    @JsonProperty("api_version")
+//    private String apiVersion;
 
     @JsonProperty("merchant")
     private String merchantId;
@@ -45,7 +45,10 @@ public class OrderSessionResponse {
     @JsonProperty("session_id")
     private String sessionId;
 
-    @JsonProperty("base_url")
-    private String baseUrl;
+    @JsonProperty("api_url")
+    private String apiUrl;
+
+    @JsonProperty("script_url")
+    private String scriptUrl;
 
 }

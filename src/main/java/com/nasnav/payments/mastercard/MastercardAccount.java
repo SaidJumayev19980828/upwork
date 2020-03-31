@@ -11,11 +11,11 @@ import java.util.Properties;
 public class MastercardAccount extends Account {
 
     protected String merchantId;
-    protected String apiVersion;
+//    protected String apiVersion;
     protected String apiUsername;
     protected String apiPassword;
     protected String apiUrl;
-    protected String baseUrl;
+    protected String scriptUrl;
 
     public void init(Properties props) {
 
@@ -24,8 +24,8 @@ public class MastercardAccount extends Account {
         this.apiUsername = props.getProperty("mcard.api_username");
         this.apiPassword = props.getProperty("mcard.api_password");
         this.apiUrl = props.getProperty("mcard.api_url");
-        this.apiVersion = props.getProperty("mcard.api_version");
-        this.baseUrl = props.getProperty("mcard.base_url");
+//        this.apiVersion = props.getProperty("mcard.api_version");
+        this.scriptUrl = props.getProperty("mcard.script_url");
         super.accountId = "MCARD:" +super.accountId;
     }
 }
