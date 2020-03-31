@@ -1,6 +1,6 @@
 --inserting organizations
-INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001, 'organization_1', now(), now());
-INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());
+INSERT INTO public.organizations(id, name, created_at, updated_at, p_name) VALUES (99001, 'organization_1', now(), now(), 'organization-1');
+INSERT INTO public.organizations(id, name, created_at, updated_at, p_name) VALUES (99002, 'organization_2', now(), now(), 'organization-2');
 
 
 

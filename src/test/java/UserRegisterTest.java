@@ -43,6 +43,7 @@ import com.nasnav.service.UserService;
 import com.nasnav.test.commons.TestCommons;
 
 import net.jcip.annotations.NotThreadSafe;
+import org.springframework.web.servlet.view.RedirectView;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -671,5 +672,21 @@ public class UserRegisterTest {
 	}
 
 
+	@Test
+	public void activateAccountTest() {
+		//first create account
+		String body = "{\"name\":\"Ahmad\", \"email\":\"test@nasnav.com\", \"password\":\"password\"," +
+				"\"org_id\": 99001, \"confirmation_flag\":true}";
+		HttpEntity<Object> userJson = TestCommons.getHttpEntity((Object)body);
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/v2/register", userJson, UserApiResponse.class);
+		Assert.assertEquals( 201, response.getStatusCodeValue());
+
+		UserEntity user = userRepository.findById(response.getBody().getEntityId()).get();
+
+		ResponseEntity<RedirectView> activationRes = template.getForEntity("/user/v2/register/activate?token="+ user.getResetPasswordToken(), RedirectView.class);
+		user = userRepository.findById(response.getBody().getEntityId()).get();
+		Assert.assertEquals("https://www.nasnav.com/organization-1/login?token="+ user.getAuthenticationToken(),
+				activationRes.getHeaders().getLocation().toString());
+	}
 
 }
