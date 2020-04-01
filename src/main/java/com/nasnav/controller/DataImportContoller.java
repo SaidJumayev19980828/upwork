@@ -1,5 +1,7 @@
 package com.nasnav.controller;
 
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -22,8 +24,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.response.ProductListImportResponse;
+import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.service.CsvDataImportService;
+import com.nasnav.service.model.ImportProductContext;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponses;
@@ -49,13 +52,22 @@ public class DataImportContoller {
 	@PostMapping(value = "productlist",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ProductListImportResponse importProductList(
+    public ResponseEntity<ImportProductContext> importProductList(
     		@RequestHeader("User-Token") String token,
             @RequestPart("csv") @Valid MultipartFile file,
             @RequestPart("properties") @Valid ProductListImportDTO importMetaData)
             		throws BusinessException {
-
-		return  importService.importProductListFromCSV(file, importMetaData);
+		try {
+			ImportProductContext importResult = importService.importProductListFromCSV(file, importMetaData);
+			if(importResult.isSuccess()) {
+				return ResponseEntity.ok(importResult);
+			}else {
+				return new ResponseEntity<>(importResult, NOT_ACCEPTABLE);
+			}			
+		}catch(ImportProductException e) {
+			return new ResponseEntity<>(e.getContext(), NOT_ACCEPTABLE);
+		}
+		
     }
 	
 	

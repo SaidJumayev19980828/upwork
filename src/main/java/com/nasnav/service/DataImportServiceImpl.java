@@ -3,14 +3,14 @@ package com.nasnav.service;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
+import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_BRAND_NAME_NOT_EXIST;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CONVERT_TO_JSON;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PREPARE_PRODUCT_DTO_DATA;
-import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_DB_SAVE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_TAGS_NOT_FOUND;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
@@ -21,17 +21,16 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
-import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.jboss.logging.Logger;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -48,10 +47,12 @@ import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.TagsRepository;
+import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ProductTagDTO;
 import com.nasnav.dto.ProductUpdateDTO;
 import com.nasnav.dto.StockUpdateDTO;
+import com.nasnav.dto.TagsDTO;
 import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -62,12 +63,14 @@ import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.TagsEntity;
-import com.nasnav.response.ProductListImportResponse;
+import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.VariantUpdateResponse;
+import com.nasnav.service.model.ImportProductContext;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import reactor.core.publisher.Flux;
 import reactor.tuple.Tuple;
 
 @Service
@@ -98,9 +101,15 @@ public class DataImportServiceImpl implements DataImportService {
     @Autowired
     private TagsRepository tagsRepo;
     
+    @Autowired
+    private CategoryService categoryService;
+    
     
     @Autowired
 	private ProductFeaturesRepository featureRepo;
+    
+    @Autowired
+    private OrganizationService organizationService;
     
 
     private Logger logger = Logger.getLogger(getClass());
@@ -110,57 +119,145 @@ public class DataImportServiceImpl implements DataImportService {
 
     @Override
 //    @Transactional(rollbackFor = Throwable.class)		// adding this will cause exception because of the enforced rollback , still unknown why
-    public ProductListImportResponse importProducts(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) throws BusinessException {
+    public ImportProductContext importProducts(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) throws BusinessException {
+    	ImportProductContext context = new ImportProductContext(productImportDTOS, productImportMetadata);
+    	
+    	importNonExistingBrands(context);    	
+    	importNonExistingTags(context);
     	
         List<ProductData> productsData = toProductDataList(productImportDTOS, productImportMetadata);
 
-        saveToDB(productsData, productImportMetadata);
+        saveToDB(productsData, context);
 
-        if(productImportMetadata.isDryrun()) {
+        if(productImportMetadata.isDryrun() || !context.isSuccess()) {
         	TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+        	clearImportContext(context);
         }            
 
-        return new ProductListImportResponse(emptyList());
+        return context;
+    }
+
+
+
+
+
+	private void clearImportContext(ImportProductContext context) {
+		context.getCreatedBrands().clear();
+		context.getCreatedTags().clear();
+		context.getCreatedProducts().clear();
+		context.getUpdatedProducts().clear();
+	}
+    
+    
+    
+    
+
+    private void importNonExistingTags(ImportProductContext context) {
+    	
+    	Set<String> tagNames = getTagNames(context);
+    	
+    	Map<String, TagsEntity> existingTags = getExistingTags(tagNames);
+    	
+    	createNonExistingTags(context, tagNames, existingTags);
+	}
+
+
+
+
+
+	private void createNonExistingTags(ImportProductContext context, Set<String> tagNames,
+			Map<String, TagsEntity> existingTags) {
+		tagNames
+    	.stream()
+    	.filter(Objects::nonNull)
+    	.filter(tagName -> !existingTags.keySet().contains(tagName.toLowerCase()))
+    	.map(this::toTagDTO)
+    	.map(this::createNewtag)
+    	.forEach(tag -> logTagCreation(tag, context));
+	}
+
+
+
+
+
+	private Map<String, TagsEntity> getExistingTags(Set<String> tagNames) {
+		Long orgId = security.getCurrentUserOrganizationId();
+		return 
+			Flux
+			 .fromIterable(tagNames)
+			 .window(500)
+			 .map(Flux::buffer)
+			 .flatMap(Flux::single)
+			 .map(HashSet::new)
+			 .flatMapIterable(tagNamesBatch -> tagsRepo.findByNameInAndOrganizationEntity_Id(tagNamesBatch, orgId))
+			 .collectMap(tag -> tag.getName().toLowerCase(), tag -> tag)
+			 .block();
+	}
+
+
+
+
+
+	private Set<String> getTagNames(ImportProductContext context) {
+		return 
+			Flux
+			 .fromIterable(context.getProducts())
+			 .flatMapIterable(ProductImportDTO::getTags)
+			 .filter(Objects::nonNull)
+			 .distinct()
+			 .collect(toSet())
+			 .block();
+	}
+    
+    
+    
+    
+    private void logTagCreation(TagsEntity tag, ImportProductContext context) {
+    	context.logNewTag(tag.getId(), tag.getName());
     }
     
     
     
+    private TagsDTO toTagDTO(String tagName) {
+    	TagsDTO dto = new TagsDTO();
+    	dto.setOperation(CREATE.getValue());
+    	dto.setName(tagName);
+    	dto.setHasCategory(false);
+    	return dto;
+    }
+    
+    
+    
+    private TagsEntity createNewtag(TagsDTO tag) {
+    	try {
+			return categoryService.createOrUpdateTag(tag);
+		} catch (BusinessException e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(e);
+		}
+    }
 
-    private void saveToDB(List<ProductData> productsData, ProductImportMetadata importMetaData) throws BusinessException {
-        List<String> errors = new ArrayList<>();
+    
+    
+    
 
+	private void saveToDB(List<ProductData> productsData, ImportProductContext context) throws BusinessException {
         IntStream
         	.range(0, productsData.size())
 //        	.parallel() // transactions are not shared among threads
         	.mapToObj(i -> Tuple.of(i, productsData.get(i)))
-        	.forEach( tuple -> saveSingleProductToDbAndLogErrors(importMetaData, errors, tuple.getT1(), tuple.getT2()));
-
-        if (!errors.isEmpty()) {
-            JSONArray json = new JSONArray(errors);
-            throw new BusinessException(
-            		ERR_PRODUCT_DB_SAVE
-                    , json.toString()
-                    , HttpStatus.NOT_ACCEPTABLE);
-        }
-
+        	.forEach( tuple -> saveSingleProductToDbAndLogErrors(context, tuple.getT1(), tuple.getT2()));
     }
 
 
 
 
-	private void saveSingleProductToDbAndLogErrors(ProductImportMetadata importMetaData, List<String> errors, int i,
-			ProductData data) {
+	private void saveSingleProductToDbAndLogErrors(ImportProductContext context, int rowNum, ProductData data) {
 		try {
-		    saveSingleProductDataToDB(data, importMetaData);
+		    saveSingleProductDataToDB(data, context);
 		} catch (Throwable e) {
 		    logger.error(e, e);
-
-		    StringBuilder msg = new StringBuilder();
-		    msg.append(String.format("Error at Row[%d], with data[%s]", i + 1, data.toString()));
-		    msg.append(System.getProperty("line.separator"));
-		    msg.append("Error Message: " + e.getMessage());
-
-		    errors.add(msg.toString());
+		    context.logNewError(e, data.toString(), rowNum);		
 		}
 	}
     
@@ -169,11 +266,13 @@ public class DataImportServiceImpl implements DataImportService {
     
 
 
-    private void saveSingleProductDataToDB(ProductData product, ProductImportMetadata importMetaData) throws BusinessException {
+    private void saveSingleProductDataToDB(ProductData product, ImportProductContext context) throws BusinessException {
         if (product.isExisting()) {
-            updateProduct(product, importMetaData);
+            updateProduct(product, context);
+            
         } else {
-            saveNewImportedProduct(product);
+            Long productId = saveNewImportedProduct(product);
+            context.logNewCreatedProduct(productId, product.getProductDto().getName());
         }
 
     }
@@ -181,16 +280,24 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-	private void updateProduct(ProductData product, ProductImportMetadata importMetaData) throws BusinessException {
-		if (importMetaData.isUpdateProduct()) {
+	private void updateProduct(ProductData product, ImportProductContext context) throws BusinessException {
+		ProductImportMetadata importMetaData = context.getImportMetaData();
+		boolean isUpdateProduct = importMetaData.isUpdateProduct();
+		boolean isUpdateStocks = importMetaData.isUpdateStocks();
+		
+		if (isUpdateProduct) {
 		    Long productId = saveProductDto(product.getProductDto());
 		    VariantUpdateResponse variantResponse = productService.updateVariant(product.getVariantDto());
 		    saveProductTags(product, productId);
 		    saveExternalMapping(product, variantResponse.getVariantId());
 		}
-
-		if (importMetaData.isUpdateStocks()) {
+		
+		if (isUpdateStocks) {
 		    stockService.updateStock(product.getStockDto());
+		}
+		
+		if(isUpdateProduct ||isUpdateStocks) {
+			context.logNewUpdatedProduct(product.getProductDto().getId(), product.getProductDto().getName());
 		}
 	}
     
@@ -198,7 +305,7 @@ public class DataImportServiceImpl implements DataImportService {
     
 
 
-    private void saveNewImportedProduct(ProductData data) throws BusinessException {
+    private Long saveNewImportedProduct(ProductData data) throws BusinessException {
         Long productId = saveProductDto(data.getProductDto());
         data.getVariantDto().setProductId(productId);
         
@@ -211,6 +318,8 @@ public class DataImportServiceImpl implements DataImportService {
         saveProductTags(data, productId);
 
         saveExternalMapping(data, variantId);
+        
+        return productId;
     }
 
 
@@ -566,6 +675,74 @@ public class DataImportServiceImpl implements DataImportService {
         product.setPname(row.getPname());
         return product;
     }
+    
+    
+    
+    private void importNonExistingBrands(ImportProductContext context) {
+    	context
+    		.getProducts()
+			.stream()
+			.map(ProductImportDTO::getBrand)
+			.distinct()
+			.filter(Objects::nonNull)
+			.filter(this::isBrandNotExists)
+			.map(this::toBrandDTO)
+			.map(this::createBrand)
+			.forEach(brand -> logBrandCreation(brand, context));;
+	}
+    
+    
+    
+
+	
+	
+	
+	private void logBrandCreation(BrandDTO brand, ImportProductContext context) {
+		context.logNewBrand(brand.getId(), brand.getName());
+	}
+
+
+
+
+
+	private BrandDTO createBrand(BrandDTO brandDto) {
+		try {
+			OrganizationResponse response = organizationService.createOrganizationBrand(brandDto, null, null);
+			BrandDTO createdBrand = new BrandDTO();
+			createdBrand.setId(response.getBrandId());
+			createdBrand.setName(brandDto.getName());
+			return createdBrand;
+		}catch(Throwable t) {
+			logger.error(t,t);
+			throw new RuntimeBusinessException(
+					format("Failed to import brand with name [%s]",brandDto.getName())
+					, "INTEGRATION FAILURE"
+					,HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	
+	
+	
+	
+	private boolean isBrandNotExists(String brandName) {
+		Long orgId = security.getCurrentUserOrganizationId();		
+		return !brandRepo.existsByNameIgnoreCaseAndOrganizationEntity_id(brandName, orgId);
+	}
+	
+	
+	
+	
+	private BrandDTO toBrandDTO(String brandName) {
+		BrandDTO dto = new BrandDTO();
+		dto.setOperation("CREATE");
+		dto.setName(brandName);
+		return dto;
+	}
+
+
+    
+    
 }
 
 

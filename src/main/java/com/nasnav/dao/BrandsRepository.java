@@ -6,6 +6,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Set;
 
 public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 
@@ -22,4 +23,6 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 
 	@Query("select b.id FROM BrandsEntity b where UPPER(b.name) = UPPER(:brandName)")
 	Long findByNameIgnoreCase(@Param("brandName")String brandName);
+
+	List<BrandsEntity> findByNameIn(Set<String> newBrands);
 }

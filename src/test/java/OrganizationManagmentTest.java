@@ -1,7 +1,9 @@
-import com.nasnav.NavBox;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.response.OrganizationResponse;
-import com.nasnav.test.commons.TestCommons;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
 
 import org.json.JSONObject;
 import org.junit.After;
@@ -24,11 +26,10 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import javax.sql.DataSource;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.sql.Connection;
-import java.sql.SQLException;
+import com.nasnav.NavBox;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.response.OrganizationResponse;
+import com.nasnav.test.commons.TestCommons;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

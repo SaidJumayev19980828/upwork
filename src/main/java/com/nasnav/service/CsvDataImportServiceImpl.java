@@ -1,7 +1,6 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CSV_PARSE_FAILURE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_INVALID_ENCODING;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_FILE_UPLOADED;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMPORT_MISSING_PARAM;
@@ -10,6 +9,7 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANN
 import static com.nasnav.enumerations.ImageCsvTemplateType.EMPTY;
 import static com.nasnav.enumerations.ImageCsvTemplateType.PRODUCTS_WITH_NO_IMGS;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
@@ -30,8 +30,6 @@ import java.util.Set;
 import javax.validation.Valid;
 
 import org.jboss.logging.Logger;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -52,11 +50,12 @@ import com.nasnav.dto.VariantWithNoImagesDTO;
 import com.nasnav.enumerations.ImageCsvTemplateType;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.response.ProductListImportResponse;
 import com.nasnav.service.helpers.ProductCsvRowProcessor;
+import com.nasnav.service.model.ImportProductContext;
 import com.univocity.parsers.common.DataProcessingException;
 import com.univocity.parsers.common.ParsingContext;
 import com.univocity.parsers.common.RowProcessorErrorHandler;
@@ -133,14 +132,16 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	public static final List<String> IMG_CSV_BASE_HEADERS = asList("variant_id","external_id","barcode","image_file");
 
 	@Transactional(rollbackFor = Throwable.class)
-	public ProductListImportResponse importProductListFromCSV(@Valid MultipartFile file,
-			@Valid ProductListImportDTO csvImportMetaData) throws BusinessException {
-
+	public ImportProductContext importProductListFromCSV(@Valid MultipartFile file,
+			@Valid ProductListImportDTO csvImportMetaData) throws BusinessException, ImportProductException {
+		
 		validateProductImportMetaData(csvImportMetaData);
 		validateProductImportCsvFile(file);
 
-		List<CsvRow> rows = parseCsvFile(file, csvImportMetaData);
 		ProductImportMetadata importMetadata = getImportMetaData(csvImportMetaData);
+		ImportProductContext initialContext = new ImportProductContext(emptyList(), importMetadata);
+		
+		List<CsvRow> rows = parseCsvFile(file, csvImportMetaData, initialContext);
 		
 		List<ProductImportDTO> productsData = 
 				rows
@@ -148,7 +149,6 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 				.map(CsvRow::toProductImportDto)
 				.collect(toList());
 		return dataImportService.importProducts(productsData, importMetadata);
-
 	}
 	
 	
@@ -171,23 +171,19 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	
 	
 
-	private List<CsvRow> parseCsvFile(MultipartFile file, ProductListImportDTO metaData) throws BusinessException {
+	private List<CsvRow> parseCsvFile(MultipartFile file, ProductListImportDTO metaData, ImportProductContext context) throws ImportProductException {
 		List<ProductFeaturesEntity> orgFeatures = featureRepo.findByShopId( metaData.getShopId() );
 		
-		List<CsvRow> rows = new ArrayList<>();
-		
-		ByteArrayInputStream in = readCsvFile(file);		
+		ByteArrayInputStream in = readCsvFile(file, context);		
 		BeanListProcessor<CsvRow> rowProcessor = createRowProcessor(metaData, orgFeatures);
-		RowParseErrorHandler rowParsingErrHandler = new RowParseErrorHandler();
+		RowParseErrorHandler rowParsingErrHandler = new RowParseErrorHandler(context);
 		CsvParserSettings settings = createParsingSettings(rowProcessor, rowParsingErrHandler);
 		
 		CsvParser parser = new CsvParser(settings);
 		
 		runCsvParser(in, rowParsingErrHandler, parser);
 		
-		rows = rowProcessor.getBeans();
-		
-		return rows;
+		return rowProcessor.getBeans();
 	}
 
 
@@ -195,22 +191,17 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 	private void runCsvParser(ByteArrayInputStream in, RowParseErrorHandler rowParsingErrHandler, CsvParser parser)
-			throws BusinessException {
+			throws ImportProductException {
+		ImportProductContext context = rowParsingErrHandler.getImportContext();
 		try {
 			parser.parse(in);
 		}catch(Exception e) {
 			logger.error(e,e);
-			throw new BusinessException(
-					ERR_CSV_PARSE_FAILURE + " cause:\n" + e
-					, "INVALID PARAM:csv"
-					, HttpStatus.NOT_ACCEPTABLE); 
-		}	
+			throw new ImportProductException(e, context); 
+		}		
 		
-		if( !rowParsingErrHandler.getErrors().isEmpty() ) {
-			throw new BusinessException(
-					ERR_CSV_PARSE_FAILURE 
-					, rowParsingErrHandler.getErrorMsgAsJson()
-					, HttpStatus.NOT_ACCEPTABLE); 
+		if(!context.isSuccess()) {
+			throw new ImportProductException(context);
 		}
 	}
 
@@ -268,16 +259,14 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 
-	private ByteArrayInputStream readCsvFile(MultipartFile file) throws BusinessException {
+	private ByteArrayInputStream readCsvFile(MultipartFile file, ImportProductContext context) throws ImportProductException {
 		byte[] bytes = new byte[0];
 		try {
 			bytes = file.getBytes();
 		} catch (IOException e) {
 			logger.error(e,e);
-			throw new BusinessException(
-					"Failed To read Products CSV file! cause:\n" + e
-					, "INTERNAL SERVER ERROR"
-					, HttpStatus.INTERNAL_SERVER_ERROR); 
+			context.logNewError(e, "csvFile", 0);
+			throw new ImportProductException(e, context);
 		}
 		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
 		return in;
@@ -520,30 +509,17 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 @Data
 class RowParseErrorHandler implements RowProcessorErrorHandler {
-	private List<String> errors;
+	private ImportProductContext importContext;
 	
 	
-	public RowParseErrorHandler() {
-		errors = new ArrayList<>();
+	public RowParseErrorHandler(ImportProductContext context) {
+		this.importContext = context;
 	}
 	
 	
 	
 	@Override
 	public void handleError(DataProcessingException error, Object[] inputRow, ParsingContext context) {
-			errors.add( error.getMessage());	
-	}
-	
-	
-	
-	
-	public String getErrorMsgAsJson() {
-		JSONArray errorsJson = new JSONArray(errors);
-		
-		JSONObject main = new JSONObject();
-		main.put("msg", ERR_CSV_PARSE_FAILURE);
-		main.put("errors", errorsJson);
-		
-		return errorsJson.toString();
+			importContext.logNewError(error, Arrays.toString(inputRow), (int)(context.currentLine())+1);	
 	}
 }

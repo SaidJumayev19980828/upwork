@@ -1,7 +1,6 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.copyNonNullProperties;
-import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -9,8 +8,10 @@ import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 
@@ -27,6 +28,8 @@ import java.util.Set;
 import javax.cache.annotation.CacheRemoveAll;
 import javax.cache.annotation.CacheResult;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedAcyclicGraph;
@@ -67,6 +70,8 @@ import com.nasnav.response.TagResponse;
 @Service
 public class CategoryService {
 
+	Logger logger = LogManager.getLogger(getClass());
+	
     @Autowired
     private final BrandsRepository brandsRepository;
 
@@ -340,7 +345,7 @@ public class CategoryService {
 
     
 	@CacheEvict(allEntries = true ,cacheNames = "organizations_tag_trees")
-    public TagsEntity createOrUpdateTag(TagsDTO tagDTO) throws BusinessException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+    public TagsEntity createOrUpdateTag(TagsDTO tagDTO) throws BusinessException{
         validateTagDto(tagDTO);
         
         String operation = tagDTO.getOperation();
@@ -360,7 +365,7 @@ public class CategoryService {
 
 
 	private TagsEntity updateTag(TagsDTO tagDTO)
-			throws BusinessException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+			throws BusinessException{
 		TagsEntity entity;
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
 		entity = orgTagsRepo
@@ -370,7 +375,15 @@ public class CategoryService {
 											, "No tag exists in the organization with provided id"
 											, NOT_ACCEPTABLE));
 		
-		copyNonNullProperties(tagDTO, entity);
+		try {
+			copyNonNullProperties(tagDTO, entity);
+		} catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+			logger.error(e, e);
+			throw new BusinessException(
+					format("Failed to update Tag [%s]!", tagDTO.toString())
+					, "INTERNAL FAILURE"
+					, INTERNAL_SERVER_ERROR);
+		}
 
 		if (tagDTO.isUpdated("graphId")) {
 			Integer graphId = tagDTO.getGraphId() != null? org.getId().intValue() : null;
@@ -386,11 +399,12 @@ public class CategoryService {
 	private void validateTagDto(TagsDTO tagDTO) throws BusinessException {
 		String operation = tagDTO.getOperation();
         Long categoryId = tagDTO.getCategoryId();
+        boolean hasCategory = tagDTO.isHasCategory();
         
         if( isBlankOrNull(operation)) {
         	throw new BusinessException("MISSING PARAM: operation", "", NOT_ACCEPTABLE);
         }else if(Objects.equals(operation, "create")) {
-        	if (categoryId == null) {
+        	if (categoryId == null && hasCategory) {
             	throw new BusinessException("MISSING PARAM: category_id", "category_id is required to create tag", NOT_ACCEPTABLE);
             }else if (tagDTO.getName() == null) {
             	throw new BusinessException("MISSING PARAM: name", "name is required to create tag", NOT_ACCEPTABLE);
@@ -431,11 +445,7 @@ public class CategoryService {
 
     private TagsEntity createNewTag(TagsDTO tagDTO) throws BusinessException {
     	OrganizationEntity org = securityService.getCurrentUserOrganization();
-    	CategoriesEntity category = 
-        		categoryRepository
-        			.findById(tagDTO.getCategoryId())
-        			.orElseThrow(() -> new BusinessException("INVALID PARAM: category_id", "No category exists with provided id", NOT_ACCEPTABLE));
-
+    	CategoriesEntity category = getCategoryEntity(tagDTO);
     	String alias = ofNullable(tagDTO.getAlias()).orElse(tagDTO.getName());
        
     	TagsEntity entity = new TagsEntity();
@@ -443,7 +453,7 @@ public class CategoryService {
         entity.setCategoriesEntity(category);
         entity.setName(tagDTO.getName());
         entity.setAlias(alias);
-        entity.setPname(encodeUrl(tagDTO.getName()));
+        entity.setPname(StringUtils.encodeUrl(tagDTO.getName()));
         entity.setGraphId(tagDTO.getGraphId());
         entity.setMetadata(tagDTO.getMetadata());
         if(tagDTO.getGraphId() != null) {
@@ -452,6 +462,27 @@ public class CategoryService {
         
         return entity;
     }
+
+
+
+
+	private CategoriesEntity getCategoryEntity(TagsDTO tagDTO) {
+		return 
+			ofNullable(tagDTO)
+			.filter(TagsDTO::isHasCategory)
+			.map(TagsDTO::getCategoryId)
+			.map(this::findCategoryById)
+			.orElse(null);
+	}
+
+
+
+
+	private CategoriesEntity findCategoryById(Long id) {
+		return categoryRepository
+				.findById(id)
+				.orElseThrow(() -> new RuntimeBusinessException("INVALID PARAM: category_id", "No category exists with provided id", NOT_ACCEPTABLE));
+	}
     
     
 
@@ -511,15 +542,28 @@ public class CategoryService {
 		return ofNullable(node)
 				.map(TagsTreeNodeCreationDTO::getTagId)
 				.map(tagsMap::get)
+				.map(this::verifyTagToBeAddedToTree)
 				.map(TagGraphNodeEntity::new)
 				.map(tagNodesRepo::save)
 				.orElseThrow(() -> 
 					new RuntimeBusinessException(
-							format("Failed to create Tree node for tag with id[%d]! Maybe it doesn;t exists for organization[%d]!", node.getTagId(), orgId)
+							format("Failed to create Tree node for tag with id[%d]! Maybe it doesn't exists for organization[%d]!", node.getTagId(), orgId)
 							, "INVALID PARAM: nodes"
 							, NOT_ACCEPTABLE));
 	}
 
+	
+	
+	
+	private TagsEntity verifyTagToBeAddedToTree(TagsEntity tag) {
+		if(tag.getCategoriesEntity() == null) {
+			throw new RuntimeBusinessException(
+					format("Cannot add tag with id[%d] to the tag tree! Tag doesnot have a category!", tag.getGraphId())
+					, "INVALID PARAM: nodes"
+					, NOT_ACCEPTABLE);
+		}
+		return tag;
+	}
 
 
 
@@ -540,12 +584,12 @@ public class CategoryService {
 
 	private Map<Long, TagsEntity> createOrgTagsMap() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		List<TagsEntity> orgTagsss = orgTagsRepo.findByOrganizationEntity_Id(orgId);
-
-        Map<Long, TagsEntity> tagsMap = new HashMap<>();
-        for (TagsEntity tag : orgTagsss) 
-        	tagsMap.put(tag.getId(), tag); // creating tags map to easier search for specific tag
-		return tagsMap;
+		return 
+			orgTagsRepo
+				.findByOrganizationEntity_Id(orgId)
+				.stream()
+				.collect(
+						toMap(TagsEntity::getId, tag -> tag));
 	}
 
 	

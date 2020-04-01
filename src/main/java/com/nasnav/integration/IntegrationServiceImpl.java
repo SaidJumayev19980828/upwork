@@ -69,7 +69,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
-import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.IntegrationEventFailureRepository;
 import com.nasnav.dao.IntegrationMappingRepository;
 import com.nasnav.dao.IntegrationMappingTypeRepository;
@@ -78,7 +77,6 @@ import com.nasnav.dao.IntegrationParamTypeRepostory;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.IntegrationDictionaryDTO;
 import com.nasnav.dto.IntegrationErrorDTO;
 import com.nasnav.dto.IntegrationImageImportDTO;
@@ -121,11 +119,11 @@ import com.nasnav.request.GetIntegrationDictParam;
 import com.nasnav.request.GetIntegrationErrorParam;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.DataImportService;
-import com.nasnav.service.OrganizationService;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.ShopService;
 import com.nasnav.service.StockService;
+import com.nasnav.service.model.ImportProductContext;
 import com.nasnav.service.model.ImportedImage;
 
 import lombok.AllArgsConstructor;
@@ -170,12 +168,6 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	@Autowired
 	private DataImportService dataImportService;
-	
-	@Autowired
-	private OrganizationService organizationService;
-	
-	@Autowired
-	private BrandsRepository brandRepo;
 	
 	@Autowired
 	private ProductVariantsRepository variantRepo;
@@ -698,8 +690,6 @@ public class IntegrationServiceImpl implements IntegrationService {
 		
 		IntegrationImportedProducts importedProducts = getProductsFromExternalSystem(orgId, metadata);
 		
-		importNonExistingBrands(importedProducts);		
-		
 		importProductsIntoNasnav(commonImportMetaData, importedProducts);
 		
 		return importedProducts.getTotalPages();
@@ -710,55 +700,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 
 
-	private void importNonExistingBrands(IntegrationImportedProducts importedProducts) {
-		importedProducts
-			.getAllShopsProducts()
-			.stream()
-			.map(ShopImportedProducts::getImportedProducts)
-			.flatMap(List::stream)
-			.map(ProductImportDTO::getBrand)
-			.distinct()
-			.filter(Objects::nonNull)
-			.filter(this::isBrandNotExists)
-			.map(this::toBrandDTO)
-			.forEach(this::createBrand);
-	}
 	
 	
-	
-	
-	private void createBrand(BrandDTO brandDto) {
-		try {
-			organizationService.createOrganizationBrand(brandDto, null, null);
-		}catch(Throwable t) {
-			logger.error(t,t);
-			throw new RuntimeBusinessException(
-					format("Failed to import brand with name [%s]",brandDto.getName())
-					, "INTEGRATION FAILURE"
-					,HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	}
-
-	
-	
-	
-	
-	private boolean isBrandNotExists(String brandName) {
-		Long orgId = securityService.getCurrentUserOrganizationId();		
-		return !brandRepo.existsByNameIgnoreCaseAndOrganizationEntity_id(brandName, orgId);
-	}
-	
-	
-	
-	
-	private BrandDTO toBrandDTO(String brandName) {
-		BrandDTO dto = new BrandDTO();
-		dto.setOperation("CREATE");
-		dto.setName(brandName);
-		return dto;
-	}
-
-
 
 
 	private void importProductsIntoNasnav(ProductImportMetadata commonImportMetaData,
@@ -884,10 +827,16 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	private void importSingleShopProducts(ProductImportInputData inputData) {
 		try {
-			dataImportService.importProducts(inputData.getProducts(), inputData.getMetadata());
+			ImportProductContext context = dataImportService.importProducts(inputData.getProducts(), inputData.getMetadata());
+			ObjectMapper mapper = new ObjectMapper();
+			String importReport = mapper.writeValueAsString(context);
+			logger.info(importReport);
 		} catch (BusinessException e) {
 			logger.error(e,e);
 			throw new RuntimeBusinessException(e);
+		} catch (JsonProcessingException e) {
+			logger.error(e,e);
+			throw new RuntimeException(e);
 		}
 	}
 	
@@ -1493,23 +1442,6 @@ public class IntegrationServiceImpl implements IntegrationService {
 								.map(IntegrationParamEntity::getParamValue)
 							    .orElse(null);
 	}
-
-
-
-
-
-
-	private Optional<String> getParamCachedValue(Long orgId, String paramName) {
-		return ofNullable(orgIntegration.get(orgId))
-				.map(OrganizationIntegrationInfo::getParameters)
-				.orElse(new ArrayList<>())
-				.stream()
-				.filter( p -> Objects.equals(p.getParameterTypeName(), paramName))
-				.map(IntegrationParamEntity::getParamValue)
-				.findFirst();
-	}
-
-
 
 
 

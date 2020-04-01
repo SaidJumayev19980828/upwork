@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.nasnav.dto.OrderRepresentationObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -54,6 +53,7 @@ import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.DetailedOrderRepObject;
+import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.ShippingAddress;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.persistence.BasketsEntity;
@@ -503,7 +503,7 @@ public class OrderServiceTest {
 
 	@Test // Nasnav_Admin diffterent filters test
 	public void ordersListNasnavAdminDifferentFiltersTest() {
-		HttpEntity httpEntity = getHttpEntity("101112");
+		HttpEntity<?> httpEntity = getHttpEntity("101112");
 		// no filters
 		ResponseEntity<String> response = template.exchange("/order/list?details_level=3"
 															, HttpMethod.GET
@@ -829,6 +829,7 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getOrderListCountTest() throws  IOException {
 
+		@SuppressWarnings("rawtypes")
 		ResponseEntity<List> response = template.exchange("/order/list?count=1", HttpMethod.GET,
 											new HttpEntity<>(TestCommons.getHeaders("101112")), List.class);
 

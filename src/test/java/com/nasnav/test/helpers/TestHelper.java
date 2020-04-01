@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.persistence.BundleEntity;
@@ -28,11 +27,7 @@ public class TestHelper {
 	private StockRepository stockRepo;
 	
 	@Autowired
-	private ProductRepository productRepo;
-	
-	@Autowired
 	private ProductVariantsRepository variantRepo;
-	
 	
 	@Autowired
 	private OrdersRepository orderRepo;

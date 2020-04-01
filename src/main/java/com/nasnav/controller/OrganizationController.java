@@ -208,7 +208,8 @@ public class OrganizationController {
     @PostMapping(value = "tag", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public TagResponse createOrganizationTag(@RequestHeader (value = "User-Token") String userToken,
                                          @RequestBody TagsDTO tagDTO) throws BusinessException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        TagsEntity tag = categoryService.createOrUpdateTag(tagDTO);
+        tagDTO.setHasCategory(true);
+    	TagsEntity tag = categoryService.createOrUpdateTag(tagDTO);
         return new TagResponse(tag.getId());
     }
 

@@ -1,9 +1,12 @@
 package com.nasnav.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class TagsDTO extends BaseJsonDTO{
 
     private Long id;
@@ -16,7 +19,15 @@ public class TagsDTO extends BaseJsonDTO{
     private String operation;
     @JsonProperty(value = "graph_id")
     private Integer graphId;
-
+    @JsonProperty(value = "has_category")
+    private boolean hasCategory;
+    
+    
+    public TagsDTO() {
+    	hasCategory = true;
+    }
+    
+    
     @Override
     protected void initRequiredProperties() { }
 
