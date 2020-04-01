@@ -1,5 +1,14 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.EntityUtils.createFailedLoginResponse;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.response.ResponseStatus.ACCOUNT_SUSPENDED;
+import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
+import static java.lang.String.format;
+import static java.util.Collections.singletonList;
+import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpStatus.LOCKED;
+
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -22,7 +31,6 @@ import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.CommonUserRepository;
-import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.OAuth2UserRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dto.UserDTOs.UserLoginObject;
@@ -38,8 +46,6 @@ import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegisteration;
 
-import static java.lang.String.format;
-
 @Service
 public class SecurityServiceImpl implements SecurityService {
 	
@@ -52,20 +58,20 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	
 	@Autowired
-	private EmployeeUserRepository empRepo;
-	
-	
-	@Autowired
 	private OrganizationRepository orgRepo;
 	
 	
 	@Autowired
 	private OAuth2UserRepository oAuthUserRepo;
+	
+	
+	@Autowired
+	private UserService userService;
 
 
 	@Override
 	public Optional<UserDetails> findUserByAuthToken(String token){
-		return Optional.ofNullable(token)
+		return ofNullable(token)
 		 		.flatMap(userRepo::findByAuthenticationToken)
 		 		.flatMap(this::getUser);
 	}
@@ -116,11 +122,11 @@ public class SecurityServiceImpl implements SecurityService {
 
 	private void validateUserPassword(UserLoginObject loginData, BaseUserEntity userEntity) {
 
-		boolean accountNeedActivation = isUserNeedActivation(userEntity);
+		boolean accountNeedActivation = isEmployeeUserNeedActivation(userEntity);
 		if (accountNeedActivation) {
 			UserApiResponse failedLoginResponse = 
-					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.NEED_ACTIVATION));
-			throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, HttpStatus.LOCKED);
+					createFailedLoginResponse(singletonList(NEED_ACTIVATION));
+			throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, LOCKED);
 		}
 		
 		boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncryptedPassword());		
@@ -132,8 +138,8 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 
-
-	private UserApiResponse login(BaseUserEntity userEntity) throws BusinessException {
+	@Override
+	public UserApiResponse login(BaseUserEntity userEntity) throws BusinessException {
 		// generate new AuthenticationToken and perform post login updates
 		userEntity = updatePostLogin(userEntity);
 		return createSuccessLoginResponse(userEntity);
@@ -148,12 +154,14 @@ public class SecurityServiceImpl implements SecurityService {
 			throwInvalidCredentialsException();
 		}
 		
-		
-		
 		if (isAccountLocked(userEntity)) { // NOSONAR
-			UserApiResponse failedLoginResponse = EntityUtils
-					.createFailedLoginResponse(Collections.singletonList(ResponseStatus.ACCOUNT_SUSPENDED));
-			throw new EntityValidationException("ACCOUNT_SUSPENDED ", failedLoginResponse, HttpStatus.LOCKED);
+			UserApiResponse failedLoginResponse = createFailedLoginResponse(singletonList(ACCOUNT_SUSPENDED));
+			throw new EntityValidationException("ACCOUNT_SUSPENDED ", failedLoginResponse, LOCKED);
+		}
+		
+		if (userService.isUserDeactivated(userEntity)) { // NOSONAR
+			UserApiResponse failedLoginResponse = createFailedLoginResponse(singletonList(NEED_ACTIVATION));
+			throw new EntityValidationException("ACCOUNT_INACTIVE", failedLoginResponse, LOCKED);
 		}
 	}
 
@@ -161,8 +169,9 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 
+
 	private boolean invalidLoginData(UserLoginObject loginData) {
-		return loginData == null || StringUtils.isBlankOrNull(loginData.email) || StringUtils.isBlankOrNull(loginData.orgId);
+		return loginData == null || isBlankOrNull(loginData.email) || isBlankOrNull(loginData.orgId);
 	}
 
 
@@ -178,7 +187,7 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	
 	
-	private boolean isUserNeedActivation(BaseUserEntity userEntity) {
+	private boolean isEmployeeUserNeedActivation(BaseUserEntity userEntity) {
 		String encPassword = userEntity.getEncryptedPassword();
 		return StringUtils.isBlankOrNull(encPassword) || EntityConstants.INITIAL_PASSWORD.equals(encPassword);
 	}

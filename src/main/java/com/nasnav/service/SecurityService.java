@@ -1,17 +1,15 @@
 package com.nasnav.service;
 
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationEntity;
+import java.util.Optional;
 
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.response.UserApiResponse;
-
-import java.util.Optional;
 
 public interface SecurityService {
 	
@@ -36,4 +34,6 @@ public interface SecurityService {
     Boolean currentUserHasRole(Roles role);
 
 	UserApiResponse socialLogin(String socialLoginToken) throws BusinessException;
+
+	UserApiResponse login(BaseUserEntity userEntity) throws BusinessException;
 }

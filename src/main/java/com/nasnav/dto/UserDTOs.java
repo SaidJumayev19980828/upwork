@@ -24,6 +24,18 @@ public class UserDTOs {
     }
 
     @Getter
+    @ApiModel(value = "User Registration Data")
+    public static class UserRegistrationObjectV2 {
+        public String name;
+        public String email;
+        public String password;
+        @JsonProperty("org_id")
+        public Long orgId;
+        @JsonProperty("confirmation_flag")
+        public Boolean confirmationFlag;
+    }
+
+    @Getter
     @ApiModel(value = "Password Reset Data")
     public static class PasswordResetObject {
         @ApiModelProperty(value = "Password reset token", example = "224c793yXg5hXyuqX", required = true)

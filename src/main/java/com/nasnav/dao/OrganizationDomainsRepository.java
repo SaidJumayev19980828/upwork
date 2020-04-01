@@ -7,4 +7,5 @@ public interface OrganizationDomainsRepository extends JpaRepository<Organizatio
 
     OrganizationDomainsEntity findByDomain(String domain);
     OrganizationDomainsEntity findByDomainAndSubdir(String domain, String subdir);
+    OrganizationDomainsEntity findByOrganizationEntity_Id(Long orgId);
 }

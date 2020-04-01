@@ -1,7 +1,5 @@
 package com.nasnav.persistence;
 
-import java.time.LocalDateTime;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
@@ -48,8 +46,6 @@ public class UserEntity extends BaseUserEntity{
         user.setEmail(userJson.email);
         user.setEncryptedPassword(EntityConstants.INITIAL_PASSWORD);
         user.setOrganizationId(userJson.getOrgId());
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdatedAt(LocalDateTime.now());
         return user;
     }
     
@@ -62,7 +58,7 @@ public class UserEntity extends BaseUserEntity{
         obj.email = this.getEmail();
         obj.phoneNumber = this.getPhoneNumber();
         obj.image = this.getImage();
-        //TODO set mobile, image after including in in DB
+        //TODO set mobile after including in in DB
         Address address = new Address();
         address.setCountry(this.getAddressCountry());
         address.setCity(this.getAddressCity());

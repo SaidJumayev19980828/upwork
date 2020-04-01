@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -18,9 +19,7 @@ import com.google.common.base.Enums;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.dao.CommonUserRepository;
 import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserDTOs.PasswordResetObject;
 import com.nasnav.dto.UserRepresentationObject;
@@ -345,6 +344,15 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 			obj.setRoles(new HashSet<>(empUserSvcHelper.getEmployeeUserRoles(obj.getId())));
 
 		return userRepObjs;
+	}
+	
+	
+	
+	
+	
+	@Override
+	public Boolean isUserDeactivated(BaseUserEntity user) {
+		return Objects.equals(user.getAuthenticationToken(), DEACTIVATION_CODE);
 	}
 	
 
