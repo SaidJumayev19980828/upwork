@@ -9,6 +9,13 @@ import com.nasnav.service.EmployeeUserService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.UserService;
 import io.swagger.annotations.*;
+
+import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE;
+
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -167,11 +174,12 @@ public class UserController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "Customers doesn't have access to view Employee users data"),
     })
     @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity getUserList(@RequestHeader (value = "User-Token") String userToken,
+    @ResponseStatus(OK)
+    public List<UserRepresentationObject> getUserList(@RequestHeader (value = "User-Token") String userToken,
                                       @RequestParam (value = "org_id", required = false) Long orgId,
                                       @RequestParam (value = "store_id", required = false) Long storeId,
                                       @RequestParam (value = "role", required = false) String role) throws BusinessException{
-        return new ResponseEntity(employeeUserService.getUserList(userToken, orgId, storeId, role), HttpStatus.OK);
+        return employeeUserService.getUserList(userToken, orgId, storeId, role);
     }
     
     
@@ -208,9 +216,9 @@ public class UserController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @PostMapping(value = "v2/register",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ResponseStatus(HttpStatus.CREATED)
+            produces = APPLICATION_JSON_UTF8_VALUE,
+            consumes = APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(CREATED)
     public UserApiResponse registerUserV2(
             @RequestBody UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException {
         return this.userService.registerUserV2(userJson);
@@ -223,7 +231,7 @@ public class UserController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @GetMapping(value = "v2/register/activate",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+            produces = APPLICATION_JSON_UTF8_VALUE)
     public RedirectView sendEmailRecovery(@RequestParam(value = "token") String token) throws BusinessException {
         return userService.activateUserAccount(token);
     }

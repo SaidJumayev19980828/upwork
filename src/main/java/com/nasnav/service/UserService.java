@@ -1,10 +1,11 @@
 package com.nasnav.service;
 
+import org.springframework.web.servlet.view.RedirectView;
+
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.UserApiResponse;
-import org.springframework.web.servlet.view.RedirectView;
 
 public interface UserService extends CommonUserServiceInterface{
 
@@ -25,4 +26,5 @@ public interface UserService extends CommonUserServiceInterface{
     public UserApiResponse updateUser(String userToken, UserDTOs.EmployeeUserUpdatingObject userJson) throws BusinessException;
 
     public UserRepresentationObject getUserData(Long id, Boolean isEmployee) throws BusinessException;
+
 }

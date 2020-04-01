@@ -6,7 +6,9 @@ import com.nasnav.response.UserApiResponse;
 
 public interface CommonUserServiceInterface {
 
-    /**
+    String DEACTIVATION_CODE = "0000-0000-0000-0000";
+
+	/**
      * Delete user entity by id
      *
      * @param userId To be used to delete user by
@@ -57,4 +59,6 @@ public interface CommonUserServiceInterface {
      * @return true if user is authenticated (token is valid)
      */
     boolean checkAuthToken(Long userId, String authToken);
+
+	Boolean isUserDeactivated(BaseUserEntity user);
 }

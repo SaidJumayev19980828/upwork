@@ -3,6 +3,11 @@ INSERT INTO public.organizations(id, name, created_at, updated_at, p_name) VALUE
 INSERT INTO public.organizations(id, name, created_at, updated_at, p_name) VALUES (99002, 'organization_2', now(), now(), 'organization-2');
 
 
+--inserting organizations domains
+INSERT INTO public.organization_domains (id, "domain", subdir, organization_id) VALUES(55001, 'nasnav.com', 'organization_1', 99001);
+INSERT INTO public.organization_domains (id, "domain", subdir, organization_id) VALUES(55002, 'nasnav.com', 'organization_2', 99002);
+
+
 
 --inserting users
 INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id, encrypted_password)

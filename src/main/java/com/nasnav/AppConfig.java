@@ -18,7 +18,8 @@ public class AppConfig {
     @Value("${email.username}")    public String mailUsername;
     @Value("${email.password}")    public String mailPassword;
     @Value("${email.recoveryurl}") public String mailRecoveryUrl = "";
-    @Value("${email.activationurl}") public String accountActivationUrl = "";
+//    @Value("${email.activationurl}")
+    public String accountActivationUrl = "/user/v2/register/activate";
     @Value("${email.port}")        public int    mailHostPort;
     @Value("${email.ssl}")         public boolean mailUseSSL;
     @Value("${paymnet.properties_dir}") public String paymentPropertiesDir = "";

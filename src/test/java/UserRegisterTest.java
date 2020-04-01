@@ -1,8 +1,11 @@
+import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 
 import javax.annotation.PreDestroy;
+import javax.mail.MessagingException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
@@ -11,9 +14,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
@@ -28,6 +33,7 @@ import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.servlet.view.RedirectView;
 
 import com.nasnav.AppConfig;
 import com.nasnav.NavBox;
@@ -39,11 +45,11 @@ import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.service.MailService;
 import com.nasnav.service.UserService;
 import com.nasnav.test.commons.TestCommons;
 
 import net.jcip.annotations.NotThreadSafe;
-import org.springframework.web.servlet.view.RedirectView;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -79,6 +85,10 @@ public class UserRegisterTest {
 	
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+	
+	
+	@MockBean
+	private MailService mailService;
 
 	@Before
 	public void setup() {
@@ -608,13 +618,20 @@ public class UserRegisterTest {
 
 
 	@Test
-	public void newUserRegisterTest() {
+	public void newUserRegisterTest() throws MessagingException, IOException {
 		String body = "{\"name\":\"Ahmad\", \"email\":\"test@nasnav.com\", \"password\":\"password\"," +
 				      "\"org_id\": 99001, \"confirmation_flag\":true}";
-		HttpEntity<Object> userJson = TestCommons.getHttpEntity((Object)body);
+		HttpEntity<Object> userJson = getHttpEntity((Object)body);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register", userJson, String.class);
 
 		Assert.assertEquals( 201, response.getStatusCodeValue());
+		Mockito
+			.verify(mailService)
+			.send(
+				  Mockito.eq("test@nasnav.com")
+				, Mockito.eq(ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+				, Mockito.anyString()
+				, Mockito.anyMap());
 	}
 
 
@@ -622,7 +639,7 @@ public class UserRegisterTest {
 	public void newUserRegisterInvalidDataTest() {
 		String body = "{\"name\":\"123\", \"email\":\"test.com\", \"password\":\"password\"," +
 				"\"org_id\": 99001, \"confirmation_flag\":true}";
-		HttpEntity<Object> userJson = TestCommons.getHttpEntity((Object)body);
+		HttpEntity<Object> userJson = getHttpEntity((Object)body);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register", userJson, String.class);
 
 		Assert.assertEquals( 406, response.getStatusCodeValue());
@@ -649,7 +666,7 @@ public class UserRegisterTest {
 	public void newUserRegisterMissingDataTest() {
 		String body = "{\"name\": null, \"email\":null, \"password\":\"password\"," +
 				"\"org_id\": 99001, \"confirmation_flag\":true}";
-		HttpEntity<Object> userJson = TestCommons.getHttpEntity((Object) body);
+		HttpEntity<Object> userJson = getHttpEntity((Object) body);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register", userJson, String.class);
 		Assert.assertEquals( 406, response.getStatusCodeValue());
 
@@ -685,7 +702,7 @@ public class UserRegisterTest {
 
 		ResponseEntity<RedirectView> activationRes = template.getForEntity("/user/v2/register/activate?token="+ user.getResetPasswordToken(), RedirectView.class);
 		user = userRepository.findById(response.getBody().getEntityId()).get();
-		Assert.assertEquals("https://www.nasnav.com/organization-1/login?token="+ user.getAuthenticationToken(),
+		Assert.assertEquals("https://nasnav.com/organization_1/login?token="+ user.getAuthenticationToken(),
 				activationRes.getHeaders().getLocation().toString());
 	}
 
