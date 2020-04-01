@@ -7,11 +7,13 @@ import static com.nasnav.test.commons.TestCommons.json;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,7 +27,6 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -51,6 +52,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.IntegrationMappingRepository;
@@ -66,6 +70,7 @@ import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.security.AuthenticationFilter;
+import com.nasnav.service.model.ImportProductContext;
 import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
 
@@ -352,15 +357,11 @@ public class DataImportApiTest {
         
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "131415", csvFileInvalidData, importProperties);
         
-        String responsebody = result.andExpect(status().is(406))
-						        	  .andReturn()
-						        	  .getResponse()
-						        	  .getContentAsString();
+        result.andExpect(status().is(406));
         
-        JSONObject bodyJson = new JSONObject(responsebody);
-        assertTrue(bodyJson.has("error"));    
-        JSONArray errors = new JSONArray(bodyJson.getString("error"));
-        assertEquals(3, errors.length());
+        ImportProductContext report = readImportReport(result);
+        assertEquals(3, report.getErrors().size());
+        assertFalse(report.isSuccess());
     }
 	
 	
@@ -386,6 +387,49 @@ public class DataImportApiTest {
         ExpectedSavedData expected = getExpectedAllNewData();
         assertProductDataImported(TEST_IMPORT_SHOP, expected);
        
+        validateImportReportForNewData(result);
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void uploadProductInvalidCSV() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+        
+		ExtendedProductDataCount before = countExtendedProductData();	
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFile, importProperties);
+		
+		result.andExpect(status().is(200));
+		
+		ExtendedProductDataCount after = countExtendedProductData();		
+		assertExpectedRowNumInserted(before, after, 2);
+		assertEquals(0, after.tags - before.tags);
+		assertEquals(0, after.brands - before.brands);
+
+        ExpectedSavedData expected = getExpectedAllNewData();
+        assertProductDataImported(TEST_IMPORT_SHOP, expected);
+       
+        validateImportReportForNewData(result);
+	}
+
+
+
+
+
+
+	private void validateImportReportForNewData(ResultActions result)
+			throws UnsupportedEncodingException, IOException, JsonParseException, JsonMappingException {
+		ImportProductContext report = readImportReport(result);
+        assertEquals(2, report.getCreatedProducts().size());
+        assertTrue(report.getUpdatedProducts().isEmpty());
+        assertTrue(report.getCreatedBrands().isEmpty());
+        assertTrue(report.getCreatedTags().isEmpty());
+        assertTrue(report.isSuccess());
+        assertTrue(report.getErrors().isEmpty());
 	}
 	
 	
@@ -491,6 +535,23 @@ public class DataImportApiTest {
 		
 		ProductDataCount after = countProductData();		
 		assertExpectedRowNumInserted(before, after, 0);
+		
+		validateImportReportForDryRun(result);
+	}
+
+
+
+
+
+
+	private void validateImportReportForDryRun(ResultActions result)
+			throws UnsupportedEncodingException, IOException, JsonParseException, JsonMappingException {
+		ImportProductContext report = readImportReport(result);
+		assertTrue(report.getCreatedProducts().isEmpty());
+		assertTrue(report.getUpdatedProducts().isEmpty());
+		assertTrue(report.getCreatedTags().isEmpty());
+		assertTrue(report.getCreatedBrands().isEmpty());
+		assertEquals(2, report.getProductsNum().intValue());
 	}
 
 	
@@ -551,6 +612,54 @@ public class DataImportApiTest {
         
         ExpectedSavedData expected = getExpectedNewOnlyAndUpdatedStocks();
         assertProductDataImported(TEST_UPDATE_SHOP, expected);            
+	}
+	
+	
+	
+	
+	@Test
+	public void uploadProductCSVUpdateBothProductsAndStockDisabledTest() throws Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", false);
+		importProperties.put("update_stocks", false);
+        
+		ProductDataCount before = countProductData();	
+		
+		ProductVariantsEntity variantBefore = helper.getVariantFullData(TEST_VARIANT_UPDATED);
+		ProductEntity productBefore = variantBefore.getProductEntity();
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
+		
+		result.andExpect(status().is(200));
+		
+		ProductDataCount after = countProductData();		
+		assertExpectedRowNumInserted(before, after, 1);          
+
+        ProductVariantsEntity variantAfter = helper.getVariantFullData(TEST_VARIANT_UPDATED);
+        ProductEntity productAFter = variantAfter.getProductEntity();
+        
+        assertEquals(variantBefore, variantAfter);
+        assertEquals(productBefore, productAFter);
+        
+        ExpectedSavedData expected = getExpectedNewOnlyWithoutStocks();
+        assertProductDataImported(TEST_UPDATE_SHOP, expected);    
+        
+        validateImportReportWithUpdateDisabled(result);
+	}
+
+
+
+
+
+
+	private void validateImportReportWithUpdateDisabled(ResultActions result)
+			throws UnsupportedEncodingException, IOException, JsonParseException, JsonMappingException {
+		ImportProductContext report = readImportReport(result);
+        assertEquals(1, report.getCreatedProducts().size());
+        assertTrue(report.getUpdatedProducts().isEmpty());
+        assertTrue(report.getCreatedTags().isEmpty());
+        assertTrue(report.getCreatedBrands().isEmpty());
 	}
 
 
@@ -623,7 +732,12 @@ public class DataImportApiTest {
 
         ExpectedSavedData expected = getExpectedNewAndUpdatedDataWithStocks();
         assertProductDataImported(TEST_UPDATE_SHOP, expected);
-        assertProductUpdatedDataSavedWithStock();        
+        assertProductUpdatedDataSavedWithStock();     
+        
+        ImportProductContext report = readImportReport(result);
+        assertEquals(1, report.getCreatedProducts().size());
+        assertEquals(1, report.getUpdatedProducts().size());
+        assertTrue(report.getErrors().isEmpty());
 	}
 
 
@@ -827,13 +941,7 @@ public class DataImportApiTest {
 		
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileWithNewTags, importProperties);
 		
-		@SuppressWarnings("unused")
-		String report = 
-				result
-				.andExpect(status().is(200))
-				.andReturn()
-				.getResponse()
-				.getContentAsString();
+		result.andExpect(status().is(200));
 		
 		ExtendedProductDataCount after = countExtendedProductData();		
 		assertExpectedRowNumInserted(before, after, 2);
@@ -841,6 +949,42 @@ public class DataImportApiTest {
 		assertEquals(2, after.brands - before.brands);
         
 		assertNewTagsAndBrandsImported();
+		
+		validateImportReportForNewCreatedTagsAndBrands(result);
+	}
+
+
+
+
+
+
+	private void validateImportReportForNewCreatedTagsAndBrands(ResultActions result)
+			throws UnsupportedEncodingException, IOException, JsonParseException, JsonMappingException {
+		ImportProductContext report = readImportReport(result);
+		assertEquals(2, report.getCreatedTags().size());
+		assertEquals(2, report.getCreatedBrands().size());
+		assertEquals(2, report.getCreatedProducts().size());
+		assertEquals(0, report.getUpdatedProducts().size());
+		assertEquals(0, report.getErrors().size());
+		assertTrue(report.isSuccess());
+	}
+
+
+
+
+
+
+	private ImportProductContext readImportReport(ResultActions result)
+			throws UnsupportedEncodingException, IOException, JsonParseException, JsonMappingException {
+		String reportStr = 
+				result
+				.andReturn()
+				.getResponse()
+				.getContentAsString();
+		
+		ObjectMapper mapper = new ObjectMapper();
+		ImportProductContext report = mapper.readValue(reportStr, ImportProductContext.class);
+		return report;
 	}
 
 
@@ -1237,7 +1381,32 @@ public class DataImportApiTest {
 		
 		return data;
 	}
+
 	
+	
+	
+	
+	private ExpectedSavedData getExpectedNewOnlyWithoutStocks() {
+		ExpectedSavedData data = new ExpectedSavedData();		
+
+		data.setQuantities( setOf(30,102) );
+		data.setPrices( setOf(new BigDecimal("15"), new BigDecimal("88.6")));
+		data.setCurrencies( setOf(EGP, USD));
+		
+		data.setBarcodes( setOf("TT232222", "87847777EW") );
+		data.setProductNames( setOf("Product to update", "hard shoes") );
+		data.setVariantsPNames(setOf("color-fo7loqy-size-m", "u_shoe") );
+		data.setProductPNames(setOf( "u_shoe", "hard-shoes") );
+		data.setDescriptions( setOf("old desc", "too hard") );
+		data.setTags( setOf("mountain equipment") );
+		data.setBrands( setOf(101L, 102L) );
+		data.setFeatureSpecs(  createNewProductOnlyExpectedFeautreSpec());
+		data.setExtraAttributes(  createNewProductOnlyExpectedExtraAttr());
+		data.setStocksNum(2);
+		
+		return data;
+	}
+
 	
 	
 	

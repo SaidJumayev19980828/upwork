@@ -24,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.service.CsvDataImportService;
 import com.nasnav.service.model.ImportProductContext;
 
@@ -56,12 +57,17 @@ public class DataImportContoller {
             @RequestPart("csv") @Valid MultipartFile file,
             @RequestPart("properties") @Valid ProductListImportDTO importMetaData)
             		throws BusinessException {
-		ImportProductContext body = importService.importProductListFromCSV(file, importMetaData); 
-		if(body.isSuccess()) {
-			return ResponseEntity.ok(body);
-		}else {
-			return new ResponseEntity<>(body, NOT_ACCEPTABLE);
+		try {
+			ImportProductContext importResult = importService.importProductListFromCSV(file, importMetaData);
+			if(importResult.isSuccess()) {
+				return ResponseEntity.ok(importResult);
+			}else {
+				return new ResponseEntity<>(importResult, NOT_ACCEPTABLE);
+			}			
+		}catch(ImportProductException e) {
+			return new ResponseEntity<>(e.getContext(), NOT_ACCEPTABLE);
 		}
+		
     }
 	
 	

@@ -131,10 +131,22 @@ public class DataImportServiceImpl implements DataImportService {
 
         if(productImportMetadata.isDryrun() || !context.isSuccess()) {
         	TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+        	clearImportContext(context);
         }            
 
         return context;
     }
+
+
+
+
+
+	private void clearImportContext(ImportProductContext context) {
+		context.getCreatedBrands().clear();
+		context.getCreatedTags().clear();
+		context.getCreatedProducts().clear();
+		context.getUpdatedProducts().clear();
+	}
     
     
     
@@ -256,8 +268,8 @@ public class DataImportServiceImpl implements DataImportService {
 
     private void saveSingleProductDataToDB(ProductData product, ImportProductContext context) throws BusinessException {
         if (product.isExisting()) {
-            updateProduct(product, context.getImportMetaData());
-            context.logNewUpdatedProduct(product.getProductDto().getId(), product.getProductDto().getName());
+            updateProduct(product, context);
+            
         } else {
             Long productId = saveNewImportedProduct(product);
             context.logNewCreatedProduct(productId, product.getProductDto().getName());
@@ -268,16 +280,24 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-	private void updateProduct(ProductData product, ProductImportMetadata importMetaData) throws BusinessException {
-		if (importMetaData.isUpdateProduct()) {
+	private void updateProduct(ProductData product, ImportProductContext context) throws BusinessException {
+		ProductImportMetadata importMetaData = context.getImportMetaData();
+		boolean isUpdateProduct = importMetaData.isUpdateProduct();
+		boolean isUpdateStocks = importMetaData.isUpdateStocks();
+		
+		if (isUpdateProduct) {
 		    Long productId = saveProductDto(product.getProductDto());
 		    VariantUpdateResponse variantResponse = productService.updateVariant(product.getVariantDto());
 		    saveProductTags(product, productId);
 		    saveExternalMapping(product, variantResponse.getVariantId());
 		}
-
-		if (importMetaData.isUpdateStocks()) {
+		
+		if (isUpdateStocks) {
 		    stockService.updateStock(product.getStockDto());
+		}
+		
+		if(isUpdateProduct ||isUpdateStocks) {
+			context.logNewUpdatedProduct(product.getProductDto().getId(), product.getProductDto().getName());
 		}
 	}
     

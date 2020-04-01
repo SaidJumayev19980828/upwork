@@ -14,7 +14,6 @@ import static org.springframework.http.HttpMethod.POST;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Predicate;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -63,7 +62,8 @@ import com.nasnav.test.commons.TestCommons;
 @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class CategoryManagmentTest {
 
-    private MockMvc mockMvc;
+    @SuppressWarnings("unused")
+	private MockMvc mockMvc;
     @Mock
     private AdminController adminController;
     @Autowired
@@ -565,6 +565,28 @@ public class CategoryManagmentTest {
         						 	5003L, 
         						 	asList(createTagTreeNode(5008L, null))))
         					    )
+        		 .toString();
+
+        HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag/tree", json, String.class);
+
+        assertEquals(406, response.getStatusCode().value());
+    }
+    
+    
+    
+    
+    
+    
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_5.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void createTagsTreeTagWithNoCategory() {
+        String body = 
+        		json()
+        		 .put("nodes"
+        			, jsonArray()
+        				 .put(createTagTreeNode(5003L, null)))
         		 .toString();
 
         HttpEntity<Object> json = getHttpEntity(body,"hijkllm");

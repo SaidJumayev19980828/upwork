@@ -11,8 +11,10 @@ import com.nasnav.dto.ProductImportMetadata;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class ImportProductContext {
@@ -63,6 +65,11 @@ public class ImportProductContext {
 	}
 	
 	
+	public void setSuccess(boolean value) {
+		//just to remove json deserialization errors
+	}
+	
+	
 	public void logNewCreatedProduct(Long id, String name) {
 		createdProducts.add(new Product(id, name));
 	}
@@ -79,6 +86,7 @@ public class ImportProductContext {
 
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 class Tag{
@@ -89,6 +97,7 @@ class Tag{
 
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 class Brand{
@@ -99,8 +108,10 @@ class Brand{
 
 
 @Data
+@NoArgsConstructor
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 class Error{
+	@JsonIgnore
 	private Throwable exception;
 	private String data;
 	private Integer rowNum;
@@ -125,9 +136,10 @@ class Error{
 
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-class Product{
+class  Product{
 	private Long id;
 	private String name;
 }
