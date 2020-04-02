@@ -12,32 +12,27 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @PropertySource("classpath:application.properties")
 public class AppConfig {
 
-    @Value("${email.dryrun}")      public boolean mailDryRun;
-    @Value("${email.hostname}")    public String mailHostname;
-    @Value("${email.mailfrom}")    public String mailSenderAddress;
-    @Value("${email.username}")    public String mailUsername;
-    @Value("${email.password}")    public String mailPassword;
-    @Value("${email.recoveryurl}") public String mailRecoveryUrl = "";
-//    @Value("${email.activationurl}")
-    public String accountActivationUrl = "/user/v2/register/activate";
-    @Value("${email.port}")        public int    mailHostPort;
-    @Value("${email.ssl}")         public boolean mailUseSSL;
+    @Value("${email.dryrun}")      		public boolean mailDryRun;
+    @Value("${email.hostname}")    		public String mailHostname;
+    @Value("${email.mailfrom}")    		public String mailSenderAddress;
+    @Value("${email.username}")    		public String mailUsername;
+    @Value("${email.password}")    		public String mailPassword;
+    @Value("${email.recoveryurl}") 		public String mailRecoveryUrl = "";
+    @Value("${email.activationurl}")  	public String accountActivationUrl;
+    @Value("${email.port}")        		public int    mailHostPort;
+    @Value("${email.ssl}")         		public boolean mailUseSSL;
     @Value("${paymnet.properties_dir}") public String paymentPropertiesDir = "";
-    /**
-     * Register password encoder bean
-     *
-     * @return PasswordEncoder object
-     */
+
+    
+    
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * Register Mail Sender bean
-     *
-     * @return JavaMailSender
-     */
+
+    
+    
     @Bean
     public JavaMailSender mailSender() {
         return new NasNavMailSender();

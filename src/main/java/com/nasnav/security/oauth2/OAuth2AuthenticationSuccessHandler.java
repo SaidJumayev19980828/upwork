@@ -33,7 +33,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
 
 
-	private static final String NASNAV_DOMAIN = "nasnav.com";
+	private static final String NASNAV_DOMAIN = "nasnav.org";
 	private static final Set<String> ALLOWED_REDIRECT_DOMAINS = setOf(NASNAV_DOMAIN, "localhost", "127.0.0.1");
 
 	@Autowired
