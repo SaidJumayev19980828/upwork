@@ -3,7 +3,6 @@ package com.nasnav.service;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
-import static com.nasnav.commons.utils.StringUtils.validateUrl;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_BRAND_NAME_NOT_EXIST;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CONVERT_TO_JSON;
@@ -30,7 +29,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.beanutils.BeanUtils;
@@ -45,12 +43,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.EntityUtils;
-import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.ProductImportMetadata;
@@ -62,7 +58,6 @@ import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
-import com.nasnav.integration.enums.MappingType;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
@@ -71,7 +66,10 @@ import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.VariantUpdateResponse;
+import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.ImportProductContext;
+import com.nasnav.service.model.VariantCache;
+import com.nasnav.service.model.VariantIdentifier;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -85,9 +83,6 @@ public class DataImportServiceImpl implements DataImportService {
 
     @Autowired
     private BrandsRepository brandRepo;
-
-    @Autowired
-    private ProductVariantsRepository variantRepo;
 
     @Autowired
     private ProductService productService;
@@ -118,6 +113,10 @@ public class DataImportServiceImpl implements DataImportService {
     private OrganizationService organizationService;
     
 
+    @Autowired
+    private CachingHelper cachingHelper;
+    
+    
     private Logger logger = Logger.getLogger(getClass());
     
     
@@ -274,8 +273,7 @@ public class DataImportServiceImpl implements DataImportService {
 
     private void saveSingleProductDataToDB(ProductData product, ImportProductContext context) throws BusinessException {
         if (product.isExisting()) {
-            updateProduct(product, context);
-            
+            updateProduct(product, context);            
         } else {
             Long productId = saveNewImportedProduct(product);
             context.logNewCreatedProduct(productId, product.getProductDto().getName());
@@ -288,43 +286,47 @@ public class DataImportServiceImpl implements DataImportService {
 
 	private void updateProduct(ProductData product, ImportProductContext context) throws BusinessException {
 		ProductImportMetadata importMetaData = context.getImportMetaData();
-		boolean isUpdateProduct = importMetaData.isUpdateProduct();
-		boolean isUpdateStocks = importMetaData.isUpdateStocks();
+		boolean updateProductEnabled = importMetaData.isUpdateProduct();
+		boolean updateStocksEnabled = importMetaData.isUpdateStocks();
 		
-		if (isUpdateProduct) {
+		if (updateProductEnabled) {
 		    Long productId = saveProductDto(product.getProductDto());
-		    VariantUpdateResponse variantResponse = productService.updateVariant(product.getVariantDto());
 		    saveProductTags(product, productId);
-		    saveExternalMapping(product, variantResponse.getVariantId());
+		    for(VariantDTOWithExternalIdAndStock variant: product.getVariants()) {
+		    	saveVariant(variant);
+		    }
 		}
 		
-		if (isUpdateStocks) {
-		    stockService.updateStock(product.getStockDto());
+		if (updateStocksEnabled) {
+			for(VariantDTOWithExternalIdAndStock variant: product.getVariants()) {
+				stockService.updateStock(variant.getStock());
+		    }
 		}
 		
-		if(isUpdateProduct ||isUpdateStocks) {
+		if(updateProductEnabled ||updateStocksEnabled) {
 			context.logNewUpdatedProduct(product.getProductDto().getId(), product.getProductDto().getName());
 		}
 	}
     
     
     
+	
+	private Long saveVariant(VariantDTOWithExternalIdAndStock variant) throws BusinessException {
+		 VariantUpdateResponse variantResponse = productService.updateVariant(variant);	
+		 Long variantId = variantResponse.getVariantId();
+		 saveExternalMapping(variant, variantId);
+		 return variantId;
+	}
 
 
+	
+	
+	
     private Long saveNewImportedProduct(ProductData data) throws BusinessException {
         Long productId = saveProductDto(data.getProductDto());
-        data.getVariantDto().setProductId(productId);
-        
-        VariantUpdateResponse variantResponse = productService.updateVariant(data.getVariantDto());
-        Long variantId = variantResponse.getVariantId();
-
-        data.getStockDto().setVariantId(variantId);
-        stockService.updateStock(data.getStockDto());
-        
         saveProductTags(data, productId);
-
-        saveExternalMapping(data, variantId);
-        
+        data.getProductDto().setId(productId);
+        saveVariantsAndStocks(data, productId);
         return productId;
     }
 
@@ -332,6 +334,20 @@ public class DataImportServiceImpl implements DataImportService {
 
 
     
+	private void saveVariantsAndStocks(ProductData data, Long productId) throws BusinessException {
+		for(VariantDTOWithExternalIdAndStock variant: data.getVariants()) {
+			variant.setProductId(productId);			
+	        Long variantId = saveVariant(variant);
+	        
+	        variant.getStock().setVariantId(variantId);
+	        stockService.updateStock(variant.getStock());
+	    }
+	}
+
+
+
+
+
 	private void saveProductTags(ProductData data, Long productId) throws BusinessException {
 		Long orgId = security.getCurrentUserOrganizationId();
         Set<String> tagsNames = data.getTagsNames();
@@ -398,10 +414,10 @@ public class DataImportServiceImpl implements DataImportService {
     
     
     
-    private void saveExternalMapping(ProductData dto, Long variantId) throws BusinessException{
-        if ( !anyIsNull(dto.getExternalId(), variantId) ) {
+    private void saveExternalMapping(VariantDTOWithExternalIdAndStock variant, Long variantId) throws BusinessException{
+        if ( !anyIsNull(variant.getExternalId(), variantId) ) {
         	Long orgId = security.getCurrentUserOrganizationId();
-        	integrationService.addMappedValue(orgId, PRODUCT_VARIANT, variantId.toString(), dto.getExternalId());
+        	integrationService.addMappedValue(orgId, PRODUCT_VARIANT, variantId.toString(), variant.getExternalId());
         }            
     }
 
@@ -463,7 +479,7 @@ public class DataImportServiceImpl implements DataImportService {
 
 
     private List<ProductData> toProductDataList(List<ProductImportDTO> rows, ProductImportMetadata importMetaData) throws BusinessException, RuntimeBusinessException {    	
-    	DataImportCachedData cache = getImportCachedData();
+    	DataImportCachedData cache = getImportCachedData(rows);
     	
     	return rows
     			.stream()
@@ -480,10 +496,42 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-	private DataImportCachedData getImportCachedData() {
+	private DataImportCachedData getImportCachedData(List<ProductImportDTO> rows) {
 		Map<String, String> featureNameToIdMapping = getFeatureNameToIdMap();
     	Map<String, BrandsEntity> brandNameToIdMapping = getBrandsMapping();
-    	return new DataImportCachedData(featureNameToIdMapping, brandNameToIdMapping);
+    	VariantCache variantCache = createVariantsCache(rows);
+    	return new DataImportCachedData(featureNameToIdMapping, brandNameToIdMapping,variantCache);
+	}
+
+
+
+
+	private VariantCache createVariantsCache(List<ProductImportDTO> rows) {
+		List<VariantIdentifier> variantIdentifiers = toVariantIdentifiers(rows);
+		return cachingHelper.createVariantCache(variantIdentifiers);
+	}
+
+
+
+
+
+	private List<VariantIdentifier> toVariantIdentifiers(List<ProductImportDTO> rows) {
+		return rows
+				.stream()
+				.map(this::toVariantIdentifier)
+				.collect(toList());
+	}
+
+	
+	
+	
+	private VariantIdentifier toVariantIdentifier(ProductImportDTO row) {
+		VariantIdentifier identifier = new VariantIdentifier();
+		String variantId = ofNullable(row.getVariantId()).map(String::valueOf).orElse(null);
+		identifier.setVariantId(variantId);
+		identifier.setExternalId(row.getExternalId());
+		identifier.setBarcode(row.getBarcode());
+		return identifier;
 	}
 
 
@@ -514,85 +562,59 @@ public class DataImportServiceImpl implements DataImportService {
 	}
 
 
-    private ProductData toProductData(List<ProductImportDTO> productData, ProductImportMetadata importMetaData, DataImportCachedData cache) throws BusinessException {
-       
-    	 List<VariantDTOWithExternalId> productVariantsData =
-    		        productData
-    		        	.stream()
-    		        	.map(row -> createVariantDto(row, cache))
-    		        	.collect(toList());
-        List<StockUpdateDTO> productStocks = 
-    	    		productData
-    		        	.stream()
-    		        	.map(row -> createStockDto(row, importMetaData))
-    		        	.collect(toList());
+    private ProductData toProductData(List<ProductImportDTO> productDataRows, ProductImportMetadata importMetaData, DataImportCachedData cache) throws BusinessException {
+    	ProductImportDTO pivotProductRow = getPivotProductDataRow(productDataRows, cache);
+    	List<VariantDTOWithExternalIdAndStock> productVariantsData =
+    		        getVariantsData(productDataRows, importMetaData, cache);
     	
     	ProductData data = new ProductData();
-
-        data.setOriginalRowData(productData.toString());
-        data.setProductDto(createProductDto(productData, cache));
+        data.setOriginalRowData(productDataRows.toString());
+        data.setProductDto(createProductDto(pivotProductRow, cache));
         data.setVariants(productVariantsData);
-        data.setStocks(productStocks);        
-        data.setTagsNames( ofNullable(productData.getTags()).orElse(emptySet()) );
-
-        Long orgId = security.getCurrentUserOrganizationId();
-
-        Optional<ProductVariantsEntity> variantEnt = null;
-
+        data.setTagsNames( ofNullable(pivotProductRow.getTags()).orElse(emptySet()) );
         
-        //all variants id, external ids , barcodes and corresponding (variant id, product id) should be prefetched and cached
-        //========================================================================================================================
-        if (isNotBlankOrNull( data.getVariantDto().getVariantId() )) {
-            variantEnt = variantRepo.findByIdAndProductEntity_OrganizationId(data.getVariantDto().getVariantId(), orgId);
-            if (!variantEnt.isPresent())
-                throw new BusinessException("No variant found with id " + data.getVariantDto().getVariantId(),
-                        "INVALID PARAM: variant_id",HttpStatus.NOT_ACCEPTABLE);
-        }
-
-        if (variantEnt == null && isNotBlankOrNull(productData.getExternalId()) ) {
-            String localMappingId = integrationService.getLocalMappedValue(orgId, MappingType.PRODUCT_VARIANT, productData.getExternalId());
-            if(localMappingId != null && validateUrl(localMappingId, "[0-9]+"))
-                variantEnt = variantRepo.findByIdAndProductEntity_OrganizationId(Long.parseLong(localMappingId), orgId);
-        }
-
-        if (variantEnt == null && isNotBlankOrNull(productData.getBarcode())) {
-        	variantEnt = variantRepo
-		    				.findByBarcodeAndProductEntity_OrganizationId(productData.getBarcode(), orgId)
-		    				.stream()
-		    				.sorted(comparing(ProductVariantsEntity::getId))
-		    				.findFirst();
-        }
-        //========================================================================================================================   
-
-        if (variantEnt != null && variantEnt.isPresent()) {
-            modifyProductDataForUpdate(data, productData, variantEnt.get());
-        }
-
         return data;
     }
+
+
+
+
+
+	private List<VariantDTOWithExternalIdAndStock> getVariantsData(List<ProductImportDTO> productDataRows,
+			ProductImportMetadata importMetaData, DataImportCachedData cache) {
+		return productDataRows
+				.stream()
+				.map(row -> createVariantDto(row, importMetaData, cache))
+				.collect(toList());
+	}
+
+
+
+
+
+	private ProductImportDTO getPivotProductDataRow(List<ProductImportDTO> productDataRows, DataImportCachedData cache) throws BusinessException {
+		ProductImportDTO firstProductRow = 
+    			productDataRows
+    			.stream()
+    			.findFirst()
+    			.orElseThrow(() -> new BusinessException("No Product Data found!", "INVALID PARAM: csv", NOT_ACCEPTABLE));
+		return productDataRows
+    			.stream()
+    			.filter(productDataRow -> hasExistingVariant(productDataRow, cache))
+    			.findFirst()
+    			.orElse(firstProductRow);
+	}
     
     
     
 
 
-    private void modifyProductDataForUpdate(ProductData dto, ProductImportDTO row, ProductVariantsEntity variantEnt)
-            throws BusinessException {
-        dto.setExisting(true);
-
-        ProductUpdateDTO product = dto.getProductDto();
-        VariantUpdateDTO variant = dto.getVariantDto();
-        StockUpdateDTO stock = dto.getStockDto();
-
-        Long productId = variantEnt.getProductEntity().getId();
-        variant.setProductId(productId);
-        variant.setVariantId(variantEnt.getId());
-        variant.setOperation(EntityConstants.Operation.UPDATE);
-
-        product.setOperation(EntityConstants.Operation.UPDATE);
-        product.setId(productId);
-
-        stock.setVariantId(variantEnt.getId());
-    }
+    private boolean hasExistingVariant(ProductImportDTO productDataRow, DataImportCachedData cache) {
+		return ofNullable(productDataRow)
+				.map(this::toVariantIdentifier)
+				.flatMap(identifier -> cachingHelper.getVariantFromCache(identifier, cache.getVariantsCache()))
+				.isPresent();
+	}
 
     
     
@@ -607,24 +629,18 @@ public class DataImportServiceImpl implements DataImportService {
         return stock;
     }
 
+    
+    
+    
 
-    private VariantDTOWithExternalId createVariantDto(ProductImportDTO row, DataImportCachedData cache) {
+    private VariantDTOWithExternalIdAndStock createVariantDto(ProductImportDTO row, ProductImportMetadata importMetaData, DataImportCachedData cache) {
     	Map<String,String> featureNameToIdMapping = cache.getFeatureNameToIdMapping();
     	
-        String features = 
-        		ofNullable(row.getFeatures())
-        		.map(map -> toFeaturesIdToValueMap(map, featureNameToIdMapping))
-                .map(JSONObject::new)
-                .map(JSONObject::toString)
-                .orElse(null);
-        
-        String extraAtrributes = 
-        		ofNullable(row.getExtraAttributes())
-                .map(JSONObject::new)
-                .map(JSONObject::toString)
-                .orElse(null);
+        String features = getFeaturesAsJsonString(row, featureNameToIdMapping);        
+        String extraAtrributes = getExtraAttrAsJsonString(row);        
+        StockUpdateDTO variantStock = createStockDto(row, importMetaData);
 
-        VariantDTOWithExternalId variant = new VariantDTOWithExternalId();
+        VariantDTOWithExternalIdAndStock variant = new VariantDTOWithExternalIdAndStock();
         variant.setVariantId(row.getVariantId());
         variant.setBarcode(row.getBarcode());
         variant.setFeatures("{}");
@@ -633,15 +649,56 @@ public class DataImportServiceImpl implements DataImportService {
         variant.setOperation(EntityConstants.Operation.CREATE);
         variant.setPname(row.getPname());
         variant.setExternalId(row.getExternalId());
+        variant.setStock(variantStock);
         if (features != null) {
             variant.setFeatures(features);
         }
         if(extraAtrributes != null) {
         	variant.setExtraAttr(extraAtrributes);
         }
+        
+        cachingHelper
+        .getVariantFromCache(toVariantIdentifier(row), cache.getVariantsCache())
+        .ifPresent(variantEntity -> {
+        	setVariantDtoAsUpdated(variant, variantEntity);
+        });
 
         return variant;
     }
+
+
+
+
+
+	private void setVariantDtoAsUpdated(VariantDTOWithExternalIdAndStock variant, ProductVariantsEntity variantEntity) {
+		variant.setVariantId(variantEntity.getId());
+		variant.setProductId(variantEntity.getProductEntity().getId());
+		variant.setOperation(EntityConstants.Operation.UPDATE);
+		variant.getStock().setVariantId(variantEntity.getId());
+	}
+
+
+
+
+
+	private String getExtraAttrAsJsonString(ProductImportDTO row) {
+		return ofNullable(row.getExtraAttributes())
+				.map(JSONObject::new)
+				.map(JSONObject::toString)
+				.orElse(null);
+	}
+
+
+
+
+
+	private String getFeaturesAsJsonString(ProductImportDTO row, Map<String, String> featureNameToIdMapping) {
+		return ofNullable(row.getFeatures())
+				.map(map -> toFeaturesIdToValueMap(map, featureNameToIdMapping))
+				.map(JSONObject::new)
+				.map(JSONObject::toString)
+				.orElse(null);
+	}
     
     
     
@@ -678,35 +735,52 @@ public class DataImportServiceImpl implements DataImportService {
     
 
 
-    private ProductUpdateDTO createProductDto(List<ProductImportDTO> productDataRows, DataImportCachedData cache) throws BusinessException {
-    	ProductImportDTO row = 
-    			productDataRows
-    			.stream()
-    			.findFirst()
-    			.orElseThrow(() -> new BusinessException("No Product Data found!", "INVALID PARAM: csv", NOT_ACCEPTABLE));
-    	
-    	Map<String, BrandsEntity> brandsCache = cache.getBrandsCache();
-    	String brandName = ofNullable(row.getBrand())
-    						.map(String::toUpperCase)
-    						.orElse("");
-    	BrandsEntity brand = brandsCache.get(brandName);
-        if (brand == null) {
-            throw new BusinessException(
-                    format(ERR_BRAND_NAME_NOT_EXIST, row.getBrand())
-                    , "INVALID DATA:brand"
-                    , HttpStatus.NOT_ACCEPTABLE);
-        }
-
-
+    private ProductUpdateDTO createProductDto(ProductImportDTO row, DataImportCachedData cache) throws BusinessException {
+    	Long brandId = getBrandId(row, cache.getBrandsCache());
+        
         ProductUpdateDTO product = new ProductUpdateDTO();
-        product.setBrandId(brand.getId());
+        product.setBrandId(brandId);
         product.setDescription(row.getDescription());
         product.setBarcode(row.getBarcode());
         product.setName(row.getName());
         product.setOperation(EntityConstants.Operation.CREATE);
         product.setPname(row.getPname());
+        
+        ifVariantExistsSetAsUpdateOperation(row, cache, product);
+        
         return product;
     }
+
+
+
+
+
+	private Long getBrandId(ProductImportDTO row, Map<String, BrandsEntity> brandsCache) throws BusinessException {
+		return ofNullable(row.getBrand())
+				.map(String::toUpperCase)
+				.map(brandsCache::get)
+				.map(BrandsEntity::getId)
+				.orElseThrow(() ->
+					new BusinessException(
+				            format(ERR_BRAND_NAME_NOT_EXIST, row.getBrand())
+				            , "INVALID DATA:brand"
+				            , HttpStatus.NOT_ACCEPTABLE));
+	}
+
+
+
+
+
+	private void ifVariantExistsSetAsUpdateOperation(ProductImportDTO row, DataImportCachedData cache,
+			ProductUpdateDTO product) {
+		cachingHelper
+        .getVariantFromCache(toVariantIdentifier(row), cache.getVariantsCache())
+		.map(ProductVariantsEntity::getProductEntity)
+		.map(ProductEntity::getId)
+		.ifPresent(
+				id -> { product.setId(id); 
+						product.setOperation(EntityConstants.Operation.UPDATE);});
+	}
     
     
     
@@ -781,9 +855,7 @@ public class DataImportServiceImpl implements DataImportService {
 @Data
 class ProductData{
 	private ProductUpdateDTO productDto;
-    private List<VariantDTOWithExternalId> variants;    
-    private List<StockUpdateDTO> stocks;
-    private boolean existing;
+    private List<VariantDTOWithExternalIdAndStock> variants;    
     private String originalRowData;
     
     private Set<String> tagsNames;
@@ -791,11 +863,15 @@ class ProductData{
     public ProductData() {
         variants = new ArrayList<>();
         productDto = new ProductUpdateDTO();
-        stocks = new ArrayList<>();
-        existing = false;
         originalRowData = "[]";
         tagsNames = emptySet();
     }
+    
+    public boolean isExisting() {
+    	return ofNullable(productDto)
+    			.map(ProductUpdateDTO::getId)
+    			.isPresent();
+    } 
 }
 
 
@@ -804,8 +880,9 @@ class ProductData{
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-class VariantDTOWithExternalId extends VariantUpdateDTO{
+class VariantDTOWithExternalIdAndStock extends VariantUpdateDTO{
 	private String externalId; 
+	private StockUpdateDTO stock;
 }
 
 
@@ -817,4 +894,5 @@ class VariantDTOWithExternalId extends VariantUpdateDTO{
 class DataImportCachedData {
 	private Map<String, String> featureNameToIdMapping;
 	private Map<String, BrandsEntity> brandsCache;
+	private VariantCache variantsCache;
 }
