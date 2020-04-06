@@ -1225,7 +1225,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		
 		ProductImageUpdateDTO variantMetaData = 
 				variant
-					.map(var -> createImgMetaData(var, metaData))
+					.map(var -> creatImgMetaData(metaData, var))
 					.orElse(null);
 
 		if(variantMetaData == null) {
@@ -1371,19 +1371,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 	}
 
 
-	
-	
-	
-	private ProductImageUpdateDTO createImgMetaData(ProductVariantsEntity variant, ProductImageBulkUpdateDTO metaData) {
-		ProductImageUpdateDTO imgMetaData = new  ProductImageUpdateDTO();
-		imgMetaData.setOperation(Operation.CREATE);
-		imgMetaData.setPriority( metaData.getPriority() );
-		imgMetaData.setType( metaData.getType() );
-		imgMetaData.setProductId(variant.getProductEntity().getId());
-		imgMetaData.setVariantId(variant.getId());
-		
-		return imgMetaData;
-	}
 	
 	
 
