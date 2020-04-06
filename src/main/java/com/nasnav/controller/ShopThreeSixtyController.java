@@ -81,9 +81,11 @@ public class ShopThreeSixtyController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @PostMapping(value = "/json_data", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopResponse updateThreeSixtyShopJsonData(@RequestHeader("User-Token") String userToken,
-                                                     @RequestBody ShopJsonDataDTO jsonDataDTO)
-            throws BusinessException, JsonProcessingException {
-        return shop360Svc.updateThreeSixtyShopJsonData(jsonDataDTO);
+                                                     @RequestParam("shop_id") Long shopId,
+                                                     @RequestParam String type,
+                                                     @RequestBody String jsonData)
+            throws BusinessException {
+        return shop360Svc.updateThreeSixtyShopJsonData(shopId, type, jsonData);
     }
 
     @ApiOperation(value = "Create/Update shop360 product positions", nickname = "updateShop360ProductPositions")
@@ -91,9 +93,9 @@ public class ShopThreeSixtyController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @PostMapping(value = "/product_positions", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopResponse updateThreeSixtyShopProductPositions(@RequestHeader("User-Token") String userToken,
-                                                     @RequestBody ShopProductPositionsDTO jsonDTO)
-            throws BusinessException, JsonProcessingException {
-        return shop360Svc.updateThreeSixtyShopProductPositions(jsonDTO);
+                                                     @RequestParam("shop_id") Long shopId,
+                                                     @RequestBody String json) throws BusinessException {
+        return shop360Svc.updateThreeSixtyShopProductPositions(shopId, json);
     }
 
     @ApiOperation(value = "Create/Update shop360 sections", nickname = "updateShop360Sections")
@@ -101,8 +103,9 @@ public class ShopThreeSixtyController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @PostMapping(value = "/sections", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopResponse updateThreeSixtyShopSections(@RequestHeader("User-Token") String userToken,
-                                                             @RequestBody ShopThreeSixtyRequestDTO jsonDTO)
+                                                     @RequestParam("shop_id") Long shopId,
+                                                     @RequestBody List<ShopFloorsRequestDTO> jsonDTO)
             throws BusinessException, IOException {
-        return shop360Svc.updateThreeSixtyShopSections(jsonDTO);
+        return shop360Svc.updateThreeSixtyShopSections(shopId, jsonDTO);
     }
 }
