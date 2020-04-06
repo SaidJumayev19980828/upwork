@@ -1,6 +1,6 @@
 package com.nasnav.service;
 
-import static com.nasnav.commons.utils.EntityUtils.nonIsEmpty;
+import static com.nasnav.commons.utils.EntityUtils.noneIsEmpty;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
@@ -2236,7 +2236,7 @@ public class ProductService {
 		Map<Long, TagsEntity> tagsMap = validateAndGetTagMap(tagIds);
 
 		List<Pair> productTagsList = new ArrayList<>();
-		if(noneIsNull(productIds, tagIds) && nonIsEmpty(productIds, tagIds)) {
+		if(noneIsNull(productIds, tagIds) && noneIsEmpty(productIds, tagIds)) {
 			productTagsList = productRepository.getProductTags(productIds, tagIds);
 		}
 

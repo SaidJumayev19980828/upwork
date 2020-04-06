@@ -1,5 +1,7 @@
 package com.nasnav.commons.model.dataimport;
 
+import static java.math.BigDecimal.ZERO;
+
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,11 +24,14 @@ public class ProductImportDTO {
 	protected BigDecimal price;
 	protected Map<String,String> features;
 	protected Map<String,String> extraAttributes;
+	protected String productGroupKey;
+	protected BigDecimal discount;
 	
 	
 	public ProductImportDTO() {
 		features = new HashMap<>();
 		tags = new HashSet<>();
 		extraAttributes = new HashMap<>();
+		discount = ZERO;
 	}
 }

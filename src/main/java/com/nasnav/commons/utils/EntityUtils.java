@@ -152,8 +152,8 @@ public class EntityUtils {
 	}
 
 
-	public static boolean nonIsEmpty(Collection<?> ... collections) {
-		List<Collection<?>> elementList =  Arrays.asList(collections);
+	public static boolean noneIsEmpty(Collection<?> ... collections) {
+		List<Collection<?>> elementList =  asList(collections);
 		return elementList
 				.stream()
 				.noneMatch(c -> c == null || c.isEmpty());
