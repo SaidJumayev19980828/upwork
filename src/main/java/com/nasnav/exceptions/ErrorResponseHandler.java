@@ -1,5 +1,7 @@
 package com.nasnav.exceptions;
 
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,6 +42,7 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.service.model.ImportProductContext;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,6 +53,30 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 	
 
 	private final Logger exceptionLogger = LoggerFactory.getLogger(ErrorResponseHandler.class.getName());
+	
+	
+	
+	
+	@ExceptionHandler(ImportProductException.class)
+	@ResponseBody
+	public ResponseEntity<ImportProductContext> handleImportProductException(ImportProductException e, WebRequest requestInfo , HttpServletRequest request) {
+		logException(requestInfo, request , e);
+		return new ResponseEntity<>(e.getContext(), NOT_ACCEPTABLE);
+	}
+	
+	
+	
+	
+	@ExceptionHandler(ImportProductRuntimeException.class)
+	@ResponseBody
+	public ResponseEntity<ImportProductContext> handleImportProductRunException(ImportProductRuntimeException e, WebRequest requestInfo , HttpServletRequest request) {
+		logException(requestInfo, request , e);
+		return new ResponseEntity<>(e.getContext(), NOT_ACCEPTABLE);
+	}
+	
+	
+	
+	
 	
 	@ExceptionHandler(RuntimeBusinessException.class)
 	@ResponseBody

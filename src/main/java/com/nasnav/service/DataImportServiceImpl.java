@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.EntityUtils.allIsNull;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
@@ -14,6 +15,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.BinaryOperator.minBy;
 import static java.util.stream.Collectors.groupingBy;
@@ -56,6 +58,7 @@ import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.dto.TagsDTO;
 import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.BrandsEntity;
@@ -124,13 +127,17 @@ public class DataImportServiceImpl implements DataImportService {
 
     @Override
 //    @Transactional(rollbackFor = Throwable.class)		// adding this will cause exception because of the enforced rollback , still unknown why
-    public ImportProductContext importProducts(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) throws BusinessException {
+    public ImportProductContext importProducts(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) throws BusinessException, ImportProductException {
     	ImportProductContext context = new ImportProductContext(productImportDTOS, productImportMetadata);
     	
     	importNonExistingBrands(context);    	
     	importNonExistingTags(context);
     	
-        List<ProductData> productsData = toProductDataList(productImportDTOS, productImportMetadata);
+    	DataImportCachedData cache = createRequiredDataCache(productImportDTOS);
+    	
+    	validateProductData(productImportDTOS, cache, context);
+    	
+        List<ProductData> productsData = toProductDataList(productImportDTOS, productImportMetadata, cache);
 
         saveToDB(productsData, context);
 
@@ -142,6 +149,54 @@ public class DataImportServiceImpl implements DataImportService {
         return context;
     }
 
+
+
+
+
+	private void validateProductData(List<ProductImportDTO> productImportDTOS, DataImportCachedData cache,
+			ImportProductContext context) throws ImportProductException {
+		
+		IntStream
+		.range(0, productImportDTOS.size())
+		.mapToObj(i -> new IndexedData<>(i, productImportDTOS.get(i)))
+		.map(product -> new IndexedData<>(product.getIndex(), toVariantIdentifier(product.getData())))
+		.filter(variantId -> !isNullVariantIdentifier(variantId.getData()))
+		.filter(variantId -> isNoVariantExistWithId(variantId.getData(), cache.getVariantsCache()))
+		.map(this::createErrorMessage)
+		.forEach(err -> context.logNewError(err.getData(), err.getIndex()));
+		
+		if(!context.getErrors().isEmpty()) {
+			throw new ImportProductException(context);
+		}
+	}
+
+
+
+
+
+	private IndexedData<String> createErrorMessage(IndexedData<VariantIdentifier> variantId) {
+		return new IndexedData<>(variantId.getIndex()
+					,format("No variant found with id[%s] nor external Id[%s] at row[%d]!"
+								, variantId.getData().getVariantId()
+								, variantId.getData().getExternalId()
+								, variantId.getIndex() + 1));
+	}
+
+	
+	
+	
+	
+	private boolean isNoVariantExistWithId(VariantIdentifier identifier, VariantCache cache) {
+		return !cache.getIdToVariantMap().containsKey(identifier.getVariantId());
+	}
+
+
+
+
+
+	private boolean isNullVariantIdentifier(VariantIdentifier identifiers) {
+		return nonNull(identifiers) && allIsNull(identifiers.getVariantId());
+	}
 
 
 
@@ -478,8 +533,9 @@ public class DataImportServiceImpl implements DataImportService {
     }
 
 
-    private List<ProductData> toProductDataList(List<ProductImportDTO> rows, ProductImportMetadata importMetaData) throws BusinessException, RuntimeBusinessException {    	
-    	DataImportCachedData cache = getImportCachedData(rows);
+    private List<ProductData> toProductDataList(List<ProductImportDTO> rows
+    		, ProductImportMetadata importMetaData, DataImportCachedData cache) throws BusinessException, RuntimeBusinessException {    	
+    	
     	
     	return rows
     			.stream()
@@ -496,7 +552,7 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-	private DataImportCachedData getImportCachedData(List<ProductImportDTO> rows) {
+	private DataImportCachedData createRequiredDataCache(List<ProductImportDTO> rows) {
 		Map<String, String> featureNameToIdMapping = getFeatureNameToIdMap();
     	Map<String, BrandsEntity> brandNameToIdMapping = getBrandsMapping();
     	VariantCache variantCache = createVariantsCache(rows);
@@ -895,4 +951,13 @@ class DataImportCachedData {
 	private Map<String, String> featureNameToIdMapping;
 	private Map<String, BrandsEntity> brandsCache;
 	private VariantCache variantsCache;
+}
+
+
+
+@Data
+@AllArgsConstructor
+class IndexedData<T>{
+	private Integer index;
+	private T data;
 }

@@ -774,7 +774,7 @@ public class DataImportApiTest {
 	public void getProductsCsvTemplate() {
 		Set<String> expectedTemplateHeaders = 
 				setOf("product_name", "barcode", "tags", "brand", "price", "quantity", "description"
-						, "variant_id", "external_id", "color", "size");
+						, "variant_id", "external_id", "color", "size", "product_group_key", "discount");
 		HttpEntity<Object> request = getHttpEntity("","131415");
 		ResponseEntity<String> res = template.exchange("/upload/productlist/template", GET, request ,String.class);
 		

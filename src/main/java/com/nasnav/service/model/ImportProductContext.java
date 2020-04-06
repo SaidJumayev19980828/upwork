@@ -60,6 +60,11 @@ public class ImportProductContext {
 	}
 	
 	
+	public void logNewError(String message, Integer rowNum) {
+		errors.add(new Error(message, rowNum));
+	}
+	
+	
 	public boolean isSuccess() {
 		return errors.isEmpty();
 	}
@@ -129,6 +134,12 @@ class Error{
 	    msg.append("Error Message: " + exception.getMessage());
 	    
 	    this.message = msg.toString();
+	}
+	
+	
+	public Error(String message, Integer rowNum) {
+		this.message = message;
+		this.rowNum = rowNum;
 	}
 }
 

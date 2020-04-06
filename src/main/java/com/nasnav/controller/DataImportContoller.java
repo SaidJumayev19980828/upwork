@@ -56,18 +56,13 @@ public class DataImportContoller {
     		@RequestHeader("User-Token") String token,
             @RequestPart("csv") @Valid MultipartFile file,
             @RequestPart("properties") @Valid ProductListImportDTO importMetaData)
-            		throws BusinessException {
-		try {
-			ImportProductContext importResult = importService.importProductListFromCSV(file, importMetaData);
-			if(importResult.isSuccess()) {
-				return ResponseEntity.ok(importResult);
-			}else {
-				return new ResponseEntity<>(importResult, NOT_ACCEPTABLE);
-			}			
-		}catch(ImportProductException e) {
-			return new ResponseEntity<>(e.getContext(), NOT_ACCEPTABLE);
-		}
-		
+            		throws BusinessException, ImportProductException {
+		ImportProductContext importResult = importService.importProductListFromCSV(file, importMetaData);
+		if(importResult.isSuccess()) {
+			return ResponseEntity.ok(importResult);
+		}else {
+			return new ResponseEntity<>(importResult, NOT_ACCEPTABLE);
+		}			
     }
 	
 	
