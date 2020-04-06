@@ -7,4 +7,6 @@ public interface ShopThreeSixtyRepository extends CrudRepository<ShopThreeSixtyE
 
     ShopThreeSixtyEntity findByShopsEntity_Id(Long shopId);
 
+    ShopThreeSixtyEntity getFirstByShopsEntity_Id(Long shopId);
+
 }

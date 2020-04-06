@@ -76,20 +76,16 @@ public class ShopScenesEntity implements BaseEntity {
         scene.setId(getId());
         scene.setName(getName());
         scene.setShopSectionId(getShopSectionsEntity().getId());
-        scene.setThumbnail(getThumbnail());
-        scene.setResized(getResized());
-
-        if (getImage() != null)
-            scene.setImage(createImage(getImage()));
+        scene.setImage(createImage(getImage(), getResized(), getThumbnail()));
 
         return scene;
     }
 
-    private Image createImage(String imageFile) {
-        String pathUri = "/uploads/scene/image/" + getId() + "/";
+    private Image createImage(String imageFile, String resized, String thumbnail) {
+        String pathUri = "/files/";
         Image image = new Image(pathUri+imageFile,
-                new ImageUrl(pathUri+"thumb_"+imageFile),
-                new ImageUrl(pathUri+"resized_"+imageFile),
+                new ImageUrl(pathUri+thumbnail),
+                new ImageUrl(pathUri+resized),
                 null);
         return image;
     }

@@ -78,11 +78,11 @@ public class ShopSectionsEntity implements BaseEntity {
     }
 
     private Image createImage(String imageFile) {
-        String pathUri = "/uploads/shop_section/image/" + getId() + "/";
-        Image image = new Image(pathUri+imageFile,
-                                new ImageUrl(pathUri+"thumb_"+imageFile),
+        String pathUri = "/files/";
+        Image image = new Image(pathUri+imageFile);/*,
+                                new ImageUrl(pathUri+imageFile),
                          null,
-                                new ImageUrl(pathUri+"small_"+imageFile));
+                                new ImageUrl(pathUri+imageFile));*/
         return image;
     }
 }
