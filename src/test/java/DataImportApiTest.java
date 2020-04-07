@@ -5,6 +5,8 @@ import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -19,12 +21,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.json.JSONObject;
@@ -108,6 +110,9 @@ public class DataImportApiTest {
 
 	@Value("classpath:/files/product__list_upload.csv")
     private Resource csvFile;
+	
+	@Value("classpath:/files/product__list_upload_group_by_key.csv")
+    private Resource csvFileGroupByKey;
 	
 	@Value("classpath:/files/product__list_upload_with_new_tags.csv")
     private Resource csvFileWithNewTags;
@@ -386,6 +391,52 @@ public class DataImportApiTest {
 
         ExpectedSavedData expected = getExpectedAllNewData();
         assertProductDataImported(TEST_IMPORT_SHOP, expected);
+       
+        validateImportReportForNewData(result);
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void uploadProductCSVNewDataTestGroupByKey() throws IOException, Exception {
+		variantRepo.deleteAll();
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+        
+		ProductDataCount before = countProductData();	
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileGroupByKey, importProperties);
+		
+		result.andExpect(status().is(200));
+		
+		ProductDataCount after = countProductData();
+		
+		assertEquals(2L, after.product - before.product);
+		assertEquals(3L, after.variant - before.variant);
+		assertEquals(3L, after.stocks - before.stocks);
+
+        ExpectedSavedData expected = getExpectedNewDataGroupedByKey();
+        assertProductDataImported(TEST_IMPORT_SHOP, expected);
+        
+        List<ProductVariantsEntity> variants = variantRepo.findByOrganizationId(99001L);
+        assertEquals(3, variants.size());
+        Map<Long, List<ProductVariantsEntity>> groupedByProduct = 
+        		variants
+        		.stream()
+        		.collect(groupingBy(var -> var.getProductEntity().getId()));
+        assertEquals(2, groupedByProduct.keySet().size());
+        
+        Set<Set<String>> variantsBarcodes = 
+        		groupedByProduct
+        		.values()
+        		.stream()
+        		.map(varList -> varList.stream().map(ProductVariantsEntity::getBarcode).collect(toSet()))
+        		.collect(toSet());
+        assertEquals( variantsBarcodes
+        		 , setOf( setOf("111222A"), setOf("1354ABN", "87847777EW")));
        
         validateImportReportForNewData(result);
 	}
@@ -681,6 +732,7 @@ public class DataImportApiTest {
 
 		ExpectedSavedData expected = getExpectedAllNewData();
 		expected.setDescriptions(setOf(TestCommons.readResource(largeDescription), "too hard"));
+		expected.setVariantDescriptions(setOf(TestCommons.readResource(largeDescription), "too hard"));
 		assertProductDataImported(TEST_IMPORT_SHOP, expected);
 
 	}
@@ -1057,11 +1109,11 @@ public class DataImportApiTest {
 		List<StocksEntity> stocks = helper.getShopStocksFullData(shopId);
         List<ProductVariantsEntity> variants = stocks.stream()
 													.map(StocksEntity::getProductVariantsEntity)
-													.collect(Collectors.toList());
+													.collect(toList());
 
-        List<ProductEntity> products = variants.stream()
+        Set<ProductEntity> products = variants.stream()
 												.map(v -> v.getProductEntity())
-												.collect(Collectors.toList()); 
+												.collect(toSet()); 
         
         
         assertEquals(expected.getStocksNum().intValue() , stocks.size());
@@ -1074,9 +1126,9 @@ public class DataImportApiTest {
                 
         
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getBarcode, expected.getBarcodes())	);
-        assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getName, expected.getProductNames()) );
+        assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getName, expected.getVariantNames()) );
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getPname, expected.getVariantsPNames()) );
-        assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getDescription, expected.getDescriptions()) );
+        assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getDescription, expected.getVariantDescriptions()) );
         assertTrue( jsonValuesIn(variants, ProductVariantsEntity::getFeatureSpec, expected.getFeatureSpecs()) );
         assertTrue( jsonValuesIn(variants, this::getExtraAtrributesStr, expected.getExtraAttributes()) );
         
@@ -1155,6 +1207,30 @@ public class DataImportApiTest {
 		data.setTags( setOf("squishy things", "mountain equipment") );
 		data.setBrands(setOf(101L, 102L) );
 		data.setStocksNum(2);
+        
+		return data;
+	}
+	
+	
+	
+	
+	private ExpectedSavedData getExpectedNewDataGroupedByKey() {
+		ExpectedSavedData data = new ExpectedSavedData();
+		
+		data.setQuantities( setOf(101,102, 22) );
+		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6"), new BigDecimal("15.23")));
+		data.setCurrencies(setOf(TransactionCurrency.EGP));
+		
+		data.setBarcodes( setOf("1354ABN", "87847777EW", "111222A") );
+		data.setProductNames( setOf("Squishy shoes") );
+		data.setVariantsPNames(setOf("squishy-shoes", "hard-shoes") );
+		data.setVariantNames(setOf("Squishy shoes", "hard shoes") );
+		data.setProductPNames(setOf("squishy-shoes") );
+		data.setDescriptions( setOf("squishy", "Another") );
+		data.setVariantDescriptions( setOf("squishy", "Another", "too hard") );
+		data.setTags( setOf("squishy things") );
+		data.setBrands(setOf(101L) );
+		data.setStocksNum(3);
         
 		return data;
 	}
@@ -1436,7 +1512,7 @@ public class DataImportApiTest {
 
 
 
-	private <T,V>  boolean  propertyValuesIn(List<T> entityList, Function<T,V> getter, Set<V> expectedValues) {
+	private <T,V>  boolean  propertyValuesIn(Collection<T> entityList, Function<T,V> getter, Set<V> expectedValues) {
 		return entityList
 				.stream()
 				.map(getter)
@@ -1450,7 +1526,7 @@ public class DataImportApiTest {
 	
 	
 	
-	private <T,V>  boolean  propertyMultiValuesIn(List<T> entityList, Function<T,? extends Collection<V>> getter, Set<V> expectedValues) {
+	private <T,V>  boolean  propertyMultiValuesIn(Collection<T> entityList, Function<T,? extends Collection<V>> getter, Set<V> expectedValues) {
 		return entityList
 				.stream()
 				.map(getter)
@@ -1539,9 +1615,11 @@ class ExpectedSavedData{
 	private Set<BigDecimal> prices ;
 	private Set<String> barcodes ;
 	private Set<String> ProductNames;
+	private Set<String> VariantNames;
 	private Set<String> productPNames;
 	private Set<String> variantsPNames;
 	private Set<String>  descriptions;
+	private Set<String> variantDescriptions;
 	private Set<String> tags;
 	private Set<Long> brands;
 	private Set<TransactionCurrency> currencies;
@@ -1553,6 +1631,23 @@ class ExpectedSavedData{
 		extraAttributes = new HashSet<>();
 		featureSpecs = new HashSet<>();
 		featureSpecs.add(new JSONObject("{}") );
+	}
+	
+	
+	public void setProductNames(Set<String> productNames) {
+		this.ProductNames = productNames;
+		if(this.VariantNames == null) {
+			this.VariantNames = productNames;
+		}
+	}
+	
+	
+	
+	public void setDescriptions(Set<String> descriptions) {
+		this.descriptions = descriptions;
+		if(this.variantDescriptions == null) {
+			this.variantDescriptions = descriptions;
+		}
 	}
 }
 

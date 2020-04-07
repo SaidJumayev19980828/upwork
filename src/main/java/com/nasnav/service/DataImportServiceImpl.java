@@ -7,7 +7,6 @@ import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_BRAND_NAME_NOT_EXIST;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CONVERT_TO_JSON;
-import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PREPARE_PRODUCT_DTO_DATA;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_TAGS_NOT_FOUND;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static java.lang.String.format;
@@ -29,11 +28,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import org.apache.commons.beanutils.BeanUtils;
 import org.jboss.logging.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +45,6 @@ import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.ProductImportMetadata;
@@ -93,9 +89,7 @@ public class DataImportServiceImpl implements DataImportService {
     @Autowired
     private StockService stockService;
 
-    @Autowired
-    private ProductRepository productRepo;
-
+    
     @Autowired
     private SecurityService security;
 
@@ -492,16 +486,15 @@ public class DataImportServiceImpl implements DataImportService {
     
 
     private String getProductDtoJson(ProductUpdateDTO dto) throws BusinessException {
-        ProductUpdateDTO dtoClone = prepareProductUpdateDto(dto);
         String productDtoJson = "";
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-            productDtoJson = mapper.writeValueAsString(dtoClone);
+            productDtoJson = mapper.writeValueAsString(dto);
         } catch (Exception e) {
             logger.error(e, e);
             throw new BusinessException(
-                    String.format(ERR_CONVERT_TO_JSON, dtoClone.getClass().getName())
+                    String.format(ERR_CONVERT_TO_JSON, dto.getClass().getName())
                     , "INTERNAL SERVER ERROR"
                     , HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -509,29 +502,8 @@ public class DataImportServiceImpl implements DataImportService {
     }
 
 
-    private ProductUpdateDTO prepareProductUpdateDto(ProductUpdateDTO dto) throws BusinessException {
-        try {
-        	Long orgId = security.getCurrentUserOrganizationId();
-            ProductUpdateDTO dtoClone = (ProductUpdateDTO) BeanUtils.cloneBean(dto);
-            Optional<ProductEntity> product = 
-            		productRepo
-            			.findByNameAndOrganizationId(dto.getName(), orgId)
-            			.stream()
-            			.findFirst();
-            if (product.isPresent()) {
-                dtoClone.setId(product.get().getId());
-                dtoClone.setOperation(EntityConstants.Operation.UPDATE);
-            }
-            return dtoClone;
-        } catch (Exception e) {
-            logger.error(e, e);
-            throw new BusinessException(
-                    String.format(ERR_PREPARE_PRODUCT_DTO_DATA, dto.toString())
-                    , "INTERNAL SERVER ERROR"
-                    , HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
+    
+    
 
     private List<ProductData> toProductDataList(List<ProductImportDTO> rows
     		, ProductImportMetadata importMetaData, DataImportCachedData cache) throws BusinessException, RuntimeBusinessException {    	
