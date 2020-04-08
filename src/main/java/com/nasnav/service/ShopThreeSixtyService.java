@@ -23,6 +23,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -71,7 +74,7 @@ public class ShopThreeSixtyService {
 
         String data = "";
         if(type.equals("web"))
-            data = getJsonDataStringSerlizable(shop.getWebJsonData());
+            data = shop.getWebJsonData();
         else if (type.equals("mobile"))
             data = getJsonDataStringSerlizable(shop.getMobileJsonData());
 
@@ -82,13 +85,19 @@ public class ShopThreeSixtyService {
     // ! custom modifier to deal with mailformed json data in shop360s !
     private String getJsonDataStringSerlizable(String oldJsonDataString) {
         String jsonDataString = oldJsonDataString;
+
         if (jsonDataString == null)
             return null;
 
-        if (jsonDataString.startsWith("--- '") && jsonDataString.endsWith("'\n"))
+        jsonDataString = jsonDataString.replaceAll("\"", "");
+
+
+        return "{\"json_data\":"+jsonDataString;
+
+        /*if (jsonDataString.startsWith("--- '") && jsonDataString.endsWith("'\n"))
             jsonDataString = jsonDataString.substring(jsonDataString.indexOf("'")+1,jsonDataString.lastIndexOf("'"));
 
-        return jsonDataString;//.replaceAll("\n", "");
+        return */
     }
 
     public String getProductPositions(Long shopId) {
@@ -100,7 +109,7 @@ public class ShopThreeSixtyService {
         if (productPosition == null || productPosition.getPositionsJsonData() == null)
             return null;
 
-        String positions =  getJsonDataStringSerlizable(productPosition.getPositionsJsonData());
+        String positions =  productPosition.getPositionsJsonData();
 
         return positions;
     }
@@ -162,7 +171,7 @@ public class ShopThreeSixtyService {
     }
 
 
-    public ShopResponse updateThreeSixtyShopJsonData(Long shopId, String type, String dataDTO) throws BusinessException {
+    public ShopResponse updateThreeSixtyShopJsonData(Long shopId, String type, String dataDTO) throws BusinessException, UnsupportedEncodingException {
         validateJsonData(shopId, type);
 
         ShopThreeSixtyEntity shopEntity = shop360Repo.getFirstByShopsEntity_Id(shopId);
@@ -172,15 +181,19 @@ public class ShopThreeSixtyService {
                     "INVALID_PARAM: view360_id", HttpStatus.NOT_ACCEPTABLE);
 
         if (type.equals("web"))
-            shopEntity.setWebJsonData(dataDTO);
+            shopEntity.setWebJsonData(decodeUrl(dataDTO));
         else if (type.equals("mobile"))
-            shopEntity.setMobileJsonData(dataDTO);
+            shopEntity.setMobileJsonData(decodeUrl(dataDTO));
         else
             throw new BusinessException("Provide type "+type+" is invalid",
                     "INVALID_PARAM: type", HttpStatus.NOT_ACCEPTABLE);
 
         shop360Repo.save(shopEntity);
         return new ShopResponse(shopEntity.getId(), HttpStatus.OK);
+    }
+
+    private String decodeUrl(String url) throws UnsupportedEncodingException {
+        return URLDecoder.decode(url, StandardCharsets.UTF_8.toString());
     }
 
     private void validateJsonData(Long shopId, String type) throws BusinessException {
@@ -200,7 +213,7 @@ public class ShopThreeSixtyService {
     }
 
 
-    public ShopResponse updateThreeSixtyShopProductPositions(Long shopId,  String json) throws BusinessException {
+    public ShopResponse updateThreeSixtyShopProductPositions(Long shopId,  String json) throws BusinessException, UnsupportedEncodingException {
 
         validateProductPositionsUpdateDTO(shopId);
 
@@ -215,7 +228,7 @@ public class ShopThreeSixtyService {
             entity.setShopsThreeSixtyEntity(shop);
         }
 
-        entity.setPositionsJsonData(json);
+        entity.setPositionsJsonData(decodeUrl(json));
 
         productPosRepo.save(entity);
         return new ShopResponse(entity.getId(), HttpStatus.OK);

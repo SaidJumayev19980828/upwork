@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,7 @@ public class ShopThreeSixtyController {
     @ApiOperation(value = "Get information about shop 360 json data", nickname = "getShop360Data")
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
-    @GetMapping(value = "/json_data", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "/json_data", produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity getShop360JsonInfo(@RequestParam("shop_id") Long shopId,
                                                    @RequestParam("type") String type) {
         return new ResponseEntity<>(shop360Svc.getShop360JsonInfo(shopId, type), HttpStatus.OK);
@@ -39,7 +40,7 @@ public class ShopThreeSixtyController {
     @ApiOperation(value = "Get information about shop 360 product positions", nickname = "getShop360ProductPositions")
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
-    @GetMapping(value = "/product_positions", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "/product_positions", produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity getShop360ProductPositions(@RequestParam("shop_id") Long shopId) {
         return new ResponseEntity<>(shop360Svc.getProductPositions(shopId), HttpStatus.OK);
     }
@@ -83,8 +84,8 @@ public class ShopThreeSixtyController {
     public ShopResponse updateThreeSixtyShopJsonData(@RequestHeader("User-Token") String userToken,
                                                      @RequestParam("shop_id") Long shopId,
                                                      @RequestParam String type,
-                                                     @RequestBody String jsonData)
-            throws BusinessException {
+                                                     @RequestParam("json_data") String jsonData)
+            throws BusinessException, UnsupportedEncodingException {
         return shop360Svc.updateThreeSixtyShopJsonData(shopId, type, jsonData);
     }
 
@@ -94,7 +95,8 @@ public class ShopThreeSixtyController {
     @PostMapping(value = "/product_positions", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopResponse updateThreeSixtyShopProductPositions(@RequestHeader("User-Token") String userToken,
                                                      @RequestParam("shop_id") Long shopId,
-                                                     @RequestBody String jsonData) throws BusinessException {
+                                                     @RequestParam("json_data") String jsonData)
+            throws BusinessException, UnsupportedEncodingException {
         return shop360Svc.updateThreeSixtyShopProductPositions(shopId, jsonData);
     }
 
