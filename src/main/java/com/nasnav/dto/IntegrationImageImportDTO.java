@@ -19,11 +19,14 @@ public class IntegrationImageImportDTO {
 	private Integer type;
 	private Integer priority;
 	private Boolean ignoreErrors;
+	private Boolean deleteOldImages;
 	
 	public IntegrationImageImportDTO() {
 		this.priority= 0;
 		this.type = PRODUCT_IMAGE;
 		this.pageNum = 1;
 		this.pageCount = 1000;
+		this.deleteOldImages = false;
+		this.ignoreErrors = false;
 	}
 }

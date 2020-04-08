@@ -44,6 +44,8 @@ public interface ProductImageService {
 			@Valid ProductImageBulkUpdateDTO metaData)  throws BusinessException;
 	
 	List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs) throws BusinessException;
+	
+	List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs, boolean deleteOldImages) throws BusinessException;
 
 	Flux<ImportedImage> readImgsFromUrls(Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap,
 			ProductImageBulkUpdateDTO metaData, WebClient client);

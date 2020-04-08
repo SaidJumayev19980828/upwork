@@ -1,5 +1,7 @@
 package com.nasnav.exceptions;
 
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,6 +52,19 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 	
 
 	private final Logger exceptionLogger = LoggerFactory.getLogger(ErrorResponseHandler.class.getName());
+	
+	
+	
+	@ExceptionHandler(ImportImageBulkRuntimeException.class)
+	@ResponseBody
+	public ResponseEntity<ImageImportBulkErrorResponse> handleImageImportBulkExceptionInterface(ImportImageBulkRuntimeException e, WebRequest requestInfo , HttpServletRequest request) {
+		logException(requestInfo, request , e);
+		return new ResponseEntity<>(new ImageImportBulkErrorResponse(e.getErrors()), INTERNAL_SERVER_ERROR);
+	}
+
+	
+	
+	
 	
 	@ExceptionHandler(RuntimeBusinessException.class)
 	@ResponseBody

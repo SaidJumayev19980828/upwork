@@ -12,7 +12,6 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_IMG_IM
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUCT_EXISTS_WITH_BARCODE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUCT_EXISTS_WITH_ID;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_VARIANT_FOUND;
-import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_PRODUCT_IMG_BULK_IMPORT;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_READ_ZIP;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_MODIFY_PRODUCT;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
@@ -28,6 +27,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.OK;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -73,6 +73,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.nasnav.commons.utils.StringUtils;
@@ -87,6 +88,7 @@ import com.nasnav.dto.ProductImageUpdateIdentifier;
 import com.nasnav.dto.ProductImgDTO;
 import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ImportImageBulkRuntimeException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.model.querydsl.sql.QProductImages;
@@ -112,6 +114,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Signal;
 import reactor.netty.http.client.HttpClient;
 import reactor.util.function.Tuple3;
 
@@ -318,13 +321,13 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private void validateProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
 		if(imgMetaData == null)
-			throw new BusinessException("No Metadata provided for product image!", "INVALID PARAM", HttpStatus.NOT_ACCEPTABLE);
+			throw new BusinessException("No Metadata provided for product image!", "INVALID PARAM", NOT_ACCEPTABLE);
 		
 		if(!imgMetaData.isRequiredPropertyProvided("operation"))
-			throw new BusinessException("No operation provided!", "INVALID PARAM:operation", HttpStatus.NOT_ACCEPTABLE);
+			throw new BusinessException("No operation provided!", "INVALID PARAM:operation", NOT_ACCEPTABLE);
 					
 		
-		if(imgMetaData.getOperation().equals( Operation.CREATE )) {
+		if(imgMetaData.getOperation().equals( CREATE )) {
 			validateNewProductImg(file, imgMetaData);
 		}else {
 			validateUpdatedProductImg(file, imgMetaData);
@@ -338,9 +341,11 @@ public class ProductImageServiceImpl implements ProductImageService {
 	private void validateUpdatedProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
 		if(!imgMetaData.areRequiredForUpdatePropertiesProvided()) {
 			throw new BusinessException(
-					String.format("Missing required parameters! required parameters for updating existing image are: %s", imgMetaData.getRequiredPropertiesForDataUpdate())
+					String.format("Missing required parameters! required parameters for updating existing image are: [%s] and provided parameters are [%s]"
+							, imgMetaData.getRequiredPropertyNamesForDataUpdate()
+							, imgMetaData.toString())
 					, "MISSING PARAM"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
 		
 		validateProductOfImg(imgMetaData);		
@@ -363,7 +368,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 			throw new BusinessException(
 					String.format("No product image exists with id: %d !", imgId)
 					, "INVALID PARAM:image_id"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 	}
 
 
@@ -372,9 +377,11 @@ public class ProductImageServiceImpl implements ProductImageService {
 	private void validateNewProductImg(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
 		if(!imgMetaData.areRequiredForCreatePropertiesProvided()) {
 			throw new BusinessException(
-					String.format("Missing required parameters! required parameters for adding new image are: %s", imgMetaData.getRequiredPropertiesForDataCreate())
+					format("Missing required parameters! required parameters for adding new image are:[%s], and provided parameters are [%s]"
+							, imgMetaData.getRequiredPropertyNamesForDataCreate()
+							, imgMetaData.toString())
 					, "MISSING PARAM"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
 		
 		validateProductOfImg(imgMetaData);
@@ -546,7 +553,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {		
 		validateUpdateImageBulkRequest(zip, csv, metaData);
 		Set<ImportedImage> importedImgs = new HashSet<>(extractImgsToImport(zip, csv, metaData));
-		return saveImgsBulk(importedImgs);
+		return saveImgsBulk(importedImgs, metaData.isDeleteOldImages());
 	}
 
 	
@@ -574,6 +581,20 @@ public class ProductImageServiceImpl implements ProductImageService {
 		return responses;
 	}
 	
+	
+	
+	
+	
+	
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs, boolean deleteOldImages) throws BusinessException {		
+		if(deleteOldImages) {
+			Long orgId = securityService.getCurrentUserOrganizationId();
+			productImagesRepository.deleteByProductEntity_organizationId(orgId);
+		}
+		return saveImgsBulk(importedImgs);
+	}
 	
 	
 	
@@ -726,7 +747,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		//until this is done; webclients are assumed to have no base url and all URL's are assumed to be absolute.
 		String httpUrl = !startsWithAnyOfAndIgnoreCase(url, "http://", "https://") ? "http://" + url : url;
 		
-		Mono<MultipartFile> imgFile = readImageDataFromUrl(client, httpUrl);
+		Mono<MultipartFile> imgFile = fetchImageData(client, httpUrl);
 		
 		List<ProductImageUpdateIdentifier> variantIdentifiers = imgDetails.getIdentifier(); 
 		Flux<ProductImageUpdateDTO> importedImgsMetaData = createImgsMetaData(metaData, variantCache, variantIdentifiers);
@@ -762,15 +783,36 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private Mono<MultipartFile> readImageDataFromUrl(WebClient client, String httpUrl) {
+	private Mono<MultipartFile> fetchImageData(WebClient client, String httpUrl) {
 		return client
 				.get()
 				.uri(httpUrl)
 				.exchange()
+				.doOnEach(signal -> logFailedImageFetch(signal, httpUrl))
+				.onErrorContinue(this::doNothing)
+				.filter(res -> Objects.equals(res.statusCode(), OK))
 				.flatMap(res -> res.bodyToMono(byte[].class))				
 				.map(bytes -> readUrlAsMultipartFile(httpUrl, bytes));
 	}
 	
+	
+	
+	
+	private void logFailedImageFetch(Signal<ClientResponse> signal, String httpUrl) {
+		if(signal.isOnError()) {
+			String message = format("Exception thrown while fetching image data from URL[%s]", httpUrl);
+			logger.log(SEVERE, message, signal.getThrowable());
+		}else if(signal.isOnNext() && !Objects.equals(signal.get().statusCode(), OK)) {
+			String message = format("Failed to fetch image data from URL[%s]! returned status is [%s]", httpUrl, signal.get().statusCode());
+			logger.log(SEVERE, message);
+		}
+	}
+	
+	
+	
+	private void doNothing(Throwable e, Object obj) {
+		
+	}
 	
 	
 	
@@ -808,7 +850,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 				.filter(Objects::nonNull)
 				.findFirst();
 		
-		Boolean isIgnoreErrors = ofNullable(metaData.getIgnoreErrors()).orElse(false);
+		Boolean isIgnoreErrors = ofNullable(metaData.isIgnoreErrors()).orElse(false);
 		if(!isIgnoreErrors && !variant.isPresent()) {
 			throw new RuntimeBusinessException(
 					format(ERR_NO_VARIANT_FOUND, variantId, externalId, barcode)
@@ -964,16 +1006,16 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private void saveSingleImgToAllItsVariants(String fileName, Map<String, List<ImportedImage>> fileImgMetadataMap,
+	private void saveSingleImgToAllItsVariants(String fileName, Map<String, List<ImportedImage>> imgMetadataMap,
 			List<String> errors, List<ProductImageUpdateResponse> responses) {
-		MultipartFile file = getMulitpartFile(fileImgMetadataMap, fileName);			
-		List<ProductImageUpdateDTO> imgMetaDataList = getImgsMetaDataList(fileImgMetadataMap, fileName);
+		MultipartFile file = getMulitpartFile(imgMetadataMap, fileName);			
+		List<ProductImageUpdateDTO> imgMetaDataList = getImgsMetaDataList(imgMetadataMap, fileName);
 		
 		try {
 			responses.addAll( saveNewProductImgsUsingSameUrl(file, imgMetaDataList) );
 		}catch(Exception e) {
 			logger.log(Level.SEVERE, e.getMessage(), e);						
-			fileImgMetadataMap.get(fileName)
+			imgMetadataMap.get(fileName)
 						.forEach(img -> errors.add( createImgImportErrMsg(img, e) ));
 		}
 	}
@@ -1023,11 +1065,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private void throwExceptionWithErrorList(List<String> errors) throws BusinessException {
-		JSONArray json = new JSONArray(errors);
-		throw new BusinessException(
-				ERR_PRODUCT_IMG_BULK_IMPORT
-				, json.toString()
-				, HttpStatus.INTERNAL_SERVER_ERROR);
+		throw new ImportImageBulkRuntimeException(errors);
 	}
 
 
@@ -1654,7 +1692,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
 		validateImageBulkMetadata(metaData);
 		Set<ImportedImage> importedImgs = fetchImgsToImportFromUrls(csv, metaData);;
-		return saveImgsBulk(importedImgs);
+		return saveImgsBulk(importedImgs, metaData.isDeleteOldImages());
 	}
 	
 	

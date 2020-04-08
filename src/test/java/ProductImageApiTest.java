@@ -311,8 +311,13 @@ public class ProductImageApiTest {
 		String expectedUrl = orgId + "/" + sanitizedFileName;
 		Path expectedPath = Paths.get(""+orgId).resolve(sanitizedFileName);
 		
-		performFileUpload(fileName, json)
-             .andExpect(status().is(406));
+		@SuppressWarnings("unused")
+		String result = 
+			performFileUpload(fileName, json)
+             .andExpect(status().is(406))
+             .andReturn()
+             .getResponse()
+             .getContentAsString();
 		
 		 FileEntity file = filesRepo.findByUrl(expectedUrl);
 		 Optional<ProductImagesEntity> img = imgRepo.findByUri(expectedUrl);

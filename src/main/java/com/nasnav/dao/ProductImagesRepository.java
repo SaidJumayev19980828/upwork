@@ -4,11 +4,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
 import com.nasnav.persistence.ProductImagesEntity;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface ProductImagesRepository extends CrudRepository<ProductImagesEntity, Long>{
 
@@ -33,4 +35,13 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 	List<ProductImagesEntity> findByProductsIds(@Param("productIds") List<Long> productIds);
 
 	List<ProductImagesEntity> findByProductVariantsEntity_IdInOrderByPriority(Set<Long> variandIds);
+
+	
+	@Query(value = "DELETE from Product_Images img where img.product_id in(select id from products product where product.organization_id = :orgId)"
+			, nativeQuery = true)
+	@Transactional
+    @Modifying
+	void deleteByProductEntity_organizationId(@Param("orgId") Long orgId);
+
+	Long countByProductEntity_OrganizationId(long l);
 }

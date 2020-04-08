@@ -1810,10 +1810,9 @@ public class IntegrationServiceImpl implements IntegrationService {
 		Integer pageCount = recitfyPageCount(param.getPageCount());
 		Integer pageNum = recitfyPageNum(param.getPageNum());
 		
-		
 		ImportedImagesPage imgsPage = importImagesFromExternalSystem(param, pageCount, pageNum);
 		
-		imgService.saveImgsBulk(imgsPage.getImages());
+		imgService.saveImgsBulk(imgsPage.getImages(), param.getDeleteOldImages());
 		
 		return createImageImportResponse(pageCount, pageNum, imgsPage);
 	}
