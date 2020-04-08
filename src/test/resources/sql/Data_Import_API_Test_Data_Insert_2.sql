@@ -55,11 +55,9 @@ insert into public.product_variants(id, "name" , product_id ,barcode, p_name, de
 
 -- stocks for variants
 insert into public.stocks(id, shop_id  , variant_id , quantity , price, created_at, updated_at, organization_id)
-values (400001, 100001, 310001, 1 , 1000 , now() , now(), 99001);
+values (400001, 100004, 310003, 1 , 1000 , now() , now(), 99001);
 insert into public.stocks(id, shop_id , variant_id , quantity , price, created_at, updated_at, organization_id)
-values (400002, 100001,310002, 20 , 122, now() , now(), 99001);
-insert into public.stocks(id, shop_id , variant_id , quantity , price, created_at, updated_at, organization_id, currency)
-values (400003, 100004,310003, 30, 15, now() , now(), 99001, 2);
+values (400002, 100004,310004, 20 , 122, now() , now(), 99001);
 
 --insering users
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)

@@ -12,6 +12,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
@@ -111,8 +113,8 @@ public class DataImportApiTest {
 	@Value("classpath:/files/product__list_upload.csv")
     private Resource csvFile;
 	
-	@Value("classpath:/files/product__list_upate_move_variant.csv")
-    private Resource csvFileMoveVariant;
+	@Value("classpath:/files/product__list_upate_group_variants.csv")
+    private Resource csvFileGroupExistingVariants;
 	
 	@Value("classpath:/files/product__list_upload_group_by_key.csv")
     private Resource csvFileGroupByKey;
@@ -368,7 +370,7 @@ public class DataImportApiTest {
         result.andExpect(status().is(406));
         
         ImportProductContext report = readImportReport(result);
-        assertEquals(3, report.getErrors().size());
+        assertEquals(4, report.getErrors().size());
         assertFalse(report.isSuccess());
     }
 	
@@ -424,7 +426,18 @@ public class DataImportApiTest {
         ExpectedSavedData expected = getExpectedNewDataGroupedByKey();
         assertProductDataImported(TEST_IMPORT_SHOP, expected);
         
-        List<ProductVariantsEntity> variants = variantRepo.findByOrganizationId(99001L);
+        validateVariantsGrouping();
+       
+        validateImportReportForNewData(result);
+	}
+
+
+
+
+
+
+	private void validateVariantsGrouping() {
+		List<ProductVariantsEntity> variants = variantRepo.findByOrganizationId(99001L);
         assertEquals(3, variants.size());
         Map<Long, List<ProductVariantsEntity>> groupedByProduct = 
         		variants
@@ -440,8 +453,6 @@ public class DataImportApiTest {
         		.collect(toSet());
         assertEquals( variantsBarcodes
         		 , setOf( setOf("111222A"), setOf("1354ABN", "87847777EW")));
-       
-        validateImportReportForNewData(result);
 	}
 	
 	
@@ -800,9 +811,9 @@ public class DataImportApiTest {
 	
 	
 	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_2.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void uploadProductCSVUpdateMoveVariantToOtherProductTest() throws IOException, Exception {
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void uploadProductCSVUpdateGroupsWithExistingVariantTest() throws IOException, Exception {
 		JSONObject importProperties = createDataImportProperties();
 		importProperties.put("shop_id", TEST_UPDATE_SHOP);
 		importProperties.put("update_product", true);
@@ -810,20 +821,23 @@ public class DataImportApiTest {
         
 		ProductDataCount before = countProductData();			
 		
-		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileMoveVariant, importProperties);
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileGroupExistingVariants, importProperties);
 		
 		result.andExpect(status().is(200));
 		
+		//- Grouping new variant to existing variant, will add the new one to the existing product
+		//- if two groups have existing variants from a single product, they will be merged.  
 		ProductDataCount after = countProductData();		
-//		assertExpectedRowNumInserted(before, after, 1);         
+		assertEquals(0, after.product - before.product);
+        assertEquals(1, after.variant - before.variant);
+        assertEquals(1, after.stocks  - before.stocks);         
 
 		
-        ExpectedSavedData expected = getExpectedUpdateDataMoveVariants();
+        ExpectedSavedData expected = getExpectedUpdateDataGroupExistingVariants();
         assertProductDataImported(TEST_UPDATE_SHOP, expected);
-        assertProductUpdatedDataSavedWithStock();     
         
         ImportProductContext report = readImportReport(result);
-        assertEquals(1, report.getCreatedProducts().size());
+        assertEquals(0, report.getCreatedProducts().size());
         assertEquals(1, report.getUpdatedProducts().size());
         assertTrue(report.getErrors().isEmpty());
 	}
@@ -1274,18 +1288,18 @@ public class DataImportApiTest {
 	
 	
 	
-	private ExpectedSavedData getExpectedUpdateDataMoveVariants() {
+	private ExpectedSavedData getExpectedUpdateDataGroupExistingVariants() {
 		ExpectedSavedData data = new ExpectedSavedData();
 		
 		data.setQuantities( setOf(101,102) );
 		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6"), new BigDecimal("8.25")));
-		data.setCurrencies(setOf(TransactionCurrency.EGP));
+		data.setCurrencies(setOf(EGP));
 		
 		data.setBarcodes( setOf("TT232222", "BB232222", "87847777EW") );
 		data.setProductNames( setOf("Squishy shoes") );
-		data.setVariantsPNames(setOf("squishy-shoes", "hard-shoes") );
+		data.setVariantsPNames(setOf("u_shoe", "hard-shoes", "n_shoe") );
 		data.setVariantNames(setOf("Squishy shoes", "hard shoes") );
-		data.setProductPNames(setOf("squishy-shoes") );
+		data.setProductPNames(setOf("u_shoe") );
 		data.setDescriptions( setOf("squishy") );
 		data.setVariantDescriptions( setOf("squishy", "too hard") );
 		data.setTags( setOf("squishy things") );

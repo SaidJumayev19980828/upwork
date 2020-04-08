@@ -44,10 +44,7 @@ import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.model.ImportProductContext;
 
-import lombok.extern.slf4j.Slf4j;
-
 @RestControllerAdvice
-@Slf4j
 public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 	
 	
@@ -61,6 +58,7 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 	@ResponseBody
 	public ResponseEntity<ImportProductContext> handleImportProductException(ImportProductException e, WebRequest requestInfo , HttpServletRequest request) {
 		logException(requestInfo, request , e);
+		e.getContext().logNewError(e, e.getMessage(), -1);
 		return new ResponseEntity<>(e.getContext(), NOT_ACCEPTABLE);
 	}
 	
@@ -71,6 +69,7 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 	@ResponseBody
 	public ResponseEntity<ImportProductContext> handleImportProductRunException(ImportProductRuntimeException e, WebRequest requestInfo , HttpServletRequest request) {
 		logException(requestInfo, request , e);
+		e.getContext().logNewError(e, e.getMessage(), -1);
 		return new ResponseEntity<>(e.getContext(), NOT_ACCEPTABLE);
 	}
 	

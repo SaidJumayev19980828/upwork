@@ -14,6 +14,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.BinaryOperator.minBy;
@@ -342,7 +343,12 @@ public class DataImportServiceImpl implements DataImportService {
 		    Long productId = saveProductDto(product.getProductDto());
 		    saveProductTags(product, productId);
 		    for(VariantDTOWithExternalIdAndStock variant: product.getVariants()) {
-		    	saveVariant(variant);
+		    	boolean isNewVariant = isNull(variant.getVariantId());
+		    	Long id = saveVariant(variant);
+		    	variant.getStock().setVariantId(id);
+		    	if(isNewVariant) {		    		
+		    		stockService.updateStock(variant.getStock());
+		    	}
 		    }
 		}
 		
@@ -592,12 +598,13 @@ public class DataImportServiceImpl implements DataImportService {
 
     private ProductData toProductData(List<ProductImportDTO> productDataRows, ProductImportMetadata importMetaData, DataImportCachedData cache) throws BusinessException {
     	ProductImportDTO pivotProductRow = getPivotProductDataRow(productDataRows, cache);
+    	ProductUpdateDTO productDto = createProductDto(pivotProductRow, cache);
     	List<VariantDTOWithExternalIdAndStock> productVariantsData =
-    		        getVariantsData(productDataRows, importMetaData, cache);
+    		        getVariantsData(productDataRows, importMetaData, cache, productDto);
     	
     	ProductData data = new ProductData();
         data.setOriginalRowData(productDataRows.toString());
-        data.setProductDto(createProductDto(pivotProductRow, cache));
+        data.setProductDto(productDto);
         data.setVariants(productVariantsData);
         data.setTagsNames( ofNullable(pivotProductRow.getTags()).orElse(emptySet()) );
         
@@ -609,10 +616,10 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 	private List<VariantDTOWithExternalIdAndStock> getVariantsData(List<ProductImportDTO> productDataRows,
-			ProductImportMetadata importMetaData, DataImportCachedData cache) {
+			ProductImportMetadata importMetaData, DataImportCachedData cache, ProductUpdateDTO product) {
 		return productDataRows
 				.stream()
-				.map(row -> createVariantDto(row, importMetaData, cache))
+				.map(row -> createVariantDto(row, importMetaData, cache, product))
 				.collect(toList());
 	}
 
@@ -661,7 +668,7 @@ public class DataImportServiceImpl implements DataImportService {
     
     
 
-    private VariantDTOWithExternalIdAndStock createVariantDto(ProductImportDTO row, ProductImportMetadata importMetaData, DataImportCachedData cache) {
+    private VariantDTOWithExternalIdAndStock createVariantDto(ProductImportDTO row, ProductImportMetadata importMetaData, DataImportCachedData cache, ProductUpdateDTO product) {
     	Map<String,String> featureNameToIdMapping = cache.getFeatureNameToIdMapping();
     	
         String features = getFeaturesAsJsonString(row, featureNameToIdMapping);        
@@ -678,6 +685,7 @@ public class DataImportServiceImpl implements DataImportService {
         variant.setPname(row.getPname());
         variant.setExternalId(row.getExternalId());
         variant.setStock(variantStock);
+        variant.setProductId(product.getProductId());
         if (features != null) {
             variant.setFeatures(features);
         }
@@ -700,7 +708,6 @@ public class DataImportServiceImpl implements DataImportService {
 
 	private void setVariantDtoAsUpdated(VariantDTOWithExternalIdAndStock variant, ProductVariantsEntity variantEntity) {
 		variant.setVariantId(variantEntity.getId());
-		variant.setProductId(variantEntity.getProductEntity().getId());
 		variant.setOperation(EntityConstants.Operation.UPDATE);
 		variant.getStock().setVariantId(variantEntity.getId());
 	}
