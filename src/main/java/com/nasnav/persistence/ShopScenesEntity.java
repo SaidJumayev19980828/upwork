@@ -82,10 +82,9 @@ public class ShopScenesEntity implements BaseEntity {
     }
 
     private Image createImage(String imageFile, String resized, String thumbnail) {
-        String pathUri = "/files/";
-        Image image = new Image(pathUri+imageFile,
-                new ImageUrl(pathUri+thumbnail),
-                new ImageUrl(pathUri+resized),
+        Image image = new Image(imageFile,
+                new ImageUrl(thumbnail),
+                new ImageUrl(resized),
                 null);
         return image;
     }

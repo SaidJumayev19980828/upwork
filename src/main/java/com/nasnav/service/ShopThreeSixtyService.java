@@ -68,27 +68,26 @@ public class ShopThreeSixtyService {
         if (shop == null)
             return null;
 
-        JSONObject data = new JSONObject();
-        if(type.equals("web")) {
-            data = new JSONObject(getJsonDataStringSerlizable(shop.getWebJsonData()));
-        }
-        else if (type.equals("mobile")) {
-            data = new JSONObject(getJsonDataStringSerlizable(shop.getMobileJsonData()));
-        }
+        String data = "";
+        if(type.equals("web"))
+            data = getJsonDataStringSerlizable(shop.getWebJsonData());
+        else if (type.equals("mobile"))
+            data = getJsonDataStringSerlizable(shop.getMobileJsonData());
 
-        return data.toString();
+
+        return data;
     }
 
     // ! custom modifier to deal with mailformed json data in shop360s !
     private String getJsonDataStringSerlizable(String oldJsonDataString) {
         String jsonDataString = oldJsonDataString;
         if (jsonDataString == null)
-            return "{}";
+            return null;
 
         if (jsonDataString.startsWith("--- '") && jsonDataString.endsWith("'\n"))
             jsonDataString = jsonDataString.substring(jsonDataString.indexOf("'")+1,jsonDataString.lastIndexOf("'"));
 
-        return jsonDataString.replaceAll("\n", "");
+        return jsonDataString;//.replaceAll("\n", "");
     }
 
     public String getProductPositions(Long shopId) {
@@ -100,9 +99,9 @@ public class ShopThreeSixtyService {
         if (productPosition == null || productPosition.getPositionsJsonData() == null)
             return null;
 
-        JSONObject positionsJson =  new JSONObject(getJsonDataStringSerlizable(productPosition.getPositionsJsonData()));
+        String positions =  getJsonDataStringSerlizable(productPosition.getPositionsJsonData());
 
-        return positionsJson.toString();
+        return positions;
     }
 
     public List<ShopFloorDTO> getSections(Long shopId) {
@@ -321,9 +320,9 @@ public class ShopThreeSixtyService {
                 throw new BusinessException("The image_url("+url+") doesn't exist!",
                         "INVALID_PARAM: image_url", HttpStatus.NOT_ACCEPTABLE);
 
-            String resized1024 = insertResizedImageName(url, 1024);
+            String resized1024 = getResizedImageName(url, 1024);
 
-            String resized4096 = insertResizedImageName(url, 4096);
+            String resized4096 = getResizedImageName(url, 4096);
 
             if(filesRepo.findByUrl(resized1024) == null)
                 resized1024 = resizeImage(1024, image, orgId);
@@ -357,12 +356,12 @@ public class ShopThreeSixtyService {
         g2d.dispose();
 
 
-        String imageName = insertResizedImageName(image.getOriginalFileName(), imageWidth);
-        File i = new File(imageName);
-        ImageIO.write(outputImage, "jpg", i );
+        String imageName = getResizedImageName(image.getOriginalFileName(), imageWidth);
+        File outputImageFile = new File(imageName);
+        ImageIO.write(outputImage, "jpg", outputImageFile );
 
         DiskFileItem fileItem = new DiskFileItem(imageName, "Image/jpg",
-                false, imageName, (int) i.length() , i);
+                false, imageName, (int) outputImageFile.length() , outputImageFile);
         fileItem.getOutputStream();
 
         MultipartFile multipartFile = new CommonsMultipartFile(fileItem);
@@ -370,9 +369,9 @@ public class ShopThreeSixtyService {
         return fileSvc.saveFile(multipartFile, orgId);
     }
 
-    private String insertResizedImageName(String imageName, int size) {
+    private String getResizedImageName(String imageName, int size) {
         return imageName.substring(0, imageName.lastIndexOf("."))
                 + "-resized"+ size +
-                imageName.substring(imageName.lastIndexOf("."), imageName.length());
+                imageName.substring(imageName.lastIndexOf("."));
     }
 }
