@@ -47,7 +47,7 @@ public interface ProductImageService {
 	
 	List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs, boolean deleteOldImages) throws BusinessException;
 
-	Flux<ImportedImage> readImgsFromUrls(Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap,
+	Flux<ImportedImage> readImgsFromUrls(Map<String, List<ProductImageUpdateIdentifier>> imgToProductsMapping,
 			ProductImageBulkUpdateDTO metaData, WebClient client);
 	
 }

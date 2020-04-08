@@ -29,6 +29,7 @@ import static com.nasnav.integration.enums.MappingType.SHOP;
 import static java.lang.String.format;
 import static java.time.Duration.ofMillis;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
@@ -41,7 +42,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1856,7 +1856,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		return pushIntegrationEvent(event, this::onImagesImportError)
 				.map(EventResult::getReturnedData)
 				.blockOptional(Duration.ofMinutes(PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN))
-				.orElse(new ImportedImagesUrlMappingPage(0, Collections.emptyMap(), WebClient.builder().build()));
+				.orElse(new ImportedImagesUrlMappingPage(0, emptyMap(), WebClient.builder().build()));
 	}
 	
 	
@@ -1864,7 +1864,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	private Mono<ImportedImagesPage> getImportedImagesPage(ImportedImagesUrlMappingPage mappingPage, ProductImageBulkUpdateDTO metaData){		
 		return integrationUtils
-				.readImgsFromUrls(mappingPage.getFileIdentifiersMap(), metaData, mappingPage.getImgsWebClient())
+				.readImgsFromUrls(mappingPage.getImgToProductsMapping(), metaData, mappingPage.getImgsWebClient())
 				.buffer()
 				.map(HashSet::new)
 				.single()

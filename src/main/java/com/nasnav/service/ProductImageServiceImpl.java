@@ -645,15 +645,15 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	@Override
 	public Flux<ImportedImage> readImgsFromUrls(
-			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap
+			Map<String, List<ProductImageUpdateIdentifier>> imgToProductsMapping
 			, ProductImageBulkUpdateDTO metaData
 			, WebClient client) {
 		
-		Mono<VariantCache> variantCacheMono = createVariantCache(fileIdentifiersMap);
+		Mono<VariantCache> variantCacheMono = createVariantCache(imgToProductsMapping);
 		
 		return variantCacheMono
 				.flatMapMany( variantCache -> 
-					fetchImportedImagesInBatches(fileIdentifiersMap, metaData, client, variantCache)
+					fetchImportedImagesInBatches(imgToProductsMapping, metaData, client, variantCache)
 				);
 	}
 
@@ -663,10 +663,10 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private Flux<ImportedImage> fetchImportedImagesInBatches(
-			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap, ProductImageBulkUpdateDTO metaData,
+			Map<String, List<ProductImageUpdateIdentifier>> imgToProductsMapping, ProductImageBulkUpdateDTO metaData,
 			WebClient client, VariantCache variantCache) {
 		return Flux
-				.fromIterable(fileIdentifiersMap.entrySet())
+				.fromIterable(imgToProductsMapping.entrySet())
 				.map(this::toVariantIdentifierAndUrlPair)
 				.window(20)		//get the images in batches of 20 per second
 				.delayElements(Duration.ofSeconds(1))
@@ -775,7 +775,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 					.map(identifier -> getProductVariant(identifier, variantCache, metaData))
 					.filter(Optional::isPresent)
 					.map(Optional::get)
-					.map(variant -> creatImgMetaData(metaData, variant));
+					.map(variant -> createImgMetaData(metaData, variant));
 	}
 
 
@@ -817,7 +817,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	
 	
-	private ProductImageUpdateDTO creatImgMetaData(ProductImageBulkUpdateDTO metaData, ProductVariantsEntity variant) {
+	private ProductImageUpdateDTO createImgMetaData(ProductImageBulkUpdateDTO metaData, ProductVariantsEntity variant) {
 		Long variantId = variant.getId();
 		Long productId = variant.getProductEntity().getId();
 		
@@ -825,10 +825,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 		imgMetaData.setOperation(CREATE);
 		imgMetaData.setPriority(metaData.getPriority());
 		imgMetaData.setType(metaData.getType());	
+		imgMetaData.setProductId(productId);
 		
-		if(Objects.equals(metaData.getType(), PRODUCT_IMAGE)) {
-			imgMetaData.setProductId(productId);
-		}else {
+		if(!Objects.equals(metaData.getType(), PRODUCT_IMAGE)) {
 			imgMetaData.setVariantId(variantId);
 		}
 		
@@ -1263,7 +1262,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		
 		ProductImageUpdateDTO variantMetaData = 
 				variant
-					.map(var -> creatImgMetaData(metaData, var))
+					.map(var -> createImgMetaData(metaData, var))
 					.orElse(null);
 
 		if(variantMetaData == null) {

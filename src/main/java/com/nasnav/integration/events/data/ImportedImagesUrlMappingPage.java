@@ -14,6 +14,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class ImportedImagesUrlMappingPage {
 	private Integer total;
-	private Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap;
+	private Map<String, List<ProductImageUpdateIdentifier>> imgToProductsMapping;
 	private WebClient imgsWebClient;
 }

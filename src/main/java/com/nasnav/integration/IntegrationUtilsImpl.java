@@ -23,10 +23,10 @@ public class IntegrationUtilsImpl implements IntegrationUtils{
 	
 
 	@Override
-	public Flux<ImportedImage> readImgsFromUrls(Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap,
+	public Flux<ImportedImage> readImgsFromUrls(Map<String, List<ProductImageUpdateIdentifier>> imgToProductsMapping,
 			ProductImageBulkUpdateDTO metaData
 			, WebClient client) {
-		return imgService.readImgsFromUrls(fileIdentifiersMap, metaData, client);
+		return imgService.readImgsFromUrls(imgToProductsMapping, metaData, client);
 	}
 
 }
