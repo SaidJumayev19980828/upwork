@@ -111,6 +111,9 @@ public class DataImportApiTest {
 	@Value("classpath:/files/product__list_upload.csv")
     private Resource csvFile;
 	
+	@Value("classpath:/files/product__list_upate_move_variant.csv")
+    private Resource csvFileMoveVariant;
+	
 	@Value("classpath:/files/product__list_upload_group_by_key.csv")
     private Resource csvFileGroupByKey;
 	
@@ -791,6 +794,39 @@ public class DataImportApiTest {
         assertEquals(1, report.getUpdatedProducts().size());
         assertTrue(report.getErrors().isEmpty());
 	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void uploadProductCSVUpdateMoveVariantToOtherProductTest() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", true);
+		importProperties.put("update_stocks", true);
+        
+		ProductDataCount before = countProductData();			
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileMoveVariant, importProperties);
+		
+		result.andExpect(status().is(200));
+		
+		ProductDataCount after = countProductData();		
+//		assertExpectedRowNumInserted(before, after, 1);         
+
+		
+        ExpectedSavedData expected = getExpectedUpdateDataMoveVariants();
+        assertProductDataImported(TEST_UPDATE_SHOP, expected);
+        assertProductUpdatedDataSavedWithStock();     
+        
+        ImportProductContext report = readImportReport(result);
+        assertEquals(1, report.getCreatedProducts().size());
+        assertEquals(1, report.getUpdatedProducts().size());
+        assertTrue(report.getErrors().isEmpty());
+	}
 
 
 	
@@ -1228,6 +1264,30 @@ public class DataImportApiTest {
 		data.setProductPNames(setOf("squishy-shoes") );
 		data.setDescriptions( setOf("squishy", "Another") );
 		data.setVariantDescriptions( setOf("squishy", "Another", "too hard") );
+		data.setTags( setOf("squishy things") );
+		data.setBrands(setOf(101L) );
+		data.setStocksNum(3);
+        
+		return data;
+	}
+	
+	
+	
+	
+	private ExpectedSavedData getExpectedUpdateDataMoveVariants() {
+		ExpectedSavedData data = new ExpectedSavedData();
+		
+		data.setQuantities( setOf(101,102) );
+		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6"), new BigDecimal("8.25")));
+		data.setCurrencies(setOf(TransactionCurrency.EGP));
+		
+		data.setBarcodes( setOf("TT232222", "BB232222", "87847777EW") );
+		data.setProductNames( setOf("Squishy shoes") );
+		data.setVariantsPNames(setOf("squishy-shoes", "hard-shoes") );
+		data.setVariantNames(setOf("Squishy shoes", "hard shoes") );
+		data.setProductPNames(setOf("squishy-shoes") );
+		data.setDescriptions( setOf("squishy") );
+		data.setVariantDescriptions( setOf("squishy", "too hard") );
 		data.setTags( setOf("squishy things") );
 		data.setBrands(setOf(101L) );
 		data.setStocksNum(3);
