@@ -26,7 +26,7 @@ import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.service.CsvDataImportService;
-import com.nasnav.service.model.ImportProductContext;
+import com.nasnav.service.model.importproduct.context.ImportProductContext;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponses;

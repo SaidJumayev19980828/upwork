@@ -1,4 +1,4 @@
-package com.nasnav.service.model;
+package com.nasnav.service.model.importproduct.context;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -143,16 +143,4 @@ class Error{
 		this.message = message;
 		this.rowNum = rowNum;
 	}
-}
-
-
-
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-class  Product{
-	private Long id;
-	private String name;
 }

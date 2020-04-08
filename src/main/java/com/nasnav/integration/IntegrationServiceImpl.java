@@ -125,8 +125,8 @@ import com.nasnav.service.ProductImageService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.ShopService;
 import com.nasnav.service.StockService;
-import com.nasnav.service.model.ImportProductContext;
 import com.nasnav.service.model.ImportedImage;
+import com.nasnav.service.model.importproduct.context.ImportProductContext;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

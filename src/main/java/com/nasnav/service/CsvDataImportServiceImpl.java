@@ -55,7 +55,7 @@ import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.service.helpers.ProductCsvRowProcessor;
-import com.nasnav.service.model.ImportProductContext;
+import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.univocity.parsers.common.DataProcessingException;
 import com.univocity.parsers.common.ParsingContext;
 import com.univocity.parsers.common.RowProcessorErrorHandler;
@@ -165,6 +165,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		importMetadata.setShopId(csvImportMetaData.getShopId());
 		importMetadata.setCurrency(csvImportMetaData.getCurrency());
 		importMetadata.setEncoding(csvImportMetaData.getEncoding());
+		importMetadata.setDeleteOldProducts(csvImportMetaData.isDeleteOldProducts());
 
 		return importMetadata;
 	}

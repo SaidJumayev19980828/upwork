@@ -50,7 +50,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockPart;
 import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -74,7 +73,7 @@ import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.security.AuthenticationFilter;
-import com.nasnav.service.model.ImportProductContext;
+import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
 
@@ -87,8 +86,8 @@ import net.jcip.annotations.NotThreadSafe;
 @AutoConfigureMockMvc
 @PropertySource("classpath:database.properties")
 @NotThreadSafe 
-@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert.sql"})
-@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert.sql"})
+@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class DataImportApiTest {
 	
 	private static final long TEST_STOCK_UPDATED = 400003L;
@@ -804,6 +803,64 @@ public class DataImportApiTest {
         assertEquals(1, report.getCreatedProducts().size());
         assertEquals(1, report.getUpdatedProducts().size());
         assertTrue(report.getErrors().isEmpty());
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void uploadProductCSVUpdateDataDeleteOldProductsTest() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", true);
+		importProperties.put("update_stocks", true);
+		importProperties.put("delete_old_products", true);
+        
+		ProductDataCount before = countProductData();
+		Long orgProductsBefore = productRepo.countByOrganizationId(99001L);
+		assertEquals(2, orgProductsBefore.intValue());
+		Long otherOrgProductBefore = productRepo.countByOrganizationId(99002L);
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
+		
+		result.andExpect(status().is(200));
+		
+		ProductDataCount after = countProductData();
+		
+		assertEquals("for organization 99001 a single product will be added, and one old product will be deleted"
+				, 0, after.product - before.product);
+        assertEquals(1, after.variant - before.variant);
+        assertEquals(1, after.stocks  - before.stocks);         
+
+        ExpectedSavedData expected = getExpectedNewAndUpdatedDataWithStocks();
+        assertProductDataImported(TEST_UPDATE_SHOP, expected);
+        assertProductUpdatedDataSavedWithStock();     
+        
+        ImportProductContext report = readImportReport(result);
+        validateDeletedOldProducts(otherOrgProductBefore, report);
+	}
+
+
+
+
+
+
+	private void validateDeletedOldProducts(Long otherOrgProductBefore, ImportProductContext report) {
+		int createdProducts = report.getCreatedProducts().size(); 
+        int updatedProducts = report.getUpdatedProducts().size(); 
+        assertEquals(1, createdProducts);
+        assertEquals(1, updatedProducts);
+        assertTrue(report.getErrors().isEmpty());
+        
+        Long orgProductsAfter = productRepo.countByOrganizationId(99001L);
+		Long otherOrgProductAfter = productRepo.countByOrganizationId(99002L);
+		
+		assertEquals(createdProducts + updatedProducts , orgProductsAfter.intValue());
+		assertEquals(otherOrgProductBefore, otherOrgProductAfter);
 	}
 	
 	

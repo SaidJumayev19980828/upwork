@@ -42,7 +42,7 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
-import com.nasnav.service.model.ImportProductContext;
+import com.nasnav.service.model.importproduct.context.ImportProductContext;
 
 @RestControllerAdvice
 public class ErrorResponseHandler extends ResponseEntityExceptionHandler {

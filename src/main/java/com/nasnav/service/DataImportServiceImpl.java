@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
 import static com.nasnav.commons.utils.EntityUtils.allIsNull;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.json.JSONObject;
@@ -42,10 +44,12 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
+import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.ProductImportMetadata;
@@ -67,9 +71,10 @@ import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.VariantUpdateResponse;
 import com.nasnav.service.helpers.CachingHelper;
-import com.nasnav.service.model.ImportProductContext;
 import com.nasnav.service.model.VariantCache;
 import com.nasnav.service.model.VariantIdentifier;
+import com.nasnav.service.model.importproduct.context.ImportProductContext;
+import com.nasnav.service.model.importproduct.context.Product;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -115,6 +120,10 @@ public class DataImportServiceImpl implements DataImportService {
     private CachingHelper cachingHelper;
     
     
+    @Autowired
+    private ProductRepository productRepo;
+    
+    
     private Logger logger = Logger.getLogger(getClass());
     
     
@@ -139,10 +148,34 @@ public class DataImportServiceImpl implements DataImportService {
         if(productImportMetadata.isDryrun() || !context.isSuccess()) {
         	TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
         	clearImportContext(context);
-        }            
+        }
+        
+        if(productImportMetadata.isDeleteOldProducts()) {
+        	Set<Long> productsToDelete = getProductsToDelete(context);		
+        	divideToBatches(productsToDelete, 500)
+        		.forEach(productRepo::deleteAllByIdIn);        			
+        }
 
         return context;
     }
+
+
+
+
+
+	private Set<Long> getProductsToDelete(ImportProductContext context) {
+		Long orgId = security.getCurrentUserOrganizationId();
+		Set<Long> productsToDelete = productRepo.listProductIdByOrganizationId(orgId);
+		Set<Long> processedProducts = 
+				Stream
+				.concat(
+						context.getCreatedProducts().stream()
+						, context.getUpdatedProducts().stream())
+				.map(Product::getId)
+				.collect(toSet());
+		processedProducts.forEach(productsToDelete::remove);
+		return productsToDelete;
+	}
 
 
 
