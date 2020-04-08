@@ -6,11 +6,11 @@ import com.nasnav.dto.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.*;
 import com.nasnav.response.ShopResponse;
-import org.apache.commons.fileupload.disk.DiskFileItem;
-import org.json.JSONObject;
+import org.apache.tika.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,6 +21,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,6 +34,8 @@ public class ShopThreeSixtyService {
 
     @Value("${files.basepath}")
     private String basePathStr;
+
+    private Path basePath;
 
     @Autowired
     private ShopsRepository shopRepo;
@@ -60,8 +63,6 @@ public class ShopThreeSixtyService {
 
     @Autowired
     private FileService fileSvc;
-
-    private Path basePath;
 
     public String getShop360JsonInfo(Long shopId, String type) {
         ShopThreeSixtyEntity shop = shop360Repo.getFirstByShopsEntity_Id(shopId);
@@ -355,16 +356,13 @@ public class ShopThreeSixtyService {
         g2d.drawImage(inputImage, 0, 0, imageWidth, imageHeight, null);
         g2d.dispose();
 
-
         String imageName = getResizedImageName(image.getOriginalFileName(), imageWidth);
         File outputImageFile = new File(imageName);
         ImageIO.write(outputImage, "jpg", outputImageFile );
 
-        DiskFileItem fileItem = new DiskFileItem(imageName, "Image/jpg",
-                false, imageName, (int) outputImageFile.length() , outputImageFile);
-        fileItem.getOutputStream();
-
-        MultipartFile multipartFile = new CommonsMultipartFile(fileItem);
+        FileInputStream output = new FileInputStream(outputImageFile);
+        MultipartFile multipartFile = new MockMultipartFile("fileItem",
+                outputImageFile.getName(), "image/jpg", IOUtils.toByteArray(output));
 
         return fileSvc.saveFile(multipartFile, orgId);
     }
