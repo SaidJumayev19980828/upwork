@@ -467,11 +467,10 @@ public class ProductImageBulkUploadTest {
 	             .getContentAsString();
 
 		JSONObject errorResponse = new JSONObject(response);
-		JSONArray errors = new JSONArray( errorResponse.getString("error") );
+		JSONArray errors = errorResponse.getJSONArray("errors");
 		
-		assertTrue(errorResponse.has("error"));
+		assertTrue(errorResponse.has("errors"));
 		assertEquals(1, errors.length());
-		
 		
 		assertNoImgsImported();
 	}
