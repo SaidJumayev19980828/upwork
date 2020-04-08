@@ -94,8 +94,8 @@ public class ShopThreeSixtyController {
     @PostMapping(value = "/product_positions", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopResponse updateThreeSixtyShopProductPositions(@RequestHeader("User-Token") String userToken,
                                                      @RequestParam("shop_id") Long shopId,
-                                                     @RequestBody String json) throws BusinessException {
-        return shop360Svc.updateThreeSixtyShopProductPositions(shopId, json);
+                                                     @RequestBody String jsonData) throws BusinessException {
+        return shop360Svc.updateThreeSixtyShopProductPositions(shopId, jsonData);
     }
 
     @ApiOperation(value = "Create/Update shop360 sections", nickname = "updateShop360Sections")
