@@ -5,7 +5,7 @@ import java.util.Map;
 
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.nasnav.dto.ProductImageUpdateIdentifier;
+import com.nasnav.service.model.VariantIdentifier;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,6 +14,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class ImportedImagesUrlMappingPage {
 	private Integer total;
-	private Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap;
+	private Map<String, List<VariantIdentifier>> imgToProductsMapping;
 	private WebClient imgsWebClient;
 }

@@ -1,10 +1,18 @@
 package com.nasnav.dto;
 
+import static com.nasnav.dto.Required.ALWAYS;
+import static com.nasnav.dto.Required.FOR_UPDATE;
+import static java.util.stream.Collectors.toSet;
+
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.apache.commons.beanutils.PropertyUtils;
@@ -96,7 +104,7 @@ public abstract class BaseJsonDTO {
 				.stream()
 				.filter(e -> e.getValue() == requiredFor)
 				.map(Entry::getKey)
-				.collect(Collectors.toSet());
+				.collect(toSet());
 	}
 	
 	
@@ -106,7 +114,7 @@ public abstract class BaseJsonDTO {
 		return	Stream.concat(
 					getRequiredPropertiesAlways().stream()
 					, getPropertiesRequiredFor(Required.FOR_CREATE).stream())
-				.collect(Collectors.toSet());
+				.collect(toSet());
 	}
 	
 
@@ -115,29 +123,40 @@ public abstract class BaseJsonDTO {
 	public Set<PropertyDescriptor> getRequiredPropertiesForDataUpdate() {
 		return	Stream.concat(
 					getRequiredPropertiesAlways().stream()
-					, getPropertiesRequiredFor(Required.FOR_UPDATE).stream())
-				.collect(Collectors.toSet());
+					, getPropertiesRequiredFor(FOR_UPDATE).stream())
+				.collect(toSet());
 	}
 
+	
+	
 	@JsonIgnore
 	public Set<String> getRequiredPropertyNamesForDataUpdate() {
-		Set propertyNames = getRequiredPropertiesAlways().stream()
-				.map(value -> value.getName()).collect(Collectors.toSet());
-		propertyNames.addAll(getPropertiesRequiredFor(Required.FOR_UPDATE).stream()
-				.map(value -> value.getName()).collect(Collectors.toSet()));
-		return propertyNames;
+		return getRequiredPropertiesForDataUpdate()
+				.stream()
+				.map(PropertyDescriptor::getName)
+				.collect(toSet());
+	}
+	
+	
+	
+	@JsonIgnore
+	public Set<String> getRequiredPropertyNamesForDataCreate() {
+		return getRequiredPropertiesForDataCreate()
+				.stream()
+				.map(PropertyDescriptor::getName)
+				.collect(toSet());
 	}
 
 	@JsonIgnore
 	public Set<PropertyDescriptor> getRequiredPropertiesAlways() {
-		return getPropertiesRequiredFor(Required.ALWAYS);
+		return getPropertiesRequiredFor(ALWAYS);
 	}
 	
 	
 	
 	
 	protected Boolean areRequiredPropertiesPresent(Required required) {
-		return Arrays.asList(Required.ALWAYS, required)
+		return Arrays.asList(ALWAYS, required)
 				.stream()
 				.filter(req -> req != null)
 				.flatMap(req -> getPropertiesRequiredFor(req).stream())

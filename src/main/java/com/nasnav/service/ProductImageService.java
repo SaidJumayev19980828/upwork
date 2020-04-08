@@ -11,12 +11,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.nasnav.dto.ProductImageBulkUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateDTO;
-import com.nasnav.dto.ProductImageUpdateIdentifier;
 import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.service.model.ImportedImage;
+import com.nasnav.service.model.VariantIdentifier;
 
 import reactor.core.publisher.Flux;
 
@@ -44,8 +44,10 @@ public interface ProductImageService {
 			@Valid ProductImageBulkUpdateDTO metaData)  throws BusinessException;
 	
 	List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs) throws BusinessException;
+	
+	List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs, boolean deleteOldImages) throws BusinessException;
 
-	Flux<ImportedImage> readImgsFromUrls(Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap,
+	Flux<ImportedImage> readImgsFromUrls(Map<String, List<VariantIdentifier>> imgToProductsMapping,
 			ProductImageBulkUpdateDTO metaData, WebClient client);
 	
 }

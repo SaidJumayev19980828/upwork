@@ -1,2 +1,2 @@
-barcode,product_name,description,brand,tags,quantity,price,size,color,extra,not-feature-col,variant_id,external_id
-TT232222,Squishy shoes,squishy,squish,squishy things;mountain equipment,101,10.25,XXL,Lettuce Heart,ext1,no,,
+barcode,product_name,description,brand,tags,quantity,price,size,color,extra,not-feature-col,variant_id,external_id,product_group_key,discount
+TT232222,Squishy shoes,squishy,squish,squishy things;mountain equipment,101,10.25,XXL,Lettuce Heart,ext1,no,,,,

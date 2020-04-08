@@ -67,6 +67,7 @@ public class ProductImageBulkUrlUploadTest {
 	
 	private static final String TEST_ZIP_DIR = "src/test/resources/img_bulk_zip";
 	private static final String TEST_CSV = "img_bulk_url_barcode.csv";
+	private static final String TEST_CSV_IMG_NOT_FOUND ="img_bulk_url_barcode_img_not_found.csv";
 	private static final String TEST_CSV_NON_EXISTING_BARCODE = "img_bulk_url_non_existing_barcode.csv";
 	private static final String TEST_CSV_MULTI_BARCODE_PER_PATH = "img_bulk_url_multi_barcode_same_path.csv";
 	private static final String TEST_CSV_VARIANT_ID_EXISTING_VARIANT = "img_bulk_url_exist_variant_id_exist_variant.csv";
@@ -200,12 +201,11 @@ public class ProductImageBulkUrlUploadTest {
 		
 		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 
-		String response =
-				performFileUpload(TEST_CSV_NON_EXISTING_BARCODE, jsonBytes, USER_TOKEN)
-	             .andExpect(status().is(406))
-	             .andReturn()
-	             .getResponse()
-	             .getContentAsString();
+		performFileUpload(TEST_CSV_NON_EXISTING_BARCODE, jsonBytes, USER_TOKEN)
+         .andExpect(status().is(406))
+         .andReturn()
+         .getResponse()
+         .getContentAsString();
 
 		assertNoImgsImported();
 	}
@@ -217,12 +217,11 @@ public class ProductImageBulkUrlUploadTest {
 		
 		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
-		String response = 
-				performFileUpload(TEST_CSV, jsonBytes, OTHER_ORG_ADMIN_TOKEN)
-	             .andExpect(status().is(406))
-	             .andReturn()
-	             .getResponse()
-	             .getContentAsString();
+		performFileUpload(TEST_CSV, jsonBytes, OTHER_ORG_ADMIN_TOKEN)
+         .andExpect(status().is(406))
+         .andReturn()
+         .getResponse()
+         .getContentAsString();
 
 		assertNoImgsImported();
 	}
@@ -250,6 +249,92 @@ public class ProductImageBulkUrlUploadTest {
 	
 	
 	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_bulk_API_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void updateImgBulkWithCSVAndDeleteOldImagesTest() throws IOException, Exception {
+		JSONObject request = createDummyUploadRequest();
+		request.put("delete_old_images", true);
+		byte[] jsonBytes = request.toString().getBytes();
+		
+		validateImageCountBefore();
+		
+		String response = 
+				performFileUpload(TEST_CSV, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(200))
+	             .andReturn()
+	             .getResponse()
+	             .getContentAsString();
+		
+		assertImgsImported(response, 2L, 99001L);		
+		
+		validateImageCountAfter(2L);
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_bulk_API_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void updateImgBulkWithCSVAndDeleteOldImagesDisabledTest() throws IOException, Exception {
+		JSONObject request = createDummyUploadRequest();
+		byte[] jsonBytes = request.toString().getBytes();
+		
+		validateImageCountBefore();
+		
+		String response = 
+				performFileUpload(TEST_CSV, jsonBytes, USER_TOKEN)
+	             .andExpect(status().is(200))
+	             .andReturn()
+	             .getResponse()
+	             .getContentAsString();
+		
+		assertImgsImported(response, 5L, 99001L);		
+		
+		validateImageCountAfter(5L);
+	}
+
+
+
+	private void validateImageCountBefore() {
+		Long countBefore = imgRepo.countByProductEntity_OrganizationId(99001L);
+		assertEquals(3L, countBefore.longValue());
+		Long countOtherOrgBefore = imgRepo.countByProductEntity_OrganizationId(99002L);
+		assertEquals(1L, countOtherOrgBefore.longValue());
+	}
+
+
+
+	private void validateImageCountAfter(Long expectedCount) {
+		Long countAfter = imgRepo.countByProductEntity_OrganizationId(99001L);
+		assertEquals("only two images were imported, and old images should have been delete", expectedCount, countAfter);
+		
+		Long countOtherOrgAfter = imgRepo.countByProductEntity_OrganizationId(99002L);
+		assertEquals(1L, countOtherOrgAfter.longValue());
+	}
+	
+	
+	
+	
+	@Test
+	public void updateImgBulkWithCSVErrorFetchingImageTest() throws IOException, Exception {
+		
+		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
+		
+		performFileUpload(TEST_CSV_IMG_NOT_FOUND, jsonBytes, USER_TOKEN)
+         .andExpect(status().is(200))
+         .andReturn()
+         .getResponse()
+         .getContentAsString();
+		
+		assertNoImgsImported();		
+	}
+	
+	
+	
+	
+	
 
 	/**
 	 * just a test that the local test server is returning static test images for the 
@@ -257,8 +342,6 @@ public class ProductImageBulkUrlUploadTest {
 	 * */
 	@Test
 	public void getImgFromLocalServerTest() throws IOException, Exception {
-		
-		byte[] jsonBytes = createDummyUploadRequest().toString().getBytes();
 		
 		WebClient client = WebClient.builder().baseUrl(serverUrl).build();
 		client
@@ -460,6 +543,23 @@ public class ProductImageBulkUrlUploadTest {
 				, responseJson.length());				
 		
 		assertEquals( 2L, imgRepo.count());		
+		
+		IntStream.range(0, responseJson.length())
+				.mapToObj(responseJson::getJSONObject)
+				.forEach(this::assertImageUploaded);
+	}
+	
+	
+	
+	
+	private void assertImgsImported(String response, Long expectedCount, Long orgId) {
+		JSONArray responseJson = new JSONArray(response);
+		assertEquals(
+				"import 2 images for two variants"
+				, 2
+				, responseJson.length());				
+		
+		assertEquals( expectedCount, imgRepo.countByProductEntity_OrganizationId(orgId));		
 		
 		IntStream.range(0, responseJson.length())
 				.mapToObj(responseJson::getJSONObject)

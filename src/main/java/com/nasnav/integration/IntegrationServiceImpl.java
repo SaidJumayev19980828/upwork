@@ -29,6 +29,7 @@ import static com.nasnav.integration.enums.MappingType.SHOP;
 import static java.lang.String.format;
 import static java.time.Duration.ofMillis;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
@@ -41,7 +42,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -89,6 +89,8 @@ import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ResponsePage;
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ImportProductException;
+import com.nasnav.exceptions.ImportProductRuntimeException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.enums.IntegrationParam;
 import com.nasnav.integration.enums.MappingType;
@@ -123,8 +125,8 @@ import com.nasnav.service.ProductImageService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.ShopService;
 import com.nasnav.service.StockService;
-import com.nasnav.service.model.ImportProductContext;
 import com.nasnav.service.model.ImportedImage;
+import com.nasnav.service.model.importproduct.context.ImportProductContext;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -837,6 +839,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 		} catch (JsonProcessingException e) {
 			logger.error(e,e);
 			throw new RuntimeException(e);
+		} catch (ImportProductException e) {
+			throw new ImportProductRuntimeException(e, e.getContext());
 		}
 	}
 	
@@ -1810,10 +1814,9 @@ public class IntegrationServiceImpl implements IntegrationService {
 		Integer pageCount = recitfyPageCount(param.getPageCount());
 		Integer pageNum = recitfyPageNum(param.getPageNum());
 		
-		
 		ImportedImagesPage imgsPage = importImagesFromExternalSystem(param, pageCount, pageNum);
 		
-		imgService.saveImgsBulk(imgsPage.getImages());
+		imgService.saveImgsBulk(imgsPage.getImages(), param.getDeleteOldImages());
 		
 		return createImageImportResponse(pageCount, pageNum, imgsPage);
 	}
@@ -1857,7 +1860,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		return pushIntegrationEvent(event, this::onImagesImportError)
 				.map(EventResult::getReturnedData)
 				.blockOptional(Duration.ofMinutes(PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN))
-				.orElse(new ImportedImagesUrlMappingPage(0, Collections.emptyMap(), WebClient.builder().build()));
+				.orElse(new ImportedImagesUrlMappingPage(0, emptyMap(), WebClient.builder().build()));
 	}
 	
 	
@@ -1865,7 +1868,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	private Mono<ImportedImagesPage> getImportedImagesPage(ImportedImagesUrlMappingPage mappingPage, ProductImageBulkUpdateDTO metaData){		
 		return integrationUtils
-				.readImgsFromUrls(mappingPage.getFileIdentifiersMap(), metaData, mappingPage.getImgsWebClient())
+				.readImgsFromUrls(mappingPage.getImgToProductsMapping(), metaData, mappingPage.getImgsWebClient())
 				.buffer()
 				.map(HashSet::new)
 				.single()

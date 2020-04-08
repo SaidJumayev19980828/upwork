@@ -42,6 +42,20 @@ public class ImageBulkUrlUploadTestCommon {
 	private  void prepareMockRequests(MockServerRule mockServerRule) throws Exception {
 		mockGetImage1Request(mockServerRule);
 		mockGetImage2Request(mockServerRule);
+		mockGetImageAndFail(mockServerRule);
+	}
+	
+	
+	
+	
+	private void mockGetImageAndFail(MockServerRule mockServerRule) throws IOException {
+   	 	mockServerRule.getClient()
+			.when(
+				request().withMethod("GET")
+						.withPath("/static/test_photo_failed.png"))
+			.respond(
+					response().withStatusCode(404))
+				;
 	}
 	
 	

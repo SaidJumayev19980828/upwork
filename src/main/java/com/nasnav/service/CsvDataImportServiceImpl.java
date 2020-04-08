@@ -55,7 +55,7 @@ import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.service.helpers.ProductCsvRowProcessor;
-import com.nasnav.service.model.ImportProductContext;
+import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.univocity.parsers.common.DataProcessingException;
 import com.univocity.parsers.common.ParsingContext;
 import com.univocity.parsers.common.RowProcessorErrorHandler;
@@ -113,6 +113,8 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 				.put("description", "description")
 				.put("variantId", "variant_id")
 				.put("externalId", "external_id")
+				.put("productGroupKey", "product_group_key")
+				.put("discount", "discount")
 				.getMap();
 	
 	
@@ -127,7 +129,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	
 	
 	
-	private final Set<String> csvBaseHeaders = new HashSet<String>(fieldToColumnHeaderMapping.values());
+	private final Set<String> CSV_BASE_HEADERS = new HashSet<String>(fieldToColumnHeaderMapping.values());
 	
 	public static final List<String> IMG_CSV_BASE_HEADERS = asList("variant_id","external_id","barcode","image_file");
 
@@ -163,6 +165,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		importMetadata.setShopId(csvImportMetaData.getShopId());
 		importMetadata.setCurrency(csvImportMetaData.getCurrency());
 		importMetadata.setEncoding(csvImportMetaData.getEncoding());
+		importMetadata.setDeleteOldProducts(csvImportMetaData.isDeleteOldProducts());
 
 		return importMetadata;
 	}
@@ -435,7 +438,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 					.sorted()
 					.collect(toList());
 		
-		List<String> baseHeaders = new ArrayList<>(csvBaseHeaders);
+		List<String> baseHeaders = new ArrayList<>(CSV_BASE_HEADERS);
 		baseHeaders.addAll(features);
 		return baseHeaders;
 	}

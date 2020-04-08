@@ -496,14 +496,14 @@ public class CategoryService {
 
         List<TagsTreeNodeCreationDTO> tree = tagsTreeDTO.getTreeNodes();
 
-        if(tree == null || tree.isEmpty()) {
+        if(tree == null) {
         	return;
         }
         
-        Map<Long, TagsEntity> tagsMap = createOrgTagsMap();        
+        Map<Long, TagsEntity> tagsCache = createTagsCache();        
         
         clearTagsTree();
-        buildNewTagGraph(tree, tagsMap);        
+        buildNewTagGraph(tree, tagsCache);        
     }
 
 
@@ -582,7 +582,7 @@ public class CategoryService {
 
 	
 
-	private Map<Long, TagsEntity> createOrgTagsMap() {
+	private Map<Long, TagsEntity> createTagsCache() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		return 
 			orgTagsRepo

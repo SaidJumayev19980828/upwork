@@ -1,7 +1,9 @@
-package com.nasnav.service.model;
+package com.nasnav.service.model.importproduct.context;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
@@ -24,10 +26,10 @@ public class ImportProductContext {
 	private ProductImportMetadata importMetaData;
 	private Integer productsNum;
 	private List<Error> errors;
-	private List<Tag> createdTags;
-	private List<Brand> createdBrands;
-	private List<Product> createdProducts;
-	private List<Product> updatedProducts;
+	private Set<Tag> createdTags;
+	private Set<Brand> createdBrands;
+	private Set<Product> createdProducts;
+	private Set<Product> updatedProducts;
 	
 	
 	public ImportProductContext(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) {
@@ -35,10 +37,10 @@ public class ImportProductContext {
 		this.importMetaData = productImportMetadata;
 		this.productsNum = productImportDTOS.size();
 		this.errors = new ArrayList<>();
-		this.createdTags = new ArrayList<>();
-		this.createdBrands = new ArrayList<>();
-		this.createdProducts = new ArrayList<>();
-		this.updatedProducts = new ArrayList<>();
+		this.createdTags = new HashSet<>();
+		this.createdBrands = new HashSet<>();
+		this.createdProducts = new HashSet<>();
+		this.updatedProducts = new HashSet<>();
 	}
 	
 	
@@ -57,6 +59,11 @@ public class ImportProductContext {
 	
 	public void logNewError(Throwable exception, String data, Integer rowNum) {
 		errors.add(new Error(exception, data, rowNum));
+	}
+	
+	
+	public void logNewError(String message, Integer rowNum) {
+		errors.add(new Error(message, rowNum));
 	}
 	
 	
@@ -130,16 +137,10 @@ class Error{
 	    
 	    this.message = msg.toString();
 	}
-}
-
-
-
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-class  Product{
-	private Long id;
-	private String name;
+	
+	
+	public Error(String message, Integer rowNum) {
+		this.message = message;
+		this.rowNum = rowNum;
+	}
 }

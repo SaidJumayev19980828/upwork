@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.nasnav.dto.ProductImageBulkUpdateDTO;
-import com.nasnav.dto.ProductImageUpdateIdentifier;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.service.model.ImportedImage;
+import com.nasnav.service.model.VariantIdentifier;
 
 import reactor.core.publisher.Flux;
 
@@ -23,10 +23,10 @@ public class IntegrationUtilsImpl implements IntegrationUtils{
 	
 
 	@Override
-	public Flux<ImportedImage> readImgsFromUrls(Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap,
+	public Flux<ImportedImage> readImgsFromUrls(Map<String, List<VariantIdentifier>> imgToProductsMapping,
 			ProductImageBulkUpdateDTO metaData
 			, WebClient client) {
-		return imgService.readImgsFromUrls(fileIdentifiersMap, metaData, client);
+		return imgService.readImgsFromUrls(imgToProductsMapping, metaData, client);
 	}
 
 }

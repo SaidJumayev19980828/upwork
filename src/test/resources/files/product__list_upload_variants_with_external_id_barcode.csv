@@ -1,2 +1,2 @@
-barcode,product_name,p_name,description,brand,tags,quantity,price,size,color,extra,not-feature-col,variant_id,external_id
-12345ABC,Squishy shoes,s_shoe,squishy,squish,squishy things,101,10.25,XXL,Lettuce Heart,,no,,4
+barcode,product_name,p_name,description,brand,tags,quantity,price,size,color,extra,not-feature-col,variant_id,external_id,product_group_key,discount
+12345ABC,Squishy shoes,s_shoe,squishy,squish,squishy things,101,10.25,XXL,Lettuce Heart,,no,,4,,

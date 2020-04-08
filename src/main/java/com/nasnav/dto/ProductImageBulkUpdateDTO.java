@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
@@ -15,7 +14,8 @@ import lombok.NoArgsConstructor;
 public class ProductImageBulkUpdateDTO{
 	private Integer type;
 	private Integer priority;
-	private Boolean ignoreErrors;
+	private boolean ignoreErrors;
+	private boolean deleteOldImages;
 	
 	public ProductImageBulkUpdateDTO() {
 		ignoreErrors = false;

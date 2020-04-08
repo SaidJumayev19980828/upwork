@@ -12,6 +12,7 @@ public class ProductImportMetadata {
 	
     private boolean updateProduct;
     private boolean updateStocks;
+    private boolean deleteOldProducts;
 
     private Long shopId;
     private Integer currency;

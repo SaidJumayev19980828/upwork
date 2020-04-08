@@ -19,12 +19,10 @@ import java.util.Map;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.web.reactive.function.BodyExtractors;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.nasnav.dto.ProductImageUpdateIdentifier;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.events.EventInfo;
@@ -36,6 +34,7 @@ import com.nasnav.integration.sallab.webclient.dto.AuthenticationData;
 import com.nasnav.integration.sallab.webclient.dto.AuthenticationResponse;
 import com.nasnav.integration.sallab.webclient.dto.Product;
 import com.nasnav.integration.sallab.webclient.dto.ProductsResponse;
+import com.nasnav.service.model.VariantIdentifier;
 import com.nasnav.service.model.VariantIdentifierAndUrlPair;
 
 import lombok.AllArgsConstructor;
@@ -110,7 +109,7 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 	
 	private ImportedImagesUrlMappingPage getUrlToProductMappingPage(FetchedProductsDataWithTotal products, WebClient client){
 		Integer total = products.getTotalElements();
-		Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap = getUrlToProductMapping(products);
+		Map<String, List<VariantIdentifier>> fileIdentifiersMap = getUrlToProductMapping(products);
 		
 		return new ImportedImagesUrlMappingPage(total , fileIdentifiersMap, client);
 	}
@@ -122,7 +121,7 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 
 
 
-	private Map<String, List<ProductImageUpdateIdentifier>> getUrlToProductMapping(FetchedProductsData products) {
+	private Map<String, List<VariantIdentifier>> getUrlToProductMapping(FetchedProductsData products) {
 		Long orgId = products.getOrgId();
 		String baseUrl = integrationService.getIntegrationParamValue(orgId, IMG_SERVER_URL.getValue());
 		return 
@@ -152,7 +151,7 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 	
 	
 	private VariantIdentifierAndUrlPair toVariantIdentifierAndUrlPair(Product product, String baseUrl) {
-		ProductImageUpdateIdentifier ids = getIdentifiers(product);
+		VariantIdentifier ids = getIdentifiers(product);
 		String imgUrl = createImgUrl(product, baseUrl);
 		return new VariantIdentifierAndUrlPair(imgUrl, asList(ids));
 	}
@@ -170,8 +169,8 @@ public class ImageImportEventListener extends AbstractElSallabEventListener<Imag
 	
 
 
-	private ProductImageUpdateIdentifier getIdentifiers(Product product) {
-		return new ProductImageUpdateIdentifier(null, product.getItemNoC(), product.getItemNoC());
+	private VariantIdentifier getIdentifiers(Product product) {
+		return new VariantIdentifier(null, product.getItemNoC(), product.getItemNoC());
 	}
 
 

@@ -101,6 +101,16 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     @Modifying
     @Query( value = "update public.products set removed = 1 where organization_Id = :orgId", nativeQuery = true )
 	void deleteAllByOrganizationId(@Param("orgId")Long orgId);
+	
+	
+	@Transactional
+    @Modifying
+    @Query( value = "update public.products set removed = 1 where id in :idList", nativeQuery = true )
+	void deleteAllByIdIn(@Param("idList") List<Long> idList);
+	
+	
+	@Query("select products.id FROM ProductEntity products where products.organizationId = :orgId")
+	Set<Long> listProductIdByOrganizationId(@Param("orgId")Long orgId);
 }
 
 

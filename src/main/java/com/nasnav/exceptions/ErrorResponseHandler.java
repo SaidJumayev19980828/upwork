@@ -1,5 +1,8 @@
 package com.nasnav.exceptions;
 
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,16 +43,49 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
-
-import lombok.extern.slf4j.Slf4j;
+import com.nasnav.service.model.importproduct.context.ImportProductContext;
 
 @RestControllerAdvice
-@Slf4j
 public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 	
 	
 
 	private final Logger exceptionLogger = LoggerFactory.getLogger(ErrorResponseHandler.class.getName());
+	
+	
+	
+	
+	@ExceptionHandler(ImportProductException.class)
+	@ResponseBody
+	public ResponseEntity<ImportProductContext> handleImportProductException(ImportProductException e, WebRequest requestInfo , HttpServletRequest request) {
+		logException(requestInfo, request , e);
+		e.getContext().logNewError(e, e.getMessage(), -1);
+		return new ResponseEntity<>(e.getContext(), NOT_ACCEPTABLE);
+	}
+	
+	
+	
+	
+	@ExceptionHandler(ImportProductRuntimeException.class)
+	@ResponseBody
+	public ResponseEntity<ImportProductContext> handleImportProductRunException(ImportProductRuntimeException e, WebRequest requestInfo , HttpServletRequest request) {
+		logException(requestInfo, request , e);
+		e.getContext().logNewError(e, e.getMessage(), -1);
+		return new ResponseEntity<>(e.getContext(), NOT_ACCEPTABLE);
+	}
+	
+	
+	
+	@ExceptionHandler(ImportImageBulkRuntimeException.class)
+	@ResponseBody
+	public ResponseEntity<ImageImportBulkErrorResponse> handleImageImportBulkExceptionInterface(ImportImageBulkRuntimeException e, WebRequest requestInfo , HttpServletRequest request) {
+		logException(requestInfo, request , e);
+		return new ResponseEntity<>(new ImageImportBulkErrorResponse(e.getErrors()), INTERNAL_SERVER_ERROR);
+	}
+
+	
+	
+	
 	
 	@ExceptionHandler(RuntimeBusinessException.class)
 	@ResponseBody
