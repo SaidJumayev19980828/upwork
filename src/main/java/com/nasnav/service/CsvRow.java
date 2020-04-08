@@ -28,6 +28,8 @@ public class CsvRow {
 	protected BigDecimal price;
 	protected Map<String,String> features;
 	protected Map<String,String> extraAttributes;
+	protected String productGroupKey;
+	protected BigDecimal discount;
 	
 	public CsvRow() {
 		extraAttributes = new HashMap<>();
@@ -52,6 +54,8 @@ public class CsvRow {
 		product.setTags(tagsSet);
 		product.setVariantId(variantId);
 		product.setExtraAttributes(getExtraAttributes());
+		product.setProductGroupKey(productGroupKey);
+		product.setDiscount(discount);
 		
 		return product;
 	}

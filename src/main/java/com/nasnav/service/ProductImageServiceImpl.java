@@ -1,7 +1,6 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
-import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.startsWithAnyOfAndIgnoreCase;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CSV_PARSE_FAILURE;
@@ -84,7 +83,6 @@ import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dto.ProductImageBulkUpdateDTO;
 import com.nasnav.dto.ProductImageUpdateDTO;
-import com.nasnav.dto.ProductImageUpdateIdentifier;
 import com.nasnav.dto.ProductImgDTO;
 import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
@@ -99,7 +97,10 @@ import com.nasnav.persistence.ProductImagesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
+import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.ImportedImage;
+import com.nasnav.service.model.VariantCache;
+import com.nasnav.service.model.VariantIdentifier;
 import com.nasnav.service.model.VariantIdentifierAndUrlPair;
 import com.querydsl.sql.Configuration;
 import com.querydsl.sql.PostgreSQLTemplates;
@@ -110,13 +111,10 @@ import com.univocity.parsers.common.record.Record;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Signal;
 import reactor.netty.http.client.HttpClient;
-import reactor.util.function.Tuple3;
 
 
 
@@ -156,6 +154,11 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	@Autowired
 	private JdbcTemplate jdbc;
+	
+	
+	@Autowired
+	private CachingHelper cachingHelper;
+	
 
 	@Override
 	public ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
@@ -608,7 +611,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	private Set<ImportedImage> fetchImgsToImportFromUrls(@Valid MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {				
 				
-		Map<String,List<ProductImageUpdateIdentifier>> fileIdentifiersMap = createFileToVariantIdsMap(csv);
+		Map<String,List<VariantIdentifier>> fileIdentifiersMap = createFileToVariantIdsMap(csv);
 		
 		return readImgsFromUrls(fileIdentifiersMap, metaData);
 	}
@@ -618,10 +621,11 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private Set<ImportedImage> readImgsFromUrls(
-			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap
+			Map<String, List<VariantIdentifier>> fileIdentifiersMap
 			, ProductImageBulkUpdateDTO metaData) {
 		
-		Mono<VariantCache> variantCacheMono = createVariantCache(fileIdentifiersMap);
+		Mono<VariantCache> variantCacheMono = 
+				createVariantCache(fileIdentifiersMap);
 		
 		return variantCacheMono
 				.flatMapMany( variantCache ->
@@ -645,7 +649,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	@Override
 	public Flux<ImportedImage> readImgsFromUrls(
-			Map<String, List<ProductImageUpdateIdentifier>> imgToProductsMapping
+			Map<String, List<VariantIdentifier>> imgToProductsMapping
 			, ProductImageBulkUpdateDTO metaData
 			, WebClient client) {
 		
@@ -656,6 +660,23 @@ public class ProductImageServiceImpl implements ProductImageService {
 					fetchImportedImagesInBatches(imgToProductsMapping, metaData, client, variantCache)
 				);
 	}
+	
+	
+	
+	
+	/**
+	 * Pre-fetch The product variants of the images from the database and cache them.
+	 * @return a cache of ProductVariantsEntity
+	 * */
+	public  Mono<VariantCache> createVariantCache(Map<String, List<VariantIdentifier>> fileIdentifiersMap) {
+		List<VariantIdentifier> variantIdentifiers = 
+				fileIdentifiersMap
+				.values()
+				.stream()
+				.flatMap(List::stream)
+				.collect(toList());
+		return cachingHelper.createVariantCacheMono(variantIdentifiers);
+	}
 
 
 
@@ -663,7 +684,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private Flux<ImportedImage> fetchImportedImagesInBatches(
-			Map<String, List<ProductImageUpdateIdentifier>> imgToProductsMapping, ProductImageBulkUpdateDTO metaData,
+			Map<String, List<VariantIdentifier>> imgToProductsMapping, ProductImageBulkUpdateDTO metaData,
 			WebClient client, VariantCache variantCache) {
 		return Flux
 				.fromIterable(imgToProductsMapping.entrySet())
@@ -678,34 +699,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	/**
-	 * Pre-fetch The product variants of the images from the database and cache them.
-	 * @return a cache of ProductVariantsEntity
-	 * */
-	private Mono<VariantCache> createVariantCache(Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
-		Mono<Map<String, ProductVariantsEntity>> idToVariantMap = getIdToVariantMap(fileIdentifiersMap);
-		Mono<Map<String, ProductVariantsEntity>> externalIdToVariantMap = getExternalIdToVariantMap(fileIdentifiersMap);
-		Mono<Map<String, ProductVariantsEntity>> barcodeToVariantMap = getBarcodeToVariantMap(fileIdentifiersMap);
-		
-		return Mono.zip(idToVariantMap, externalIdToVariantMap, barcodeToVariantMap)
-				.map(this::createVariantCacheFromTuple);
-	}
-	
-	
-	
-	
-	private VariantCache createVariantCacheFromTuple(Tuple3<Map<String, ProductVariantsEntity>, Map<String, ProductVariantsEntity>, Map<String, ProductVariantsEntity>> tuple) {
-		Map<String, ProductVariantsEntity> idToVariantMap = tuple.getT1();
-		Map<String, ProductVariantsEntity> externalIdToVariantMap = tuple.getT2();
-		Map<String, ProductVariantsEntity> barcodeToVariantMap = tuple.getT3();
-		return new VariantCache(idToVariantMap, externalIdToVariantMap, barcodeToVariantMap);
-	}
-
-
-
 
 	
-	private VariantIdentifierAndUrlPair toVariantIdentifierAndUrlPair(Map.Entry<String, List<ProductImageUpdateIdentifier>> ent) {
+	private VariantIdentifierAndUrlPair toVariantIdentifierAndUrlPair(Map.Entry<String, List<VariantIdentifier>> ent) {
 		return new VariantIdentifierAndUrlPair(ent.getKey(), ent.getValue());
 	}
 	
@@ -749,7 +745,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		
 		Mono<MultipartFile> imgFile = fetchImageData(client, httpUrl);
 		
-		List<ProductImageUpdateIdentifier> variantIdentifiers = imgDetails.getIdentifier(); 
+		List<VariantIdentifier> variantIdentifiers = imgDetails.getIdentifier(); 
 		Flux<ProductImageUpdateDTO> importedImgsMetaData = createImgsMetaData(metaData, variantCache, variantIdentifiers);
 			
 		return Flux
@@ -770,7 +766,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private Flux<ProductImageUpdateDTO> createImgsMetaData(ProductImageBulkUpdateDTO metaData,
-			VariantCache variantCache, List<ProductImageUpdateIdentifier> variantIdentifiers) {
+			VariantCache variantCache, List<VariantIdentifier> variantIdentifiers) {
 		return Flux.fromIterable(variantIdentifiers)
 					.map(identifier -> getProductVariant(identifier, variantCache, metaData))
 					.filter(Optional::isPresent)
@@ -837,7 +833,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	
 	
-	private Optional<ProductVariantsEntity> getProductVariant(ProductImageUpdateIdentifier identifier, VariantCache cache, ProductImageBulkUpdateDTO metaData) {
+	private Optional<ProductVariantsEntity> getProductVariant(VariantIdentifier identifier, VariantCache cache, ProductImageBulkUpdateDTO metaData) {
 		String variantId = identifier.getVariantId();
 		String externalId = identifier.getExternalId();
 		String barcode = identifier.getBarcode();	
@@ -861,134 +857,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 	}
 	
 	
-
-
-	private Mono<Map<String, ProductVariantsEntity>> getBarcodeToVariantMap(
-			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
-		return 
-			Flux
-			.fromStream(fileIdentifiersMap.values().stream().flatMap(List::stream))	
-			.filter(identifier -> isNotBlankOrNull(identifier.getBarcode()))
-			.map(ProductImageUpdateIdentifier::getBarcode)
-			.window(1000)
-			.flatMap(this::getVariantsByBarcode)
-			.collectMap(ProductVariantsEntity::getBarcode, variant -> variant);
-	}
-
-
-
-
-
-
-	private Mono<Map<String, ProductVariantsEntity>> getExternalIdToVariantMap(
-			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
-		return 
-			Flux
-			.fromStream(fileIdentifiersMap.values().stream().flatMap(List::stream))	
-			.filter(identifier -> isNotBlankOrNull(identifier.getExternalId()))
-			.map(ProductImageUpdateIdentifier::getExternalId)
-			.window(1000)
-			.flatMap(this::getVariantsByExternalId)
-			.collectMap(variant-> variant.externalId, variant -> variant.variant);
-	}
-
-
-
-
-
-
-	private Mono<Map<String, ProductVariantsEntity>> getIdToVariantMap(
-			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap) {
-		return 
-			Flux
-			.fromStream(fileIdentifiersMap.values().stream().flatMap(List::stream))	
-			.filter(identifier -> isNotBlankOrNull(identifier.getVariantId()))
-			.map(ProductImageUpdateIdentifier::getVariantId)
-			.window(1000)
-			.flatMap(this::getVariantsById)
-			.collectMap(this::getIdAsString, variant -> variant);
-	}
-
-	
-	
-	
-	
-	
-	private Flux<ProductVariantsEntity> getVariantsById(Flux<String> idList){
-		return 
-			idList
-			.map(Long::valueOf)
-			.buffer()
-			.flatMapIterable(productVariantsRepository::findByIdIn);
-	}
-	
-	
-	
-	
-	
-	private Flux<ProductVariantsEntityWithExternalId> getVariantsByExternalId(Flux<String> idList){		
-		return 
-			idList
-			.buffer()
-			.flatMapIterable(this::getProductVariantFromExternalIdIn);
-	}
-	
-	
-	
-	
-	
-	private Flux<ProductVariantsEntity> getVariantsByBarcode(Flux<String> barcodeList){
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		return 
-			barcodeList
-			.buffer()
-			.flatMapIterable(barcodes -> productVariantsRepository.findByOrganizationIdAndBarcodeIn(orgId, barcodes));
-	}
-	
-	
-	
-	
-	private List<ProductVariantsEntityWithExternalId> getProductVariantFromExternalIdIn(List<String> extIdList){
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		Map<String,String> mapping = integrationService.getLocalMappedValues(orgId, PRODUCT_VARIANT, extIdList);
-		Map<String,String> localToExtIdMapping = 
-				mapping
-				.entrySet()
-				.stream()
-				.collect(toMap(Map.Entry::getValue, Map.Entry::getKey));
-		
-		List<Long> variantIds = 
-				localToExtIdMapping
-				.keySet()
-				.stream()
-				.map(Long::valueOf)
-				.collect(toList());
-		
-		return 
-			productVariantsRepository
-				.findByIdIn(variantIds)
-				.stream()
-				.map(variant -> toProductVariantEntityWithExtId(localToExtIdMapping, variant))
-				.collect(toList());
-	}
-
-
-
-
-
-
-	private ProductVariantsEntityWithExternalId toProductVariantEntityWithExtId(Map<String, String> localToExtIdMapping,
-			ProductVariantsEntity variant) {
-		String extId = localToExtIdMapping.get(String.valueOf(variant.getId()));
-		return new ProductVariantsEntityWithExternalId(variant , extId);
-	}
-	
-	
-	
-	
-	private String getIdAsString(ProductVariantsEntity variant) {
-		return String.valueOf(variant.getId());
-	}
 
 
 
@@ -1089,7 +957,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 			@Valid ProductImageBulkUpdateDTO metaData) throws BusinessException {
 		List<ImportedImage> imgs = new ArrayList<>();		
 		List<String> errors = new ArrayList<>();		
-		Map<String,List<ProductImageUpdateIdentifier>> fileIdentifiersMap = createFileToVariantIdsMap(csv);
+		Map<String,List<VariantIdentifier>> fileIdentifiersMap = createFileToVariantIdsMap(csv);
 		
 		try(ZipInputStream stream = new ZipInputStream(zip.getInputStream())){	
 			
@@ -1115,7 +983,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 
 	private List<ImportedImage> readZipStream(ZipInputStream stream, ProductImageBulkUpdateDTO metaData,
-			Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap, List<String> errors) throws IOException {
+			Map<String, List<VariantIdentifier>> fileIdentifiersMap, List<String> errors) throws IOException {
 		
 		List<ImportedImage> imgs = new ArrayList<>();
 		
@@ -1144,7 +1012,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	 * as a single barcode can belong to both a product and a product variant.
 	 * */
 	private List<ImportedImage> readImgsFromZipEntry(ZipEntry zipEntry, ZipInputStream stream,
-			ProductImageBulkUpdateDTO metaData, Map<String, List<ProductImageUpdateIdentifier>> fileIdentifiersMap, List<String> errors) {
+			ProductImageBulkUpdateDTO metaData, Map<String, List<VariantIdentifier>> fileIdentifiersMap, List<String> errors) {
 		List<ImportedImage> imgsFromEntry = new ArrayList<>();
 		
 		if(zipEntry.isDirectory() ) {
@@ -1205,13 +1073,13 @@ public class ProductImageServiceImpl implements ProductImageService {
 	 * - barcode exists for both a product and a variant
 	 * */
 	private List<ProductImageUpdateDTO> createImportedImagesMetaData(ZipEntry zipEntry,
-																	 Map<String,List<ProductImageUpdateIdentifier>> fileIdentifiersMap,
+																	 Map<String,List<VariantIdentifier>> fileIdentifiersMap,
 																	 ProductImageBulkUpdateDTO metaData) throws BusinessException{
 		
-		List<ProductImageUpdateIdentifier> identifiers = getVariantIdentifiersForCompressedFile(zipEntry, fileIdentifiersMap);
+		List<VariantIdentifier> identifiers = getVariantIdentifiersForCompressedFile(zipEntry, fileIdentifiersMap);
 		
 		List<List<ProductImageUpdateDTO>> metaDataLists = new ArrayList<>();
-		for(ProductImageUpdateIdentifier identifier: identifiers) {
+		for(VariantIdentifier identifier: identifiers) {
 			metaDataLists.add(createImportedImagesMetaData(metaData, identifier));
 		}
 		
@@ -1225,8 +1093,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	
 
-
-	private List<ProductImageUpdateDTO> createImportedImagesMetaData(ProductImageBulkUpdateDTO metaData, ProductImageUpdateIdentifier identifier)
+	//TODO: this should use variant cache instead
+	private List<ProductImageUpdateDTO> createImportedImagesMetaData(ProductImageBulkUpdateDTO metaData, VariantIdentifier identifier)
 			throws BusinessException {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 
@@ -1291,15 +1159,15 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	
 
-	private List<ProductImageUpdateIdentifier> getVariantIdentifiersForCompressedFile(ZipEntry zipEntry, Map<String,
-																List<ProductImageUpdateIdentifier>> fileToIdentifiersMap) {
+	private List<VariantIdentifier> getVariantIdentifiersForCompressedFile(ZipEntry zipEntry, Map<String,
+																List<VariantIdentifier>> fileToIdentifiersMap) {
 		String fileName = zipEntry.getName();
-		List<ProductImageUpdateIdentifier> identifiers = fileToIdentifiersMap.get(fileName);
+		List<VariantIdentifier> identifiers = fileToIdentifiersMap.get(fileName);
 		
 		if(identifiers == null) {
 			String barcode =  getBarcodeFromImgName(fileName);
 			identifiers = new ArrayList<>();
-			identifiers.add(new ProductImageUpdateIdentifier(barcode));
+			identifiers.add(new VariantIdentifier(barcode));
 		}
 		return identifiers;
 	}
@@ -1420,17 +1288,17 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	
 
-	private Map<String, List<ProductImageUpdateIdentifier>> createFileToVariantIdsMap(MultipartFile csv) throws BusinessException {
+	private Map<String, List<VariantIdentifier>> createFileToVariantIdsMap(MultipartFile csv) throws BusinessException {
 		if(csv == null ||csv.isEmpty())
 			return new HashMap<>();		
 
 		List<Record> csvRecords = getCsvRecords(csv);
-		Map<String, List<ProductImageUpdateIdentifier>> identifiersMap = new HashMap<>();
+		Map<String, List<VariantIdentifier>> identifiersMap = new HashMap<>();
 		String path;
-		ProductImageUpdateIdentifier identifier;
+		VariantIdentifier identifier;
 		for(Record record:csvRecords) {
 			path = normalizeZipPath(record.getString("path"));
-			identifier = new ProductImageUpdateIdentifier(record.getString("variant_id"), record.getString("external_id"), record.getString("barcode"));
+			identifier = new VariantIdentifier(record.getString("variant_id"), record.getString("external_id"), record.getString("barcode"));
 
 			if (identifiersMap.get(path) == null)
 				identifiersMap.put(path, new ArrayList<>());
@@ -1711,19 +1579,3 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-
-@AllArgsConstructor
-class ProductVariantsEntityWithExternalId {
-	public ProductVariantsEntity variant;
-	public String externalId;
-}
-
-
-
-@AllArgsConstructor
-@Data
-class VariantCache{    
-	private Map<String, ProductVariantsEntity> idToVariantMap;
-	private Map<String, ProductVariantsEntity> externalIdToVariantMap;
-	private Map<String, ProductVariantsEntity> barcodeToVariantMap; 
-}

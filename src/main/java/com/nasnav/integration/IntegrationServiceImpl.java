@@ -89,6 +89,8 @@ import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ResponsePage;
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ImportProductException;
+import com.nasnav.exceptions.ImportProductRuntimeException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.enums.IntegrationParam;
 import com.nasnav.integration.enums.MappingType;
@@ -123,8 +125,8 @@ import com.nasnav.service.ProductImageService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.ShopService;
 import com.nasnav.service.StockService;
-import com.nasnav.service.model.ImportProductContext;
 import com.nasnav.service.model.ImportedImage;
+import com.nasnav.service.model.importproduct.context.ImportProductContext;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -837,6 +839,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 		} catch (JsonProcessingException e) {
 			logger.error(e,e);
 			throw new RuntimeException(e);
+		} catch (ImportProductException e) {
+			throw new ImportProductRuntimeException(e, e.getContext());
 		}
 	}
 	

@@ -1,6 +1,6 @@
 package com.nasnav.exceptions;
 
-import com.nasnav.service.model.ImportProductContext;
+import com.nasnav.service.model.importproduct.context.ImportProductContext;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

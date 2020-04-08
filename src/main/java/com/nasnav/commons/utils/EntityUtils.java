@@ -4,7 +4,6 @@ import static java.util.Arrays.asList;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -47,7 +46,7 @@ public class EntityUtils {
 	
 	
 	public static boolean areEqual(Object... elements){
-		List<Object> elementList =  Arrays.asList(elements);
+		List<Object> elementList =  asList(elements);
 		Set<Object> elementSet = new HashSet<>(elementList);
 		return  elementSet.size() == 1;
 	}
@@ -55,7 +54,7 @@ public class EntityUtils {
 	
 	
 	public static boolean anyIsNull(Object... elements){
-		List<Object> elementList =  Arrays.asList(elements);
+		List<Object> elementList =  asList(elements);
 		return elementList.stream().anyMatch(e -> e == null);
 	}
 	
@@ -68,7 +67,7 @@ public class EntityUtils {
 	
 	
 	public static boolean allIsNull(Object... elements){
-		List<Object> elementList =  Arrays.asList(elements);
+		List<Object> elementList =  asList(elements);
 		return elementList.stream().allMatch(e -> e == null);
 	}
 	
@@ -76,7 +75,7 @@ public class EntityUtils {
 	
 	@SafeVarargs
 	public static <T> Set<T> setOf(T...elements){
-		return new HashSet<>( Arrays.asList(elements));
+		return new HashSet<>( asList(elements));
 	}
 	
 	
@@ -152,8 +151,8 @@ public class EntityUtils {
 	}
 
 
-	public static boolean nonIsEmpty(Collection<?> ... collections) {
-		List<Collection<?>> elementList =  Arrays.asList(collections);
+	public static boolean noneIsEmpty(Collection<?> ... collections) {
+		List<Collection<?>> elementList =  asList(collections);
 		return elementList
 				.stream()
 				.noneMatch(c -> c == null || c.isEmpty());
