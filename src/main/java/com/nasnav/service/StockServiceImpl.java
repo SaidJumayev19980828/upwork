@@ -3,6 +3,8 @@ package com.nasnav.service;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_MISSING_STOCK_UPDATE_PARAMS;
 import static java.lang.String.format;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
@@ -28,7 +30,6 @@ import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.model.querydsl.sql.QStocks;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
@@ -38,6 +39,9 @@ import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.StockUpdateResponse;
+import com.nasnav.service.helpers.CachingHelper;
+import com.nasnav.service.model.VariantCache;
+import com.nasnav.service.model.VariantIdentifier;
 
 @Service
 public class StockServiceImpl implements StockService {
@@ -59,6 +63,9 @@ public class StockServiceImpl implements StockService {
 
     @Autowired
     private SecurityService security;
+    
+    @Autowired
+    private CachingHelper cachingHelper;
 
     public List<StocksEntity> getProductStockForShop(Long productId, Long shopId) throws BusinessException {
         Optional<ProductEntity> prodOpt = productRepo.findById(productId);
@@ -183,6 +190,26 @@ public class StockServiceImpl implements StockService {
 	}
 	
 	
+	
+	public List<Long> updateStockBatch(List<StockUpdateDTO> stocks) throws BusinessException{
+		List<VariantIdentifier> variantIdList = 
+				stocks
+				.stream()
+				.map(this::getVariantIdentifier)
+				.collect(toList());
+		VariantCache variantCache = cachingHelper.createVariantCache(variantIdList); 
+		return null;
+	}
+	
+	
+	
+	private VariantIdentifier getVariantIdentifier(StockUpdateDTO stock) {
+		String idStr = ofNullable(stock)
+						.map(StockUpdateDTO::getVariantId)
+						.map(String::valueOf)
+						.orElse(null);
+		return new VariantIdentifier(idStr, null, null);
+	}	
 	
 	
 
