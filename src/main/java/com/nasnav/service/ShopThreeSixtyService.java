@@ -59,6 +59,9 @@ public class ShopThreeSixtyService {
     private FilesRepository filesRepo;
 
     @Autowired
+    private ProductRepository productsRepo;
+
+    @Autowired
     private SecurityService securitySvc;
 
     @Autowired
@@ -164,7 +167,9 @@ public class ShopThreeSixtyService {
     }
 
 
-    public ShopResponse updateThreeSixtyShopJsonData(Long shopId, String type, String dataDTO) throws BusinessException, UnsupportedEncodingException {
+    public ShopResponse updateThreeSixtyShopJsonData(Long shopId, String type, String dataDTO)
+            throws BusinessException, UnsupportedEncodingException {
+
         validateJsonData(shopId, type);
 
         ShopThreeSixtyEntity shopEntity = shop360Repo.getFirstByShopsEntity_Id(shopId);
@@ -185,9 +190,11 @@ public class ShopThreeSixtyService {
         return new ShopResponse(shopEntity.getId(), HttpStatus.OK);
     }
 
+
     private String decodeUrl(String url) throws UnsupportedEncodingException {
         return URLDecoder.decode(url, StandardCharsets.UTF_8.toString());
     }
+
 
     private void validateJsonData(Long shopId, String type) throws BusinessException {
         if (shopId == null)
@@ -405,10 +412,11 @@ public class ShopThreeSixtyService {
                 imageName.substring(imageName.lastIndexOf("."));
     }
 
-    public List<ProductRepresentationObject> getShop360Products(String barcode, String name) throws BusinessException {
+    public List<ProductRepresentationObject> getShop360Products(Long orgId,String barcode, String name) throws BusinessException {
         if (StringUtils.isBlankOrNull(barcode) && StringUtils.isBlankOrNull(name))
             throw new BusinessException("Either provide barcode or name",
                     "MISSING_PARAMS: barcode, name", HttpStatus.NOT_ACCEPTABLE);
+
         return null;
     }
 

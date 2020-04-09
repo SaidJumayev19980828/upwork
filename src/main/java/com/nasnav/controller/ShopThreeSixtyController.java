@@ -80,24 +80,26 @@ public class ShopThreeSixtyController {
     @ApiOperation(value = "Create/Update shop360 json data", nickname = "updateShop360JsonData")
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
-    @PostMapping(value = "/json_data", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "/json_data", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+                 produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopResponse updateThreeSixtyShopJsonData(@RequestHeader("User-Token") String userToken,
-                                                     @RequestParam("shop_id") Long shopId,
-                                                     @RequestParam String type,
-                                                     @RequestBody String json_data)
+                                                     Long shop_id,
+                                                     String type,
+                                                     String json_data)
             throws BusinessException, UnsupportedEncodingException {
-        return shop360Svc.updateThreeSixtyShopJsonData(shopId, type, json_data);
+        return shop360Svc.updateThreeSixtyShopJsonData(shop_id, type, json_data);
     }
 
     @ApiOperation(value = "Create/Update shop360 product positions", nickname = "updateShop360ProductPositions")
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
-    @PostMapping(value = "/product_positions", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "/product_positions",consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+                 produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopResponse updateThreeSixtyShopProductPositions(@RequestHeader("User-Token") String userToken,
-                                                     @RequestParam("shop_id") Long shopId,
-                                                     @RequestBody String json_data)
+                                                             Long shop_id,
+                                                             String json_data)
             throws BusinessException, UnsupportedEncodingException {
-        return shop360Svc.updateThreeSixtyShopProductPositions(shopId, json_data);
+        return shop360Svc.updateThreeSixtyShopProductPositions(shop_id, json_data);
     }
 
     @ApiOperation(value = "Create/Update shop360 sections", nickname = "updateShop360Sections")
@@ -116,8 +118,9 @@ public class ShopThreeSixtyController {
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @GetMapping(value = "/products", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public List<ProductRepresentationObject> getShop360products(@RequestParam("barcode") String barcode,
+    public List<ProductRepresentationObject> getShop360products(@RequestParam("org_id") Long orgId,
+                                                                @RequestParam("barcode") String barcode,
                                                                 @RequestParam("name") String name) throws BusinessException {
-        return shop360Svc.getShop360Products(barcode, name);
+        return shop360Svc.getShop360Products(orgId, barcode, name);
     }
 }
