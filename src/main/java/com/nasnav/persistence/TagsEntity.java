@@ -1,5 +1,7 @@
 package com.nasnav.persistence;
 
+import static java.util.Optional.ofNullable;
+
 import java.util.Set;
 
 import javax.persistence.Column;
@@ -70,13 +72,14 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
 
     @Override
     public BaseRepresentationObject getRepresentation() {
+    	Long categoryId = ofNullable(categoriesEntity).map(CategoriesEntity::getId).orElse(null);
         TagsRepresentationObject obj = new TagsRepresentationObject();
         obj.setId(getId());
         obj.setName(getName());
         obj.setAlias(getAlias());
         obj.setPname(getPname());
         obj.setMetadata(getMetadata());
-        obj.setCategoryId(categoriesEntity.getId());
+        obj.setCategoryId(categoryId);
         obj.setGraphId(getGraphId());
         
         return obj;

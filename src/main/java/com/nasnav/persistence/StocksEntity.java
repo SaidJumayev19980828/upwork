@@ -17,7 +17,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.enumerations.TransactionCurrency;
 
 import lombok.Data;

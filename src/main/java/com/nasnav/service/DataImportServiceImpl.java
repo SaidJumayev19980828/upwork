@@ -44,7 +44,6 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
-import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.BrandsRepository;
@@ -342,6 +341,7 @@ public class DataImportServiceImpl implements DataImportService {
 
 	private void saveSingleProductToDbAndLogErrors(ImportProductContext context, int rowNum, ProductData data) {
 		try {
+			logger.info(format(">>>>>>>>>>>>>>>>>>>>>>>>>>>> saving row[%d] ....", rowNum));
 		    saveSingleProductDataToDB(data, context);
 		} catch (Throwable e) {
 		    logger.error(e, e);

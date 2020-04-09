@@ -3,6 +3,7 @@ package com.nasnav.constatnts.error.dataimport;
 public class ErrorMessages {
 	public static final String ERR_PRODUCT_IMPORT_MISSING_PARAM = "Missing required parameters! required parameters are {shop_id, currency, encoding, headers, csv}";
 	public static final String ERR_SHOP_ID_NOT_EXIST = "No shop exists with id [%d]";
+	public static final String ERR_MISSING_STOCK_UPDATE_PARAMS = "Missing required parameters! required parameters are {shop_id, variant_id, [quantity OR price and currency]}, while given data is[%s]!";
 	public static final String ERR_CATEGORY_NAME_NOT_EXIST = "No category exists with name [%s]";
 	public static final String ERR_BRAND_NAME_NOT_EXIST = "No brand exists with name [%s]";
 	public static final String ERR_PRODUCT_NAME_NOT_EXIST = "No product exists with name [%s]";
