@@ -1,6 +1,12 @@
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import org.json.JSONObject;
 import org.junit.Test;
@@ -11,14 +17,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nasnav.NavBox;
@@ -26,7 +28,6 @@ import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.StocksEntity;
-import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -79,15 +80,15 @@ public class ShopStockUpdateTest {
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , "non-existing-token");
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , "non-existing-token");
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);		
 		
-		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+		assertEquals(UNAUTHORIZED, response.getStatusCode());
 	}
 	
 	
@@ -101,15 +102,15 @@ public class ShopStockUpdateTest {
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
 	
 	
@@ -122,15 +123,15 @@ public class ShopStockUpdateTest {
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
 	
 	
@@ -142,15 +143,15 @@ public class ShopStockUpdateTest {
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
 	
 	
@@ -162,15 +163,15 @@ public class ShopStockUpdateTest {
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(OK, response.getStatusCode());
 	}
 	
 	
@@ -183,15 +184,15 @@ public class ShopStockUpdateTest {
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.remove("shop_id");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 	
 	
@@ -205,15 +206,15 @@ public class ShopStockUpdateTest {
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.remove("variant_id");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 	
 	
@@ -228,15 +229,15 @@ public class ShopStockUpdateTest {
 		updateReq.remove("price");
 		updateReq.remove("currency");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 	
 	
@@ -250,15 +251,15 @@ public class ShopStockUpdateTest {
 		updateReq.remove("quantity");
 		updateReq.remove("price");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 	
 	
@@ -273,15 +274,15 @@ public class ShopStockUpdateTest {
 		updateReq.remove("quantity");
 		updateReq.remove("currency");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 	
 	
@@ -293,15 +294,15 @@ public class ShopStockUpdateTest {
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.remove("quantity");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(OK, response.getStatusCode());
 	}
 	
 	
@@ -315,15 +316,15 @@ public class ShopStockUpdateTest {
 		updateReq.remove("price");
 		updateReq.remove("currency");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(OK, response.getStatusCode());
 	}
 	
 	
@@ -336,15 +337,15 @@ public class ShopStockUpdateTest {
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.put("currency", -140);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 	
 	
@@ -358,15 +359,15 @@ public class ShopStockUpdateTest {
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.put("price", -140);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 	
 	
@@ -380,15 +381,15 @@ public class ShopStockUpdateTest {
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.put("shop_id", 1111111L);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 	
 	
@@ -403,15 +404,15 @@ public class ShopStockUpdateTest {
 		JSONObject updateReq = createStockUpdateReq();
 		updateReq.put("variant_id", 1111111L);
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 
 	
@@ -429,15 +430,15 @@ public class ShopStockUpdateTest {
 		
 		JSONObject updateReq = createStockUpdateReq();
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(OK, response.getStatusCode());
 		
 		JSONObject body = new JSONObject(response.getBody());
 		assertTrue(body.has("stock_id"));
@@ -468,15 +469,15 @@ public class ShopStockUpdateTest {
 		updateReq.remove("price");	
 		updateReq.remove("currency");
 		
-		HttpEntity request =  TestCommons.getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(updateReq.toString() , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/shop/stock"
-						, HttpMethod.POST
+						, POST
 						, request
 						, String.class);	
 		
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(OK, response.getStatusCode());
 		
 		JSONObject body = new JSONObject(response.getBody());
 		assertTrue(body.has("stock_id"));
