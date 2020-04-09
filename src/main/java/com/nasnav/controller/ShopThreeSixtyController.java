@@ -84,9 +84,9 @@ public class ShopThreeSixtyController {
     public ShopResponse updateThreeSixtyShopJsonData(@RequestHeader("User-Token") String userToken,
                                                      @RequestParam("shop_id") Long shopId,
                                                      @RequestParam String type,
-                                                     @RequestParam("json_data") String jsonData)
+                                                     @RequestBody String json_data)
             throws BusinessException, UnsupportedEncodingException {
-        return shop360Svc.updateThreeSixtyShopJsonData(shopId, type, jsonData);
+        return shop360Svc.updateThreeSixtyShopJsonData(shopId, type, json_data);
     }
 
     @ApiOperation(value = "Create/Update shop360 product positions", nickname = "updateShop360ProductPositions")
@@ -95,9 +95,9 @@ public class ShopThreeSixtyController {
     @PostMapping(value = "/product_positions", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopResponse updateThreeSixtyShopProductPositions(@RequestHeader("User-Token") String userToken,
                                                      @RequestParam("shop_id") Long shopId,
-                                                     @RequestParam("json_data") String jsonData)
+                                                     @RequestBody String json_data)
             throws BusinessException, UnsupportedEncodingException {
-        return shop360Svc.updateThreeSixtyShopProductPositions(shopId, jsonData);
+        return shop360Svc.updateThreeSixtyShopProductPositions(shopId, json_data);
     }
 
     @ApiOperation(value = "Create/Update shop360 sections", nickname = "updateShop360Sections")
@@ -109,5 +109,15 @@ public class ShopThreeSixtyController {
                                                      @RequestBody List<ShopFloorsRequestDTO> jsonDTO)
             throws BusinessException, IOException {
         return shop360Svc.updateThreeSixtyShopSections(shopId, jsonDTO);
+    }
+
+
+    @ApiOperation(value = "Search for products related to 360", nickname = "get360sProducts")
+    @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
+    @GetMapping(value = "/products", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public List<ProductRepresentationObject> getShop360products(@RequestParam("barcode") String barcode,
+                                                                @RequestParam("name") String name) throws BusinessException {
+        return shop360Svc.getShop360Products(barcode, name);
     }
 }

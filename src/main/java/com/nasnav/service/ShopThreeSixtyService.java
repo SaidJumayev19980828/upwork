@@ -1,6 +1,6 @@
 package com.nasnav.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.exceptions.BusinessException;
@@ -12,10 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -93,11 +90,7 @@ public class ShopThreeSixtyService {
         if (jsonDataString.startsWith("--- '") && jsonDataString.endsWith("'\n"))
             jsonDataString = jsonDataString.substring(jsonDataString.indexOf("'")+1,jsonDataString.lastIndexOf("'"));
 
-        /*if (type.equals("mobile")) {
-            jsonDataString = jsonDataString.replaceAll( "\"", "\\\"");
-            return "{\"json_data\":" + jsonDataString + "}";
-        }*/
-        return jsonDataString;
+        return jsonDataString.replaceAll("\n", "");
     }
 
     public String getProductPositions(Long shopId) {
@@ -411,4 +404,12 @@ public class ShopThreeSixtyService {
                 + "-resized"+ size +
                 imageName.substring(imageName.lastIndexOf("."));
     }
+
+    public List<ProductRepresentationObject> getShop360Products(String barcode, String name) throws BusinessException {
+        if (StringUtils.isBlankOrNull(barcode) && StringUtils.isBlankOrNull(name))
+            throw new BusinessException("Either provide barcode or name",
+                    "MISSING_PARAMS: barcode, name", HttpStatus.NOT_ACCEPTABLE);
+        return null;
+    }
+
 }
