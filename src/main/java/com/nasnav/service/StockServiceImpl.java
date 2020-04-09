@@ -5,6 +5,7 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_MISSING_S
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
@@ -12,8 +13,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
@@ -197,7 +200,19 @@ public class StockServiceImpl implements StockService {
 				.stream()
 				.map(this::getVariantIdentifier)
 				.collect(toList());
-		VariantCache variantCache = cachingHelper.createVariantCache(variantIdList); 
+		VariantCache variantCache = cachingHelper.createVariantCache(variantIdList);
+		
+		List<Long> shopIdList = 
+				stocks
+				.stream()
+				.map(StockUpdateDTO::getShopId)
+				.collect(toList());		 
+		Map<Long, ShopsEntity> shopCache = 
+				shopRepo
+				.findByIdIn(shopIdList)
+				.stream()
+				.collect(toMap(ShopsEntity::getId, shop -> shop));
+		
 		return null;
 	}
 	
@@ -264,7 +279,8 @@ public class StockServiceImpl implements StockService {
 
 
 
-	private void validateStockToUpdate(StockUpdateDTO req) throws BusinessException {
+	private void validateStockToUpdate(StockUpdateDTO req
+			, VariantCache variantCache, Map<Long, ShopsEntity> shopCache) throws BusinessException {
 		if(!allParamExists(req) ){
 			throw new BusinessException(
 					format(ERR_MISSING_STOCK_UPDATE_PARAMS, req)
@@ -282,17 +298,17 @@ public class StockServiceImpl implements StockService {
 			validateStockPrice(req);
 		}
 		
-		validateShopId(req);
-		validateVariantId(req);
+		validateShopId(req, shopCache);
+		validateVariantId(req, variantCache);
 	}
 	
 	
 
 	
 	
-	private void validateVariantId(StockUpdateDTO req) throws BusinessException{
+	private void validateVariantId(StockUpdateDTO req, VariantCache variantCache) throws BusinessException{
 		Long id = req.getVariantId();
-		if(!variantRepo.existsById(id) ) {
+		if(!variantCache.getIdToVariantMap().containsKey(id) ) {
 			throw new BusinessException(
 					format("No product variant exists with id[%d]!", id)
 					, "INVALID_PARAM:variant_id" 
@@ -303,8 +319,9 @@ public class StockServiceImpl implements StockService {
 	
 	
 
-	private void validateShopId(StockUpdateDTO req) throws BusinessException{
-		ShopsEntity shop = validateShopExists(req);		
+	private void validateShopId(StockUpdateDTO req, Map<Long, ShopsEntity> shopCache) throws BusinessException{
+		validateShopExists(req, shopCache);
+		ShopsEntity shop = shopCache.get(req.getShopId());
 		validateIfOrgMgrOfShop(shop);
 		validateIfStoreManagerOfShop(shop);
 	}
@@ -314,15 +331,14 @@ public class StockServiceImpl implements StockService {
 	
 
 
-	private ShopsEntity validateShopExists(StockUpdateDTO req) throws BusinessException {
+	private void validateShopExists(StockUpdateDTO req, Map<Long, ShopsEntity> shopCache) throws BusinessException {
 		Long shopId = req.getShopId();		
-		return shopRepo
-				.findById(shopId)
-				.orElseThrow(() -> 
-					new BusinessException(
-						format("No shop exists with id[%d]!", shopId)
-						, "INVALID_PARAM:shop_id" 
-						, NOT_ACCEPTABLE));
+		if(!shopCache.containsKey(shopId)) {
+			throw new BusinessException(
+					format("No shop exists with id[%d]!", shopId)
+					, "INVALID_PARAM:shop_id" 
+					, NOT_ACCEPTABLE);
+		}
 	}
 
 

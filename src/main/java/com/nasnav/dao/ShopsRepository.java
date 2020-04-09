@@ -34,4 +34,6 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
 	Optional<ShopsEntity> findByNameAndOrganizationEntity_Id(String shopName, Long orgId);
 
 	ShopsEntity findByIdAndOrganizationEntity_Id(Long id, Long orgId);
+
+	List<ShopsEntity> findByIdIn(List<Long> shopIdList);
 }
