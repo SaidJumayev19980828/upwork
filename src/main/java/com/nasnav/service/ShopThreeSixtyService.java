@@ -74,30 +74,30 @@ public class ShopThreeSixtyService {
 
         String data = "";
         if(type.equals("web"))
-            data = shop.getWebJsonData();
+            data = getJsonDataStringSerlizable(shop.getWebJsonData(),type);
         else if (type.equals("mobile"))
-            data = getJsonDataStringSerlizable(shop.getMobileJsonData());
+            data = getJsonDataStringSerlizable(shop.getMobileJsonData(), type);
 
 
         return data;
     }
 
+
     // ! custom modifier to deal with mailformed json data in shop360s !
-    private String getJsonDataStringSerlizable(String oldJsonDataString) {
+    private String getJsonDataStringSerlizable(String oldJsonDataString, String type) {
         String jsonDataString = oldJsonDataString;
 
         if (jsonDataString == null)
             return null;
 
-        jsonDataString = jsonDataString.replaceAll("\"", "");
-
-
-        return "{\"json_data\":"+jsonDataString;
-
-        /*if (jsonDataString.startsWith("--- '") && jsonDataString.endsWith("'\n"))
+        if (jsonDataString.startsWith("--- '") && jsonDataString.endsWith("'\n"))
             jsonDataString = jsonDataString.substring(jsonDataString.indexOf("'")+1,jsonDataString.lastIndexOf("'"));
 
-        return */
+        /*if (type.equals("mobile")) {
+            jsonDataString = jsonDataString.replaceAll( "\"", "\\\"");
+            return "{\"json_data\":" + jsonDataString + "}";
+        }*/
+        return jsonDataString;
     }
 
     public String getProductPositions(Long shopId) {
@@ -109,7 +109,7 @@ public class ShopThreeSixtyService {
         if (productPosition == null || productPosition.getPositionsJsonData() == null)
             return null;
 
-        String positions =  productPosition.getPositionsJsonData();
+        String positions =  getJsonDataStringSerlizable(productPosition.getPositionsJsonData(),"pp");
 
         return positions;
     }
@@ -267,11 +267,20 @@ public class ShopThreeSixtyService {
     }
 
     private Long createShop360Floor(OrganizationEntity org, Long viewId, List<ShopFloorsRequestDTO> dto,
-                                    Map<String, List<String>> resizedImagesMap) {
+                                    Map<String, List<String>> resizedImagesMap) throws BusinessException {
         ShopThreeSixtyEntity shop = shop360Repo.findById(viewId).get();
-        ShopFloorsEntity floor = new ShopFloorsEntity();
+        ShopFloorsEntity floor;
 
         for(ShopFloorsRequestDTO floorDTO : dto) {
+            if (floorDTO.getId() == null)
+                floor = new ShopFloorsEntity();
+            else {
+                floor = shopFloorsRepo.findById(floorDTO.getId()).get();
+                if (!floor.getShopThreeSixtyEntity().getId().equals(shop.getId()))
+                    throw new BusinessException("Provided floor No. " + floorDTO.getId() + " doesn't belong to shop No. "+shop.getId(),
+                            "INVALID_PARAM: floor_id", HttpStatus.NOT_ACCEPTABLE);
+            }
+
             floor.setName(floorDTO.getName());
             floor.setNumber(floorDTO.getNumber());
             floor.setShopThreeSixtyEntity(shop);
@@ -287,9 +296,17 @@ public class ShopThreeSixtyService {
     }
 
     private void createShop360Section(ShopSectionsRequestDTO dto, ShopFloorsEntity floor, OrganizationEntity org,
-                                      Map<String, List<String>> resizedImagesMap) {
+                                      Map<String, List<String>> resizedImagesMap) throws BusinessException {
+        ShopSectionsEntity section;
+        if (dto.getId() == null)
+            section = new ShopSectionsEntity();
+        else {
+            section = sectionsRepo.findById(dto.getId()).get();
+            if (!section.getShopFloorsEntity().getId().equals(floor.getId()))
+                throw new BusinessException("Provided section No. " + dto.getId() + " doesn't belong to floor No. "+floor.getId(),
+                        "INVALID_PARAM: section_id", HttpStatus.NOT_ACCEPTABLE);
+        }
 
-        ShopSectionsEntity section = new ShopSectionsEntity();
         section.setName(dto.getName());
         section.setImage(dto.getImageUrl());
         section.setShopFloorsEntity(floor);
@@ -301,8 +318,17 @@ public class ShopThreeSixtyService {
     }
 
     private void createShop360Scene(ShopScenesRequestDTO dto, ShopSectionsEntity section, OrganizationEntity org,
-                                    Map<String, List<String>> resizedImagesMap) {
-        ShopScenesEntity scene = new ShopScenesEntity();
+                                    Map<String, List<String>> resizedImagesMap) throws BusinessException {
+        ShopScenesEntity scene;
+        if (dto.getId() == null)
+            scene = new ShopScenesEntity();
+        else {
+            scene = scenesRepo.findById(dto.getId()).get();
+            if (!scene.getShopSectionsEntity().getId().equals(section.getId()))
+                throw new BusinessException("Provided scene No. " + dto.getId() + " doesn't belong to section No. " + section.getId(),
+                        "INVALID_PARAM: scene_id", HttpStatus.NOT_ACCEPTABLE);
+        }
+
         scene.setName(dto.getName());
         scene.setImage(dto.getImageUrl());
         if(dto.getImageUrl() != null) {
