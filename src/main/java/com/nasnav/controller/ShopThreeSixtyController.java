@@ -80,7 +80,7 @@ public class ShopThreeSixtyController {
     @ApiOperation(value = "Create/Update shop360 json data", nickname = "updateShop360JsonData")
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
-    @PostMapping(value = "/json_data", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+    @PutMapping(value = "/json_data", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
                  produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopResponse updateThreeSixtyShopJsonData(@RequestHeader("User-Token") String userToken,
                                                      Long shop_id,
@@ -93,7 +93,7 @@ public class ShopThreeSixtyController {
     @ApiOperation(value = "Create/Update shop360 product positions", nickname = "updateShop360ProductPositions")
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
-    @PostMapping(value = "/product_positions",consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+    @PutMapping(value = "/product_positions",consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
                  produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopResponse updateThreeSixtyShopProductPositions(@RequestHeader("User-Token") String userToken,
                                                              Long shop_id,
