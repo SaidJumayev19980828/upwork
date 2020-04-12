@@ -10,4 +10,11 @@ public class VariantBasicData {
 	private Long productId;
 	private Long organizationId;
 	private String barcode;
+	
+	public VariantBasicData(Long variantId, Long productId, Long organizationId, String barcode) {
+		this.variantId = variantId;
+		this.productId = productId;
+		this.organizationId = organizationId;
+		this.barcode = barcode;
+	}
 }

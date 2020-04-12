@@ -416,6 +416,7 @@ public class StockServiceImpl implements StockService {
 		}
 		EmployeeUserEntity empUser = (EmployeeUserEntity)user;
 		
+		//TODO: revise this condition
 		if( !security.currentUserHasRole(Roles.ORGANIZATION_MANAGER) 
 				&& security.currentUserHasRole(Roles.STORE_MANAGER)
 				&& !Objects.equals( empUser.getShopId(), shop.getId()) ) {

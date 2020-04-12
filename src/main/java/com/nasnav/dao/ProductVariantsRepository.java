@@ -30,15 +30,17 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	@Query("SELECT variant FROM ProductVariantsEntity variant INNER JOIN FETCH variant.productEntity prod where prod.organizationId = :orgId")
 	List<ProductVariantsEntity> findByOrganizationId(@Param("orgId") Long orgId);
 	
-	@Query("SELECT variant.id as variantId, product.id as productId, product.organizationId as organizationId , variant.barcode as barcode "
-			+ " FROM ProductVariantsEntity variant INNER JOIN FETCH variant.productEntity prod "
+	@Query("SELECT NEW com.nasnav.service.model.VariantBasicData(variant.id, variant.productEntity.id, variant.productEntity.organizationId, variant.barcode) "
+//			"SELECT NEW com.nasnav.service.model.VariantBasicData(variant.id, product.id, product.organizationId, variant.barcode) "
+			+ " FROM ProductVariantsEntity variant "
+//			+ " JOIN variant.productEntity product "
 			+ " where variant.id in :idList")
 	List<VariantBasicData> findByIdIn(@Param("idList") List<Long> idList);
 	
-	@Query("SELECT variant.id as variantId, product.id as productId, product.organizationId as organizationId , variant.barcode as barcode"
+	@Query("SELECT NEW com.nasnav.service.model.VariantBasicData(variant.id, variant.productEntity.id, variant.productEntity.organizationId, variant.barcode) "
 			+ " FROM ProductVariantsEntity variant "
-			+ " INNER JOIN FETCH variant.productEntity product "
-			+ " where product.organizationId = :orgId "
+//			+ " JOIN variant.productEntity product "
+			+ " where variant.productEntity.organizationId = :orgId "
 			+ " AND variant.barcode in (:barcodeList)")
 	List<VariantBasicData> findByOrganizationIdAndBarcodeIn(@Param("orgId") Long orgId,  @Param("barcodeList") List<String> barcodeList);
 
