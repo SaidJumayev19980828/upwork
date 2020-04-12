@@ -37,13 +37,7 @@ public class ProductPositionEntity implements BaseEntity {
     @Column(name = "positions_json_data")
     private String positionsJsonData;
 
-    @Column(name = "created_at")
-    @CreationTimestamp
-    private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
-    @CreationTimestamp
-    private LocalDateTime updatedAt;
 
     @Column(name = "preview_json_data")
     private String previewJsonData;

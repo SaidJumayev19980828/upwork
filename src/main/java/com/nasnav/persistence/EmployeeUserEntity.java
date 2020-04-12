@@ -69,8 +69,6 @@ public class EmployeeUserEntity extends BaseUserEntity {
         employeeUser.setEncryptedPassword(EntityConstants.INITIAL_PASSWORD);
         employeeUser.setOrganizationId(employeeUserJson.orgId);
         employeeUser.setShopId(employeeUserJson.storeId);
-        employeeUser.setCreatedAt(LocalDateTime.now());
-        employeeUser.setUpdatedAt(LocalDateTime.now());
         employeeUser.setAvatar(employeeUserJson.getAvatar());
         return employeeUser;
     }

@@ -18,10 +18,4 @@ public class RoleEmployeeUser extends DefaultBusinessEntity<Integer> {
 
     @Column(name = "role_id")
     private Integer roleId;
-
-    @Column(name = "created_at")
-    public LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    public LocalDateTime updatedAt;
 }

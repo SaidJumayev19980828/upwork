@@ -1,9 +1,9 @@
 --dummy organization
-insert into public.organizations(id , name , created_at, updated_at)
-values (99001, 'Bundle guys' , now() , now());
+insert into public.organizations(id , name )
+values (99001, 'Bundle guys' );
 
 -- dummy shop
-INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100001 , 'Bundle Shop' , now() , now() , 99001);
+INSERT INTO public.shops (id,"name",  organization_id) VALUES(100001 , 'Bundle Shop'  , 99001);
 
 
 -- dummy products
@@ -24,16 +24,16 @@ insert into public.product_variants(id, "name" , product_id ) values(300004, 'va
 
 
 -- stocks for products, product variant and bundles
-insert into public.stocks(id, shop_id , variant_id , quantity , price , created_at, updated_at, organization_id)
-values (400011, 100001 ,300011, 1 , 1000 , now() , now(), 99001);
-insert into public.stocks(id, shop_id , variant_id , quantity , price, created_at, updated_at, organization_id)
-values (400012, 100001, 300012, 20 , 122, now() , now(), 99001);
-insert into public.stocks(id, shop_id , variant_id , quantity , price, created_at, updated_at, organization_id)
-values (400002, 100001, 300002, 30 , 500, now() , now(), 99001);
-insert into public.stocks(id, shop_id , variant_id , quantity , price, created_at, updated_at, organization_id)
-values (400003, 100001, 300003, 2000 , 3000, now() , now(), 99001);
-insert into public.stocks(id, shop_id , variant_id , quantity , price, created_at, updated_at, organization_id)
-values (400004, 100001, 300004, 24 , 10000, now() , now(), 99001);
+insert into public.stocks(id, shop_id , variant_id , quantity , price ,  organization_id)
+values (400011, 100001 ,300011, 1 , 1000 , 99001);
+insert into public.stocks(id, shop_id , variant_id , quantity , price,  organization_id)
+values (400012, 100001, 300012, 20 , 122, 99001);
+insert into public.stocks(id, shop_id , variant_id , quantity , price,  organization_id)
+values (400002, 100001, 300002, 30 , 500, 99001);
+insert into public.stocks(id, shop_id , variant_id , quantity , price,  organization_id)
+values (400003, 100001, 300003, 2000 , 3000, 99001);
+insert into public.stocks(id, shop_id , variant_id , quantity , price,  organization_id)
+values (400004, 100001, 300004, 24 , 10000, 99001);
 
 
 

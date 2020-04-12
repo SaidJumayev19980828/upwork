@@ -95,13 +95,6 @@ public class ProductEntity {
 
     private String description;
 
-
-    @Column(name = "info_updated")
-    private Boolean infoUpdated;
-
-    @Column(name = "item_id")
-    private String itemId;
-
     @Column(name = "created_at")
     @CreationTimestamp
     private LocalDateTime creationDate;

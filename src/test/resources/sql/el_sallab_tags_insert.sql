@@ -1,4 +1,4 @@
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(233, 'COLLECTION2'	, now(), now());
+INSERT INTO public.categories(id, name) VALUES(233, 'COLLECTION2'	);
 
 
 

@@ -85,8 +85,6 @@ public class NavBoxTest {
         brand.setPname("mtb");
         brand.setBannerImage("/some/banner/image.png");
         brand.setLogo("/bright/logo/image.png");
-        brand.setCreatedAt(new Date());
-        brand.setUpdatedAt(new Date());
         brandsRepository.save(brand);
         long objectId = brand.getId();
 
@@ -126,8 +124,6 @@ public class NavBoxTest {
         shop.setPname("sts");
         shop.setLogo("/bright/logo/image.png");
         shop.setBanner("/some/shop/banner.png");
-        shop.setArea("Some Area");
-        shop.setArea("some_area");
         shop.setCountry("EG");
         shop.setCity("Cairo");
         shop.setStreet("Bambino Street");

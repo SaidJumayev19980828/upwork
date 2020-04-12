@@ -35,29 +35,9 @@ public class BrandsEntity implements BaseEntity{
        
     @Column(name = "banner_image")
     private String bannerImage;
-    
-    @Column(name = "created_at")
-    @CreationTimestamp
-    private Date createdAt;
-    
-    @Column(name = "updated_at")
-    @UpdateTimestamp
-    private Date updatedAt;
 
     @Column(name = "p_name")
     private String pname;
-    
-    @Column(name = "following_standards")
-    private Boolean followingStandards;
-           
-    @Column(name = "stock_management")
-    private Boolean stockManagement;
-        
-    @Column(name = "google_plus")
-    private String googlePlus;
-    
-    @Column(name = "display_name")
-    private String displayName;
     
     @Column(name = "dark_logo")
     private String darkLogo;
@@ -72,20 +52,13 @@ public class BrandsEntity implements BaseEntity{
 
     private String name;    
     private String logo;
-    private String facebook;    
-    private String twitter;    
-    private String instagram;
     private String description;
-    private String pinterest;
-    private String youtube;
-    private String snapchat;
     
 
     @Override
     public BaseRepresentationObject getRepresentation() {
         Organization_BrandRepresentationObject brandRepresentationObject = new Organization_BrandRepresentationObject();
         brandRepresentationObject.setCategoryId(getCategoryId());
-        brandRepresentationObject.setDisplayName(getDisplayName());
         brandRepresentationObject.setId(getId());
         brandRepresentationObject.setLogoUrl(getLogo());
         brandRepresentationObject.setName(getName());

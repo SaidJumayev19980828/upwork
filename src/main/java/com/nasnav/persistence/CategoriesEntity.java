@@ -37,14 +37,8 @@ public class CategoriesEntity {
     
     @Column(name = "parent_id")
     private Integer parentId;
-    
-    @Column(name = "created_at")
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at")
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
+
+
 
 
     //@Override

@@ -35,13 +35,7 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "p_name")
     private String pname;
     
-    @Column(name = "created_at")
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at")
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
+
 
     @Column(name = "theme_id")
     private Integer themeId;

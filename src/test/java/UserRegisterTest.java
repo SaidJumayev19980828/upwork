@@ -120,8 +120,6 @@ public class UserRegisterTest {
 		UserEntity persistentUser = new UserEntity();
 		persistentUser.setName("John Smith");
 		persistentUser.setEmail("unavailable@nasnav.com");
-		persistentUser.setCreatedAt(LocalDateTime.now());
-		persistentUser.setUpdatedAt(LocalDateTime.now());
 		persistentUser.setEncryptedPassword("---");
 		persistentUser.setOrganizationId(organization.getId());
 		

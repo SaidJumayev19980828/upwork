@@ -30,13 +30,7 @@ public class ShopFloorsEntity implements BaseEntity {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "created_at")
-    @CreationTimestamp
-    private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
-    @CreationTimestamp
-    private LocalDateTime updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "shop360_id", nullable = false)

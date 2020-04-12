@@ -17,11 +17,7 @@ public class CitiesEntity {
     
     private String name;
     
-    @Column(name = "created_at")
-    private Date createdAt;
-    
-    @Column(name = "updated_at")
-    private Date updatedAt;
+
     
 
     @OneToOne(cascade = CascadeType.ALL)

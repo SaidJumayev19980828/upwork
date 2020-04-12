@@ -46,22 +46,10 @@ public class ShopSectionsEntity implements BaseEntity {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "web_json_data")
-    private String webJsonData;
-
-    @Column(name = "mobile_json_data")
-    private String mobileJsonData;
-
     @Column(name = "image")
     private String image;
 
-    @Column(name = "created_at")
-    @CreationTimestamp
-    private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
-    @CreationTimestamp
-    private LocalDateTime updatedAt;
 
     @Override
     public BaseRepresentationObject getRepresentation() {

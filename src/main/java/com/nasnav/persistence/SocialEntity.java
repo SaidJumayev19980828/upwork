@@ -21,11 +21,7 @@ public class SocialEntity implements BaseEntity {
     private String twitter;
     private String instagram;
     
-    @Column(name = "created_at")
-    private Date createdAt;
-    
-    @Column(name = "updated_at")
-    private Date updatedAt;
+
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "organization_id", referencedColumnName = "id")

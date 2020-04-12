@@ -29,7 +29,6 @@ public class OrganizationServiceHelper  {
         SocialEntity socialEntity = socialRepository.findOneByOrganizationEntity_Id(json.organizationId);
         if (socialEntity == null){
             socialEntity = new SocialEntity();
-            socialEntity.setCreatedAt(new Date());
             socialEntity.setOrganizationEntity(organization);
         }
         if (json.socialTwitter != null) {
@@ -54,7 +53,6 @@ public class OrganizationServiceHelper  {
                 throw new BusinessException("INVALID_PARAM: social_instagram", "the URL is malformed", HttpStatus.NOT_ACCEPTABLE);
 
         }
-        socialEntity.setUpdatedAt(new Date());
         return socialEntity;
     }
 }

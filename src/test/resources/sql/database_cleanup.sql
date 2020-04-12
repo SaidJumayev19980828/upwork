@@ -28,7 +28,6 @@ DELETE FROM public.files  where organization_id between 99000 and 99999;
 DELETE FROM public.files  where orig_filename = 'nasnav--Test_Photo.png';  -- for test files with no organization
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;
-DELETE FROM public.malls where id = 901;
 DELETE FROM public.tag_graph_edges 
 WHERE child_id IN (
 	select node.id 

@@ -36,21 +36,11 @@ public class StocksEntity {
 	private Integer quantity;
 	private String location;
 
-	@Column(name = "created_at", nullable = false, length = 29)
-	@CreationTimestamp
-	private LocalDateTime creationDate;
-
-	@Column(name = "updated_at", nullable = false, length = 29)
-	@UpdateTimestamp
-	private LocalDateTime updateDate;
-
 	@Column(name = "price")
 	private BigDecimal price;
 
 	@Column(name = "currency")
 	private int currency;
-
-	
 
 	private BigDecimal discount;
 

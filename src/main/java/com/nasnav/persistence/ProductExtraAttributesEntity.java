@@ -32,15 +32,6 @@ public class ProductExtraAttributesEntity {
 	
 	private String value;
 	
-	@CreationTimestamp
-	@Column(name = "created_at")
-	private LocalDateTime createdAt;
-	
-	
-	@UpdateTimestamp
-	@Column(name = "updated_at")
-	private LocalDateTime UpdatedAt;
-	
 	
 	@ManyToOne(cascade = CascadeType.DETACH)
 	@JoinColumn(name = "variant_id", referencedColumnName = "id")
