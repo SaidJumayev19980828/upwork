@@ -2,6 +2,7 @@ package com.nasnav.dao;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -10,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.service.model.VariantBasicData;
 
 public interface ProductVariantsRepository extends JpaRepository<ProductVariantsEntity, Long>{
 
@@ -28,11 +30,17 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	@Query("SELECT variant FROM ProductVariantsEntity variant INNER JOIN FETCH variant.productEntity prod where prod.organizationId = :orgId")
 	List<ProductVariantsEntity> findByOrganizationId(@Param("orgId") Long orgId);
 	
-	List<ProductVariantsEntity> findByIdIn(List<Long> idList);
+	@Query("SELECT variant.id as variantId, product.id as productId, product.organizationId as organizationId , variant.barcode as barcode "
+			+ " FROM ProductVariantsEntity variant INNER JOIN FETCH variant.productEntity prod "
+			+ " where variant.id in :idList")
+	List<VariantBasicData> findByIdIn(@Param("idList") List<Long> idList);
 	
-	@Query("SELECT variant FROM ProductVariantsEntity variant INNER JOIN FETCH variant.productEntity prod where prod.organizationId = :orgId "
+	@Query("SELECT variant.id as variantId, product.id as productId, product.organizationId as organizationId , variant.barcode as barcode"
+			+ " FROM ProductVariantsEntity variant "
+			+ " INNER JOIN FETCH variant.productEntity product "
+			+ " where product.organizationId = :orgId "
 			+ " AND variant.barcode in (:barcodeList)")
-	List<ProductVariantsEntity> findByOrganizationIdAndBarcodeIn(@Param("orgId") Long orgId,  @Param("barcodeList") List<String> barcodeList);
+	List<VariantBasicData> findByOrganizationIdAndBarcodeIn(@Param("orgId") Long orgId,  @Param("barcodeList") List<String> barcodeList);
 
 	long countByProductEntity_organizationId(long l);
 
@@ -44,4 +52,8 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
     		" where product_id in " + 
     		" (select id from products prod where prod.organization_id = :orgId)", nativeQuery = true )
 	void deleteAllByProductEntity_organizationId(@Param("orgId")Long orgId);
+
+	
+	@Query("select variant.id from ProductVariantsEntity variant where variant.id in :idList")
+	Set<Long> findExistingVariantsByIdIn(@Param("idList") List<Long> variantIdList);
 }

@@ -15,12 +15,14 @@ import org.springframework.stereotype.Service;
 
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.integration.IntegrationService;
-import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.service.SecurityService;
+import com.nasnav.service.model.VariantBasicData;
 import com.nasnav.service.model.VariantCache;
 import com.nasnav.service.model.VariantIdentifier;
 
 import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple3;
@@ -54,9 +56,9 @@ public class CachingHelper {
 	
 	
 	public  Mono<VariantCache> createVariantCacheMono(List<VariantIdentifier> variantIdentifiers) {
-		Mono<Map<String, ProductVariantsEntity>> idToVariantMap = getIdToVariantMap(variantIdentifiers);
-		Mono<Map<String, ProductVariantsEntity>> externalIdToVariantMap = getExternalIdToVariantMap(variantIdentifiers);
-		Mono<Map<String, ProductVariantsEntity>> barcodeToVariantMap = getBarcodeToVariantMap(variantIdentifiers);
+		Mono<Map<String, VariantBasicData>> idToVariantMap = getIdToVariantMap(variantIdentifiers);
+		Mono<Map<String, VariantBasicData>> externalIdToVariantMap = getExternalIdToVariantMap(variantIdentifiers);
+		Mono<Map<String, VariantBasicData>> barcodeToVariantMap = getBarcodeToVariantMap(variantIdentifiers);
 		
 		return Mono.zip(idToVariantMap, externalIdToVariantMap, barcodeToVariantMap)
 				.map(this::createVariantCacheFromTuple);
@@ -65,8 +67,8 @@ public class CachingHelper {
 	
 	
 	
-	public Optional<ProductVariantsEntity> getVariantFromCache(VariantIdentifier identifiers, VariantCache cache) {
-		ProductVariantsEntity variant= 
+	public Optional<VariantBasicData> getVariantFromCache(VariantIdentifier identifiers, VariantCache cache) {
+		VariantBasicData variant= 
 			ofNullable(cache.getIdToVariantMap().get(identifiers.getVariantId()))
 				.orElse(
 					ofNullable(cache.getExternalIdToVariantMap().get(identifiers.getExternalId()))
@@ -78,10 +80,10 @@ public class CachingHelper {
 	
 	
 	
-	private VariantCache createVariantCacheFromTuple(Tuple3<Map<String, ProductVariantsEntity>, Map<String, ProductVariantsEntity>, Map<String, ProductVariantsEntity>> tuple) {
-		Map<String, ProductVariantsEntity> idToVariantMap = tuple.getT1();
-		Map<String, ProductVariantsEntity> externalIdToVariantMap = tuple.getT2();
-		Map<String, ProductVariantsEntity> barcodeToVariantMap = tuple.getT3();
+	private VariantCache createVariantCacheFromTuple(Tuple3<Map<String, VariantBasicData>, Map<String, VariantBasicData>, Map<String, VariantBasicData>> tuple) {
+		Map<String, VariantBasicData> idToVariantMap = tuple.getT1();
+		Map<String, VariantBasicData> externalIdToVariantMap = tuple.getT2();
+		Map<String, VariantBasicData> barcodeToVariantMap = tuple.getT3();
 		return new VariantCache(idToVariantMap, externalIdToVariantMap, barcodeToVariantMap);
 	}
 	
@@ -89,7 +91,7 @@ public class CachingHelper {
 	
 	
 	
-	private Mono<Map<String, ProductVariantsEntity>> getIdToVariantMap(
+	private Mono<Map<String, VariantBasicData>> getIdToVariantMap(
 			List<VariantIdentifier> variantIdentifiers) {
 		return 
 			Flux
@@ -106,7 +108,7 @@ public class CachingHelper {
 	
 	
 	
-	private Flux<ProductVariantsEntity> getVariantsById(Flux<String> idList){
+	private Flux<VariantBasicData> getVariantsById(Flux<String> idList){
 		return 
 			idList
 			.map(Long::valueOf)
@@ -118,7 +120,7 @@ public class CachingHelper {
 	
 	
 	
-	private Flux<ProductVariantsEntityWithExternalId> getVariantsByExternalId(Flux<String> idList){		
+	private Flux<Variant> getVariantsByExternalId(Flux<String> idList){		
 		return 
 			idList
 			.buffer()
@@ -129,7 +131,7 @@ public class CachingHelper {
 	
 	
 	
-	private Flux<ProductVariantsEntity> getVariantsByBarcode(Flux<String> barcodeList){
+	private Flux<VariantBasicData> getVariantsByBarcode(Flux<String> barcodeList){
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		return 
 			barcodeList
@@ -140,7 +142,7 @@ public class CachingHelper {
 	
 	
 	
-	private List<ProductVariantsEntityWithExternalId> getProductVariantFromExternalIdIn(List<String> extIdList){
+	private List<Variant> getProductVariantFromExternalIdIn(List<String> extIdList){
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		Map<String,String> mapping = integrationService.getLocalMappedValues(orgId, PRODUCT_VARIANT, extIdList);
 		Map<String,String> localToExtIdMapping = 
@@ -167,23 +169,23 @@ public class CachingHelper {
 	
 	
 	
-	private ProductVariantsEntityWithExternalId toProductVariantEntityWithExtId(Map<String, String> localToExtIdMapping,
-			ProductVariantsEntity variant) {
-		String extId = localToExtIdMapping.get(String.valueOf(variant.getId()));
-		return new ProductVariantsEntityWithExternalId(variant , extId);
+	private Variant toProductVariantEntityWithExtId(Map<String, String> localToExtIdMapping,
+			VariantBasicData variant) {
+		String extId = localToExtIdMapping.get(String.valueOf(variant.getVariantId()));
+		return new Variant(variant , extId);
 	}
 	
 	
 	
 	
-	private String getIdAsString(ProductVariantsEntity variant) {
-		return String.valueOf(variant.getId());
+	private String getIdAsString(VariantBasicData variant) {
+		return String.valueOf(variant.getVariantId());
 	}
 
 	
 	
 	
-	private Mono<Map<String, ProductVariantsEntity>> getBarcodeToVariantMap(
+	private Mono<Map<String, VariantBasicData>> getBarcodeToVariantMap(
 			List<VariantIdentifier> variantIdentifiers) {
 		return 
 			Flux
@@ -192,7 +194,7 @@ public class CachingHelper {
 			.map(VariantIdentifier::getBarcode)
 			.window(SEARCH_BATCH_SIZE)
 			.flatMap(this::getVariantsByBarcode)
-			.collectMap(ProductVariantsEntity::getBarcode, variant -> variant);
+			.collectMap(VariantBasicData::getBarcode, variant -> variant);
 	}
 
 
@@ -200,7 +202,7 @@ public class CachingHelper {
 
 
 
-	private Mono<Map<String, ProductVariantsEntity>> getExternalIdToVariantMap(
+	private Mono<Map<String, VariantBasicData>> getExternalIdToVariantMap(
 			List<VariantIdentifier> variantIdentifiers) {
 		return 
 			Flux
@@ -209,7 +211,7 @@ public class CachingHelper {
 			.map(VariantIdentifier::getExternalId)
 			.window(1000)
 			.flatMap(this::getVariantsByExternalId)
-			.collectMap(variant-> variant.externalId, variant -> variant.variant);
+			.collectMap(variant-> variant.getExternalId(), variant -> variant);
 	}
 
 
@@ -222,9 +224,17 @@ public class CachingHelper {
 
 
 
+@Data
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
-class ProductVariantsEntityWithExternalId {
-	public ProductVariantsEntity variant;
-	public String externalId;
+class Variant extends VariantBasicData {
+	private String externalId;
+	
+	public Variant(VariantBasicData basicData, String externalId) {
+		this.setVariantId(basicData.getVariantId());
+		this.setProductId(basicData.getProductId());
+		this.setOrganizationId(basicData.getOrganizationId());
+		this.externalId = externalId;
+	}
 }
 

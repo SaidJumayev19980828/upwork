@@ -3,6 +3,7 @@ package com.nasnav.service;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_MISSING_STOCK_UPDATE_PARAMS;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -16,8 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
+import javax.sql.DataSource;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,13 +27,14 @@ import org.springframework.stereotype.Service;
 
 import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.model.querydsl.sql.QStocks;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
@@ -43,8 +45,12 @@ import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.StockUpdateResponse;
 import com.nasnav.service.helpers.CachingHelper;
+import com.nasnav.service.model.VariantBasicData;
 import com.nasnav.service.model.VariantCache;
 import com.nasnav.service.model.VariantIdentifier;
+import com.querydsl.sql.Configuration;
+import com.querydsl.sql.PostgreSQLTemplates;
+import com.querydsl.sql.SQLQueryFactory;
 
 @Service
 public class StockServiceImpl implements StockService {
@@ -59,13 +65,13 @@ public class StockServiceImpl implements StockService {
     private BundleRepository bundleRepo;
     
     @Autowired
-    private ProductVariantsRepository variantRepo;    
-    
-    @Autowired
     private ShopsRepository shopRepo;
 
     @Autowired
     private SecurityService security;
+    
+    @Autowired
+    private DataSource dataSource;
     
     @Autowired
     private CachingHelper cachingHelper;
@@ -187,9 +193,28 @@ public class StockServiceImpl implements StockService {
 	
 	
 	public StockUpdateResponse updateStock(StockUpdateDTO stockUpdateReq) throws BusinessException {
-		validateStockToUpdate(stockUpdateReq);
-			
-		return saveStockToDB(stockUpdateReq);
+		Long id = updateStockBatch(asList(stockUpdateReq))
+					.stream()
+					.findFirst()
+					.orElseThrow(() -> 
+						new BusinessException(
+								format("Stock update Failed for [%s]!", stockUpdateReq.toString())
+								, "OPERATION FAILURE"
+								, NOT_ACCEPTABLE));
+		return new StockUpdateResponse(id);
+	}
+	
+	
+	
+	
+	
+	private Long saveStock(StockUpdateDTO stockUpdateReq, VariantCache variantCache, Map<Long,ShopsEntity> shopCache) {
+		try {
+			validateStockToUpdate(stockUpdateReq, variantCache, shopCache);
+		} catch (BusinessException e) {
+			throw new RuntimeBusinessException(e);
+		}		
+		return saveStockToDB(stockUpdateReq, variantCache, shopCache);
 	}
 	
 	
@@ -213,7 +238,10 @@ public class StockServiceImpl implements StockService {
 				.stream()
 				.collect(toMap(ShopsEntity::getId, shop -> shop));
 		
-		return null;
+		return stocks
+				.stream()
+				.map(stk -> saveStock(stk, variantCache, shopCache))
+				.collect(toList());
 	}
 	
 	
@@ -228,11 +256,12 @@ public class StockServiceImpl implements StockService {
 	
 	
 
-	private StockUpdateResponse saveStockToDB(StockUpdateDTO req) {
+	private Long saveStockToDB(StockUpdateDTO req
+			, VariantCache variantCache, Map<Long, ShopsEntity> shopCache) {
 		Long shopId = req.getShopId();
 		Long variantId = req.getVariantId();
 		
-		StocksEntity stock = getStockEntityToUpdate(shopId, variantId);
+		StocksEntity stock = getStockEntityToUpdate(shopId, variantId, variantCache, shopCache);
 		
 		if(req.getQuantity() != null) {
 			stock.setQuantity( req.getQuantity() );
@@ -247,33 +276,40 @@ public class StockServiceImpl implements StockService {
 			stock.setCurrency( currecny );
 		}
 		
+//		Long orgId = security.getCurrentUserOrganizationId();
+//		SQLQueryFactory query = new SQLQueryFactory(createQueryDslConfig() , dataSource);
+//		QStocks stk = QStocks.stocks;
+//		query.insert(stk).values(stk.organizationId.eq(orgId), stk.currency.eq);
+		
 		stock = stockRepo.save(stock);
 		
-		return new StockUpdateResponse(stock.getId());
+		return stock.getId();
 	}
 
 	
 	
 	
-	private StocksEntity getStockEntityToUpdate(Long shopId, Long variantId) {
+	private StocksEntity getStockEntityToUpdate(Long shopId, Long variantId, VariantCache variantCache, Map<Long, ShopsEntity> shopCache) {
 		return stockRepo
 				.findByProductVariantsEntity_IdAndShopsEntity_Id(variantId, shopId)
-				.orElse(createNewStock(shopId, variantId));
+				.orElse(createNewStock(shopId, variantId, variantCache, shopCache));
 	}
 	
 	
 	
 	
 
-	private StocksEntity createNewStock(Long shopId, Long variantId) {
-		ShopsEntity shop = shopRepo.findById(shopId).get();
-		ProductVariantsEntity variant = variantRepo.findById(variantId).get();
+	private StocksEntity createNewStock(Long shopId, Long variantId, VariantCache variantCache, Map<Long, ShopsEntity> shopCache) {
+		ShopsEntity shop =  shopCache.get(shopId);
+//		VariantBasicData variant = variantCache.getIdToVariantMap().get(String.valueOf(variantId));
 		OrganizationEntity organizationEntity = security.getCurrentUserOrganization();
 		
+		ProductVariantsEntity variant = new ProductVariantsEntity();
+		variant.setId(variantId);
 		StocksEntity stock = new StocksEntity();			
 		stock.setShopsEntity(shop);
 		stock.setProductVariantsEntity(variant);
-		stock.setOrganizationEntity(organizationEntity);// TODO Auto-generated method stub
+		stock.setOrganizationEntity(organizationEntity);
 		return stock;
 	}
 
@@ -308,11 +344,21 @@ public class StockServiceImpl implements StockService {
 	
 	private void validateVariantId(StockUpdateDTO req, VariantCache variantCache) throws BusinessException{
 		Long id = req.getVariantId();
-		if(!variantCache.getIdToVariantMap().containsKey(id) ) {
+		if(!variantCache.getIdToVariantMap().containsKey(String.valueOf(id)) ) {
 			throw new BusinessException(
 					format("No product variant exists with id[%d]!", id)
 					, "INVALID_PARAM:variant_id" 
 					, NOT_ACCEPTABLE);
+		}
+		
+		VariantBasicData variant = variantCache.getIdToVariantMap().get(String.valueOf(id));
+		Long userOrgId = security.getCurrentUserOrganizationId();
+		Long variantOrgId = variant.getOrganizationId(); 
+		if(!Objects.equals(userOrgId, variantOrgId)) {
+			throw new BusinessException(
+					format("User from organization[%d] cannot change stock for variant of id[%d]!", userOrgId,  id)
+					, "INVALID_PARAM:variant_id" 
+					, FORBIDDEN);
 		}
 	}
 	
@@ -392,7 +438,7 @@ public class StockServiceImpl implements StockService {
 			throw new BusinessException(
 					String.format("Invalid Quantity value [%d]!", quantity)
 					, "INVALID_PARAM:quantity" 
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}		
 	}
 	
@@ -407,7 +453,7 @@ public class StockServiceImpl implements StockService {
 			throw new BusinessException(
 					String.format("Invalid Price value [%s]!", price.toString())
 					, "INVALID_PARAM:currency" 
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
 	}
 	
@@ -443,5 +489,13 @@ public class StockServiceImpl implements StockService {
 		
 		return !anyIsNull( req.getShopId() ,req.getVariantId() )
 									&&  ( (B && C) || (A && !B && !C) );
+	}
+	
+	
+	
+	private Configuration createQueryDslConfig() {
+		Configuration config = new Configuration(new PostgreSQLTemplates());
+		config.setUseLiterals(true);
+		return config;
 	}
 }

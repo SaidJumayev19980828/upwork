@@ -62,14 +62,13 @@ import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.VariantUpdateResponse;
 import com.nasnav.service.helpers.CachingHelper;
+import com.nasnav.service.model.VariantBasicData;
 import com.nasnav.service.model.VariantCache;
 import com.nasnav.service.model.VariantIdentifier;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
@@ -739,10 +738,10 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-	private void setVariantDtoAsUpdated(VariantDTOWithExternalIdAndStock variant, ProductVariantsEntity variantEntity) {
-		variant.setVariantId(variantEntity.getId());
+	private void setVariantDtoAsUpdated(VariantDTOWithExternalIdAndStock variant, VariantBasicData variantEntity) {
+		variant.setVariantId(variantEntity.getVariantId());
 		variant.setOperation(EntityConstants.Operation.UPDATE);
-		variant.getStock().setVariantId(variantEntity.getId());
+		variant.getStock().setVariantId(variantEntity.getVariantId());
 	}
 
 
@@ -843,8 +842,7 @@ public class DataImportServiceImpl implements DataImportService {
 			ProductUpdateDTO product) {
 		cachingHelper
         .getVariantFromCache(toVariantIdentifier(row), cache.getVariantsCache())
-		.map(ProductVariantsEntity::getProductEntity)
-		.map(ProductEntity::getId)
+		.map(VariantBasicData::getProductId)
 		.ifPresent(
 				id -> { product.setId(id); 
 						product.setOperation(EntityConstants.Operation.UPDATE);});
