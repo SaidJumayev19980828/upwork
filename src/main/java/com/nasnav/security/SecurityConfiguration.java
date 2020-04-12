@@ -82,6 +82,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 	private  List<AuthPattern> permissions = asList(
 						//url pattern	-------------------------	Method	------------	Roles
 						patternOf( "/360view/**"					,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/360view/**"					,HttpMethod.PUT		, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/order"							,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 					    patternOf( "/order/**"),
 						patternOf( "/stock/**"	 										, getNonCustomersRoles() ),
