@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
 
@@ -35,5 +36,5 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
 
 	ShopsEntity findByIdAndOrganizationEntity_Id(Long id, Long orgId);
 
-	List<ShopsEntity> findByIdIn(List<Long> shopIdList);
+	List<ShopsEntity> findByIdIn(Set<Long> shopIdList);
 }

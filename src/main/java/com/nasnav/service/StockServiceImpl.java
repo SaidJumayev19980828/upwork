@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_MISSING_STOCK_UPDATE_PARAMS;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
@@ -11,19 +12,19 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.stream.StreamSupport;
 
-import javax.sql.DataSource;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,10 +52,7 @@ import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.VariantBasicData;
 import com.nasnav.service.model.VariantCache;
 import com.nasnav.service.model.VariantIdentifier;
-import com.querydsl.sql.Configuration;
-import com.querydsl.sql.PostgreSQLTemplates;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Service
@@ -74,9 +72,6 @@ public class StockServiceImpl implements StockService {
 
     @Autowired
     private SecurityService security;
-    
-    @Autowired
-    private DataSource dataSource;
     
     @Autowired
     private CachingHelper cachingHelper;
@@ -155,11 +150,11 @@ public class StockServiceImpl implements StockService {
     
     
     public Boolean isPhysicalProduct(StocksEntity stock) {
-    	return Optional.ofNullable(stock)
-		    			.map(StocksEntity::getProductVariantsEntity)
-		    			.map(ProductVariantsEntity::getProductEntity)
-		    			.filter(product -> Objects.equals( product.getProductType(), ProductTypes.STOCK_ITEM) )
-		    			.isPresent();
+    	return ofNullable(stock)
+    			.map(StocksEntity::getProductVariantsEntity)
+    			.map(ProductVariantsEntity::getProductEntity)
+    			.filter(product -> Objects.equals( product.getProductType(), ProductTypes.STOCK_ITEM) )
+    			.isPresent();
     }
 
 
@@ -212,50 +207,120 @@ public class StockServiceImpl implements StockService {
 	
 	
 	
-	private Long saveStock(StockUpdateDTO stockUpdateReq, VariantCache variantCache, Map<Long,ShopsEntity> shopCache, VariantStockCache stockCache) {
+	private StocksEntity prepareStockEntity(StockUpdateDTO stockUpdateReq, VariantCache variantCache, Map<Long,ShopsEntity> shopCache, VariantStockCache stockCache) {
 		try {
 			validateStockToUpdate(stockUpdateReq, variantCache, shopCache);
 		} catch (BusinessException e) {
 			throw new RuntimeBusinessException(e);
-		}		
-		return saveStockToDB(stockUpdateReq, variantCache, shopCache);
+		}
+		
+		Long shopId = stockUpdateReq.getShopId();
+		Long variantId = stockUpdateReq.getVariantId();
+		
+		StocksEntity stock = getStockEntityToUpdate(shopId, variantId, variantCache, shopCache, stockCache);
+		
+		if(stockUpdateReq.getQuantity() != null) {
+			stock.setQuantity( stockUpdateReq.getQuantity() );
+		}
+		
+		if(stockUpdateReq.getPrice() != null) {
+			stock.setPrice( stockUpdateReq.getPrice() );
+		}
+		
+		if(stockUpdateReq.getCurrency() != null) {
+			TransactionCurrency currecny = TransactionCurrency.getTransactionCurrency( stockUpdateReq.getCurrency());
+			stock.setCurrency( currecny );
+		}
+		return stock;
 	}
 	
 	
 	
+	
+	@Override
+	@Transactional(rollbackOn = Throwable.class)	
 	public List<Long> updateStockBatch(List<StockUpdateDTO> stocks) throws BusinessException{
+		VariantCache variantCache = createVariantsCache(stocks);
+		Map<Long, ShopsEntity> shopCache = createShopsCache(stocks);		
+		VariantStockCache stockCache = createStocksCache(stocks);
+		
+		List<StocksEntity> stocksToUpdate = prepareStocksToUpdate(stocks, variantCache, shopCache, stockCache);
+		
+		return saveAllStocks(stocksToUpdate);
+	}
+
+	
+
+
+	private List<Long> saveAllStocks(List<StocksEntity> stocksToUpdate) {
+		return StreamSupport
+				.stream(stockRepo.saveAll(stocksToUpdate).spliterator(), false)
+				.map(StocksEntity::getId)
+				.collect(toList());
+	}
+
+
+	
+
+	private List<StocksEntity> prepareStocksToUpdate(List<StockUpdateDTO> stocks, VariantCache variantCache,
+			Map<Long, ShopsEntity> shopCache, VariantStockCache stockCache) {
+		List<StocksEntity> stocksToUpdate =
+				stocks
+				.stream()
+				.map(stk -> prepareStockEntity(stk, variantCache, shopCache, stockCache))
+				.collect(toList());
+		return stocksToUpdate;
+	}
+
+
+
+	private VariantStockCache createStocksCache(List<StockUpdateDTO> stocks) {
+		Set<Long> variantIdList = 
+				stocks
+				.stream()
+				.map(StockUpdateDTO::getVariantId)
+				.collect(toSet());
+		
+		List<StocksEntity> variantStocks = 
+				divideToBatches(variantIdList, 500)
+					.stream()
+					.map(stockRepo::findByProductVariantsEntity_IdIn)
+					.flatMap(List::stream)
+					.collect(toList());
+				
+		VariantStockCache stockCache = new VariantStockCache(variantStocks);
+		return stockCache;
+	}
+
+
+
+	private Map<Long, ShopsEntity> createShopsCache(List<StockUpdateDTO> stocks) {
+		Set<Long> shopIdList = 
+				stocks
+				.stream()
+				.map(StockUpdateDTO::getShopId)
+				.collect(toSet());		 
+		Map<Long, ShopsEntity> shopCache = 
+				shopRepo
+				.findByIdIn(shopIdList)
+				.stream()
+				.collect(toMap(ShopsEntity::getId, shop -> shop));
+		return shopCache;
+	}
+
+
+
+	private VariantCache createVariantsCache(List<StockUpdateDTO> stocks) {
 		List<VariantIdentifier> variantIdentifiers = 
 				stocks
 				.stream()
 				.map(this::getVariantIdentifier)
 				.collect(toList());
 		VariantCache variantCache = cachingHelper.createVariantCache(variantIdentifiers);
-		
-		List<Long> shopIdList = 
-				stocks
-				.stream()
-				.map(StockUpdateDTO::getShopId)
-				.collect(toList());		 
-		Map<Long, ShopsEntity> shopCache = 
-				shopRepo
-				.findByIdIn(shopIdList)
-				.stream()
-				.collect(toMap(ShopsEntity::getId, shop -> shop));
-		
-		
-		List<Long> variantIdList = 
-				stocks
-				.stream()
-				.map(StockUpdateDTO::getVariantId)
-				.collect(toList());
-		List<StocksEntity> variantStocks = stockRepo.findByProductVariantsEntity_IdIn(variantIdList);
-				
-		VariantStockCache stockCache = new VariantStockCache(variantStocks);
-		return stocks
-				.stream()
-				.map(stk -> saveStock(stk, variantCache, shopCache, stockCache))
-				.collect(toList());
+		return variantCache;
 	}
+	
+	
 	
 	
 	
@@ -269,43 +334,27 @@ public class StockServiceImpl implements StockService {
 	
 	
 
-	private Long saveStockToDB(StockUpdateDTO req
-			, VariantCache variantCache, Map<Long, ShopsEntity> shopCache) {
-		Long shopId = req.getShopId();
-		Long variantId = req.getVariantId();
-		
-		StocksEntity stock = getStockEntityToUpdate(shopId, variantId, variantCache, shopCache);
-		
-		if(req.getQuantity() != null) {
-			stock.setQuantity( req.getQuantity() );
-		}
-		
-		if(req.getPrice() != null) {
-			stock.setPrice( req.getPrice() );
-		}
-		
-		if(req.getCurrency() != null) {
-			TransactionCurrency currecny = TransactionCurrency.getTransactionCurrency( req.getCurrency());
-			stock.setCurrency( currecny );
-		}
-		
-//		Long orgId = security.getCurrentUserOrganizationId();
-//		SQLQueryFactory query = new SQLQueryFactory(createQueryDslConfig() , dataSource);
-//		QStocks stk = QStocks.stocks;
-//		query.insert(stk).values(stk.organizationId.eq(orgId), stk.currency.eq);
-		
-		stock = stockRepo.save(stock);
-		
-		return stock.getId();
-	}
-
 	
 	
 	
-	private StocksEntity getStockEntityToUpdate(Long shopId, Long variantId, VariantCache variantCache, Map<Long, ShopsEntity> shopCache) {
-		return stockRepo
-				.findByProductVariantsEntity_IdAndShopsEntity_Id(variantId, shopId)
+	private StocksEntity getStockEntityToUpdate(Long shopId, Long variantId, VariantCache variantCache, Map<Long, ShopsEntity> shopCache,VariantStockCache stockCache) {
+		return stockCache
+				.getVariantStocks(variantId)
+				.stream()
+				.filter(stk -> hasShopIdOf(stk, shopId))
+				.findFirst()
 				.orElse(createNewStock(shopId, variantId, variantCache, shopCache));
+	}
+	
+	
+	
+	
+	private boolean hasShopIdOf(StocksEntity stock , Long shopId) {
+		return ofNullable(stock)
+				.map(StocksEntity::getShopsEntity)
+				.map(ShopsEntity::getId)
+				.orElse(-1L)
+				.equals(shopId);
 	}
 	
 	
@@ -505,13 +554,6 @@ public class StockServiceImpl implements StockService {
 									&&  ( (B && C) || (A && !B && !C) );
 	}
 	
-	
-	
-	private Configuration createQueryDslConfig() {
-		Configuration config = new Configuration(new PostgreSQLTemplates());
-		config.setUseLiterals(true);
-		return config;
-	}
 }
 
 
