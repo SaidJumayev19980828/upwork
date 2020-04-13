@@ -175,10 +175,11 @@ public class ShopService {
 
 	private void validateUserToUpdateShop(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId,
 			List<String> userRoles) throws BusinessException {
+        Long orgId = securityService.getCurrentUserOrganizationId();
 		if (!userRoles.contains("ORGANIZATION_MANAGER") && !userRoles.contains("STORE_MANAGER")){
         	throw new BusinessException("User is not an authorized to modify this shop!", "INSUFFICIENT RIGHTS", HttpStatus.FORBIDDEN);
         }
-        if (userRoles.contains("ORGANIZATION_MANAGER") && !employeeUserOrgId.equals(shopJson.getOrgId())){
+        if (userRoles.contains("ORGANIZATION_MANAGER") && !employeeUserOrgId.equals(orgId)){
         	throw new BusinessException("User is not an authorized to modify this shop!", "INSUFFICIENT RIGHTS", HttpStatus.FORBIDDEN);
         }
         if (userRoles.contains("STORE_MANAGER") && !employeeUserShopId.equals(shopJson.getId())){

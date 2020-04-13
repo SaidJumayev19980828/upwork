@@ -31,8 +31,9 @@ public class ShopThreeSixtyController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @GetMapping(value = "/json_data", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity getShop360JsonInfo(@RequestParam("shop_id") Long shopId,
-                                                   @RequestParam("type") String type) {
-        return new ResponseEntity<>(shop360Svc.getShop360JsonInfo(shopId, type), HttpStatus.OK);
+                                             @RequestParam String type,
+                                             @RequestParam(defaultValue = "true") Boolean publish) {
+        return new ResponseEntity<>(shop360Svc.getShop360JsonInfo(shopId, type, publish), HttpStatus.OK);
     }
 
 
@@ -41,8 +42,9 @@ public class ShopThreeSixtyController {
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @GetMapping(value = "/product_positions", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity getShop360ProductPositions(@RequestParam("shop_id") Long shopId) {
-        return new ResponseEntity<>(shop360Svc.getProductPositions(shopId), HttpStatus.OK);
+    public ResponseEntity getShop360ProductPositions(@RequestParam("shop_id") Long shopId,
+                                                     @RequestParam(defaultValue = "true") Boolean publish) {
+        return new ResponseEntity<>(shop360Svc.getProductPositions(shopId, publish), HttpStatus.OK);
     }
 
 
@@ -63,6 +65,16 @@ public class ShopThreeSixtyController {
     @GetMapping(value = "/shops", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopThreeSixtyDTO getShop360Shops(@RequestParam("shop_id") Long shopId) {
         return shop360Svc.getThreeSixtyShops(shopId);
+    }
+
+
+    @ApiOperation(value = "publish json data", nickname = "publishJsonData")
+    @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
+    @PostMapping(value = "/publish", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ShopResponse publishJsonData(@RequestHeader("User-Token") String userToken,
+                                        @RequestParam ("shop_id")Long shopId) throws BusinessException {
+        return shop360Svc.publishJsonData(shopId);
     }
 
 
