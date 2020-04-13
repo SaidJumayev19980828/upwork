@@ -35,9 +35,6 @@ public class ShopThreeSixtyEntity implements BaseEntity{
     @Column(name = "url")
     private String url;
 
-    @Column(name = "scene_asset_bundle")
-    private String sceneAssetBundle;
-
     @Column(name = "scene_name")
     private String sceneName;
 
@@ -50,13 +47,7 @@ public class ShopThreeSixtyEntity implements BaseEntity{
     @Column(name = "preview_json_data")
     private String previewJsonSata;
 
-    @Column(name = "created_at")
-    @CreationTimestamp
-    private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
-    @CreationTimestamp
-    private LocalDateTime updatedAt;
 
     @Override
     public BaseRepresentationObject getRepresentation() {

@@ -189,7 +189,6 @@ public class CategoryService {
                         "Provided parent category doesn't exit", HttpStatus.NOT_ACCEPTABLE);
             }
         }
-        categoriesEntity.setUpdatedAt(LocalDateTime.now());
         categoryRepository.save(categoriesEntity);
         return new ResponseEntity<CategoryResponse>(new CategoryResponse(categoriesEntity.getId()), HttpStatus.OK);
     }

@@ -18,13 +18,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper=false)
 public abstract class BaseUserEntity extends DefaultBusinessEntity<Long>{	
 
-	@Column(name = "created_at")
-	@CreationTimestamp
-	private LocalDateTime createdAt;
-	
-	@Column(name = "updated_at")
-	@UpdateTimestamp
-	private LocalDateTime updatedAt;
+
 	
 	@Column(name = "email")
 	private String email;

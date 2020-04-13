@@ -81,9 +81,6 @@ public class EmployeeUserServiceHelper {
 		RoleEmployeeUser roleEmployeeUser = new RoleEmployeeUser();
 		roleEmployeeUser.setRoleId(roleId);
 		roleEmployeeUser.setEmployeeUserId(employeeUserId);
-		//TODO: check if these fields will be removed from the DB or not
-		roleEmployeeUser.setCreatedAt(LocalDateTime.now());
-		roleEmployeeUser.setUpdatedAt(LocalDateTime.now());
 		roleEmployeeUserRepository.save(roleEmployeeUser);
 	}
 
@@ -93,9 +90,6 @@ public class EmployeeUserServiceHelper {
 		Role role = new Role();
 		role.setOrganizationId(org_id);
 		role.setName(roleEnum.name());
-		//TODO: check if these fields will be removed from the DB or not
-		role.setCreatedAt(LocalDateTime.now());
-		role.setUpdatedAt(LocalDateTime.now());
 		Role roleEntity = roleRepository.save(role);
 		// get the create role id to create a RoleEmployeeUser entity using it
 		Integer roleId = roleEntity.getId();

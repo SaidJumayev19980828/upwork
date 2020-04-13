@@ -1,38 +1,38 @@
 ----------------------------inserting dummy data----------------------------
 --inserting organizations
-INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001, 'organization_1', now(), now());
-INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());
+INSERT INTO public.organizations(id, name) VALUES (99001, 'organization_1');
+INSERT INTO public.organizations(id, name) VALUES (99002, 'organization_2');
 
 --inserting brands
-INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (101, 202, 'brand_1', now(), now(), 99002);
-INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (102, 201, 'brand_2', now(), now(), 99001);
+INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99002);
+INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 201, 'brand_2', 99001);
 
 --inserting categories
-INSERT INTO public.categories(id, name, created_at, updated_at, parent_id, logo,p_name) VALUES (201, 'category_1', now(), now(), null,'logo_1','name');
-INSERT INTO public.categories(id, name, created_at, updated_at, parent_id, logo) VALUES (202, 'category_2', now(), now(), 201,'logo_2');
-INSERT INTO public.categories(id, name, created_at, updated_at, parent_id, logo, p_name) VALUES (203, 'category_3', now(), now(), 201,'logo_3', 'category-3');
-INSERT INTO public.categories(id, name, created_at, updated_at, parent_id, logo,p_name) VALUES (204, 'category_4', now(), now(), 202,'logo_4','category-4');
-INSERT INTO public.categories(id, name, created_at, updated_at, logo,p_name) VALUES (205, 'category_5', now(), now(), 'logo_5','name');
-INSERT INTO public.categories(id, name, created_at, updated_at, logo) VALUES (206, 'category_6', now(), now(), 'logo_6');
-INSERT INTO public.categories(id, name, created_at, updated_at, logo, p_name) VALUES (207, 'category_7', now(), now(), 'logo_7', 'category-3');
+INSERT INTO public.categories(id, name,  parent_id, logo,p_name) VALUES (201, 'category_1', null,'logo_1','name');
+INSERT INTO public.categories(id, name,  parent_id, logo) VALUES (202, 'category_2', 201,'logo_2');
+INSERT INTO public.categories(id, name,  parent_id, logo, p_name) VALUES (203, 'category_3', 201,'logo_3', 'category-3');
+INSERT INTO public.categories(id, name,  parent_id, logo,p_name) VALUES (204, 'category_4', 202,'logo_4','category-4');
+INSERT INTO public.categories(id, name,  logo,p_name) VALUES (205, 'category_5', 'logo_5','name');
+INSERT INTO public.categories(id, name,  logo) VALUES (206, 'category_6', 'logo_6');
+INSERT INTO public.categories(id, name,  logo, p_name) VALUES (207, 'category_7', 'logo_7', 'category-3');
 
 --inserting shops
-INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (501, 'shop_1', 102, now(), now(), 99002);
-INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (502, 'shop_2', 101, now(), now(), 99001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (501, 'shop_1', 102, 99002);
+INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (502, 'shop_2', 101, 99001);
 
 --inserting Employee Users
-INSERT INTO public.employee_users(id, name, created_at, updated_at, email, organization_id, authentication_token, shop_id)
-	VALUES (68, 'Ahmad', now(), now(), 'testuser1@nasnav.com', 99001, 'abcdefg',  501);
-INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
-	VALUES (69, now(), now(), 'testuser2@nasnav.com', 99001, 'hijkllm',  501);
+INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
+	VALUES (68, 'Ahmad', 'testuser1@nasnav.com', 99001, 'abcdefg',  501);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+	VALUES (69, 'testuser2@nasnav.com', 99001, 'hijkllm',  501);
 
 --inserting Roles
-insert into roles(id, name, created_at, updated_at, organization_id) values(1, 'NASNAV_ADMIN', now(), now(), 99001);
-insert into roles(id, name, created_at, updated_at, organization_id) values(2, 'ORGANIZATION_ADMIN', now(), now(), 99001);
+insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
+insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
 
 --inserting Roles EmployeeUsers relations
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (20, 68, 1, now(), now());
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (21, 69, 2, now(), now());
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
 
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99002, now(), now());

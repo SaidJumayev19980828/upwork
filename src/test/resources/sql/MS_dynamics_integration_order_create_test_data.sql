@@ -1,74 +1,74 @@
 --inserting organizations
-INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001, 'organization_1', now(), now());
-INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());
+INSERT INTO public.organizations(id, name) VALUES (99001, 'organization_1');
+INSERT INTO public.organizations(id, name) VALUES (99002, 'organization_2');
 
 
 --inserting categories
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(201, 'PERFUMES', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(202, 'SKIN CARE', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(203, 'MAKE UP', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(204, 'FRAGRANCE', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(205, 'BC POSM', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(206, 'BABY CARE', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(207, 'SC POSM', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(208, 'FOOT CARE', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(209, 'FR POSM', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(210, 'DIM', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(211, 'TREATMENT', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(212, 'FOOTC POSM', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(213, 'MAKE-UP AC', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(214, 'FORTUNE', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(215, 'HAIR CARE', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(217, 'READY TO WEAR', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(218, 'MU POSM', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(219, 'BODY', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(220, 'DELSEY', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(221, 'ACCESSORY', now(), now());
-INSERT INTO public.categories(id, name, created_at, updated_at) VALUES(222, 'GIFT VOUCHER', now(), now());
+INSERT INTO public.categories(id, name) VALUES(201, 'PERFUMES');
+INSERT INTO public.categories(id, name) VALUES(202, 'SKIN CARE');
+INSERT INTO public.categories(id, name) VALUES(203, 'MAKE UP');
+INSERT INTO public.categories(id, name) VALUES(204, 'FRAGRANCE');
+INSERT INTO public.categories(id, name) VALUES(205, 'BC POSM');
+INSERT INTO public.categories(id, name) VALUES(206, 'BABY CARE');
+INSERT INTO public.categories(id, name) VALUES(207, 'SC POSM');
+INSERT INTO public.categories(id, name) VALUES(208, 'FOOT CARE');
+INSERT INTO public.categories(id, name) VALUES(209, 'FR POSM');
+INSERT INTO public.categories(id, name) VALUES(210, 'DIM');
+INSERT INTO public.categories(id, name) VALUES(211, 'TREATMENT');
+INSERT INTO public.categories(id, name) VALUES(212, 'FOOTC POSM');
+INSERT INTO public.categories(id, name) VALUES(213, 'MAKE-UP AC');
+INSERT INTO public.categories(id, name) VALUES(214, 'FORTUNE');
+INSERT INTO public.categories(id, name) VALUES(215, 'HAIR CARE');
+INSERT INTO public.categories(id, name) VALUES(217, 'READY TO WEAR');
+INSERT INTO public.categories(id, name) VALUES(218, 'MU POSM');
+INSERT INTO public.categories(id, name) VALUES(219, 'BODY');
+INSERT INTO public.categories(id, name) VALUES(220, 'DELSEY');
+INSERT INTO public.categories(id, name) VALUES(221, 'ACCESSORY');
+INSERT INTO public.categories(id, name) VALUES(222, 'GIFT VOUCHER');
 
 
 
 
 --inserting brands
-INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (101, 202, 'Baldman', now(), now(), 99001);
-INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organization_id) VALUES (102, 201, 'brand_2', now(), now(), 99001);
+INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'Baldman', 99001);
+INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 201, 'brand_2', 99001);
 
 
 --inserting shops
-INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (50001, 'shop_1', 102, now(), now(), 99001);
-INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (50002, 'shop_2', 101, now(), now(), 99001);
-INSERT INTO public.shops(id, name, brand_id, created_at, updated_at, organization_id) VALUES (55555, 'shop_3', 101, now(), now(), 99001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (50001, 'shop_1', 102, 99001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (50002, 'shop_2', 101, 99001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (55555, 'shop_3', 101, 99001);
 
 
 
 --inserting Employee Users
-INSERT INTO public.employee_users(id, name, created_at, updated_at, email, organization_id, authentication_token, shop_id)
-	VALUES (68, 'Ahmad', now(), now(), 'testuser1@nasnav.com', 99001, 'abcdefg',  50001);
-INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
-	VALUES (69, now(), now(), 'testuser2@nasnav.com', 99001, 'hijkllm',  50001);
+INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
+	VALUES (68, 'Ahmad', 'testuser1@nasnav.com', 99001, 'abcdefg',  50001);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+	VALUES (69, 'testuser2@nasnav.com', 99001, 'hijkllm',  50001);
 
 
-INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id,country,city ,address)
-    VALUES (88, 'user1@nasnav.com',now(), now(), 'user1','123eerd', 99001, 'Egypt', 'Cairo', '12 Abbas el-Akkad, Nasr City');
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id,country,city ,address)
+    VALUES (88, 'user1@nasnav.com','user1','123eerd', 99001, 'Egypt', 'Cairo', '12 Abbas el-Akkad, Nasr City');
 
 
 
 --inserting Roles
-insert into roles(id, name, created_at, updated_at, organization_id) values(1, 'NASNAV_ADMIN', now(), now(), 99001);
-insert into roles(id, name, created_at, updated_at, organization_id) values(2, 'ORGANIZATION_ADMIN', now(), now(), 99001);
-insert into roles(id, name, created_at, updated_at, organization_id) values(3, 'ORGANIZATION_MANAGER', now(), now(), 99001);
-insert into roles(id, name, created_at, updated_at, organization_id) values(4, 'ORGANIZATION_EMPLOYEE', now(), now(), 99001);
-insert into roles(id, name, created_at, updated_at, organization_id) values(5, 'STORE_ADMIN', now(), now(), 99001);
-insert into roles(id, name, created_at, updated_at, organization_id) values(6, 'STORE_MANAGER', now(), now(), 99001);
-insert into roles(id, name, created_at, updated_at, organization_id) values(7, 'STORE_EMPLOYEE', now(), now(), 99001);
-insert into roles(id, name, created_at, updated_at, organization_id) values(8, 'CUSTOMER', now(), now(), 99001);
+insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
+insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
+insert into roles(id, name,  organization_id) values(3, 'ORGANIZATION_MANAGER', 99001);
+insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
+insert into roles(id, name,  organization_id) values(5, 'STORE_ADMIN', 99001);
+insert into roles(id, name,  organization_id) values(6, 'STORE_MANAGER', 99001);
+insert into roles(id, name,  organization_id) values(7, 'STORE_EMPLOYEE', 99001);
+insert into roles(id, name,  organization_id) values(8, 'CUSTOMER', 99001);
 
 
 
 --inserting Roles EmployeeUsers relations
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (20, 68, 1, now(), now());
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (21, 69, 2, now(), now());
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (22, 69, 3, now(), now());
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 69, 3);
 
 
 
@@ -89,10 +89,10 @@ insert into public.product_variants(id, "name" , product_id, barcode, feature_sp
 
 
 --inserting stocks
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(60001, 50001, 6, now(), now(), 99001, 600.0, 310001);
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(60002, 50001, 55, now(), now(), 99001, 600.0, 310002);
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(60003, 50002, 66, now(), now(), 99001, 600.0, 310001);
-insert into public.stocks(id, shop_id, quantity, created_at, updated_at, organization_id, price, variant_id) values(60004, 55555, 88, now(), now(), 99001, 600.0, 310003);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(60001, 50001, 6, 99001, 600.0, 310001);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(60002, 50001, 55, 99001, 600.0, 310002);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(60003, 50002, 66, 99001, 600.0, 310001);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(60004, 55555, 88, 99001, 600.0, 310003);
 
 
 -- integration Mapping types

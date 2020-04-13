@@ -54,11 +54,6 @@ public class ShopsEntity implements BaseEntity{
     @Column(name = "phone_number")
     private String phoneNumber;
     
-    private String area;
-    
-    @Column(name = "p_area")
-    private String parea;
-    
     @Column(precision=10, scale=2)
     private BigDecimal lat;
     
@@ -67,27 +62,10 @@ public class ShopsEntity implements BaseEntity{
     
     @Column(name = "brand_id")
     private Long brandId;
-    
-    @Column(name = "created_at")
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at")
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
-
-    @Column(name = "p_street")
-    private String pStreet;
-
 
     private String logo;
 
     private String banner;
-
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "mall_id", referencedColumnName = "id")
-    @JsonIgnore
-    private MallsEntity mallsEntity;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "organization_id", nullable = false)
@@ -95,8 +73,6 @@ public class ShopsEntity implements BaseEntity{
     @Exclude
     @lombok.ToString.Exclude
     private OrganizationEntity organizationEntity;
-
-
 
     @Override
     public BaseRepresentationObject getRepresentation() {
@@ -107,8 +83,6 @@ public class ShopsEntity implements BaseEntity{
         shopRepresentationObject.setName(getName());
         shopRepresentationObject.setPname(getPname());
         Address address = new Address();
-        address.setArea(getArea());
-        address.setParea(getParea());
         address.setCity(getCity());
         address.setCountry(getCountry());
         address.setStreet(getStreet());

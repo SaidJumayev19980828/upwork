@@ -21,24 +21,18 @@ public class Roles implements java.io.Serializable {
 	
 	private int id;
 	private String name;
-	private Date createdAt;
-	private Date updatedAt;
 	private Long organizationId;
 
 	public Roles() {
 	}
 
-	public Roles(int id, Date createdAt, Date updatedAt) {
+	public Roles(int id) {
 		this.id = id;
-		this.createdAt = createdAt;
-		this.updatedAt = updatedAt;
 	}
 
-	public Roles(int id, String name, Date createdAt, Date updatedAt, Long organizationId) {
+	public Roles(int id, String name, Long organizationId) {
 		this.id = id;
 		this.name = name;
-		this.createdAt = createdAt;
-		this.updatedAt = updatedAt;
 		this.organizationId = organizationId;
 	}
 
@@ -60,26 +54,6 @@ public class Roles implements java.io.Serializable {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	@Temporal(TemporalType.TIMESTAMP)
-	@Column(name = "created_at", nullable = false, length = 29)
-	public Date getCreatedAt() {
-		return this.createdAt;
-	}
-
-	public void setCreatedAt(Date createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	@Temporal(TemporalType.TIMESTAMP)
-	@Column(name = "updated_at", nullable = false, length = 29)
-	public Date getUpdatedAt() {
-		return this.updatedAt;
-	}
-
-	public void setUpdatedAt(Date updatedAt) {
-		this.updatedAt = updatedAt;
 	}
 
 	@Column(name = "organization_id")

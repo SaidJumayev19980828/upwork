@@ -1,26 +1,26 @@
 --inserting organizations
-INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99001, 'organization_1', now(), now());
-INSERT INTO public.organizations(id, name, created_at, updated_at) VALUES (99002, 'organization_2', now(), now());
+INSERT INTO public.organizations(id, name) VALUES (99001, 'organization_1');
+INSERT INTO public.organizations(id, name) VALUES (99002, 'organization_2');
 
 
 
 --inserting Employee Users
-INSERT INTO public.employee_users(id, name, created_at, updated_at, email, organization_id, authentication_token, shop_id)
-	VALUES (68, 'Ahmad', now(), now(), 'testuser1@nasnav.com', 99001, 'abcdefg',  501);
-INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
-	VALUES (69, now(), now(), 'testuser2@nasnav.com', 99001, 'hijkllm',  501);
-INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
-	VALUES (70, now(), now(), 'testuser3@nasnav.com', 99001, 'sfeesdfsdf',  501);
+INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
+	VALUES (68, 'Ahmad', 'testuser1@nasnav.com', 99001, 'abcdefg',  501);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+	VALUES (69, 'testuser2@nasnav.com', 99001, 'hijkllm',  501);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+	VALUES (70, 'testuser3@nasnav.com', 99001, 'sfeesdfsdf',  501);
 
 --inserting Roles
-insert into public.roles(id, name, created_at, updated_at, organization_id) values(1, 'NASNAV_ADMIN', now(), now(), 99001);
-insert into public.roles(id, name, created_at, updated_at, organization_id) values(2, 'ORGANIZATION_ADMIN', now(), now(), 99001);
-insert into public.roles(id, name, created_at, updated_at, organization_id) values(4, 'ORGANIZATION_EMPLOYEE', now(), now(), 99001);
+insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
+insert into public.roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
+insert into public.roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
 
 --inserting Roles EmployeeUsers relations
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (20, 68, 1, now(), now());
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (21, 69, 2, now(), now());
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (22, 70, 4, now(), now());
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 70, 4);
 
 
 -- Mandatory integration parameters

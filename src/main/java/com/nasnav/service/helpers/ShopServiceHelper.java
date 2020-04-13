@@ -2,9 +2,7 @@ package com.nasnav.service.helpers;
 
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
@@ -13,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.nasnav.commons.utils.StringUtils;
-import com.nasnav.dao.MallRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.persistence.OrganizationEntity;
@@ -23,26 +20,11 @@ import com.nasnav.service.SecurityService;
 @Service
 public class ShopServiceHelper extends BeanUtils{
 
-    private final MallRepository mallRepo;
-    
-    
     @Autowired
     private OrganizationRepository orgRepo;
-    
-    
+
     @Autowired
     private SecurityService sercurityService;
-    
-    
-    
-    
-
-    public ShopServiceHelper(MallRepository mallRepository){
-        this.mallRepo = mallRepository;
-    }
-    
-    
-    
     
 
     public String[] getNullProperties(ShopJsonDTO shopJson) {
@@ -62,16 +44,9 @@ public class ShopServiceHelper extends BeanUtils{
     
 
     public ShopsEntity setAdditionalShopProperties(ShopsEntity shopsEntity, ShopJsonDTO shopJson){
-        if (shopJson.getMallId() != null){
-            shopsEntity.setMallsEntity(mallRepo.findById((shopJson.getMallId())).get());
-        }
-        if (shopJson.getName() != null) {
+        if (shopJson.getName() != null)
             shopsEntity.setPname(StringUtils.encodeUrl(shopJson.getName()));
-        }
-        if (shopJson.getStreet() != null) {
-            shopsEntity.setPStreet(StringUtils.encodeUrl(shopJson.getStreet()));
-        }
-        
+
         OrganizationEntity org = sercurityService.getCurrentUserOrganization();               
         shopsEntity.setOrganizationEntity(org);        
         

@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @Data
 @ApiModel(value = "Shops data")
 @JsonPropertyOrder({"org_id", "id", "name", "address_country", "address_street", "address_streetno",
-        "address_floor", "address_lat", "address_lng", "mall_id", "brand_id", "logo", "banner", "photo"})
+        "address_floor", "address_lat", "address_lng", "brand_id", "logo", "banner", "photo"})
 
 public class ShopJsonDTO {
 
@@ -50,10 +50,6 @@ public class ShopJsonDTO {
     @ApiModelProperty(value = "Shop Address Longitude", example = "31.2234449")
     @JsonProperty("address_lng")
     private BigDecimal lng;
-
-    @ApiModelProperty(value = "Shop Mall Id", example = "12345")
-    @JsonProperty("mall_id")
-    private Long mallId;
 
     @ApiModelProperty(value = "Shop Brand Id", example = "12345")
     @JsonProperty("brand_id")

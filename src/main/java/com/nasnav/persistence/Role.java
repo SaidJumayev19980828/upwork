@@ -19,10 +19,4 @@ public class Role extends DefaultBusinessEntity<Integer>{
 
     @Column(name = "organization_id")
     private Long organizationId;
-
-    @Column(name = "created_at")
-    public LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    public LocalDateTime updatedAt;
 }

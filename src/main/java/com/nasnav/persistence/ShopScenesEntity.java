@@ -52,13 +52,7 @@ public class ShopScenesEntity implements BaseEntity {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "created_at")
-    @CreationTimestamp
-    private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
-    @CreationTimestamp
-    private LocalDateTime updatedAt;
 
     @Column(name = "image")
     private String image;
