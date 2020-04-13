@@ -56,6 +56,7 @@ public class ShopFloorsEntity implements BaseEntity {
     @Override
     public BaseRepresentationObject getRepresentation() {
         ShopFloorDTO floor = new ShopFloorDTO();
+        floor.setId(getId());
         floor.setNumber(getNumber());
         floor.setName(getName());
         floor.setShopSections(getShopSections().stream().map(section -> (ShopSectionsDTO) section.getRepresentation()).collect(Collectors.toSet()));
