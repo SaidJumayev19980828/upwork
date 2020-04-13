@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
 import javax.transaction.Transactional;
@@ -31,6 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.nasnav.commons.model.IndexedData;
 import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ShopsRepository;
@@ -38,7 +40,7 @@ import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
@@ -207,11 +209,12 @@ public class StockServiceImpl implements StockService {
 	
 	
 	
-	private StocksEntity prepareStockEntity(StockUpdateDTO stockUpdateReq, VariantCache variantCache, Map<Long,ShopsEntity> shopCache, VariantStockCache stockCache) {
+	private StocksEntity prepareStockEntity(IndexedData<StockUpdateDTO> indexedStkDto, VariantCache variantCache, Map<Long,ShopsEntity> shopCache, VariantStockCache stockCache) {
+		StockUpdateDTO stockUpdateReq = indexedStkDto.getData();
 		try {
 			validateStockToUpdate(stockUpdateReq, variantCache, shopCache);
 		} catch (BusinessException e) {
-			throw new RuntimeBusinessException(e);
+			throw new StockValidationException(e, indexedStkDto.getIndex());
 		}
 		
 		Long shopId = stockUpdateReq.getShopId();
@@ -239,7 +242,7 @@ public class StockServiceImpl implements StockService {
 	
 	@Override
 	@Transactional(rollbackOn = Throwable.class)	
-	public List<Long> updateStockBatch(List<StockUpdateDTO> stocks) throws BusinessException{
+	public List<Long> updateStockBatch(List<StockUpdateDTO> stocks){
 		VariantCache variantCache = createVariantsCache(stocks);
 		Map<Long, ShopsEntity> shopCache = createShopsCache(stocks);		
 		VariantStockCache stockCache = createStocksCache(stocks);
@@ -265,8 +268,9 @@ public class StockServiceImpl implements StockService {
 	private List<StocksEntity> prepareStocksToUpdate(List<StockUpdateDTO> stocks, VariantCache variantCache,
 			Map<Long, ShopsEntity> shopCache, VariantStockCache stockCache) {
 		List<StocksEntity> stocksToUpdate =
-				stocks
-				.stream()
+				IntStream
+				.range(0, stocks.size())
+				.mapToObj(i -> new IndexedData<>(i, stocks.get(i)))
 				.map(stk -> prepareStockEntity(stk, variantCache, shopCache, stockCache))
 				.collect(toList());
 		return stocksToUpdate;

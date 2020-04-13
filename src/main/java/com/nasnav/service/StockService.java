@@ -38,5 +38,5 @@ public interface StockService {
 	
 	StockUpdateResponse updateStock(StockUpdateDTO stockUpdateReq) throws BusinessException;
 
-	List<Long> updateStockBatch(List<StockUpdateDTO> stocks) throws BusinessException;
+	List<Long> updateStockBatch(List<StockUpdateDTO> stocks);
 }

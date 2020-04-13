@@ -15,7 +15,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.BinaryOperator.minBy;
@@ -30,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -43,6 +43,7 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.commons.model.IndexedData;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.constatnts.EntityConstants;
@@ -60,6 +61,7 @@ import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
@@ -78,7 +80,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import reactor.core.publisher.Flux;
-import reactor.tuple.Tuple;
+import reactor.tuple.Tuple2;
 
 @Service
 public class DataImportServiceImpl implements DataImportService {
@@ -328,23 +330,111 @@ public class DataImportServiceImpl implements DataImportService {
     
 
 	private void saveToDB(List<ProductData> productsData, ImportProductContext context) throws BusinessException {
-        IntStream
-        	.range(0, productsData.size())
-//        	.parallel() // transactions are not shared among threads
-        	.mapToObj(i -> Tuple.of(i, productsData.get(i)))
-        	.forEach( tuple -> saveSingleProductToDbAndLogErrors(context, tuple.getT1(), tuple.getT2()));
+		ProductDataImportContext.of(productsData, context)
+		.map(this::saveProducts)
+		.map(this::saveVariants)
+		.map(this::saveStocks);
     }
+	
+	
+	
+	private ProductDataImportContext saveProducts(ProductDataImportContext context) {
+		List<ProductData> productsData = context.getProductsData();
+		ImportProductContext importContext = context.getContext();
+		
+		IntStream
+    	.range(0, productsData.size())
+//    	.parallel() // transactions are not shared among threads
+    	.mapToObj(i -> Tuple2.of(i, productsData.get(i)))
+    	.forEach( tuple -> saveSingleProductToDbAndLogErrors(importContext, tuple.getT1(), tuple.getT2()));
+		return context;
+	}
+
+	
+	
+	
+	
+	private ProductDataImportContext saveVariants(ProductDataImportContext context) {
+		saveNewVariants(context);		
+		saveExistingVariants(context);		
+		return context;
+	}
 
 
 
 
-	private void saveSingleProductToDbAndLogErrors(ImportProductContext context, int rowNum, ProductData data) {
+
+	private void saveNewVariants(ProductDataImportContext context) {
+		context
+		.getProductsData()
+		.stream()
+		.map(ProductData::getVariants)
+		.flatMap(List::stream)
+		.filter(variant -> Objects.isNull(variant.getVariantId()))
+		.forEach(this::saveNewVariant);
+	}
+
+
+
+
+
+	private void saveExistingVariants(ProductDataImportContext context) {
+		ProductImportMetadata importMetaData = context.getContext().getImportMetaData();
+		boolean updateProductEnabled = importMetaData.isUpdateProduct();
+		
+		context
+		.getProductsData()
+		.stream()
+		.map(ProductData::getVariants)
+		.flatMap(List::stream)
+		.filter(variant -> Objects.nonNull(variant.getVariantId()))
+		.filter(variant -> updateProductEnabled)
+		.forEach(this::saveVariant);
+	}
+	
+	
+	
+	private void saveNewVariant(VariantDTOWithExternalIdAndStock variant) {
+		Long id = saveVariant(variant);
+    	variant.getStock().setVariantId(id);
+	}
+	
+	
+	
+	
+	private ProductDataImportContext saveStocks(ProductDataImportContext context) {
+		ProductImportMetadata importMetaData = context.getContext().getImportMetaData();
+		boolean updateStocksEnabled = importMetaData.isUpdateStocks();
+		if (updateStocksEnabled) {
+			List<StockUpdateDTO> stocks = 
+				context
+				.getProductsData()
+				.stream()
+				.map(ProductData::getVariants)
+				.flatMap(List::stream)
+				.map(VariantDTOWithExternalIdAndStock::getStock)
+				.collect(toList());
+			try {
+				stockService.updateStockBatch(stocks);
+			} catch (StockValidationException e) {
+				context.getContext().logNewError(e, e.getErrorMessage(), e.getIndex());
+				throw e;
+			}
+		}
+		return context;
+	}
+	
+
+
+
+	private ProductData saveSingleProductToDbAndLogErrors(ImportProductContext context, int rowNum, ProductData data) {
 		try {
-			logger.info(format(">>>>>>>>>>>>>>>>>>>>>>>>>>>> saving row[%d] ....", rowNum));
-		    saveSingleProductDataToDB(data, context);
+			logger.info(format(">>>>>>>>>>>>>>>>>>>>>>>>>>>> saving product[%d] ....", rowNum));
+		    return saveSingleProductDataToDB(data, context);
 		} catch (Throwable e) {
 		    logger.error(e, e);
-		    context.logNewError(e, data.toString(), rowNum);		
+		    context.logNewError(e, data.toString(), rowNum);
+		    return data;
 		}
 	}
     
@@ -353,20 +443,21 @@ public class DataImportServiceImpl implements DataImportService {
     
 
 
-    private void saveSingleProductDataToDB(ProductData product, ImportProductContext context) throws BusinessException {
+    private ProductData saveSingleProductDataToDB(ProductData product, ImportProductContext context) throws BusinessException {
         if (product.isExisting()) {
-            updateProduct(product, context);            
+            return updateProduct(product, context);            
         } else {
-            Long productId = saveNewImportedProduct(product);
+        	ProductData modifiedProductData =  saveNewImportedProduct(product);
+        	Long productId = modifiedProductData.getProductDto().getProductId();
             context.logNewCreatedProduct(productId, product.getProductDto().getName());
+            return modifiedProductData;
         }
-
     }
 
 
 
 
-	private void updateProduct(ProductData product, ImportProductContext context) throws BusinessException {
+	private ProductData updateProduct(ProductData product, ImportProductContext context) throws BusinessException {
 		ProductImportMetadata importMetaData = context.getImportMetaData();
 		boolean updateProductEnabled = importMetaData.isUpdateProduct();
 		boolean updateStocksEnabled = importMetaData.isUpdateStocks();
@@ -374,62 +465,63 @@ public class DataImportServiceImpl implements DataImportService {
 		if (updateProductEnabled) {
 		    Long productId = saveProductDto(product.getProductDto());
 		    saveProductTags(product, productId);
-		    for(VariantDTOWithExternalIdAndStock variant: product.getVariants()) {
-		    	boolean isNewVariant = isNull(variant.getVariantId());
-		    	Long id = saveVariant(variant);
-		    	variant.getStock().setVariantId(id);
-		    	if(isNewVariant) {		    		
-		    		stockService.updateStock(variant.getStock());
-		    	}
-		    }
-		}
-		
-		if (updateStocksEnabled) {
-			for(VariantDTOWithExternalIdAndStock variant: product.getVariants()) {
-				stockService.updateStock(variant.getStock());
-		    }
+		    product.getVariants().forEach(variant -> variant.setProductId(productId));
 		}
 		
 		if(updateProductEnabled ||updateStocksEnabled) {
 			context.logNewUpdatedProduct(product.getProductDto().getId(), product.getProductDto().getName());
 		}
+		
+		return product;
+	}
+	
+	
+	
+	
+	
+	private ProductData updateVariants(ProductData product, ImportProductContext context) throws BusinessException {
+		ProductImportMetadata importMetaData = context.getImportMetaData();
+		boolean updateProductEnabled = importMetaData.isUpdateProduct();
+		
+		if (updateProductEnabled) {
+		    for(VariantDTOWithExternalIdAndStock variant: product.getVariants()) {
+		    	Long id = saveVariant(variant);
+		    	variant.getStock().setVariantId(id);
+		    }
+		}
+		return product;
 	}
     
     
+	
+	
     
 	
-	private Long saveVariant(VariantDTOWithExternalIdAndStock variant) throws BusinessException {
-		 VariantUpdateResponse variantResponse = productService.updateVariant(variant);	
-		 Long variantId = variantResponse.getVariantId();
-		 saveExternalMapping(variant, variantId);
-		 return variantId;
+	private Long saveVariant(VariantDTOWithExternalIdAndStock variant) {
+		try {
+			VariantUpdateResponse variantResponse = productService.updateVariant(variant);	
+			Long variantId = variantResponse.getVariantId();
+			saveExternalMapping(variant, variantId);
+			return variantId;
+		}catch(BusinessException e) {
+			throw new RuntimeBusinessException(e);
+		}
 	}
 
 
 	
 	
 	
-    private Long saveNewImportedProduct(ProductData data) throws BusinessException {
+    private ProductData saveNewImportedProduct(ProductData data) throws BusinessException {
         Long productId = saveProductDto(data.getProductDto());
         saveProductTags(data, productId);
         data.getProductDto().setId(productId);
-        saveVariantsAndStocks(data, productId);
-        return productId;
+        data.getVariants().forEach(variant -> variant.setProductId(productId));
+        return data;
     }
 
 
 
-
-    
-	private void saveVariantsAndStocks(ProductData data, Long productId) throws BusinessException {
-		for(VariantDTOWithExternalIdAndStock variant: data.getVariants()) {
-			variant.setProductId(productId);			
-	        Long variantId = saveVariant(variant);
-	        
-	        variant.getStock().setVariantId(variantId);
-	        stockService.updateStock(variant.getStock());
-	    }
-	}
 
 
 
@@ -967,7 +1059,11 @@ class DataImportCachedData {
 
 @Data
 @AllArgsConstructor
-class IndexedData<T>{
-	private Integer index;
-	private T data;
+class ProductDataImportContext{
+	private List<ProductData> productsData;
+	private ImportProductContext context;
+	
+	public static Optional<ProductDataImportContext> of(List<ProductData> productData, ImportProductContext context){
+		return Optional.of(new ProductDataImportContext(productData, context));
+	} 
 }
