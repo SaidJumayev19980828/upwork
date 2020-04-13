@@ -31,15 +31,12 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	List<ProductVariantsEntity> findByOrganizationId(@Param("orgId") Long orgId);
 	
 	@Query("SELECT NEW com.nasnav.service.model.VariantBasicData(variant.id, variant.productEntity.id, variant.productEntity.organizationId, variant.barcode) "
-//			"SELECT NEW com.nasnav.service.model.VariantBasicData(variant.id, product.id, product.organizationId, variant.barcode) "
 			+ " FROM ProductVariantsEntity variant "
-//			+ " JOIN variant.productEntity product "
 			+ " where variant.id in :idList")
 	List<VariantBasicData> findByIdIn(@Param("idList") List<Long> idList);
 	
 	@Query("SELECT NEW com.nasnav.service.model.VariantBasicData(variant.id, variant.productEntity.id, variant.productEntity.organizationId, variant.barcode) "
 			+ " FROM ProductVariantsEntity variant "
-//			+ " JOIN variant.productEntity product "
 			+ " where variant.productEntity.organizationId = :orgId "
 			+ " AND variant.barcode in (:barcodeList)")
 	List<VariantBasicData> findByOrganizationIdAndBarcodeIn(@Param("orgId") Long orgId,  @Param("barcodeList") List<String> barcodeList);

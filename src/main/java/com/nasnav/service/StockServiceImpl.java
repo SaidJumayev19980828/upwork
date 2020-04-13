@@ -2,9 +2,13 @@ package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_MISSING_STOCK_UPDATE_PARAMS;
+import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
+import static com.nasnav.enumerations.Roles.STORE_MANAGER;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -12,11 +16,12 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 import javax.transaction.Transactional;
@@ -30,11 +35,9 @@ import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.StockUpdateDTO;
-import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.model.querydsl.sql.QStocks;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
@@ -50,7 +53,9 @@ import com.nasnav.service.model.VariantCache;
 import com.nasnav.service.model.VariantIdentifier;
 import com.querydsl.sql.Configuration;
 import com.querydsl.sql.PostgreSQLTemplates;
-import com.querydsl.sql.SQLQueryFactory;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 @Service
 public class StockServiceImpl implements StockService {
@@ -179,7 +184,6 @@ public class StockServiceImpl implements StockService {
 		}else {
 			stocks  = stockRepo.findByProductVariantsEntity_Id(variantId);
 		}
-        
 		
         if(stocks == null )
         	stocks  = new ArrayList<>();
@@ -208,7 +212,7 @@ public class StockServiceImpl implements StockService {
 	
 	
 	
-	private Long saveStock(StockUpdateDTO stockUpdateReq, VariantCache variantCache, Map<Long,ShopsEntity> shopCache) {
+	private Long saveStock(StockUpdateDTO stockUpdateReq, VariantCache variantCache, Map<Long,ShopsEntity> shopCache, VariantStockCache stockCache) {
 		try {
 			validateStockToUpdate(stockUpdateReq, variantCache, shopCache);
 		} catch (BusinessException e) {
@@ -220,12 +224,12 @@ public class StockServiceImpl implements StockService {
 	
 	
 	public List<Long> updateStockBatch(List<StockUpdateDTO> stocks) throws BusinessException{
-		List<VariantIdentifier> variantIdList = 
+		List<VariantIdentifier> variantIdentifiers = 
 				stocks
 				.stream()
 				.map(this::getVariantIdentifier)
 				.collect(toList());
-		VariantCache variantCache = cachingHelper.createVariantCache(variantIdList);
+		VariantCache variantCache = cachingHelper.createVariantCache(variantIdentifiers);
 		
 		List<Long> shopIdList = 
 				stocks
@@ -238,9 +242,18 @@ public class StockServiceImpl implements StockService {
 				.stream()
 				.collect(toMap(ShopsEntity::getId, shop -> shop));
 		
+		
+		List<Long> variantIdList = 
+				stocks
+				.stream()
+				.map(StockUpdateDTO::getVariantId)
+				.collect(toList());
+		List<StocksEntity> variantStocks = stockRepo.findByProductVariantsEntity_IdIn(variantIdList);
+				
+		VariantStockCache stockCache = new VariantStockCache(variantStocks);
 		return stocks
 				.stream()
-				.map(stk -> saveStock(stk, variantCache, shopCache))
+				.map(stk -> saveStock(stk, variantCache, shopCache, stockCache))
 				.collect(toList());
 	}
 	
@@ -417,8 +430,8 @@ public class StockServiceImpl implements StockService {
 		EmployeeUserEntity empUser = (EmployeeUserEntity)user;
 		
 		//TODO: revise this condition
-		if( !security.currentUserHasRole(Roles.ORGANIZATION_MANAGER) 
-				&& security.currentUserHasRole(Roles.STORE_MANAGER)
+		if( !security.currentUserHasRole(ORGANIZATION_MANAGER) 
+				&& security.currentUserHasRole(STORE_MANAGER)
 				&& !Objects.equals( empUser.getShopId(), shop.getId()) ) {
 			throw new BusinessException(
 					String.format("Shop Manager of shop with id[%d] cannot make changes "
@@ -465,7 +478,7 @@ public class StockServiceImpl implements StockService {
 
 	private void validateStockCurrency(StockUpdateDTO req) throws BusinessException {
 		Integer currency = req.getCurrency();
-		boolean invalidCurrency = Arrays.asList( TransactionCurrency.values() )
+		boolean invalidCurrency = asList( TransactionCurrency.values() )
 										.stream()
 										.map(TransactionCurrency::getValue)
 										.map(Integer::valueOf)
@@ -498,5 +511,37 @@ public class StockServiceImpl implements StockService {
 		Configuration config = new Configuration(new PostgreSQLTemplates());
 		config.setUseLiterals(true);
 		return config;
+	}
+}
+
+
+
+
+
+
+
+
+
+@Data
+class VariantStockCache{
+	private Map<Long, List<StocksEntity>> variantStocks;
+	
+	VariantStockCache(List<StocksEntity> stocks){
+		this.variantStocks = 
+			ofNullable(stocks)
+			.orElse(emptyList())
+			.stream()
+			.collect(groupingBy(this::stockVariantId));
+	}
+	
+	
+	private Long stockVariantId(StocksEntity stk) {
+		return ofNullable(stk).map(StocksEntity::getProductVariantsEntity).map(ProductVariantsEntity::getId).orElse(-1L);
+	}
+	
+	public List<StocksEntity> getVariantStocks(Long variantId){
+		return ofNullable(variantId)
+				.map(variantStocks::get)
+				.orElse(emptyList());
 	}
 }

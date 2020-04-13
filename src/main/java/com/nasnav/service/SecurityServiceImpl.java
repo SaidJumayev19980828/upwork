@@ -5,8 +5,10 @@ import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.response.ResponseStatus.ACCOUNT_SUSPENDED;
 import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.LOCKED;
 
 import java.time.LocalDateTime;
@@ -14,7 +16,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -94,7 +95,7 @@ public class SecurityServiceImpl implements SecurityService {
 		
 		return userRepo.getUserRoles(userEntity).stream()												
 								.map(SimpleGrantedAuthority::new)
-								.collect(Collectors.toList());
+								.collect(toList());
 	}
 
 
@@ -250,7 +251,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Override
 	public BaseUserEntity getCurrentUser() {
-		return Optional.ofNullable( SecurityContextHolder.getContext() )
+		return ofNullable( SecurityContextHolder.getContext() )
 					.map(c -> c.getAuthentication())
 					.map(Authentication::getDetails)
 					.map(BaseUserEntity.class::cast)
@@ -286,11 +287,14 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Override
 	public Boolean userHasRole(BaseUserEntity user, Roles role) {
-		List<GrantedAuthority> roles = getUserRoles(user);
-		return roles.stream()
-					.map(GrantedAuthority::getAuthority)
-					.filter(Objects::nonNull)
-					.anyMatch(auth -> Objects.equals( auth, role.getValue()));
+		return ofNullable( SecurityContextHolder.getContext() )
+				.map(c -> c.getAuthentication())
+				.map(Authentication::getAuthorities)
+				.orElse(emptyList())
+				.stream()
+				.map(GrantedAuthority::getAuthority)
+				.filter(Objects::nonNull)
+				.anyMatch(auth -> Objects.equals( auth, role.getValue()));
 	}
 
 
