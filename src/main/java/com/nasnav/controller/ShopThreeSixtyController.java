@@ -29,7 +29,7 @@ public class ShopThreeSixtyController {
     @ApiOperation(value = "Get information about shop 360 json data", nickname = "getShop360Data")
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
-    @GetMapping(value = "/json_data", produces = MediaType.TEXT_PLAIN_VALUE)
+    @GetMapping(value = "/json_data", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity getShop360JsonInfo(@RequestParam("shop_id") Long shopId,
                                                    @RequestParam("type") String type) {
         return new ResponseEntity<>(shop360Svc.getShop360JsonInfo(shopId, type), HttpStatus.OK);
@@ -40,7 +40,7 @@ public class ShopThreeSixtyController {
     @ApiOperation(value = "Get information about shop 360 product positions", nickname = "getShop360ProductPositions")
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
-    @GetMapping(value = "/product_positions", produces = MediaType.TEXT_PLAIN_VALUE)
+    @GetMapping(value = "/product_positions", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity getShop360ProductPositions(@RequestParam("shop_id") Long shopId) {
         return new ResponseEntity<>(shop360Svc.getProductPositions(shopId), HttpStatus.OK);
     }
