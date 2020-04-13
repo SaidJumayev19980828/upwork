@@ -68,16 +68,20 @@ public class ShopThreeSixtyService {
     @Autowired
     private FileService fileSvc;
 
-    public String getShop360JsonInfo(Long shopId, String type) {
+    public String getShop360JsonInfo(Long shopId, String type, Boolean publish) {
         ShopThreeSixtyEntity shop = shop360Repo.getFirstByShopsEntity_Id(shopId);
         if (shop == null)
             return null;
 
         String data = "";
-        if(type.equals("web"))
-            data = getJsonDataStringSerlizable(shop.getWebJsonData(),type);
+        if(type.equals("web")) {
+            if (publish)
+                data = getJsonDataStringSerlizable(shop.getWebJsonData());
+            else
+                data = getJsonDataStringSerlizable(shop.getPreviewJsonData());
+        }
         else if (type.equals("mobile"))
-            data = getJsonDataStringSerlizable(shop.getMobileJsonData(), type);
+            data = getJsonDataStringSerlizable(shop.getMobileJsonData());
 
 
         return data;
@@ -85,7 +89,7 @@ public class ShopThreeSixtyService {
 
 
     // ! custom modifier to deal with mailformed json data in shop360s !
-    private String getJsonDataStringSerlizable(String oldJsonDataString, String type) {
+    private String getJsonDataStringSerlizable(String oldJsonDataString) {
         String jsonDataString = oldJsonDataString;
 
         if (jsonDataString == null)
@@ -97,7 +101,7 @@ public class ShopThreeSixtyService {
         return jsonDataString.replaceAll("\n", "");
     }
 
-    public String getProductPositions(Long shopId) {
+    public String getProductPositions(Long shopId, Boolean publish) {
         ShopThreeSixtyEntity shop = shop360Repo.getFirstByShopsEntity_Id(shopId);
         if (shop == null)
             return null;
@@ -106,7 +110,12 @@ public class ShopThreeSixtyService {
         if (productPosition == null || productPosition.getPositionsJsonData() == null)
             return null;
 
-        String positions =  getJsonDataStringSerlizable(productPosition.getPositionsJsonData(),"pp");
+        String positions;
+
+        if (publish)
+            positions = getJsonDataStringSerlizable(productPosition.getPositionsJsonData());
+        else
+            positions = getJsonDataStringSerlizable(productPosition.getPreviewJsonData());
 
         return positions;
     }
@@ -180,7 +189,7 @@ public class ShopThreeSixtyService {
                     "INVALID_PARAM: view360_id", HttpStatus.NOT_ACCEPTABLE);
 
         if (type.equals("web"))
-            shopEntity.setWebJsonData(decodeUrl(dataDTO));
+            shopEntity.setPreviewJsonData(decodeUrl(dataDTO));
         else if (type.equals("mobile"))
             shopEntity.setMobileJsonData(decodeUrl(dataDTO));
         else
@@ -229,7 +238,7 @@ public class ShopThreeSixtyService {
             entity.setShopsThreeSixtyEntity(shop);
         }
 
-        entity.setPositionsJsonData(decodeUrl(json));
+        entity.setPreviewJsonData(decodeUrl(json));
 
         productPosRepo.save(entity);
         return new ShopResponse(entity.getId(), HttpStatus.OK);
@@ -438,8 +447,26 @@ public class ShopThreeSixtyService {
         if (StringUtils.isBlankOrNull(barcode) && StringUtils.isBlankOrNull(name))
             throw new BusinessException("Either provide barcode or name",
                     "MISSING_PARAMS: barcode, name", HttpStatus.NOT_ACCEPTABLE);
-
+        List<ProductEntity> productsList = new ArrayList<>();
+        /*if (barcode != null && name == null)
+            productsList = productsRepo.findByBarcodeContainsAndOrganizationId(String barcode, Long orgId);*/
         return null;
     }
 
+
+    public ShopResponse publishJsonData(Long shopId) throws BusinessException {
+        ShopThreeSixtyEntity shop360 = shop360Repo.findByShopsEntity_Id(shopId);
+        ProductPositionEntity productPosition = productPosRepo.findByShopsThreeSixtyEntity_Id(shopId);
+
+        if (shop360 == null || productPosition == null)
+            throw new BusinessException(null, "INVALID_PARAM: shop_id", HttpStatus.NOT_ACCEPTABLE);
+
+        shop360.setWebJsonData(shop360.getPreviewJsonData());
+        productPosition.setPositionsJsonData(productPosition.getPreviewJsonData());
+
+        shop360Repo.save(shop360);
+        productPosRepo.save(productPosition);
+
+        return new ShopResponse(shopId, HttpStatus.OK);
+    }
 }

@@ -45,7 +45,7 @@ public class ShopThreeSixtyEntity implements BaseEntity{
     private boolean published;
 
     @Column(name = "preview_json_data")
-    private String previewJsonSata;
+    private String previewJsonData;
 
 
 

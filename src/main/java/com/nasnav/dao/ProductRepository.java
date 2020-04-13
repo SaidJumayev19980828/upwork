@@ -111,6 +111,15 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	
 	@Query("select products.id FROM ProductEntity products where products.organizationId = :orgId")
 	Set<Long> listProductIdByOrganizationId(@Param("orgId")Long orgId);
+
+
+	@Query("select p.id, p.name, v.barcode, s.price" +
+            " from ProductEntity p join ProductVariantsEntity v on p = v.productEntity" +
+            " join StocksEntity s on s.productVariantsEntity = v where p.organizationId = :orgId" +
+            " and v.barcode like '%:barcode%'")
+    List<ProductEntity> findByBarcodeContainsAndOrganizationId(
+                                            @Param("barcode") String barcode,
+                                            @Param("orgId") Long orgId);
 }
 
 
