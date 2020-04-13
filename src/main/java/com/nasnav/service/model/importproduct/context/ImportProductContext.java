@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.dto.ProductImportMetadata;
+import com.nasnav.service.model.DataImportCachedData;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,6 +24,8 @@ public class ImportProductContext {
 
 	@JsonIgnore
 	private List<ProductImportDTO> products;
+	@JsonIgnore
+	private DataImportCachedData cache;
 	private ProductImportMetadata importMetaData;
 	private Integer productsNum;
 	private List<Error> errors;
@@ -32,7 +35,7 @@ public class ImportProductContext {
 	private Set<Product> updatedProducts;
 	
 	
-	public ImportProductContext(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) {
+	public ImportProductContext(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata, DataImportCachedData cache) {
 		this.products = productImportDTOS;
 		this.importMetaData = productImportMetadata;
 		this.productsNum = productImportDTOS.size();
@@ -41,6 +44,12 @@ public class ImportProductContext {
 		this.createdBrands = new HashSet<>();
 		this.createdProducts = new HashSet<>();
 		this.updatedProducts = new HashSet<>();
+		this.cache = cache;
+	}
+	
+	
+	public ImportProductContext(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) {
+		this(productImportDTOS, productImportMetadata, DataImportCachedData.emptyCache());
 	}
 	
 	

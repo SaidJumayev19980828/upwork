@@ -244,6 +244,15 @@ public class StockServiceImpl implements StockService {
 	@Transactional(rollbackOn = Throwable.class)	
 	public List<Long> updateStockBatch(List<StockUpdateDTO> stocks){
 		VariantCache variantCache = createVariantsCache(stocks);
+		return updateStockBatch(stocks, variantCache);
+	}
+	
+	
+	
+	
+	@Override
+	@Transactional(rollbackOn = Throwable.class)	
+	public List<Long> updateStockBatch(List<StockUpdateDTO> stocks, VariantCache variantCache){
 		Map<Long, ShopsEntity> shopCache = createShopsCache(stocks);		
 		VariantStockCache stockCache = createStocksCache(stocks);
 		

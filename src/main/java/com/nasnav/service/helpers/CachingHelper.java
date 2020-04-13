@@ -2,10 +2,13 @@ package com.nasnav.service.helpers;
 
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
+import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
+import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -113,6 +116,8 @@ public class CachingHelper {
 			idList
 			.map(Long::valueOf)
 			.buffer()
+			.filter(variantIdList -> !variantIdList.isEmpty())
+			.defaultIfEmpty(asList(-1L))
 			.flatMapIterable(productVariantsRepository::findByIdIn);
 	}
 	
@@ -124,6 +129,8 @@ public class CachingHelper {
 		return 
 			idList
 			.buffer()
+			.filter(exIdList -> !exIdList.isEmpty())
+			.defaultIfEmpty(asList(randomUUID().toString())) //the list should never be empty
 			.flatMapIterable(this::getProductVariantFromExternalIdIn);
 	}
 	
@@ -136,6 +143,8 @@ public class CachingHelper {
 		return 
 			barcodeList
 			.buffer()
+			.filter(barcodes -> !barcodes.isEmpty())
+			.defaultIfEmpty(asList(randomUUID().toString())) //the list should never be empty
 			.flatMapIterable(barcodes -> productVariantsRepository.findByOrganizationIdAndBarcodeIn(orgId, barcodes));
 	}
 	
@@ -158,18 +167,29 @@ public class CachingHelper {
 				.map(Long::valueOf)
 				.collect(toList());
 		
-		return 
-			productVariantsRepository
-				.findByIdIn(variantIds)
+		return 	findVariantsbyId(localToExtIdMapping, variantIds);
+	}
+
+
+
+
+
+
+	private List<Variant> findVariantsbyId(Map<String, String> localToExtIdMapping, List<Long> variantIds) {
+		List<Long> idList = new ArrayList<>();
+		idList.add(-1L);//the list should be non-empty
+		idList.addAll(variantIds);
+		return productVariantsRepository
+				.findByIdIn(idList)
 				.stream()
-				.map(variant -> toProductVariantEntityWithExtId(localToExtIdMapping, variant))
+				.map(variant -> toVariant(localToExtIdMapping, variant))
 				.collect(toList());
 	}
 	
 	
 	
 	
-	private Variant toProductVariantEntityWithExtId(Map<String, String> localToExtIdMapping,
+	private Variant toVariant(Map<String, String> localToExtIdMapping,
 			VariantBasicData variant) {
 		String extId = localToExtIdMapping.get(String.valueOf(variant.getVariantId()));
 		return new Variant(variant , extId);
