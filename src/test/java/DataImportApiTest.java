@@ -1,4 +1,5 @@
 import static com.nasnav.commons.utils.EntityUtils.setOf;
+import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.USD;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
@@ -10,6 +11,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -61,6 +63,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dao.IntegrationMappingRepository;
+import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
@@ -184,6 +187,8 @@ public class DataImportApiTest {
 	@Autowired
 	private BrandsRepository brandsRepo;
 	
+	@Autowired
+	private OrdersRepository orderRepo;
 	
 	@Test
     public void uploadProductsCSVNoAuthNTest() throws IOException, Exception {
@@ -795,9 +800,7 @@ public class DataImportApiTest {
 		ProductDataCount after = countProductData();		
 		assertExpectedRowNumInserted(before, after, 1);         
 
-        ExpectedSavedData expected = getExpectedNewAndUpdatedDataWithStocks();
-        assertProductDataImported(TEST_UPDATE_SHOP, expected);
-        assertProductUpdatedDataSavedWithStock();     
+        assertDataSaved();     
         
         ImportProductContext report = readImportReport(result);
         assertEquals(1, report.getCreatedProducts().size());
@@ -813,35 +816,23 @@ public class DataImportApiTest {
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_3.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void uploadProductCSVUpdateDataDeleteOldProductsTest() throws IOException, Exception {
-		JSONObject importProperties = createDataImportProperties();
-		importProperties.put("shop_id", TEST_UPDATE_SHOP);
-		importProperties.put("update_product", true);
-		importProperties.put("update_stocks", true);
-		importProperties.put("delete_old_products", true);
+	public void uploadProductCSVUpdateDataDeleteOldProductsTest() throws Throwable {
+		JSONObject importProperties = createDataImportPropertiesWithDeleteOldProducts();
         
-		ProductDataCount before = countProductData();
-		Long orgProductsBefore = productRepo.countByOrganizationId(99001L);
-		assertEquals(2, orgProductsBefore.intValue());
-		Long otherOrgProductBefore = productRepo.countByOrganizationId(99002L);
+		Long orgId = 99001L;
+		Long otherOrg = 99002L;
+		Long variantToBeDeleted = 310001L;
+		Long productToBeDeleted = 200001L;
 		
+		ProductDataDeleteCounts before = countData(orgId, otherOrg);		
+		assertDataExistedBeforeImport(variantToBeDeleted, productToBeDeleted, before);
+				
 		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
 		
 		result.andExpect(status().is(200));
-		
-		ProductDataCount after = countProductData();
-		
-		assertEquals("for organization 99001 a single product will be added, and one old product will be deleted"
-				, 0, after.product - before.product);
-        assertEquals(1, after.variant - before.variant);
-        assertEquals(1, after.stocks  - before.stocks);         
 
-        ExpectedSavedData expected = getExpectedNewAndUpdatedDataWithStocks();
-        assertProductDataImported(TEST_UPDATE_SHOP, expected);
-        assertProductUpdatedDataSavedWithStock();     
-        
-        ImportProductContext report = readImportReport(result);
-        validateDeletedOldProducts(otherOrgProductBefore, report);
+        assertDataSaved();     
+        validateDeletedOldProducts(before ,result, productToBeDeleted, variantToBeDeleted);
 	}
 
 
@@ -849,18 +840,130 @@ public class DataImportApiTest {
 
 
 
-	private void validateDeletedOldProducts(Long otherOrgProductBefore, ImportProductContext report) {
+	private void assertDataSaved() {
+		ExpectedSavedData expected = getExpectedNewAndUpdatedDataWithStocks();
+        assertProductDataImported(TEST_UPDATE_SHOP, expected);
+        assertProductUpdatedDataSavedWithStock();
+	}
+
+
+
+
+
+
+	private JSONObject createDataImportPropertiesWithDeleteOldProducts() {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", true);
+		importProperties.put("update_stocks", true);
+		importProperties.put("delete_old_products", true);
+		return importProperties;
+	}
+
+
+
+
+
+
+	private void assertOtherOrgDataNotDeleted(Long orgId, Long otherOrg, ProductDataDeleteCounts before) {
+		long otherOrgProductAfter = productRepo.countByOrganizationId(otherOrg);
+		long otherOrgOrdersCountAfter = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), otherOrg);
+		long otherOrgVariantsAfter = variantRepo.countByProductEntity_organizationId(orgId);
+		
+		assertEquals(before.otherOrgProducts, otherOrgProductAfter);
+		assertEquals(before.otherOrgOrders, otherOrgOrdersCountAfter);
+		assertEquals(before.otherOrgVariants, otherOrgVariantsAfter);
+	}
+
+
+
+
+
+
+	private void assertDataExistedBeforeImport(Long variantToBeDeleted, Long productToBeDeleted,
+			ProductDataDeleteCounts before) {
+		assertEquals(2, before.orgProducts);
+		assertNotEquals(0L, before.orders);
+		assertNotEquals(0L, before.orgVariants);
+		assertNotEquals(0L, before.otherOrgProducts);
+		assertNotEquals(0L, before.otherOrgOrders);
+		assertNotEquals(0L, before.otherOrgVariants);
+		assertTrue(variantRepo.existsById(variantToBeDeleted));
+		assertTrue(productRepo.existsById(productToBeDeleted));
+	}
+
+
+
+
+
+
+	private ProductDataDeleteCounts countData(Long orgId, Long otherOrg) {
+		ProductDataDeleteCounts before = new ProductDataDeleteCounts();
+		before.allProductsDataCount = countProductData();
+		before.orgProducts = productRepo.countByOrganizationId(orgId);
+		before.orders = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), orgId);
+		before.orgVariants = variantRepo.countByProductEntity_organizationId(orgId);
+		before.otherOrgProducts = productRepo.countByOrganizationId(otherOrg);
+		before.otherOrgOrders = orderRepo.countByStatusAndOrganizationEntity_id(NEW.getValue(), otherOrg);
+		before.otherOrgVariants = variantRepo.countByProductEntity_organizationId(orgId);
+		before.orgId = orgId;
+		before.otherOrgId = otherOrg;
+		return before;
+	}
+
+
+
+
+
+
+	private void validateDeletedOldProducts(ProductDataDeleteCounts before, ResultActions result
+			, Long productToBeDeleted, Long variantToBeDeleted) throws  Throwable {
+		ImportProductContext report = readImportReport(result);
+		Long orgId = before.orgId;
+		Long otherOrg = before.otherOrgId;
+		ProductDataDeleteCounts after = countData(orgId, otherOrg);
+		 
+        validateExpectedReport(report);
+		validateOrgDataCount(after, before, report, productToBeDeleted, variantToBeDeleted);
+		assertOtherOrgDataNotDeleted(orgId, otherOrg, before);
+	}
+
+
+
+
+
+
+	private void validateOrgDataCount(ProductDataDeleteCounts after, ProductDataDeleteCounts before, ImportProductContext report
+			, Long productToBeDeleted, Long variantToBeDeleted) {
+		assertEquals("for organization 99001 a single product will be added, and one old product will be deleted"
+				,0 , after.allProductsDataCount.product - before.allProductsDataCount.product);
+        assertEquals("for organization 99001 a single variant will be added, and one old product will be deleted"
+        		,0 , after.allProductsDataCount.variant - before.allProductsDataCount.variant);
+        assertEquals("for organization 99001 a single stock will be added, and no stocks will be deleted"
+        		,1 , after.allProductsDataCount.stocks  - before.allProductsDataCount.stocks);
+        
 		int createdProducts = report.getCreatedProducts().size(); 
-        int updatedProducts = report.getUpdatedProducts().size(); 
-        assertEquals(1, createdProducts);
+        int updatedProducts = report.getUpdatedProducts().size();
+		assertEquals(createdProducts + updatedProducts , after.orgProducts);
+		assertEquals("validate variants deleted , each product has single variant in the test..."
+				, createdProducts + updatedProducts, after.orgVariants);
+		assertEquals(0L, after.orders);
+		
+		assertFalse("assert non updated product deleted.", productRepo.existsById(productToBeDeleted));
+		assertFalse("assert non updated product variant deleted.", variantRepo.existsById(variantToBeDeleted));
+	}
+
+
+
+
+
+
+	private void validateExpectedReport(ImportProductContext report) {
+		int createdProducts = report.getCreatedProducts().size(); 
+        int updatedProducts = report.getUpdatedProducts().size();
+		assertEquals(1, createdProducts);
         assertEquals(1, updatedProducts);
         assertTrue(report.getErrors().isEmpty());
-        
-        Long orgProductsAfter = productRepo.countByOrganizationId(99001L);
-		Long otherOrgProductAfter = productRepo.countByOrganizationId(99002L);
-		
-		assertEquals(createdProducts + updatedProducts , orgProductsAfter.intValue());
-		assertEquals(otherOrgProductBefore, otherOrgProductAfter);
 	}
 	
 	
@@ -981,6 +1084,9 @@ public class DataImportApiTest {
 		result.andExpect(status().is(406));
 	}
 
+	
+	
+	
 	@Test
 	public void uploadProductCSVExistingVariantIdExistVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
@@ -1804,3 +1910,20 @@ class ExtendedProductDataCount extends ProductDataCount{
 		this.stocks = count.stocks;
 	};
 }
+
+
+
+class ProductDataDeleteCounts{
+	public Long otherOrgId;
+	public Long orgId;
+	public ProductDataCount allProductsDataCount;
+	public long orgProducts;
+	public long orders;
+	public long orgVariants;
+	public long otherOrgProducts;
+	public long otherOrgOrders;
+	public long otherOrgVariants;
+} 
+
+
+

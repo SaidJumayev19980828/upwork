@@ -781,7 +781,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		String externalShopId = shopProducts.getExternalShopId();
 		String shopIdStr = 
-				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValueIgnoreCase(orgId, MappingType.SHOP.getValue(), externalShopId)
+				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(orgId, MappingType.SHOP.getValue(), externalShopId)
 					.map(IntegrationMappingEntity::getLocalValue)
 					.orElse(null);
 		Long shopId = -1L;

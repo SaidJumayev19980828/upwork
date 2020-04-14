@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.startsWithAnyOfAndIgnoreCase;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
@@ -8,17 +9,14 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING_IMG_FILE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_IMG_DATA_PROVIDED;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_IMG_IMPORT_RESPONSE;
-import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUCT_EXISTS_WITH_BARCODE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUCT_EXISTS_WITH_ID;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_VARIANT_FOUND;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_READ_ZIP;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_MODIFY_PRODUCT;
-import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
-import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.logging.Level.SEVERE;
 import static java.util.stream.Collectors.groupingBy;
@@ -45,7 +43,6 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -75,7 +72,6 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductImagesRepository;
@@ -88,7 +84,6 @@ import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportImageBulkRuntimeException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.integration.IntegrationService;
 import com.nasnav.model.querydsl.sql.QProductImages;
 import com.nasnav.model.querydsl.sql.QProductVariants;
 import com.nasnav.persistence.BaseUserEntity;
@@ -99,6 +94,7 @@ import com.nasnav.response.ProductImageDeleteResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.ImportedImage;
+import com.nasnav.service.model.VariantBasicData;
 import com.nasnav.service.model.VariantCache;
 import com.nasnav.service.model.VariantIdentifier;
 import com.nasnav.service.model.VariantIdentifierAndUrlPair;
@@ -144,9 +140,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 	@Autowired
 	private SecurityService securityService;
 	
-	
-	@Autowired
-	private IntegrationService integrationService;
 
 	@Autowired
 	private DataSource dataSource;
@@ -813,9 +806,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	
 	
-	private ProductImageUpdateDTO createImgMetaData(ProductImageBulkUpdateDTO metaData, ProductVariantsEntity variant) {
-		Long variantId = variant.getId();
-		Long productId = variant.getProductEntity().getId();
+	private ProductImageUpdateDTO createImgMetaData(ProductImageBulkUpdateDTO metaData, VariantBasicData variant) {
+		Long variantId = variant.getVariantId();
+		Long productId = variant.getProductId();
 		
 		ProductImageUpdateDTO imgMetaData = new ProductImageUpdateDTO();
 		imgMetaData.setOperation(CREATE);
@@ -833,27 +826,32 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	
 	
-	private Optional<ProductVariantsEntity> getProductVariant(VariantIdentifier identifier, VariantCache cache, ProductImageBulkUpdateDTO metaData) {
-		String variantId = identifier.getVariantId();
-		String externalId = identifier.getExternalId();
-		String barcode = identifier.getBarcode();	
-		Optional<ProductVariantsEntity> variant =
-				Stream
-				.of(  cache.getIdToVariantMap().get(variantId)
-					, cache.getExternalIdToVariantMap().get(externalId)
-					, cache.getBarcodeToVariantMap().get(barcode))
-				.filter(Objects::nonNull)
-				.findFirst();
+	private Optional<VariantBasicData> getProductVariant(VariantIdentifier identifier, VariantCache cache, ProductImageBulkUpdateDTO metaData) {
+		Optional<VariantBasicData> variant = getVariantFromCache(identifier, cache);
 		
 		Boolean isIgnoreErrors = ofNullable(metaData.isIgnoreErrors()).orElse(false);
 		if(!isIgnoreErrors && !variant.isPresent()) {
 			throw new RuntimeBusinessException(
-					format(ERR_NO_VARIANT_FOUND, variantId, externalId, barcode)
+					format(ERR_NO_VARIANT_FOUND, identifier.getVariantId(), identifier.getExternalId(), identifier.getBarcode())
 					, "INVALID PARAM: csv"
 					, NOT_ACCEPTABLE);
 		}
-		
 		return variant;
+	}
+
+
+
+
+
+
+	private Optional<VariantBasicData> getVariantFromCache(VariantIdentifier identifier, VariantCache cache) {
+		String variantId = identifier.getVariantId();
+		String externalId = identifier.getExternalId();
+		String barcode = identifier.getBarcode();
+		return firstExistingValueOf(
+				cache.getIdToVariantMap().get(variantId)
+				, cache.getExternalIdToVariantMap().get(externalId)
+				, cache.getBarcodeToVariantMap().get(barcode));
 	}
 	
 	
@@ -1077,10 +1075,12 @@ public class ProductImageServiceImpl implements ProductImageService {
 																	 ProductImageBulkUpdateDTO metaData) throws BusinessException{
 		
 		List<VariantIdentifier> identifiers = getVariantIdentifiersForCompressedFile(zipEntry, fileIdentifiersMap);
+		VariantCache cache = cachingHelper.createVariantCache(identifiers);
 		
 		List<List<ProductImageUpdateDTO>> metaDataLists = new ArrayList<>();
 		for(VariantIdentifier identifier: identifiers) {
-			metaDataLists.add(createImportedImagesMetaData(metaData, identifier));
+			List<ProductImageUpdateDTO> imgsMetaData = createImportedImagesMetaData(metaData, identifier, cache); 
+			metaDataLists.add(imgsMetaData);
 		}
 		
 		return metaDataLists
@@ -1088,63 +1088,20 @@ public class ProductImageServiceImpl implements ProductImageService {
 				.flatMap(List::stream)
 				.collect(toList());
 	}
-
 	
 	
 	
 
-	//TODO: this should use variant cache instead
-	private List<ProductImageUpdateDTO> createImportedImagesMetaData(ProductImageBulkUpdateDTO metaData, VariantIdentifier identifier)
+	private List<ProductImageUpdateDTO> createImportedImagesMetaData(ProductImageBulkUpdateDTO metaData
+			, VariantIdentifier identifier
+			, VariantCache cache)
 			throws BusinessException {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-
-		Optional<ProductVariantsEntity> variant = empty();
-
-		if (identifier.getVariantId() != null) {
-			variant = productVariantsRepository.findById(Long.parseLong(identifier.getVariantId()));
-			validateVariantExistance(variant, identifier.getVariantId());
-		}
-
-
-		if ( !variant.isPresent() && identifier.getExternalId() != null) {
-			String localMappedValue = integrationService.getLocalMappedValue(orgId, PRODUCT_VARIANT, identifier.getExternalId());
-			if (localMappedValue != null && StringUtils.validateUrl(localMappedValue, "[0-9]+")) {
-				variant = productVariantsRepository.findById(Long.parseLong(localMappedValue));
-				validateVariantExistance(variant, localMappedValue);
-			}
-			else {
-				throw new BusinessException("Provided external_id("+identifier.getExternalId()+") doesn't match any mapped value!",
-						"INVALID_PARAM: external_id", NOT_ACCEPTABLE);
-			}
-				
-		}
-
-		if ( !variant.isPresent() && identifier.getBarcode() != null) {
-			variant =
-					productVariantsRepository
-						.findByBarcodeAndProductEntity_OrganizationId(identifier.getBarcode(), orgId)
-						.stream()
-						.sorted(comparing(ProductVariantsEntity::getId))
-						.findFirst();
-		}
+		Optional<VariantBasicData> variant = getProductVariant(identifier, cache, metaData);
 		
-		ProductImageUpdateDTO variantMetaData = 
-				variant
-					.map(var -> createImgMetaData(metaData, var))
-					.orElse(null);
-
-		if(variantMetaData == null) {
-			throw new BusinessException(
-					format(ERR_NO_PRODUCT_EXISTS_WITH_BARCODE, identifier.getBarcode(), orgId)
-					, "INVALID PARAM:imgs_zip"
-					, NOT_ACCEPTABLE);
-		}
-		
-		return
-			asList( variantMetaData )
-			  .stream()
-			  .filter(java.util.Objects::nonNull)
-			  .collect(toList());
+		return variant
+				.map(var -> createImgMetaData(metaData, var))
+				.map(Arrays::asList)
+				.orElse(emptyList());
 	}
 
 	

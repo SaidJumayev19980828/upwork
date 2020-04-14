@@ -13,7 +13,9 @@ public class ImportProductException extends Exception {
 	
 	
 	public ImportProductException(ImportProductContext context) {
+		super(context.getErrors().stream().findFirst().map(e -> e.getMessage()).orElse("Error"));
 		this.context = context;
+		
 	}
 	
 	
