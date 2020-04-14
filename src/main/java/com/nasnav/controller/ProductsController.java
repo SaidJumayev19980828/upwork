@@ -370,5 +370,18 @@ public class ProductsController {
     		, @RequestParam(name = "confirmed",defaultValue = "false", required = true) boolean isConfirmed) throws BusinessException {
     	productService.deleteAllProducts(isConfirmed);
     }
-    
+
+
+    @ApiOperation(value = "Hide/show all products which has no images", nickname = "hide/showProduct", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Products hidden/shown successfully"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+    })
+    @ResponseStatus(OK)
+    @PostMapping(value = "hide")
+    public void hideProducts(@RequestHeader("User-Token") String token,
+                             @RequestParam(required = false, defaultValue = "true") Boolean hide) {
+        productService.hideProducts(hide);
+    }
 }

@@ -57,6 +57,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.sql.DataSource;
 
+import com.nasnav.dao.*;
 import org.apache.commons.beanutils.BeanUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -79,18 +80,6 @@ import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
-import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.BundleRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ProductImagesRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.BundleDTO;
 import com.nasnav.dto.BundleElementUpdateDTO;
 import com.nasnav.dto.ExtraAttributeDTO;
@@ -212,6 +201,9 @@ public class ProductService {
 
 	@Autowired
 	private ExtraAttributesRepository extraAttrRepo;
+
+	@Autowired
+	private ProductImgsCustomRepository productImgsCustomRepo;
 
 	@Autowired
 	private DataSource dataSource;
@@ -2343,5 +2335,17 @@ public class ProductService {
 		ordersRepository.deleteByStatusAndOrgId( NEW.getValue(), orgId);
 		productVariantsRepository.deleteAllByProductEntity_organizationId(orgId);
 		productRepository.deleteAllByOrganizationId(orgId);
+	}
+
+
+
+	public void hideProducts(Boolean hide) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		List<Long> productIdsList = productImgsCustomRepo.getProductsWithNoImages(orgId)
+									.stream().map(p -> p.getProductId())
+									.collect(Collectors.toList());
+
+		if (!(productIdsList == null || productIdsList.isEmpty()))
+			productRepository.setProductsHidden(productIdsList, hide, orgId);
 	}
 }
