@@ -46,10 +46,10 @@ INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, remov
 
 
 -- dummy products
-insert into PUBLIC.products(ID,"name",product_type, organization_id,category_id, updated_at) VALUES(200001, 'Bundle Product#1' , 0 , 99001, 201, now());
-insert into PUBLIC.products(ID,"name",product_type, organization_id,category_id, updated_at) VALUES(200002, 'Bundle Product#2' , 0 , 99002, 201, now());
-insert into PUBLIC.products(ID,"name",product_type, organization_id,category_id, updated_at, p_name, description, brand_id, barcode)
-VALUES(200003, 'Product to update' , 0 , 99001, 201, now(), 'u_shoe', 'old desc', 101, 'TT232222');
+insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200001, 'Bundle Product#1' , now() , now(), 0 , 99001, 201);
+insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200002, 'Bundle Product#2' , now() , now(), 0 , 99002, 201);
+insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id, p_name, description, brand_id, barcode) 
+VALUES(200003, 'Product to update' , now() , now(), 0 , 99001, 201, 'u_shoe', 'old desc', 101, 'TT232222');
 
 
 -- variants for each product
@@ -106,9 +106,9 @@ INSERT INTO public.users(id, email, user_name, authentication_token, organizatio
    
 
 --inserting orders
-insert into public.orders(id,user_id, organization_id,status,shop_id) values(630001, 88, 99001, 0, 100001);
-insert into public.orders(id,user_id, organization_id,status,shop_id) values(630013, 89, 99002, 0, 100002);
-insert into public.orders(id,user_id, organization_id,status,shop_id) values(630014, 88, 99001, 1, 100001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(630001, 88, now(), now(), 99001, 0, 100001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(630013, 89, now(), now(), 99002, 0, 100002);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(630014, 88, now(), now(), 99001, 1, 100001);
 
 
 
