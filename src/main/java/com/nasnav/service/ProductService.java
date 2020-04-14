@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
 import static com.nasnav.commons.utils.EntityUtils.noneIsEmpty;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
@@ -87,6 +88,7 @@ import com.nasnav.dao.ExtraAttributesRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductImagesRepository;
+import com.nasnav.dao.ProductImgsCustomRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
@@ -212,6 +214,9 @@ public class ProductService {
 
 	@Autowired
 	private ExtraAttributesRepository extraAttrRepo;
+
+	@Autowired
+	private ProductImgsCustomRepository productImgsCustomRepo;
 
 	@Autowired
 	private DataSource dataSource;
@@ -2343,5 +2348,20 @@ public class ProductService {
 		ordersRepository.deleteByStatusAndOrgId( NEW.getValue(), orgId);
 		productVariantsRepository.deleteAllByProductEntity_organizationId(orgId);
 		productRepository.deleteAllByOrganizationId(orgId);
+	}
+
+
+
+	public void hideProducts(Boolean hide) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		List<Long> productIdsList = productImgsCustomRepo.getProductsWithNoImages(orgId)
+									.stream()
+									.map(p -> p.getProductId())
+									.collect(toList());
+
+		if (!(productIdsList == null || productIdsList.isEmpty())) {
+			divideToBatches(productIdsList, 500)
+				.forEach(batch -> productRepository.setProductsHidden(batch, hide, orgId));
+		}
 	}
 }

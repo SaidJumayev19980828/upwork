@@ -122,6 +122,9 @@ public class ProductEntity {
 
     @Column(name="removed")
     private Integer removed;
+    
+    @Column(name="hide")
+    private boolean hide;
 
 
     //TODO : we only need this until the Column PRODUCTS.PRODUCT_TYPE is set as non-null

@@ -120,6 +120,17 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     List<ProductEntity> findByBarcodeContainsAndOrganizationId(
                                             @Param("barcode") String barcode,
                                             @Param("orgId") Long orgId);
+
+
+    @Modifying
+    @Transactional
+	@Query(value = "update Products set hide = :hide where organization_id = :orgId and id in :ids",
+            nativeQuery = true)
+    void setProductsHidden(@Param("ids") List<Long> ids,
+                           @Param("hide") Boolean hide,
+                           @Param("orgId") Long orgId);
+    
+	Long countByHideAndOrganizationId(boolean b, Long orgId);
 }
 
 

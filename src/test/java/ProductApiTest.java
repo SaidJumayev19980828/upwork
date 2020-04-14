@@ -8,6 +8,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
@@ -1173,6 +1174,32 @@ public class ProductApiTest {
 		//----------------------------------------------------------
 		assertDataDeleted(org, otherOrg, productCountOtherOrgBefore, variantCountOtherOrgBefore,
 				bundlesCountOtherOrgBefore, ordersCountOtherOrgBefore);
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Products_API_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void productHideApiTest() {
+		Long orgId = 99002L;
+		long unhiddenProductsBefore = productRepository.countByHideAndOrganizationId(false, orgId);
+		assertNotEquals("all products have no images in the test", 0L, unhiddenProductsBefore);
+		
+		HttpEntity<?> request =  getHttpEntity("" , "131415");
+		
+		ResponseEntity<String> response = 
+				template.exchange("/product/hide?hide=true" ,POST, request, String.class);
+		
+		assertEquals(OK, response.getStatusCode());
+		
+		long unhiddenProductsAfter = productRepository.countByHideAndOrganizationId(false, orgId);
+		long hiddenProductsAfter = productRepository.countByHideAndOrganizationId(true, orgId);
+		
+		assertEquals("all products have no images in the test", 0L, unhiddenProductsAfter);
+		assertEquals("all products with no images will be hidden", unhiddenProductsBefore, hiddenProductsAfter);
 	}
 
 
