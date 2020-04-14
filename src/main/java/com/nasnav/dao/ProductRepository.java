@@ -129,6 +129,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     void setProductsHidden(@Param("ids") List<Long> ids,
                            @Param("hide") Boolean hide,
                            @Param("orgId") Long orgId);
+    
+	Long countByHideAndOrganizationId(boolean b, Long orgId);
 }
 
 
