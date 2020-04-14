@@ -2,14 +2,18 @@ import static com.nasnav.test.commons.TestCommons.getHeaders;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static com.nasnav.test.commons.TestCommons.jsonArray;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.OK;
 
 import java.io.IOException;
 import java.util.List;
@@ -775,6 +779,53 @@ public class CategoryManagmentTest {
         ResponseEntity<String> response = template.exchange("/organization/tag?tag_id=5007", DELETE, json, String.class);
         assertEquals(200, response.getStatusCode().value());
     }
+    
+    
+    
 
-
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void assignTagCategoryTest() {
+   	
+    	List<TagsEntity> tagNoCategory = 
+    			orgTagsRepo.findByCategoriesEntity_IdAndOrganizationEntity_Id(null, 99001L);
+    	List<Long> tagsIds = tagNoCategory.stream().map(TagsEntity::getId).collect(toList());
+    	assertNotEquals(0L, tagNoCategory.size());
+    	
+    	String tagParam = tagsIds.toString().replace("[", "").replace("]", "");
+        HttpEntity<Object> json = getHttpEntity("","hijkllm");
+        String url = format("/organization/tag/category?category_id=%d&tags=%s", 201, tagParam);
+        ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
+        assertEquals(OK, response.getStatusCode());
+        
+        List<TagsEntity> tagNoCategoryAfter = 
+    			orgTagsRepo.findByCategoriesEntity_IdAndOrganizationEntity_Id(null, 99001L);
+        assertEquals(0L, tagNoCategoryAfter.size());
+    }
+    
+    
+    
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_6.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void assignTagCategoryNoTagsParamTest() {
+    	Long categoryId = 201L;
+    	List<TagsEntity> tagNoCategory = 
+    			orgTagsRepo.findByCategoriesEntity_IdAndOrganizationEntity_Id(null, 99001L);
+    	assertNotEquals(0L, tagNoCategory.size());
+    	
+        HttpEntity<Object> json = getHttpEntity("","hijkllm");
+        String url = format("/organization/tag/category?category_id=%d", categoryId);
+        ResponseEntity<String> response = template.exchange(url, POST, json, String.class);
+        assertEquals(OK, response.getStatusCode());
+        
+        List<TagsEntity> tagNoCategoryAfter = 
+    			orgTagsRepo.findByCategoriesEntity_IdAndOrganizationEntity_Id(null, 99001L);
+        assertEquals(0L, tagNoCategoryAfter.size());
+        
+        List<TagsEntity> tagsWithAssignedCategory = 
+    			orgTagsRepo.findByCategoriesEntity_IdAndOrganizationEntity_Id(categoryId, 99001L);
+        assertEquals("Only tags with no categories were assigned to the new category",tagNoCategory.size() , tagsWithAssignedCategory.size());
+    }
 }
