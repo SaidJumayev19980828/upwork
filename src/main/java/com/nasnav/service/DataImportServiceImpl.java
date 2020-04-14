@@ -10,6 +10,7 @@ import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_BRAND_NAME_NOT_EXIST;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CONVERT_TO_JSON;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_TAGS_NOT_FOUND;
+import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -48,9 +49,12 @@ import com.nasnav.commons.model.IndexedData;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.constatnts.EntityConstants;
+import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.ProductImportMetadata;
@@ -125,6 +129,14 @@ public class DataImportServiceImpl implements DataImportService {
     @Autowired
     private ProductRepository productRepo;
     
+    @Autowired
+    private ProductVariantsRepository variantRepo;
+    
+    @Autowired
+    private BasketRepository basketRepo;
+    
+    @Autowired
+    private OrdersRepository orderRepo;
     
     private Logger logger = Logger.getLogger(getClass());
     
@@ -155,11 +167,39 @@ public class DataImportServiceImpl implements DataImportService {
         if(productImportMetadata.isDeleteOldProducts()) {
         	Set<Long> productsToDelete = getProductsToDelete(context);		
         	divideToBatches(productsToDelete, 500)
-        		.forEach(productRepo::deleteAllByIdIn);        			
+        		.forEach(this::deleteProductsData);        		
+        	
         }
 
         return context;
     }
+    
+    private void deleteProductsData(List<Long> productsToDelete) {
+    	Long orgId = security.getCurrentUserOrganizationId();
+    	Set<Long> newOrdersId = orderRepo.findOrderIdByStatusAndProductIdIn(productsToDelete, orgId, NEW.getValue());
+    	basketRepo.deleteByProductIdInAndOrganizationIdAndStatus(productsToDelete, orgId, NEW.getValue());
+    	orderRepo.deleteAllByStatusAndIdIn(newOrdersId, orgId, NEW.getValue());
+    	productRepo.deleteAllByIdIn(productsToDelete);
+    	variantRepo.deleteAllByProductIdIn(productsToDelete);
+    }
+
+
+
+
+
+	private Set<Long> getProcessedProducts(ImportProductContext context) {
+		Set<Long> processedProducts = 
+				Stream
+				.concat(
+						context.getCreatedProducts().stream()
+						, context.getUpdatedProducts().stream())
+				.map(Product::getId)
+				.collect(toSet());
+		if(processedProducts.isEmpty()) {
+			processedProducts.add(-1L);
+		}
+		return processedProducts;
+	}
 
 
 
@@ -168,13 +208,7 @@ public class DataImportServiceImpl implements DataImportService {
 	private Set<Long> getProductsToDelete(ImportProductContext context) {
 		Long orgId = security.getCurrentUserOrganizationId();
 		Set<Long> productsToDelete = productRepo.listProductIdByOrganizationId(orgId);
-		Set<Long> processedProducts = 
-				Stream
-				.concat(
-						context.getCreatedProducts().stream()
-						, context.getUpdatedProducts().stream())
-				.map(Product::getId)
-				.collect(toSet());
+		Set<Long> processedProducts = getProcessedProducts(context);
 		processedProducts.forEach(productsToDelete::remove);
 		return productsToDelete;
 	}
@@ -193,7 +227,7 @@ public class DataImportServiceImpl implements DataImportService {
 		.filter(variantId -> !isNullVariantIdentifier(variantId.getData()))
 		.filter(variantId -> isNoVariantExistWithId(variantId.getData(), cache.getVariantsCache()))
 		.map(this::createErrorMessage)
-		.forEach(err -> context.logNewError(err.getData(), err.getIndex()));
+		.forEach(err -> context.logNewError(err.getData(), err.getIndex()+1));
 		
 		if(!context.getErrors().isEmpty()) {
 			throw new ImportProductException(context);

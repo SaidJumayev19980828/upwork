@@ -17,7 +17,7 @@ INSERT INTO public.brands(id, category_id, name,created_at, updated_at, organiza
 
 -- dummy shop
 INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100001 , 'Funny Shop' , now() , now() , 99001);
-INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100002 , 'Wealthy Shop' , now() , now() , 99001);
+INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100002 , 'Wealthy Shop' , now() , now() , 99002);
 INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100003 , 'Import Shop' , now() , now() , 99001);
 INSERT INTO public.shops (id,"name", created_at , updated_at , organization_id) VALUES(100004 , 'Update Shop' , now() , now() , 99001);
 
@@ -66,6 +66,8 @@ values (400002, 100001,310002, 20 , 122, now() , now(), 99001);
 insert into public.stocks(id, shop_id , variant_id , quantity , price, created_at, updated_at, organization_id, currency)
 values (400003, 100004,310003, 30, 15, now() , now(), 99001, 2);
 
+
+
 --insering users
 INSERT INTO public.employee_users(id, created_at, updated_at, email, organization_id, authentication_token, shop_id)
 VALUES (68, now(), now(), 'testuser1@nasnav.com', 99001, '101112',  100001);
@@ -93,6 +95,27 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (22, 70, 2, now(), now());
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (23, 71, 2, now(), now());
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id, created_at, updated_at) VALUES (24, 72, 2, now(), now());
+
+
+--inserting customers
+INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id,country,city ,address)
+    VALUES (88, 'user1@nasnav.com',now(), now(), 'user1','123', 99001, 'Egypt', 'Cairo', '12 Abbas el-Akkad, Nasr City');
+INSERT INTO public.users(id, email, created_at, updated_at, user_name, authentication_token, organization_id,country,city ,address)
+    VALUES (89, 'user2@nasnav.com',now(), now(), 'user2','456', 99002, 'Egypt', 'Cairo', '12 Abbas el-Akkad, Nasr City');
+
+   
+
+--inserting orders
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(630001, 88, now(), now(), 99001, 0, 100001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(630013, 89, now(), now(), 99002, 0, 100002);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(630014, 88, now(), now(), 99001, 1, 100001);
+
+
+
+-- insert order items
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(630001, 400001, 14, 800.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(630013, 400002, 14, 600.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(630014, 400003, 14, 600.0, 1);
 
 
 

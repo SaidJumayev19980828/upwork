@@ -1,8 +1,10 @@
 package com.nasnav.dao;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -76,6 +78,23 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
     @Modifying
     @Query("delete from OrdersEntity o where o.status = :status and o.organizationEntity.id = :orgId")
     void deleteByStatusAndOrgId(@Param("status") Integer status, @Param("orgId") Long orgId);
+    
+    
+    @Transactional
+    @Modifying
+    @Query("delete from OrdersEntity o where o.status = :status and o.organizationEntity.id = :orgId and o.id in :idList")
+    void deleteAllByStatusAndIdIn(@Param("idList") Collection<Long> orderIdList,
+								 @Param("orgId") Long orgId,
+							     @Param("status") Integer status);
 
 	long countByStatusAndOrganizationEntity_id(Integer value, Long org);
+	
+	
+	@Query("select ord.id from OrdersEntity ord "
+			+ " left join ord.basketsEntity basket "
+			+ " where basket.stocksEntity.productVariantsEntity.productEntity.id in :idList "
+			+ " and basket.ordersEntity in (select o from OrdersEntity o where o.status = :status and o.organizationEntity.id = :orgId)")
+	Set<Long> findOrderIdByStatusAndProductIdIn(@Param("idList") List<Long> productIdList,
+								 @Param("orgId") Long orgId,
+							     @Param("status") Integer status);
 }

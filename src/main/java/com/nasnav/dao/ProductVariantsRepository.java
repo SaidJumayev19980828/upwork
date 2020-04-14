@@ -55,4 +55,15 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	
 	@Query("select variant.id from ProductVariantsEntity variant where variant.id in :idList")
 	Set<Long> findExistingVariantsByIdIn(@Param("idList") List<Long> variantIdList);
+
+	@Query("select variant.id from ProductVariantsEntity variant where variant.productEntity.organizationId = :orgId")
+	Set<Long> listVariantIdByOrganizationId(@Param("orgId")Long orgId);
+	
+	@Query("select variant.id from ProductVariantsEntity variant where variant.productEntity.id in :idList")
+	Set<Long> findVariantIdByProductIdIn(@Param("idList") List<Long> productIdList);
+	
+	@Transactional
+    @Modifying
+    @Query( value = "update public.product_variants set removed = 1 where product_id in :idList", nativeQuery = true )
+	void deleteAllByProductIdIn(@Param("idList") List<Long> idList);
 }

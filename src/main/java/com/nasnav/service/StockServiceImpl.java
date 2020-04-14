@@ -276,13 +276,11 @@ public class StockServiceImpl implements StockService {
 
 	private List<StocksEntity> prepareStocksToUpdate(List<StockUpdateDTO> stocks, VariantCache variantCache,
 			Map<Long, ShopsEntity> shopCache, VariantStockCache stockCache) {
-		List<StocksEntity> stocksToUpdate =
-				IntStream
+		return IntStream
 				.range(0, stocks.size())
 				.mapToObj(i -> new IndexedData<>(i, stocks.get(i)))
 				.map(stk -> prepareStockEntity(stk, variantCache, shopCache, stockCache))
 				.collect(toList());
-		return stocksToUpdate;
 	}
 
 
