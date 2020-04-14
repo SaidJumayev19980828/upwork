@@ -669,6 +669,19 @@ public class CategoryService {
     	return dto;
     }
 
+
+    public void assignTagsCategory(Long categortId, List<Long> tagsIds) throws BusinessException {
+    	Long orgId = securityService.getCurrentUserOrganizationId();
+
+    	if (categortId == null)
+    		throw new BusinessException(null, "MISSING_PARAM: category_id", NOT_ACCEPTABLE);
+
+    	if (tagsIds == null || tagsIds.isEmpty())
+    		orgTagsRepo.setAllTagsCategory(categortId, orgId);
+		else
+			orgTagsRepo.setTagsListCategory(categortId, orgId, tagsIds);
+	}
+
 }
 
 
