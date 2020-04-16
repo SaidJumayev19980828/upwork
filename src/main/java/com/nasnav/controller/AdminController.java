@@ -1,12 +1,11 @@
 package com.nasnav.controller;
 
-import com.nasnav.dto.CategoryDTO;
-import com.nasnav.dto.OrganizationRepresentationObject;
+import com.nasnav.dto.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.CategoryService;
-import com.nasnav.dto.OrganizationDTO;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.service.OrganizationService;
+import com.nasnav.service.ThemeService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
@@ -29,6 +28,9 @@ public class AdminController {
 
 	@Autowired
 	private OrganizationService organizationService;
+
+	@Autowired
+	private ThemeService themeService;
 
     @ApiOperation(value = "Create an Organization", nickname = "OrganizationCreation", code = 200)
     @ApiResponses(value = {
@@ -87,4 +89,28 @@ public class AdminController {
 		return organizationService.listOrganizations();
 	}
 
+
+
+	@ApiOperation(value = "list all theme classes", nickname = "themesList", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 404, message = "no theme classes found"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to list theme classes"),
+    })
+    @GetMapping(value = "themes/class", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public List<ThemeClassDTO> listThemeClasses(@RequestHeader (value = "User-Token") String userToken) {
+        return themeService.listThemeClasses();
+    }
+    
+
+    @ApiOperation(value = "list all themes", nickname = "themeClassesList", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 404, message = "no theme found"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to list theme"),
+    })
+    @GetMapping(value = "themes", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public List<ThemeDTO> listThemes(@RequestHeader (value = "User-Token") String userToken) {
+        return themeService.listThemes();
+    }
 }
