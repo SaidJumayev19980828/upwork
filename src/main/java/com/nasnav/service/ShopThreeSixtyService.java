@@ -184,9 +184,7 @@ public class ShopThreeSixtyService {
 
         ShopThreeSixtyEntity shopEntity = shop360Repo.getFirstByShopsEntity_Id(shopId);
 
-        if (shopEntity == null)
-            throw new BusinessException("Provide view360_id doesn't match any existing shop",
-                    "INVALID_PARAM: view360_id", HttpStatus.NOT_ACCEPTABLE);
+        validateShop360Link(shopEntity);
 
         if (type.equals("web"))
             shopEntity.setPreviewJsonData(decodeUrl(dataDTO));
@@ -212,9 +210,7 @@ public class ShopThreeSixtyService {
                     "MISSING_PARAM: shop_id", HttpStatus.NOT_ACCEPTABLE);
 
         ShopThreeSixtyEntity shop = shop360Repo.getFirstByShopsEntity_Id(shopId);
-        if (shop == null)
-            throw new BusinessException("Shop360s not found",
-                    "INVALID_PARAM: shop_id", HttpStatus.NOT_ACCEPTABLE);
+        validateShop360Link(shop);
 
         if (type == null)
             throw new BusinessException("Must provide type for JsonData (web or mobile)",
@@ -252,19 +248,25 @@ public class ShopThreeSixtyService {
 
         ShopThreeSixtyEntity shop = shop360Repo.getFirstByShopsEntity_Id(shopId);
 
+        validateShop360Link(shop);
+    }
+
+
+    private void validateShop360Link(ShopThreeSixtyEntity shop) throws BusinessException {
         if (shop == null)
-            throw new BusinessException("Provided shopId doesn't match any existing shop360",
+            throw new BusinessException("No 360 shops linked to shop_id!",
                     "INVALID_PARAM: shop_id", HttpStatus.NOT_ACCEPTABLE);
     }
+
 
     @Transactional
     public ShopResponse updateThreeSixtyShopSections(Long shopId, List<ShopFloorsRequestDTO> jsonDTO) throws BusinessException, IOException {
         OrganizationEntity org = securitySvc.getCurrentUserOrganization();
 
         ShopThreeSixtyEntity shop = shop360Repo.getFirstByShopsEntity_Id(shopId);
-        if (shop == null)
-            throw new BusinessException("No 360 shops linked to shop_id!",
-                    "INVALID_PARAM: shop_id", HttpStatus.NOT_ACCEPTABLE);
+
+        validateShop360Link(shop);
+
         Map<String, List<String>> resizedImagesMap = generateImageUrls(org.getId(),jsonDTO);
         //clearOldShop360Date(org.getId(), shop.getId());
         createShop360Floor(org, shop.getId(), jsonDTO, resizedImagesMap);
@@ -286,10 +288,12 @@ public class ShopThreeSixtyService {
             if (floorDTO.getId() == null)
                 floor = new ShopFloorsEntity();
             else {
-                floor = shopFloorsRepo.findById(floorDTO.getId()).get();
-                if (floor == null)
+
+                if (!shopFloorsRepo.existsById(floorDTO.getId()))
                     throw new BusinessException("Provided floor No. " + floorDTO.getId() + " doesn't exist!",
                             "INVALID_PARAM: floor_id", HttpStatus.NOT_ACCEPTABLE);
+
+                floor = shopFloorsRepo.findById(floorDTO.getId()).get();
                 if (!floor.getShopThreeSixtyEntity().getId().equals(shop.getId()))
                     throw new BusinessException("Provided floor No. " + floorDTO.getId() + " doesn't belong to shop No. "+shop.getId(),
                             "INVALID_PARAM: floor_id", HttpStatus.NOT_ACCEPTABLE);
@@ -316,10 +320,12 @@ public class ShopThreeSixtyService {
         if (dto.getId() == null)
             section = new ShopSectionsEntity();
         else {
-            section = sectionsRepo.findById(dto.getId()).get();
-            if (section == null)
-                throw new BusinessException("Provided section No. " + section.getId() + " doesn't exist!",
+            if (!sectionsRepo.existsById(dto.getId()))
+                throw new BusinessException("Provided section No. " + dto.getId() + " doesn't exist!",
                         "INVALID_PARAM: section_id", HttpStatus.NOT_ACCEPTABLE);
+
+            section = sectionsRepo.findById(dto.getId()).get();
+
             if (!section.getShopFloorsEntity().getId().equals(floor.getId()))
                 throw new BusinessException("Provided section No. " + dto.getId() + " doesn't belong to floor No. "+floor.getId(),
                         "INVALID_PARAM: section_id", HttpStatus.NOT_ACCEPTABLE);
@@ -344,10 +350,12 @@ public class ShopThreeSixtyService {
         if (dto.getId() == null)
             scene = new ShopScenesEntity();
         else {
-            scene = scenesRepo.findById(dto.getId()).get();
-            if (scene == null)
-                throw new BusinessException("Provided scene No. " + scene.getId() + " doesn't exist!",
+            if (sectionsRepo.existsById(dto.getId()))
+                throw new BusinessException("Provided scene No. " + dto.getId() + " doesn't exist!",
                         "INVALID_PARAM: scene_id", HttpStatus.NOT_ACCEPTABLE);
+
+            scene = scenesRepo.findById(dto.getId()).get();
+
             if (!scene.getShopSectionsEntity().getId().equals(section.getId()))
                 throw new BusinessException("Provided scene No. " + dto.getId() + " doesn't belong to section No. " + section.getId(),
                         "INVALID_PARAM: scene_id", HttpStatus.NOT_ACCEPTABLE);
@@ -358,8 +366,10 @@ public class ShopThreeSixtyService {
 
         if(dto.getImageUrl() != null) {
             scene.setImage(dto.getImageUrl());
-            scene.setThumbnail(resizedImagesMap.get(dto.getImageUrl()).get(0));
-            scene.setResized(resizedImagesMap.get(dto.getImageUrl()).get(1));
+            if (!resizedImagesMap.get(dto.getImageUrl()).isEmpty()) {
+                scene.setThumbnail(resizedImagesMap.get(dto.getImageUrl()).get(0));
+                scene.setResized(resizedImagesMap.get(dto.getImageUrl()).get(1));
+            }
         }
 
         scene.setShopSectionsEntity(section);
@@ -468,5 +478,15 @@ public class ShopThreeSixtyService {
         productPosRepo.save(productPosition);
 
         return new ShopResponse(shopId, HttpStatus.OK);
+    }
+
+
+    public void deleteShop360Floors(Long shopId) throws BusinessException {
+        Long orgId = securitySvc.getCurrentUserOrganizationId();
+        ShopThreeSixtyEntity shopThreeSixtyEntity = shop360Repo.getFirstByShopsEntity_Id(shopId);
+
+        validateShop360Link(shopThreeSixtyEntity);
+
+        clearOldShop360Date(orgId, shopThreeSixtyEntity.getId());
     }
 }
