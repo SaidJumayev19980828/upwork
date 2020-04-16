@@ -4,6 +4,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.http.HttpStatus;
 
+import java.util.function.Supplier;
+
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class BusinessException extends Exception implements BusinessExceptionInterface{

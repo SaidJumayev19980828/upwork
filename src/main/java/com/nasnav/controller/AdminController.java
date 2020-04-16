@@ -2,6 +2,7 @@ package com.nasnav.controller;
 
 import com.nasnav.dto.*;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.response.ThemeResponse;
 import com.nasnav.service.CategoryService;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.service.OrganizationService;
@@ -113,4 +114,19 @@ public class AdminController {
     public List<ThemeDTO> listThemes(@RequestHeader (value = "User-Token") String userToken) {
         return themeService.listThemes();
     }
+
+
+	@ApiOperation(value = "Create/update theme class", nickname = "themeClassUpdate", code = 200)
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid Parameter"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to list theme"),
+	})
+	@PostMapping(value = "themes/class", consumes = MediaType.APPLICATION_JSON_VALUE,
+										 produces = MediaType.APPLICATION_JSON_VALUE)
+	public ThemeResponse updateThemeClass(@RequestHeader (value = "User-Token") String userToken,
+										  @RequestBody ThemeClassDTO jsonDTO) throws BusinessException {
+		return themeService.updateThemeClass(jsonDTO);
+	}
+
 }
