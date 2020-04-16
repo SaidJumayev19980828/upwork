@@ -140,9 +140,39 @@ public class ShopThreeSixtyController {
     @ApiOperation(value = "Delete shop 360 floors", nickname = "delete360sFloors")
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "Deleted"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
-    @DeleteMapping(value = "/sections")
+    @DeleteMapping(value = "/floors")
     public void deleteShop360Floors(@RequestHeader("User-Token") String userToken,
                                     @RequestParam("shop_id") Long shopId) throws BusinessException {
         shop360Svc.deleteShop360Floors(shopId);
+    }
+
+    @ApiOperation(value = "Delete shop 360 floor", nickname = "delete360sFloor")
+    @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "Deleted"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
+    @DeleteMapping(value = "/floor")
+    public void deleteShop360Floor(@RequestHeader("User-Token") String userToken,
+                                   @RequestParam("shop_id") Long shopId,
+                                   @RequestParam("floor_id") Long floorId) throws BusinessException {
+        shop360Svc.deleteShop360Floor(shopId, floorId);
+    }
+
+    @ApiOperation(value = "Delete shop 360 section", nickname = "delete360sSection")
+    @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "Deleted"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
+    @DeleteMapping(value = "/section")
+    public void deleteShop360Section(@RequestHeader("User-Token") String userToken,
+                                     @RequestParam("shop_id") Long shopId,
+                                     @RequestParam("section_id") Long sectionId) throws BusinessException {
+        shop360Svc.deleteShop360Section(shopId, sectionId);
+    }
+
+    @ApiOperation(value = "Delete shop 360 scene", nickname = "delete360sScene")
+    @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "Deleted"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
+    @DeleteMapping(value = "/scene")
+    public void deleteShop360Scene(@RequestHeader("User-Token") String userToken,
+                                   @RequestParam("shop_id") Long shopId,
+                                   @RequestParam("scene_id") Long sceneId) throws BusinessException {
+        shop360Svc.deleteShop360Scene(shopId, sceneId);
     }
 }

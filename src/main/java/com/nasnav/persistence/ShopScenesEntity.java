@@ -35,7 +35,7 @@ public class ShopScenesEntity implements BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
     @JoinColumn(name = "shop_section_id", nullable = false)
     @JsonIgnore
     @EqualsAndHashCode.Exclude
