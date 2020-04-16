@@ -366,10 +366,11 @@ public class ShopThreeSixtyService {
 
         if(dto.getImageUrl() != null) {
             scene.setImage(dto.getImageUrl());
-            if (!resizedImagesMap.get(dto.getImageUrl()).isEmpty()) {
-                scene.setThumbnail(resizedImagesMap.get(dto.getImageUrl()).get(0));
-                scene.setResized(resizedImagesMap.get(dto.getImageUrl()).get(1));
-            }
+            if (resizedImagesMap.get(dto.getImageUrl()) != null)
+                if (!resizedImagesMap.get(dto.getImageUrl()).isEmpty()) {
+                    scene.setThumbnail(resizedImagesMap.get(dto.getImageUrl()).get(0));
+                    scene.setResized(resizedImagesMap.get(dto.getImageUrl()).get(1));
+                }
         }
 
         scene.setShopSectionsEntity(section);
@@ -411,7 +412,7 @@ public class ShopThreeSixtyService {
             if(filesRepo.findByUrl(resized4096) == null)
                 resized4096 = resizeImage(4096, image, orgId);
 
-            if (resizedImagesMap.get(image) == null) {
+            if (resizedImagesMap.get(url) == null) {
                 List<String> resizedImgs = new ArrayList<>();
                 resizedImgs.add(resized1024);
                 resizedImgs.add(resized4096);
@@ -436,7 +437,7 @@ public class ShopThreeSixtyService {
         g2d.drawImage(inputImage, 0, 0, imageWidth, imageHeight, null);
         g2d.dispose();
 
-        String imageName = getResizedImageName(image.getOriginalFileName(), imageWidth);
+        String imageName = getResizedImageName(image.getUrl().substring(image.getUrl().lastIndexOf('/')+1), imageWidth);
         File outputImageFile = new File(imageName);
         ImageIO.write(outputImage, "jpg", outputImageFile );
 
