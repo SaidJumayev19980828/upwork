@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.dto.ProductImportMetadata;
+import com.nasnav.service.model.DataImportCachedData;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,6 +24,8 @@ public class ImportProductContext {
 
 	@JsonIgnore
 	private List<ProductImportDTO> products;
+	@JsonIgnore
+	private DataImportCachedData cache;
 	private ProductImportMetadata importMetaData;
 	private Integer productsNum;
 	private List<Error> errors;
@@ -32,7 +35,7 @@ public class ImportProductContext {
 	private Set<Product> updatedProducts;
 	
 	
-	public ImportProductContext(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) {
+	public ImportProductContext(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata, DataImportCachedData cache) {
 		this.products = productImportDTOS;
 		this.importMetaData = productImportMetadata;
 		this.productsNum = productImportDTOS.size();
@@ -41,6 +44,12 @@ public class ImportProductContext {
 		this.createdBrands = new HashSet<>();
 		this.createdProducts = new HashSet<>();
 		this.updatedProducts = new HashSet<>();
+		this.cache = cache;
+	}
+	
+	
+	public ImportProductContext(List<ProductImportDTO> productImportDTOS, ProductImportMetadata productImportMetadata) {
+		this(productImportDTOS, productImportMetadata, DataImportCachedData.emptyCache());
 	}
 	
 	
@@ -110,37 +119,4 @@ class Tag{
 class Brand{
 	private Long id;
 	private String name;
-}
-
-
-
-@Data
-@NoArgsConstructor
-@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-class Error{
-	@JsonIgnore
-	private Throwable exception;
-	private String data;
-	private Integer rowNum;
-	private String message;
-	private String stackTrace;
-	
-	public Error(Throwable exception, String data, Integer rowNum) {
-		this.data = data;
-		this.rowNum = rowNum;
-		this.exception = exception;
-		
-		StringBuilder msg = new StringBuilder();
-	    msg.append(String.format("Error at Row[%d], with data[%s]", rowNum + 1, data));
-	    msg.append(System.getProperty("line.separator"));
-	    msg.append("Error Message: " + exception.getMessage());
-	    
-	    this.message = msg.toString();
-	}
-	
-	
-	public Error(String message, Integer rowNum) {
-		this.message = message;
-		this.rowNum = rowNum;
-	}
 }

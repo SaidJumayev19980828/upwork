@@ -9,8 +9,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.apache.commons.beanutils.PropertyUtils;
 
@@ -156,6 +158,16 @@ public class EntityUtils {
 		return elementList
 				.stream()
 				.noneMatch(c -> c == null || c.isEmpty());
+	}
+	
+	
+	
+	@SafeVarargs
+	public static <T> Optional<T> firstExistingValueOf(T... values) {
+		return Stream
+				.of(values)
+				.filter(Objects::nonNull)
+				.findFirst();
 	}
 }
 

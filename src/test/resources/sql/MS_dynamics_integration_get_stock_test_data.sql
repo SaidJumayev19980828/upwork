@@ -75,7 +75,7 @@ INSERT INTO public.product_features(id, name, p_name, description, organization_
 
 
 --inserting products
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
 
 
 -- variants for each product

@@ -184,7 +184,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		
 		CsvParser parser = new CsvParser(settings);
 		
-		runCsvParser(in, rowParsingErrHandler, parser);
+		runCsvParser(in, rowParsingErrHandler, parser, metaData.getEncoding());
 		
 		return rowProcessor.getBeans();
 	}
@@ -193,11 +193,11 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 
-	private void runCsvParser(ByteArrayInputStream in, RowParseErrorHandler rowParsingErrHandler, CsvParser parser)
+	private void runCsvParser(ByteArrayInputStream in, RowParseErrorHandler rowParsingErrHandler, CsvParser parser, String encoding)
 			throws ImportProductException {
 		ImportProductContext context = rowParsingErrHandler.getImportContext();
 		try {
-			parser.parse(in);
+			parser.parse(in, encoding);
 		}catch(Exception e) {
 			logger.error(e,e);
 			throw new ImportProductException(e, context); 

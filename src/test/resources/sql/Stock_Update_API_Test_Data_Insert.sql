@@ -21,8 +21,8 @@ INSERT INTO public.shops (id,"name",  organization_id) VALUES(100002 , 'other or
 
 
 -- dummy products
-insert into PUBLIC.products(ID,"name",product_type, organization_id,category_id, updated_at) VALUES(200001, 'Bundle Product#1' , 0 , 99001, 201, now());
-insert into PUBLIC.products(ID,"name",product_type, organization_id,category_id, updated_at) VALUES(200002, 'Bundle Product#2' , 0 , 99001, 201, now());
+insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200001, 'Bundle Product#1' , now() , now(), 0 , 99001, 201);
+insert into PUBLIC.products(ID,"name",created_at,updated_at,product_type, organization_id,category_id) VALUES(200002, 'Bundle Product#2' , now() , now(), 0 , 99001, 201);
 
 
 

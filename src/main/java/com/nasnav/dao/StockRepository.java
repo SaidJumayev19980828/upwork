@@ -50,4 +50,12 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 
 
 	List<StocksEntity> findByProductVariantsEntity_Id(Long id);
+
+
+	@Query("select stock from StocksEntity stock "
+			+ " left join stock.productVariantsEntity var "
+			+ " left join stock.shopsEntity shop "
+			+ " left join fetch stock.organizationEntity org"
+			+ " where var.id in :variantIds  " )
+	List<StocksEntity> findByProductVariantsEntity_IdIn(@Param("variantIds")List<Long> variantIds);
 }

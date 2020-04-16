@@ -8,6 +8,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
@@ -15,10 +16,14 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.nasnav.response.ProductsDeleteResponse;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -55,7 +60,6 @@ import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductSortOptions;
 import com.nasnav.dto.ProductsResponse;
-import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ProductEntity;
@@ -64,6 +68,7 @@ import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.response.ProductUpdateResponse;
+import com.nasnav.response.ProductsDeleteResponse;
 import com.nasnav.test.commons.TestCommons;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -1169,6 +1174,32 @@ public class ProductApiTest {
 		//----------------------------------------------------------
 		assertDataDeleted(org, otherOrg, productCountOtherOrgBefore, variantCountOtherOrgBefore,
 				bundlesCountOtherOrgBefore, ordersCountOtherOrgBefore);
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Products_API_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void productHideApiTest() {
+		Long orgId = 99002L;
+		long unhiddenProductsBefore = productRepository.countByHideAndOrganizationId(false, orgId);
+		assertNotEquals("all products have no images in the test", 0L, unhiddenProductsBefore);
+		
+		HttpEntity<?> request =  getHttpEntity("" , "131415");
+		
+		ResponseEntity<String> response = 
+				template.exchange("/product/hide?hide=true" ,POST, request, String.class);
+		
+		assertEquals(OK, response.getStatusCode());
+		
+		long unhiddenProductsAfter = productRepository.countByHideAndOrganizationId(false, orgId);
+		long hiddenProductsAfter = productRepository.countByHideAndOrganizationId(true, orgId);
+		
+		assertEquals("all products have no images in the test", 0L, unhiddenProductsAfter);
+		assertEquals("all products with no images will be hidden", unhiddenProductsBefore, hiddenProductsAfter);
 	}
 
 

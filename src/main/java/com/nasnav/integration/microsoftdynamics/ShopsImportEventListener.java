@@ -1,10 +1,10 @@
 package com.nasnav.integration.microsoftdynamics;
 
+import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.http.HttpStatus;
@@ -60,7 +60,7 @@ public class ShopsImportEventListener extends AbstractMSDynamicsEventListener<Sh
 				.map(List::stream)
 				.flatMap(Stream::findFirst)
 				.map(stores -> stores.getStores())
-				.orElse(Collections.emptyList());			
+				.orElse(emptyList());			
 	}
 	
 	
@@ -68,10 +68,10 @@ public class ShopsImportEventListener extends AbstractMSDynamicsEventListener<Sh
 	
 	private List<ImportedShop> toImportedShopsList(List<Store> stores){
 		return ofNullable(stores)
-				.orElse(Collections.emptyList())
+				.orElse(emptyList())
 				.stream()
 				.map(this::toImportedShop)
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 	
 	

@@ -700,11 +700,18 @@ public class OrganizationService {
     }
 
 
+    
+    
+    
+    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
     public boolean deleteImage(Long imgId) throws BusinessException {
-        OrganizationImagesEntity img = organizationImagesRepository.findById(imgId)
-                        .orElseThrow(()-> new BusinessException("No Image exists with id ["+ imgId+"] !",
-                                "INVALID PARAM:image_id", HttpStatus.NOT_ACCEPTABLE));
-
+        OrganizationImagesEntity img = 
+        		organizationImagesRepository
+        		.findById(imgId)
+                .orElseThrow(()-> new BusinessException(
+                					"No Image exists with id ["+ imgId+"] !"
+                					,"INVALID PARAM:image_id"
+                					, NOT_ACCEPTABLE));
         validateImgToDelete(img);
 
         organizationImagesRepository.deleteById(imgId);
@@ -713,6 +720,9 @@ public class OrganizationService {
 
         return true;
     }
+    
+    
+    
 
     private void validateImgToDelete(OrganizationImagesEntity img) throws BusinessException {
         Long orgId = img.getOrganizationEntity().getId();

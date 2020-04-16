@@ -4,12 +4,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.TagsEntity;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
 
@@ -28,4 +30,17 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
     
 	Set<TagsEntity> findByNameInAndOrganizationEntity_Id(Set<String> tags, Long orgId);
 
+	@Transactional
+    @Modifying
+    @Query(value = "update Tags set category_id = :categoryId where organization_id = :orgId and category_id is null",
+    nativeQuery = true)
+    void setAllTagsCategory(@Param("categoryId") Long categoryId, @Param("orgId") Long orgId);
+
+    @Transactional
+    @Modifying
+    @Query(value = "update Tags set category_id = :categoryId where organization_id = :orgId and id in :ids",
+            nativeQuery = true)
+    void setTagsListCategory(@Param("categoryId") Long categoryId,
+                             @Param("orgId") Long orgId,
+                             @Param("ids") List<Long> ids);
 }
