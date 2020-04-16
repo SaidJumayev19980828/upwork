@@ -120,7 +120,7 @@ public class AdminController {
 	@ApiResponses(value = {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
 			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid Parameter"),
-			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to list theme"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to create theme class"),
 	})
 	@PostMapping(value = "themes/class", consumes = MediaType.APPLICATION_JSON_VALUE,
 										 produces = MediaType.APPLICATION_JSON_VALUE)
@@ -129,4 +129,43 @@ public class AdminController {
 		return themeService.updateThemeClass(jsonDTO);
 	}
 
+
+	@ApiOperation(value = "Create/update theme", nickname = "themeUpdate", code = 200)
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid Parameter"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to create theme"),
+	})
+	@PostMapping(value = "themes", consumes = MediaType.APPLICATION_JSON_VALUE,
+			produces = MediaType.APPLICATION_JSON_VALUE)
+	public ThemeResponse updateTheme(@RequestHeader (value = "User-Token") String userToken,
+									 @RequestBody ThemeDTO jsonDTO) throws BusinessException {
+		return themeService.updateTheme(jsonDTO);
+	}
+
+
+	@ApiOperation(value = "Delete theme class", nickname = "themeClassDeletion", code = 200)
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid Parameter"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to delete theme class"),
+	})
+	@DeleteMapping(value = "themes/class")
+	public void deleteThemeClass(@RequestHeader (value = "User-Token") String userToken,
+								 @RequestParam Integer id) throws BusinessException {
+		themeService.deleteThemeClass(id);
+	}
+
+
+	@ApiOperation(value = "Delete theme", nickname = "themeDeletion", code = 200)
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid Parameter"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to delete theme"),
+	})
+	@DeleteMapping(value = "themes")
+	public void deleteTheme(@RequestHeader (value = "User-Token") String userToken,
+							@RequestParam Integer id) throws BusinessException {
+		themeService.deleteTheme(id);
+	}
 }
