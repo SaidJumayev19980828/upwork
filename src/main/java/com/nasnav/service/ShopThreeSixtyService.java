@@ -16,6 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
+
+import static java.util.Collections.emptySet;
+import static java.util.Optional.ofNullable;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -345,9 +349,9 @@ public class ShopThreeSixtyService {
         section.setShopFloorsEntity(floor);
         section.setOrganizationEntity(org);
         ShopSectionsEntity savedSection = sectionsRepo.save(section);
-        for(ShopScenesRequestDTO scene: dto.getShopScenes())
-            createShop360Scene(scene, savedSection, org, resizedImagesMap);
-
+        for(ShopScenesRequestDTO scene: getScenes(dto)) {
+        	createShop360Scene(scene, savedSection, org, resizedImagesMap);
+        }
     }
 
     private void createShop360Scene(ShopScenesRequestDTO dto, ShopSectionsEntity section, OrganizationEntity org,
@@ -384,21 +388,9 @@ public class ShopThreeSixtyService {
         scenesRepo.save(scene);
     }
 
-    private Map generateImageUrls(Long orgId, List<ShopFloorsRequestDTO> dto) throws BusinessException, IOException {
+    private Map<String, List<String>> generateImageUrls(Long orgId, List<ShopFloorsRequestDTO> dto) throws BusinessException, IOException {
 
-        List<String> urls = new ArrayList<>();
-        for(ShopFloorsRequestDTO floor: dto) {
-            for(ShopSectionsRequestDTO section: floor.getShopSections()) {
-                if(section.getImageUrl() != null) {
-                    urls.add(section.getImageUrl());
-                }
-                for (ShopScenesRequestDTO scene : section.getShopScenes()) {
-                    if(section.getImageUrl() != null) {
-                        urls.add(scene.getImageUrl());
-                    }
-                }
-            }
-        }
+        List<String> urls = getSectionsAndScenseImages(dto);
 
         Map<String, List<String>> resizedImagesMap = new HashMap<>();
         for(String url: urls) {
@@ -427,6 +419,40 @@ public class ShopThreeSixtyService {
         }
         return resizedImagesMap;
     }
+
+
+	private List<String> getSectionsAndScenseImages(List<ShopFloorsRequestDTO> dto) {
+		List<String> urls = new ArrayList<>();
+        for(ShopFloorsRequestDTO floor: dto) {
+        	Set<ShopSectionsRequestDTO> sections = getSections(floor);
+            for(ShopSectionsRequestDTO section: sections) {
+                if(section.getImageUrl() != null) {
+                    urls.add(section.getImageUrl());
+                }
+                Set<ShopScenesRequestDTO> scences = getScenes(section);
+                for (ShopScenesRequestDTO scene : scences) {
+                    if(section.getImageUrl() != null) {
+                        urls.add(scene.getImageUrl());
+                    }
+                }
+            }
+        }
+		return urls;
+	}
+
+
+	private Set<ShopSectionsRequestDTO> getSections(ShopFloorsRequestDTO floor) {
+		return ofNullable(floor)
+		.map(ShopFloorsRequestDTO::getShopSections)
+		.orElse(emptySet());
+	}
+
+
+	private Set<ShopScenesRequestDTO> getScenes(ShopSectionsRequestDTO section) {
+		return ofNullable(section)
+		.map(ShopSectionsRequestDTO::getShopScenes)
+		.orElse(emptySet());
+	}
 
 
     private String resizeImage(int imageWidth, FileEntity image, Long orgId) throws IOException, BusinessException {
