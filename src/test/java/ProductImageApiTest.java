@@ -5,6 +5,12 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -928,11 +934,11 @@ public class ProductImageApiTest {
 		BaseUserEntity user = empUserRepo.getById(68L);
 		Long productId = 105487845408L;
 		
-		HttpEntity<?> request =  TestCommons.getHttpEntity("" , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity("" , user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/images?product_id=" + productId
-						, HttpMethod.GET
+						, GET
 						, request
 						, String.class);
 		
@@ -954,5 +960,98 @@ public class ProductImageApiTest {
 		
 		assertEquals("Only products 1001, 1002 have images, but 1003 should have the fallback image url", 3, coverImgs.keySet().size());
 		assertEquals("expected cover images uri's" , expectedUris, new HashSet<>(coverImgs.values()) );
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_bulk_API_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void deleteAllImagesNotConfirmed() {
+		Long countBefore = imgRepo.countByProductEntity_OrganizationId(99001L);
+		assertNotEquals(0L,  countBefore.longValue());
+		
+		HttpEntity<?> request =  getHttpEntity("" , "101112");
+		ResponseEntity<String> response = 
+				template.exchange("/product/image/all?confirmed=false"
+						, DELETE
+						, request
+						, String.class);
+		
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+		Long countAfter = imgRepo.countByProductEntity_OrganizationId(99001L);
+		assertEquals(countBefore,  countAfter);
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_bulk_API_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void deleteAllImages() {
+		Long countBefore = imgRepo.countByProductEntity_OrganizationId(99001L);
+		assertNotEquals(0L,  countBefore.longValue());
+		
+		HttpEntity<?> request =  getHttpEntity("" , "101112");
+		ResponseEntity<String> response = 
+				template.exchange("/product/image/all?confirmed=true"
+						, DELETE
+						, request
+						, String.class);
+		
+		assertEquals(OK, response.getStatusCode());
+		Long countAfter = imgRepo.countByProductEntity_OrganizationId(99001L);
+		assertEquals(0L,  countAfter.longValue());
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_bulk_API_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void deleteAllImagesNoAuthz() {
+		Long countBefore = imgRepo.countByProductEntity_OrganizationId(99001L);
+		assertNotEquals(0L,  countBefore.longValue());
+		
+		HttpEntity<?> request =  getHttpEntity("" , "NO_AUTH");
+		ResponseEntity<String> response = 
+				template.exchange("/product/image/all?confirmed=true"
+						, DELETE
+						, request
+						, String.class);
+		
+		assertEquals(UNAUTHORIZED, response.getStatusCode());
+		Long countAfter = imgRepo.countByProductEntity_OrganizationId(99001L);
+		assertEquals(countBefore,  countAfter);
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_image_bulk_API_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void deleteAllImagesNoAuthN() {
+		Long countBefore = imgRepo.countByProductEntity_OrganizationId(99001L);
+		assertNotEquals(0L,  countBefore.longValue());
+		
+		HttpEntity<?> request =  getHttpEntity("" , "erereres");
+		ResponseEntity<String> response = 
+				template.exchange("/product/image/all?confirmed=true"
+						, DELETE
+						, request
+						, String.class);
+		
+		assertEquals(FORBIDDEN, response.getStatusCode());
+		Long countAfter = imgRepo.countByProductEntity_OrganizationId(99001L);
+		assertEquals(countBefore,  countAfter);
 	}
 }

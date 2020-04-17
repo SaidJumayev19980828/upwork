@@ -586,10 +586,19 @@ public class ProductImageServiceImpl implements ProductImageService {
 	@Transactional(rollbackFor = Throwable.class)
 	public List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs, boolean deleteOldImages) throws BusinessException {		
 		if(deleteOldImages) {
-			Long orgId = securityService.getCurrentUserOrganizationId();
-			productImagesRepository.deleteByProductEntity_organizationId(orgId);
+			deleteOrgProductmages();
 		}
 		return saveImgsBulk(importedImgs);
+	}
+
+
+
+
+
+
+	private void deleteOrgProductmages() {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		productImagesRepository.deleteByProductEntity_organizationId(orgId);
 	}
 	
 	
@@ -1530,6 +1539,20 @@ public class ProductImageServiceImpl implements ProductImageService {
                         HttpClient.create().wiretap(true)
                 ))
                 .build();
+	}
+
+
+
+
+
+
+	@Override
+	public void deleteAllImages(boolean isConfirmed) throws BusinessException {
+		if(!isConfirmed) {
+			throw new BusinessException("Delete operation for all images is not confirmed!", "INVALID PARAM: confirm", NOT_ACCEPTABLE);
+		}
+		
+		deleteOrgProductmages();
 	}
 	
 }

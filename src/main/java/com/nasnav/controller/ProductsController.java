@@ -164,6 +164,25 @@ public class ProductsController {
 	
 	
 	
+
+	@ApiOperation(value = "delete image for product", nickname = "product image delete", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Product image deleted"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+	@ResponseStatus(OK)
+	@DeleteMapping(value = "image/all")
+    public void deleteAllProductImages(@RequestHeader("User-Token") String token
+    		, @RequestParam(name = "confirmed",defaultValue = "false", required = true) boolean isConfirmed)
+            		throws BusinessException {
+		productImgService.deleteAllImages(isConfirmed);
+    }
+	
+	
+	
+	
 	
 	@ApiOperation(value = "get bundles", nickname = "GetBundles", code = 201)
     @ApiResponses(value = {

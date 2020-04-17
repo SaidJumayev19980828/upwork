@@ -50,4 +50,5 @@ public interface ProductImageService {
 	Flux<ImportedImage> readImgsFromUrls(Map<String, List<VariantIdentifier>> imgToProductsMapping,
 			ProductImageBulkUpdateDTO metaData, WebClient client);
 	
+	void deleteAllImages(boolean isConfirmed) throws BusinessException;
 }
