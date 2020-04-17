@@ -34,7 +34,6 @@ import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static reactor.core.scheduler.Schedulers.boundedElastic;
 
@@ -186,6 +185,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 	@Autowired
 	private IntegrationUtils integrationUtils;
 	
+	@Autowired
+	private IntegrationServiceHelper integrationHelper;
 	
 	private Map<Long, OrganizationIntegrationInfo> orgIntegration;
 	
@@ -1797,11 +1798,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	@Override
 	public Map<String,String> getLocalMappedValues(Long orgId, MappingType type, List<String> externalValues) {
-		return mappingRepo
-				.findByOrganizationIdAndMappingType_typeNameAndRemoteValueIn(orgId, type.getValue(), externalValues)
-				.stream()
-				.filter(mapping -> mapping.getRemoteValue() != null)
-				.collect(toMap(IntegrationMappingEntity::getRemoteValue, IntegrationMappingEntity::getLocalValue));
+		return integrationHelper.getLocalMappedValues(orgId, type, externalValues);
 	}
 
 

@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.IntegrationServiceHelper;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.model.VariantBasicData;
 import com.nasnav.service.model.VariantCache;
@@ -46,7 +46,7 @@ public class CachingHelper {
 	
 	
 	@Autowired
-	IntegrationService integrationService;
+	IntegrationServiceHelper integrationHelper;
 	
 	
 	public VariantCache createVariantCache(List<VariantIdentifier> variantIdentifiers) {
@@ -153,7 +153,7 @@ public class CachingHelper {
 	
 	private List<Variant> getProductVariantFromExternalIdIn(List<String> extIdList){
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		Map<String,String> mapping = integrationService.getLocalMappedValues(orgId, PRODUCT_VARIANT, extIdList);
+		Map<String,String> mapping = integrationHelper.getLocalMappedValues(orgId, PRODUCT_VARIANT, extIdList);
 		Map<String,String> localToExtIdMapping = 
 				mapping
 				.entrySet()

@@ -5,7 +5,7 @@ import javax.persistence.PostPersist;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.nasnav.integration.IntegrationServiceHelper;
+import com.nasnav.integration.IntegrationServiceAdapter;
 import com.nasnav.integration.events.data.AddressData;
 import com.nasnav.integration.events.data.CustomerData;
 import com.nasnav.persistence.UserEntity;
@@ -17,12 +17,12 @@ import com.sun.istack.logging.Logger;
 @Component
 public class UserEntityListener {
 	
-	private static IntegrationServiceHelper integrationHelper;
+	private static IntegrationServiceAdapter integrationHelper;
 	private static Logger logger = Logger.getLogger(UserEntityListener.class);
 	
 	
 	@Autowired
-	public void setIntegrationServiceHelper(IntegrationServiceHelper integrationHelper) {
+	public void setIntegrationServiceHelper(IntegrationServiceAdapter integrationHelper) {
 		UserEntityListener.integrationHelper = integrationHelper;
 	}
 	

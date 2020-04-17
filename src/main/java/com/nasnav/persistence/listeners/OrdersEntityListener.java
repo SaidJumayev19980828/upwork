@@ -9,7 +9,7 @@ import javax.persistence.PostUpdate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.nasnav.integration.IntegrationServiceHelper;
+import com.nasnav.integration.IntegrationServiceAdapter;
 import com.nasnav.persistence.OrdersEntity;
 
 
@@ -18,11 +18,11 @@ import com.nasnav.persistence.OrdersEntity;
 @Component
 public class OrdersEntityListener {
 	
-	private static IntegrationServiceHelper integrationHelper;
+	private static IntegrationServiceAdapter integrationHelper;
 	
 	
 	@Autowired
-	public void setIntegrationServiceHelper(IntegrationServiceHelper integrationHelper) {
+	public void setIntegrationServiceHelper(IntegrationServiceAdapter integrationHelper) {
 		OrdersEntityListener.integrationHelper = integrationHelper;
 	}
 	

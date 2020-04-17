@@ -56,7 +56,7 @@ import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.SecurityService;
 
 @Service
-public class IntegrationServiceHelperImpl implements IntegrationServiceHelper {
+public class IntegrationServiceAdapterImpl implements IntegrationServiceAdapter {
 	
 	private static final int PAYMENT_DELAY_FACTOR = 2;
 
