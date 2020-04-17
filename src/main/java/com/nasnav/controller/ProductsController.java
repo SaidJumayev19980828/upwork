@@ -297,8 +297,8 @@ public class ProductsController {
             consumes = MULTIPART_FORM_DATA_VALUE)
     public List<ProductImageUpdateResponse> importProductImagesBulkViaUrl(
     		@RequestHeader (value = "User-Token") String userToken,
-            @RequestParam(name="imgs_barcode_csv", required=false )  MultipartFile csv,
-            @RequestParam("properties") @Valid ProductImageBulkUpdateDTO metaData)
+            @RequestPart(name="imgs_barcode_csv", required=false )  MultipartFile csv,
+            @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData)
             		throws BusinessException {
 
 		return  productImgService.updateProductImageBulkViaUrl(csv, metaData);
