@@ -8,8 +8,8 @@ import lombok.ToString;
 
 import javax.persistence.*;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
+import static java.util.Comparator.comparing;
 
 @Table(name = "shop_sections")
 @Entity
@@ -57,6 +57,7 @@ public class ShopSectionsEntity implements BaseEntity {
         section.setName(getName());
         section.setShopScenes(getShopScenes().stream()
                                              .map(scene -> (ShopScenesDTO) scene.getRepresentation())
+                                             .sorted(comparing(ShopScenesDTO::getId))
                                              .collect(Collectors.toList()));
 
         if (getImage() != null)

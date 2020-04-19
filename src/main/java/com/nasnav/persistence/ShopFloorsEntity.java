@@ -3,6 +3,7 @@ package com.nasnav.persistence;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.ShopFloorDTO;
+import com.nasnav.dto.ShopScenesDTO;
 import com.nasnav.dto.ShopSectionsDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -11,6 +12,8 @@ import lombok.ToString;
 import javax.persistence.*;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static java.util.Comparator.comparing;
 
 @Table(name = "shop_floors")
 @Entity
@@ -59,6 +62,7 @@ public class ShopFloorsEntity implements BaseEntity {
         floor.setName(getName());
         floor.setShopSections(getShopSections().stream()
                                                .map(section -> (ShopSectionsDTO) section.getRepresentation())
+                                               .sorted(comparing(ShopSectionsDTO::getId))
                                                .collect(Collectors.toList()));
         return floor;
     }
