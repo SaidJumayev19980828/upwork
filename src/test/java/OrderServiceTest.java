@@ -1640,15 +1640,21 @@ public class OrderServiceTest {
 		Long orderId = 330033L; 
 		OrdersEntity order = orderRepository.findById(orderId).get();
 		LocalDateTime initialUpdateTime = order.getUpdateDate();
+		StocksEntity stockBefore = stockRepository.findById(601L).get();
+		assertEquals(15, stockBefore.getQuantity().intValue());
+		
 		createDummyPayment(order);
 		ResponseEntity<String> response = confirmOrder(token, orderId);
 		
 		assertEquals(OK, response.getStatusCode());
 		
+		
 		OrdersEntity saved = orderRepository.findById(orderId).get();
 		assertEquals(CLIENT_CONFIRMED.getValue(), saved.getStatus());
-		assertEquals(ONE, saved.getAmount());
 		assertTrue(saved.getUpdateDate().isAfter(initialUpdateTime));
+		
+		StocksEntity stockAfter = stockRepository.findById(601L).get();
+		assertEquals(1, stockAfter.getQuantity().intValue());
 	}
 	
 	
