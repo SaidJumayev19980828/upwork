@@ -61,7 +61,9 @@ public class ShopFloorsEntity implements BaseEntity {
         floor.setId(getId());
         floor.setNumber(getNumber());
         floor.setName(getName());
-        floor.setShopSections(getShopSections().stream()
+
+        List<ShopSectionsEntity> sectionsEntities = getShopSections().stream().collect(Collectors.toList());
+        floor.setShopSections(sectionsEntities.stream()
                                                .map(section -> (ShopSectionsDTO) section.getRepresentation())
                                                .sorted(comparing(ShopSectionsDTO::getId))
                                                .collect(Collectors.toList()));
