@@ -11,6 +11,7 @@ import lombok.ToString;
 
 import javax.persistence.*;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
@@ -52,7 +53,7 @@ public class ShopFloorsEntity implements BaseEntity {
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<ShopSectionsEntity> shopSections;
+    private Set<ShopSectionsEntity> shopSections;
 
     @Override
     public BaseRepresentationObject getRepresentation() {

@@ -8,6 +8,7 @@ import lombok.ToString;
 
 import javax.persistence.*;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import static java.util.Comparator.comparing;
 
@@ -39,7 +40,7 @@ public class ShopSectionsEntity implements BaseEntity {
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<ShopScenesEntity> shopScenes;
+    private Set<ShopScenesEntity> shopScenes;
 
     @Column(name = "name")
     private String name;

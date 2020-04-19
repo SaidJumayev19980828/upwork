@@ -17,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 
-import static java.util.Collections.emptySet;
+import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 
 import java.awt.*;
@@ -390,7 +390,7 @@ public class ShopThreeSixtyService {
 
     private Map<String, List<String>> generateImageUrls(Long orgId, List<ShopFloorsRequestDTO> dto) throws BusinessException, IOException {
 
-        List<String> urls = getSectionsAndScenseImages(dto);
+        List<String> urls = getSectionsAndScenesImages(dto);
 
         Map<String, List<String>> resizedImagesMap = new HashMap<>();
         for(String url: urls) {
@@ -421,15 +421,15 @@ public class ShopThreeSixtyService {
     }
 
 
-	private List<String> getSectionsAndScenseImages(List<ShopFloorsRequestDTO> dto) {
+	private List<String> getSectionsAndScenesImages(List<ShopFloorsRequestDTO> dto) {
 		List<String> urls = new ArrayList<>();
         for(ShopFloorsRequestDTO floor: dto) {
-        	Set<ShopSectionsRequestDTO> sections = getSections(floor);
+        	List<ShopSectionsRequestDTO> sections = getSections(floor);
             for(ShopSectionsRequestDTO section: sections) {
                 if(section.getImageUrl() != null) {
                     urls.add(section.getImageUrl());
                 }
-                Set<ShopScenesRequestDTO> scences = getScenes(section);
+                List<ShopScenesRequestDTO> scences = getScenes(section);
                 for (ShopScenesRequestDTO scene : scences) {
                     if(section.getImageUrl() != null) {
                         urls.add(scene.getImageUrl());
@@ -441,17 +441,17 @@ public class ShopThreeSixtyService {
 	}
 
 
-	private Set<ShopSectionsRequestDTO> getSections(ShopFloorsRequestDTO floor) {
+	private List<ShopSectionsRequestDTO> getSections(ShopFloorsRequestDTO floor) {
 		return ofNullable(floor)
 		.map(ShopFloorsRequestDTO::getShopSections)
-		.orElse(emptySet());
+		.orElse(emptyList());
 	}
 
 
-	private Set<ShopScenesRequestDTO> getScenes(ShopSectionsRequestDTO section) {
+	private List<ShopScenesRequestDTO> getScenes(ShopSectionsRequestDTO section) {
 		return ofNullable(section)
 		.map(ShopSectionsRequestDTO::getShopScenes)
-		.orElse(emptySet());
+		.orElse(emptyList());
 	}
 
 

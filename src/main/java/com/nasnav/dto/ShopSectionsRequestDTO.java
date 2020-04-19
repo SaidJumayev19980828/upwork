@@ -3,7 +3,8 @@ package com.nasnav.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
-import java.util.Set;
+import java.util.List;
+
 
 @Data
 public class ShopSectionsRequestDTO {
@@ -12,5 +13,5 @@ public class ShopSectionsRequestDTO {
     @JsonProperty("image_url")
     private String imageUrl;
     @JsonProperty("scenes")
-    private Set<ShopScenesRequestDTO> shopScenes;
+    private List<ShopScenesRequestDTO> shopScenes;
 }
