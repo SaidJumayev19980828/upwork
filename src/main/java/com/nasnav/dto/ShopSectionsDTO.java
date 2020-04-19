@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -32,5 +33,5 @@ public class ShopSectionsDTO extends BaseRepresentationObject{
     private LocalDateTime updatedAt;
 
     @JsonProperty("scenes")
-    private Set<ShopScenesDTO> shopScenes;
+    private List<ShopScenesDTO> shopScenes;
 }

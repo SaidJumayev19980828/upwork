@@ -5,11 +5,9 @@ import com.nasnav.dto.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
-import java.io.IOException;
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,7 +39,7 @@ public class ShopSectionsEntity implements BaseEntity {
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private Set<ShopScenesEntity> shopScenes;
+    private List<ShopScenesEntity> shopScenes;
 
     @Column(name = "name")
     private String name;
@@ -57,7 +55,9 @@ public class ShopSectionsEntity implements BaseEntity {
 
         section.setId(getId());
         section.setName(getName());
-        section.setShopScenes(getShopScenes().stream().map(scene -> (ShopScenesDTO) scene.getRepresentation()).collect(Collectors.toSet()));
+        section.setShopScenes(getShopScenes().stream()
+                                             .map(scene -> (ShopScenesDTO) scene.getRepresentation())
+                                             .collect(Collectors.toList()));
 
         if (getImage() != null)
             section.setImage(createImage(getImage()));

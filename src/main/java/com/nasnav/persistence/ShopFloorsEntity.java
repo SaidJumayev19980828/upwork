@@ -7,11 +7,9 @@ import com.nasnav.dto.ShopSectionsDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
-import java.util.Set;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Table(name = "shop_floors")
@@ -51,7 +49,7 @@ public class ShopFloorsEntity implements BaseEntity {
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private Set<ShopSectionsEntity> shopSections;
+    private List<ShopSectionsEntity> shopSections;
 
     @Override
     public BaseRepresentationObject getRepresentation() {
@@ -59,7 +57,9 @@ public class ShopFloorsEntity implements BaseEntity {
         floor.setId(getId());
         floor.setNumber(getNumber());
         floor.setName(getName());
-        floor.setShopSections(getShopSections().stream().map(section -> (ShopSectionsDTO) section.getRepresentation()).collect(Collectors.toSet()));
+        floor.setShopSections(getShopSections().stream()
+                                               .map(section -> (ShopSectionsDTO) section.getRepresentation())
+                                               .collect(Collectors.toList()));
         return floor;
     }
 }

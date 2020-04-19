@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.util.Set;
+import java.util.List;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -19,5 +19,5 @@ public class ShopFloorDTO extends BaseRepresentationObject{
     private String name;
 
     @JsonProperty("shop_sections")
-    private Set<ShopSectionsDTO> shopSections;
+    private List<ShopSectionsDTO> shopSections;
 }

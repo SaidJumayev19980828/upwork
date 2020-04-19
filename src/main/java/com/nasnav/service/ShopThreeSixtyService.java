@@ -129,7 +129,7 @@ public class ShopThreeSixtyService {
         if (shop == null)
             return new ArrayList<>();
 
-        List<ShopFloorDTO> floors = shopFloorsRepo.findByShopThreeSixtyEntity_Id(shop.getId())
+        List<ShopFloorDTO> floors = shopFloorsRepo.findByShopThreeSixtyEntity_IdOrderById(shop.getId())
                                                           .stream()
                                                           .map(f -> (ShopFloorDTO) f.getRepresentation())
                                                           .collect(Collectors.toList());
