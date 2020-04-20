@@ -5,6 +5,7 @@ import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_MISSING_STOCK_UPDATE_PARAMS;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
+import static com.nasnav.persistence.ProductTypes.BUNDLE;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -116,7 +117,7 @@ public class StockServiceImpl implements StockService {
      * */
     @Transactional
     public Integer getStockQuantity(StocksEntity stock){
-        ProductEntity product = Optional.ofNullable(stock.getProductVariantsEntity())
+        ProductEntity product = ofNullable(stock.getProductVariantsEntity())
         								.map(ProductVariantsEntity::getProductEntity)
         								.orElse(null);
         if(product == null){
@@ -125,7 +126,7 @@ public class StockServiceImpl implements StockService {
 
         Integer productType = product.getProductType();
 
-        if( productType.equals(ProductTypes.BUNDLE) ){
+        if( productType.equals(BUNDLE) ){
         	if(stock.getQuantity().equals(0))
         		return 0;
         	else 
@@ -489,7 +490,6 @@ public class StockServiceImpl implements StockService {
 		}
 		EmployeeUserEntity empUser = (EmployeeUserEntity)user;
 		
-		//TODO: revise this condition
 		if( !security.currentUserHasRole(ORGANIZATION_MANAGER) 
 				&& security.currentUserHasRole(STORE_MANAGER)
 				&& !Objects.equals( empUser.getShopId(), shop.getId()) ) {
@@ -563,6 +563,42 @@ public class StockServiceImpl implements StockService {
 		
 		return !anyIsNull( req.getShopId() ,req.getVariantId() )
 									&&  ( (B && C) || (A && !B && !C) );
+	}
+
+
+
+	@Override
+	public void reduceStockBy(StocksEntity stocksEntity, Integer quantity) {
+		if(isBundleStock(stocksEntity)) {
+			reduceBundleStock(stocksEntity, quantity);
+		}else {
+			reduceNormalStockBy(stocksEntity, quantity);
+		}
+	}
+
+
+
+	private void reduceBundleStock(StocksEntity stocksEntity, Integer quantity) {
+		stockRepo
+			.findByBundleStockId(stocksEntity.getId())
+			.forEach(itemStock -> reduceNormalStockBy(itemStock, quantity));  
+	}
+
+
+
+	private boolean isBundleStock(StocksEntity stocksEntity) {
+		return stockRepo
+				.getStockProductType(stocksEntity.getId())
+				.map(productType -> Objects.equals(productType, BUNDLE))
+				.orElse(false);
+	}
+
+
+
+	private StocksEntity reduceNormalStockBy(StocksEntity stocksEntity, Integer quantity) {
+		int newQuantity = stocksEntity.getQuantity() - ofNullable(quantity).orElse(0).intValue();
+		stocksEntity.setQuantity(newQuantity);
+		return stockRepo.save(stocksEntity);
 	}
 	
 }

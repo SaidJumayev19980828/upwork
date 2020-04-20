@@ -5,7 +5,10 @@ import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.enumerations.PaymentStatus.PAID;
+import static com.nasnav.enumerations.TransactionCurrency.EGP;
+import static com.nasnav.test.commons.TestCommons.getHeaders;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -17,6 +20,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,6 +53,7 @@ import com.nasnav.controller.OrdersController;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.BasketItem;
@@ -60,6 +65,7 @@ import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
@@ -120,6 +126,9 @@ public class OrderServiceTest {
 	@Autowired
 	private JdbcTemplate jdbc;
 	
+	
+	@Autowired
+	private PaymentsRepository paymentRepository;
 	
 	@Test
 	public void unregisteredUser() {
@@ -1613,10 +1622,154 @@ public class OrderServiceTest {
 	public void testOrderListDeletionNotNewOrder() {
 		ResponseEntity<String> response = template.exchange("/order?order_ids=330038&order_ids=330037",
 				HttpMethod.DELETE,
-				new HttpEntity<>(TestCommons.getHeaders("131415")),
+				new HttpEntity<>(getHeaders("131415")),
 				String.class);
 		assertEquals(406, response.getStatusCodeValue());
 	}
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void testOrderConfirm() {
+		//create order
+		String token = "123";
+		
+		Long orderId = 330033L; 
+		OrdersEntity order = orderRepository.findById(orderId).get();
+		LocalDateTime initialUpdateTime = order.getUpdateDate();
+		StocksEntity stockBefore = stockRepository.findById(601L).get();
+		assertEquals(15, stockBefore.getQuantity().intValue());
+		
+		createDummyPayment(order);
+		ResponseEntity<String> response = confirmOrder(token, orderId);
+		
+		assertEquals(OK, response.getStatusCode());
+		
+		
+		OrdersEntity saved = orderRepository.findById(orderId).get();
+		assertEquals(CLIENT_CONFIRMED.getValue(), saved.getStatus());
+		assertTrue(saved.getUpdateDate().isAfter(initialUpdateTime));
+		
+		StocksEntity stockAfter = stockRepository.findById(601L).get();
+		assertEquals(1, stockAfter.getQuantity().intValue());
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void testOrderConfirmForBundle() {
+		//create order
+		String token = "123";
+		
+		Long orderId = 330033L; 
+		OrdersEntity order = orderRepository.findById(orderId).get();
+		
+		BundleOrderTestStocks before = getStocksCountBefore();		
+		validateStockQuantityBefore(before);
+		
+		//-----------------------------------------------------
+		createDummyPayment(order);
+		ResponseEntity<String> response = confirmOrder(token, orderId);
+
+		//-----------------------------------------------------
+		assertEquals(OK, response.getStatusCode());		
+		OrdersEntity saved = orderRepository.findById(orderId).get();
+		assertEquals(CLIENT_CONFIRMED.getValue(), saved.getStatus());
+		
+		validateStocksQuantities(before);
+	}
+
+
+
+
+
+
+	private void validateStockQuantityBefore(BundleOrderTestStocks before) {
+		assertNotEquals(0, before.bundleStocks.intValue());
+		assertNotEquals(0, before.bundleItem1Stocks.intValue());
+		assertNotEquals(0, before.bundleItem2Stocks.intValue());
+		assertNotEquals(0, before.otherProductStocks.intValue());
+	}
+
+
+
+
+
+
+	private BundleOrderTestStocks getStocksCountBefore() {
+		BundleOrderTestStocks before = new BundleOrderTestStocks();
+		before.bundleStocks = stockRepository.findById(601L).get().getQuantity();
+		before.bundleItem1Stocks = stockRepository.findById(602L).get().getQuantity();
+		before.bundleItem2Stocks = stockRepository.findById(603L).get().getQuantity();
+		before.otherProductStocks = stockRepository.findById(604L).get().getQuantity();
+		return before;
+	}
+
+
+
+
+
+
+	private void validateStocksQuantities(BundleOrderTestStocks before) {
+		BundleOrderTestStocks after = new BundleOrderTestStocks();
+		after.bundleStocks = stockRepository.findById(601L).get().getQuantity();
+		after.bundleItem1Stocks = stockRepository.findById(602L).get().getQuantity();
+		after.bundleItem2Stocks = stockRepository.findById(603L).get().getQuantity();
+		after.otherProductStocks = stockRepository.findById(604L).get().getQuantity();
+		
+		assertEquals(before.bundleStocks, after.bundleStocks);
+		assertEquals(before.bundleItem1Stocks - 2, after.bundleItem1Stocks.intValue());
+		assertEquals(before.bundleItem2Stocks - 2, after.bundleItem2Stocks.intValue());
+		assertEquals(before.otherProductStocks - 3, after.otherProductStocks.intValue());
+	}
+	
+	
+	
+	
+	
+	private PaymentEntity createDummyPayment(OrdersEntity order) {
+		
+		PaymentEntity payment = new PaymentEntity();
+		JSONObject paymentObj = 
+				json()
+				.put("what_is_this?", "dummy_payment_obj");
+		
+		payment.setOperator("UPG");
+		payment.setUid("MLB-<MerchantReference>");
+		payment.setExecuted(new Date());
+		payment.setObject(paymentObj.toString());
+		payment.setAmount(order.getAmount());
+		payment.setCurrency(EGP);
+		payment.setStatus(PAID);
+		payment.setUserId(order.getUserId());
+		
+		payment= paymentRepository.saveAndFlush(payment);
+		order.setPaymentEntity(payment);
+		orderRepository.saveAndFlush(order);
+		return payment;
+	}
+
+	
+	
+	
+	private ResponseEntity<String> confirmOrder(String token, Long orderId) {
+		JSONObject updateRequest = createOrderRequestWithBasketItems(CLIENT_CONFIRMED);
+		updateRequest.put("order_id", orderId);
+		
+		ResponseEntity<String> updateResponse = 
+				template.postForEntity("/order/update"
+										, getHttpEntity( updateRequest.toString(), token)
+										, String.class);
+		return updateResponse;			
+	}
+
 
 }
 
@@ -1626,4 +1779,14 @@ public class OrderServiceTest {
 class Item{
 	private Long stockId;
 	private Integer quantity;
+}
+
+
+
+
+class BundleOrderTestStocks{
+	Integer bundleStocks;
+	Integer bundleItem1Stocks;
+	Integer bundleItem2Stocks;
+	Integer otherProductStocks;
 }

@@ -218,7 +218,12 @@ public class OrderServiceImpl implements OrderService {
 													   .map(order -> order.getPrice())
 													   .reduce(ZERO, BigDecimal::add)));
 	}
-
+	
+	
+	
+	
+	
+	@Transactional(rollbackFor = Throwable.class)
 	public OrderResponse updateExistingOrder(OrderJsonDto orderJson) throws BusinessException {
 
 		validateOrderUpdate(orderJson);
@@ -620,24 +625,45 @@ public class OrderServiceImpl implements OrderService {
 
 	private OrderResponse updateOrder(OrderJsonDto orderJsonDto) throws BusinessException {
 
-		OrderStatus newStatus = Optional.ofNullable(orderJsonDto.getStatus())
+		OrderStatus newStatus = ofNullable(orderJsonDto.getStatus())
 										.map(OrderStatus::findEnum)
-										.orElse(OrderStatus.NEW);
+										.orElse(NEW);
 
 		OrdersEntity orderEntity =  ordersRepository.findById( orderJsonDto.getId() )
 													.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS));
 
 		OrderResponse orderResponse = updateCurrentOrderStatus(orderJsonDto, orderEntity, newStatus);
 		
-		if ( newStatus.equals( OrderStatus.NEW )) {
+		if ( newStatus.equals(NEW)) {
 			orderResponse = updateOrderBasket(orderJsonDto, orderEntity);
+		}else if(newStatus.equals(CLIENT_CONFIRMED)) {
+			updateItemStocks(orderEntity);
 		}
+		
 		return orderResponse;
 	}
 	
 	
 	
 	
+
+	private void updateItemStocks(OrdersEntity orderEntity) {
+	   orderEntity.getBasketsEntity().forEach(this::reduceItemStock);		
+	}
+
+	
+	
+	private void reduceItemStock(BasketsEntity item) {
+		int quantity = 
+				ofNullable(item)
+				.map(BasketsEntity::getQuantity)
+				.map(BigDecimal::intValue)
+				.orElse(0);
+		stockService.reduceStockBy(item.getStocksEntity(), quantity);
+	}
+
+
+
 
 	private OrderResponse updateOrderBasket(OrderJsonDto order, OrdersEntity orderEntity) throws BusinessException {
 
