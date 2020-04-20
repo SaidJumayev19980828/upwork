@@ -9,10 +9,12 @@ import javax.validation.Valid;
 
 import com.nasnav.AppConfig;
 import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
+import com.nasnav.dto.*;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.OrganizationPaymentGatewaysEntity;
+import com.nasnav.service.ThemeService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,13 +35,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dto.BrandDTO;
-import com.nasnav.dto.OrganizationDTO;
-import com.nasnav.dto.OrganizationImageUpdateDTO;
-import com.nasnav.dto.ProductFeatureDTO;
-import com.nasnav.dto.ProductFeatureUpdateDTO;
-import com.nasnav.dto.TagsDTO;
-import com.nasnav.dto.TagsTreeCreationDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.OrganizationResponse;
@@ -70,6 +65,9 @@ public class OrganizationController {
 
     @Autowired
     private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
+
+    @Autowired
+    private ThemeService themeService;
 
     private Logger classLogger = LogManager.getLogger(OrganizationController.class);
 
@@ -199,6 +197,7 @@ public class OrganizationController {
         return  orgService.deleteImage(imageId);
     }
 
+
     @ApiOperation(value = "Create or update Organization tag", nickname = "orgTagModification", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -212,6 +211,7 @@ public class OrganizationController {
     	TagsEntity tag = categoryService.createOrUpdateTag(tagDTO);
         return new TagResponse(tag.getId());
     }
+
 
     @ApiOperation(value = "Delete Organization tag", nickname = "orgTagDeletion", code = 200)
     @ApiResponses(value = {
@@ -243,6 +243,7 @@ public class OrganizationController {
         categoryService.createTagTree(tree);
     }
 
+
     @ApiOperation(value = "Assign category to list of tags", nickname = "assignTagsCategory", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -256,6 +257,64 @@ public class OrganizationController {
                                   @RequestParam(value = "tags", required = false) List<Long> tagsIds) throws BusinessException {
         categoryService.assignTagsCategory(categoryId, tagsIds);
     }
+
+
+    @ApiOperation(value = "get theme classes assigned a certain organization", nickname = "GetOrgThemeClasses", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "themes/class", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public List<ThemeClassDTO> getOrgThemeClasses(@RequestHeader (value = "User-Token") String userToken,
+                                                  @RequestParam("org_id") Long orgId) throws Exception {
+        return themeService.getOrgThemeClasses(orgId);
+    }
+
+
+    @ApiOperation(value = "Assign the organization to a certain theme class", nickname = "assignOrgThemeClass", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "themes/class")
+    @ResponseStatus(OK)
+    public void assignOrgThemeClass(@RequestHeader (value = "User-Token") String userToken,
+                                   @RequestParam("org_id") Long orgId,
+                                   @RequestParam(value = "class_id") Integer classId) throws BusinessException {
+        themeService.assignOrgThemeClass(orgId, classId);
+    }
+
+
+    @ApiOperation(value = "Remove the organization from a certain theme class", nickname = "removeOrgThemeClass", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @DeleteMapping(value = "themes/class")
+    @ResponseStatus(OK)
+    public void removeOrgThemeClass(@RequestHeader (value = "User-Token") String userToken,
+                                    @RequestParam("org_id") Long orgId,
+                                    @RequestParam(value = "class_id") Integer classId) throws BusinessException {
+        themeService.removeOrgThemeClass(orgId, classId);
+    }
+
+
+    @ApiOperation(value = "Change an organization current theme", nickname = "changeOrgTheme", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "themes")
+    @ResponseStatus(OK)
+    public void changeOrgTheme(@RequestHeader (value = "User-Token") String userToken,
+                                    @RequestBody OrganizationThemesSettingsDTO dto) throws BusinessException {
+        themeService.changeOrgTheme(dto);
+    }
+
 
 
 
