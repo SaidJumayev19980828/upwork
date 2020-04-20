@@ -499,10 +499,15 @@ public class ShopThreeSixtyService {
 
     public ShopResponse publishJsonData(Long shopId) throws BusinessException {
         ShopThreeSixtyEntity shop360 = shop360Repo.findByShopsEntity_Id(shopId);
-        ProductPositionEntity productPosition = productPosRepo.findByShopsThreeSixtyEntity_Id(shopId);
+        if (shop360 == null)
+            throw new BusinessException("missing shop data",
+                    "INVALID_PARAM: shop_id", HttpStatus.NOT_ACCEPTABLE);
 
-        if (shop360 == null || productPosition == null)
-            throw new BusinessException(null, "INVALID_PARAM: shop_id", HttpStatus.NOT_ACCEPTABLE);
+        ProductPositionEntity productPosition = productPosRepo.findByShopsThreeSixtyEntity_Id(shop360.getId());
+
+        if (productPosition == null)
+            throw new BusinessException("missing product positions data",
+                    "INVALID_PARAM: shop_id", HttpStatus.NOT_ACCEPTABLE);
 
         shop360.setWebJsonData(shop360.getPreviewJsonData());
         productPosition.setPositionsJsonData(productPosition.getPreviewJsonData());
