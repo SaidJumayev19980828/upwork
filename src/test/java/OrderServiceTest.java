@@ -10,7 +10,6 @@ import static com.nasnav.test.commons.TestCommons.getHeaders;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.lang.String.format;
-import static java.math.BigDecimal.ONE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -1660,21 +1659,77 @@ public class OrderServiceTest {
 	
 	
 	
-	private Long createNewOrder(String token) {
-		Long stockId = 60001L;
-		Integer orderQuantity = 5;
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void testOrderConfirmForBundle() {
+		//create order
+		String token = "123";
 		
-		//---------------------------------------------------------------
-		JSONObject request = createOrderRequestWithBasketItems(NEW, item(stockId, orderQuantity));
-		ResponseEntity<OrderResponse> response = 
-				template.postForEntity("/order/create"
-										, getHttpEntity( request.toString(), token)
-										, OrderResponse.class);
+		Long orderId = 330033L; 
+		OrdersEntity order = orderRepository.findById(orderId).get();
 		
-		assertEquals(OK, response.getStatusCode());
-		Long orderId = response.getBody().getOrders().get(0).getId();
-		return orderId;
+		BundleOrderTestStocks before = getStocksCountBefore();		
+		validateStockQuantityBefore(before);
+		
+		//-----------------------------------------------------
+		createDummyPayment(order);
+		ResponseEntity<String> response = confirmOrder(token, orderId);
+
+		//-----------------------------------------------------
+		assertEquals(OK, response.getStatusCode());		
+		OrdersEntity saved = orderRepository.findById(orderId).get();
+		assertEquals(CLIENT_CONFIRMED.getValue(), saved.getStatus());
+		
+		validateStocksQuantities(before);
 	}
+
+
+
+
+
+
+	private void validateStockQuantityBefore(BundleOrderTestStocks before) {
+		assertNotEquals(0, before.bundleStocks.intValue());
+		assertNotEquals(0, before.bundleItem1Stocks.intValue());
+		assertNotEquals(0, before.bundleItem2Stocks.intValue());
+		assertNotEquals(0, before.otherProductStocks.intValue());
+	}
+
+
+
+
+
+
+	private BundleOrderTestStocks getStocksCountBefore() {
+		BundleOrderTestStocks before = new BundleOrderTestStocks();
+		before.bundleStocks = stockRepository.findById(601L).get().getQuantity();
+		before.bundleItem1Stocks = stockRepository.findById(602L).get().getQuantity();
+		before.bundleItem2Stocks = stockRepository.findById(603L).get().getQuantity();
+		before.otherProductStocks = stockRepository.findById(604L).get().getQuantity();
+		return before;
+	}
+
+
+
+
+
+
+	private void validateStocksQuantities(BundleOrderTestStocks before) {
+		BundleOrderTestStocks after = new BundleOrderTestStocks();
+		after.bundleStocks = stockRepository.findById(601L).get().getQuantity();
+		after.bundleItem1Stocks = stockRepository.findById(602L).get().getQuantity();
+		after.bundleItem2Stocks = stockRepository.findById(603L).get().getQuantity();
+		after.otherProductStocks = stockRepository.findById(604L).get().getQuantity();
+		
+		assertEquals(before.bundleStocks, after.bundleStocks);
+		assertEquals(before.bundleItem1Stocks - 2, after.bundleItem1Stocks.intValue());
+		assertEquals(before.bundleItem2Stocks - 2, after.bundleItem2Stocks.intValue());
+		assertEquals(before.otherProductStocks - 3, after.otherProductStocks.intValue());
+	}
+	
 	
 	
 	
@@ -1724,4 +1779,14 @@ public class OrderServiceTest {
 class Item{
 	private Long stockId;
 	private Integer quantity;
+}
+
+
+
+
+class BundleOrderTestStocks{
+	Integer bundleStocks;
+	Integer bundleItem1Stocks;
+	Integer bundleItem2Stocks;
+	Integer otherProductStocks;
 }
