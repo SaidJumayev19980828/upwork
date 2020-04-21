@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface ThemesRepository extends JpaRepository<ThemeEntity, Integer> {
 
-    List<ThemeEntity> findByThemeClassEnitiy_Id(Integer classId);
+    List<ThemeEntity> findByThemeClassEntity_Id(Integer classId);
 }

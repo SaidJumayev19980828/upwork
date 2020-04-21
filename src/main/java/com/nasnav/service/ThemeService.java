@@ -31,6 +31,9 @@ public class ThemeService {
     @Autowired
     private OrganizationRepository orgRepo;
 
+    @Autowired
+    private SecurityService securityService;
+
 
     public List<ThemeClassDTO> listThemeClasses() {
         return themeClassRepo.findAll().stream()
@@ -67,8 +70,12 @@ public class ThemeService {
     public ThemeResponse updateTheme(ThemeDTO dto) throws BusinessException {
         Optional<ThemeEntity> optionalThemeEntity;
         ThemeEntity theme;
-        if (dto.getId() == null)
+        if (dto.getId() == null) {
             theme = new ThemeEntity();
+            if (dto.getThemeClassId() == null)
+                throw new BusinessException("Must provide theme_class_id!",
+                        "MISSING_PARAM: theme_class_id", HttpStatus.NOT_ACCEPTABLE);
+        }
         else {
             optionalThemeEntity = themesRepo.findById(dto.getId());
 
@@ -96,7 +103,7 @@ public class ThemeService {
         if (dto.getThemeClassId() != null) {
             Optional<ThemeClassEntity> themeClass = themeClassRepo.findById(dto.getThemeClassId());
             checkThemeClassExistence(themeClass);
-                theme.setThemeClassEntity(themeClass.get());
+            theme.setThemeClassEntity(themeClass.get());
         }
 
         return theme;
@@ -107,12 +114,12 @@ public class ThemeService {
         Optional<ThemeClassEntity> entity = themeClassRepo.findById(id);
         checkThemeClassExistence(entity);
 
-        if (themesRepo.findByThemeClassEnitiy_Id(id).isEmpty())
+        if (themesRepo.findByThemeClassEntity_Id(id).isEmpty())
             themeClassRepo.delete(entity.get());
         else
             throw new BusinessException("There are themes linked to this class!",
                     "INVALID_OPERATION", HttpStatus.NOT_ACCEPTABLE);
-
+        //TODO check if org is using the theme class
     }
 
 
@@ -200,12 +207,40 @@ public class ThemeService {
 
     private void checkThemeExistence(Optional<ThemeEntity> theme) throws BusinessException {
         if (!theme.isPresent())
-            throw new BusinessException("Provided theme_id doesn't match any existing theme class!",
+            throw new BusinessException("Provided theme_id doesn't match any existing theme!",
                     "INVALID_PARAM: theme_id", HttpStatus.NOT_ACCEPTABLE);
     }
 
 
-    public void changeOrgTheme(OrganizationThemesSettingsDTO dto) {
+    public void changeOrgTheme(OrganizationThemesSettingsDTO dto) throws BusinessException {
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
 
+        Optional<ThemeEntity> theme = themesRepo.findById(dto.getThemeId());
+        checkThemeExistence(theme);
+
+        ThemeClassEntity themeClass = theme.get().getThemeClassEntity();
+        Set<ThemeClassEntity> availableThemeClasses = org.getThemeClasses();
+        if(!availableThemeClasses.contains(themeClass))
+            throw new BusinessException("Organization doesn't have permission to use this theme!",
+                    "INVALID_PARAM: theme_id", HttpStatus.NOT_ACCEPTABLE);
+
+        Optional<OrganizationThemesSettingsEntity> orgThemeSettings
+                = orgThemeSettingsRepo.findByOrganizationEntity_IdAndThemeId(org.getId(), dto.getThemeId());
+
+        OrganizationThemesSettingsEntity orgThemeSetting = new OrganizationThemesSettingsEntity();
+
+        if (orgThemeSettings.isPresent())
+            orgThemeSetting = orgThemeSettings.get();
+
+        orgThemeSetting.setOrganizationEntity(org);
+        orgThemeSetting.setThemeId(dto.getThemeId());
+
+        if (dto.getSettings() != null) {
+            orgThemeSetting.setSettings(dto.getSettings());
+        } else {
+            orgThemeSetting.setSettings(theme.get().getDefaultSettings());
+        }
+
+        orgThemeSettingsRepo.save(orgThemeSetting);
     }
 }
