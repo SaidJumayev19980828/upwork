@@ -123,8 +123,7 @@ public class ProductImportEventListener extends AbstractMSDynamicsEventListener<
 
 	private boolean isValidStock(Stocks stock) {
 		return isNotBlankOrNull(stock.getStoreCode()) 
-				&& stock.getValue() != null
-				&& BigDecimal.ZERO.compareTo(stock.getValue()) < 0;
+				&& stock.getValue() != null;
 	} 
 	
 	
