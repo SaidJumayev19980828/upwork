@@ -69,16 +69,17 @@ public class ThemesApiTest {
 
         Assert.assertEquals(200,response.getStatusCodeValue());
         Assert.assertTrue(themeClassRepo.existsById(response.getBody().getId()));
-        themeClassRepo.deleteById(response.getBody().getId());
+        themeClassRepo.deleteById(response.getBody().getId()); //TODO: >>> why the delete?
     }
 
 
     @Test
     public void updateThemeClassSuccess() {
-        String body = "{\"id\": 990011,\"name\": \"new name\"}";
+    	//TODO: >>> create jsons using JSONObject or TestCommons.json(), that makes them more maintainable and readable, it is hard to maintain strings.
+        String body = "{\"id\": 990011,\"name\": \"new name\"}"; 
         HttpEntity<?> request =  getHttpEntity(body,"101112");
         ResponseEntity<ThemeResponse> response = template.exchange("/admin/themes/class",
-                HttpMethod.POST, request, ThemeResponse.class);
+                HttpMethod.POST, request, ThemeResponse.class); //TODO: >>> static import for POST 
 
         Assert.assertEquals(200,response.getStatusCodeValue());
         Assert.assertEquals("new name",themeClassRepo.findById(response.getBody().getId()).get().getName());
@@ -87,6 +88,7 @@ public class ThemesApiTest {
 
     @Test
     public void createThemeClassInvalidToken() {
+    	//TODO: >>> create jsons using JSONObject or TestCommons.json(), that makes them more maintainable and readable, it is hard to maintain strings.
         String body = "{\"name\": \"theme_class_1\"}";
         HttpEntity<?> request =  getHttpEntity(body,"1011123");
         ResponseEntity<ThemeResponse> response = template.exchange("/admin/themes/class",
@@ -98,6 +100,7 @@ public class ThemesApiTest {
 
     @Test
     public void createThemeClassUnauthorizedToken() {
+    	//TODO: >>> create jsons using JSONObject or TestCommons.json(), that makes them more maintainable and readable, it is hard to maintain strings.
         String body = "{\"name\": \"theme_class_1\"}";
         HttpEntity<?> request =  getHttpEntity(body,"131415");
         ResponseEntity<ThemeResponse> response = template.exchange("/admin/themes/class",
@@ -109,6 +112,7 @@ public class ThemesApiTest {
 
     @Test
     public void createThemeClassInvalidId() {
+    	//TODO: >>> create jsons using JSONObject or TestCommons.json(), that makes them more maintainable and readable, it is hard to maintain strings.
         String body = "{\"id\":-1, \"name\": \"theme_class_1\"}";
         HttpEntity<?> request =  getHttpEntity(body,"101112");
         ResponseEntity<ThemeResponse> response = template.exchange("/admin/themes/class",
@@ -176,6 +180,7 @@ public class ThemesApiTest {
 
     @Test
     public void createThemeSuccess() {
+    	//TODO: >>> create jsons using JSONObject or TestCommons.json(), that makes them more maintainable and readable, it is hard to maintain strings.
         String body = "{\"name\": \"theme_1\", \"theme_class_id\": 990011}";
         HttpEntity<?> request =  getHttpEntity(body,"101112");
         ResponseEntity<ThemeResponse> response = template.exchange("/admin/themes",
@@ -208,6 +213,7 @@ public class ThemesApiTest {
 
     @Test
     public void createThemeInvalidToken() {
+    	//TODO: >>> create jsons using JSONObject or TestCommons.json(), that makes them more maintainable and readable, it is hard to maintain strings.
         String body = "{\"name\": \"theme_1\", \"theme_class_id\": 990011}";
         HttpEntity<?> request =  getHttpEntity(body,"1011122");
         ResponseEntity<ThemeResponse> response = template.exchange("/admin/themes",
@@ -398,6 +404,11 @@ public class ThemesApiTest {
 
         Assert.assertEquals(406,response.getStatusCodeValue());
     }
+    
+    
+    
+    //TODO: >>> need a test for an admin trying to set the theme for another organization
+    //TODO: >>> need test for changing the organization theme setting
 
 
     @Test
@@ -487,6 +498,8 @@ public class ThemesApiTest {
 
         Assert.assertEquals(200, response.getStatusCodeValue());
         Assert.assertTrue(orgThemeSettingsRepo.existsByOrganizationEntity_IdAndThemeId(99001L, 5001));
+        
+        //TODO: >>> need to check if the theme was assigned to the organization entity
     }
 
 
