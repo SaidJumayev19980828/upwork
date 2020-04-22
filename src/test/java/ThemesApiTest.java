@@ -591,4 +591,16 @@ public class ThemesApiTest {
 
         Assert.assertEquals(403, response.getStatusCodeValue());
     }
+
+
+    @Test
+    public void changeOrgThemeNotSameOrg() {
+        String body = "{\"theme_id\":5001}";
+        HttpEntity<?> request =  getHttpEntity(body,"161718");
+
+        ResponseEntity<String> response =
+                template.exchange("/organization/themes", POST, request, String.class);
+
+        Assert.assertEquals(406, response.getStatusCodeValue());
+    }
 }

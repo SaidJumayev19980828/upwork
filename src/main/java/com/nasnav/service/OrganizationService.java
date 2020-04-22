@@ -15,8 +15,10 @@ import javax.cache.annotation.CacheResult;
 
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
+import com.nasnav.dto.response.navbox.ThemeRepresentationObject;
 import com.nasnav.persistence.*;
 import org.apache.http.client.utils.URIBuilder;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
@@ -136,7 +138,6 @@ public class OrganizationService {
     private OrganizationRepresentationObject getOrganizationAdditionalData(OrganizationEntity entity) {
         OrganizationRepresentationObject orgRepObj = ((OrganizationRepresentationObject) entity.getRepresentation());
 
-        //TODO add brandRepresentationObjects from other repository
         SocialEntity socialEntity = socialRepository.findOneByOrganizationEntity_Id(orgRepObj.getId());
         if (socialEntity != null)
             orgRepObj.setSocial((SocialRepresentationObject) socialEntity.getRepresentation());
@@ -157,23 +158,35 @@ public class OrganizationService {
             orgRepObj.setImages(imagesList);
         }
 
-        //TODO: >>> relation between settings and organization is many-to-many, which means this may return multiple values
-        //you need to filter also with OrganiationEntity.themeId, if nothing is returned , return the default settings.
-        //as there may be a setting or not, you will probably need the repository method to return an optional, orElse
-        //create a new one in a function
-        OrganizationThemesSettingsEntity themeSettings = orgThemesSettingsRepo.findByOrganizationEntity_Id(orgRepObj.getId());
-        if (themeSettings != null) {
-            ThemeEntity themeEntity = themesRepo.findById(themeSettings.getThemeId()).get();
-
-            ThemeDTO themeDTO = (ThemeDTO)themeEntity.getRepresentation();
-            themeDTO.setDefaultSettings(themeSettings.getSettings());
-            orgRepObj.setTheme(themeDTO);
-        }
+        orgRepObj.setTheme(getOrganizationThemeDTO(orgRepObj));
 
         return orgRepObj;
     }
 
-    
+    private ThemeRepresentationObject getOrganizationThemeDTO(OrganizationRepresentationObject orgRepObj) {
+        if (orgRepObj.getThemeId() == null)
+            return null;
+
+        ThemeRepresentationObject themeRepObj = new ThemeRepresentationObject();
+
+        Optional<ThemeEntity> optionalThemeEntity = themesRepo.findById(orgRepObj.getThemeId());
+
+        if (optionalThemeEntity.isPresent()) {
+            ThemeEntity themeEntity = optionalThemeEntity.get();
+            ThemeDTO themeDTO = (ThemeDTO)themeEntity.getRepresentation();
+            BeanUtils.copyProperties(themeDTO, themeRepObj);
+        }
+
+        Optional<OrganizationThemesSettingsEntity> optionalThemeSettings =
+                orgThemesSettingsRepo.findByOrganizationEntity_IdAndThemeId(orgRepObj.getId(), orgRepObj.getThemeId());
+
+        if (optionalThemeSettings.isPresent()) {
+            OrganizationThemesSettingsEntity themesSettings = optionalThemeSettings.get();
+            themeRepObj.setCurrentSettings(themesSettings.getSettings());
+        }
+
+        return themeRepObj;
+    }
     
     @CacheResult(cacheName = "organizations_extra_attributes")
     public List<ExtraAttributesRepresentationObject> getOrganizationExtraAttributesById(Long organizationId){

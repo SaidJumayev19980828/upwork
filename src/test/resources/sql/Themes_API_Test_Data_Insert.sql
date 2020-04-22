@@ -21,7 +21,7 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (69, 'testuser2@nasnav.com', 99001, '131415',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (70, 'testuser4@nasnav.com', 99001, '161718',  501);
+	VALUES (70, 'testuser4@nasnav.com', 99002, '161718',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (71, 'testuser5@nasnav.com', 99001, '192021',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
