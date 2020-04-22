@@ -135,7 +135,8 @@ public class ThemeService {
     }
 
 
-    public void deleteTheme(Integer id) throws BusinessException {
+    public void deleteTheme(Integer themeId) throws BusinessException {
+    	Integer id = ofNullable(themeId).orElse(-1);
         Optional<ThemeEntity> entity = themesRepo.findById(id);
 
         checkThemeExistence(entity, id);

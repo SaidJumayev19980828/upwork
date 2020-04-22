@@ -1,12 +1,13 @@
-import com.nasnav.NavBox;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.OrganizationThemeSettingsRepository;
-import com.nasnav.dao.ThemeClassRepository;
-import com.nasnav.dao.ThemesRepository;
-import com.nasnav.persistence.ThemeEntity;
-import com.nasnav.response.ThemeClassResponse;
-import com.nasnav.response.ThemeResponse;
-import net.jcip.annotations.NotThreadSafe;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
+import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
+
+import java.util.List;
+
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -21,13 +22,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.List;
+import com.nasnav.NavBox;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.OrganizationThemeSettingsRepository;
+import com.nasnav.dao.ThemeClassRepository;
+import com.nasnav.dao.ThemesRepository;
+import com.nasnav.persistence.ThemeEntity;
+import com.nasnav.response.ThemeClassResponse;
+import com.nasnav.response.ThemeResponse;
 
-import static com.nasnav.test.commons.TestCommons.*;
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static org.springframework.http.HttpMethod.*;
-import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
-import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
+import net.jcip.annotations.NotThreadSafe;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -431,7 +435,6 @@ public class ThemesApiTest {
     
     
     
-    //TODO: >>> need a test for an admin trying to set the theme for another organization
 
 
 

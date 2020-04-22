@@ -69,6 +69,9 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     @ApiModelProperty(value = "All the images related to the organization")
     private List<OrganizationImagesRepresentationObject> images;
 
+    
+    //TODO: >>> use separate DTO that shows theme info + settings, as both the default settings and current settings should
+    //be returned.
     private ThemeDTO theme;
 }
 

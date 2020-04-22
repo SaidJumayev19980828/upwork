@@ -157,6 +157,10 @@ public class OrganizationService {
             orgRepObj.setImages(imagesList);
         }
 
+        //TODO: >>> relation between settings and organization is many-to-many, which means this may return multiple values
+        //you need to filter also with OrganiationEntity.themeId, if nothing is returned , return the default settings.
+        //as there may be a setting or not, you will probably need the repository method to return an optional, orElse
+        //create a new one in a function
         OrganizationThemesSettingsEntity themeSettings = orgThemesSettingsRepo.findByOrganizationEntity_Id(orgRepObj.getId());
         if (themeSettings != null) {
             ThemeEntity themeEntity = themesRepo.findById(themeSettings.getThemeId()).get();
