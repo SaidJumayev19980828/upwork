@@ -10,6 +10,9 @@ INSERT INTO public.themes(id, name, theme_class_id)VALUES (5003, 'theme_3', 9900
 
 INSERT INTO public.organization_theme_classes(id, organization_id, theme_class_id)VALUES (5003, 99001 , 990011);
 
+INSERT INTO public.organization_themes_settings(id, organization_id, theme_id, settings)
+    VALUES (5001, 99001, 5002, 'settings');
+
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 201, 'brand_1', 99001);
 INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (501, 'shop_1', 101, 99001);
 

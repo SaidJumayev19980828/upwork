@@ -2,6 +2,7 @@ package com.nasnav.controller;
 
 import com.nasnav.dto.*;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.response.ThemeClassResponse;
 import com.nasnav.response.ThemeResponse;
 import com.nasnav.service.CategoryService;
 import com.nasnav.response.OrganizationResponse;
@@ -40,10 +41,9 @@ public class AdminController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "organization", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity createOrganization(@RequestHeader (value = "User-Token") String userToken,
+    public OrganizationResponse createOrganization(@RequestHeader (value = "User-Token") String userToken,
                                              @RequestBody OrganizationDTO.OrganizationCreationDTO json)  throws BusinessException {
-	    OrganizationResponse response = organizationService.createOrganization(json);
-	    return new ResponseEntity(response, response.getHttpStatus());
+	    return organizationService.createOrganization(json);
     }
 
 	@ApiOperation(value = "Create or update a Category", nickname = "categoryModification", code = 200)
@@ -123,9 +123,9 @@ public class AdminController {
 			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to create theme class"),
 	})
 	@PostMapping(value = "themes/class", consumes = MediaType.APPLICATION_JSON_VALUE,
-										 produces = MediaType.APPLICATION_JSON_VALUE)
-	public ThemeResponse updateThemeClass(@RequestHeader (value = "User-Token") String userToken,
-										  @RequestBody ThemeClassDTO jsonDTO) throws BusinessException {
+										 produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	public ThemeClassResponse updateThemeClass(@RequestHeader (value = "User-Token") String userToken,
+											   @RequestBody ThemeClassDTO jsonDTO) throws BusinessException {
 		return themeService.updateThemeClass(jsonDTO);
 	}
 

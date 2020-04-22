@@ -8,4 +8,5 @@ import java.util.List;
 public interface ThemesRepository extends JpaRepository<ThemeEntity, Integer> {
 
     List<ThemeEntity> findByThemeClassEntity_Id(Integer classId);
+    Integer countByThemeClassEntity_Id(Integer classId);
 }

@@ -68,5 +68,7 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
 
     @ApiModelProperty(value = "All the images related to the organization")
     private List<OrganizationImagesRepresentationObject> images;
+
+    private ThemeDTO theme;
 }
 

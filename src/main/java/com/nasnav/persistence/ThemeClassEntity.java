@@ -30,7 +30,7 @@ public class ThemeClassEntity extends AbstractPersistable<Integer> implements Ba
     private Set<OrganizationEntity> organizationEntities;*/
 
     @Override
-    public BaseRepresentationObject getRepresentation() {
+    public ThemeClassDTO getRepresentation() {
         ThemeClassDTO themeClass = new ThemeClassDTO(getId(), getName());
         return themeClass;
     }

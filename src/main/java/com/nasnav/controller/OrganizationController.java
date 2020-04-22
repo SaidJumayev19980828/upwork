@@ -83,13 +83,12 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
-    public ResponseEntity<OrganizationResponse> updateOrganizationData(@RequestHeader (value = "User-Token") String userToken,
+    public OrganizationResponse updateOrganizationData(@RequestHeader (value = "User-Token") String userToken,
                                                  @RequestPart("properties") String jsonString,
                                                  @RequestPart(value = "logo", required = false) @Valid MultipartFile file) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         OrganizationDTO.OrganizationModificationDTO json = mapper.readValue(jsonString, OrganizationDTO.OrganizationModificationDTO.class);
-        OrganizationResponse response = orgService.updateOrganizationData(userToken, json, file);
-        return new ResponseEntity<OrganizationResponse>(response, response.getHttpStatus());
+        return orgService.updateOrganizationData(json, file);
     }
 
 
@@ -120,14 +119,13 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "brand", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
-    public ResponseEntity<OrganizationResponse> updateBrandData(@RequestHeader (value = "User-Token") String userToken,
+    public OrganizationResponse updateBrandData(@RequestHeader (value = "User-Token") String userToken,
                                                  @RequestPart("properties") String jsonString,
                                                  @RequestPart(value = "logo", required = false) @Valid MultipartFile logo,
                                                  @RequestPart(value = "banner", required = false) @Valid MultipartFile banner) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         BrandDTO json = mapper.readValue(jsonString, BrandDTO.class);
-        OrganizationResponse res = orgService.validateAndUpdateBrand(json, logo, banner);
-        return new ResponseEntity<OrganizationResponse>(res, res.getHttpStatus());
+        return orgService.validateAndUpdateBrand(json, logo, banner);
     }
 
 

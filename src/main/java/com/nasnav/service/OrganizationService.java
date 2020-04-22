@@ -13,6 +13,9 @@ import java.util.stream.Collectors;
 
 import javax.cache.annotation.CacheResult;
 
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
+import com.nasnav.persistence.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -24,39 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dao.OrganizationDomainsRepository;
-import com.nasnav.dao.OrganizationImagesRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.OrganizationThemeRepository;
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.SocialRepository;
-import com.nasnav.dto.BrandDTO;
-import com.nasnav.dto.ExtraAttributesRepresentationObject;
-import com.nasnav.dto.OrganizationDTO;
-import com.nasnav.dto.OrganizationImageUpdateDTO;
-import com.nasnav.dto.OrganizationImagesRepresentationObject;
-import com.nasnav.dto.OrganizationRepresentationObject;
-import com.nasnav.dto.OrganizationThemesRepresentationObject;
-import com.nasnav.dto.Organization_BrandRepresentationObject;
-import com.nasnav.dto.Pair;
-import com.nasnav.dto.ProductFeatureDTO;
-import com.nasnav.dto.ProductFeatureUpdateDTO;
-import com.nasnav.dto.SocialRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.ExtraAttributesEntity;
-import com.nasnav.persistence.OrganizationDomainsEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.OrganizationImagesEntity;
-import com.nasnav.persistence.OrganizationThemeEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.SocialEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
@@ -100,6 +71,12 @@ public class OrganizationService {
     
     @Autowired
     private SecurityService securityService;
+
+    @Autowired
+    private OrganizationThemeSettingsRepository orgThemesSettingsRepo;
+
+    @Autowired
+    private ThemesRepository themesRepo;
 
     @Autowired
     public OrganizationService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository, SocialRepository socialRepository,
@@ -180,6 +157,15 @@ public class OrganizationService {
             orgRepObj.setImages(imagesList);
         }
 
+        OrganizationThemesSettingsEntity themeSettings = orgThemesSettingsRepo.findByOrganizationEntity_Id(orgRepObj.getId());
+        if (themeSettings != null) {
+            ThemeEntity themeEntity = themesRepo.findById(themeSettings.getThemeId()).get();
+
+            ThemeDTO themeDTO = (ThemeDTO)themeEntity.getRepresentation();
+            themeDTO.setDefaultSettings(themeSettings.getSettings());
+            orgRepObj.setTheme(themeDTO);
+        }
+
         return orgRepObj;
     }
 
@@ -229,17 +215,9 @@ public class OrganizationService {
     
     
     @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
-    public OrganizationResponse updateOrganizationData(String userToken,
-                                   OrganizationDTO.OrganizationModificationDTO json, MultipartFile file) throws BusinessException {
-        if (json.organizationId == null) {
-            throw new BusinessException("MISSING_PARAM: org_id", "Required org_id is missing", HttpStatus.NOT_ACCEPTABLE);
-        }
-        if (!organizationRepository.existsById(json.organizationId)) {
-            throw new BusinessException("INVALID_PARAM: org_id", "Provided org_id is not matching any organization", HttpStatus.NOT_ACCEPTABLE);
-        }
-        if (!employeeUserRepository.findByAuthenticationToken(userToken).get().getOrganizationId().equals(json.organizationId)){
-            throw new BusinessException("INSUFFICIENT_RIGHTS", "EmployeeUser is not admin of organization", HttpStatus.NOT_ACCEPTABLE);
-        }
+    public OrganizationResponse updateOrganizationData(OrganizationDTO.OrganizationModificationDTO json, MultipartFile file) throws BusinessException {
+        validateOrganizationUpdateData(json);
+
         OrganizationEntity organization = organizationRepository.findById(json.organizationId).get();
         if (json.description != null) {
             organization.setDescription(json.description);
@@ -272,14 +250,23 @@ public class OrganizationService {
         if (orgTheme != null)
             organizationThemeRepository.save(orgTheme);
 
-        organizationRepository.save(organization);
-        return new OrganizationResponse();
+        organization = organizationRepository.save(organization);
+        return new OrganizationResponse(organization.getId(), 0);
     }
 
-    
-    
-    
-    
+    private void validateOrganizationUpdateData(OrganizationDTO.OrganizationModificationDTO json) throws BusinessException {
+        if (json.organizationId == null) {
+            throw new BusinessException("MISSING_PARAM: org_id", "Required org_id is missing", HttpStatus.NOT_ACCEPTABLE);
+        }
+        if (!organizationRepository.existsById(json.organizationId)) {
+            throw new BusinessException("INVALID_PARAM: org_id", "Provided org_id is not matching any organization", HttpStatus.NOT_ACCEPTABLE);
+        }
+        if (!securityService.getCurrentUserOrganizationId().equals(json.organizationId)){
+            throw new BusinessException("INSUFFICIENT_RIGHTS", "EmployeeUser is not admin of organization", HttpStatus.NOT_ACCEPTABLE);
+        }
+    }
+
+
     public List<Organization_BrandRepresentationObject> getOrganizationBrands(Long orgId){
         List<Organization_BrandRepresentationObject> brands = null;
         if (orgId == null)
