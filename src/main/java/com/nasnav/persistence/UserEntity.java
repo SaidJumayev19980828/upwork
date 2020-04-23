@@ -39,6 +39,9 @@ public class UserEntity extends BaseUserEntity{
     @Column(name="image")
     private String image;
 
+    @Column(name="user_status")
+    private Integer userStatus;
+
     
     public static UserEntity registerUser(UserDTOs.UserRegistrationObject userJson) {
     	UserEntity user = new UserEntity();

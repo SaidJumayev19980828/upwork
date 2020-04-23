@@ -33,6 +33,8 @@ public class UserDTOs {
         public Long orgId;
         @JsonProperty("confirmation_flag")
         public Boolean confirmationFlag;
+        @JsonProperty("redirect_url")
+        private String redirectUrl;
     }
 
     @Getter

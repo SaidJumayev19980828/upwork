@@ -36,6 +36,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.enumerations.UserStatus;
+import com.nasnav.persistence.OrganizationEntity;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -78,7 +81,9 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private CommonUserRepository commonUserRepo;
 	
-	
+	@Autowired
+	private OrganizationRepository orgRepo;
+
 	@Autowired
 	private OrganizationDomainsRepository orgDomainRepo;
 
@@ -101,7 +106,7 @@ public class UserServiceImpl implements UserService {
 		generateResetPasswordToken(user);
 		user = userRepository.saveAndFlush(user);
 		
-		sendActivationMail(user);
+		sendActivationMail(user, userJson.getRedirectUrl());
 
 		UserApiResponse api = createStatusApiResponse(user.getId(),	asList(NEED_ACTIVATION, ACTIVATION_SENT));
 		api.setMessages(new ArrayList<>());
@@ -124,6 +129,13 @@ public class UserServiceImpl implements UserService {
 			throw new BusinessException("Required org_id is  missing!", "MISSING_PARAM: org_id", NOT_ACCEPTABLE);
 		}
 
+		Optional<OrganizationEntity> org = orgRepo.findById(userJson.getOrgId());
+		if (!org.isPresent()) {
+			throw new BusinessException(
+					String.format("Provided org_id %d doesn't match any existing organization", userJson.getOrgId()),
+					"INVALID_PARAM: org_id", NOT_ACCEPTABLE);
+		}
+
 		if (userRepository.existsByEmailIgnoreCaseAndOrganizationId(userJson.email, userJson.getOrgId())) {
 			throw new EntityValidationException(
 					"Invalid User Entity: " + EMAIL_EXISTS,
@@ -135,7 +147,7 @@ public class UserServiceImpl implements UserService {
 
 
 
-	private UserApiResponse sendActivationMail(UserEntity userEntity) {
+	private UserApiResponse sendActivationMail(UserEntity userEntity, String redirectUrl) {
 		UserApiResponse userApiResponse = new UserApiResponse();
 		try {
 			// create parameter map to replace parameter by actual UserEntity data.
@@ -143,7 +155,9 @@ public class UserServiceImpl implements UserService {
 			parametersMap.put(USERNAME_PARAMETER, userEntity.getName());
 			parametersMap.put(ACCOUNT_EMAIL_PARAMETER, userEntity.getEmail());
 			parametersMap.put(ACTIVATION_ACCOUNT_URL_PARAMETER,
-					appConfig.accountActivationUrl.concat(userEntity.getResetPasswordToken()));
+					appConfig.accountActivationUrl
+							.concat(userEntity.getResetPasswordToken())
+							.concat("&redirect="+redirectUrl));
 			// send Recovery mail to user
 			this.mailService.send(userEntity.getEmail(), EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT,
 					NEW_EMAIL_ACTIVATION_TEMPLATE, parametersMap);
@@ -172,15 +186,17 @@ public class UserServiceImpl implements UserService {
 
 
 	private void setUserAsDeactivated(UserEntity user) {
-		user.setAuthenticationToken(DEACTIVATION_CODE);
+		user.setUserStatus(UserStatus.NOT_ACTIVATED.getValue());
 	}
 
 	
 	
 	@Override
 	public Boolean isUserDeactivated(BaseUserEntity user) {
-		return Objects.equals(user.getAuthenticationToken(), DEACTIVATION_CODE);
+		UserEntity userEntity =  (UserEntity)user;
+		return userEntity.getUserStatus().equals(UserStatus.NOT_ACTIVATED.getValue());
 	}
+
 
 	@Override
 	public UserApiResponse registerUser(UserDTOs.UserRegistrationObject userJson) {
@@ -458,22 +474,23 @@ public class UserServiceImpl implements UserService {
 
 
 	@Override
-	public RedirectView activateUserAccount(String token) throws BusinessException {
+	public RedirectView activateUserAccount(String token, String redirect) throws BusinessException {
 		UserEntity user = userRepository.findByResetPasswordToken(token);
 
 		checkUserActivation(user);
 		user.setResetPasswordToken(null);
+		user.setUserStatus(UserStatus.ACTIVATED.ordinal());
 		
-		return redirectUser(securityService.login(user).getToken(), user.getOrganizationId());
+		return redirectUser(securityService.login(user).getToken(), redirect);
 	}
 
 	
 	
-	private RedirectView redirectUser(String authToken, Long orgId) {
-		String loginUrl = buildOrgLoginPageUrl(orgId);
+	private RedirectView redirectUser(String authToken, String loginUrl) {
+		//String loginUrl = buildOrgLoginPageUrl(orgId);
 		
 		RedirectAttributesModelMap attributes = new RedirectAttributesModelMap();
-		attributes.addAttribute("token", authToken);
+		attributes.addAttribute("auth_token", authToken);
 		
 		RedirectView redirectView = new RedirectView();	
 		redirectView.setUrl(loginUrl);
