@@ -12,6 +12,7 @@ import com.nasnav.persistence.ThemeEntity;
 import com.nasnav.response.ThemeClassResponse;
 import com.nasnav.response.ThemeResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,6 +55,9 @@ public class ThemeService {
     }
 
 
+    
+    
+    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
     public ThemeClassResponse updateThemeClass(ThemeClassDTO dto) throws BusinessException {
         Optional<ThemeClassEntity> optionalThemeClass;
         
@@ -73,7 +77,10 @@ public class ThemeService {
         return new ThemeClassResponse(themeClass.getId());
     }
 
+    
+    
 
+    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
     public ThemeResponse updateTheme(ThemeDTO dto) throws BusinessException {
         Optional<ThemeEntity> optionalThemeEntity;
         ThemeEntity theme;
@@ -162,6 +169,8 @@ public class ThemeService {
     }
 
 
+    
+    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
     public void assignOrgThemeClass(Long orgId, Integer themeClassId) throws BusinessException {
         Optional<OrganizationEntity> optionalOrg = orgRepo.findById(orgId);
         checkOrgExistence(optionalOrg, orgId);
@@ -179,7 +188,9 @@ public class ThemeService {
         orgRepo.save(org);
     }
 
-
+    
+    
+    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
     public void removeOrgThemeClass(Long orgId, Integer themeClassId) throws BusinessException {
         Optional<OrganizationEntity> optionalOrg = orgRepo.findById(orgId);
         checkOrgExistence(optionalOrg, orgId);
@@ -225,6 +236,7 @@ public class ThemeService {
 
 
     @Transactional
+    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
     public void changeOrgTheme(OrganizationThemesSettingsDTO dto) throws BusinessException {
         OrganizationEntity org = securityService.getCurrentUserOrganization();
 
