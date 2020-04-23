@@ -4,6 +4,13 @@ INSERT INTO public.organizations(id, name) VALUES (99001, 'organization_1');
 INSERT INTO public.organizations(id, name) VALUES (99002, 'organization_2');
 
 
+
+-- dummy shop
+INSERT INTO public.shops (id,"name",  organization_id) VALUES(501 , 'Bundle Shop'  , 99002);
+INSERT INTO public.shops (id,"name",  organization_id) VALUES(502 , 'another Shop'  , 99001);
+
+
+
 --inserting users
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
     VALUES (88, 'user1@nasnav.com','user1','123', 99001);
@@ -20,7 +27,7 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (70, 'testuser4@nasnav.com', 99001, '161718',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (71, 'testuser5@nasnav.com', 99001, '192021',  501);
+	VALUES (71, 'testuser5@nasnav.com', 99001, '192021',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (158, 'testuser3@nasnav.com', 99002, '222324',  501);
 

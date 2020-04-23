@@ -14,6 +14,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.io.IOException;
@@ -1060,8 +1061,8 @@ public class OrderServiceTest {
 	public void getCurrentOrderUserHasMultipleNewOrdersTest() throws JsonParseException, JsonMappingException, IOException {
 			
 		ResponseEntity<String> response = template.exchange("/order/current?details_level=3"
-														, HttpMethod.GET
-														, new HttpEntity<>(TestCommons.getHeaders("456"))
+														, GET
+														, new HttpEntity<>(getHeaders("456"))
 														, String.class);		
 		
 		System.out.println("Order >>>> " + response.getBody());
@@ -1070,7 +1071,7 @@ public class OrderServiceTest {
 		
 		DetailedOrderRepObject expected = createExpectedOrderInfo(330005L, new BigDecimal("50.00"), 1, "NEW", 89L);
 		
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(OK, response.getStatusCode());
 		assertEquals(expected, body);
 	}
 	

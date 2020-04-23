@@ -16,6 +16,7 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 2
 
 -- dummy shop
 INSERT INTO public.shops (id,"name",  organization_id) VALUES(100001 , 'Bundle Shop'  , 99001);
+INSERT INTO public.shops (id,"name",  organization_id) VALUES(100002 , 'another Shop'  , 99001);
 
 
 -- dummy products
@@ -96,11 +97,11 @@ insert into public.product_bundles(product_id, bundle_stock_id) values(200007 , 
 
 --insering users
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502);
+VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  100001);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-VALUES (69, 'testuser2@nasnav.com', 99001, '131415',  501);
+VALUES (69, 'testuser2@nasnav.com', 99001, '131415',  100001);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-VALUES (70, 'testuser3@nasnav.com', 99002, '8874ssd',  501);
+VALUES (70, 'testuser3@nasnav.com', 99002, '8874ssd', 100002);
 
 
 --inserting customers

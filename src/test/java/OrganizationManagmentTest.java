@@ -1,3 +1,6 @@
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
@@ -77,7 +80,7 @@ public class OrganizationManagmentTest {
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("logo", file);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
         Assert.assertEquals(200, response.getStatusCode().value());
     }
@@ -89,7 +92,7 @@ public class OrganizationManagmentTest {
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("logo", file);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"abcdefg", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"abcdefg", MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
         Assert.assertEquals(403, response.getStatusCode().value());
     }
@@ -100,7 +103,7 @@ public class OrganizationManagmentTest {
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("logo", file);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
