@@ -2,9 +2,12 @@ package com.nasnav.persistence;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.Set;
 
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -34,11 +37,18 @@ public class OrganizationEntity implements BaseEntity {
     
     @Column(name = "p_name")
     private String pname;
-    
-
 
     @Column(name = "theme_id")
     private Integer themeId;
+
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JoinTable(name = "organization_theme_classes"
+            ,joinColumns = {@JoinColumn(name="organization_id")}
+            ,inverseJoinColumns = {@JoinColumn(name="theme_class_id")})
+    private Set<ThemeClassEntity> themeClasses;
 
     public OrganizationEntity() {
         id = null;
