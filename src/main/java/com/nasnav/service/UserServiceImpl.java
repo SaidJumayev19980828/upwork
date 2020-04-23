@@ -106,7 +106,7 @@ public class UserServiceImpl implements UserService {
 		generateResetPasswordToken(user);
 		user = userRepository.saveAndFlush(user);
 		
-		sendActivationMail(user);
+		sendActivationMail(user, userJson.getRedirectUrl());
 
 		UserApiResponse api = createStatusApiResponse(user.getId(),	asList(NEED_ACTIVATION, ACTIVATION_SENT));
 		api.setMessages(new ArrayList<>());
@@ -147,7 +147,7 @@ public class UserServiceImpl implements UserService {
 
 
 
-	private UserApiResponse sendActivationMail(UserEntity userEntity) {
+	private UserApiResponse sendActivationMail(UserEntity userEntity, String redirectUrl) {
 		UserApiResponse userApiResponse = new UserApiResponse();
 		try {
 			// create parameter map to replace parameter by actual UserEntity data.
@@ -155,7 +155,9 @@ public class UserServiceImpl implements UserService {
 			parametersMap.put(USERNAME_PARAMETER, userEntity.getName());
 			parametersMap.put(ACCOUNT_EMAIL_PARAMETER, userEntity.getEmail());
 			parametersMap.put(ACTIVATION_ACCOUNT_URL_PARAMETER,
-					appConfig.accountActivationUrl.concat(userEntity.getResetPasswordToken()));
+					appConfig.accountActivationUrl
+							.concat(userEntity.getResetPasswordToken())
+							.concat("&redirect="+redirectUrl));
 			// send Recovery mail to user
 			this.mailService.send(userEntity.getEmail(), EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT,
 					NEW_EMAIL_ACTIVATION_TEMPLATE, parametersMap);
@@ -184,7 +186,7 @@ public class UserServiceImpl implements UserService {
 
 
 	private void setUserAsDeactivated(UserEntity user) {
-		user.setUserStatus(UserStatus.NOT_ACTIVATED.ordinal());
+		user.setUserStatus(UserStatus.NOT_ACTIVATED.getValue());
 	}
 
 	
@@ -192,7 +194,7 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public Boolean isUserDeactivated(BaseUserEntity user) {
 		UserEntity userEntity =  (UserEntity)user;
-		return userEntity.getUserStatus().equals(UserStatus.NOT_ACTIVATED.ordinal());
+		return userEntity.getUserStatus().equals(UserStatus.NOT_ACTIVATED.getValue());
 	}
 
 
@@ -472,23 +474,23 @@ public class UserServiceImpl implements UserService {
 
 
 	@Override
-	public RedirectView activateUserAccount(String token) throws BusinessException {
+	public RedirectView activateUserAccount(String token, String redirect) throws BusinessException {
 		UserEntity user = userRepository.findByResetPasswordToken(token);
 
 		checkUserActivation(user);
 		user.setResetPasswordToken(null);
 		user.setUserStatus(UserStatus.ACTIVATED.ordinal());
 		
-		return redirectUser(securityService.login(user).getToken(), user.getOrganizationId());
+		return redirectUser(securityService.login(user).getToken(), redirect);
 	}
 
 	
 	
-	private RedirectView redirectUser(String authToken, Long orgId) {
-		String loginUrl = buildOrgLoginPageUrl(orgId);
+	private RedirectView redirectUser(String authToken, String loginUrl) {
+		//String loginUrl = buildOrgLoginPageUrl(orgId);
 		
 		RedirectAttributesModelMap attributes = new RedirectAttributesModelMap();
-		attributes.addAttribute("token", authToken);
+		attributes.addAttribute("auth_token", authToken);
 		
 		RedirectView redirectView = new RedirectView();	
 		redirectView.setUrl(loginUrl);
