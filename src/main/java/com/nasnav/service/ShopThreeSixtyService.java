@@ -317,7 +317,7 @@ public class ShopThreeSixtyService {
 
             ShopFloorsEntity savedFloor = shopFloorsRepo.save(floor);
 
-            for (ShopSectionsRequestDTO sectionsDTO : floorDTO.getShopSections())
+            for (ShopSectionsRequestDTO sectionsDTO : getSections(floorDTO))
                 createShop360Section(sectionsDTO, savedFloor, org, resizedImagesMap);
         }
 

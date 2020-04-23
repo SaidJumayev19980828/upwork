@@ -36,6 +36,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.enumerations.UserStatus;
+import com.nasnav.persistence.OrganizationEntity;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -78,7 +81,9 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private CommonUserRepository commonUserRepo;
 	
-	
+	@Autowired
+	private OrganizationRepository orgRepo;
+
 	@Autowired
 	private OrganizationDomainsRepository orgDomainRepo;
 
@@ -122,6 +127,13 @@ public class UserServiceImpl implements UserService {
 
 		if (userJson.getOrgId() == null) {
 			throw new BusinessException("Required org_id is  missing!", "MISSING_PARAM: org_id", NOT_ACCEPTABLE);
+		}
+
+		Optional<OrganizationEntity> org = orgRepo.findById(userJson.getOrgId());
+		if (!org.isPresent()) {
+			throw new BusinessException(
+					String.format("Provided org_id %d doesn't match any existing organization", userJson.getOrgId()),
+					"INVALID_PARAM: org_id", NOT_ACCEPTABLE);
 		}
 
 		if (userRepository.existsByEmailIgnoreCaseAndOrganizationId(userJson.email, userJson.getOrgId())) {
@@ -172,15 +184,17 @@ public class UserServiceImpl implements UserService {
 
 
 	private void setUserAsDeactivated(UserEntity user) {
-		user.setAuthenticationToken(DEACTIVATION_CODE);
+		user.setUserStatus(UserStatus.NOT_ACTIVATED.ordinal());
 	}
 
 	
 	
 	@Override
 	public Boolean isUserDeactivated(BaseUserEntity user) {
-		return Objects.equals(user.getAuthenticationToken(), DEACTIVATION_CODE);
+		UserEntity userEntity =  (UserEntity)user;
+		return userEntity.getUserStatus().equals(UserStatus.NOT_ACTIVATED.ordinal());
 	}
+
 
 	@Override
 	public UserApiResponse registerUser(UserDTOs.UserRegistrationObject userJson) {
@@ -463,6 +477,7 @@ public class UserServiceImpl implements UserService {
 
 		checkUserActivation(user);
 		user.setResetPasswordToken(null);
+		user.setUserStatus(UserStatus.ACTIVATED.ordinal());
 		
 		return redirectUser(securityService.login(user).getToken(), user.getOrganizationId());
 	}
