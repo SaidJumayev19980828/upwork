@@ -19,7 +19,7 @@ import org.springframework.http.HttpStatus;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class OrderResponse  extends BaseResponse implements Serializable {
+public class OrderResponse  implements Serializable {
 
 	private static final long serialVersionUID = -2071547898771698563L;
 

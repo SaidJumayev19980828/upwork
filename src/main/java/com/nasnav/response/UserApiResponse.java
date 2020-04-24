@@ -14,10 +14,11 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class UserApiResponse extends BaseResponse implements Serializable {
+public class UserApiResponse  implements Serializable {
 
+	private static final long serialVersionUID = 894752313L;
 
-    // exclude entityId property from
+	// exclude entityId property from
     // json if it is null as per API requirements
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     // set property name to user_id as per API requirements
@@ -60,7 +61,6 @@ public class UserApiResponse extends BaseResponse implements Serializable {
     public UserApiResponse(boolean success, Long entityId, List<ResponseStatus> responseStatuses,
                            String token, List<String> roles, Long organizationId, Long storeId,
                            String name, String email) {
-        this.success = success;
         this.entityId = entityId;
         this.name = name;
         this.email = email;
@@ -93,7 +93,6 @@ public class UserApiResponse extends BaseResponse implements Serializable {
      */
     private UserApiResponse(Long entityId, List<ResponseStatus> responseStatuses) {
         this(responseStatuses);
-        this.success = true;
         this.entityId = entityId;
     }
 
@@ -103,7 +102,6 @@ public class UserApiResponse extends BaseResponse implements Serializable {
      * @param responseStatuses
      */
     private UserApiResponse(boolean success, List<ResponseStatus> responseStatuses) {
-        this.success = success;
         if(StringUtils.isNotBlankOrNull(responseStatuses)){
             List<String> messagesList= new ArrayList<>();
             responseStatuses.forEach(responseStatus->{

@@ -401,9 +401,7 @@ public class EmployeeUserServiceHelper {
 			this.mailService.send(employeeUserEntity.getEmail(), EmailConstants.CHANGE_PASSWORD_EMAIL_SUBJECT,
 					EmailConstants.CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap);
 			// set success to true after sending mail.
-			userApiResponse.setSuccess(true);
 		} catch (Exception e) {
-			userApiResponse.setSuccess(false);
 			userApiResponse.setMessages(Collections.singletonList(e.getMessage()));
 			throw new EntityValidationException("Could not send Email ", userApiResponse,
 					HttpStatus.INTERNAL_SERVER_ERROR);

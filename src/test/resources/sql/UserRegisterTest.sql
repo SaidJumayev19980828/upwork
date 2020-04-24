@@ -13,12 +13,12 @@ INSERT INTO public.organization_domains (id, "domain", subdir, organization_id) 
 
 
 --inserting users
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password)
-    VALUES (88001, 'user1@nasnav.com','user1','123', 99001, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password)
-    VALUES (88002, 'user1@nasnav.com','user1','456', 99002, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
-INSERT INTO public.users(id, email,  user_name, authentication_token, address, country, city, phone_number, image, organization_id, encrypted_password)
-    VALUES (88003, 'user2@nasnav.com','user2','789', '21 jump street', 'Egypt', 'Cairo', '+021092154875','/urls/images/fdsafag23.jpg',  99001, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status)
+    VALUES (88001, 'user1@nasnav.com','user1','123', 99001, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status)
+    VALUES (88002, 'user1@nasnav.com','user1','456', 99002, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
+INSERT INTO public.users(id, email,  user_name, authentication_token, address, country, city, phone_number, image, organization_id, encrypted_password, user_status)
+    VALUES (88003, 'user2@nasnav.com','user2','789', '21 jump street', 'Egypt', 'Cairo', '+021092154875','/urls/images/fdsafag23.jpg',  99001, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
 
    
 --inserting Employee Users

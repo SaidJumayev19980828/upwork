@@ -1,5 +1,7 @@
 package com.nasnav.persistence;
 
+import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
@@ -13,14 +15,12 @@ import com.nasnav.persistence.listeners.UserEntityListener;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
 @Entity
 @EntityListeners(UserEntityListener.class)
 @Table(name = "users")
 @EqualsAndHashCode(callSuper=false)
-@NoArgsConstructor
 public class UserEntity extends BaseUserEntity{
 
     @Column(name="user_name")
@@ -41,6 +41,12 @@ public class UserEntity extends BaseUserEntity{
 
     @Column(name="user_status")
     private Integer userStatus;
+    
+    
+    
+    public UserEntity() {
+    	userStatus = NOT_ACTIVATED.getValue();
+    }
 
     
     public static UserEntity registerUser(UserDTOs.UserRegistrationObject userJson) {
@@ -49,6 +55,7 @@ public class UserEntity extends BaseUserEntity{
         user.setEmail(userJson.email);
         user.setEncryptedPassword(EntityConstants.INITIAL_PASSWORD);
         user.setOrganizationId(userJson.getOrgId());
+        user.setUserStatus(NOT_ACTIVATED.getValue());
         return user;
     }
     

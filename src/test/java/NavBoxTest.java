@@ -5,7 +5,6 @@ import static org.springframework.http.HttpMethod.GET;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Date;
 
 import javax.sql.DataSource;
 
@@ -32,7 +31,6 @@ import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
 
 import com.nasnav.NavBox;
 import com.nasnav.controller.NavboxController;
