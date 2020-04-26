@@ -6,6 +6,8 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 @NoArgsConstructor
 @Data
 public class OrganizationDTO {
@@ -46,5 +48,8 @@ public class OrganizationDTO {
         @ApiModelProperty(value = "URL to instagram account", example = "https://instagram.com/fortunestores")
         @JsonProperty("social_instagram")
         public String socialInstagram;
+
+        @JsonProperty("extra_info")
+        public Map info;
     }
 }

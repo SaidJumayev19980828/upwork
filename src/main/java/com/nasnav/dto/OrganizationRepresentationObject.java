@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.util.List;
+import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
@@ -71,5 +72,8 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     private List<OrganizationImagesRepresentationObject> images;
 
     private ThemeRepresentationObject theme;
+
+    @JsonProperty("extra_info")
+    private String info;
 }
 

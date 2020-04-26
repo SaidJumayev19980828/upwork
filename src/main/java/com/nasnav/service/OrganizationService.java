@@ -18,6 +18,7 @@ import com.nasnav.dto.*;
 import com.nasnav.dto.response.navbox.ThemeRepresentationObject;
 import com.nasnav.persistence.*;
 import org.apache.http.client.utils.URIBuilder;
+import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -238,6 +239,9 @@ public class OrganizationService {
         OrganizationEntity organization = organizationRepository.findById(json.organizationId).get();
         if (json.description != null) {
             organization.setDescription(json.description);
+        }
+        if (json.info != null) {
+            organization.setExtraInfo(new JSONObject(json.info).toString());
         }
 
         if (json.themeId != null) {

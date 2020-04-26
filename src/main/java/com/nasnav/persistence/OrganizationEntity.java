@@ -2,6 +2,7 @@ package com.nasnav.persistence;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.Map;
 import java.util.Set;
 
 import javax.persistence.*;
@@ -16,6 +17,7 @@ import com.nasnav.dto.OrganizationRepresentationObject;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.json.JSONObject;
 
 @Entity
 @Table(name = "organizations")
@@ -49,6 +51,9 @@ public class OrganizationEntity implements BaseEntity {
             ,joinColumns = {@JoinColumn(name="organization_id")}
             ,inverseJoinColumns = {@JoinColumn(name="theme_class_id")})
     private Set<ThemeClassEntity> themeClasses;
+
+    @Column(name = "extra_info")
+    private String extraInfo;
 
     public OrganizationEntity() {
         id = null;
@@ -89,6 +94,8 @@ public class OrganizationEntity implements BaseEntity {
         organizationRepresentationObject.setPname(getPname());
         organizationRepresentationObject.setType(getType()!=null?getType().name():null);
         organizationRepresentationObject.setThemeId(getThemeId());
+
+        organizationRepresentationObject.setInfo(getExtraInfo());
 
         return organizationRepresentationObject;
     }
