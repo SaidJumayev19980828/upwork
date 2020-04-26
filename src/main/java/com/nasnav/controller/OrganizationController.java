@@ -140,7 +140,7 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @GetMapping(value = "products_features", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public List<ProductFeatureDTO> updateOrganizationFeaturesData(@RequestParam("organization_id") Long orgId) throws Exception {
+    public List<ProductFeatureDTO> getOrganizationFeaturesData(@RequestParam("organization_id") Long orgId) throws Exception {
         return orgService.getProductFeatures(orgId);
     }
 
@@ -158,7 +158,8 @@ public class OrganizationController {
     @PostMapping(value = "products_feature"
             , produces = MediaType.APPLICATION_JSON_UTF8_VALUE
             , consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ProductFeatureUpdateResponse updateProductFeature(@RequestBody ProductFeatureUpdateDTO featureDto) throws Exception {
+    public ProductFeatureUpdateResponse updateProductFeature(@RequestHeader("User-Token") String token
+    		, @RequestBody ProductFeatureUpdateDTO featureDto) throws Exception {
         return orgService.updateProductFeature(featureDto);
     }
 

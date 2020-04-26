@@ -10,6 +10,7 @@ import static com.nasnav.test.commons.TestCommons.getHeaders;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -62,6 +63,7 @@ import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.ShippingAddress;
 import com.nasnav.enumerations.OrderStatus;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrdersEntity;
@@ -1669,7 +1671,7 @@ public class OrderServiceTest {
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_3.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void testOrderCheckoutService() {
+	public void testOrderCheckoutService() throws BusinessException {
 		Long orderId = 330033L; 
 		OrdersEntity order = orderRepository.findById(orderId).get();
 		LocalDateTime initialUpdateTime = order.getUpdateDate();
@@ -1677,7 +1679,7 @@ public class OrderServiceTest {
 		assertEquals(15, stockBefore.getQuantity().intValue());
 		
 		//-------------------------------------------
-		orderService.checkoutOrder(order);
+		orderService.checkoutOrder(orderId);
 		//-------------------------------------------
 		
 		OrdersEntity saved = orderRepository.findById(orderId).get();
@@ -1725,15 +1727,14 @@ public class OrderServiceTest {
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_4.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void testOrderCheckoutForBundle() {
+	public void testOrderCheckoutForBundle() throws BusinessException {
 		Long orderId = 330033L; 
-		OrdersEntity order = orderRepository.findById(orderId).get();
 		
 		BundleOrderTestStocks before = getStocksCountBefore();		
 		validateStockQuantityBefore(before);
 		
 		//-------------------------------------------
-		orderService.checkoutOrder(order);
+		orderService.checkoutOrder(orderId);
 		//-------------------------------------------
 				
 		OrdersEntity saved = orderRepository.findById(orderId).get();
@@ -1742,6 +1743,20 @@ public class OrderServiceTest {
 		validateStocksQuantities(before);
 	}
 
+	
+	
+	@Test(expected = Throwable.class)
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void testOrderCheckoutValidateNotEnoughStock() throws BusinessException {
+		Long orderId = 330037L; 
+		StocksEntity stockBefore = stockRepository.findById(602L).get();
+		assertEquals(0, stockBefore.getQuantity().intValue());
+		
+		//-------------------------------------------
+		orderService.validateOrderIdsForCheckOut(asList(orderId));
+		//-------------------------------------------		
+	}
 
 
 

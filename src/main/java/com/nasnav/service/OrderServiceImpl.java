@@ -86,6 +86,7 @@ import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.ShippingAddress;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
+import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
@@ -95,6 +96,7 @@ import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
@@ -268,7 +270,6 @@ public class OrderServiceImpl implements OrderService {
 		Long orderId = order.getId();
 		OrdersEntity orderEntity = ordersRepository.findById(orderId)
 											.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS, orderId));		
-
 		
 		if( !Objects.equals(userId, orderEntity.getUserId()) ) {
 			throwInvalidOrderException(ERR_ORDER_NOT_OWNED_BY_USER, userId, orderId);
@@ -667,6 +668,27 @@ public class OrderServiceImpl implements OrderService {
 		order.setStatus(CLIENT_CONFIRMED.getValue());		
 		updateStocks(order);
 		return ordersRepository.save(order);
+	}
+	
+	
+	
+	
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public OrdersEntity checkoutOrder(Long orderId) throws BusinessException {
+		//TODO: this should be done if the payment API became authenticated
+//		Long userId = 
+//				ofNullable(securityService.getCurrentUser())
+//				.map(BaseUserEntity::getId)
+//				.orElseThrow(() -> new RuntimeBusinessException("No user provided for the checkout!", "INVALID OPERATION", NOT_ACCEPTABLE));
+//		OrdersEntity order = ordersRepository.findByIdAndUserId(orderId, userId);
+		//-------------------------------------------
+		OrdersEntity order = 
+				ordersRepository
+				.findById(orderId)
+				.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS, orderId));	
+
+		return checkoutOrder(order);
 	}
 	
 	
@@ -1281,8 +1303,18 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
+	@Transactional
 	public void validateOrdersForCheckOut(List<OrdersEntity> orders){
 		orders.forEach(this::validateOrderForCheckout);
+	}
+	
+	
+	
+	@Override
+	@Transactional
+	public void validateOrderIdsForCheckOut(List<Long> orderIds){
+		List<OrdersEntity> orders = ordersRepository.findByIdIn(orderIds);
+		validateOrdersForCheckOut(orders);
 	}
 	
 	
@@ -1320,5 +1352,14 @@ public class OrderServiceImpl implements OrderService {
 		if(quantity > stockService.getStockQuantity( item.getStocksEntity() )) {
 			throwRuntimeInvalidOrderException(ERR_NO_ENOUGH_STOCK);
 		}
+	}
+	
+	
+	
+	@Override
+	public void setOrderAsPaid(PaymentEntity payment, OrdersEntity order) {
+		order.setPaymentStatus(PaymentStatus.PAID);
+		order.setPaymentEntity(payment);
+		ordersRepository.save(order);
 	}
 }
