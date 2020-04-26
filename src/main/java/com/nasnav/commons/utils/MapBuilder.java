@@ -31,7 +31,7 @@ public class MapBuilder<K,V> {
 	
 	
 	public MapBuilder<K, V> putNonNull(K key, V value) {
-		if(!noneIsNull(key, value)) {
+		if(noneIsNull(key, value)) {
 			map.put(key, value);
 		}		
 		return this;
