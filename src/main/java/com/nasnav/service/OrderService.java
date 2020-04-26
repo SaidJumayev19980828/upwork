@@ -34,4 +34,8 @@ public interface OrderService {
 	public void deleteOrders(List<Long> orderIds) throws BusinessException;
 
 	public void deleteCurrentOrders();
+	
+	public void validateOrdersForCheckOut(List<OrdersEntity> orders); 
+	
+	public OrdersEntity checkoutOrder(OrdersEntity order);
 }

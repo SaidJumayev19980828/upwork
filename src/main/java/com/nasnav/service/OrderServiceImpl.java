@@ -23,6 +23,7 @@ import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_O
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_OWNED_BY_USER;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_STATUS_NOT_ALLOWED_FOR_ROLE;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_UPDATED_ORDER_WITH_NO_ID;
+import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.DELIVERED;
@@ -41,6 +42,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -87,6 +89,7 @@ import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
@@ -434,11 +437,11 @@ public class OrderServiceImpl implements OrderService {
 		for(BasketItemDTO item: basket) {
 			validateBasketItem(item);
 		}
-
-
-		/*if( countShops(basket) > 1) {
-			throwInvalidOrderException(ERR_ITEMS_FROM_MULTIPLE_SHOPS);
-		}*/
+	}
+	
+	
+	private void validateBasketItems(OrdersEntity order) throws BusinessException {	
+		order.getBasketsEntity().forEach(this::validateBasketItem);
 	}
 
 
@@ -519,10 +522,22 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
+	private void throwRuntimeInvalidOrderException(String msg, Object... msgParams){
+		throw getInvalidRuntimeOrderException(msg, msgParams);
+	}
+	
+	
+	
 	
 	private BusinessException getInvalidOrderException(String msg, Object... msgParams) {
-		String error = OrderFailedStatus.INVALID_ORDER.toString();
-		return new BusinessException( format(msg, msgParams), error, HttpStatus.NOT_ACCEPTABLE);
+		String error = INVALID_ORDER.toString();
+		return new BusinessException( format(msg, msgParams), error, NOT_ACCEPTABLE);
+	}
+	
+	
+	private RuntimeBusinessException getInvalidRuntimeOrderException(String msg, Object... msgParams) {
+		String error = INVALID_ORDER.toString();
+		return new RuntimeBusinessException( format(msg, msgParams), error, NOT_ACCEPTABLE);
 	}
 	
 	
@@ -637,7 +652,7 @@ public class OrderServiceImpl implements OrderService {
 		if ( newStatus.equals(NEW)) {
 			orderResponse = updateOrderBasket(orderJsonDto, orderEntity);
 		}else if(newStatus.equals(CLIENT_CONFIRMED)) {
-			updateItemStocks(orderEntity);
+			updateStocks(orderEntity);
 		}
 		
 		return orderResponse;
@@ -645,9 +660,20 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public OrdersEntity checkoutOrder(OrdersEntity order) {
+//		validateBasketItems(order);		//TODO: this should be added when we add refund, because exceptions will refund the user
+		order.setStatus(CLIENT_CONFIRMED.getValue());		
+		updateStocks(order);
+		return ordersRepository.save(order);
+	}
+	
+	
+	
 	
 
-	private void updateItemStocks(OrdersEntity orderEntity) {
+	private void updateStocks(OrdersEntity orderEntity) {
 	   orderEntity.getBasketsEntity().forEach(this::reduceItemStock);		
 	}
 
@@ -1242,11 +1268,57 @@ public class OrderServiceImpl implements OrderService {
 		for(OrdersEntity order : orders) {
 			if (!order.getOrganizationEntity().getId().equals(orgId))
 				throw new BusinessException("Provided order ("+order.getId()+") doesn't belong to current organization",
-						"INVALID_PARAM: order_id", HttpStatus.NOT_ACCEPTABLE);
+						"INVALID_PARAM: order_id", NOT_ACCEPTABLE);
 			if (order.getStatus() != 0)
 				throw new BusinessException("Provided order ("+order.getId()+") is not a new order and can't be deleted",
-						"INVALID_PARAM: order_id", HttpStatus.NOT_ACCEPTABLE);
+						"INVALID_PARAM: order_id", NOT_ACCEPTABLE);
 		}
 
+	}
+
+
+
+
+
+	@Override
+	public void validateOrdersForCheckOut(List<OrdersEntity> orders){
+		orders.forEach(this::validateOrderForCheckout);
+	}
+	
+	
+	
+	
+	private void validateOrderForCheckout(OrdersEntity order) {
+		validateOrderStatusForCheckOut(order);
+		order.getBasketsEntity().forEach(this::validateBasketItem);
+	}
+
+
+
+
+
+	private void validateOrderStatusForCheckOut(OrdersEntity order) {
+		Integer status = 
+				ofNullable(order)
+					.map(OrdersEntity::getStatus)
+					.orElse(-1);
+		if(!NEW.getValue().equals(status)) {
+			throw new RuntimeBusinessException(format("Order with id[%d] has invalid status[%d] and can't be checked out!", order.getId(), status)
+					, "Invalid Operation"
+					, NOT_ACCEPTABLE);
+		}
+	};
+	
+	
+	
+	private void validateBasketItem(BasketsEntity item) {
+		Integer quantity = 
+				ofNullable(item)
+				.map(BasketsEntity::getQuantity)
+				.map(BigDecimal::intValue)
+				.orElse(0);
+		if(quantity > stockService.getStockQuantity( item.getStocksEntity() )) {
+			throwRuntimeInvalidOrderException(ERR_NO_ENOUGH_STOCK);
+		}
 	}
 }

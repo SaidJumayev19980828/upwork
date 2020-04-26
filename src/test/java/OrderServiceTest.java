@@ -71,6 +71,7 @@ import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.OrderResponse;
+import com.nasnav.service.OrderService;
 import com.nasnav.service.UserService;
 import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
@@ -126,6 +127,10 @@ public class OrderServiceTest {
 	
 	@Autowired
 	private JdbcTemplate jdbc;
+	
+	
+	@Autowired
+	private OrderService orderService;
 	
 	
 	@Autowired
@@ -1661,6 +1666,32 @@ public class OrderServiceTest {
 	
 	
 	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void testOrderCheckoutService() {
+		Long orderId = 330033L; 
+		OrdersEntity order = orderRepository.findById(orderId).get();
+		LocalDateTime initialUpdateTime = order.getUpdateDate();
+		StocksEntity stockBefore = stockRepository.findById(601L).get();
+		assertEquals(15, stockBefore.getQuantity().intValue());
+		
+		//-------------------------------------------
+		orderService.checkoutOrder(order);
+		//-------------------------------------------
+		
+		OrdersEntity saved = orderRepository.findById(orderId).get();
+		assertEquals(CLIENT_CONFIRMED.getValue(), saved.getStatus());
+		assertTrue(saved.getUpdateDate().isAfter(initialUpdateTime));
+		
+		StocksEntity stockAfter = stockRepository.findById(601L).get();
+		assertEquals(1, stockAfter.getQuantity().intValue());
+	}
+	
+	
+	
+	
+	
 	
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_4.sql"})
@@ -1681,6 +1712,30 @@ public class OrderServiceTest {
 
 		//-----------------------------------------------------
 		assertEquals(OK, response.getStatusCode());		
+		OrdersEntity saved = orderRepository.findById(orderId).get();
+		assertEquals(CLIENT_CONFIRMED.getValue(), saved.getStatus());
+		
+		validateStocksQuantities(before);
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void testOrderCheckoutForBundle() {
+		Long orderId = 330033L; 
+		OrdersEntity order = orderRepository.findById(orderId).get();
+		
+		BundleOrderTestStocks before = getStocksCountBefore();		
+		validateStockQuantityBefore(before);
+		
+		//-------------------------------------------
+		orderService.checkoutOrder(order);
+		//-------------------------------------------
+				
 		OrdersEntity saved = orderRepository.findById(orderId).get();
 		assertEquals(CLIENT_CONFIRMED.getValue(), saved.getStatus());
 		
