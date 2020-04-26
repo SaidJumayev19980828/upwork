@@ -589,6 +589,7 @@ public class ProductImageBulkUrlUploadTest {
 		
 		metaData.put("type", 7);
 		metaData.put("priority", 1);
+		metaData.put("ignore_errors", false);
 		
 		return metaData;
 	}
