@@ -56,6 +56,7 @@ public class UserEntity extends BaseUserEntity{
         user.setEncryptedPassword(EntityConstants.INITIAL_PASSWORD);
         user.setOrganizationId(userJson.getOrgId());
         user.setUserStatus(NOT_ACTIVATED.getValue());
+        user.setPhoneNumber(userJson.getPhoneNumber());
         return user;
     }
     
