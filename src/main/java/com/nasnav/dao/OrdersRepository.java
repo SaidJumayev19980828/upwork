@@ -97,4 +97,6 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	Set<Long> findOrderIdByStatusAndProductIdIn(@Param("idList") List<Long> productIdList,
 								 @Param("orgId") Long orgId,
 							     @Param("status") Integer status);
+
+	List<OrdersEntity> findByIdIn(List<Long> orderIds);
 }

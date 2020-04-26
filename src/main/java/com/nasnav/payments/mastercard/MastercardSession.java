@@ -1,15 +1,21 @@
 package com.nasnav.payments.mastercard;
 
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.PaymentsRepository;
-import com.nasnav.enumerations.PaymentStatus;
-import com.nasnav.enumerations.TransactionCurrency;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.payments.Account;
-import com.nasnav.payments.misc.Tools;
-import com.nasnav.persistence.*;
-import com.nasnav.service.OrderService;
-import lombok.Getter;
+import static com.nasnav.enumerations.TransactionCurrency.EGP;
+import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -18,23 +24,24 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.PaymentsRepository;
+import com.nasnav.enumerations.PaymentStatus;
+import com.nasnav.enumerations.TransactionCurrency;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.payments.misc.Tools;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.PaymentEntity;
+import com.nasnav.service.OrderService;
 
-import static com.nasnav.enumerations.TransactionCurrency.*;
+import lombok.Getter;
 
 @Service
 public class MastercardSession {
@@ -182,27 +189,34 @@ public class MastercardSession {
             throw new BusinessException("Invalid state for the payment ", "INVALID_INPUT", HttpStatus.NOT_ACCEPTABLE);
         }
         if (json.getString("successIndicator").equals(paymentIndicator)) {
-//            payment.setOrdersEntity(this.order);
-            for (OrdersEntity oe: this.includedOrders) {
-                oe.setPaymentStatus(PaymentStatus.PAID);
-                oe.setPaymentEntity(payment);
-                ordersRepository.save(oe);
+            for (OrdersEntity order: this.includedOrders) {
+            	orderService.checkoutOrder(order.getId());
+            	orderService.setOrderAsPaid(payment, order);
             }
             ordersRepository.flush();
+            
             payment.setUid("CFM-" + payment.getUid());
             payment.setExecuted(new Date());
             payment.setStatus(PaymentStatus.PAID);
             paymentsRepository.saveAndFlush(payment);
             return;
         }
-        throw new BusinessException("Provided payment code does not match successIndicator", "INTVALID_CODE", HttpStatus.CONFLICT);
+        throw new BusinessException("Provided payment code does not match successIndicator", "INTVALID_CODE", CONFLICT);
     }
+    
+    
+
 
 
 
     public boolean initialize(ArrayList<OrdersEntity> orders) throws BusinessException {
-
+    	if(Objects.isNull(orders)) {
+    		throw new BusinessException("No orders provided for payment!", "INVALID PARAM: order_id", NOT_ACCEPTABLE);
+    	}    	
         this.includedOrders = orders;
+        
+        validateOrdersForCheckOut(this.includedOrders);
+        
         this.orderUid = Tools.getOrderUid(orders, classLogger);
         this.orderValue = Tools.getTotalOrderValue(orders, orderService, classLogger);
         long userId = orders.get(0).getUserId();
@@ -267,6 +281,19 @@ public class MastercardSession {
         }
         return false;
     }
+
+    
+    
+	private void validateOrdersForCheckOut(List<OrdersEntity> orders) {
+		List<Long> orderIds = 
+				orders
+				.stream()
+				.map(OrdersEntity::getId)
+				.collect(toList());        
+        orderService.validateOrderIdsForCheckOut(orderIds);
+	}
+	
+	
 
     public String getSessionId() {
         return this.sessionId;
