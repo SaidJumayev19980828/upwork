@@ -76,6 +76,10 @@ public class OrdersEntity implements BaseEntity{
 	public void setOrderStatus(OrderStatus status) {
 		this.status = status.getValue();
 	}
+	
+	public OrderStatus getOrderStatus() {
+		return OrderStatus.findEnum(status);
+	}
 
 	@Column(name = "created_at", nullable = false, length = 29)
 	@CreationTimestamp

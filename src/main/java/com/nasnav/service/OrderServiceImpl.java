@@ -647,13 +647,13 @@ public class OrderServiceImpl implements OrderService {
 
 		OrdersEntity orderEntity =  ordersRepository.findById( orderJsonDto.getId() )
 													.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS));
-
+		OrderStatus oldStatus = orderEntity.getOrderStatus();
 		OrderResponse orderResponse = updateCurrentOrderStatus(orderJsonDto, orderEntity, newStatus);
 		
 		if ( newStatus.equals(NEW)) {
 			orderResponse = updateOrderBasket(orderJsonDto, orderEntity);
-		}else if(newStatus.equals(CLIENT_CONFIRMED)) {
-			updateStocks(orderEntity);
+		}else if(newStatus.equals(CLIENT_CONFIRMED) && !Objects.equals(oldStatus, CLIENT_CONFIRMED)) {
+			reduceStocks(orderEntity);
 		}
 		
 		return orderResponse;
@@ -666,7 +666,7 @@ public class OrderServiceImpl implements OrderService {
 	public OrdersEntity checkoutOrder(OrdersEntity order) {
 //		validateBasketItems(order);		//TODO: this should be added when we add refund, because exceptions will refund the user
 		order.setStatus(CLIENT_CONFIRMED.getValue());		
-		updateStocks(order);
+		reduceStocks(order);
 		return ordersRepository.save(order);
 	}
 	
@@ -695,7 +695,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 
-	private void updateStocks(OrdersEntity orderEntity) {
+	private void reduceStocks(OrdersEntity orderEntity) {
 	   orderEntity.getBasketsEntity().forEach(this::reduceItemStock);		
 	}
 
