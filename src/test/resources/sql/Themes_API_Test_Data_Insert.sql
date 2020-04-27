@@ -4,9 +4,9 @@ INSERT INTO public.organizations(id, name) VALUES (99002, 'organization_2');
 INSERT INTO public.theme_classes(id, name)VALUES (990011, 'theme_class_1');
 INSERT INTO public.theme_classes(id, name)VALUES (990012, 'theme_class_2');
 
-INSERT INTO public.themes(id, name, theme_class_id)VALUES (5001, 'theme_1', 990011);
-INSERT INTO public.themes(id, name, theme_class_id)VALUES (5002, 'theme_2', 990011);
-INSERT INTO public.themes(id, name, theme_class_id)VALUES (5003, 'theme_3', 990012);
+INSERT INTO public.themes(id, name, theme_class_id, uid)VALUES (5001, 'theme_1', 990011, '5001');
+INSERT INTO public.themes(id, name, theme_class_id, uid)VALUES (5002, 'theme_2', 990011, '5002');
+INSERT INTO public.themes(id, name, theme_class_id, uid)VALUES (5003, 'theme_3', 990012, '5003');
 
 INSERT INTO public.organization_theme_classes(id, organization_id, theme_class_id)VALUES (5003, 99001 , 990011);
 

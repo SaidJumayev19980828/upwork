@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class ThemeDTO extends BaseRepresentationObject{
 
-    private Integer id;
+    private String uid;
     private String name;
 
     @JsonProperty("preview_image")

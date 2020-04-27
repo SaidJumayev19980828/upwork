@@ -165,7 +165,7 @@ public class AdminController {
 	})
 	@DeleteMapping(value = "themes")
 	public void deleteTheme(@RequestHeader (value = "User-Token") String userToken,
-							@RequestParam Integer id) throws BusinessException {
+							@RequestParam String id) throws BusinessException {
 		themeService.deleteTheme(id);
 	}
 }

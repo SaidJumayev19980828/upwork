@@ -169,7 +169,7 @@ public class OrganizationService {
 
         ThemeRepresentationObject themeRepObj = new ThemeRepresentationObject();
 
-        Optional<ThemeEntity> optionalThemeEntity = themesRepo.findById(orgRepObj.getThemeId());
+        Optional<ThemeEntity> optionalThemeEntity = themesRepo.findByUid(orgRepObj.getThemeId());
 
         if (optionalThemeEntity.isPresent()) {
             ThemeEntity themeEntity = optionalThemeEntity.get();
@@ -178,7 +178,7 @@ public class OrganizationService {
         }
 
         Optional<OrganizationThemesSettingsEntity> optionalThemeSettings =
-                orgThemesSettingsRepo.findByOrganizationEntity_IdAndThemeId(orgRepObj.getId(), orgRepObj.getThemeId());
+                orgThemesSettingsRepo.findByOrganizationEntity_IdAndThemeId(orgRepObj.getId(), Integer.parseInt(orgRepObj.getThemeId()));
 
         if (optionalThemeSettings.isPresent()) {
             OrganizationThemesSettingsEntity themesSettings = optionalThemeSettings.get();
