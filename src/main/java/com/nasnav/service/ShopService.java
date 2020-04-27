@@ -103,7 +103,8 @@ public class ShopService {
     public ShopResponse shopModification(ShopJsonDTO shopJson) throws BusinessException{
         BaseUserEntity baseUser =  securityService.getCurrentUser();
         if(!(baseUser instanceof EmployeeUserEntity)) {
-        	throw new BusinessException("User is not an authorized to modify shops!", "INSUFFICIENT RIGHTS", HttpStatus.FORBIDDEN);
+        	throw new BusinessException("User is not an authorized to modify shops!",
+                    "INSUFFICIENT RIGHTS", HttpStatus.FORBIDDEN);
         }
         
         EmployeeUserEntity user = (EmployeeUserEntity)baseUser;
@@ -127,8 +128,9 @@ public class ShopService {
         }
         
         ShopsEntity shopsEntity = new ShopsEntity();
-        BeanUtils.copyProperties(shopJson, shopsEntity);
+
         shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson);
+
         shopsRepository.save(shopsEntity);
         return new ShopResponse(shopsEntity.getId(), HttpStatus.OK);
     }
@@ -137,12 +139,12 @@ public class ShopService {
     
     
 
-    private ShopResponse updateShop(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId, List<String> userRoles) throws BusinessException{
-    	
-    	validateShopUdpate(shopJson, employeeUserOrgId, employeeUserShopId, userRoles);
+    private ShopResponse updateShop(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId,
+                                    List<String> userRoles) throws BusinessException{
+
+        validateShopUpdate(shopJson, employeeUserOrgId, employeeUserShopId, userRoles);
         
     	ShopsEntity shopsEntity = shopsRepository.findById(shopJson.getId()).get();
-        BeanUtils.copyProperties(shopJson, shopsEntity, shopServiceHelper.getNullProperties(shopJson));
         shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson);
         
         shopsRepository.save(shopsEntity);
@@ -153,7 +155,7 @@ public class ShopService {
 
 
 
-	private void validateShopUdpate(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId,
+	private void validateShopUpdate(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId,
 			List<String> userRoles) throws BusinessException {
 		
 		validateShop(shopJson);

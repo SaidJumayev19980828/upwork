@@ -270,6 +270,13 @@ public class SecurityServiceImpl implements SecurityService {
 	}
 
 
+	@Override
+	public Long getCurrentUserShopId() {
+		return Optional.ofNullable( getCurrentUser() )
+				.map(user -> (EmployeeUserEntity)user)
+				.map(EmployeeUserEntity::getShopId)
+				.orElseThrow(() -> new IllegalStateException("Current User has no shop!"));
+	}
 
 
 
