@@ -195,7 +195,8 @@ public class ThemesApiTest {
     @Test
     public void createThemeSuccess() {
         JSONObject body = json().put("theme_class_id", 990011)
-                                .put("name", "new theme_class_1");
+                                .put("name", "new theme_class_1")
+                                .put("uid", "5001");
 
         HttpEntity<?> request =  getHttpEntity(body.toString(),"101112");
         ResponseEntity<ThemeResponse> response = template.exchange("/admin/themes",
@@ -203,18 +204,19 @@ public class ThemesApiTest {
 
         System.out.println(response.getBody());
         Assert.assertEquals(200,response.getStatusCodeValue());
-        Assert.assertTrue(themesRepo.existsById(response.getBody().getThemeId()));
-        themesRepo.deleteById(response.getBody().getThemeId());
+        Assert.assertTrue(themesRepo.existsByUid(response.getBody().getThemeId()));
+        ThemeEntity theme = themesRepo.findByUid(response.getBody().getThemeId()).get();
+        themesRepo.delete(theme);
     }
 
 
     @Test
     public void updateThemeSuccess() {
-        JSONObject body = json().put("id", 5002)
-                                .put("name", "new theme name")
+        JSONObject body = json().put("name", "new theme name")
                                 .put("preview_image", "new theme image")
                                 .put("default_settings", "new theme settings")
-                                .put("theme_class_id", 990012);
+                                .put("theme_class_id", 990012)
+                                .put("uid", "5002");
 
         HttpEntity<?> request =  getHttpEntity(body.toString(),"101112");
         ResponseEntity<ThemeResponse> response = template.exchange("/admin/themes",
@@ -222,7 +224,7 @@ public class ThemesApiTest {
 
         Assert.assertEquals(200,response.getStatusCodeValue());
 
-        ThemeEntity entity = themesRepo.findById(response.getBody().getThemeId()).get();
+        ThemeEntity entity = themesRepo.findByUid(response.getBody().getThemeId()).get();
 
         Assert.assertEquals("new theme name", entity.getName());
         Assert.assertEquals("new theme image", entity.getPreviewImage());
@@ -258,9 +260,8 @@ public class ThemesApiTest {
 
 
     @Test
-    public void createThemeInvalidId() {
-        JSONObject body = json().put("id", -1)
-                                .put("name", "theme_1")
+    public void createThemeMissingId() {
+        JSONObject body = json().put("name", "theme_1")
                                 .put("theme_class_id", 990011);
 
         HttpEntity<?> request =  getHttpEntity(body.toString(),"101112");
@@ -595,7 +596,7 @@ public class ThemesApiTest {
 
     @Test
     public void changeOrgThemeNotSameOrg() {
-        String body = "{\"theme_id\":5001}";
+        String body = "{\"theme_id\":\"5001\"}";
         HttpEntity<?> request =  getHttpEntity(body,"161718");
 
         ResponseEntity<String> response =

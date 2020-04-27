@@ -93,7 +93,7 @@ public class OrganizationEntity implements BaseEntity {
         organizationRepresentationObject.setName(getName());
         organizationRepresentationObject.setPname(getPname());
         organizationRepresentationObject.setType(getType()!=null?getType().name():null);
-        organizationRepresentationObject.setThemeId(getThemeId());
+        organizationRepresentationObject.setThemeId(getThemeId().toString());
 
         if (getExtraInfo() != null) {
             try {

@@ -36,7 +36,7 @@ public class OrganizationThemesSettingsEntity extends AbstractPersistable<Intege
 
         themesDTO.setId(getId());
         themesDTO.setSettings(getSettings());
-        themesDTO.setThemeId(getThemeId());
+        themesDTO.setThemeId(getThemeId()+"");
 
         return themesDTO;
     }

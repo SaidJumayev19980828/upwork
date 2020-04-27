@@ -83,25 +83,25 @@ public class ThemeService {
     @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
     public ThemeResponse updateTheme(ThemeDTO dto) throws BusinessException {
         Optional<ThemeEntity> optionalThemeEntity;
-        ThemeEntity theme;
-        if (dto.getId() == null) {
-            theme = new ThemeEntity();
-            if (dto.getThemeClassId() == null) {
-                throw new BusinessException("Must provide theme_class_id!",
-                        "MISSING_PARAM: theme_class_id", NOT_ACCEPTABLE);
-            }
+        ThemeEntity theme = new ThemeEntity();
+        if (dto.getUid() == null) {
+            throw new BusinessException("Must provide theme_id!",
+                    "MISSING_PARAM: theme_id", NOT_ACCEPTABLE);
         }
-        else {
-            optionalThemeEntity = themesRepo.findById(dto.getId());
+        if (dto.getThemeClassId() == null) {
+            throw new BusinessException("Must provide theme_class_id!",
+                    "MISSING_PARAM: theme_class_id", NOT_ACCEPTABLE);
+        }
 
-            checkThemeExistence(optionalThemeEntity, dto.getId());
+        optionalThemeEntity = themesRepo.findByUid(dto.getUid());
 
+        if (optionalThemeEntity.isPresent()) {
             theme = optionalThemeEntity.get();
         }
 
         theme = setThemeProperties(theme, dto);
         theme = themesRepo.save(theme);
-        return new ThemeResponse(theme.getId());
+        return new ThemeResponse(theme.getUid());
     }
 
 
@@ -120,6 +120,8 @@ public class ThemeService {
             checkThemeClassExistence(themeClass, dto.getThemeClassId());
             theme.setThemeClassEntity(themeClass.get());
         }
+
+        theme.setUid(dto.getUid());
 
         return theme;
     }
@@ -142,13 +144,13 @@ public class ThemeService {
     }
 
 
-    public void deleteTheme(Integer themeId) throws BusinessException {
-    	Integer id = ofNullable(themeId).orElse(-1);
-        Optional<ThemeEntity> entity = themesRepo.findById(id);
+    public void deleteTheme(String themeId) throws BusinessException {
+    	String id = ofNullable(themeId).orElse("-1");
+        Optional<ThemeEntity> entity = themesRepo.findByUid(id);
 
         checkThemeExistence(entity, id);
 
-        Set<Long> orgIds = orgThemeSettingsRepo.findOrganizationIdByThemeIdIn(id);
+        Set<Long> orgIds = orgThemeSettingsRepo.findOrganizationIdByThemeIdIn(entity.get().getId());
         if (!orgIds.isEmpty()) {
             throw new BusinessException("Theme is used by organization : " + orgIds.toString(),
                     "INVALID_PARAM: id", NOT_ACCEPTABLE);
@@ -227,10 +229,10 @@ public class ThemeService {
     }
 
 
-    private void checkThemeExistence(Optional<ThemeEntity> theme, Integer id) throws BusinessException {
+    private void checkThemeExistence(Optional<ThemeEntity> theme, String id) throws BusinessException {
         if (!theme.isPresent())
             throw new BusinessException(
-                    format("Provided theme_id %d doesn't match any existing theme!", id),
+                    format("Provided theme_id %s doesn't match any existing theme!", id),
                     "INVALID_PARAM: theme_id", NOT_ACCEPTABLE);
     }
 
@@ -240,7 +242,7 @@ public class ThemeService {
     public void changeOrgTheme(OrganizationThemesSettingsDTO dto) throws BusinessException {
         OrganizationEntity org = securityService.getCurrentUserOrganization();
 
-        Optional<ThemeEntity> theme = themesRepo.findById(dto.getThemeId());
+        Optional<ThemeEntity> theme = themesRepo.findByUid(dto.getThemeId());
         checkThemeExistence(theme, dto.getThemeId());
 
         ThemeClassEntity themeClass = theme.get().getThemeClassEntity();
@@ -254,11 +256,11 @@ public class ThemeService {
 
         OrganizationThemesSettingsEntity orgThemeSetting =
         		orgThemeSettingsRepo
-        			.findByOrganizationEntity_IdAndThemeId(org.getId(), dto.getThemeId())
+        			.findByOrganizationEntity_IdAndThemeId(org.getId(), theme.get().getId())
         			.orElse(new OrganizationThemesSettingsEntity());
 
         orgThemeSetting.setOrganizationEntity(org);
-        orgThemeSetting.setThemeId(dto.getThemeId());
+        orgThemeSetting.setThemeId(theme.get().getId());
 
         if (dto.getSettings() != null) {
             orgThemeSetting.setSettings(dto.getSettings());
@@ -266,7 +268,7 @@ public class ThemeService {
             orgThemeSetting.setSettings(theme.get().getDefaultSettings());
         }
 
-        org.setThemeId(dto.getThemeId());
+        org.setThemeId(Integer.parseInt(dto.getThemeId()));
         orgRepo.save(org);
 
         orgThemeSettingsRepo.save(orgThemeSetting);

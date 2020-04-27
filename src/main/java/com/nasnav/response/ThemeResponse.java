@@ -8,10 +8,10 @@ import lombok.Data;
 public class ThemeResponse {
 
     @JsonProperty("theme_id")
-    private Integer themeId;
+    private String themeId;
 
     @JsonCreator
-    public ThemeResponse(Integer themeId) {
+    public ThemeResponse(String themeId) {
         this.themeId = themeId;
     }
 }

@@ -8,6 +8,6 @@ public class OrganizationThemesSettingsDTO extends BaseRepresentationObject {
 
     private Integer id;
     @JsonProperty("theme_id")
-    private Integer themeId;
+    private String themeId;
     private String settings;
 }

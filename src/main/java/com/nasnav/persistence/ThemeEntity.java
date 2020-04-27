@@ -33,12 +33,15 @@ public class ThemeEntity extends AbstractPersistable<Integer> implements BaseEnt
     @JsonIgnore
     private ThemeClassEntity themeClassEntity;
 
+    @Column(name = "uid")
+    private String uid;
+
 
     @Override
     public BaseRepresentationObject getRepresentation() {
         ThemeDTO themeDTO = new ThemeDTO();
 
-        themeDTO.setId(getId());
+        themeDTO.setUid(getUid());
         themeDTO.setName(getName());
         themeDTO.setPreviewImage(getPreviewImage());
         themeDTO.setDefaultSettings(getDefaultSettings());
