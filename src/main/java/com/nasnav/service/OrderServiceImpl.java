@@ -91,6 +91,8 @@ import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.exceptions.StockValidationException;
+import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
@@ -131,6 +133,9 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	private ShopsRepository shopsRepo;
+	
+	@Autowired
+	private IntegrationService integrationService;
 
 	private Map<OrderStatus, Set<OrderStatus>> nextOrderStatusSet;
 	private Set<OrderStatus> orderStatusForCustomers;
@@ -538,7 +543,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	private RuntimeBusinessException getInvalidRuntimeOrderException(String msg, Object... msgParams) {
 		String error = INVALID_ORDER.toString();
-		return new RuntimeBusinessException( format(msg, msgParams), error, NOT_ACCEPTABLE);
+		return new StockValidationException( format(msg, msgParams), error, NOT_ACCEPTABLE);
 	}
 	
 	
@@ -1322,6 +1327,8 @@ public class OrderServiceImpl implements OrderService {
 	
 	private void validateOrderForCheckout(OrdersEntity order) {
 		validateOrderStatusForCheckOut(order);
+		Long orgId = order.getOrganizationEntity().getId();
+		if(integrationService.hasActiveIntegration(orgId))
 		order.getBasketsEntity().forEach(this::validateBasketItem);
 	}
 

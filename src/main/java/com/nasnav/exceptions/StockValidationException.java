@@ -16,6 +16,13 @@ public class StockValidationException extends RuntimeBusinessException {
     	super(errorMessage, errorCode, httpStatus);
     	this.index = index;
     }
+	
+	
+	
+	public StockValidationException(String errorMessage, String errorCode, HttpStatus httpStatus) {
+    	super(errorMessage, errorCode, httpStatus);
+    	this.index = 0;
+    }
     
     
 

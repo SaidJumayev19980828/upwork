@@ -180,4 +180,6 @@ public interface IntegrationService {
 	ResponsePage<Void> importProductImages(IntegrationImageImportDTO param)throws BusinessException;
 	
 	IntegrationUtils getIntegrationUtils();
+	
+	boolean hasActiveIntegration(Long orgId);
 }

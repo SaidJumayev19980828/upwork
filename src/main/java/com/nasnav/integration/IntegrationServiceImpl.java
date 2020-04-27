@@ -35,6 +35,7 @@ import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static reactor.core.scheduler.Schedulers.boundedElastic;
 
 import java.io.PrintWriter;
@@ -781,10 +782,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	private void addShopLocalId(ShopImportedProducts shopProducts) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		String externalShopId = shopProducts.getExternalShopId();
-		String shopIdStr = 
-				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(orgId, MappingType.SHOP.getValue(), externalShopId)
-					.map(IntegrationMappingEntity::getLocalValue)
-					.orElse(null);
+		String shopIdStr = getLocalMappedValue(orgId, SHOP, externalShopId);				
 		Long shopId = -1L;
 		
 		try {
@@ -794,7 +792,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 			throw new RuntimeBusinessException(
 					format(ERR_EXTERNAL_SHOP_NOT_FOUND, externalShopId)
 					, "INTEGRATION FAILURE"
-					, HttpStatus.INTERNAL_SERVER_ERROR);
+					, INTERNAL_SERVER_ERROR);
 		}
 		
 		shopProducts.setShopId(shopId);
@@ -1380,7 +1378,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		return orgIntegration.entrySet()
 							.stream()
 							.map(this::toOrganizationIntegrationInfoDTO)
-							.collect(Collectors.toList());					
+							.collect(toList());					
 	}
 	
 	
@@ -1913,6 +1911,18 @@ public class IntegrationServiceImpl implements IntegrationService {
 	@Override
 	public IntegrationUtils getIntegrationUtils() {
 		return integrationUtils;
+	}
+
+
+
+
+
+
+	@Override
+	public boolean hasActiveIntegration(Long orgId) {
+		return ofNullable(orgIntegration.get(orgId))
+				.map(integrationModule -> !integrationModule.isDisabled())
+				.orElse(false);
 	}
 
 }

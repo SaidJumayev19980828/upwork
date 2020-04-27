@@ -1,6 +1,5 @@
 package com.nasnav.test.integration.msdynamics;
 
-import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.PaymentStatus.PAID;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
@@ -72,6 +71,7 @@ import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.dto.UserDTOs.UserRegistrationObject;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.OrdersEntity;
@@ -79,6 +79,7 @@ import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.OrderResponse;
+import com.nasnav.service.OrderService;
 import com.nasnav.test.model.Item;
 
 @RunWith(SpringRunner.class)
@@ -152,6 +153,8 @@ public class MicrosoftDynamicsIntegrationTest {
 	@Autowired
 	private OrdersRepository orderRepo;
 	
+	@Autowired
+	private OrderService orderService;
 
 	
 	 @Rule
@@ -392,9 +395,10 @@ public class MicrosoftDynamicsIntegrationTest {
 	public void createOrderTest() throws Throwable {
 		//create order
 		String token = "123eerd";
+		Long stockId = 60001L;
+		Integer orderQuantity = 5;
 		
-		
-		Long orderId = createNewOrder(token); 
+		Long orderId = createNewOrder(token, stockId, orderQuantity); 
 		OrdersEntity order = orderRepo.findById(orderId).get();
 		createDummyPayment(order);
 		confirmOrder(token, orderId);
@@ -419,6 +423,7 @@ public class MicrosoftDynamicsIntegrationTest {
 		IntegrationMappingEntity orderMapping = 
 				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndLocalValue(ORG_ID, ORDER.getValue(), order.getId().toString())
 							.orElse(null);
+		@SuppressWarnings("unused")
 		String expectedBody = getPaymentApiRequestExpectedBody(orderMapping.getRemoteValue(), payment.getAmount());
 		if(usingMockServer) {
 			mockServerRule.getClient().verify(
@@ -513,16 +518,8 @@ private PaymentEntity createDummyPayment(OrdersEntity order) {
 
 
 
-	private void confirmOrder(String token, Long orderId) {
-		JSONObject updateRequest = createOrderRequestWithBasketItems(CLIENT_CONFIRMED);
-		updateRequest.put("order_id", orderId);
-		
-		ResponseEntity<String> updateResponse = 
-				template.postForEntity("/order/update"
-										, getHttpEntity( updateRequest.toString(), token)
-										, String.class);
-		
-		assertEquals(OK, updateResponse.getStatusCode());
+	private void confirmOrder(String token, Long orderId) throws BusinessException {
+		orderService.checkoutOrder(orderId);
 	}
 
 
@@ -530,11 +527,7 @@ private PaymentEntity createDummyPayment(OrdersEntity order) {
 
 
 
-	private Long createNewOrder(String token) {
-		Long stockId = 60001L;
-		Integer orderQuantity = 5;
-		
-		//---------------------------------------------------------------
+	private Long createNewOrder(String token, Long stockId, Integer orderQuantity) {
 		JSONObject request = createOrderRequestWithBasketItems(NEW, item(stockId, orderQuantity));
 		ResponseEntity<OrderResponse> response = 
 				template.postForEntity("/order/create"
@@ -694,6 +687,41 @@ private PaymentEntity createDummyPayment(OrdersEntity order) {
 	}
 
 
+	
+	
+	@Test(expected = StockValidationException.class)
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_order_create_test_data.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void createOrderWithNoExtStockTest() throws Throwable {
+		String token = "123eerd";
+		Long stockId = 60003L;
+		Integer orderQuantity = 5;
+		
+		Long orderId = createNewOrder(token, stockId, orderQuantity); 
+		OrdersEntity order = orderRepo.findById(orderId).get();
+		createDummyPayment(order);
+		
+		orderService.validateOrderIdsForCheckOut(asList(orderId));
+	}
+	
+	
+	
+	
+	
+	@Test(expected = StockValidationException.class)
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_order_create_test_data.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void createOrderWithDelayedExtStockTest() throws Throwable {
+		String token = "123eerd";
+		Long stockId = 60002L;
+		Integer orderQuantity = 5;
+		
+		Long orderId = createNewOrder(token, stockId, orderQuantity); 
+		OrdersEntity order = orderRepo.findById(orderId).get();
+		createDummyPayment(order);
+		
+		orderService.validateOrderIdsForCheckOut(asList(orderId));
+	}
 
 
 
