@@ -95,7 +95,13 @@ public class OrganizationEntity implements BaseEntity {
         organizationRepresentationObject.setType(getType()!=null?getType().name():null);
         organizationRepresentationObject.setThemeId(getThemeId());
 
-        organizationRepresentationObject.setInfo(getExtraInfo());
+        if (getExtraInfo() != null) {
+            try {
+                JSONObject json = new JSONObject(getExtraInfo());
+                organizationRepresentationObject.setInfo(json.toMap());
+            } catch (Exception e) {}
+        }
+
 
         return organizationRepresentationObject;
     }

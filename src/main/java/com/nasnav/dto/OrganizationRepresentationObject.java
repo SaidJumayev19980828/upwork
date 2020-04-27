@@ -74,6 +74,6 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     private ThemeRepresentationObject theme;
 
     @JsonProperty("extra_info")
-    private String info;
+    private Map info;
 }
 
