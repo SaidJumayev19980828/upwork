@@ -48,8 +48,14 @@ public class ThemeService {
     }
 
 
-    public List<ThemeDTO> listThemes() {
-        return themesRepo.findAll().stream()
+    public List<ThemeDTO> listThemes(Integer classId) {
+        List<ThemeEntity> themesList;
+        if (classId != null) {
+            themesList = themesRepo.findByThemeClassEntity_Id(classId);
+        } else {
+            themesList = themesRepo.findAll();
+        }
+        return themesList.stream()
                 .map(theme -> (ThemeDTO)theme.getRepresentation())
                 .collect(toList());
     }
@@ -173,23 +179,35 @@ public class ThemeService {
 
     
     @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
-    public void assignOrgThemeClass(Long orgId, Integer themeClassId) throws BusinessException {
+    public void assignOrgThemeClass(Long orgId, List<Integer> classIds) throws BusinessException {
         Optional<OrganizationEntity> optionalOrg = orgRepo.findById(orgId);
         checkOrgExistence(optionalOrg, orgId);
         OrganizationEntity org = optionalOrg.get();
 
-        Optional<ThemeClassEntity> themeClass = themeClassRepo.findById(themeClassId);
-        checkThemeClassExistence(themeClass, themeClassId);
+        List<ThemeClassEntity> themeClass = themeClassRepo.findByIdIn(classIds);
+        checkThemeClassesExist(classIds, themeClass.stream().map(c -> c.getId()).collect(toList()));
 
         Set<ThemeClassEntity> orgClasses = org.getThemeClasses();
-        if (orgClasses.contains(themeClass.get()))
-            throw new BusinessException("Theme class is already assigned to organization!",
-                    "INVALID_OPERATION", NOT_ACCEPTABLE);
 
-        orgClasses.add(themeClass.get());
+        for (ThemeClassEntity c : themeClass) {
+            if (orgClasses.contains(c))
+                throw new BusinessException("Theme class is already assigned to organization!",
+                        "INVALID_OPERATION", NOT_ACCEPTABLE);
+        }
+
+        orgClasses.addAll(themeClass);
         orgRepo.save(org);
     }
 
+
+    private void checkThemeClassesExist(List<Integer> requestIds, List<Integer> currentIds) throws BusinessException {
+        requestIds.removeAll(currentIds);
+
+        if (!requestIds.isEmpty()) {
+            throw new BusinessException(format("Provided class ids %s doesn't have corresponding classes", requestIds.toString()),
+                    "INVALID_PARAM: classId", NOT_ACCEPTABLE);
+        }
+    }
     
     
     @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})

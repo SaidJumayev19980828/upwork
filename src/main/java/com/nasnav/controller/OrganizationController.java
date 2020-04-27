@@ -282,8 +282,8 @@ public class OrganizationController {
     @ResponseStatus(OK)
     public void assignOrgThemeClass(@RequestHeader (value = "User-Token") String userToken,
                                    @RequestParam("org_id") Long orgId,
-                                   @RequestParam(value = "class_id") Integer classId) throws BusinessException {
-        themeService.assignOrgThemeClass(orgId, classId);
+                                   @RequestParam(value = "class_id") List<Integer> classIds) throws BusinessException {
+        themeService.assignOrgThemeClass(orgId, classIds);
     }
 
 
