@@ -843,6 +843,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 	private void importSingleShopProducts(ProductImportInputData inputData) {
 		try {
+			logger.info(format(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> importing products of shop[%d]"
+					, inputData.getMetadata().getShopId()));
 			ImportProductContext context = dataImportService.importProducts(inputData.getProducts(), inputData.getMetadata());
 			ObjectMapper mapper = new ObjectMapper();
 			String importReport = mapper.writeValueAsString(context);
