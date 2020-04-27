@@ -19,6 +19,7 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -277,13 +278,30 @@ public class StockServiceImpl implements StockService {
 
 	private List<StocksEntity> prepareStocksToUpdate(List<StockUpdateDTO> stocks, VariantCache variantCache,
 			Map<Long, ShopsEntity> shopCache, VariantStockCache stockCache) {
+		Set<String> seen = new HashSet<>();
 		return IntStream
 				.range(0, stocks.size())
 				.mapToObj(i -> new IndexedData<>(i, stocks.get(i)))
+				.filter(stk -> isNotSeenBefore(seen, stk))
 				.map(stk -> prepareStockEntity(stk, variantCache, shopCache, stockCache))
 				.collect(toList());
 	}
 
+
+
+	private boolean isNotSeenBefore(Set<String> seen, IndexedData<StockUpdateDTO> stk) {
+		String key = variantIdAndShopIdCombination(stk.getData());
+		return seen.add(key);
+	}
+
+	
+	
+	
+	private String variantIdAndShopIdCombination(StockUpdateDTO stk) {
+		Long variantId = ofNullable(stk).map(StockUpdateDTO::getVariantId).orElse(-1L);
+		Long shopId = ofNullable(stk).map(StockUpdateDTO::getShopId).orElse(-1L);
+		return format("%d-%d", variantId, shopId);
+	}
 
 
 	private VariantStockCache createStocksCache(List<StockUpdateDTO> stocks) {

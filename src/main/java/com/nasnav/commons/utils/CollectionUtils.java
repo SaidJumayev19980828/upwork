@@ -6,6 +6,9 @@ import static java.util.stream.Collectors.toList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import reactor.core.publisher.Flux;
 
@@ -24,4 +27,20 @@ public class CollectionUtils {
 				.single(emptyList())
 				.block();
 	} 
+	
+	
+	
+	public static <T,U> List<T> distinctBy(Collection<T> collection, Function<? super T, ? extends U> keyExtractor){
+		Set<U> seen = ConcurrentHashMap.newKeySet();
+		return collection
+				.stream()
+				.filter(e -> distinctByKey(e, keyExtractor, seen))
+				.collect(toList());
+	}
+	
+	
+	private static <T,U> boolean  distinctByKey(T element, Function<? super T, ? extends U> keyExtractor, Set<U> seen) {
+		U distinctKey = keyExtractor.apply(element);
+	    return seen.add(distinctKey);
+	}
 }

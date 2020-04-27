@@ -1,3 +1,3 @@
-variant_id,external_id,barcode,path
+variant_id,external_id,barcode,image_file
 ,,ABCDEFG123,nasnav--Test_Photo.png
 ,,NOTEXISITING,nasnav--Test_Photo_UPDATED.png

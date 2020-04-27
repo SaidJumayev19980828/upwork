@@ -8,7 +8,6 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_SHOP_ID_N
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_CHANGE_OTHER_ORG_SHOP;
 import static com.nasnav.enumerations.ImageCsvTemplateType.EMPTY;
 import static com.nasnav.enumerations.ImageCsvTemplateType.PRODUCTS_WITH_NO_IMGS;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -131,8 +130,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	
 	private final Set<String> CSV_BASE_HEADERS = new HashSet<String>(fieldToColumnHeaderMapping.values());
 	
-	public static final List<String> IMG_CSV_BASE_HEADERS = asList("variant_id","external_id","barcode","image_file");
-
+	
 	@Transactional(rollbackFor = Throwable.class)
 	public ImportProductContext importProductListFromCSV(@Valid MultipartFile file,
 			@Valid ProductListImportDTO csvImportMetaData) throws BusinessException, ImportProductException {
