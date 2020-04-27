@@ -742,12 +742,27 @@ public class IntegrationServiceImpl implements IntegrationService {
 		
 		addEveryShopLocalId(importedProducts);
 		
-		return importedProducts;
+		return filterProductsWithNoEixstingShop(importedProducts);
 	}
 
 	
 	
 	
+	private IntegrationImportedProducts filterProductsWithNoEixstingShop(IntegrationImportedProducts importedProducts) {
+		List<ShopImportedProducts> filteredAllShopsProducts = 
+				importedProducts
+					.getAllShopsProducts()
+					.stream()
+					.filter(shopProducts -> shopProducts.getShopId() > 0)
+					.collect(toList());
+		return new IntegrationImportedProducts(importedProducts.getTotalPages(), filteredAllShopsProducts);
+	}
+
+
+
+
+
+
 	private Integer recitfyPageCount(Integer value) {
 		return ofNullable(value)
 				.map(val -> val <= 0? 1: val)
@@ -781,10 +796,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 	private void addShopLocalId(ShopImportedProducts shopProducts) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		String externalShopId = shopProducts.getExternalShopId();
-		String shopIdStr = 
-				mappingRepo.findByOrganizationIdAndMappingType_typeNameAndRemoteValue(orgId, MappingType.SHOP.getValue(), externalShopId)
-					.map(IntegrationMappingEntity::getLocalValue)
-					.orElse(null);
+		String shopIdStr = ofNullable(getLocalMappedValue(orgId, SHOP, externalShopId)).orElse("-1");
+				
 		Long shopId = -1L;
 		
 		try {
