@@ -14,8 +14,10 @@ public class OrganizationDTO {
 
     @ApiModel(value = "Organization Creation Data")
     public static class OrganizationCreationDTO {
+
+        public Long id;
+
         @ApiModelProperty(value = "Organization's name", example = "Super Pharm", required = true)
-        @JsonProperty("name")
         public String name;
 
         @ApiModelProperty(value = "Url-compatible name, used as part of the URL path for organization shop", example = "super-pharm", required = true)

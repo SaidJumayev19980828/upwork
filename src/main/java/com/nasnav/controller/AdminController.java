@@ -34,7 +34,7 @@ public class AdminController {
 	@Autowired
 	private ThemeService themeService;
 
-    @ApiOperation(value = "Create an Organization", nickname = "OrganizationCreation", code = 200)
+    @ApiOperation(value = "Create/update an Organization", nickname = "OrganizationCreation", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),

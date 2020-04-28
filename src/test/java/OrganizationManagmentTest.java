@@ -1,3 +1,4 @@
+import static com.nasnav.test.commons.TestCommons.*;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
@@ -8,6 +9,7 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
+import com.nasnav.persistence.OrganizationEntity;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
@@ -114,7 +116,7 @@ public class OrganizationManagmentTest {
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("logo", file);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
@@ -126,7 +128,7 @@ public class OrganizationManagmentTest {
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("logo", file);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
         Assert.assertEquals(406, response.getStatusCode().value());
 
@@ -135,7 +137,7 @@ public class OrganizationManagmentTest {
         map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("logo", file);
-        json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
         Assert.assertEquals(406, response.getStatusCode().value());
 
@@ -144,7 +146,7 @@ public class OrganizationManagmentTest {
         map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("logo", file);
-        json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
@@ -155,7 +157,7 @@ public class OrganizationManagmentTest {
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("logo", organizationsDataInsert);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
@@ -163,7 +165,7 @@ public class OrganizationManagmentTest {
     @Test
     public void createOrganizationSuccessTest() {
         String body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad-pant-trello\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"abcdefg");
+        HttpEntity<Object> json = getHttpEntity(body,"abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
                 OrganizationResponse.class);
         organizationRepository.deleteById(response.getBody().getOrganizationId());
@@ -173,13 +175,13 @@ public class OrganizationManagmentTest {
     @Test
     public void createOrganizationMissingValuesTest() {
         String body = "{\"p_name\":\"solad-pant\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body, "abcdefg");
+        HttpEntity<Object> json = getHttpEntity(body, "abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
                 OrganizationResponse.class);
         Assert.assertEquals(406, response.getStatusCode().value());
 
         body = "{\"name\":\"Solad Pant\"}";
-        json = TestCommons.getHttpEntity(body,"abcdefg");
+        json = getHttpEntity(body,"abcdefg");
         response = template.postForEntity("/admin/organization", json, OrganizationResponse.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
@@ -187,13 +189,13 @@ public class OrganizationManagmentTest {
     @Test
     public void createOrganizationInvalidValuesTest() {
         String body = "{\"name\":\"23Solad Pant#\", \"p_name\":\"solad-pant\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"abcdefg");
+        HttpEntity<Object> json = getHttpEntity(body,"abcdefg");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
                 OrganizationResponse.class);
         Assert.assertEquals(406, response.getStatusCode().value());
 
         body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad_pant#$!^*\"}";
-        json = TestCommons.getHttpEntity(body,"abcdefg");
+        json = getHttpEntity(body,"abcdefg");
         response = template.postForEntity("/admin/organization", json, OrganizationResponse.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
@@ -202,7 +204,7 @@ public class OrganizationManagmentTest {
     @Test
     public void createOrganizationUnauthorizedUserTest() {
         String body = "{\"name\":\"Solad Pant\", \"p_name\":\"solad-pant\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
+        HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization", json,
                 OrganizationResponse.class);
         Assert.assertEquals(403, response.getStatusCode().value());
@@ -241,6 +243,20 @@ public class OrganizationManagmentTest {
         url = new URI("https://www.invaliddomain-egypt.com/categories/");
         response = template.getForEntity("/navbox/orgid?url="+ url, String.class);
         checkFailResponse(response);
+    }
+
+    @Test
+    public void updateOrgNameTest () {
+        JSONObject body = json().put("id", 99001)
+                                .put("name", "new org name")
+                                .put("p_name", "org-name");
+        HttpEntity<Object> json = getHttpEntity(body.toString(),"abcdefg");
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization",
+                json, OrganizationResponse.class);
+        Assert.assertEquals(200, response.getStatusCode().value());
+        OrganizationEntity org = organizationRepository.findOneById(99001L);
+        Assert.assertEquals("new org name", org.getName());
+        Assert.assertEquals("org-name", org.getPname());
     }
 
 
