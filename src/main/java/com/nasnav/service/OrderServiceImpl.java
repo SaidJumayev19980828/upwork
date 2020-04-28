@@ -662,7 +662,8 @@ public class OrderServiceImpl implements OrderService {
 		
 		if ( newStatus.equals(NEW)) {
 			orderResponse = updateOrderBasket(orderJsonDto, orderEntity);
-		}else if(newStatus.equals(CLIENT_CONFIRMED) && !Objects.equals(oldStatus, CLIENT_CONFIRMED)) {
+		}else if(newStatus.equals(CLIENT_CONFIRMED) 
+					&& Objects.equals(oldStatus, NEW)) {
 			reduceStocks(orderEntity);
 		}
 		
