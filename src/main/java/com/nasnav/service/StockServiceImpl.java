@@ -27,6 +27,8 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,6 +80,9 @@ public class StockServiceImpl implements StockService {
     
     @Autowired
     private CachingHelper cachingHelper;
+    
+    @Autowired
+    private EntityManager entityManager;
 
     public List<StocksEntity> getProductStockForShop(Long productId, Long shopId) throws BusinessException {
         Optional<ProductEntity> prodOpt = productRepo.findById(productId);
@@ -599,6 +604,21 @@ public class StockServiceImpl implements StockService {
 		int newQuantity = stocksEntity.getQuantity() - ofNullable(quantity).orElse(0).intValue();
 		stocksEntity.setQuantity(newQuantity);
 		return stockRepo.save(stocksEntity);
+	}
+
+
+
+	@Override
+	public void updateStockQuantity(StockUpdateDTO updateDto) {
+		Query query = entityManager.createQuery(
+						"UPDATE StocksEntity stock SET quantity = :quantity "
+						+ " WHERE stock.shopsEntity.id = :shopId "
+						+ " AND stock.productVariantsEntity.id = :variantId");
+		query
+		.setParameter("quantity", updateDto.getQuantity())
+		.setParameter("shopId", updateDto.getShopId())
+		.setParameter("variantId", updateDto.getVariantId())
+		.executeUpdate();
 	}
 	
 }

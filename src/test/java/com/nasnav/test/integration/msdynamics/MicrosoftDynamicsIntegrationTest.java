@@ -9,7 +9,6 @@ import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static com.nasnav.test.commons.TestCommons.jsonArray;
 import static com.nasnav.test.commons.TestCommons.readResource;
-import static com.nasnav.test.integration.msdynamics.IntegrationTestCommon.GET_BY_ID_DELAY;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -39,14 +38,12 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
@@ -69,24 +66,19 @@ import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.dto.UserDTOs.UserRegistrationObject;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
-import com.nasnav.integration.IntegrationServiceImpl;
 import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.OrderService;
-import com.nasnav.service.SecurityService;
 import com.nasnav.test.model.Item;
 
 @RunWith(SpringRunner.class)
@@ -163,11 +155,7 @@ public class MicrosoftDynamicsIntegrationTest {
 	@Autowired
 	private OrderService orderService;
 
-	@MockBean
-	private SecurityService securityService;
 	
-	@Autowired
-	private StockRepository stockRepo;
 	
 	 @Rule
 	 public MockServerRule mockServerRule = new MockServerRule(this);
@@ -477,7 +465,7 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	
 	
-private PaymentEntity createDummyPayment(OrdersEntity order) {
+	private PaymentEntity createDummyPayment(OrdersEntity order) {
 		
 		PaymentEntity payment = new PaymentEntity();
 		JSONObject paymentObj = 
@@ -701,53 +689,6 @@ private PaymentEntity createDummyPayment(OrdersEntity order) {
 
 	
 	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_order_create_test_data.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-	public void createOrderWithNoExtStockTest() throws Throwable {		
-		Mockito.when(securityService.getCurrentUserOrganizationId()).thenReturn(99001L);
-		
-		Long stockId = 60003L;
-		StocksEntity stockBefore = stockRepo.findById(stockId).get();
-		assertNotEquals(0, stockBefore.getQuantity().intValue());
-		//--------------------------------------
-		Long orderId = 330033L;
-		OrdersEntity order = orderRepo.findById(orderId).get();
-		createDummyPayment(order);
-		
-		boolean isThrown = false;
-		try {
-			orderService.validateOrderIdsForCheckOut(asList(orderId));
-		}catch(StockValidationException e) {
-			isThrown = true;
-		}
-		
-		//--------------------------------------
-		assertTrue(isThrown);
-		
-		StocksEntity stockAfter = stockRepo.findById(stockId).get();
-		assertEquals(0, stockAfter.getQuantity().intValue());
-	}
-	
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_order_create_test_data.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-	public void createOrderWithDelayedExtStockTest() throws Throwable {
-		IntegrationServiceImpl.STOCK_REQUEST_TIMEOUT = GET_BY_ID_DELAY - 1;
-		Mockito.when(securityService.getCurrentUserOrganizationId()).thenReturn(99001L);
-		
-		Long orderId = 330034L;
-		OrdersEntity order = orderRepo.findById(orderId).get();
-		createDummyPayment(order);
-		
-		orderService.validateOrderIdsForCheckOut(asList(orderId));
-		
-		assertTrue("The validation shouldn't throw an exception",true);
-	}
 
 
 

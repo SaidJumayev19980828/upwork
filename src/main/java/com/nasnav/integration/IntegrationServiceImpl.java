@@ -36,6 +36,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static reactor.core.scheduler.Schedulers.boundedElastic;
 
 import java.io.PrintWriter;
@@ -883,7 +884,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 
 	@Override
-	public Integer getExternalStock(Long localVariantId, Long localShopId) throws BusinessException {
+	public Optional<Integer> getExternalStock(Long localVariantId, Long localShopId) throws BusinessException {
 		
 		validateStockFetchParam(localVariantId, localShopId);		
 		
@@ -896,7 +897,10 @@ public class IntegrationServiceImpl implements IntegrationService {
 		//this method should instead throw a well-know exception if no stock were found, and upper layers decides what to user instead
 		//-------------------------------------------------------------
 		if(anyBlankOrNull(externalVariantId, externalShopId)) {
-			return getVariantLocalStockForShop(localVariantId, localShopId);
+			throw new BusinessException(
+					format("Invalid stock parameters : variantId-shopId are [%d-%d]", localVariantId, localShopId)
+					, "INVALID PARAMETERS"  
+					, NOT_ACCEPTABLE);
 		}
 		//-------------------------------------------------------------
 		
@@ -906,9 +910,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		return pushIntegrationEvent(event, (e,t) -> handleStockFetchFailure(localVariantId, localShopId, t))
 				.onErrorReturn(null)
 				.blockOptional(Duration.ofSeconds(STOCK_REQUEST_TIMEOUT))
-				.map(res -> res.getReturnedData())
-				//-------------------------------------------------------------
-				.orElseGet( () -> getVariantLocalStockForShop(localVariantId, localShopId));
+				.map(res -> res.getReturnedData());
 	}
 
 

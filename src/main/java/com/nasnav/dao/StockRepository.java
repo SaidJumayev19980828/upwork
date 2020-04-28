@@ -82,4 +82,5 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 			+ " where bundleStock.id = :stockId "
 			+ " and TYPE(product) = BundleEntity")
 	List<StocksEntity> findByBundleStockId(@Param("stockId")Long bundleStockId);
+	
 }
