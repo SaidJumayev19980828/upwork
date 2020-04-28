@@ -264,15 +264,16 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Override
 	public Long getCurrentUserOrganizationId() {
-		return Optional.ofNullable( getCurrentUser() )
-						.map(BaseUserEntity::getOrganizationId)
-						.orElseThrow(() -> new IllegalStateException("Current User has no organization!"));
+		return ofNullable( getCurrentUser() )
+				.map(BaseUserEntity::getOrganizationId)
+				.orElseThrow(() -> new IllegalStateException("Current User has no organization!"));
 	}
 
 
 	@Override
 	public Long getCurrentUserShopId() {
-		return Optional.ofNullable( getCurrentUser() )
+		return ofNullable( getCurrentUser() )
+				.filter(user -> user instanceof EmployeeUserEntity)
 				.map(user -> (EmployeeUserEntity)user)
 				.map(EmployeeUserEntity::getShopId)
 				.orElseThrow(() -> new IllegalStateException("Current User has no shop!"));
@@ -282,10 +283,10 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Override
 	public OrganizationEntity getCurrentUserOrganization() {
-		return Optional.ofNullable( getCurrentUser() )
-						.map(BaseUserEntity::getOrganizationId)
-						.flatMap(orgRepo::findById)
-						.orElseThrow(() -> new IllegalStateException("Current User has no organization!"));
+		return ofNullable( getCurrentUser() )
+				.map(BaseUserEntity::getOrganizationId)
+				.flatMap(orgRepo::findById)
+				.orElseThrow(() -> new IllegalStateException("Current User has no organization!"));
 	}
 
 
