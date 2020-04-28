@@ -347,8 +347,7 @@ public class OrganizationService {
     
     
     
-    
-    @CacheEvict(allEntries = true, cacheNames = {"brands"})
+    @CacheEvict(allEntries = true, cacheNames = {"brands","organizations_by_name", "organizations_by_id"})
     public OrganizationResponse validateAndUpdateBrand(BrandDTO json, MultipartFile logo, MultipartFile banner) throws BusinessException {
         if (json.operation != null) {
             if (json.operation.equals("create"))
