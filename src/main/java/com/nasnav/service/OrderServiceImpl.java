@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
@@ -42,6 +43,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
@@ -64,6 +66,8 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -84,6 +88,7 @@ import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.ShippingAddress;
+import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
@@ -102,6 +107,7 @@ import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
@@ -125,6 +131,8 @@ public class OrderServiceImpl implements OrderService {
 
 	private final EmployeeUserServiceHelper employeeUserServiceHelper;
 	
+	private Logger logger = LogManager.getLogger();
+	
 	@Autowired
 	private EntityManager em;
 
@@ -136,6 +144,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	@Autowired
 	private IntegrationService integrationService;
+	
 
 	private Map<OrderStatus, Set<OrderStatus>> nextOrderStatusSet;
 	private Set<OrderStatus> orderStatusForCustomers;
@@ -1328,11 +1337,52 @@ public class OrderServiceImpl implements OrderService {
 	private void validateOrderForCheckout(OrdersEntity order) {
 		validateOrderStatusForCheckOut(order);
 		Long orgId = order.getOrganizationEntity().getId();
-		if(integrationService.hasActiveIntegration(orgId))
+		if(integrationService.hasActiveIntegration(orgId)) {
+			updateOrderItemStocksFromExternalSys(order);
+		}
 		order.getBasketsEntity().forEach(this::validateBasketItem);
 	}
 
 
+
+
+
+	private void updateOrderItemStocksFromExternalSys(OrdersEntity order) {
+		order.getBasketsEntity().forEach(this::updateItemStockFromExternalSys);
+	}
+
+	
+	
+
+	private void updateItemStockFromExternalSys(BasketsEntity item) {		
+		try {
+			StockBasicData stockData = basketRepository.getItemStockBasicDataById(item.getId());
+			Long variantId = stockData.getVariantId();
+			Long shopId = stockData.getShopId();
+			if(anyIsNull(variantId, shopId)) {
+				throw new BusinessException(
+						format("Basket item[%d] has invalid variant-shop data [%d - %d]", item.getId(), variantId, shopId)
+						, "INVALID DATA"
+						, INTERNAL_SERVER_ERROR);
+			}
+			Integer extStock = integrationService.getExternalStock(stockData.getVariantId(), stockData.getShopId());
+			updateStock(stockData, extStock);
+		} catch (Throwable e) {
+			logger.error(e, e);
+		}
+	}
+
+
+
+
+
+	private void updateStock(StockBasicData stockData, Integer extStock) throws BusinessException {
+		StockUpdateDTO updateDto = new StockUpdateDTO();
+		updateDto.setQuantity(extStock);
+		updateDto.setVariantId(stockData.getVariantId());
+		updateDto.setShopId(stockData.getShopId());
+		stockService.updateStock(updateDto);
+	}
 
 
 
@@ -1342,7 +1392,8 @@ public class OrderServiceImpl implements OrderService {
 					.map(OrdersEntity::getStatus)
 					.orElse(-1);
 		if(!NEW.getValue().equals(status)) {
-			throw new RuntimeBusinessException(format("Order with id[%d] has invalid status[%d] and can't be checked out!", order.getId(), status)
+			throw new RuntimeBusinessException(
+					format("Order with id[%d] has invalid status[%d] and can't be checked out!", order.getId(), status)
 					, "Invalid Operation"
 					, NOT_ACCEPTABLE);
 		}

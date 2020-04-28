@@ -56,6 +56,7 @@ import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.service.helpers.ProductCsvRowProcessor;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
+import com.nasnav.service.model.importproduct.csv.CsvRow;
 import com.univocity.parsers.common.DataProcessingException;
 import com.univocity.parsers.common.ParsingContext;
 import com.univocity.parsers.common.RowProcessorErrorHandler;

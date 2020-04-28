@@ -107,6 +107,7 @@ INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67007, 'ORDER
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '50001', 'FOarabia', 99001);
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '55555', 'Delsey', 99001);
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67006, '310001', '11CYM-0010001', 99001);
+INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67006, '310002', '11CYM-0015566', 99001);
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67006, '310003', '11CYM-0015551', 99001);
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67004, '88', 'UNR-023538', 99001);
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id) VALUES(67005, '50002', 'FOoscar', 99001);
@@ -117,3 +118,13 @@ INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value,
 -- Mandatory integration parameters
 INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(6601, 'INTEGRATION_MODULE', TRUE);
 INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(6602, 'MAX_REQUESTS_PER_SECOND', TRUE);
+
+
+--inserting orders
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330033, 88, now(), now(), 99001, 0, 50001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330034, 88, now(), now(), 99001, 0, 50001);
+
+-- insert order items
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330033, 60003, 5, 600.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330034, 60002, 5, 600.0, 1);
+

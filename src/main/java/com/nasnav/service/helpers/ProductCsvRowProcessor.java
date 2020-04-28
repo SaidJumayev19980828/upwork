@@ -13,7 +13,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.service.CsvRow;
+import com.nasnav.service.model.importproduct.csv.CsvRow;
 import com.univocity.parsers.common.Context;
 import com.univocity.parsers.common.processor.BeanListProcessor;
 import com.univocity.parsers.common.record.Record;

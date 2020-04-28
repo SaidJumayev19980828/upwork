@@ -143,6 +143,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 
 	private static final Integer MAX_PG_SIZE = 500;
 
+	public static long STOCK_REQUEST_TIMEOUT = 30;
+
 	public static  long REQUEST_TIMEOUT_SEC = 300L;
 
 	private final Logger logger = Logger.getLogger(getClass());
@@ -902,7 +904,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 		
 		//the webclient will return empty Mono if the response was not OK
 		return pushIntegrationEvent(event, (e,t) -> handleStockFetchFailure(localVariantId, localShopId, t))
-				.blockOptional(Duration.ofSeconds(REQUEST_TIMEOUT_SEC))
+				.onErrorReturn(null)
+				.blockOptional(Duration.ofSeconds(STOCK_REQUEST_TIMEOUT))
 				.map(res -> res.getReturnedData())
 				//-------------------------------------------------------------
 				.orElseGet( () -> getVariantLocalStockForShop(localVariantId, localShopId));

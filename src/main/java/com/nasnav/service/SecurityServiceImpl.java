@@ -264,7 +264,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Override
 	public Long getCurrentUserOrganizationId() {
-		return Optional.ofNullable( getCurrentUser() )
+		return ofNullable( getCurrentUser() )
 						.map(BaseUserEntity::getOrganizationId)
 						.orElseThrow(() -> new IllegalStateException("Current User has no organization!"));
 	}
