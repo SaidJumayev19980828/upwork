@@ -190,8 +190,8 @@ public class MastercardSession {
         }
         if (json.getString("successIndicator").equals(paymentIndicator)) {
             for (OrdersEntity order: this.includedOrders) {
-            	orderService.checkoutOrder(order.getId());
-            	orderService.setOrderAsPaid(payment, order);
+            	OrdersEntity saved = orderService.checkoutOrder(order.getId());
+            	orderService.setOrderAsPaid(payment, saved);
             }
             ordersRepository.flush();
             
