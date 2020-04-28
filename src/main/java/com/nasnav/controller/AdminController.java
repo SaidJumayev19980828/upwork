@@ -111,8 +111,9 @@ public class AdminController {
             @io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to list theme"),
     })
     @GetMapping(value = "themes", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public List<ThemeDTO> listThemes(@RequestHeader (value = "User-Token") String userToken) {
-        return themeService.listThemes();
+    public List<ThemeDTO> listThemes(@RequestHeader (value = "User-Token") String userToken,
+									 @RequestParam(value = "class_id", required = false) Integer classId) {
+        return themeService.listThemes(classId);
     }
 
 
