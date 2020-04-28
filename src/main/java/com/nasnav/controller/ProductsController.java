@@ -156,7 +156,8 @@ public class ProductsController {
 	@ResponseStatus(HttpStatus.OK)
 	@DeleteMapping(value = "image",
             produces = APPLICATION_JSON_UTF8_VALUE)
-    public ProductImageDeleteResponse deleteProductImage(@RequestParam("image_id") @Valid Long imageId)
+    public ProductImageDeleteResponse deleteProductImage(@RequestHeader("User-Token") String token
+    		,@RequestParam("image_id") @Valid Long imageId)
             		throws BusinessException {
 		return  productImgService.deleteImage(imageId);
     }

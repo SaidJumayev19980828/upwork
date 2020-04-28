@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
@@ -42,6 +43,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
@@ -64,6 +66,8 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -91,6 +95,9 @@ import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.exceptions.StockValidationException;
+import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
@@ -100,6 +107,7 @@ import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
@@ -123,6 +131,8 @@ public class OrderServiceImpl implements OrderService {
 
 	private final EmployeeUserServiceHelper employeeUserServiceHelper;
 	
+	private Logger logger = LogManager.getLogger();
+	
 	@Autowired
 	private EntityManager em;
 
@@ -131,6 +141,10 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	private ShopsRepository shopsRepo;
+	
+	@Autowired
+	private IntegrationService integrationService;
+	
 
 	private Map<OrderStatus, Set<OrderStatus>> nextOrderStatusSet;
 	private Set<OrderStatus> orderStatusForCustomers;
@@ -440,10 +454,6 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 	
-	
-	private void validateBasketItems(OrdersEntity order) throws BusinessException {	
-		order.getBasketsEntity().forEach(this::validateBasketItem);
-	}
 
 
 	private Map<Long, List<BasketItemDTO>> groupBasketsByShops(List<BasketItemDTO> baskets) {
@@ -538,7 +548,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	private RuntimeBusinessException getInvalidRuntimeOrderException(String msg, Object... msgParams) {
 		String error = INVALID_ORDER.toString();
-		return new RuntimeBusinessException( format(msg, msgParams), error, NOT_ACCEPTABLE);
+		return new StockValidationException( format(msg, msgParams), error, NOT_ACCEPTABLE);
 	}
 	
 	
@@ -1302,8 +1312,11 @@ public class OrderServiceImpl implements OrderService {
 
 
 
+	//TODO: i don't like that validations is also doing a stock update from external system, but for now, i can't put this action
+	//somewhere else, as the validation-checkout are not done at the same point now. 
+	//validation is done before payment and checkout after it!
 	@Override
-	@Transactional
+	@Transactional(noRollbackFor = StockValidationException.class)	//the validation may update the stock from external system as well
 	public void validateOrdersForCheckOut(List<OrdersEntity> orders){
 		orders.forEach(this::validateOrderForCheckout);
 	}
@@ -1311,7 +1324,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	@Override
-	@Transactional
+	@Transactional(noRollbackFor = StockValidationException.class)	//the validation may update the stock from external system as well
 	public void validateOrderIdsForCheckOut(List<Long> orderIds){
 		List<OrdersEntity> orders = ordersRepository.findByIdIn(orderIds);
 		validateOrdersForCheckOut(orders);
@@ -1322,8 +1335,66 @@ public class OrderServiceImpl implements OrderService {
 	
 	private void validateOrderForCheckout(OrdersEntity order) {
 		validateOrderStatusForCheckOut(order);
+		Long orgId = order.getOrganizationEntity().getId();
+		//TODO add integration parameter for disabling this update if needed
+		if(integrationService.hasActiveIntegration(orgId)) {
+			updateOrderItemStocksFromExternalSys(order);
+		}
 		order.getBasketsEntity().forEach(this::validateBasketItem);
 	}
+
+
+
+
+
+	private void updateOrderItemStocksFromExternalSys(OrdersEntity order) {
+		order.getBasketsEntity().forEach(this::updateItemStockFromExternalSys);
+	}
+
+	
+	
+
+	private void updateItemStockFromExternalSys(BasketsEntity item) {		
+		try {
+			StockBasicData stockData = getItemStockData(item);
+			fetchAndUpdateStockIfExists(item, stockData);			
+		} catch (Throwable e) {
+			logger.error(e, e);
+		}
+	}
+
+
+
+
+
+	private StockBasicData getItemStockData(BasketsEntity item) throws BusinessException {
+		StockBasicData stockData = basketRepository.getItemStockBasicDataById(item.getId());
+		Long variantId = stockData.getVariantId();
+		Long shopId = stockData.getShopId();
+		if(anyIsNull(variantId, shopId)) {
+			throw new BusinessException(
+					format("Basket item[%d] has invalid variant-shop data [%d - %d]", item.getId(), variantId, shopId)
+					, "INVALID DATA"
+					, INTERNAL_SERVER_ERROR);
+		}
+		return stockData;
+	}
+
+
+
+
+
+	private void fetchAndUpdateStockIfExists(BasketsEntity item, StockBasicData stockData)
+			throws InvalidIntegrationEventException, BusinessException {
+		Optional<Integer> extStock = integrationService.getExternalStock(stockData.getVariantId(), stockData.getShopId());
+		if(extStock.isPresent()) {
+			StocksEntity stock = item.getStocksEntity();
+			stock.setQuantity(extStock.get());
+			stockRepository.save(stock);
+		}
+	}
+
+
 
 
 
@@ -1335,7 +1406,8 @@ public class OrderServiceImpl implements OrderService {
 					.map(OrdersEntity::getStatus)
 					.orElse(-1);
 		if(!NEW.getValue().equals(status)) {
-			throw new RuntimeBusinessException(format("Order with id[%d] has invalid status[%d] and can't be checked out!", order.getId(), status)
+			throw new RuntimeBusinessException(
+					format("Order with id[%d] has invalid status[%d] and can't be checked out!", order.getId(), status)
 					, "Invalid Operation"
 					, NOT_ACCEPTABLE);
 		}

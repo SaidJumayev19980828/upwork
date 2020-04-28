@@ -3,6 +3,7 @@ package com.nasnav.integration;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import com.nasnav.dto.IntegrationDictionaryDTO;
@@ -66,7 +67,7 @@ public interface IntegrationService {
 	 * @throws InvalidIntegrationEventException 
 	 * @throws BusinessException 
 	 * */
-	Integer getExternalStock(Long localVariantId, Long localShopId) throws InvalidIntegrationEventException, BusinessException;
+	Optional<Integer> getExternalStock(Long localVariantId, Long localShopId) throws InvalidIntegrationEventException, BusinessException;
 	
 	
 	/**
@@ -180,4 +181,6 @@ public interface IntegrationService {
 	ResponsePage<Void> importProductImages(IntegrationImageImportDTO param)throws BusinessException;
 	
 	IntegrationUtils getIntegrationUtils();
+	
+	boolean hasActiveIntegration(Long orgId);
 }

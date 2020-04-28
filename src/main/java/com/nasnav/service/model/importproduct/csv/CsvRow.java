@@ -1,4 +1,4 @@
-package com.nasnav.service;
+package com.nasnav.service.model.importproduct.csv;
 
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;

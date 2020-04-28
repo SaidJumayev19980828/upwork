@@ -1,5 +1,7 @@
 package com.nasnav.test.integration.msdynamics;
+import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.nasnav.test.commons.TestCommons.readResource;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
@@ -18,6 +20,7 @@ import com.google.common.net.MediaType;
 @Component
 public class IntegrationTestCommon {
 	
+	public static final long GET_BY_ID_DELAY = 3L;
 	public static final String DUMMY_CUSTOMER_ID = "UNR-023517";
 	public static final String DUMMY_PAYMENT_ID  = "UNR-168360";
 	private static final String PAYMENT_BODY_SCHEMA = 
@@ -38,6 +41,9 @@ public class IntegrationTestCommon {
     
     @Value("classpath:/json/ms_dynamics_integratoin_test/get_product_by_sku_response.json")
 	private Resource singleProductJson;
+    
+    @Value("classpath:/json/ms_dynamics_integratoin_test/get_product_by_sku_response_2.json")
+	private Resource singleProductJson2;
     
     
     @Value("classpath:/json/ms_dynamics_integratoin_test/get_customer_response.json")
@@ -73,6 +79,7 @@ public class IntegrationTestCommon {
 		 mockCreateOrderRequest(mockServerRule);
 		 mockReturnOrderRequest(mockServerRule);
 		 mockGetProductByIdRequest(mockServerRule);
+		 mockGetProductByIdRequestWithDelay(mockServerRule);
 		 mockGetProductByIdRequestFailure(mockServerRule);
 		 mockGetProductBySKURequest(mockServerRule);
 		 mockGetProductsRequestWithPagination(mockServerRule);
@@ -106,10 +113,11 @@ public class IntegrationTestCommon {
 				request().withMethod("GET")
 						.withPath("/api/products/6221105441060"))
 			.respond(
-					response().withBody(productBySkuResponse, MediaType.JSON_UTF_8) 
+					response().withBody(productBySkuResponse, JSON_UTF_8) 
 							  .withStatusCode(200))
 				;
 	}
+	
 	
 	
 	
@@ -122,10 +130,28 @@ public class IntegrationTestCommon {
 				request().withMethod("GET")
 						.withPath("/api/products/11CYM-0010001"))
 			.respond(
-					response().withBody(productBySkuResponse, MediaType.JSON_UTF_8) 
+					response().withBody(productBySkuResponse, JSON_UTF_8) 
 							  .withStatusCode(200))
 				;
 	}
+	
+	
+	
+
+	private  void mockGetProductByIdRequestWithDelay(MockServerRule mockServerRule) throws IOException {
+		String productBySkuResponse = new String( Files.readAllBytes(singleProductJson.getFile().toPath()) );
+    	 mockServerRule.getClient()
+			.when(
+				request().withMethod("GET")
+						.withPath("/api/products/11CYM-0015566"))
+			.respond(
+					response().withBody(productBySkuResponse, JSON_UTF_8) 
+							  .withStatusCode(200)
+							  .withDelay(SECONDS, GET_BY_ID_DELAY))
+				;
+	}
+	
+	
 	
 	
 	

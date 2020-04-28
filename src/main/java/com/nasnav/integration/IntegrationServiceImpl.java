@@ -35,6 +35,8 @@ import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static reactor.core.scheduler.Schedulers.boundedElastic;
 
 import java.io.PrintWriter;
@@ -115,7 +117,6 @@ import com.nasnav.persistence.IntegrationMappingTypeEntity;
 import com.nasnav.persistence.IntegrationParamEntity;
 import com.nasnav.persistence.IntegrationParamTypeEntity;
 import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.StocksEntity;
 import com.nasnav.request.GetIntegrationDictParam;
 import com.nasnav.request.GetIntegrationErrorParam;
 import com.nasnav.response.ShopResponse;
@@ -123,7 +124,6 @@ import com.nasnav.service.DataImportService;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.ShopService;
-import com.nasnav.service.StockService;
 import com.nasnav.service.model.ImportedImage;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 
@@ -141,6 +141,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 	private static final long PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN = 5760L;
 
 	private static final Integer MAX_PG_SIZE = 500;
+
+	public static long STOCK_REQUEST_TIMEOUT = 30;
 
 	public static  long REQUEST_TIMEOUT_SEC = 300L;
 
@@ -176,8 +178,6 @@ public class IntegrationServiceImpl implements IntegrationService {
 	@Autowired
 	private ShopsRepository shopRepo;
 	
-	@Autowired
-	private StockService stockService;
 	
 	@Autowired
 	private ProductImageService imgService;
@@ -807,7 +807,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 			throw new RuntimeBusinessException(
 					format(ERR_EXTERNAL_SHOP_NOT_FOUND, externalShopId)
 					, "INTEGRATION FAILURE"
-					, HttpStatus.INTERNAL_SERVER_ERROR);
+					, INTERNAL_SERVER_ERROR);
 		}
 		
 		shopProducts.setShopId(shopId);
@@ -898,7 +898,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 	
 
 	@Override
-	public Integer getExternalStock(Long localVariantId, Long localShopId) throws BusinessException {
+	public Optional<Integer> getExternalStock(Long localVariantId, Long localShopId) throws BusinessException {
 		
 		validateStockFetchParam(localVariantId, localShopId);		
 		
@@ -911,7 +911,10 @@ public class IntegrationServiceImpl implements IntegrationService {
 		//this method should instead throw a well-know exception if no stock were found, and upper layers decides what to user instead
 		//-------------------------------------------------------------
 		if(anyBlankOrNull(externalVariantId, externalShopId)) {
-			return getVariantLocalStockForShop(localVariantId, localShopId);
+			throw new BusinessException(
+					format("Invalid stock parameters : variantId-shopId are [%d-%d]", localVariantId, localShopId)
+					, "INVALID PARAMETERS"  
+					, NOT_ACCEPTABLE);
 		}
 		//-------------------------------------------------------------
 		
@@ -919,10 +922,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 		
 		//the webclient will return empty Mono if the response was not OK
 		return pushIntegrationEvent(event, (e,t) -> handleStockFetchFailure(localVariantId, localShopId, t))
-				.blockOptional(Duration.ofSeconds(REQUEST_TIMEOUT_SEC))
-				.map(res -> res.getReturnedData())
-				//-------------------------------------------------------------
-				.orElseGet( () -> getVariantLocalStockForShop(localVariantId, localShopId));
+				.blockOptional(Duration.ofSeconds(STOCK_REQUEST_TIMEOUT))
+				.map(res -> res.getReturnedData());
 	}
 
 
@@ -956,31 +957,20 @@ public class IntegrationServiceImpl implements IntegrationService {
 			throw new BusinessException(
 						format(ERR_FETCH_STOCK_VARIANT_NOT_EXISTS, variantId)
 						, "INVALID INTEGRATION OPERATION"
-						, HttpStatus.INTERNAL_SERVER_ERROR);
+						, INTERNAL_SERVER_ERROR);
 		}
 		
 		if(!shopdExists) {
 			throw new BusinessException(
 						format(ERR_FETCH_STOCK_SHOP_NOT_EXISTS, variantId, shopId)
 						, "INVALID INTEGRATION OPERATION"
-						, HttpStatus.INTERNAL_SERVER_ERROR);
+						, INTERNAL_SERVER_ERROR);
 		}
 	}
 
 
 
 
-
-
-	private Integer getVariantLocalStockForShop(Long localVariantId, Long localShopId) {
-		
-		List<StocksEntity> stocks = stockService.getVariantStockForShop(localVariantId, localShopId);
-		return stocks
-				.stream()
-				.map(StocksEntity::getQuantity)
-				.findFirst()
-				.orElse(0);
-	}
 	
 	
 	
@@ -990,7 +980,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		throw new RuntimeBusinessException(
 				format("Failed To get stocks of variant [%d] for shop [%d]", variantId, shopId)
 				, "EXTERNAL STOCK FETCH FAILED"
-				, HttpStatus.INTERNAL_SERVER_ERROR);
+				, INTERNAL_SERVER_ERROR);
 	}
 	
 	
@@ -1395,7 +1385,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		return orgIntegration.entrySet()
 							.stream()
 							.map(this::toOrganizationIntegrationInfoDTO)
-							.collect(Collectors.toList());					
+							.collect(toList());					
 	}
 	
 	
@@ -1928,6 +1918,18 @@ public class IntegrationServiceImpl implements IntegrationService {
 	@Override
 	public IntegrationUtils getIntegrationUtils() {
 		return integrationUtils;
+	}
+
+
+
+
+
+
+	@Override
+	public boolean hasActiveIntegration(Long orgId) {
+		return ofNullable(orgIntegration.get(orgId))
+				.map(integrationModule -> !integrationModule.isDisabled())
+				.orElse(false);
 	}
 
 }
