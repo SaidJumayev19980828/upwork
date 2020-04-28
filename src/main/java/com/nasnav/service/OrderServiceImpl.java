@@ -676,9 +676,10 @@ public class OrderServiceImpl implements OrderService {
 	@Transactional(rollbackFor = Throwable.class)
 	public OrdersEntity checkoutOrder(OrdersEntity order) {
 //		validateBasketItems(order);		//TODO: this should be added when we add refund, because exceptions will refund the user
-		order.setStatus(CLIENT_CONFIRMED.getValue());		
-		reduceStocks(order);
-		return ordersRepository.save(order);
+		order.setStatus(CLIENT_CONFIRMED.getValue());	
+		OrdersEntity saved = ordersRepository.save(order);
+		reduceStocks(saved);
+		return saved;
 	}
 	
 	
