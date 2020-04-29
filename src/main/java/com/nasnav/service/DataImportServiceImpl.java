@@ -708,7 +708,7 @@ public class DataImportServiceImpl implements DataImportService {
     	return rows
     			.stream()
 //	    		.parallel() //transactions are not shared among threads
-	    		.filter(row -> isNotBlankOrNull(row.getBrand()))
+//	    		.filter(row -> isNotBlankOrNull(row.getBrand()))
 	    		.collect(groupingBy(row -> ofNullable(row.getProductGroupKey()).orElse(row.getName())))
 	    		.values()
 	    		.stream()
@@ -961,10 +961,10 @@ public class DataImportServiceImpl implements DataImportService {
 
 
     private ProductUpdateDTO createProductDto(ProductImportDTO row, DataImportCachedData cache) throws BusinessException {
-    	Long brandId = getBrandId(row, cache.getBrandsCache());
-        
+    	//Long brandId = getBrandId(row, cache.getBrandsCache());
+
         ProductUpdateDTO product = new ProductUpdateDTO();
-        product.setBrandId(brandId);
+        //product.setBrandId(brandId);
         product.setDescription(row.getDescription());
         product.setBarcode(row.getBarcode());
         product.setName(row.getName());
@@ -972,7 +972,14 @@ public class DataImportServiceImpl implements DataImportService {
         product.setPname(row.getPname());
         
         ifVariantExistsSetAsUpdateOperation(row, cache, product);
-        
+
+		if( ofNullable(product).map(ProductUpdateDTO::getId).isPresent()
+				||
+				row.getBrand() != null){
+			Long brandId = getBrandId(row, cache.getBrandsCache());
+			product.setBrandId(brandId);
+		}
+
         return product;
     }
 

@@ -55,7 +55,9 @@ VALUES(200003, 'Product to update' , now() , now(), 0 , 99001, 201, 'u_shoe', 'o
 -- variants for each product
 insert into public.product_variants(id, "name" , product_id ,barcode, feature_spec) values(310001, 'var', 200001, '12345ABC', '{}');
 insert into public.product_variants(id, "name" , product_id ,barcode, feature_spec) values(310002, 'var', 200002, '45678EFG', '{}');
-insert into public.product_variants(id, "name" , product_id ,barcode, p_name, description, feature_spec) values(310003, 'Product to update', 200003, 'TT232222', 'u_shoe', 'old desc', '{}');
+insert into public.product_variants(id, "name" , product_id ,barcode, p_name, description, feature_spec)
+    values(310003, 'Product to update', 200003, 'TT232222', 'u_shoe', 'old desc', '{}');
+insert into public.product_variants(id, "name" , product_id ,barcode, feature_spec) values(310004, 'var', 200002, '910HIJK', '{}');
 
 
 -- stocks for variants
