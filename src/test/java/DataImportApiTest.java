@@ -123,7 +123,10 @@ public class DataImportApiTest {
 	
 	@Value("classpath:/files/product__list_upload_with_new_tags.csv")
     private Resource csvFileWithNewTags;
-	
+
+	@Value("classpath:/files/product__list_upload_existing_barcodes_new_tags_only.csv")
+	private Resource csvFileWithBarcodesAndNewTagsOnly;
+
 	@Value("classpath:/files/product__list_upload_missing_features.csv")
     private Resource csvFileMissingFeatures;
 
@@ -1192,8 +1195,27 @@ public class DataImportApiTest {
         assertProductUpdatedDataSavedWithStock();        
 	}
 
+	@Test
+	public void uploadProductCSVWithBarcodesAndNewTagsOnly() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("update_product", true);
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		ExtendedProductDataCount before = countExtendedProductData();
 
-	
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileWithBarcodesAndNewTagsOnly, importProperties);
+
+		result.andExpect(status().is(200));
+
+		ExtendedProductDataCount after = countExtendedProductData();
+
+		assertExpectedRowNumInserted(before, after, 0);
+
+		assertEquals(2, after.tags - before.tags);
+
+		ImportProductContext report = readImportReport(result);
+
+		assertEquals(2, report.getUpdatedProducts().size());
+	}
 	
 	
 	
@@ -1214,7 +1236,7 @@ public class DataImportApiTest {
 		assertEquals(2, after.brands - before.brands);
         
 		assertNewTagsAndBrandsImported();
-		
+
 		validateImportReportForNewCreatedTagsAndBrands(result);
 	}
 
