@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import com.nasnav.commons.utils.StringUtils;
 import org.jboss.logging.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -709,7 +710,7 @@ public class DataImportServiceImpl implements DataImportService {
     			.stream()
 //	    		.parallel() //transactions are not shared among threads
 //	    		.filter(row -> isNotBlankOrNull(row.getBrand()))
-	    		.collect(groupingBy(row -> ofNullable(row.getProductGroupKey()).orElse(row.getName())))
+	    		.collect(groupingBy(row -> EntityUtils.firstExistingValueOf(row.getProductGroupKey(),row.getName(),StringUtils.generateUUIDToken())))
 	    		.values()
 	    		.stream()
 	    		.filter(EntityUtils::noneIsEmpty)
@@ -961,24 +962,27 @@ public class DataImportServiceImpl implements DataImportService {
 
 
     private ProductUpdateDTO createProductDto(ProductImportDTO row, DataImportCachedData cache) throws BusinessException {
-    	//Long brandId = getBrandId(row, cache.getBrandsCache());
 
         ProductUpdateDTO product = new ProductUpdateDTO();
-        //product.setBrandId(brandId);
         product.setDescription(row.getDescription());
         product.setBarcode(row.getBarcode());
         product.setName(row.getName());
         product.setOperation(EntityConstants.Operation.CREATE);
         product.setPname(row.getPname());
         
-        ifVariantExistsSetAsUpdateOperation(row, cache, product);
+        Optional<Long> productId = getProductId(row, cache);
 
-		if( ofNullable(product).map(ProductUpdateDTO::getId).isPresent()
-				||
-				row.getBrand() != null){
+        if (productId.isPresent()) {
+        	product.setId(productId.get());
+        	product.setOperation(UPDATE);
+			if(row.getBrand() != null) {
+				Long brandId = getBrandId(row, cache.getBrandsCache());
+				product.setBrandId(brandId);
+			}
+		} else {
 			Long brandId = getBrandId(row, cache.getBrandsCache());
 			product.setBrandId(brandId);
-		}
+        }
 
         return product;
     }
@@ -1003,14 +1007,14 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-	private void ifVariantExistsSetAsUpdateOperation(ProductImportDTO row, DataImportCachedData cache,
-			ProductUpdateDTO product) {
-		cachingHelper
-        .getVariantFromCache(toVariantIdentifier(row), cache.getVariantsCache())
-		.map(VariantBasicData::getProductId)
+	private Optional<Long> getProductId(ProductImportDTO row, DataImportCachedData cache) {
+		return cachingHelper
+				.getVariantFromCache(toVariantIdentifier(row), cache.getVariantsCache())
+				.map(VariantBasicData::getProductId);
+				/*
 		.ifPresent(
 				id -> { product.setId(id); 
-						product.setOperation(EntityConstants.Operation.UPDATE);});
+						product.setOperation(EntityConstants.Operation.UPDATE);});*/
 	}
     
     
