@@ -11,6 +11,7 @@ import static com.nasnav.test.commons.TestCommons.jsonArray;
 import static com.nasnav.test.commons.TestCommons.readResource;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -20,6 +21,7 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.JsonBody.json;
 import static org.mockserver.verify.VerificationTimes.exactly;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 
@@ -32,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -67,6 +70,7 @@ import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.TagsRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.dto.UserDTOs.UserRegistrationObject;
@@ -77,6 +81,7 @@ import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.TagsEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.OrderService;
@@ -156,7 +161,8 @@ public class MicrosoftDynamicsIntegrationTest {
 	@Autowired
 	private OrderService orderService;
 
-	
+	@Autowired
+	private TagsRepository tagRepo;
 	
 	 @Rule
 	 public MockServerRule mockServerRule = new MockServerRule(this);
@@ -295,16 +301,23 @@ public class MicrosoftDynamicsIntegrationTest {
 					.put("page_count", count);
 		
 		HttpEntity<Object> request = getHttpEntity(requestJson.toString(), "hijkllm");
-        ResponseEntity<String> response = template.exchange("/integration/import/products", HttpMethod.POST, request, String.class);       
+        ResponseEntity<String> response = template.exchange("/integration/import/products", POST, request, String.class);       
         
         assertEquals(OK, response.getStatusCode());
 		//------------------------------------------------
-		//test the mock api was called
+		//test the mock api's was called
 		if(usingMockServer) {
 			mockServerRule.getClient().verify(
 				      request()
 				        .withMethod("GET")
 				        .withPath("/api/products/\\d+/\\d+"),
+				      VerificationTimes.exactly(1)
+				    );
+			
+			mockServerRule.getClient().verify(
+				      request()
+				        .withMethod("GET")
+				        .withPath("/api/categories"),
 				      VerificationTimes.exactly(1)
 				    );
 		}
@@ -316,13 +329,14 @@ public class MicrosoftDynamicsIntegrationTest {
 		long countShopsAfter = shopsRepo.count();
 		JSONArray extShopsJson = getExpectedShopsJson();
 		
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(OK, response.getStatusCode());
 		assertNotEquals("products were imported", 0L, countProductsAfter - countProductsBefore);
 		if(usingMockServer) {
 			assertEquals("shops were imported", extShopsJson.length() - countShopsBefore, countShopsAfter - countShopsBefore);
 			assertEquals("assert brands were imported", 3L, brandRepo.count());
 			assertTrue("all imported products have integration mapping" , allProductHaveMapping());
 			assertEquals("check number of remaining pages to import", 0, Integer.valueOf(response.getBody()).intValue());
+			assertNewTagsImported();
 		}
 	}
 	
@@ -331,6 +345,21 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	
 	
+	private void assertNewTagsImported() {
+		List<String> existingTags = 
+				StreamSupport
+				.stream(tagRepo.findAll().spliterator(), false)
+				.map(TagsEntity::getName)
+				.collect(toList());
+		assertTrue("Brands are imported as tags as well", existingTags.contains("Cybele"));
+		assertTrue("Categories parents are imported as tags", existingTags.contains("Web Sits"));
+	}
+
+
+
+
+
+
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/MS_dynamics_integration_get_stock_test_data.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})

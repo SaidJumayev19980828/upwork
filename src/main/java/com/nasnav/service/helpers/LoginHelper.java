@@ -1,6 +1,6 @@
 package com.nasnav.service.helpers;
 
-import static com.nasnav.commons.utils.EntityUtils.setOf;
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static java.util.Optional.ofNullable;
 
 import java.util.Set;

@@ -1,9 +1,11 @@
 package com.nasnav.commons.utils;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -42,5 +44,13 @@ public class CollectionUtils {
 	private static <T,U> boolean  distinctByKey(T element, Function<? super T, ? extends U> keyExtractor, Set<U> seen) {
 		U distinctKey = keyExtractor.apply(element);
 	    return seen.add(distinctKey);
+	}
+	
+	
+	
+	
+	@SafeVarargs
+	public static <T> Set<T> setOf(T...elements){
+		return new HashSet<>( asList(elements));
 	}
 }

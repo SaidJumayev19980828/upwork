@@ -57,6 +57,10 @@ public class IntegrationTestCommon {
 	private Resource productsJson2;
     
     
+    @Value("classpath:/json/ms_dynamics_integratoin_test/get_categories_response.json")
+	private Resource categoriesJson;
+    
+    
     
 
 	public  String initFortuneMockServer(MockServerRule mockServerRule) throws Exception {		
@@ -86,6 +90,7 @@ public class IntegrationTestCommon {
 		 mockGetProductsRequest(mockServerRule);		 
 		 mockGetCustomerByPhoneRequest(mockServerRule);
 		 mockGetStoresRequest(mockServerRule);
+		 mockGetCategoriesRequest(mockServerRule);
 	}
 	
 	
@@ -97,6 +102,20 @@ public class IntegrationTestCommon {
 			.when(
 				request().withMethod("GET")
 						.withPath("/api/stores"))
+			.respond(
+					response().withBody(storesResponse, MediaType.JSON_UTF_8) 
+							  .withStatusCode(200))
+				;
+	}
+	
+	
+	
+	private  void mockGetCategoriesRequest(MockServerRule mockServerRule) throws Exception {
+		String storesResponse = new String( Files.readAllBytes(categoriesJson.getFile().toPath()) );
+   	 	mockServerRule.getClient()
+			.when(
+				request().withMethod("GET")
+						.withPath("/api/categories"))
 			.respond(
 					response().withBody(storesResponse, MediaType.JSON_UTF_8) 
 							  .withStatusCode(200))
