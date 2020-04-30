@@ -1,11 +1,15 @@
 package com.nasnav.service;
 
-import static com.nasnav.commons.utils.StringUtils.*;
+import static com.nasnav.commons.utils.StringUtils.encodeUrl;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.commons.utils.StringUtils.validateName;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.net.URISyntaxException;
 import java.util.List;
@@ -15,24 +19,56 @@ import java.util.stream.Collectors;
 
 import javax.cache.annotation.CacheResult;
 
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
-import com.nasnav.dto.response.navbox.ThemeRepresentationObject;
-import com.nasnav.persistence.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.dao.OrganizationDomainsRepository;
+import com.nasnav.dao.OrganizationImagesRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.OrganizationThemeRepository;
+import com.nasnav.dao.OrganizationThemeSettingsRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.SocialRepository;
+import com.nasnav.dao.ThemesRepository;
+import com.nasnav.dto.BrandDTO;
+import com.nasnav.dto.ExtraAttributesRepresentationObject;
+import com.nasnav.dto.OrganizationDTO;
+import com.nasnav.dto.OrganizationImageUpdateDTO;
+import com.nasnav.dto.OrganizationImagesRepresentationObject;
+import com.nasnav.dto.OrganizationRepresentationObject;
+import com.nasnav.dto.OrganizationThemesRepresentationObject;
+import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.Pair;
+import com.nasnav.dto.ProductFeatureDTO;
+import com.nasnav.dto.ProductFeatureUpdateDTO;
+import com.nasnav.dto.SocialRepresentationObject;
+import com.nasnav.dto.ThemeDTO;
+import com.nasnav.dto.response.navbox.ThemeRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.BrandsEntity;
+import com.nasnav.persistence.ExtraAttributesEntity;
+import com.nasnav.persistence.OrganizationDomainsEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.OrganizationImagesEntity;
+import com.nasnav.persistence.OrganizationThemeEntity;
+import com.nasnav.persistence.OrganizationThemesSettingsEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.SocialEntity;
+import com.nasnav.persistence.ThemeEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
@@ -54,7 +90,6 @@ public class OrganizationService {
     
     private final OrganizationServiceHelper helper;
     private final FileService fileService;
-    private final EmployeeUserRepository employeeUserRepository;
 
     private final OrganizationImagesRepository organizationImagesRepository;
 
@@ -95,7 +130,6 @@ public class OrganizationService {
         this.extraAttributesRepository = extraAttributesRepository;
         this.helper = helper;
         this.fileService = fileService;
-        this.employeeUserRepository = employeeUserRepository;
         this.organizationImagesRepository = organizationImagesRepository;
     }
 
@@ -206,6 +240,11 @@ public class OrganizationService {
         return response;
     }
     
+    
+    
+    
+    
+    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
     public OrganizationResponse createOrganization(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
         validateOrganizationName(json);
         OrganizationEntity organizationEntity = organizationRepository.findByPname(json.pname);

@@ -1,23 +1,37 @@
 package com.nasnav.controller;
 
-import com.nasnav.dto.*;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.response.ThemeClassResponse;
-import com.nasnav.response.ThemeResponse;
-import com.nasnav.service.CategoryService;
-import com.nasnav.response.OrganizationResponse;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.ThemeService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponses;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.nasnav.dto.CategoryDTO;
+import com.nasnav.dto.OrganizationDTO;
+import com.nasnav.dto.OrganizationRepresentationObject;
+import com.nasnav.dto.ThemeClassDTO;
+import com.nasnav.dto.ThemeDTO;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.response.OrganizationResponse;
+import com.nasnav.response.ThemeClassResponse;
+import com.nasnav.response.ThemeResponse;
+import com.nasnav.service.CategoryService;
+import com.nasnav.service.OrganizationService;
+import com.nasnav.service.ThemeService;
+
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponses;
 
 @RestController
 @RequestMapping("/admin")
@@ -53,7 +67,7 @@ public class AdminController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
 	})
 	@PostMapping(value = "category", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public ResponseEntity createCategory(@RequestHeader (value = "User-Token") String userToken,
+	public ResponseEntity<?> createCategory(@RequestHeader (value = "User-Token") String userToken,
 	                                     @RequestBody CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
     	if (categoryJson.getOperation() != null)
 			if (categoryJson.getOperation().equals("update"))
@@ -71,7 +85,7 @@ public class AdminController {
 			@io.swagger.annotations.ApiResponse(code = 409, message = "Category is used by other entities"),
 	})
 	@DeleteMapping(value = "category", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public ResponseEntity deleteCategory(@RequestHeader (value = "User-Token") String userToken,
+	public ResponseEntity<?> deleteCategory(@RequestHeader (value = "User-Token") String userToken,
 	                                     @RequestParam (value = "category_id") Long categoryId ) throws BusinessException {
 		if (categoryId == null ){
 			throw new BusinessException("MISSING_PRARM: Category_id", "",HttpStatus.NOT_ACCEPTABLE);

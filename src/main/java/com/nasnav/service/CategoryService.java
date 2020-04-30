@@ -161,6 +161,9 @@ public class CategoryService {
         return new ResponseEntity<CategoryResponse>(new CategoryResponse(categoriesEntity.getId()), HttpStatus.OK);
     }
 
+    
+    
+    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id", "organizations_tag_trees"})
     public ResponseEntity<CategoryResponse> updateCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
         if (categoryJson.getId() == null) {
             throw new BusinessException("MISSING_PARAM: ID", "No category ID is provided", HttpStatus.NOT_ACCEPTABLE);
