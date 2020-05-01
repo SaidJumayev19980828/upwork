@@ -6,12 +6,14 @@ import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.dto.ProductSortOptions;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 @Data
+@NoArgsConstructor
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class ProductSearchParam {
 
@@ -28,6 +30,10 @@ public class ProductSearchParam {
     public SortOrder order;
     public BigDecimal minPrice;
     public BigDecimal maxPrice;
+
+    public ProductSearchParam(Long org_id) {
+        this.org_id = org_id;
+    }
 
     public void setSort(String sort) {
         this.sort = ProductSortOptions.valueOf(sort.toUpperCase());

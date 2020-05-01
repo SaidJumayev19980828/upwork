@@ -343,7 +343,7 @@ public class ProductService {
 
 
 
-	private Configuration createQueryDslConfig() {
+	public Configuration createQueryDslConfig() {
 		Configuration config = new Configuration(new PostgreSQLTemplates());
 		config.setUseLiterals(true);
 		return config;
@@ -593,23 +593,23 @@ public class ProductService {
 
 		SQLQuery<?> fromClause = getProductsBaseQuery(query, predicate);
 
-		SQLQuery<?> productsQuery = 
+		SQLQuery<?> productsQuery =
 				fromClause.select(
-						stock.id.as("stock_id"), 
-						stock.quantity.as("quantity"), 
+						stock.id.as("stock_id"),
+						stock.quantity.as("quantity"),
 						stock.price.as("price"),
 		                stock.discount, stock.currency,
-						product.organizationId.as("organization_id"), 
+						product.organizationId.as("organization_id"),
 						stock.shopId.as("shop_id"),
-						variant.barcode.as("variant_barcode"), 
+						variant.barcode.as("variant_barcode"),
 						variant.featureSpec,
-						product.id, 
-						product.barcode, 
+						product.id,
+						product.barcode,
 						product.brandId.as("brand_id"),
-						product.categoryId.as("category_id"), 
-						product.description.as("description"), 
+						product.categoryId.as("category_id"),
+						product.description.as("description"),
 						product.name.as("name"),
-						product.createdAt.as("creation_date"), 
+						product.createdAt.as("creation_date"),
 						product.updatedAt.as("update_date"),
 						SQLExpressions.rowNumber()
 								.over()

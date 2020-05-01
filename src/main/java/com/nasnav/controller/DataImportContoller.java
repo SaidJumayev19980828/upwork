@@ -4,6 +4,8 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.sql.SQLException;
 
 import javax.validation.Valid;
 
@@ -78,4 +80,16 @@ public class DataImportContoller {
 				.body(s.toString());
 	}
 
+
+
+
+	@GetMapping(value = "/productlist")
+	@ResponseBody
+	public ResponseEntity<String> generateProductsCsv(@RequestHeader("User-Token") String token) throws SQLException, BusinessException, IllegalAccessException, InvocationTargetException {
+		ByteArrayOutputStream s = importService.generateProductsCsv();
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType("text/csv"))
+				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Products_Csv.csv")
+				.body(s.toString());
+	}
 }

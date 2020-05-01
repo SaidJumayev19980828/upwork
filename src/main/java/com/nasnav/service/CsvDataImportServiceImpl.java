@@ -17,7 +17,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -26,11 +28,23 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import javax.sql.DataSource;
 import javax.validation.Valid;
 
+import com.nasnav.dao.*;
+import com.nasnav.model.querydsl.sql.QBrands;
+import com.nasnav.model.querydsl.sql.QProductVariants;
+import com.nasnav.model.querydsl.sql.QProducts;
+import com.nasnav.model.querydsl.sql.QStocks;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.sql.SQLExpressions;
+import com.querydsl.sql.SQLQuery;
+import com.querydsl.sql.SQLQueryFactory;
 import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -39,10 +53,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.MapBuilder;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ProductImgsCustomRepository;
-import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.dto.VariantWithNoImagesDTO;
@@ -76,7 +86,17 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	@Autowired
 	private ShopsRepository shopRepo;
 	
-	
+	@Autowired
+	private ProductService productService;
+
+	@Autowired
+	private DataSource dataSource;
+
+	@Autowired
+	private JdbcTemplate template;
+
+	@Autowired
+	private ProductRepository productRepository;
 	@Autowired
 	private EmployeeUserRepository empRepo;
 	
@@ -240,7 +260,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	
 	private BeanWriterProcessor<VariantWithNoImagesDTO> createImgsTemplateRowProcessor() {
 		
-		ColumnMapping mapper = createImgCsvAttrToColMapping();		
+		ColumnMapping mapper = createImgCsvAttrToColMapping(fieldToImgsTemplateColumnHeaderMapping);
 		
 		BeanWriterProcessor<VariantWithNoImagesDTO> rowProcessor = new BeanWriterProcessor<>(VariantWithNoImagesDTO.class);
 		rowProcessor.setColumnMapper(mapper);
@@ -252,9 +272,9 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 
-	private ColumnMapping createImgCsvAttrToColMapping() {
+	private ColumnMapping createImgCsvAttrToColMapping(Map fields) {
 		ColumnMapping mapping = new ColumnMapping();
-		mapping.attributesToColumnNames(fieldToImgsTemplateColumnHeaderMapping);		
+		mapping.attributesToColumnNames(fields);
 		return mapping;
 	}
 
@@ -359,7 +379,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		EmployeeUserEntity user =  empRepo.getOneByEmail(auth.getName());
 		Long userOrgId = user.getOrganizationId();
-		
+
 		ShopsEntity shop = shopRepo.findById(shopId).get();
 		Long shopOrgId = shop.getOrganizationEntity().getId();
 		
@@ -455,8 +475,93 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 			return generateEmptyImagesCsvTemplate();
 		}
 	}
-	
-	
+
+
+	public ByteArrayOutputStream generateProductsCsv() throws InvocationTargetException, SQLException, IllegalAccessException, BusinessException {
+		List<String> headers = new ArrayList<>();
+		headers.addAll(CSV_BASE_HEADERS);
+
+		Long orgId = security.getCurrentUserOrganizationId();
+		List<CsvRow> products = getProducts(orgId);
+
+		return buildProductsCsv(headers, products);
+	}
+
+
+	private List<CsvRow> getProducts(Long orgId) {
+		SQLQueryFactory query = new SQLQueryFactory(productService.createQueryDslConfig() , dataSource);
+
+		QStocks stock = QStocks.stocks;
+		QProducts product = QProducts.products;
+		QProductVariants variant = QProductVariants.productVariants;
+		QBrands brand = QBrands.brands;
+
+		SQLQuery fromClause = getProductsBaseQuery(query, orgId);
+		SQLQuery<?> productsQuery =
+				fromClause.select(
+						stock.quantity,
+						stock.price,
+						stock.discount,
+						product.organizationId.as("organization_id"),
+						variant.id.as("variant_id"),
+						variant.featureSpec,
+						product.barcode,
+						brand.name.as("brand"),
+						product.description.as("description"),
+						product.name.as("name"),
+						product.id.as("product_id"),
+						SQLExpressions.rowNumber()
+								.over()
+								.partitionBy(product.id)
+								.orderBy(stock.price).as("row_num"));
+
+		SQLQuery<?> stocks =
+				query
+						.from(productsQuery.as("total_products"))
+						.where(Expressions.numberPath(Long.class, "row_num").eq(1L));
+
+		stocks.select((Expressions.template(CsvRow.class,"*")));
+
+		List<CsvRow> result =
+				template.query(stocks.getSQL().getSQL(),
+						new BeanPropertyRowMapper<>(CsvRow.class));
+
+		for (CsvRow row : result) {
+			List<String> tagsList = productRepository.getTagsNamesByProductId(row.getProductId());
+			if(tagsList.size() > 0) {
+				String tags = toTagsString(tagsList);
+				row.setTags(tags);
+			} else {
+				row.setTags("");
+			}
+
+		}
+
+		return result;
+	}
+
+
+	private String toTagsString(List<String> tags) {
+		String tagsString = "";
+		for(String tag : tags) {
+			tagsString += ";"+tag;
+		}
+		return tagsString.substring(1);
+	}
+
+
+	private SQLQuery<?> getProductsBaseQuery(SQLQueryFactory query, Long orgId) {
+		QStocks stock = QStocks.stocks;
+		QProducts product = QProducts.products;
+		QProductVariants variant = QProductVariants.productVariants;
+		QBrands brand = QBrands.brands;
+
+		return query.from(stock)
+				.innerJoin(variant).on(stock.variantId.eq(variant.id))
+				.innerJoin(product).on(variant.productId.eq(product.id))
+				.innerJoin(brand).on(product.brandId.eq(brand.id))
+				.where(product.organizationId.eq(orgId));
+	}
 	
 	
 	private ByteArrayOutputStream generateImagesCsvTemplateForProductsWithNoImgs() {
@@ -478,20 +583,45 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 			List<VariantWithNoImagesDTO> variants) {
 		BeanWriterProcessor<VariantWithNoImagesDTO> processor = createImgsTemplateRowProcessor();
 		CsvWriterSettings settings = createWritterSettings(processor);
-		
+
+		return writeCsvResult(headers, settings, variants);
+	}
+
+
+
+	private ByteArrayOutputStream buildProductsCsv(List<String> headers,
+												   List<CsvRow> products) {
+		BeanWriterProcessor<CsvRow> processor = createProductsRowProcessor();
+		CsvWriterSettings settings = createWritterSettings(processor);
+
+		return writeCsvResult(headers, settings, products);
+	}
+
+
+	private BeanWriterProcessor<CsvRow> createProductsRowProcessor() {
+		ColumnMapping mapper = createImgCsvAttrToColMapping(fieldToColumnHeaderMapping);
+
+		BeanWriterProcessor<CsvRow> rowProcessor = new BeanWriterProcessor<>(CsvRow.class);
+		rowProcessor.setColumnMapper(mapper);
+		rowProcessor.setStrictHeaderValidationEnabled(true);
+		return rowProcessor;
+	}
+
+
+	private ByteArrayOutputStream writeCsvResult(List<String> headers, CsvWriterSettings settings, List data) {
 		ByteArrayOutputStream csvResult = new ByteArrayOutputStream();
 		Writer outputWriter = new OutputStreamWriter(csvResult);
 		CsvWriter writer = new CsvWriter(outputWriter, settings);
-		
+
 		writer.writeHeaders(headers.stream().toArray(String[]::new));
-		writer.processRecordsAndClose(variants);
-				
+		writer.processRecordsAndClose(data);
+
 		return csvResult;
 	}
 	
 	
 	
-	private CsvWriterSettings createWritterSettings(BeanWriterProcessor<VariantWithNoImagesDTO> rowProcessor) {
+	private CsvWriterSettings createWritterSettings(BeanWriterProcessor rowProcessor) {
 		CsvWriterSettings settings = new CsvWriterSettings();
 		settings.setRowWriterProcessor(rowProcessor);		
 		settings.setMaxCharsPerColumn(-1);
