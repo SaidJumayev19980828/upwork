@@ -230,9 +230,9 @@ public class CategoryService {
     public List<TagsRepresentationObject> getOrganizationTags(Long orgId, String categoryName) {
         List<TagsEntity> tagsEntities;
         if(isBlankOrNull(categoryName)) {
-        	tagsEntities = orgTagsRepo.findByOrganizationEntity_Id(orgId);
+        	tagsEntities = orgTagsRepo.findByOrganizationEntity_IdOrderByName(orgId);
         }else {
-        	tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_Id(categoryName, orgId);
+        	tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdOrderByName(categoryName, orgId);
         }
         return tagsEntities
         			.stream()
