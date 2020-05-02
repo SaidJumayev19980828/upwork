@@ -461,7 +461,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		baseHeaders.addAll(features);
 		return baseHeaders;
 	}
-	
+
 	
 	
 
@@ -478,8 +478,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 	public ByteArrayOutputStream generateProductsCsv() throws InvocationTargetException, SQLException, IllegalAccessException, BusinessException {
-		List<String> headers = new ArrayList<>();
-		headers.addAll(CSV_BASE_HEADERS);
+		List<String> headers = getProductImportTemplateHeaders();
 
 		Long orgId = security.getCurrentUserOrganizationId();
 		List<CsvRow> products = getProducts(orgId);
@@ -489,38 +488,8 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 	private List<CsvRow> getProducts(Long orgId) {
-		SQLQueryFactory query = new SQLQueryFactory(productService.createQueryDslConfig() , dataSource);
 
-		QStocks stock = QStocks.stocks;
-		QProducts product = QProducts.products;
-		QProductVariants variant = QProductVariants.productVariants;
-		QBrands brand = QBrands.brands;
-
-		SQLQuery fromClause = getProductsBaseQuery(query, orgId);
-		SQLQuery<?> productsQuery =
-				fromClause.select(
-						stock.quantity,
-						stock.price,
-						stock.discount,
-						product.organizationId.as("organization_id"),
-						variant.id.as("variant_id"),
-						variant.featureSpec,
-						product.barcode,
-						brand.name.as("brand"),
-						product.description.as("description"),
-						product.name.as("name"),
-						product.id.as("product_id"),
-						SQLExpressions.rowNumber()
-								.over()
-								.partitionBy(product.id)
-								.orderBy(stock.price).as("row_num"));
-
-		SQLQuery<?> stocks =
-				query
-						.from(productsQuery.as("total_products"))
-						.where(Expressions.numberPath(Long.class, "row_num").eq(1L));
-
-		stocks.select((Expressions.template(CsvRow.class,"*")));
+		SQLQuery stocks = getStocksQuery(orgId);
 
 		List<CsvRow> result =
 				template.query(stocks.getSQL().getSQL(),
@@ -534,10 +503,44 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 			} else {
 				row.setTags("");
 			}
-
 		}
 
 		return result;
+	}
+
+
+	private SQLQuery getStocksQuery(Long orgId) {
+		SQLQueryFactory query = new SQLQueryFactory(productService.createQueryDslConfig() , dataSource);
+
+		QStocks stock = QStocks.stocks;
+		QProducts product = QProducts.products;
+		QProductVariants variant = QProductVariants.productVariants;
+		QBrands brand = QBrands.brands;
+
+		SQLQuery fromClause = getProductsBaseQuery(query, orgId);
+		SQLQuery<?> productsQuery = fromClause.select(
+											stock.quantity,
+											stock.price,
+											stock.discount,
+											product.organizationId.as("organization_id"),
+											variant.id.as("variant_id"),
+											variant.featureSpec,
+											product.barcode,
+											brand.name.as("brand"),
+											product.description.as("description"),
+											product.name.as("name"),
+											product.id.as("product_id"),
+											SQLExpressions.rowNumber()
+													.over()
+													.partitionBy(product.id)
+													.orderBy(stock.price).as("row_num"));
+
+		SQLQuery<?> stocks = query.from(productsQuery.as("total_products"))
+								  .where(Expressions.numberPath(Long.class, "row_num").eq(1L));
+
+		stocks.select((Expressions.template(CsvRow.class,"*")));
+
+		return stocks;
 	}
 
 
