@@ -609,6 +609,7 @@ public class ProductService {
 						product.categoryId.as("category_id"), 
 						product.description.as("description"), 
 						product.name.as("name"),
+						product.pName.as("pname"),
 						product.createdAt.as("creation_date"), 
 						product.updatedAt.as("update_date"),
 						SQLExpressions.rowNumber()
