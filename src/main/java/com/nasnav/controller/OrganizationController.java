@@ -14,6 +14,7 @@ import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
 import com.nasnav.payments.upg.UpgAccount;
 import com.nasnav.persistence.OrganizationPaymentGatewaysEntity;
+import com.nasnav.service.BrandService;
 import com.nasnav.service.ThemeService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -68,6 +69,9 @@ public class OrganizationController {
 
     @Autowired
     private ThemeService themeService;
+
+    @Autowired
+    private BrandService brandService;
 
     private Logger classLogger = LogManager.getLogger(OrganizationController.class);
 
@@ -129,7 +133,13 @@ public class OrganizationController {
     }
 
 
+    @DeleteMapping(value = "brand")
+    @ResponseStatus(OK)
+    public void deleteBrand(@RequestHeader (value = "User-Token") String userToken,
+                            @RequestParam("brand_id") Long brandId) throws BusinessException {
+        brandService.deleteBrand(brandId);
 
+    }
 
 
 

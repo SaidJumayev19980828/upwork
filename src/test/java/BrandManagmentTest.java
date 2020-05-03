@@ -6,6 +6,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dto.Organization_BrandRepresentationObject;
 import com.nasnav.service.BrandService;
 import org.junit.After;
@@ -20,9 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
@@ -49,7 +48,8 @@ public class BrandManagmentTest {
     private TestRestTemplate template;
     @Autowired
     private BrandService brandSvc;
-
+    @Autowired
+    private BrandsRepository brandRepo;
     @Before
     public void setup(){
         performSqlScript(databaseCleanup);
@@ -239,7 +239,7 @@ public class BrandManagmentTest {
     public void getBrandsTest() {
         ResponseEntity<List> response = template.getForEntity("/organization/brands?org_id=99001", List.class);
         Assert.assertTrue(200 == response.getStatusCode().value());
-        Assert.assertEquals(1 ,response.getBody().size());
+        Assert.assertEquals(3 ,response.getBody().size());
 
         response = template.getForEntity("/organization/brands?org_id=99002", List.class);
         Assert.assertTrue(200 == response.getStatusCode().value());
@@ -248,5 +248,69 @@ public class BrandManagmentTest {
         response = template.getForEntity("/organization/brands?org_id=999999", List.class);
         Assert.assertTrue(200 == response.getStatusCode().value());
         Assert.assertEquals(0 ,response.getBody().size());
+    }
+
+
+    @Test
+    public void deleteBrand() {
+        HttpEntity request = TestCommons.getHttpEntity("hijkllm");
+        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=103", HttpMethod.DELETE,
+                                        request, String.class);
+        Assert.assertEquals(200, res.getStatusCodeValue());
+        Assert.assertTrue(brandRepo.existsById(101L));
+    }
+
+
+    @Test
+    public void deleteBrandInvalidId() {
+        HttpEntity request = TestCommons.getHttpEntity("hijkllm");
+        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=-1", HttpMethod.DELETE,
+                request, String.class);
+        Assert.assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void deleteBrandLinkedShop() {
+        HttpEntity request = TestCommons.getHttpEntity("hijkllm");
+        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=102", HttpMethod.DELETE,
+                request, String.class);
+        Assert.assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void deleteBrandLinkedProduct() {
+        HttpEntity request = TestCommons.getHttpEntity("hijkllm");
+        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=104", HttpMethod.DELETE,
+                request, String.class);
+        Assert.assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void deleteBrandInvalidToken() {
+        HttpEntity request = TestCommons.getHttpEntity("hijkdllm");
+        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=104", HttpMethod.DELETE,
+                request, String.class);
+        Assert.assertEquals(401, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void deleteBrandUnauthenticated() {
+        HttpEntity request = TestCommons.getHttpEntity("abcdefg");
+        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=103", HttpMethod.DELETE,
+                request, String.class);
+        Assert.assertEquals(403, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void deleteBrandDifferentOrg() {
+        HttpEntity request = TestCommons.getHttpEntity("123456");
+        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=103", HttpMethod.DELETE,
+                request, String.class);
+        Assert.assertEquals(406, res.getStatusCodeValue());
     }
 }
