@@ -83,6 +83,12 @@ public class DataImportContoller {
 
 
 
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Products data exported"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
 	@GetMapping(value = "/productlist")
 	@ResponseBody
 	public ResponseEntity<String> generateProductsCsv(@RequestHeader("User-Token") String token) throws SQLException, BusinessException, IllegalAccessException, InvocationTargetException {

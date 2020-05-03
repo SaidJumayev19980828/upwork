@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_INVALID_ENCODING;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_FILE_UPLOADED;
@@ -9,8 +10,11 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANN
 import static com.nasnav.enumerations.ImageCsvTemplateType.EMPTY;
 import static com.nasnav.enumerations.ImageCsvTemplateType.PRODUCTS_WITH_NO_IMGS;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -22,25 +26,20 @@ import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 import javax.validation.Valid;
 
-import com.nasnav.dao.*;
-import com.nasnav.model.querydsl.sql.QBrands;
-import com.nasnav.model.querydsl.sql.QProductVariants;
-import com.nasnav.model.querydsl.sql.QProducts;
-import com.nasnav.model.querydsl.sql.QStocks;
-import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.sql.SQLExpressions;
-import com.querydsl.sql.SQLQuery;
-import com.querydsl.sql.SQLQueryFactory;
 import org.jboss.logging.Logger;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -53,6 +52,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.MapBuilder;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ProductImgsCustomRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.dto.ProductListImportDTO;
 import com.nasnav.dto.VariantWithNoImagesDTO;
@@ -60,12 +65,22 @@ import com.nasnav.enumerations.ImageCsvTemplateType;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportProductException;
+import com.nasnav.model.querydsl.sql.QBrands;
+import com.nasnav.model.querydsl.sql.QProductVariants;
+import com.nasnav.model.querydsl.sql.QProducts;
+import com.nasnav.model.querydsl.sql.QStocks;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
+import com.nasnav.persistence.dto.query.result.products.export.ProductExportedData;
 import com.nasnav.service.helpers.ProductCsvRowProcessor;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.sql.SQLExpressions;
+import com.querydsl.sql.SQLQuery;
+import com.querydsl.sql.SQLQueryFactory;
 import com.univocity.parsers.common.DataProcessingException;
 import com.univocity.parsers.common.ParsingContext;
 import com.univocity.parsers.common.RowProcessorErrorHandler;
@@ -115,6 +130,12 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	
 	@Autowired
 	private ProductImgsCustomRepository productImgsCustomRepo;
+	
+	@Autowired
+	private TagsRepository tagsRepo;
+	
+	@Autowired
+	private ProductFeaturesRepository feautreRepo;
 	
 	
 	private Logger logger = Logger.getLogger(getClass());
@@ -490,28 +511,147 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 	private List<CsvRow> getProducts(Long orgId) {
 
-		SQLQuery stocks = getStocksQuery(orgId);
+		SQLQuery<?> stocks = getStocksQuery(orgId);
 
-		List<CsvRow> result =
+		List<ProductExportedData> result =
 				template.query(stocks.getSQL().getSQL(),
-						new BeanPropertyRowMapper<>(CsvRow.class));
-
-		for (CsvRow row : result) {
-			row.setProductGroupKey(row.getProductId().toString());
-			List<String> tagsList = productRepository.getTagsNamesByProductId(row.getProductId());
-			if(tagsList.size() > 0) {
-				String tags = toTagsString(tagsList);
-				row.setTags(tags);
-			} else {
-				row.setTags("");
-			}
-		}
-
-		return result;
+						new BeanPropertyRowMapper<>(ProductExportedData.class));
+		
+		Map<Long,List<ProductTagsBasicData>> productTags = createProductTagsMap(result);
+		Map<Integer, ProductFeaturesEntity> features = createFeaturesMap();
+		return result
+				.stream()
+				.map(product -> toCsvRow(product, productTags, features))
+				.collect(toList());
+	}
+	
+	
+	
+	
+	private Map<Integer, ProductFeaturesEntity> createFeaturesMap() {
+		Long orgId = security.getCurrentUserOrganizationId();
+		return feautreRepo
+				.findByOrganizationId(orgId)
+				.stream()
+				.collect(toMap(ProductFeaturesEntity::getId, t -> t));
 	}
 
 
-	private SQLQuery getStocksQuery(Long orgId) {
+
+
+	private Map<Long, List<ProductTagsBasicData>> createProductTagsMap(List<ProductExportedData> result) {
+		List<Long> productIds = 
+				result
+				.stream()
+				.map(ProductExportedData::getProductId)
+				.collect(toList()); 
+		return divideToBatches(productIds, 500)
+				.stream()
+				.map(tagsRepo::getTagsByProductIdIn)
+				.flatMap(List::stream)
+				.collect(groupingBy(ProductTagsBasicData::getProductId));
+	}
+
+
+
+
+	private CsvRow toCsvRow(ProductExportedData productData, Map<Long,List<ProductTagsBasicData>> productTags, Map<Integer, ProductFeaturesEntity> features) {
+		CsvRow row = readCsvRow(productData);
+		
+		setTags(row, productData, productTags);
+		setFeatures(row, productData, features);
+		return row;
+	}
+
+
+
+
+	private void setFeatures(CsvRow row, ProductExportedData productData,
+			Map<Integer, ProductFeaturesEntity> featuresMap) {
+		Map<String,String> features = 
+				ofNullable(productData)
+				.map(ProductExportedData::getFeatureSpec)
+				.flatMap(this::toFeaturesJson)
+				.map(json -> toFreaturesMap(json, featuresMap))
+				.orElse(emptyMap());
+		
+		row.setFeatures(features);
+	}
+
+	
+	
+	
+	private Map<String,String> toFreaturesMap(JSONObject json, Map<Integer, ProductFeaturesEntity> featuresMap){
+		Map<String,String> features = new  HashMap<>();
+		for(String key : json.keySet()) {
+			Optional.of(key)
+			.map(k -> Integer.valueOf(k))
+			.map(featuresMap::get)
+			.map(ProductFeaturesEntity::getName)
+			.ifPresent( name -> features.put(name, json.getString(key)));
+		}
+		return features;
+	}
+	
+	
+
+	private Optional<JSONObject> toFeaturesJson(String jsonStr) {
+		try {
+			JSONObject json = new JSONObject(jsonStr);
+			return Optional.of(json);
+		}catch(Throwable e) {
+			return Optional.empty();
+		}
+	}
+
+
+	private CsvRow readCsvRow(ProductExportedData data) {
+		CsvRow row = new CsvRow();
+		row.setBarcode(data.getBarcode());
+		row.setBrand(data.getBrand());
+		row.setDescription(data.getDescription());
+		row.setDiscount(data.getDiscount());
+		row.setExternalId(row.getExternalId());
+		row.setName(data.getName());
+		row.setPrice(data.getPrice());
+		row.setProductGroupKey(data.getProductId().toString());
+		row.setProductId(data.getProductId());
+		row.setQuantity(data.getQuantity());
+		row.setVariantId(data.getVariantId());
+		return row;
+	}
+
+
+
+
+	private void setTags(CsvRow row, ProductExportedData productData,
+			Map<Long, List<ProductTagsBasicData>> productTags) {
+		List<String> tagsList = getTagsNames(productData.getProductId(), productTags);
+		if(tagsList.size() > 0) {
+			String tags = toTagsString(tagsList);
+			row.setTags(tags);
+		} else {
+			row.setTags("");
+		}
+	}
+
+	
+	
+	
+
+	private List<String> getTagsNames(Long productId, Map<Long, List<ProductTagsBasicData>> productTags) {
+		return ofNullable(productId)
+				.map(productTags::get)
+				.orElse(emptyList())
+				.stream()
+				.map(ProductTagsBasicData::getTagName)
+				.collect(toList());
+	}
+
+
+
+
+	private SQLQuery<?> getStocksQuery(Long orgId) {
 		SQLQueryFactory query = new SQLQueryFactory(productService.createQueryDslConfig() , dataSource);
 
 		QStocks stock = QStocks.stocks;
@@ -519,7 +659,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		QProductVariants variant = QProductVariants.productVariants;
 		QBrands brand = QBrands.brands;
 
-		SQLQuery fromClause = getProductsBaseQuery(query, orgId);
+		SQLQuery<?> fromClause = getProductsBaseQuery(query, orgId);
 		SQLQuery<?> productsQuery = fromClause.select(
 											stock.quantity,
 											stock.price,
@@ -527,7 +667,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 											product.organizationId.as("organization_id"),
 											variant.id.as("variant_id"),
 											variant.featureSpec,
-											product.barcode,
+											variant.barcode.as("barcode"),
 											brand.name.as("brand"),
 											product.description.as("description"),
 											product.name.as("name"),
@@ -537,8 +677,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 													.partitionBy(product.id)
 													.orderBy(stock.price).as("row_num"));
 
-		SQLQuery<?> stocks = query.from(productsQuery.as("total_products"))
-								  .where(Expressions.numberPath(Long.class, "row_num").eq(1L));
+		SQLQuery<?> stocks = query.from(productsQuery.as("total_products"));
 
 		stocks.select((Expressions.template(CsvRow.class,"*")));
 
@@ -565,7 +704,8 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 				.innerJoin(variant).on(stock.variantId.eq(variant.id))
 				.innerJoin(product).on(variant.productId.eq(product.id))
 				.innerJoin(brand).on(product.brandId.eq(brand.id))
-				.where(product.organizationId.eq(orgId));
+				.where(product.organizationId.eq(orgId)
+						.and(product.removed.eq(0)));
 	}
 	
 	
