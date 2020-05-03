@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.copyNonNullProperties;
+import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static java.lang.String.format;
@@ -563,7 +564,7 @@ public class CategoryService {
 	private TagsEntity verifyTagToBeAddedToTree(TagsEntity tag) {
 		if(tag.getCategoriesEntity() == null) {
 			throw new RuntimeBusinessException(
-					format("Cannot add tag with id[%d] to the tag tree! Tag doesnot have a category!", tag.getGraphId())
+					format("Cannot add tag with id[%d] to the tag tree! Tag doesnot have a category!", tag.getId())
 					, "INVALID PARAM: nodes"
 					, NOT_ACCEPTABLE);
 		}
@@ -579,6 +580,7 @@ public class CategoryService {
 				.map(TagsTreeNodeCreationDTO::getChildren)
 				.orElse(emptyList())
 				.stream()
+				.filter(child -> noneIsNull(child, child.getTagId()))
 				.map(child -> createTagSubTree(child, tagsMap))
 				.collect(toList());
 	}
