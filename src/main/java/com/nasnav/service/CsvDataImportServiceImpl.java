@@ -102,7 +102,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	
 	@Autowired
 	private SecurityService security;
-	
+
 	
 	@Autowired
 	private ProductFeaturesRepository featureRepo;
@@ -478,9 +478,10 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 	public ByteArrayOutputStream generateProductsCsv() throws InvocationTargetException, SQLException, IllegalAccessException, BusinessException {
+		Long orgId = security.getCurrentUserOrganizationId();
+
 		List<String> headers = getProductImportTemplateHeaders();
 
-		Long orgId = security.getCurrentUserOrganizationId();
 		List<CsvRow> products = getProducts(orgId);
 
 		return buildProductsCsv(headers, products);
@@ -496,6 +497,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 						new BeanPropertyRowMapper<>(CsvRow.class));
 
 		for (CsvRow row : result) {
+			row.setProductGroupKey(row.getProductId().toString());
 			List<String> tagsList = productRepository.getTagsNamesByProductId(row.getProductId());
 			if(tagsList.size() > 0) {
 				String tags = toTagsString(tagsList);
