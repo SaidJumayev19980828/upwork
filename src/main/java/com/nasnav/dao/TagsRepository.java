@@ -8,10 +8,11 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.TagsEntity;
-import org.springframework.transaction.annotation.Transactional;
+import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 
 public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
 
@@ -44,4 +45,11 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
     void setTagsListCategory(@Param("categoryId") Long categoryId,
                              @Param("orgId") Long orgId,
                              @Param("ids") List<Long> ids);
+    
+    
+    @Query("SELECT NEW com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData(product.id , tags.id, tags.name) "
+    		+ " from ProductEntity product "
+    		+ " left join product.tags tags "
+    		+ " where product.id in :productIds")
+    List<ProductTagsBasicData> getTagsByProductIdIn(@Param("productIds")List<Long> productIds);
 }

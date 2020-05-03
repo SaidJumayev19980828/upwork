@@ -4,6 +4,8 @@ import static java.util.Arrays.asList;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.sql.SQLException;
 import java.util.List;
 
 import javax.validation.Valid;
@@ -37,4 +39,6 @@ public interface CsvDataImportService {
 	public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException;
 	public ByteArrayOutputStream generateImagesCsvTemplate(ImageCsvTemplateType type) throws IOException;
 	List<String> getProductImportTemplateHeaders();
+
+	public ByteArrayOutputStream generateProductsCsv() throws InvocationTargetException, SQLException, IllegalAccessException, BusinessException;
 }

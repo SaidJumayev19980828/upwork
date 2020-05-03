@@ -30,6 +30,7 @@ public class CsvRow {
 	protected Map<String,String> extraAttributes;
 	protected String productGroupKey;
 	protected BigDecimal discount;
+	protected Long productId;
 	
 	public CsvRow() {
 		extraAttributes = new HashMap<>();
