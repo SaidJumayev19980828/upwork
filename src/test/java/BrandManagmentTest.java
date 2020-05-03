@@ -1,3 +1,6 @@
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static org.springframework.http.HttpMethod.DELETE;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -6,9 +9,6 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dto.Organization_BrandRepresentationObject;
-import com.nasnav.service.BrandService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -21,14 +21,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import com.nasnav.NavBox;
-import com.nasnav.test.commons.TestCommons;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.service.BrandService;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -76,7 +80,7 @@ public class BrandManagmentTest {
         map.add("properties", body);
         map.add("logo", file);
         map.add("banner", file);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(200, response.getStatusCode().value());
     }
@@ -86,7 +90,7 @@ public class BrandManagmentTest {
         String body = "{\"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
@@ -96,7 +100,7 @@ public class BrandManagmentTest {
         String body = "{\"operation\":\"invalid_operation\", \"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
@@ -106,7 +110,7 @@ public class BrandManagmentTest {
         String body = "{\"operation\":\"create\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
@@ -119,7 +123,7 @@ public class BrandManagmentTest {
         String body = "{\"operation\":\"create\", \"name\":\"Alfa Romero\", \"p_name\":\"12Alfa Romero#\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
@@ -134,7 +138,7 @@ public class BrandManagmentTest {
         map.add("properties", body);
         map.add("logo", databaseCleanup);
         map.add("banner", brandsDataInsert);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
@@ -144,7 +148,7 @@ public class BrandManagmentTest {
         String body = "{\"operation\":\"update\", \"brand_id\": 101,\"name\":\"12Alfa Romero#\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(200, response.getStatusCode().value());
     }
@@ -154,7 +158,7 @@ public class BrandManagmentTest {
         String body = "{\"operation\":\"update\", \"brand_id\": 101,\"name\":\"Alfa Romero\", \"p_name\":\"12Alfa Romero#\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
@@ -166,7 +170,7 @@ public class BrandManagmentTest {
         map.add("properties", body);
         map.add("logo", databaseCleanup);
         map.add("banner", brandsDataInsert);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
@@ -176,7 +180,7 @@ public class BrandManagmentTest {
         String body = "{\"operation\":\"update\", \"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
@@ -186,7 +190,7 @@ public class BrandManagmentTest {
         String body = "{\"operation\":\"update\", \"brand_id\": 9999999, \"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map, "hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map, "hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(404, response.getStatusCode().value());
     }
@@ -196,7 +200,7 @@ public class BrandManagmentTest {
         String body = "{\"operation\":\"update\", \"brand_id\": 101, \"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"abcdefg", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"abcdefg", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(403, response.getStatusCode().value());
     }
@@ -206,7 +210,7 @@ public class BrandManagmentTest {
         String body = "{\"operation\":\"create\", \"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"abcdefg", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"abcdefg", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(403, response.getStatusCode().value());
     }
@@ -216,7 +220,7 @@ public class BrandManagmentTest {
         String body = "{\"operation\":\"update\", \"brand_id\": 101, \"name\":\"Alfa Romero\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
         Assert.assertEquals(200, response.getStatusCode().value());
     }
@@ -226,9 +230,9 @@ public class BrandManagmentTest {
         String body = "{\"operation\":\"update\", \"brand_id\": 101, \"name\":\"Alfa Romero\", \"p_name\":\"p-name\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
-        HttpEntity<Object> json = TestCommons.getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<Object> response = template.postForEntity("/organization/brand", json, Object.class);
-        LinkedHashMap mapRes = (LinkedHashMap) response.getBody();
+        LinkedHashMap<?, ?> mapRes = (LinkedHashMap<?, ?>) response.getBody();
         Organization_BrandRepresentationObject brand = brandSvc.getBrandById(((Integer) mapRes.get("brand_id")).longValue());
 
         Assert.assertEquals("p-name", brand.getPname());
@@ -253,18 +257,20 @@ public class BrandManagmentTest {
 
     @Test
     public void deleteBrand() {
-        HttpEntity request = TestCommons.getHttpEntity("hijkllm");
-        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=103", HttpMethod.DELETE,
-                                        request, String.class);
+    	Long brandId = 103L;
+    	Assert.assertTrue(brandRepo.existsById(brandId));
+        HttpEntity<?> request = getHttpEntity("hijkllm");
+        ResponseEntity<String> res = 
+        		template.exchange("/organization/brand?brand_id="+ brandId, DELETE, request, String.class);
         Assert.assertEquals(200, res.getStatusCodeValue());
-        Assert.assertTrue(brandRepo.existsById(101L));
+        Assert.assertFalse(brandRepo.existsById(brandId));
     }
 
 
     @Test
     public void deleteBrandInvalidId() {
-        HttpEntity request = TestCommons.getHttpEntity("hijkllm");
-        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=-1", HttpMethod.DELETE,
+        HttpEntity<?> request = getHttpEntity("hijkllm");
+        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=-1", DELETE,
                 request, String.class);
         Assert.assertEquals(406, res.getStatusCodeValue());
     }
@@ -272,8 +278,8 @@ public class BrandManagmentTest {
 
     @Test
     public void deleteBrandLinkedShop() {
-        HttpEntity request = TestCommons.getHttpEntity("hijkllm");
-        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=102", HttpMethod.DELETE,
+        HttpEntity<?> request = getHttpEntity("hijkllm");
+        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=102", DELETE,
                 request, String.class);
         Assert.assertEquals(406, res.getStatusCodeValue());
     }
@@ -281,8 +287,8 @@ public class BrandManagmentTest {
 
     @Test
     public void deleteBrandLinkedProduct() {
-        HttpEntity request = TestCommons.getHttpEntity("hijkllm");
-        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=104", HttpMethod.DELETE,
+        HttpEntity<?> request = getHttpEntity("hijkllm");
+        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=104", DELETE,
                 request, String.class);
         Assert.assertEquals(406, res.getStatusCodeValue());
     }
@@ -290,8 +296,8 @@ public class BrandManagmentTest {
 
     @Test
     public void deleteBrandInvalidToken() {
-        HttpEntity request = TestCommons.getHttpEntity("hijkdllm");
-        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=104", HttpMethod.DELETE,
+        HttpEntity<?> request = getHttpEntity("hijkdllm");
+        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=104", DELETE,
                 request, String.class);
         Assert.assertEquals(401, res.getStatusCodeValue());
     }
@@ -299,8 +305,8 @@ public class BrandManagmentTest {
 
     @Test
     public void deleteBrandUnauthenticated() {
-        HttpEntity request = TestCommons.getHttpEntity("abcdefg");
-        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=103", HttpMethod.DELETE,
+        HttpEntity<?> request = getHttpEntity("abcdefg");
+        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=103", DELETE,
                 request, String.class);
         Assert.assertEquals(403, res.getStatusCodeValue());
     }
@@ -308,8 +314,8 @@ public class BrandManagmentTest {
 
     @Test
     public void deleteBrandDifferentOrg() {
-        HttpEntity request = TestCommons.getHttpEntity("123456");
-        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=103", HttpMethod.DELETE,
+        HttpEntity<?> request = getHttpEntity("123456");
+        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=103", DELETE,
                 request, String.class);
         Assert.assertEquals(406, res.getStatusCodeValue());
     }

@@ -80,22 +80,4 @@ public class DataImportContoller {
 				.body(s.toString());
 	}
 
-
-
-
-    @ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "Products data exported"),
-            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
-            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
-            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
-    })
-	@GetMapping(value = "/productlist")
-	@ResponseBody
-	public ResponseEntity<String> generateProductsCsv(@RequestHeader("User-Token") String token) throws SQLException, BusinessException, IllegalAccessException, InvocationTargetException {
-		ByteArrayOutputStream s = importService.generateProductsCsv();
-		return ResponseEntity.ok()
-				.contentType(MediaType.parseMediaType("text/csv"))
-				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Products_Csv.csv")
-				.body(s.toString());
-	}
 }
