@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 import javax.validation.Valid;
@@ -498,20 +497,20 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	}
 
 
-	public ByteArrayOutputStream generateProductsCsv() throws InvocationTargetException, SQLException, IllegalAccessException, BusinessException {
+	public ByteArrayOutputStream generateProductsCsv(Long shopId) throws InvocationTargetException, SQLException, IllegalAccessException, BusinessException {
 		Long orgId = security.getCurrentUserOrganizationId();
 
 		List<String> headers = getProductImportTemplateHeaders();
 
-		List<CsvRow> products = getProducts(orgId);
+		List<CsvRow> products = getProducts(orgId, shopId);
 
 		return buildProductsCsv(headers, products);
 	}
 
 
-	private List<CsvRow> getProducts(Long orgId) {
+	private List<CsvRow> getProducts(Long orgId, Long shopId) {
 
-		SQLQuery<?> stocks = getStocksQuery(orgId);
+		SQLQuery<?> stocks = getStocksQuery(orgId, shopId);
 
 		List<ProductExportedData> result =
 				template.query(stocks.getSQL().getSQL(),
@@ -651,7 +650,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 
-	private SQLQuery<?> getStocksQuery(Long orgId) {
+	private SQLQuery<?> getStocksQuery(Long orgId, Long shopId) {
 		SQLQueryFactory query = new SQLQueryFactory(productService.createQueryDslConfig() , dataSource);
 
 		QStocks stock = QStocks.stocks;
@@ -659,7 +658,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		QProductVariants variant = QProductVariants.productVariants;
 		QBrands brand = QBrands.brands;
 
-		SQLQuery<?> fromClause = getProductsBaseQuery(query, orgId);
+		SQLQuery<?> fromClause = getProductsBaseQuery(query, orgId, shopId);
 		SQLQuery<?> productsQuery = fromClause.select(
 											stock.quantity,
 											stock.price,
@@ -694,7 +693,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	}
 
 
-	private SQLQuery<?> getProductsBaseQuery(SQLQueryFactory query, Long orgId) {
+	private SQLQuery<?> getProductsBaseQuery(SQLQueryFactory query, Long orgId, Long shopId) {
 		QStocks stock = QStocks.stocks;
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
@@ -705,6 +704,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 				.innerJoin(product).on(variant.productId.eq(product.id))
 				.innerJoin(brand).on(product.brandId.eq(brand.id))
 				.where(product.organizationId.eq(orgId)
+						.and(stock.shopId.eq(shopId))
 						.and(product.removed.eq(0)));
 	}
 	

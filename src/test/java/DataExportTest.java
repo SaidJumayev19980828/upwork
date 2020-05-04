@@ -39,7 +39,8 @@ public class DataExportTest {
 	
 	@Test
 	public void testProductExport(){		
-		ResponseEntity<String> response = template.exchange("/export/products", GET, getHttpEntity("101112"), String.class);
+		ResponseEntity<String> response = 
+				template.exchange("/export/products?shop_id=502", GET, getHttpEntity("101112"), String.class);
 		
 		System.out.println(">>>>>>>\n" + response.getBody());
 		

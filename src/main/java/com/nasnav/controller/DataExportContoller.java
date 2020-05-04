@@ -7,12 +7,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -43,8 +43,10 @@ public class DataExportContoller {
     })
 	@GetMapping(value = "/products")
 	@ResponseBody
-	public ResponseEntity<String> generateProductsCsv(@RequestHeader("User-Token") String token) throws SQLException, BusinessException, IllegalAccessException, InvocationTargetException {
-		ByteArrayOutputStream s = importService.generateProductsCsv();
+	public ResponseEntity<String> generateProductsCsv(
+			@RequestHeader("User-Token") String token
+			, @RequestParam(name = "shop_id", required = true)Long shopId) throws SQLException, BusinessException, IllegalAccessException, InvocationTargetException {
+		ByteArrayOutputStream s = importService.generateProductsCsv(shopId);
 		return ResponseEntity.ok()
 				.contentType(MediaType.parseMediaType("text/csv"))
 				.header(CONTENT_DISPOSITION, "attachment; filename=Products_Csv.csv")

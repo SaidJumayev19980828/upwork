@@ -40,5 +40,5 @@ public interface CsvDataImportService {
 	public ByteArrayOutputStream generateImagesCsvTemplate(ImageCsvTemplateType type) throws IOException;
 	List<String> getProductImportTemplateHeaders();
 
-	public ByteArrayOutputStream generateProductsCsv() throws InvocationTargetException, SQLException, IllegalAccessException, BusinessException;
+	public ByteArrayOutputStream generateProductsCsv(Long shopId) throws InvocationTargetException, SQLException, IllegalAccessException, BusinessException;
 }
