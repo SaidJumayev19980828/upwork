@@ -352,6 +352,7 @@ public class MicrosoftDynamicsIntegrationTest {
 				.map(TagsEntity::getName)
 				.collect(toList());
 		assertTrue("Brands are imported as tags as well", existingTags.contains("Cybele"));
+		assertTrue("All the products are given the tag brand", existingTags.contains("All Products"));
 		assertTrue("Categories parents are imported as tags", existingTags.contains("Web Sits"));
 	}
 

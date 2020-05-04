@@ -43,6 +43,12 @@ import reactor.core.publisher.Mono;
 
 public class ProductImportEventListener extends AbstractMSDynamicsEventListener<ProductsImportEvent, ProductImportEventParam, IntegrationImportedProducts> {
 
+	private static final String ALL_PRODUCTS_TAG = "All Products";
+
+
+
+
+
 	public ProductImportEventListener(IntegrationService integrationService) {
 		super(integrationService);		
 	}
@@ -241,7 +247,7 @@ public class ProductImportEventListener extends AbstractMSDynamicsEventListener<
 
 
 	private Set<String> createTagsList(Product product, Map<String, Set<String>> categoriesParents) {
-		Set<String> tags = setOf(product.getCategory(), product.getBrand());
+		Set<String> tags = setOf(product.getCategory(), product.getBrand(), ALL_PRODUCTS_TAG);
 		Set<String> categoryParents = 
 				ofNullable(product.getCategory())
 				.map(categoriesParents::get)
