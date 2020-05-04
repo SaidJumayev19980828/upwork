@@ -2365,4 +2365,11 @@ public class ProductService {
 				.forEach(batch -> productRepository.setProductsHidden(batch, hide, orgId));
 		}
 	}
+
+
+
+
+	public void deleteAllTagsForProducts(List<Long> products) {
+		productRepository.deleteAllTagsForProducts(products);
+	}
 }

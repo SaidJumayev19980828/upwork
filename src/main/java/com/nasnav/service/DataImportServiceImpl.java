@@ -4,7 +4,6 @@ import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
 import static com.nasnav.commons.utils.EntityUtils.allIsNull;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
-import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_BRAND_NAME_NOT_EXIST;
@@ -36,7 +35,6 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import com.nasnav.commons.utils.StringUtils;
 import org.jboss.logging.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +47,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.model.IndexedData;
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.EntityUtils;
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.BrandsRepository;
@@ -546,7 +545,7 @@ public class DataImportServiceImpl implements DataImportService {
 		
 		if (updateProductEnabled) {
 		    Long productId = saveProductDto(product.getProductDto());
-		    saveProductTags(product, productId);
+		    saveProductTags(product, productId, context.getImportMetaData().isResetTags());
 		    product.getVariants().forEach(variant -> variant.setProductId(productId));
 		}
 		
@@ -582,7 +581,7 @@ public class DataImportServiceImpl implements DataImportService {
 	
     private ProductData saveNewImportedProduct(ProductData data) throws BusinessException {
         Long productId = saveProductDto(data.getProductDto());
-        saveProductTags(data, productId);
+        saveProductTags(data, productId, false);
         data.getProductDto().setId(productId);
         data.getVariants().forEach(variant -> variant.setProductId(productId));
         return data;
@@ -595,14 +594,14 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-	private void saveProductTags(ProductData data, Long productId) throws BusinessException {
+	private void saveProductTags(ProductData data, Long productId, boolean isResetTags) throws BusinessException {
 		Long orgId = security.getCurrentUserOrganizationId();
         Set<String> tagsNames = data.getTagsNames();
         Map<String, TagsEntity> tagsMap = getTagsNamesMap(orgId, tagsNames);
         
         validateTags(orgId, tagsNames, tagsMap);        
         
-        saveProductTagsToDB(tagsMap, productId);
+        saveProductTagsToDB(tagsMap, productId, isResetTags);
 	}
 
 
@@ -618,11 +617,15 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-	private void saveProductTagsToDB(Map<String, TagsEntity> tagsMap, Long productId) throws BusinessException {
+	private void saveProductTagsToDB(Map<String, TagsEntity> tagsMap, Long productId, boolean isResetTags) throws BusinessException {
 		ProductTagDTO productTagDTO = new ProductTagDTO();
         List<Long> tagIds = getTagIdList(tagsMap);
         productTagDTO.setProductIds(asList(productId));
         productTagDTO.setTagIds(tagIds);
+        
+        if( isResetTags && !tagIds.isEmpty()) {
+        	productService.deleteAllTagsForProducts(asList(productId));
+        }
         
         productService.updateProductTags(productTagDTO);
 	}

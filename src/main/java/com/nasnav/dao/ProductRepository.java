@@ -135,6 +135,12 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
                            @Param("orgId") Long orgId);
 
 	Long countByHideAndOrganizationId(boolean b, Long orgId);
+	
+	
+	@Modifying
+    @Transactional
+	@Query(value = "DELETE FROM Product_tags t WHERE t.product_id in :productIds", nativeQuery = true)
+	void deleteAllTagsForProducts(@Param("productIds")List<Long> products);
 }
 
 

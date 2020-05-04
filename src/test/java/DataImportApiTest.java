@@ -1239,6 +1239,36 @@ public class DataImportApiTest {
 
 		validateImportReportForNewCreatedTagsAndBrands(result);
 	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void uploadProductCSVWithResetTagsFlag() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", true);
+		importProperties.put("update_stocks", true);
+		importProperties.put("reset_tags", true);
+        
+		Long productId = 200003L;
+		ProductEntity productBefore = helper.getProductFullData(productId);
+		assertEquals(1, productBefore.getTags().size());		
+		long tagId = productBefore.getTags().stream().findFirst().map(TagsEntity::getId).orElse(-1L);
+		assertEquals("this is the id of the tag that will be removed from the product", 22007L, tagId);
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
+		
+		result.andExpect(status().is(200));
+		
+		ProductEntity productAfter = helper.getProductFullData(productId);
+		assertEquals(1, productAfter.getTags().size());		
+		long newTagId = productAfter.getTags().stream().findFirst().map(TagsEntity::getId).orElse(-1L);
+		assertEquals("this is the id of the tag that te product should have", 22001L, newTagId);
+	}
 
 
 
