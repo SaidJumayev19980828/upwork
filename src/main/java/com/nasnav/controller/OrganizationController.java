@@ -214,7 +214,7 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "tag", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public TagResponse createOrganizationTag(@RequestHeader (value = "User-Token") String userToken,
+    public TagResponse updateOrganizationTag(@RequestHeader (value = "User-Token") String userToken,
                                          @RequestBody TagsDTO tagDTO) throws BusinessException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         tagDTO.setHasCategory(true);
     	TagsEntity tag = categoryService.createOrUpdateTag(tagDTO);

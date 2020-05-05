@@ -379,7 +379,8 @@ public class CategoryService {
 											, NOT_ACCEPTABLE));
 		
 		try {
-			copyNonNullProperties(tagDTO, entity);
+			copyNonNullProperties(tagDTO, entity);			
+			setCategory(tagDTO, entity);
 		} catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
 			logger.error(e, e);
 			throw new BusinessException(
@@ -393,6 +394,24 @@ public class CategoryService {
 			entity.setGraphId(graphId);            	
 		}
 		return orgTagsRepo.save(entity);
+	}
+
+
+
+
+	private void setCategory(TagsDTO tagDTO, TagsEntity entity) throws BusinessException {
+		Long categoryId = tagDTO.getCategoryId();
+		if(Objects.nonNull(categoryId)) {
+			CategoriesEntity category = 
+					categoryRepository
+						.findById(categoryId)
+						.orElseThrow(() -> 
+							new BusinessException(
+								format("No category exists with id [%d]!", categoryId)
+								, "INVALID PARAM: category_id"
+								, NOT_ACCEPTABLE));
+			entity.setCategoriesEntity(category);
+		}
 	}
 
 
