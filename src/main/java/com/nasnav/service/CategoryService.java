@@ -1,6 +1,8 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.copyNonNullProperties;
+import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
+import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -16,7 +18,6 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.lang.reflect.InvocationTargetException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -161,6 +162,9 @@ public class CategoryService {
         return new ResponseEntity<CategoryResponse>(new CategoryResponse(categoriesEntity.getId()), HttpStatus.OK);
     }
 
+    
+    
+    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id", "organizations_tag_trees"})
     public ResponseEntity<CategoryResponse> updateCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
         if (categoryJson.getId() == null) {
             throw new BusinessException("MISSING_PARAM: ID", "No category ID is provided", HttpStatus.NOT_ACCEPTABLE);
@@ -227,9 +231,9 @@ public class CategoryService {
     public List<TagsRepresentationObject> getOrganizationTags(Long orgId, String categoryName) {
         List<TagsEntity> tagsEntities;
         if(isBlankOrNull(categoryName)) {
-        	tagsEntities = orgTagsRepo.findByOrganizationEntity_Id(orgId);
+        	tagsEntities = orgTagsRepo.findByOrganizationEntity_IdOrderByName(orgId);
         }else {
-        	tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_Id(categoryName, orgId);
+        	tagsEntities = orgTagsRepo.findByCategoriesEntity_NameAndOrganizationEntity_IdOrderByName(categoryName, orgId);
         }
         return tagsEntities
         			.stream()
@@ -356,7 +360,7 @@ public class CategoryService {
         	entity = updateTag(tagDTO);
         }    
 
-        return orgTagsRepo.save(entity);
+        return entity;
     }
 
 
@@ -388,7 +392,7 @@ public class CategoryService {
 			Integer graphId = tagDTO.getGraphId() != null? org.getId().intValue() : null;
 			entity.setGraphId(graphId);            	
 		}
-		return entity;
+		return orgTagsRepo.save(entity);
 	}
 
 
@@ -451,15 +455,18 @@ public class CategoryService {
         entity.setOrganizationEntity(org);
         entity.setCategoriesEntity(category);
         entity.setName(tagDTO.getName());
-        entity.setAlias(alias);
-        entity.setPname(StringUtils.encodeUrl(tagDTO.getName()));
+        entity.setAlias(alias);        
         entity.setGraphId(tagDTO.getGraphId());
         entity.setMetadata(tagDTO.getMetadata());
         if(tagDTO.getGraphId() != null) {
         	entity.setGraphId(org.getId().intValue()); // TODO will change to tagDTO.getGraphId() when we support MultiGraph per org
         }
         
-        return entity;
+        entity = orgTagsRepo.save(entity);
+        String pname = format("%d-%s", entity.getId(), encodeUrl(tagDTO.getName()));
+        entity.setPname(pname);
+        
+        return orgTagsRepo.save(entity);
     }
 
 
@@ -557,7 +564,7 @@ public class CategoryService {
 	private TagsEntity verifyTagToBeAddedToTree(TagsEntity tag) {
 		if(tag.getCategoriesEntity() == null) {
 			throw new RuntimeBusinessException(
-					format("Cannot add tag with id[%d] to the tag tree! Tag doesnot have a category!", tag.getGraphId())
+					format("Cannot add tag with id[%d] to the tag tree! Tag doesnot have a category!", tag.getId())
 					, "INVALID PARAM: nodes"
 					, NOT_ACCEPTABLE);
 		}
@@ -573,6 +580,7 @@ public class CategoryService {
 				.map(TagsTreeNodeCreationDTO::getChildren)
 				.orElse(emptyList())
 				.stream()
+				.filter(child -> noneIsNull(child, child.getTagId()))
 				.map(child -> createTagSubTree(child, tagsMap))
 				.collect(toList());
 	}

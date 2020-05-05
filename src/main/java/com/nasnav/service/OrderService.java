@@ -5,6 +5,7 @@ import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 
@@ -34,4 +35,14 @@ public interface OrderService {
 	public void deleteOrders(List<Long> orderIds) throws BusinessException;
 
 	public void deleteCurrentOrders();
+	
+	public void validateOrdersForCheckOut(List<OrdersEntity> orders); 
+	
+	public OrdersEntity checkoutOrder(OrdersEntity order);
+
+	OrdersEntity checkoutOrder(Long orderId) throws BusinessException;
+
+	void validateOrderIdsForCheckOut(List<Long> orderIds);
+
+	public void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
 }

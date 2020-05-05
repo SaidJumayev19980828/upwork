@@ -75,11 +75,6 @@ public class EntityUtils {
 	
 	
 	
-	@SafeVarargs
-	public static <T> Set<T> setOf(T...elements){
-		return new HashSet<>( asList(elements));
-	}
-	
 	
 	
 	

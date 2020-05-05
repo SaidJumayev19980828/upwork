@@ -492,10 +492,10 @@ public class ShopStockUpdateTest {
 		assertTrue(stockBefore.getPrice().compareTo( saved.getPrice() ) == 0 );
 	}
 
+	
+	
 
-	
-	
-	
+
 	private JSONObject createStockUpdateReq() {
 		JSONObject json = new JSONObject();
 		

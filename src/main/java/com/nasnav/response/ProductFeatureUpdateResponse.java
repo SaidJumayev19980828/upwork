@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class ProductFeatureUpdateResponse extends BaseResponse{
+public class ProductFeatureUpdateResponse {
 	private Integer featureId;
 }

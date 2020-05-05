@@ -66,6 +66,13 @@ public class OrganizationThemeEntity implements BaseEntity {
     @Type(type = "com.nasnav.persistence.GenericArrayType")
     private String[] sliderImages;
     
+    @Column(name = "created_at")
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+    
+    @Column(name = "updated_at")
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
 
     

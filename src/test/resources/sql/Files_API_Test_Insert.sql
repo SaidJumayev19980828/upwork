@@ -4,6 +4,15 @@ INSERT INTO public.organizations(id, name) VALUES (99001, 'organization_1');
 INSERT INTO public.organizations(id, name) VALUES (99002, 'organization_2');
 INSERT INTO public.organizations(id, name) VALUES (99003, 'organization_2');
 
+
+-- dummy shop
+INSERT INTO public.shops (id,"name",  organization_id) VALUES(502 , 'Bundle Shop'  , 99001);
+INSERT INTO public.shops (id,"name",  organization_id) VALUES(501 , 'another Shop'  , 99001);
+INSERT INTO public.shops (id,"name",  organization_id) VALUES(503 , 'Shop 3'  , 99001);
+INSERT INTO public.shops (id,"name",  organization_id) VALUES(504 , 'Shop 4'  , 99003);
+INSERT INTO public.shops (id,"name",  organization_id) VALUES(506 , 'Shop 5'  , 99002);
+
+
 --inserting users
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
     VALUES (88, 'user1@nasnav.com','user1','123', 99001);

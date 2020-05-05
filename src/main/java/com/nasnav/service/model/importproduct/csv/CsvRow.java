@@ -1,4 +1,4 @@
-package com.nasnav.service;
+package com.nasnav.service.model.importproduct.csv;
 
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
-import com.nasnav.commons.utils.EntityUtils;
+import com.nasnav.commons.utils.CollectionUtils;
 
 import lombok.Data;
 
@@ -30,6 +30,7 @@ public class CsvRow {
 	protected Map<String,String> extraAttributes;
 	protected String productGroupKey;
 	protected BigDecimal discount;
+	protected Long productId;
 	
 	public CsvRow() {
 		extraAttributes = new HashMap<>();
@@ -66,7 +67,7 @@ public class CsvRow {
 	private Set<String> parseTags() {
 		return	ofNullable(tags)
 				.map(tagStr -> tagStr.split(TAGS_SEPARATOR))
-				.map(EntityUtils::setOf)
+				.map(CollectionUtils::setOf)
 				.orElse(emptySet())
 				.stream()
 				.map(tagStr -> tagStr.trim())

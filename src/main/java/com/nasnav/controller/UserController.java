@@ -232,7 +232,8 @@ public class UserController {
     })
     @GetMapping(value = "v2/register/activate",
             produces = APPLICATION_JSON_UTF8_VALUE)
-    public RedirectView sendEmailRecovery(@RequestParam(value = "token") String token) throws BusinessException {
-        return userService.activateUserAccount(token);
+    public RedirectView sendEmailRecovery(@RequestParam(value = "token") String token,
+                                          @RequestParam(value = "redirect") String redirect) throws BusinessException {
+        return userService.activateUserAccount(token, redirect);
     }
 }

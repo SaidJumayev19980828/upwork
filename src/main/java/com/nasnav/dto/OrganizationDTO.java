@@ -6,14 +6,18 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 @NoArgsConstructor
 @Data
 public class OrganizationDTO {
 
     @ApiModel(value = "Organization Creation Data")
     public static class OrganizationCreationDTO {
+
+        public Long id;
+
         @ApiModelProperty(value = "Organization's name", example = "Super Pharm", required = true)
-        @JsonProperty("name")
         public String name;
 
         @ApiModelProperty(value = "Url-compatible name, used as part of the URL path for organization shop", example = "super-pharm", required = true)
@@ -46,5 +50,8 @@ public class OrganizationDTO {
         @ApiModelProperty(value = "URL to instagram account", example = "https://instagram.com/fortunestores")
         @JsonProperty("social_instagram")
         public String socialInstagram;
+
+        @JsonProperty("extra_info")
+        public Map info;
     }
 }

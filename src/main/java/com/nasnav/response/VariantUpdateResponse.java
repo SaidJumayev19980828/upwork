@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class VariantUpdateResponse extends BaseResponse{
+public class VariantUpdateResponse {
 	private Long variantId;
 }

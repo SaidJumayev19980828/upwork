@@ -145,4 +145,12 @@ public class FortuneWebClient {
                 .uri("/api/products/"+id)
                 .exchange();
     }
+    
+    
+    
+    public Mono<ClientResponse> getCategories() {
+        return client.get()
+                .uri("/api/categories")
+                .exchange();
+    }
 }

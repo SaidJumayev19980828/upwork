@@ -1,5 +1,6 @@
 package com.nasnav.service.helpers;
 
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -11,9 +12,8 @@ import java.util.Set;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.service.CsvRow;
+import com.nasnav.service.model.importproduct.csv.CsvRow;
 import com.univocity.parsers.common.Context;
 import com.univocity.parsers.common.processor.BeanListProcessor;
 import com.univocity.parsers.common.record.Record;
@@ -71,7 +71,7 @@ public class ProductCsvRowProcessor<T extends CsvRow> extends BeanListProcessor<
 
 
 	private Set<String> getExtraCsvHeaders(Context context) {
-		Set<String> extraHeaders = EntityUtils.setOf(context.headers());
+		Set<String> extraHeaders = setOf(context.headers());
 		extraHeaders.removeAll(defaultTemplateHeaders);
 		return extraHeaders;
 	}

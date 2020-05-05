@@ -13,6 +13,10 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUC
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_VARIANT_FOUND;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_READ_ZIP;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_MODIFY_PRODUCT;
+import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_BARCODE;
+import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_EXTERNAL_ID;
+import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_IMAGE_FILE;
+import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_VARIANT_ID;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
@@ -1263,8 +1267,11 @@ public class ProductImageServiceImpl implements ProductImageService {
 		String path;
 		VariantIdentifier identifier;
 		for(Record record:csvRecords) {
-			path = normalizeZipPath(record.getString("path"));
-			identifier = new VariantIdentifier(record.getString("variant_id"), record.getString("external_id"), record.getString("barcode"));
+			path = normalizeZipPath(record.getString(IMG_CSV_HEADER_IMAGE_FILE));
+			identifier = new VariantIdentifier(
+								record.getString(IMG_CSV_HEADER_VARIANT_ID)
+								, record.getString(IMG_CSV_HEADER_EXTERNAL_ID)
+								, record.getString(IMG_CSV_HEADER_BARCODE));
 
 			if (identifiersMap.get(path) == null)
 				identifiersMap.put(path, new ArrayList<>());

@@ -1,10 +1,10 @@
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
+import static org.springframework.http.HttpMethod.GET;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Date;
 
 import javax.sql.DataSource;
 
@@ -31,7 +31,6 @@ import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
 
 import com.nasnav.NavBox;
 import com.nasnav.controller.NavboxController;
@@ -116,7 +115,7 @@ public class NavBoxTest {
     @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
     public void testShops() {
         // TODO: no support for opening times yet
-        ShopsEntity shop = new ShopsEntity();
+        ShopsEntity shop = shopsRepository.findById(100001L).get();
         long orgId = 99001L;
         OrganizationEntity org  = organizationRepository.findOneById(orgId);
         shop.setOrganizationEntity(org);
@@ -130,21 +129,26 @@ public class NavBoxTest {
         shop.setFloor("3");
         shop.setLat(BigDecimal.valueOf(30.072994));
         shop.setLng(BigDecimal.valueOf(31.346011));
-        System.out.println("XXX " + shop.getOrganizationEntity().getId());
         shopsRepository.save(shop);
+        
         long objectId = shop.getId();
 
-        ResponseEntity<String> orgResponse =  template.exchange(
-                "/navbox/shops?org_id=" + orgId,
-                HttpMethod.GET, new HttpEntity<>(headers), String.class);
-//System.out.println(orgResponse.getBody());
-        ResponseEntity<String> shopResponse =  template.exchange(
-                "/navbox/shop?shop_id=" + objectId,
-                HttpMethod.GET, new HttpEntity<>(headers), String.class);
-//System.out.println(orgResponse.getBody());
+        ResponseEntity<String> orgResponse =  
+        		template.exchange(
+		                "/navbox/shops?org_id=" + orgId
+		                ,GET
+		                , new HttpEntity<>(headers)
+		                , String.class);
+        
+        ResponseEntity<String> shopResponse =  
+        		template.exchange(
+        				"/navbox/shop?shop_id=" + objectId
+        				, GET
+        				, new HttpEntity<>(headers)
+        				, String.class);
 
-        shopsRepository.delete(shop);
-        organizationRepository.delete(org);
+//        shopsRepository.delete(shop);
+//        organizationRepository.delete(org);
 
         JSONArray jsona = new JSONArray(orgResponse.getBody());
         Assert.assertEquals(1, jsona.length());

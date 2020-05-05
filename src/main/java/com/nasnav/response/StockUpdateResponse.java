@@ -5,13 +5,11 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-@EqualsAndHashCode(callSuper=true)
 @AllArgsConstructor
-public class StockUpdateResponse extends BaseResponse{
+public class StockUpdateResponse {
 	
 	private Long stockId;
 }

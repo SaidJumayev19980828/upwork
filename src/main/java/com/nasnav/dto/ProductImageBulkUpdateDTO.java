@@ -18,6 +18,7 @@ public class ProductImageBulkUpdateDTO{
 	private boolean deleteOldImages;
 	
 	public ProductImageBulkUpdateDTO() {
-		ignoreErrors = false;
+		//TODO: return this to false after the option is implemented on the dashboard
+		ignoreErrors = true;
 	}
 }

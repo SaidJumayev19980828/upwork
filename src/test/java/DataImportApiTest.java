@@ -1,4 +1,4 @@
-import static com.nasnav.commons.utils.EntityUtils.setOf;
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.USD;
@@ -123,7 +123,10 @@ public class DataImportApiTest {
 	
 	@Value("classpath:/files/product__list_upload_with_new_tags.csv")
     private Resource csvFileWithNewTags;
-	
+
+	@Value("classpath:/files/product__list_upload_existing_barcodes_new_tags_only.csv")
+	private Resource csvFileWithBarcodesAndNewTagsOnly;
+
 	@Value("classpath:/files/product__list_upload_missing_features.csv")
     private Resource csvFileMissingFeatures;
 
@@ -1192,8 +1195,27 @@ public class DataImportApiTest {
         assertProductUpdatedDataSavedWithStock();        
 	}
 
+	@Test
+	public void uploadProductCSVWithBarcodesAndNewTagsOnly() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("update_product", true);
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+		ExtendedProductDataCount before = countExtendedProductData();
 
-	
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileWithBarcodesAndNewTagsOnly, importProperties);
+
+		result.andExpect(status().is(200));
+
+		ExtendedProductDataCount after = countExtendedProductData();
+
+		assertExpectedRowNumInserted(before, after, 0);
+
+		assertEquals(2, after.tags - before.tags);
+
+		ImportProductContext report = readImportReport(result);
+
+		assertEquals(2, report.getUpdatedProducts().size());
+	}
 	
 	
 	
@@ -1214,8 +1236,38 @@ public class DataImportApiTest {
 		assertEquals(2, after.brands - before.brands);
         
 		assertNewTagsAndBrandsImported();
-		
+
 		validateImportReportForNewCreatedTagsAndBrands(result);
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void uploadProductCSVWithResetTagsFlag() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", true);
+		importProperties.put("update_stocks", true);
+		importProperties.put("reset_tags", true);
+        
+		Long productId = 200003L;
+		ProductEntity productBefore = helper.getProductFullData(productId);
+		assertEquals(1, productBefore.getTags().size());		
+		long tagId = productBefore.getTags().stream().findFirst().map(TagsEntity::getId).orElse(-1L);
+		assertEquals("this is the id of the tag that will be removed from the product", 22007L, tagId);
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
+		
+		result.andExpect(status().is(200));
+		
+		ProductEntity productAfter = helper.getProductFullData(productId);
+		assertEquals(1, productAfter.getTags().size());		
+		long newTagId = productAfter.getTags().stream().findFirst().map(TagsEntity::getId).orElse(-1L);
+		assertEquals("this is the id of the tag that te product should have", 22001L, newTagId);
 	}
 
 

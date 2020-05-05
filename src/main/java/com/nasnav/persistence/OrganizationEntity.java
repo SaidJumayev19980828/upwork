@@ -2,9 +2,13 @@ package com.nasnav.persistence;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.Map;
+import java.util.Set;
 
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -13,6 +17,7 @@ import com.nasnav.dto.OrganizationRepresentationObject;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.json.JSONObject;
 
 @Entity
 @Table(name = "organizations")
@@ -34,11 +39,21 @@ public class OrganizationEntity implements BaseEntity {
     
     @Column(name = "p_name")
     private String pname;
-    
-
 
     @Column(name = "theme_id")
     private Integer themeId;
+
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JoinTable(name = "organization_theme_classes"
+            ,joinColumns = {@JoinColumn(name="organization_id")}
+            ,inverseJoinColumns = {@JoinColumn(name="theme_class_id")})
+    private Set<ThemeClassEntity> themeClasses;
+
+    @Column(name = "extra_info")
+    private String extraInfo;
 
     public OrganizationEntity() {
         id = null;
@@ -78,7 +93,15 @@ public class OrganizationEntity implements BaseEntity {
         organizationRepresentationObject.setName(getName());
         organizationRepresentationObject.setPname(getPname());
         organizationRepresentationObject.setType(getType()!=null?getType().name():null);
-        organizationRepresentationObject.setThemeId(getThemeId());
+        organizationRepresentationObject.setThemeId(getThemeId().toString());
+
+        if (getExtraInfo() != null) {
+            try {
+                JSONObject json = new JSONObject(getExtraInfo());
+                organizationRepresentationObject.setInfo(json.toMap());
+            } catch (Exception e) {}
+        }
+
 
         return organizationRepresentationObject;
     }

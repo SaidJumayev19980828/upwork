@@ -58,4 +58,29 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 			+ " left join fetch stock.organizationEntity org"
 			+ " where var.id in :variantIds  " )
 	List<StocksEntity> findByProductVariantsEntity_IdIn(@Param("variantIds")List<Long> variantIds);
+	
+	
+	
+	@Query("select stock from BasketsEntity basket "
+			+ " left join basket.stocksEntity stock "
+			+ " where basket.ordersEntity.id = :orderId")
+	List<StocksEntity> findItemStocksByOrderId(@Param("orderId") Long orderId);
+
+	
+		
+	@Query("select product.productType from StocksEntity stock "
+			+ " left join stock.productVariantsEntity variant "
+			+ " left join variant.productEntity product "
+			+ " where stock.id = :stockId")
+	Optional<Integer> getStockProductType(@Param("stockId") Long id);
+
+
+	@Query("select product.items from StocksEntity bundleStock"
+			+ " left join bundleStock.productVariantsEntity variant "
+			+ " left join variant.productEntity product"
+//			+ " left join bundle.items itemsStocks"
+			+ " where bundleStock.id = :stockId "
+			+ " and TYPE(product) = BundleEntity")
+	List<StocksEntity> findByBundleStockId(@Param("stockId")Long bundleStockId);
+	
 }

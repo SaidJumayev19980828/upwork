@@ -9,6 +9,8 @@ import com.nasnav.payments.upg.UpgLightbox;
 import com.nasnav.payments.misc.Tools;
 import com.nasnav.payments.upg.UpgSession;
 import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.service.OrderService;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -19,7 +21,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 @RestController
@@ -40,6 +45,9 @@ public class PaymentControllerUpg {
 
     @Autowired
     private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
+    
+    @Autowired
+    private OrderService orderService;
 
     @Autowired
     public PaymentControllerUpg(
@@ -76,6 +84,8 @@ public class PaymentControllerUpg {
     public ResponseEntity<?> upgGetData(@RequestParam(name = "order_id") String ordersList) throws BusinessException {
         ArrayList<OrdersEntity> orders = Tools.getOrdersFromString(ordersRepository, ordersList, ",");
 
+        validateOrdersForCheckOut(orders);
+        
         String accountName = Tools.getAccount(Tools.getOrdersFromString(ordersRepository, ordersList, ","), "upg", orgPaymentGatewaysRep);
 
         Properties props = Tools.getPropertyForAccount(accountName, upgLogger, config.paymentPropertiesDir);
@@ -89,6 +99,16 @@ public class PaymentControllerUpg {
         JSONObject data = lightbox.getJsonConfig(orders, session.getUpgAccount(), session.getOrderService(), upgLogger);
         return new ResponseEntity<>(data.toString(), HttpStatus.OK);
     }
+    
+    
+    private void validateOrdersForCheckOut(List<OrdersEntity> orders) {
+		List<Long> orderIds = 
+				orders
+				.stream()
+				.map(OrdersEntity::getId)
+				.collect(toList());        
+		orderService.validateOrderIdsForCheckOut(orderIds);
+	}
 
     @PostMapping(value = "callback")
     public ResponseEntity<?> upgCallback(@RequestBody String content) throws BusinessException {

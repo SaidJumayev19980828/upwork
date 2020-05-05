@@ -3,6 +3,7 @@ package com.nasnav.integration.microsoftdynamics;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpStatus.OK;
 
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -43,14 +44,11 @@ public class StockFetchEventListener extends AbstractMSDynamicsEventListener<Sto
 						.map(StockEventParam::getShopId)
 						.orElse(null);
 		
-		//TODO: for now the behavior is to fail silently and return empty mono.
-		//and leave it to the integration service to return a fallback value.
-		//this can change later as we may want to propagate the error, and let it be handled
-		//by error callbacks.
+		
 		Long orgId = event.getOrganizationId();
 		return getWebClient(orgId)
 				.getProductById(extVariantId)
-				.filter( res -> res.statusCode() == HttpStatus.OK)
+				.flatMap(this::throwExceptionIfNotOk)
 				.flatMap(res -> res.bodyToMono(ProductsResponse.class))
 				.flatMap(product -> getStockQtyForShop(product, extShopId));
 	}

@@ -3,12 +3,14 @@ package com.nasnav.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.nasnav.dto.response.navbox.ThemeRepresentationObject;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.util.List;
+import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
@@ -52,7 +54,7 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
 
     @ApiModelProperty(value = "theme id used in the organization")
     @JsonProperty("theme_id")
-    private Integer themeId;
+    private String themeId;
 
     @ApiModelProperty(value = "Brands carried by the organization")
     @JsonProperty("brands")
@@ -68,5 +70,10 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
 
     @ApiModelProperty(value = "All the images related to the organization")
     private List<OrganizationImagesRepresentationObject> images;
+
+    private ThemeRepresentationObject theme;
+
+    @JsonProperty("extra_info")
+    private Map info;
 }
 

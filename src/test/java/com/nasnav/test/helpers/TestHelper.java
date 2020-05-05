@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.dao.BundleRepository;
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.persistence.BundleEntity;
@@ -31,6 +32,9 @@ public class TestHelper {
 	
 	@Autowired
 	private OrdersRepository orderRepo;
+	
+	@Autowired
+	private ProductRepository productRepo;
 	
 	
 	@Transactional(readOnly = true)
@@ -120,6 +124,17 @@ public class TestHelper {
 		order.getShopsEntity().getName();
 
 		return order;
+	}
+	
+	
+	
+	
+	@Transactional
+	public ProductEntity getProductFullData(Long productId) {
+		ProductEntity product = productRepo.findById(productId).get();
+		
+		product.getTags();
+		return product;
 	}
 		
 

@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.dto.query.result.StockBasicData;
 
 public interface BasketRepository extends JpaRepository<BasketsEntity, Long> {
 
@@ -64,4 +65,12 @@ public interface BasketRepository extends JpaRepository<BasketsEntity, Long> {
 	void deleteByProductIdInAndOrganizationIdAndStatus( @Param("idList") List<Long> productIdList,
 											 @Param("orgId") Long orgId,
 										     @Param("status") Integer status);
+    
+    @Query("SELECT NEW com.nasnav.persistence.dto.query.result.StockBasicData(variant.id , shop.id , stock.id) "
+    		+ " from BasketsEntity basket "
+    		+ " left join basket.stocksEntity stock "
+    		+ " left join stock.shopsEntity shop "
+    		+ " left join stock.productVariantsEntity variant"
+    		+ " WHERE basket.id = :id")
+    StockBasicData getItemStockBasicDataById( @Param("id") Long id);
 }

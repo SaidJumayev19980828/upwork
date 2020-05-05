@@ -1,6 +1,6 @@
 package com.nasnav.integration.sallab;
 
-import static com.nasnav.commons.utils.EntityUtils.setOf;
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.ERR_INVALID_PAGINATION_PARAMS;
 import static com.nasnav.integration.sallab.ShopsImportEventListener.HARD_CODED_STOCK;
 import static java.lang.String.format;

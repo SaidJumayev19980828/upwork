@@ -26,6 +26,10 @@ DELETE FROM public.social_links WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_images where organization_id between 99000 and 99999;
 DELETE FROM public.files  where organization_id between 99000 and 99999;
 DELETE FROM public.files  where orig_filename = 'nasnav--Test_Photo.png';  -- for test files with no organization
+DELETE FROM public.scenes WHERE organization_id between 99000 and 99999;
+DELETE FROM public.shop_sections WHERE organization_id between 99000 and 99999;
+DELETE FROM public.shop_floors WHERE organization_id between 99000 and 99999;
+DELETE FROM public.shop360s WHERE shop_id in (select id from public.shops WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.tag_graph_edges 
@@ -37,7 +41,11 @@ WHERE child_id IN (
 DELETE FROM public.tag_graph_nodes where tag_id  in (select id FROM public.tags WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.organization_themes WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.tags WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.organization_themes_settings where organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.organization_theme_classes where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_domains WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_image_types;
+DELETE FROM public.themes where id between 5001 and 5003;
+DELETE FROM public.theme_classes where id between 990011 and 990012;
 DELETE FROM public.categories WHERE id between 200 AND 240;

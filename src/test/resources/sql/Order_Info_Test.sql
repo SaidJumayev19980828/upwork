@@ -21,6 +21,9 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (103, 2
 --inserting shops
 INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (501, 'shop_1', 102, 99002);
 INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (502, 'shop_2', 101, 99001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (503, 'shop_3', 101, 99001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (504, 'shop_4', 101, 99003);
+INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (506, 'shop_6', 101, 99002);
 
 
 --inserting users

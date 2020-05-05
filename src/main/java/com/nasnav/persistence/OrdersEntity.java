@@ -68,8 +68,17 @@ public class OrdersEntity implements BaseEntity{
 	public PaymentStatus getPaymentStatus() {
 		return PaymentStatus.getPaymentStatus(paymentStatus);
 	}
-	public void setPaymentStatus(PaymentStatus status) {
+	
+	public void setPaymentStatus(PaymentStatus paymentStatus) {
+		this.paymentStatus = paymentStatus.getValue();
+	}
+	
+	public void setOrderStatus(OrderStatus status) {
 		this.status = status.getValue();
+	}
+	
+	public OrderStatus getOrderStatus() {
+		return OrderStatus.findEnum(status);
 	}
 
 	@Column(name = "created_at", nullable = false, length = 29)

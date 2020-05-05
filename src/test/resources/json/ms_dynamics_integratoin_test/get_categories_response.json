@@ -1,0 +1,678 @@
+[
+  {
+    "categories": [
+      {
+        "category_id": 5637152077,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 0,
+        "category_name": "Web Sits",
+        "LEVEL_": 1
+      },
+      {
+        "category_id": 5637152078,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152077,
+        "category_name": "PERFUMES",
+        "LEVEL_": 2
+      },
+      {
+        "category_id": 5637152079,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152077,
+        "category_name": "MAKEUP",
+        "LEVEL_": 2
+      },
+      {
+        "category_id": 5637152081,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152077,
+        "category_name": "SKIN CARE",
+        "LEVEL_": 2
+      },
+      {
+        "category_id": 5637152826,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152078,
+        "category_name": "Women",
+        "LEVEL_": 3
+      },
+      {
+        "category_id": 5637152827,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152078,
+        "category_name": "Men",
+        "LEVEL_": 3
+      },
+      {
+        "category_id": 5637152828,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152079,
+        "category_name": "Face",
+        "LEVEL_": 3
+      },
+      {
+        "category_id": 5637152829,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152079,
+        "category_name": "Eyes",
+        "LEVEL_": 3
+      },
+      {
+        "category_id": 5637152830,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152079,
+        "category_name": "Lips",
+        "LEVEL_": 3
+      },
+      {
+        "category_id": 5637152831,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152081,
+        "category_name": "Body Care",
+        "LEVEL_": 3
+      },
+      {
+        "category_id": 5637152832,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152081,
+        "category_name": "Face Care",
+        "LEVEL_": 3
+      },
+      {
+        "category_id": 5637152833,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152828,
+        "category_name": "Foundation",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637152834,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152829,
+        "category_name": "Eyeshadow",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637152836,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152830,
+        "category_name": "Lipstick",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637152837,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152831,
+        "category_name": "Oil Treatment",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637152838,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Face Cleanser",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153576,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152079,
+        "category_name": "Makeup Tools",
+        "LEVEL_": 3
+      },
+      {
+        "category_id": 5637153577,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152079,
+        "category_name": "Sets",
+        "LEVEL_": 3
+      },
+      {
+        "category_id": 5637153578,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152079,
+        "category_name": "Nails",
+        "LEVEL_": 3
+      },
+      {
+        "category_id": 5637153581,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152829,
+        "category_name": "Eye Liner",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153582,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152829,
+        "category_name": "Eye Concealer",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153583,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152829,
+        "category_name": "Mascara",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153584,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152829,
+        "category_name": "Eye Brow",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153585,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152829,
+        "category_name": "Khol",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153586,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152829,
+        "category_name": "Tattoo",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153589,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152829,
+        "category_name": "Eye Lashes",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153590,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152829,
+        "category_name": "Kajal",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153591,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152828,
+        "category_name": "Blush",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153592,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152828,
+        "category_name": "Powder",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153593,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152828,
+        "category_name": "Loose Powder",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153594,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152828,
+        "category_name": "Makeup Remover",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153595,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152828,
+        "category_name": "BB Cream",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153596,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152828,
+        "category_name": "General",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153597,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152828,
+        "category_name": "Fixer",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153598,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152828,
+        "category_name": "Concealer",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153602,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152828,
+        "category_name": "Primer",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153603,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152829,
+        "category_name": "Eye Primer",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153604,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152830,
+        "category_name": "Lip Gloss",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153605,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152830,
+        "category_name": "Lip Balm",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153606,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152830,
+        "category_name": "Lip Liner",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153607,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152830,
+        "category_name": "Scrub",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153608,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153576,
+        "category_name": "Makeup Brushes",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153609,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153576,
+        "category_name": "Sharpener",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153610,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153576,
+        "category_name": "Sponge",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153611,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153578,
+        "category_name": "Nail Color",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153612,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153577,
+        "category_name": "Kits",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153613,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152081,
+        "category_name": "Skin Care Sets",
+        "LEVEL_": 3
+      },
+      {
+        "category_id": 5637153614,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152081,
+        "category_name": "Suncare",
+        "LEVEL_": 3
+      },
+      {
+        "category_id": 5637153615,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152081,
+        "category_name": "Eye Care",
+        "LEVEL_": 3
+      },
+      {
+        "category_id": 5637153616,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152081,
+        "category_name": "Lip Care",
+        "LEVEL_": 3
+      },
+      {
+        "category_id": 5637153617,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152831,
+        "category_name": "Body Treatment",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153618,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152831,
+        "category_name": "Body Firming",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153619,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152831,
+        "category_name": "Body Care Men",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153620,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152831,
+        "category_name": "Body General",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153621,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152831,
+        "category_name": "Super Restorative",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153622,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152831,
+        "category_name": "Body Whitening",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153623,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152831,
+        "category_name": "Body Sets",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153624,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152831,
+        "category_name": "Special",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153625,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152831,
+        "category_name": "Body Cleanser",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153626,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153615,
+        "category_name": "Eye Cleanser",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153627,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153615,
+        "category_name": "Eye Whitening",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153628,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153615,
+        "category_name": "Youth  Activetor",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153629,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153615,
+        "category_name": "Eye Firming",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153630,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153615,
+        "category_name": "Global",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153631,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153615,
+        "category_name": "Anti Aging",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153632,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153615,
+        "category_name": "Fatigue",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153633,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153615,
+        "category_name": "Eye Treatment",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153634,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153615,
+        "category_name": "Eye General",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153635,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153615,
+        "category_name": "Regenerating Anti Age",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153636,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Face Firming",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153637,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Face Treatment",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153638,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Face Care Men",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153639,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Extra Firming",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153640,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Double Serum",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153641,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Face Oil Treatment",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153642,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Face General",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153643,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Face Super Restorative",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153644,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Multi Active",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153645,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Hydration",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153646,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Face Whitening",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153647,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Face Special",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153648,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Face Sets",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153649,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Hydra Essn",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153650,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Hydra Essnential",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153651,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Beauty Flash",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153653,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Extra Firmingenticre",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153654,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Hydra Essential",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153655,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Face Anti Aging",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153656,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152832,
+        "category_name": "Anti Wrink",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153657,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153616,
+        "category_name": "LIP Hyrdation",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153658,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153616,
+        "category_name": "LIP Global",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153659,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153616,
+        "category_name": "LIP Anti Aging",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153660,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153614,
+        "category_name": "Self Tan",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153661,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153614,
+        "category_name": "Face Sun",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153662,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637153614,
+        "category_name": "Body Sun",
+        "LEVEL_": 4
+      },
+      {
+        "category_id": 5637153663,
+        "CATEGORYHIERARCHY": 5637146076,
+        "PARENTCATEGORY": 5637152078,
+        "category_name": "Unisex",
+        "LEVEL_": 3
+      }
+    ]
+  }
+]

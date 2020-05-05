@@ -26,7 +26,7 @@ public class TestController {
 	@PostMapping("/get_stock")
 	public Integer getExternalStock(@RequestParam("variant_id") Long variantId
 			, @RequestParam("shop_id") Long shopId) throws InvalidIntegrationEventException, BusinessException {
-		return integrationService.getExternalStock(variantId, shopId);
+		return integrationService.getExternalStock(variantId, shopId).orElse(-1);
 	}
 	
 }

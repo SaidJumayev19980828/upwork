@@ -2,6 +2,9 @@
 INSERT INTO public.organizations(id, name) VALUES (99001, 'organization_1');
 INSERT INTO public.organizations(id, name) VALUES (99002, 'organization_2');
 
+-- dummy shop
+INSERT INTO public.shops (id,"name",  organization_id) VALUES(501 , 'Bundle Shop'  , 99001);
+INSERT INTO public.shops (id,"name",  organization_id) VALUES(502 , 'another Shop'  , 99001);
 
 
 --inserting Employee Users

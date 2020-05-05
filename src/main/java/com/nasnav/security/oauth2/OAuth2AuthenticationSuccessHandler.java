@@ -1,15 +1,14 @@
 package com.nasnav.security.oauth2;
-import static com.nasnav.commons.utils.EntityUtils.setOf;
 import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
 import static com.nasnav.security.oauth2.CookieUtils.getCookie;
 import static com.nasnav.security.oauth2.OAuth2AuthorizationRequestRepository.ORG_ID_COOKIE_NAME;
 import static com.nasnav.security.oauth2.OAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME;
+import static com.nasnav.service.helpers.LoginHelper.isInvalidRedirectUrl;
 import static java.lang.String.format;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.Set;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -33,8 +32,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
 
 
-	private static final String NASNAV_DOMAIN = "nasnav.org";
-	private static final Set<String> ALLOWED_REDIRECT_DOMAINS = setOf(NASNAV_DOMAIN, "localhost", "127.0.0.1");
 
 	@Autowired
     private AuthorizationRequestRepository<OAuth2AuthorizationRequest> requestRepository;
@@ -153,25 +150,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 	}
 
 
-
-
-
-
-	private boolean isInvalidRedirectUrl(UriComponents redirectUri) {
-		String host = redirectUri.getHost();
-		return host != null && isNotAllowedHost(host);
-	}
-
-
-
-
-
-
-	private boolean isNotAllowedHost(String host) {
-		return ALLOWED_REDIRECT_DOMAINS
-				.stream()
-				.noneMatch(domain -> host.endsWith(domain));
-	}
 
 
 

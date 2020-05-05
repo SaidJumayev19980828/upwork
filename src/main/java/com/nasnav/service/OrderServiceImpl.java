@@ -1,9 +1,10 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
-import static com.nasnav.commons.utils.EntityUtils.setOf;
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
 import static com.nasnav.commons.utils.StringUtils.nullSafe;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_CALC_ORDER_FAILED;
@@ -23,6 +24,7 @@ import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_O
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_OWNED_BY_USER;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_STATUS_NOT_ALLOWED_FOR_ROLE;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_UPDATED_ORDER_WITH_NO_ID;
+import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.DELIVERED;
@@ -41,6 +43,8 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -62,6 +66,8 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -84,17 +90,24 @@ import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.ShippingAddress;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
+import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.exceptions.StockValidationException;
+import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
@@ -118,6 +131,8 @@ public class OrderServiceImpl implements OrderService {
 
 	private final EmployeeUserServiceHelper employeeUserServiceHelper;
 	
+	private Logger logger = LogManager.getLogger();
+	
 	@Autowired
 	private EntityManager em;
 
@@ -126,6 +141,10 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	private ShopsRepository shopsRepo;
+	
+	@Autowired
+	private IntegrationService integrationService;
+	
 
 	private Map<OrderStatus, Set<OrderStatus>> nextOrderStatusSet;
 	private Set<OrderStatus> orderStatusForCustomers;
@@ -218,7 +237,12 @@ public class OrderServiceImpl implements OrderService {
 													   .map(order -> order.getPrice())
 													   .reduce(ZERO, BigDecimal::add)));
 	}
-
+	
+	
+	
+	
+	
+	@Transactional(rollbackFor = Throwable.class)
 	public OrderResponse updateExistingOrder(OrderJsonDto orderJson) throws BusinessException {
 
 		validateOrderUpdate(orderJson);
@@ -260,7 +284,6 @@ public class OrderServiceImpl implements OrderService {
 		Long orderId = order.getId();
 		OrdersEntity orderEntity = ordersRepository.findById(orderId)
 											.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS, orderId));		
-
 		
 		if( !Objects.equals(userId, orderEntity.getUserId()) ) {
 			throwInvalidOrderException(ERR_ORDER_NOT_OWNED_BY_USER, userId, orderId);
@@ -429,12 +452,8 @@ public class OrderServiceImpl implements OrderService {
 		for(BasketItemDTO item: basket) {
 			validateBasketItem(item);
 		}
-
-
-		/*if( countShops(basket) > 1) {
-			throwInvalidOrderException(ERR_ITEMS_FROM_MULTIPLE_SHOPS);
-		}*/
 	}
+	
 
 
 	private Map<Long, List<BasketItemDTO>> groupBasketsByShops(List<BasketItemDTO> baskets) {
@@ -514,10 +533,22 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
+	private void throwRuntimeInvalidOrderException(String msg, Object... msgParams){
+		throw getInvalidRuntimeOrderException(msg, msgParams);
+	}
+	
+	
+	
 	
 	private BusinessException getInvalidOrderException(String msg, Object... msgParams) {
-		String error = OrderFailedStatus.INVALID_ORDER.toString();
-		return new BusinessException( format(msg, msgParams), error, HttpStatus.NOT_ACCEPTABLE);
+		String error = INVALID_ORDER.toString();
+		return new BusinessException( format(msg, msgParams), error, NOT_ACCEPTABLE);
+	}
+	
+	
+	private RuntimeBusinessException getInvalidRuntimeOrderException(String msg, Object... msgParams) {
+		String error = INVALID_ORDER.toString();
+		return new StockValidationException( format(msg, msgParams), error, NOT_ACCEPTABLE);
 	}
 	
 	
@@ -620,24 +651,79 @@ public class OrderServiceImpl implements OrderService {
 
 	private OrderResponse updateOrder(OrderJsonDto orderJsonDto) throws BusinessException {
 
-		OrderStatus newStatus = Optional.ofNullable(orderJsonDto.getStatus())
+		OrderStatus newStatus = ofNullable(orderJsonDto.getStatus())
 										.map(OrderStatus::findEnum)
-										.orElse(OrderStatus.NEW);
+										.orElse(NEW);
 
 		OrdersEntity orderEntity =  ordersRepository.findById( orderJsonDto.getId() )
 													.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS));
-
+		OrderStatus oldStatus = orderEntity.getOrderStatus();
 		OrderResponse orderResponse = updateCurrentOrderStatus(orderJsonDto, orderEntity, newStatus);
 		
-		if ( newStatus.equals( OrderStatus.NEW )) {
+		if ( newStatus.equals(NEW)) {
 			orderResponse = updateOrderBasket(orderJsonDto, orderEntity);
+		}else if(newStatus.equals(CLIENT_CONFIRMED) 
+					&& Objects.equals(oldStatus, NEW)) {
+			reduceStocks(orderEntity);
 		}
+		
 		return orderResponse;
 	}
 	
 	
 	
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public OrdersEntity checkoutOrder(OrdersEntity order) {
+//		validateBasketItems(order);		//TODO: this should be added when we add refund, because exceptions will refund the user
+		order.setStatus(CLIENT_CONFIRMED.getValue());	
+		OrdersEntity saved = ordersRepository.save(order);
+		reduceStocks(saved);
+		return saved;
+	}
 	
+	
+	
+	
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public OrdersEntity checkoutOrder(Long orderId) throws BusinessException {
+		//TODO: this should be done if the payment API became authenticated
+//		Long userId = 
+//				ofNullable(securityService.getCurrentUser())
+//				.map(BaseUserEntity::getId)
+//				.orElseThrow(() -> new RuntimeBusinessException("No user provided for the checkout!", "INVALID OPERATION", NOT_ACCEPTABLE));
+//		OrdersEntity order = ordersRepository.findByIdAndUserId(orderId, userId);
+		//-------------------------------------------
+		OrdersEntity order = 
+				ordersRepository
+				.findById(orderId)
+				.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS, orderId));	
+
+		return checkoutOrder(order);
+	}
+	
+	
+	
+	
+
+	private void reduceStocks(OrdersEntity orderEntity) {
+	   orderEntity.getBasketsEntity().forEach(this::reduceItemStock);		
+	}
+
+	
+	
+	private void reduceItemStock(BasketsEntity item) {
+		int quantity = 
+				ofNullable(item)
+				.map(BasketsEntity::getQuantity)
+				.map(BigDecimal::intValue)
+				.orElse(0);
+		stockService.reduceStockBy(item.getStocksEntity(), quantity);
+	}
+
+
+
 
 	private OrderResponse updateOrderBasket(OrderJsonDto order, OrdersEntity orderEntity) throws BusinessException {
 
@@ -1216,11 +1302,138 @@ public class OrderServiceImpl implements OrderService {
 		for(OrdersEntity order : orders) {
 			if (!order.getOrganizationEntity().getId().equals(orgId))
 				throw new BusinessException("Provided order ("+order.getId()+") doesn't belong to current organization",
-						"INVALID_PARAM: order_id", HttpStatus.NOT_ACCEPTABLE);
+						"INVALID_PARAM: order_id", NOT_ACCEPTABLE);
 			if (order.getStatus() != 0)
 				throw new BusinessException("Provided order ("+order.getId()+") is not a new order and can't be deleted",
-						"INVALID_PARAM: order_id", HttpStatus.NOT_ACCEPTABLE);
+						"INVALID_PARAM: order_id", NOT_ACCEPTABLE);
 		}
 
+	}
+
+
+
+
+
+	//TODO: i don't like that validations is also doing a stock update from external system, but for now, i can't put this action
+	//somewhere else, as the validation-checkout are not done at the same point now. 
+	//validation is done before payment and checkout after it!
+	@Override
+	@Transactional(noRollbackFor = StockValidationException.class)	//the validation may update the stock from external system as well
+	public void validateOrdersForCheckOut(List<OrdersEntity> orders){
+		orders.forEach(this::validateOrderForCheckout);
+	}
+	
+	
+	
+	@Override
+	@Transactional(noRollbackFor = StockValidationException.class)	//the validation may update the stock from external system as well
+	public void validateOrderIdsForCheckOut(List<Long> orderIds){
+		List<OrdersEntity> orders = ordersRepository.findByIdIn(orderIds);
+		validateOrdersForCheckOut(orders);
+	}
+	
+	
+	
+	
+	private void validateOrderForCheckout(OrdersEntity order) {
+		validateOrderStatusForCheckOut(order);
+		Long orgId = order.getOrganizationEntity().getId();
+		//TODO add integration parameter for disabling this update if needed
+		if(integrationService.hasActiveIntegration(orgId)) {
+			updateOrderItemStocksFromExternalSys(order);
+		}
+		order.getBasketsEntity().forEach(this::validateBasketItem);
+	}
+
+
+
+
+
+	private void updateOrderItemStocksFromExternalSys(OrdersEntity order) {
+		order.getBasketsEntity().forEach(this::updateItemStockFromExternalSys);
+	}
+
+	
+	
+
+	private void updateItemStockFromExternalSys(BasketsEntity item) {		
+		try {
+			StockBasicData stockData = getItemStockData(item);
+			fetchAndUpdateStockIfExists(item, stockData);			
+		} catch (Throwable e) {
+			logger.error(e, e);
+		}
+	}
+
+
+
+
+
+	private StockBasicData getItemStockData(BasketsEntity item) throws BusinessException {
+		StockBasicData stockData = basketRepository.getItemStockBasicDataById(item.getId());
+		Long variantId = stockData.getVariantId();
+		Long shopId = stockData.getShopId();
+		if(anyIsNull(variantId, shopId)) {
+			throw new BusinessException(
+					format("Basket item[%d] has invalid variant-shop data [%d - %d]", item.getId(), variantId, shopId)
+					, "INVALID DATA"
+					, INTERNAL_SERVER_ERROR);
+		}
+		return stockData;
+	}
+
+
+
+
+
+	private void fetchAndUpdateStockIfExists(BasketsEntity item, StockBasicData stockData)
+			throws InvalidIntegrationEventException, BusinessException {
+		Optional<Integer> extStock = integrationService.getExternalStock(stockData.getVariantId(), stockData.getShopId());
+		if(extStock.isPresent()) {
+			StocksEntity stock = item.getStocksEntity();
+			stock.setQuantity(extStock.get());
+			stockRepository.save(stock);
+		}
+	}
+
+
+
+
+
+
+
+	private void validateOrderStatusForCheckOut(OrdersEntity order) {
+		Integer status = 
+				ofNullable(order)
+					.map(OrdersEntity::getStatus)
+					.orElse(-1);
+		if(!NEW.getValue().equals(status)) {
+			throw new RuntimeBusinessException(
+					format("Order with id[%d] has invalid status[%d] and can't be checked out!", order.getId(), status)
+					, "Invalid Operation"
+					, NOT_ACCEPTABLE);
+		}
+	};
+	
+	
+	
+	private void validateBasketItem(BasketsEntity item) {
+		Integer quantity = 
+				ofNullable(item)
+				.map(BasketsEntity::getQuantity)
+				.map(BigDecimal::intValue)
+				.orElse(0);
+		if(quantity > stockService.getStockQuantity( item.getStocksEntity() )) {
+			throwRuntimeInvalidOrderException(ERR_NO_ENOUGH_STOCK);
+		}
+	}
+	
+	
+	
+	@Override
+	public void setOrderAsPaid(PaymentEntity payment, OrdersEntity order) {
+		order.setPaymentStatus(PaymentStatus.PAID);
+		order.setPaymentEntity(payment);
+		ordersRepository.save(order);
 	}
 }

@@ -1,4 +1,11 @@
 import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
+import static com.nasnav.constatnts.EntityConstants.INITIAL_PASSWORD;
+import static com.nasnav.enumerations.UserStatus.ACTIVATED;
+import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
+import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
+import static java.lang.String.format;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -41,6 +48,7 @@ import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.controller.UserController;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.UserRepository;
+import com.nasnav.enumerations.UserStatus;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
@@ -122,6 +130,7 @@ public class UserRegisterTest {
 		persistentUser.setEmail("unavailable@nasnav.com");
 		persistentUser.setEncryptedPassword("---");
 		persistentUser.setOrganizationId(organization.getId());
+		persistentUser.setUserStatus(ACTIVATED.getValue());
 		
 		return persistentUser;
 	}
@@ -176,7 +185,7 @@ public class UserRegisterTest {
 		userService.deleteUser(response.getBody().getEntityId());
 		//delete created organization
 		organizationRepository.delete(org);
-		Assert.assertTrue(response.getBody().isSuccess());
+		
 		Assert.assertEquals(201, response.getStatusCode().value());
 	}
 
@@ -200,7 +209,7 @@ public class UserRegisterTest {
 		
 		// try to re register with the same email and different org_id
 		response = template.postForEntity("/user/register", userJsonNewOrgId, UserApiResponse.class);
-		Assert.assertTrue(response.getBody().isSuccess());
+		
 		Long newUserId = response.getBody().getEntityId();
 		// response status should contain ACTIVATION_SENT
 		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.ACTIVATION_SENT));
@@ -225,7 +234,7 @@ public class UserRegisterTest {
 
 		// try to re register with the same email and org_id
 		response = template.postForEntity("/user/register", userJson, UserApiResponse.class);
-		Assert.assertFalse(response.getBody().isSuccess());
+		
 		// response status should contain EMAIL_EXISTS
 		System.out.println(response.getBody());
 		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.EMAIL_EXISTS));
@@ -241,7 +250,7 @@ public class UserRegisterTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/register", userJson,
 				UserApiResponse.class);
 		// success should be false
-		Assert.assertFalse(response.getBody().isSuccess());
+		
 		// response status should contain INVALID_EMAIL
 		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_EMAIL));
 		Assert.assertEquals(406, response.getStatusCode().value());
@@ -254,7 +263,7 @@ public class UserRegisterTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/register", userJson,
 				UserApiResponse.class);
 		// success should be false
-		Assert.assertFalse(response.getBody().isSuccess());
+		
 		// response status should contain INVALID_NAME
 		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_NAME));
 		Assert.assertEquals(406, response.getStatusCode().value());
@@ -266,7 +275,7 @@ public class UserRegisterTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/register", userJson,
 				UserApiResponse.class);
 		// success should be false
-		Assert.assertFalse(response.getBody().isSuccess());
+		
 		Assert.assertEquals(406, response.getStatusCode().value());
 	}
 
@@ -278,7 +287,7 @@ public class UserRegisterTest {
 				organization.getId() + "&employee=false", UserApiResponse.class);
         System.out.println("###############" + response.getBody().getMessages());
 		Assert.assertTrue(response.getBody().getMessages().contains(ResponseStatus.INVALID_EMAIL.name()));
-		Assert.assertFalse(response.getBody().isSuccess());
+		
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
@@ -288,7 +297,7 @@ public class UserRegisterTest {
 						organization.getId() + "&employee=false",
 				UserApiResponse.class);
 		Assert.assertTrue(response.getBody().getMessages().contains(ResponseStatus.EMAIL_NOT_EXIST.name()));
-		Assert.assertFalse(response.getBody().isSuccess());
+		
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
@@ -296,7 +305,7 @@ public class UserRegisterTest {
 	public void testSendResetPasswordTokenForNoPassedMail() {
 		ResponseEntity<UserApiResponse> response = getResponseFromGet("/user/recover?email=&org_id=12&employee=false", UserApiResponse.class);
 		Assert.assertTrue(response.getBody().getMessages().contains(ResponseStatus.INVALID_EMAIL.name()));
-		Assert.assertFalse(response.getBody().isSuccess());
+		
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
@@ -319,7 +328,7 @@ public class UserRegisterTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/recover", userJson,
 				UserApiResponse.class);
 
-		Assert.assertTrue(response.getBody().isSuccess());
+		
 		Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
 
 		userJson = getHttpEntity(
@@ -328,7 +337,7 @@ public class UserRegisterTest {
 		response = template.postForEntity("/user/login", userJson, UserApiResponse.class);
 
 		// Delete this user
-		Assert.assertTrue(response.getBody().isSuccess());
+		
 		Assert.assertEquals(200, response.getStatusCode().value());
 
 	}
@@ -343,7 +352,7 @@ public class UserRegisterTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/recover", userJson,
 				UserApiResponse.class);
 
-		Assert.assertFalse(response.getBody().isSuccess());
+		
 		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_PARAMETERS));
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
@@ -361,7 +370,7 @@ public class UserRegisterTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/recover", userJson,
 				UserApiResponse.class);
 
-		Assert.assertFalse(response.getBody().isSuccess());
+		
 		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_PASSWORD));
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
@@ -380,7 +389,7 @@ public class UserRegisterTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/recover", userJson,
 				UserApiResponse.class);
 
-		Assert.assertFalse(response.getBody().isSuccess());
+		
 		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.EXPIRED_TOKEN));
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
@@ -398,7 +407,7 @@ public class UserRegisterTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
 
-		Assert.assertTrue(response.getBody().isSuccess());
+		
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
 
@@ -426,7 +435,7 @@ public class UserRegisterTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
 
-		Assert.assertTrue(response.getBody().isSuccess());
+		
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
 	
@@ -446,7 +455,7 @@ public class UserRegisterTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
 
-		Assert.assertTrue(response.getBody().isSuccess());
+		
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
 	
@@ -468,7 +477,7 @@ public class UserRegisterTest {
 																, getHttpEntity(request.toString())
 																, UserApiResponse.class);
 
-		Assert.assertTrue(response.getBody().isSuccess());
+		
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
 	
@@ -486,7 +495,7 @@ public class UserRegisterTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
 
-		Assert.assertFalse(response.getBody().isSuccess());
+		
 		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_CREDENTIALS));
 		Assert.assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatusCode().value());
 	}
@@ -519,7 +528,7 @@ public class UserRegisterTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
 
-		Assert.assertFalse(response.getBody().isSuccess());
+		
 		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_PARAMETERS));
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
@@ -535,14 +544,14 @@ public class UserRegisterTest {
 		Long userId = response.getBody().getEntityId();
 
 		// directly login without changing his passwrod
-		userJson = getHttpEntity("{\t\n" + "\t\"password\":\"" + EntityConstants.INITIAL_PASSWORD + "\",\n"
+		userJson = getHttpEntity("{\t\n" + "\t\"password\":\"" + INITIAL_PASSWORD + "\",\n"
 				+ "\t\"email\":\"" + "another_email@nasnav.com" + "\", \"org_id\": " +  organization.getId() + " }");
 
 		response = template.postForEntity("/user/login", userJson, UserApiResponse.class);
 		// Delete this user
 		userService.deleteUser(userId);
-		Assert.assertFalse(response.getBody().isSuccess());
-		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.NEED_ACTIVATION));
+		
+		Assert.assertTrue(response.getBody().getResponseStatuses().contains(NEED_ACTIVATION));
 		Assert.assertEquals(HttpStatus.LOCKED.value(), response.getStatusCode().value());
 	}
 	
@@ -599,7 +608,6 @@ public class UserRegisterTest {
 		HttpEntity<Object> userJson = TestCommons.getHttpEntity(body, "123");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", userJson, UserApiResponse.class);
 
-		Assert.assertTrue(response.getBody().isSuccess());
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
 
@@ -617,8 +625,8 @@ public class UserRegisterTest {
 
 	@Test
 	public void newUserRegisterTest() throws MessagingException, IOException {
-		String body = "{\"name\":\"Ahmad\", \"email\":\"test@nasnav.com\", \"password\":\"password\"," +
-				      "\"org_id\": 99001, \"confirmation_flag\":true}";
+		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
+		String body = createUserRegisterV2Request(redirectUrl);  
 		HttpEntity<Object> userJson = getHttpEntity((Object)body);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register", userJson, String.class);
 
@@ -690,18 +698,83 @@ public class UserRegisterTest {
 	@Test
 	public void activateAccountTest() {
 		//first create account
-		String body = "{\"name\":\"Ahmad\", \"email\":\"test@nasnav.com\", \"password\":\"password\"," +
-				"\"org_id\": 99001, \"confirmation_flag\":true}";
-		HttpEntity<Object> userJson = TestCommons.getHttpEntity((Object)body);
+		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
+		String body = createUserRegisterV2Request(redirectUrl);  
+		HttpEntity<Object> userJson = getHttpEntity(body);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/v2/register", userJson, UserApiResponse.class);
 		Assert.assertEquals( 201, response.getStatusCodeValue());
 
 		UserEntity user = userRepository.findById(response.getBody().getEntityId()).get();
 
-		ResponseEntity<RedirectView> activationRes = template.getForEntity("/user/v2/register/activate?token="+ user.getResetPasswordToken(), RedirectView.class);
-		user = userRepository.findById(response.getBody().getEntityId()).get();
-		Assert.assertEquals("https://nasnav.com/organization_1/login?token="+ user.getAuthenticationToken(),
-				activationRes.getHeaders().getLocation().toString());
+		String activationUrl = format("/user/v2/register/activate?token=%s&redirect=%s", user.getResetPasswordToken(), redirectUrl);
+		
+		ResponseEntity<RedirectView> activationRes = template.getForEntity(activationUrl, RedirectView.class);
+
+		user = userRepository.findById(response.getBody().getEntityId()).get();		
+		String exepctedtUrl = format("https://nasnav.org/dummy_org/login?redirect=checkout&auth_token=%s", user.getAuthenticationToken());
+		Assert.assertEquals(exepctedtUrl , activationRes.getHeaders().getLocation().toString());
+		
+		Assert.assertEquals(ACTIVATED.getValue(), user.getUserStatus());
+		Assert.assertNull(user.getResetPasswordToken());
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void registerAccountTestInvalidRedirect() {
+		String redirectUrl = "https://HACKER.BAD/hacking";
+		String body = createUserRegisterV2Request(redirectUrl);  
+		
+		HttpEntity<Object> userJson = getHttpEntity(body);
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/v2/register", userJson, UserApiResponse.class);
+		
+		Assert.assertEquals( 406, response.getStatusCodeValue());
+	}
+	
+	
+	
+	
+	@Test
+	public void activateAccountTestInvalidRedirect() {
+		//first create account
+		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
+		String body = createUserRegisterV2Request(redirectUrl);  
+		HttpEntity<Object> userJson = getHttpEntity(body);
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/v2/register", userJson, UserApiResponse.class);
+		Assert.assertEquals( 201, response.getStatusCodeValue());
+
+		
+		//try activating the account
+		UserEntity user = userRepository.findById(response.getBody().getEntityId()).get();
+
+		String invalidRedirectUrl = "https://HACKER.BAD/hacking";
+		String activationUrl = format("/user/v2/register/activate?token=%s&redirect=%s", user.getResetPasswordToken(), invalidRedirectUrl);
+		
+		ResponseEntity<RedirectView> activationRes = template.getForEntity(activationUrl, RedirectView.class);
+		Assert.assertEquals( 406, activationRes.getStatusCodeValue());
+		
+		user = userRepository.findById(response.getBody().getEntityId()).get();		
+		
+		Assert.assertEquals(NOT_ACTIVATED.getValue(), user.getUserStatus());
+		Assert.assertNotNull(user.getResetPasswordToken());
+	}
+
+
+
+
+	private String createUserRegisterV2Request(String redirectUrl) {
+		String body = json()
+						.put("name", "Ahmad")
+						.put("email", "test@nasnav.com")
+						.put("password", "password")
+						.put("org_id", 99001)
+						.put("confirmation_flag", true)
+						.put("redirect_url", redirectUrl)
+						.toString();
+		return body;
 	}
 
 }

@@ -21,7 +21,7 @@ public interface UserService extends CommonUserServiceInterface{
 
     UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException;
 
-    RedirectView activateUserAccount(String token) throws BusinessException;
+    RedirectView activateUserAccount(String token, String redirect) throws BusinessException;
 
     public UserApiResponse updateUser(String userToken, UserDTOs.EmployeeUserUpdatingObject userJson) throws BusinessException;
 

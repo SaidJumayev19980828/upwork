@@ -1,4 +1,4 @@
-import static com.nasnav.commons.utils.EntityUtils.setOf;
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static java.lang.Math.random;
 import static java.lang.String.format;
 import static junit.framework.TestCase.assertEquals;

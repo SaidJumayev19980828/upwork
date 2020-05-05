@@ -21,6 +21,9 @@ public class UserDTOs {
     	@ApiModelProperty(value = "User's name", example = "John Smith", required = true)
         @JsonProperty("name")
         public String name;
+
+        @JsonProperty("phone_number")
+        private String phoneNumber;
     }
 
     @Getter
@@ -33,6 +36,11 @@ public class UserDTOs {
         public Long orgId;
         @JsonProperty("confirmation_flag")
         public Boolean confirmationFlag;
+        @JsonProperty("redirect_url")
+        private String redirectUrl;
+
+        @JsonProperty("phone_number")
+        private String phoneNumber;
     }
 
     @Getter
