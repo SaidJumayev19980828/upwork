@@ -58,7 +58,7 @@ public class PaymentControllerRave {
     public ResponseEntity<?> initPayment(@RequestParam(name = "order_id") Long orderId) throws BusinessException {
         Optional<OrdersEntity> orderOpt = ordersRepository.findById(orderId);
         if (!orderOpt.isPresent()) {
-            throw new BusinessException("No order exists with that id", null, HttpStatus.NOT_ACCEPTABLE);
+            throw new BusinessException("No order exists with that id", "", HttpStatus.NOT_ACCEPTABLE);
         }
 
         // some dummy data for initial tests

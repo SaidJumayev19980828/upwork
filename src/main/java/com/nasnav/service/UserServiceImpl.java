@@ -8,11 +8,13 @@ import static com.nasnav.constatnts.EmailConstants.NEW_EMAIL_ACTIVATION_TEMPLATE
 import static com.nasnav.constatnts.EmailConstants.USERNAME_PARAMETER;
 import static com.nasnav.constatnts.EntityConstants.PASSWORD_MAX_LENGTH;
 import static com.nasnav.constatnts.EntityConstants.PASSWORD_MIN_LENGTH;
-import static com.nasnav.constatnts.EntityConstants.PROTOCOL;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_VALIDITY;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0001;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0002;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0003;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
 import static com.nasnav.response.ResponseStatus.EMAIL_EXISTS;
 import static com.nasnav.response.ResponseStatus.EXPIRED_TOKEN;
@@ -22,6 +24,7 @@ import static com.nasnav.response.ResponseStatus.INVALID_TOKEN;
 import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
 import static com.nasnav.response.UserApiResponse.createStatusApiResponse;
 import static com.nasnav.service.helpers.LoginHelper.isInvalidRedirectUrl;
+import static java.lang.String.format;
 import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -42,6 +45,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -57,16 +62,15 @@ import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.dao.CommonUserRepository;
-import com.nasnav.dao.OrganizationDomainsRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationDomainsEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
@@ -75,6 +79,7 @@ import com.nasnav.response.UserApiResponse;
 @Service
 public class UserServiceImpl implements UserService {
 
+	private Logger logger = LogManager.getLogger();
 	private UserRepository userRepository;
 	private MailService mailService;
 	private PasswordEncoder passwordEncoder;
@@ -90,8 +95,6 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private OrganizationRepository orgRepo;
 
-	@Autowired
-	private OrganizationDomainsRepository orgDomainRepo;
 
 	@Autowired
 	public UserServiceImpl(UserRepository userRepository, MailService mailService, PasswordEncoder passwordEncoder) {
@@ -174,6 +177,7 @@ public class UserServiceImpl implements UserService {
 			mailService.send(userEntity.getEmail(), ACTIVATION_ACCOUNT_EMAIL_SUBJECT,
 					NEW_EMAIL_ACTIVATION_TEMPLATE, parametersMap);
 		} catch (Exception e) {
+			logger.error(e, e);
 			userApiResponse.setMessages(singletonList(e.getMessage()));
 			throw new EntityValidationException("Could not send Email ", userApiResponse,
 					INTERNAL_SERVER_ERROR);
@@ -189,9 +193,9 @@ public class UserServiceImpl implements UserService {
 		parametersMap.put(USERNAME_PARAMETER, userEntity.getName());
 		parametersMap.put(ACCOUNT_EMAIL_PARAMETER, userEntity.getEmail());
 		parametersMap.put(ACTIVATION_ACCOUNT_URL_PARAMETER,
-				appConfig.accountActivationUrl
-						.concat(userEntity.getResetPasswordToken())
-						.concat("&redirect="+redirectUrl));
+				redirectUrl.replace("?", "")
+						.concat("?activation_token=")
+						.concat(userEntity.getResetPasswordToken()));
 		return parametersMap;
 	}
 
@@ -540,13 +544,6 @@ public class UserServiceImpl implements UserService {
 
 
 
-	private String buildOrgLoginPageUrl(Long orgId) {
-		OrganizationDomainsEntity orgDomain = orgDomainRepo.findByOrganizationEntity_Id(orgId);
-		String domain = orgDomain.getDomain();
-		String subDir = ofNullable("/"+orgDomain.getSubdir()).orElse("");
-		String loginUrl = String.format("%s%s%s/login", PROTOCOL, domain, subDir);
-		return loginUrl;
-	}
 
 	private void checkUserActivation(UserEntity user) throws BusinessException {
 		if (user == null)
@@ -589,5 +586,63 @@ public class UserServiceImpl implements UserService {
 		}
 		String[] result = new String[nullProperties.size()];
 		return nullProperties.toArray(result);
+	}
+
+
+
+
+	@Override
+	public void resendActivationEmail(ActivationEmailResendDTO accountInfo) throws BusinessException {		
+		String email = accountInfo.getEmail();
+		Long orgId = accountInfo.getOrgId();
+		BaseUserEntity user = commonUserRepo.getByEmailAndOrganizationId(email, orgId);
+		validateActivationEmailResend(accountInfo, user);
+		
+		sendActivationMail((UserEntity)user, accountInfo.getRedirectUrl());
+	}
+
+
+
+
+	private void validateActivationEmailResend(ActivationEmailResendDTO accountInfo, BaseUserEntity user) throws BusinessException {
+		String email = accountInfo.getEmail();
+		Long orgId = accountInfo.getOrgId();
+		if(user == null || !(user instanceof UserEntity)) {
+			throw new BusinessException(
+					format(UXACTVX0001.getValue(), email, orgId)
+					, UXACTVX0001
+					, NOT_ACCEPTABLE);
+		}else if(!isUserDeactivated(user)){
+			throw new BusinessException(
+					format(UXACTVX0002.getValue(), email)
+					, UXACTVX0002
+					, NOT_ACCEPTABLE);
+		}else if(resendRequestedTooSoon(accountInfo)) {
+			throw new BusinessException(
+					format(UXACTVX0003.getValue(), email)
+					, UXACTVX0003
+					, NOT_ACCEPTABLE);
+		}			 		
+	}
+
+
+
+
+	private boolean resendRequestedTooSoon(ActivationEmailResendDTO accountInfo) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+
+
+
+	@Override
+	public UserApiResponse activateUserAccount(String token) throws BusinessException {
+		UserEntity user = userRepository.findByResetPasswordToken(token);
+
+		checkUserActivation(user);
+		
+		activateUserInDB(user);
+		return securityService.login(user);
 	}
 }

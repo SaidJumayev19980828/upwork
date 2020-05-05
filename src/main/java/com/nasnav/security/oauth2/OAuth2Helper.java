@@ -1,5 +1,6 @@
 package com.nasnav.security.oauth2;
 
+import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static java.lang.String.format;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,6 +84,7 @@ public class OAuth2Helper {
     	reg.orgId = orgId;
     	
     	UserEntity nasnavUser = UserEntity.registerUser(reg);
+    	nasnavUser.setUserStatus(ACTIVATED.getValue());
 
     	nasnavUser  = userRepo.save(nasnavUser);
 		return nasnavUser;

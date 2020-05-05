@@ -2,11 +2,13 @@ import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJ
 import static com.nasnav.constatnts.EntityConstants.INITIAL_PASSWORD;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
+import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
 import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.TestUserEmail;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.lang.String.format;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -32,7 +34,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
@@ -48,7 +49,6 @@ import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.controller.UserController;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.UserRepository;
-import com.nasnav.enumerations.UserStatus;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
@@ -68,6 +68,7 @@ import net.jcip.annotations.NotThreadSafe;
 @Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 public class UserRegisterTest {
 
+	@SuppressWarnings("unused")
 	private MockMvc mockMvc;
 	private UserEntity persistentUser;
 	private OrganizationEntity organization;
@@ -178,7 +179,7 @@ public class UserRegisterTest {
 		OrganizationEntity org = createOrganization();
 
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\":" + org.getId() + "}");
+				"{\"name\":\"Ahmed\",\"email\":\"" + TestUserEmail + "\", \"org_id\":" + org.getId() + "}");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/register", userJson,
 				UserApiResponse.class);
 		// Delete this user
@@ -194,12 +195,12 @@ public class UserRegisterTest {
 		//create new organization
 		OrganizationEntity org = createOrganization();
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\":" + org.getId() + "}");
+				"{\"name\":\"Ahmed\",\"email\":\"" + TestUserEmail + "\", \"org_id\":" + org.getId() + "}");
 
 		//create new organization
 		OrganizationEntity newOrg = createOrganization();
 		HttpEntity<Object> userJsonNewOrgId = getHttpEntity(
-				"{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": " + newOrg.getId() + "}");
+				"{\"name\":\"Ahmed\",\"email\":\"" + TestUserEmail + "\", \"org_id\": " + newOrg.getId() + "}");
 
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/register", userJson,
 				UserApiResponse.class);
@@ -212,7 +213,7 @@ public class UserRegisterTest {
 		
 		Long newUserId = response.getBody().getEntityId();
 		// response status should contain ACTIVATION_SENT
-		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.ACTIVATION_SENT));
+		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ACTIVATION_SENT));
 		Assert.assertEquals(201, response.getStatusCode().value());
 		
 		// Delete this user
@@ -558,13 +559,13 @@ public class UserRegisterTest {
 
 	private HttpEntity<Object> getHttpEntity(Object body) {
 		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.setContentType(APPLICATION_JSON);
 		return new HttpEntity<>(body, headers);
 	}
 
 	private <T> ResponseEntity<T> getResponseFromGet(String URL, Class<T> classRef) {
 		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.setContentType(APPLICATION_JSON);
 		return template.exchange(URL, HttpMethod.GET, new HttpEntity<>(headers), classRef);
 	}
 	
@@ -626,7 +627,7 @@ public class UserRegisterTest {
 	@Test
 	public void newUserRegisterTest() throws MessagingException, IOException {
 		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
-		String body = createUserRegisterV2Request(redirectUrl);  
+		String body = createUserRegisterV2Request(redirectUrl).toString();   
 		HttpEntity<Object> userJson = getHttpEntity((Object)body);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register", userJson, String.class);
 
@@ -639,6 +640,43 @@ public class UserRegisterTest {
 				, Mockito.anyString()
 				, Mockito.anyMap());
 	}
+	
+	
+	
+	
+	
+	@Test
+	public void activationEmailResendTest() throws MessagingException, IOException {
+		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
+		
+		JSONObject body = createActivationResendRequest(redirectUrl); 
+		HttpEntity<Object> userJson = getHttpEntity(body.toString());
+		ResponseEntity<String> response = template.postForEntity("/user/v2/register/activate/resend", userJson, String.class);
+
+		Assert.assertEquals( 200, response.getStatusCodeValue());
+		Mockito
+			.verify(mailService)
+			.send(
+				  Mockito.eq("not.activated@nasnav.com")
+				, Mockito.eq(ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+				, Mockito.anyString()
+				, Mockito.anyMap());
+	}
+	
+	
+	//TODO: test activation email resend : non-existing email for organization
+	//TODO: test activation email resend : employee user
+	//TODO: test activation email resend : too soon
+
+
+
+	private JSONObject createActivationResendRequest(String redirectUrl) {
+		return json()
+				.put("email", "not.activated@nasnav.com")
+				.put("org_id", 99001)
+				.put("redirect_url", redirectUrl);
+	}
+	
 
 
 	@Test
@@ -699,7 +737,7 @@ public class UserRegisterTest {
 	public void activateAccountTest() {
 		//first create account
 		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
-		String body = createUserRegisterV2Request(redirectUrl);  
+		String body = createUserRegisterV2Request(redirectUrl).toString();   
 		HttpEntity<Object> userJson = getHttpEntity(body);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/v2/register", userJson, UserApiResponse.class);
 		Assert.assertEquals( 201, response.getStatusCodeValue());
@@ -722,11 +760,39 @@ public class UserRegisterTest {
 	
 	
 	
+	@Test
+	public void activateAccountNoRedirectTest() {
+		//first create account
+		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
+		String body = createUserRegisterV2Request(redirectUrl).toString();   
+		HttpEntity<Object> userJson = getHttpEntity(body);
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/v2/register", userJson, UserApiResponse.class);
+		Assert.assertEquals( 201, response.getStatusCodeValue());
+
+		UserEntity user = userRepository.findById(response.getBody().getEntityId()).get();
+
+		String activationUrl = format("/user/v2/register/activate?token=%s", user.getResetPasswordToken(), redirectUrl);
+		
+		@SuppressWarnings("unused")
+		ResponseEntity<String> activationRes = template.postForEntity(activationUrl, getHttpEntity(""), String.class);
+
+		user = userRepository.findById(response.getBody().getEntityId()).get();		
+		
+		Assert.assertEquals(ACTIVATED.getValue(), user.getUserStatus());
+		Assert.assertNull(user.getResetPasswordToken());
+		
+		//TODO: add assertion for returned login response 
+	}
+	
+	
+	
+	
+	
 	
 	@Test
 	public void registerAccountTestInvalidRedirect() {
 		String redirectUrl = "https://HACKER.BAD/hacking";
-		String body = createUserRegisterV2Request(redirectUrl);  
+		String body = createUserRegisterV2Request(redirectUrl).toString();  
 		
 		HttpEntity<Object> userJson = getHttpEntity(body);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/v2/register", userJson, UserApiResponse.class);
@@ -741,7 +807,7 @@ public class UserRegisterTest {
 	public void activateAccountTestInvalidRedirect() {
 		//first create account
 		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
-		String body = createUserRegisterV2Request(redirectUrl);  
+		String body = createUserRegisterV2Request(redirectUrl).toString();  
 		HttpEntity<Object> userJson = getHttpEntity(body);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/v2/register", userJson, UserApiResponse.class);
 		Assert.assertEquals( 201, response.getStatusCodeValue());
@@ -765,16 +831,14 @@ public class UserRegisterTest {
 
 
 
-	private String createUserRegisterV2Request(String redirectUrl) {
-		String body = json()
-						.put("name", "Ahmad")
-						.put("email", "test@nasnav.com")
-						.put("password", "password")
-						.put("org_id", 99001)
-						.put("confirmation_flag", true)
-						.put("redirect_url", redirectUrl)
-						.toString();
-		return body;
+	private JSONObject createUserRegisterV2Request(String redirectUrl) {
+		return json()
+				.put("name", "Ahmad")
+				.put("email", "test@nasnav.com")
+				.put("password", "password")
+				.put("org_id", 99001)
+				.put("confirmation_flag", true)
+				.put("redirect_url", redirectUrl);
 	}
 
 }

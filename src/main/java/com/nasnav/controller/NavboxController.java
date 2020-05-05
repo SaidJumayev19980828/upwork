@@ -65,7 +65,7 @@ public class NavboxController {
 		Organization_BrandRepresentationObject brandRepresentationObject = brandService.getBrandById(brandId);
 
 		if (brandRepresentationObject == null)
-			throw new BusinessException("Brand not found", null, NOT_FOUND);
+			throw new BusinessException("Brand not found", "", NOT_FOUND);
 
 		return new ResponseEntity<>(brandRepresentationObject, OK);
 	}
@@ -86,7 +86,7 @@ public class NavboxController {
 			@RequestParam(name = "url", required = false) String url) throws BusinessException {
 
 		if (organizationName == null && organizationId == null && url == null)
-			throw new BusinessException("Provide org_id or p_name or url request params", null, BAD_REQUEST);
+			throw new BusinessException("Provide org_id or p_name or url request params", "", BAD_REQUEST);
 
 		if (organizationName != null)
 			return organizationService.getOrganizationByName(organizationName);

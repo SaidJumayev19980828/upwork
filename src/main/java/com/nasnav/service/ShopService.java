@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 
 import javax.cache.annotation.CacheResult;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
@@ -65,7 +64,7 @@ public class ShopService {
         List<ShopsEntity> shopsEntities = shopsRepository.findByOrganizationEntity_Id(organizationId);
 
         if(shopsEntities==null || shopsEntities.isEmpty())
-            throw new BusinessException("No shops found",null, HttpStatus.NOT_FOUND);
+            throw new BusinessException("No shops found","", HttpStatus.NOT_FOUND);
 
         return shopsEntities.stream().map(shopsEntity -> {
             ShopRepresentationObject shopRepresentationObject = ((ShopRepresentationObject) shopsEntity.getRepresentation());
@@ -85,7 +84,7 @@ public class ShopService {
         Optional<ShopsEntity> shopsEntityOptional = shopsRepository.findById(shopId);
 
         if(shopsEntityOptional==null || !shopsEntityOptional.isPresent())
-            throw new BusinessException("Shop not found",null, HttpStatus.NOT_FOUND);
+            throw new BusinessException("Shop not found","", HttpStatus.NOT_FOUND);
 
         ShopRepresentationObject shopRepObj = (ShopRepresentationObject)shopsEntityOptional.get().getRepresentation();
         List<OrganizationImagesEntity> imageEntities = orgImgRepo.findByShopsEntityId(shopId);

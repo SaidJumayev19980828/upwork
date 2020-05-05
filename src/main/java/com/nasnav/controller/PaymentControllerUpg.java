@@ -68,7 +68,7 @@ public class PaymentControllerUpg {
 
         Properties props = Tools.getPropertyForAccount(accountName, upgLogger, config.paymentPropertiesDir);
         if (props == null) {
-            throw new BusinessException("Unknown payment account",null,HttpStatus.NOT_ACCEPTABLE);
+            throw new BusinessException("Unknown payment account","",HttpStatus.NOT_ACCEPTABLE);
         }
         session.getUpgAccount().init(props);
 
@@ -90,7 +90,7 @@ public class PaymentControllerUpg {
 
         Properties props = Tools.getPropertyForAccount(accountName, upgLogger, config.paymentPropertiesDir);
         if (props == null) {
-            throw new BusinessException("Unknown payment account",null,HttpStatus.NOT_ACCEPTABLE);
+            throw new BusinessException("Unknown payment account","",HttpStatus.NOT_ACCEPTABLE);
         }
         session.getUpgAccount().init(props);
         upgLogger.info("Setting up payment for order(s): {} via processor: {}", ordersList, session.getUpgAccount().getUpgMerchantId());

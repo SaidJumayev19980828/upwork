@@ -122,7 +122,7 @@ public class PaymentControllerMastercard {
 
         Properties props = Tools.getPropertyForAccount(accountName, mastercardLogger, config.paymentPropertiesDir);
         if (props == null) {
-            throw new BusinessException("Unknown payment account",null,HttpStatus.NOT_ACCEPTABLE);
+            throw new BusinessException("Unknown payment account","",HttpStatus.NOT_ACCEPTABLE);
         }
         session.getMerchantAccount().init(props);
         mastercardLogger.info("Setting up payment for order(s): {} via processor: {}", orderList, session.getMerchantAccount().getMerchantId());
@@ -146,7 +146,7 @@ public class PaymentControllerMastercard {
                 response.setSuccess(true);
             } catch(Exception ex){
                 ex.printStackTrace();
-                throw new BusinessException("Unable to set up payment session",null,HttpStatus.INTERNAL_SERVER_ERROR);
+                throw new BusinessException("Unable to set up payment session","",HttpStatus.INTERNAL_SERVER_ERROR);
             }
             ObjectMapper oMap = new ObjectMapper();
             String result = "{}";
@@ -157,7 +157,7 @@ public class PaymentControllerMastercard {
             }
             return new ResponseEntity<>(result, HttpStatus.OK);
         } else {
-            throw new BusinessException("Unable to initialize Mastercard payment session",null,HttpStatus.BAD_GATEWAY);
+            throw new BusinessException("Unable to initialize Mastercard payment session","",HttpStatus.BAD_GATEWAY);
         }
     }
 

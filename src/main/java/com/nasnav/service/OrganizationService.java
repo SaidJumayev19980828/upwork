@@ -150,7 +150,7 @@ public class OrganizationService {
             organizationEntity = organizationRepository.findOneByNameIgnoreCase(organizationName);
 
         if (organizationEntity == null)
-            throw new BusinessException("Organization not found", null, NOT_FOUND);
+            throw new BusinessException("Organization not found", "", NOT_FOUND);
 
         return getOrganizationAdditionalData(organizationEntity);
     }
@@ -163,7 +163,7 @@ public class OrganizationService {
         OrganizationEntity organizationEntity = organizationRepository.findOneById(organizationId);
 
         if (organizationEntity == null)
-            throw new BusinessException("Organization not found", null, NOT_FOUND);
+            throw new BusinessException("Organization not found", "", NOT_FOUND);
 
         return getOrganizationAdditionalData(organizationEntity);
     }

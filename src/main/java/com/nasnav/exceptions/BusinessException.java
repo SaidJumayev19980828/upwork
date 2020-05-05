@@ -1,10 +1,9 @@
 package com.nasnav.exceptions;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.springframework.http.HttpStatus;
 
-import java.util.function.Supplier;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -21,6 +20,14 @@ public class BusinessException extends Exception implements BusinessExceptionInt
     private String errorCode;
 
     private HttpStatus httpStatus;
+    
+    
+    public BusinessException(String errorMessage, ErrorCodes errorCode, HttpStatus httpStatus) {
+    	super(errorMessage);
+        this.errorMessage = errorMessage;
+        this.errorCode = errorCode.toString();
+        this.httpStatus = httpStatus;
+    }
 
     public BusinessException(String errorMessage, String errorCode, HttpStatus httpStatus) {
     	super(errorMessage);

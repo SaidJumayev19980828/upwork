@@ -2,6 +2,7 @@ package com.nasnav.controller;
 
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
+import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegisteration;
@@ -235,5 +236,33 @@ public class UserController {
     public RedirectView sendEmailRecovery(@RequestParam(value = "token") String token,
                                           @RequestParam(value = "redirect") String redirect) throws BusinessException {
         return userService.activateUserAccount(token, redirect);
+    }
+    
+    
+    
+    
+    @ApiOperation(value = "activate the user account and login", nickname = "userActivation")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Account activated"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "v2/register/activate",
+            produces = APPLICATION_JSON_UTF8_VALUE)
+    public UserApiResponse activateUser(@RequestParam(value = "token") String token) throws BusinessException {
+        return userService.activateUserAccount(token);
+    }
+    
+    
+    
+    
+    
+    @ApiOperation(value = "resend user activation email", nickname = "userActivationResend")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Activation Email Sent"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "v2/register/activate/resend")
+    public void resendActivationEmail(@RequestBody ActivationEmailResendDTO accountInfo) throws BusinessException {
+        userService.resendActivationEmail(accountInfo);
     }
 }

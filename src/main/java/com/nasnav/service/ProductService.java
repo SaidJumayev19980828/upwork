@@ -817,19 +817,19 @@ public class ProductService {
 			params.setOrder(oldParams.order.getValue());
 
 		if (params.sort != null && ProductSortOptions.getProductSortOptions(params.sort.getValue()) == null)
-			throw new BusinessException("Sort is limited to id, name, pname, price", null, HttpStatus.BAD_REQUEST);
+			throw new BusinessException("Sort is limited to id, name, pname, price", "", HttpStatus.BAD_REQUEST);
 
 		if (params.order != null && !params.order.getValue().equals("asc") && !params.order.getValue().equals("desc"))
-			throw new BusinessException("Order is limited to asc and desc only", null, HttpStatus.BAD_REQUEST);
+			throw new BusinessException("Order is limited to asc and desc only", "", HttpStatus.BAD_REQUEST);
 
 		if (params.start != null && params.start < 0)
-			throw new BusinessException("Start can be zero or more", null, HttpStatus.BAD_REQUEST);
+			throw new BusinessException("Start can be zero or more", "", HttpStatus.BAD_REQUEST);
 
 		if (params.count != null && params.count < 1)
-			throw new BusinessException("Count can be One or more", null, HttpStatus.BAD_REQUEST);
+			throw new BusinessException("Count can be One or more", "", HttpStatus.BAD_REQUEST);
 
 		if (params.org_id == null && params.shop_id == null)
-			throw new BusinessException("Shop Id or Organization Id shall be provided", null, HttpStatus.BAD_REQUEST);
+			throw new BusinessException("Shop Id or Organization Id shall be provided", "", HttpStatus.BAD_REQUEST);
 
 		if (params.minPrice != null && params.minPrice.compareTo(BigDecimal.ZERO) < 0)
 			params.minPrice = BigDecimal.ZERO;
