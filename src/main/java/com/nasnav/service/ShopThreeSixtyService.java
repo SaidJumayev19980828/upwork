@@ -431,7 +431,7 @@ public class ShopThreeSixtyService {
                 }
                 List<ShopScenesRequestDTO> scences = getScenes(section);
                 for (ShopScenesRequestDTO scene : scences) {
-                    if(section.getImageUrl() != null) {
+                    if(scene.getImageUrl() != null) {
                         urls.add(scene.getImageUrl());
                     }
                 }
