@@ -2,12 +2,14 @@ import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJ
 import static com.nasnav.constatnts.EntityConstants.INITIAL_PASSWORD;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0004;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
 import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
 import static com.nasnav.test.commons.TestCommons.TestUserEmail;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.lang.String.format;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.never;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import java.io.IOException;
@@ -658,6 +660,51 @@ public class UserRegisterTest {
 			.verify(mailService)
 			.send(
 				  Mockito.eq("not.activated@nasnav.com")
+				, Mockito.eq(ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+				, Mockito.anyString()
+				, Mockito.anyMap());
+	}
+	
+	
+	
+	@Test
+	public void activationEmailResendDeactivatedButNotTokenTest() throws MessagingException, IOException {
+		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
+		
+		JSONObject body = createActivationResendRequest(redirectUrl); 
+		body.put("email", "no.token.man@nasnav.com");
+		
+		HttpEntity<Object> userJson = getHttpEntity(body.toString());
+		ResponseEntity<String> response = template.postForEntity("/user/v2/register/activate/resend", userJson, String.class);
+
+		Assert.assertEquals( 200, response.getStatusCodeValue());
+		Mockito
+			.verify(mailService)
+			.send(
+				  Mockito.eq("no.token.man@nasnav.com")
+				, Mockito.eq(ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+				, Mockito.anyString()
+				, Mockito.anyMap());
+	}
+	
+	
+	
+	
+	@Test
+	public void activationEmailResendInvalidRedirectTest() throws MessagingException, IOException {
+		String redirectUrl = "bla\bla? nasnav.org/dummy_org/login?redirect=checkout";
+		
+		JSONObject body = createActivationResendRequest(redirectUrl); 
+		body.put("email", "no.token.man@nasnav.com");
+		
+		HttpEntity<Object> userJson = getHttpEntity(body.toString());
+		ResponseEntity<String> response = template.postForEntity("/user/v2/register/activate/resend", userJson, String.class);
+
+		Assert.assertEquals( 500, response.getStatusCodeValue());
+		Mockito
+			.verify(mailService, never())
+			.send(
+				  Mockito.eq("no.token.man@nasnav.com")
 				, Mockito.eq(ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
 				, Mockito.anyString()
 				, Mockito.anyMap());

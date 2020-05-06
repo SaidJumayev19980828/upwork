@@ -1,5 +1,7 @@
 package com.nasnav.exceptions;
 
+import static java.lang.String.format;
+
 import org.springframework.http.HttpStatus;
 
 import lombok.Data;
@@ -18,6 +20,14 @@ public class RuntimeBusinessException extends RuntimeException implements Busine
     private String errorCode;
 
     private HttpStatus httpStatus;
+    
+    
+    public RuntimeBusinessException(HttpStatus httpStatus, ErrorCodes errorCode , Object...args) {
+    	super(format(errorCode.getValue(), args));
+        this.errorMessage = format(errorCode.getValue(), args);
+        this.errorCode = errorCode.toString();
+        this.httpStatus = httpStatus;
+    }
 
     public RuntimeBusinessException(String errorMessage, String errorCode, HttpStatus httpStatus) {
     	super(errorMessage);

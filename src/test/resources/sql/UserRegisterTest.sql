@@ -19,9 +19,11 @@ INSERT INTO public.users(id, email,  user_name, authentication_token, organizati
     VALUES (88002, 'user1@nasnav.com','user1','456', 99002, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
 INSERT INTO public.users(id, email,  user_name, authentication_token, address, country, city, phone_number, image, organization_id, encrypted_password, user_status)
     VALUES (88003, 'user2@nasnav.com','user2','789', '21 jump street', 'Egypt', 'Cairo', '+021092154875','/urls/images/fdsafag23.jpg',  99001, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru', 201);
-   INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status, reset_password_token)
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status, reset_password_token)
     VALUES (88004, 'not.activated@nasnav.com','not activated','951', 99001, '963', 200, 'sfdsdfd81');
-
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status, reset_password_token)
+    VALUES (88005, 'no.token.man@nasnav.com','not activated but no token','77', 99001, '963', 200, null);
+   
    
 --inserting Employee Users
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password)

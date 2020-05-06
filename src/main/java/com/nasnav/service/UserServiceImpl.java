@@ -15,6 +15,7 @@ import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
 import static com.nasnav.exceptions.ErrorCodes.UXACTVX0001;
 import static com.nasnav.exceptions.ErrorCodes.UXACTVX0002;
 import static com.nasnav.exceptions.ErrorCodes.UXACTVX0003;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0004;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
 import static com.nasnav.response.ResponseStatus.EMAIL_EXISTS;
 import static com.nasnav.response.ResponseStatus.EXPIRED_TOKEN;
@@ -34,6 +35,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
+import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,6 +47,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
@@ -69,6 +72,7 @@ import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
@@ -189,15 +193,29 @@ public class UserServiceImpl implements UserService {
 
 
 	private Map<String, String> createActivationEmailParameters(UserEntity userEntity, String redirectUrl) {
+		String activationRedirectUrl = buildActivationRedirectUrl(userEntity, redirectUrl);
+		
 		Map<String, String> parametersMap = new HashMap<>();
 		parametersMap.put(USERNAME_PARAMETER, userEntity.getName());
 		parametersMap.put(ACCOUNT_EMAIL_PARAMETER, userEntity.getEmail());
-		parametersMap.put(ACTIVATION_ACCOUNT_URL_PARAMETER,
-				redirectUrl.replace("?", "")
-						.concat("?activation_token=")
-						.concat(userEntity.getResetPasswordToken()));
+		parametersMap.put(ACTIVATION_ACCOUNT_URL_PARAMETER, activationRedirectUrl);				
 		return parametersMap;
 	}
+
+
+
+	private String buildActivationRedirectUrl(UserEntity userEntity, String redirectUrl) {
+		URIBuilder builder;
+		try {
+			builder = new URIBuilder(redirectUrl);
+			builder.addParameter("activation_token", userEntity.getResetPasswordToken());
+			return builder.build().toString();
+		} catch (URISyntaxException e) {
+			logger.error(e, e);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0004, redirectUrl);
+		}		
+	}
+
 
 
 
@@ -364,24 +382,19 @@ public class UserServiceImpl implements UserService {
 		return userEntity;
 	}
 
-	/**
-	 * Generate ResetPasswordToken and assign it to passed user entity
-	 *
-	 * @param userEntity user entity
-	 * @return user entity after generating ResetPasswordToken and updating entity.
-	 */
+
+	
+	
+	
 	private void generateResetPasswordToken(UserEntity userEntity) {
 		String generatedToken = generateResetPasswordToken();
 		userEntity.setResetPasswordToken(generatedToken);
 		userEntity.setResetPasswordSentAt(now());
 	}
 
-	/**
-	 * Send An Email to user.
-	 *
-	 * @param userEntity user entity
-	 * @return UserApiResponse representing the status of sending email.
-	 */
+	
+	
+	
 	private UserApiResponse sendRecoveryMail(UserEntity userEntity) {
 		UserApiResponse userApiResponse = new UserApiResponse();
 		try {
@@ -595,10 +608,16 @@ public class UserServiceImpl implements UserService {
 	public void resendActivationEmail(ActivationEmailResendDTO accountInfo) throws BusinessException {		
 		String email = accountInfo.getEmail();
 		Long orgId = accountInfo.getOrgId();
-		BaseUserEntity user = commonUserRepo.getByEmailAndOrganizationId(email, orgId);
-		validateActivationEmailResend(accountInfo, user);
+		BaseUserEntity baseUser = commonUserRepo.getByEmailAndOrganizationId(email, orgId);
+		validateActivationEmailResend(accountInfo, baseUser);
 		
-		sendActivationMail((UserEntity)user, accountInfo.getRedirectUrl());
+		UserEntity user = (UserEntity)baseUser;
+		if(isUserDeactivated(user) && isNull(user.getResetPasswordToken())) {
+			generateResetPasswordToken(user);
+			userRepository.save(user);
+		}
+		
+		sendActivationMail(user, accountInfo.getRedirectUrl());
 	}
 
 
