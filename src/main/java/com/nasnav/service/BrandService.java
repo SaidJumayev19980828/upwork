@@ -1,18 +1,19 @@
 package com.nasnav.service;
 
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dto.Organization_BrandRepresentationObject;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.ProductEntity;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Optional;
 
 import javax.cache.annotation.CacheResult;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.BrandsEntity;
 
 @Service
 public class BrandService {
@@ -36,6 +37,7 @@ public class BrandService {
     }
 
 
+    @CacheEvict(allEntries = true, cacheNames = {"brands","organizations_by_name", "organizations_by_id"})
     public void deleteBrand(Long brandId) throws BusinessException {
         Long orgId = securityService.getCurrentUserOrganizationId();
 
