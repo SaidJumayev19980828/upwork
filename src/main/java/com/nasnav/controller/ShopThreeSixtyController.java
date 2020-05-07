@@ -131,9 +131,8 @@ public class ShopThreeSixtyController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @GetMapping(value = "/products", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public List<ProductRepresentationObject> getShop360products(@RequestParam("org_id") Long orgId,
-                                                                @RequestParam("barcode") String barcode,
                                                                 @RequestParam("name") String name) throws BusinessException {
-        return shop360Svc.getShop360Products(orgId, barcode, name);
+        return shop360Svc.getShop360Products(orgId, name);
     }
 
 

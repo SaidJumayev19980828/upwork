@@ -486,14 +486,14 @@ public class ShopThreeSixtyService {
                 imageName.substring(imageName.lastIndexOf("."));
     }
 
-    public List<ProductRepresentationObject> getShop360Products(Long orgId,String barcode, String name) throws BusinessException {
-        if (StringUtils.isBlankOrNull(barcode) && StringUtils.isBlankOrNull(name))
-            throw new BusinessException("Either provide barcode or name",
-                    "MISSING_PARAMS: barcode, name", HttpStatus.NOT_ACCEPTABLE);
-        List<ProductEntity> productsList = new ArrayList<>();
-        /*if (barcode != null && name == null)
-            productsList = productsRepo.findByBarcodeContainsAndOrganizationId(String barcode, Long orgId);*/
-        return null;
+
+    public List<ProductRepresentationObject> getShop360Products(Long orgId, String name) throws BusinessException {
+        if (StringUtils.isBlankOrNull(name))
+            throw new BusinessException("Provide search prarmeter",
+                    "MISSING_PARAMS: name", HttpStatus.NOT_ACCEPTABLE);
+        List<ProductRepresentationObject> productsList = new ArrayList<>();
+            productsList = productsRepo.find360Products(name, orgId);
+        return productsList;
     }
 
 
@@ -528,6 +528,7 @@ public class ShopThreeSixtyService {
         clearOldShop360Date(orgId, shopThreeSixtyEntity.getId());
     }
 
+
     public void deleteShop360Floor(Long shopId, Long floorId) throws BusinessException {
         Long orgId = securitySvc.getCurrentUserOrganizationId();
         ShopThreeSixtyEntity shopThreeSixtyEntity = shop360Repo.getFirstByShopsEntity_Id(shopId);
@@ -540,6 +541,7 @@ public class ShopThreeSixtyService {
 
         shopFloorsRepo.delete(floor);
     }
+
 
     public void deleteShop360Section(Long shopId, Long sectionId) throws BusinessException {
         Long orgId = securitySvc.getCurrentUserOrganizationId();
@@ -556,6 +558,7 @@ public class ShopThreeSixtyService {
 
         sectionsRepo.delete(section);
     }
+
 
     public void deleteShop360Scene(Long shopId, Long sceneId) throws BusinessException {
         Long orgId = securitySvc.getCurrentUserOrganizationId();

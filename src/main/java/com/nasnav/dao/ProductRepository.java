@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import com.nasnav.dto.ProductRepresentationObject;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -117,12 +118,14 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	Set<Long> listProductIdByOrganizationId(@Param("orgId")Long orgId);
 
 
-	@Query("select p.id, p.name, v.barcode, s.price" +
-            " from ProductEntity p join ProductVariantsEntity v on p = v.productEntity" +
-            " join StocksEntity s on s.productVariantsEntity = v where p.organizationId = :orgId" +
-            " and v.barcode like '%:barcode%'")
-    List<ProductEntity> findByBarcodeContainsAndOrganizationId(
-                                            @Param("barcode") String barcode,
+	@Query(value = "select p.id, p.name, v.barcode, s.price" +
+            " from products p join product_variants v on p.id = v.product_id" +
+            " join stocks s on s.variant_id = v.id where p.organization_id = :orgId" +
+            " and (v.barcode like '%:name%' or p.barcode like '%:name%' or p.description like '%:name%' or" +
+            " p.id in (select pt.id from product_tags pt where pt.tag_id in (select t.id from tags t where t.name like '%:name%')))",
+            nativeQuery = true)
+    List<ProductRepresentationObject> find360Products(
+                                            @Param("name") String name,
                                             @Param("orgId") Long orgId);
 
 
