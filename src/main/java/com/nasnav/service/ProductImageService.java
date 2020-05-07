@@ -6,6 +6,7 @@ import java.util.Set;
 
 import javax.validation.Valid;
 
+import com.nasnav.dto.ProductImgDTO;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -37,6 +38,8 @@ public interface ProductImageService {
 	String getProductCoverImage(Long productId);
 
 	List<ProductImgDetailsDTO> getProductImgs(Long productId) throws BusinessException;
+
+	Map<Long,List<ProductImgDTO>> getProductsImageList(List<Long> productIds);
 
 	Map<Long,String> getProductsCoverImages(List<Long> productIds);
 

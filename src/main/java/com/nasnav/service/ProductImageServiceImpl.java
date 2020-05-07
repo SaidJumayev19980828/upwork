@@ -1469,18 +1469,48 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private Set<ProductImagesEntity> getProductAndVariantsImageEntities(Long productId) {
 		
-		Set<Long> variandIds = 
-				productRepository
-					.findById(productId)
-					.map(ProductEntity::getProductVariants)
-					.orElse(emptySet()).stream()
-					.map(ProductVariantsEntity::getId)
-					.collect(toSet());
+		Set<Long> variandIds = getProductVariantsIdsSet(productId);
 		
 		Set<ProductImagesEntity> imgs = new HashSet<>();
 		imgs.addAll(productImagesRepository.findByProductEntity_Id(productId));
 		imgs.addAll(productImagesRepository.findByProductVariantsEntity_IdInOrderByPriority(variandIds));
 		return imgs;
+	}
+
+
+	private Set<Long> getProductVariantsIdsSet(Long productId) {
+		return productRepository
+						.findById(productId)
+						.map(ProductEntity::getProductVariants)
+						.orElse(emptySet()).stream()
+						.map(ProductVariantsEntity::getId)
+						.collect(toSet());
+	}
+
+	@Override
+	public Map<Long,List<ProductImgDTO>> getProductsImageList(List<Long> productIds) {
+		SQLQueryFactory queryFactory = new SQLQueryFactory(createQueryDslConfig(), dataSource);
+		QProductImages image = QProductImages.productImages;
+		QProductVariants variant = QProductVariants.productVariants;
+		SQLQuery<?> query =
+				queryFactory
+						.select(image.uri.as("url"), image.productId)
+						.from(image)
+						.leftJoin(variant).on(image.variantId.eq(variant.id))
+						.where(image.productId.in(productIds).or(variant.productId.in(productIds)));
+
+		String  sqlString = query.getSQL().getSQL();
+		List<ProductImgDTO> productImages = jdbc.query(sqlString, new BeanPropertyRowMapper<>(ProductImgDTO.class));
+
+		Map<Long,List<ProductImgDTO>> productImgsMap =
+				productImages
+						.stream()
+						.collect(groupingBy(ProductImgDTO::getProductId))
+						.entrySet()
+						.stream()
+						.collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+		return productImgsMap;
 	}
 	
 	
