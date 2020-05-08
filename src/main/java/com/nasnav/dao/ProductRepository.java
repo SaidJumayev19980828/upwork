@@ -117,6 +117,9 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	Set<Long> listProductIdByOrganizationId(@Param("orgId")Long orgId);
 
 
+	//TODO: >>> product entity has eager fetching for tags, and variants will eager fetch extra-variants.(this is wrong , and we should make them lazy later!)
+	//if you just needt product id , barcode and price, it will be better to make a projection query that only returns those.
+	//ProductVariantsRepository.findByIdIn() is an example for projection queries.
 	@Query(value = "select distinct p"+
             " from ProductEntity p join ProductVariantsEntity v on p = v.productEntity" +
             " join StocksEntity s on s.productVariantsEntity = v where s.shopsEntity.id = :shopId" +

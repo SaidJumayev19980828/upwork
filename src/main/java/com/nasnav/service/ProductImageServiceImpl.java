@@ -1459,7 +1459,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 		return getProductAndVariantsImageEntities(productId)
 				.stream()
 				.map(this::toProductImgDetailsDTO)
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 
 
@@ -1478,6 +1478,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	}
 
 
+	//TODO:>>> consider using ProductVariantsRepository.findVariantIdByProductIdIn() as this may query a lot of data with no need.
 	private Set<Long> getProductVariantsIdsSet(Long productId) {
 		return productRepository
 						.findById(productId)
@@ -1487,6 +1488,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 						.collect(toSet());
 	}
 
+	
+	//TODO: >>> consider using this this.getProductAndVariantsImageEntities(), check its generated sql and check which of them will fit your needs.
+	//querydsl queries comes at the cost ignoring soft delete, so, they come at a price. 
 	@Override
 	public Map<Long,List<ProductImgDTO>> getProductsImageList(List<Long> productIds) {
 		SQLQueryFactory queryFactory = new SQLQueryFactory(createQueryDslConfig(), dataSource);

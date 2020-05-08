@@ -658,6 +658,9 @@ public class StockServiceImpl implements StockService {
 
 
 
+	
+	//TODO: >>> consider using jpql queries to take advantage of enforced entities filtration and cross-platform.
+	//jpql supports group by, so , you may be able to do it using projection queries.
 	@Override
 	public List<Prices> getProductsPrices(List<Long> productIds) {
 		SQLQueryFactory queryFactory = new SQLQueryFactory(createQueryDslConfig(), dataSource);
