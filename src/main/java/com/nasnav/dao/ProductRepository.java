@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -117,17 +118,12 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	Set<Long> listProductIdByOrganizationId(@Param("orgId")Long orgId);
 
 
-	//TODO: >>> product entity has eager fetching for tags, and variants will eager fetch extra-variants.(this is wrong , and we should make them lazy later!)
-	//if you just needt product id , barcode and price, it will be better to make a projection query that only returns those.
-	//ProductVariantsRepository.findByIdIn() is an example for projection queries.
-	@Query(value = "select distinct p"+
+	@Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
             " from ProductEntity p join ProductVariantsEntity v on p = v.productEntity" +
             " join StocksEntity s on s.productVariantsEntity = v where s.shopsEntity.id = :shopId" +
             " and (v.barcode like %:name% or p.barcode like %:name% " +
             " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
-    List<ProductEntity> find360Products(
-                                            @Param("name") String name,
-                                            @Param("shopId") Long shopId);
+    List<ThreeSixtyProductsDTO> find360Products(@Param("name") String name, @Param("shopId") Long shopId);
 
 
     @Modifying

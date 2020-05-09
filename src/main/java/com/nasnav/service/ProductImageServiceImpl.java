@@ -19,34 +19,22 @@ import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_IMAGE_FILE;
 import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_VARIANT_ID;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
 import static java.util.Optional.ofNullable;
 import static java.util.logging.Level.SEVERE;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Duration;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -1456,7 +1444,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	public List<ProductImgDetailsDTO> getProductImgs(Long productId) throws BusinessException {
 		validateProductToFetchItsImgs(productId);
 		
-		return getProductAndVariantsImageEntities(productId)
+		return getProductAndVariantsImageEntities(Collections.singletonList(productId))
 				.stream()
 				.map(this::toProductImgDetailsDTO)
 				.collect(toList());
@@ -1467,49 +1455,23 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private Set<ProductImagesEntity> getProductAndVariantsImageEntities(Long productId) {
+	private Set<ProductImagesEntity> getProductAndVariantsImageEntities(List<Long> productIds) {
 		
-		Set<Long> variandIds = getProductVariantsIdsSet(productId);
+		Set<Long> variantIds = productVariantsRepository.findVariantIdByProductIdIn(productIds);
 		
 		Set<ProductImagesEntity> imgs = new HashSet<>();
-		imgs.addAll(productImagesRepository.findByProductEntity_Id(productId));
-		imgs.addAll(productImagesRepository.findByProductVariantsEntity_IdInOrderByPriority(variandIds));
+		imgs.addAll(productImagesRepository.findByProductEntity_IdIn(productIds));
+		imgs.addAll(productImagesRepository.findByProductVariantsEntity_IdInOrderByPriority(variantIds));
 		return imgs;
 	}
 
 
-	//TODO:>>> consider using ProductVariantsRepository.findVariantIdByProductIdIn() as this may query a lot of data with no need.
-	private Set<Long> getProductVariantsIdsSet(Long productId) {
-		return productRepository
-						.findById(productId)
-						.map(ProductEntity::getProductVariants)
-						.orElse(emptySet()).stream()
-						.map(ProductVariantsEntity::getId)
-						.collect(toSet());
-	}
-
-	
-	//TODO: >>> consider using this this.getProductAndVariantsImageEntities(), check its generated sql and check which of them will fit your needs.
-	//querydsl queries comes at the cost ignoring soft delete, so, they come at a price. 
 	@Override
-	public Map<Long,List<ProductImgDTO>> getProductsImageList(List<Long> productIds) {
-		SQLQueryFactory queryFactory = new SQLQueryFactory(createQueryDslConfig(), dataSource);
-		QProductImages image = QProductImages.productImages;
-		QProductVariants variant = QProductVariants.productVariants;
-		SQLQuery<?> query =
-				queryFactory
-						.select(image.uri.as("url"), image.productId)
-						.from(image)
-						.leftJoin(variant).on(image.variantId.eq(variant.id))
-						.where(image.productId.in(productIds).or(variant.productId.in(productIds)));
+	public Map<Long,List<ProductImagesEntity>> getProductsImageList(List<Long> productIds) {
 
-		String  sqlString = query.getSQL().getSQL();
-		List<ProductImgDTO> productImages = jdbc.query(sqlString, new BeanPropertyRowMapper<>(ProductImgDTO.class));
-
-		Map<Long,List<ProductImgDTO>> productImgsMap =
-				productImages
+		Map<Long,List<ProductImagesEntity>> productImgsMap = getProductAndVariantsImageEntities(productIds)
 						.stream()
-						.collect(groupingBy(ProductImgDTO::getProductId))
+						.collect(groupingBy(i -> i.getProductEntity().getId()))
 						.entrySet()
 						.stream()
 						.collect(toMap(Map.Entry::getKey, Map.Entry::getValue));

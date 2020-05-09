@@ -12,16 +12,20 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class Prices {
     @JsonProperty("product_id")
-    private Long productId;
+    private Long id;
     @JsonProperty("min_price")
     private BigDecimal minPrice;
     @JsonProperty("max_price")
     private BigDecimal maxPrice;
 
-    public Prices(Long productId, BigDecimal minPrice, BigDecimal maxPrice) {
-        this.productId = productId;
+    public Prices(Long id, BigDecimal minPrice, BigDecimal maxPrice) {
+        this.id = id;
         this.minPrice = minPrice;
         this.maxPrice = maxPrice;
     }
 
+    public Prices(BigDecimal minPrice, BigDecimal maxPrice) {
+        this.minPrice = minPrice;
+        this.maxPrice = maxPrice;
+    }
 }

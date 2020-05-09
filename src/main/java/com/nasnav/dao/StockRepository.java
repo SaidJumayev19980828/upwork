@@ -3,6 +3,7 @@ package com.nasnav.dao;
 import java.util.List;
 import java.util.Optional;
 
+import com.nasnav.dto.Prices;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -82,5 +83,10 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 			+ " where bundleStock.id = :stockId "
 			+ " and TYPE(product) = BundleEntity")
 	List<StocksEntity> findByBundleStockId(@Param("stockId")Long bundleStockId);
-	
+
+
+	@Query(value = "select NEW com.nasnav.dto.Prices(p.id, MIN(s.price) , MAX(s.price) )" +
+			" from StocksEntity s join ProductVariantsEntity v on s.productVariantsEntity = v join ProductEntity p on v.productEntity = p" +
+			" where p.id in :productIds group by p.id")
+	List<Prices> getProductsPrices(@Param("productIds") List<Long> productIds);
 }

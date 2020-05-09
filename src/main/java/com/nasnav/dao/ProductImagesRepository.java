@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 public interface ProductImagesRepository extends CrudRepository<ProductImagesEntity, Long>{
 
 	List<ProductImagesEntity> findByProductEntity_Id(Long productId);
+
+	List<ProductImagesEntity> findByProductEntity_IdIn(List<Long> productIds);
 	
 	List<ProductImagesEntity> findByProductVariantsEntity_Id(Long productVariantId);
 	

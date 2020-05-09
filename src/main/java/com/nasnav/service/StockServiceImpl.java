@@ -33,17 +33,8 @@ import javax.persistence.Query;
 import javax.sql.DataSource;
 import javax.transaction.Transactional;
 
-import com.nasnav.dto.Prices;
-import com.nasnav.model.querydsl.sql.QProductVariants;
-import com.nasnav.model.querydsl.sql.QProducts;
-import com.nasnav.model.querydsl.sql.QStocks;
-import com.querydsl.sql.Configuration;
-import com.querydsl.sql.PostgreSQLTemplates;
-import com.querydsl.sql.SQLQuery;
-import com.querydsl.sql.SQLQueryFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -656,38 +647,6 @@ public class StockServiceImpl implements StockService {
 		.executeUpdate();
 	}
 
-
-
-	
-	//TODO: >>> consider using jpql queries to take advantage of enforced entities filtration and cross-platform.
-	//jpql supports group by, so , you may be able to do it using projection queries.
-	@Override
-	public List<Prices> getProductsPrices(List<Long> productIds) {
-		SQLQueryFactory queryFactory = new SQLQueryFactory(createQueryDslConfig(), dataSource);
-		QProducts product = QProducts.products;
-		QProductVariants variant = QProductVariants.productVariants;
-		QStocks stock = QStocks.stocks;
-		SQLQuery<?> query =
-				queryFactory
-						.select(product.id.as("productId"), stock.price.min().as("minPrice"), stock.price.max().as("maxPrice"))
-						.from(stock)
-						.leftJoin(variant).on(stock.variantId.eq(variant.id))
-						.leftJoin(product).on(variant.productId.eq(product.id))
-						.where(product.id.in(productIds))
-						.groupBy(product.id);
-
-		String  sqlString = query.getSQL().getSQL();
-		List<Prices> productsPrices = jdbc.query(sqlString, new BeanPropertyRowMapper<>(Prices.class));
-
-		return productsPrices;
-	}
-
-
-	private Configuration createQueryDslConfig() {
-		Configuration config = new Configuration(new PostgreSQLTemplates());
-		config.setUseLiterals(true);
-		return config;
-	}
 }
 
 

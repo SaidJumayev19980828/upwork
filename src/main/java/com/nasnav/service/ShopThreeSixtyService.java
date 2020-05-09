@@ -73,7 +73,7 @@ public class ShopThreeSixtyService {
     private ProductImagesRepository productImagesRepository;
 
     @Autowired
-    private StockService stocksService;
+    private StockRepository stockRepo;
 
     @Autowired
     private TagsRepository tagsRepo;
@@ -506,35 +506,32 @@ public class ShopThreeSixtyService {
         validateProductSearch(name, shopId);
 
         ShopsEntity shop = shopRepo.findById(shopId).get();
-        List<ThreeSixtyProductsDTO> productsList = new ArrayList<>();
-        List<ProductEntity> products = productsRepo.find360Products(name.toLowerCase(), shopId);
+        //List<ThreeSixtyProductsDTO> productsList = new ArrayList<>();
+        List<ThreeSixtyProductsDTO> products = productsRepo.find360Products(name.toLowerCase(), shopId);
 
         List<Long> productIds = products.stream().map(p -> p.getId()).collect(Collectors.toList());
 
-        Map<Long, List<ProductImgDTO>> productsImagesMap = productImageService.getProductsImageList(productIds);
+        Map<Long, List<ProductImagesEntity>> productsImagesMap = productImageService.getProductsImageList(productIds);
 
-        Map<Long, Prices> productsPricesMap = stocksService.getProductsPrices(productIds)
+        Map<Long, Prices> productsPricesMap = stockRepo.getProductsPrices(productIds)
                         .stream()
-                        .collect(Collectors.toMap(Prices::getProductId, p -> p));
+                        .collect(Collectors.toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
 
-        for (ProductEntity p : products) {
-            ThreeSixtyProductsDTO dto = new ThreeSixtyProductsDTO(p.getId(), p.getName(), p.getDescription());
+        for (ThreeSixtyProductsDTO dto : products) {
 
             if (productsImagesMap.get(dto.getId()) != null)
                 dto.setImages(productsImagesMap.get(dto.getId()).stream()
-                                                    .map(i -> of(i.getUrl()).orElse(null))
-                                                    .collect(Collectors.toList()));
+                                                                .map(i -> of(i.getUri()).orElse(null))
+                                                                .collect(Collectors.toList()));
 
             if (productsPricesMap.get(dto.getId()) != null)
                 dto.setPrices(productsPricesMap.get(dto.getId()));
-
-            productsList.add(dto);
         }
 
         List<TagsRepresentationObject> tagsList = getTagsList(name, shop.getOrganizationEntity().getId());
 
         JSONObject response = new JSONObject();
-        response.put("products", productsList);
+        response.put("products", products);
         response.put("collections", tagsList);
         return response.toString();
     }

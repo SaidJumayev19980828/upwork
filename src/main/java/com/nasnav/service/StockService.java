@@ -47,6 +47,4 @@ public interface StockService {
 	void reduceStockBy(StocksEntity stocksEntity, Integer quantity);
 
 	void updateStockQuantity(StockUpdateDTO updateDto);
-
-	List<Prices> getProductsPrices(List<Long> productIds);
 }
