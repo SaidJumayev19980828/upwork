@@ -52,4 +52,7 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
     		+ " left join product.tags tags "
     		+ " where product.id in :productIds")
     List<ProductTagsBasicData> getTagsByProductIdIn(@Param("productIds")List<Long> productIds);
+
+
+    List<TagsEntity> findByNameContainingAndOrganizationEntity_Id(String name, Long orgId);
 }

@@ -19,34 +19,22 @@ import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_IMAGE_FILE;
 import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_VARIANT_ID;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
 import static java.util.Optional.ofNullable;
 import static java.util.logging.Level.SEVERE;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Duration;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -1456,10 +1444,10 @@ public class ProductImageServiceImpl implements ProductImageService {
 	public List<ProductImgDetailsDTO> getProductImgs(Long productId) throws BusinessException {
 		validateProductToFetchItsImgs(productId);
 		
-		return getProductAndVariantsImageEntities(productId)
+		return getProductAndVariantsImageEntities(Collections.singletonList(productId))
 				.stream()
 				.map(this::toProductImgDetailsDTO)
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 
 
@@ -1467,20 +1455,28 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private Set<ProductImagesEntity> getProductAndVariantsImageEntities(Long productId) {
+	private Set<ProductImagesEntity> getProductAndVariantsImageEntities(List<Long> productIds) {
 		
-		Set<Long> variandIds = 
-				productRepository
-					.findById(productId)
-					.map(ProductEntity::getProductVariants)
-					.orElse(emptySet()).stream()
-					.map(ProductVariantsEntity::getId)
-					.collect(toSet());
+		Set<Long> variantIds = productVariantsRepository.findVariantIdByProductIdIn(productIds);
 		
 		Set<ProductImagesEntity> imgs = new HashSet<>();
-		imgs.addAll(productImagesRepository.findByProductEntity_Id(productId));
-		imgs.addAll(productImagesRepository.findByProductVariantsEntity_IdInOrderByPriority(variandIds));
+		imgs.addAll(productImagesRepository.findByProductEntity_IdIn(productIds));
+		imgs.addAll(productImagesRepository.findByProductVariantsEntity_IdInOrderByPriority(variantIds));
 		return imgs;
+	}
+
+
+	@Override
+	public Map<Long,List<ProductImagesEntity>> getProductsImageList(List<Long> productIds) {
+
+		Map<Long,List<ProductImagesEntity>> productImgsMap = getProductAndVariantsImageEntities(productIds)
+						.stream()
+						.collect(groupingBy(i -> i.getProductEntity().getId()))
+						.entrySet()
+						.stream()
+						.collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+		return productImgsMap;
 	}
 	
 	

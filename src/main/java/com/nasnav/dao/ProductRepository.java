@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -117,13 +118,12 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	Set<Long> listProductIdByOrganizationId(@Param("orgId")Long orgId);
 
 
-	@Query("select p.id, p.name, v.barcode, s.price" +
+	@Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
             " from ProductEntity p join ProductVariantsEntity v on p = v.productEntity" +
-            " join StocksEntity s on s.productVariantsEntity = v where p.organizationId = :orgId" +
-            " and v.barcode like '%:barcode%'")
-    List<ProductEntity> findByBarcodeContainsAndOrganizationId(
-                                            @Param("barcode") String barcode,
-                                            @Param("orgId") Long orgId);
+            " join StocksEntity s on s.productVariantsEntity = v where s.shopsEntity.id = :shopId" +
+            " and (v.barcode like %:name% or p.barcode like %:name% " +
+            " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
+    List<ThreeSixtyProductsDTO> find360Products(@Param("name") String name, @Param("shopId") Long shopId);
 
 
     @Modifying

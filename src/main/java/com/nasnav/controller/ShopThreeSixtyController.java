@@ -130,10 +130,9 @@ public class ShopThreeSixtyController {
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @GetMapping(value = "/products", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public List<ProductRepresentationObject> getShop360products(@RequestParam("org_id") Long orgId,
-                                                                @RequestParam("barcode") String barcode,
+    public String getShop360products(@RequestParam("shop_id") Long shopId,
                                                                 @RequestParam("name") String name) throws BusinessException {
-        return shop360Svc.getShop360Products(orgId, barcode, name);
+        return shop360Svc.getShop360Products(shopId, name);
     }
 
 

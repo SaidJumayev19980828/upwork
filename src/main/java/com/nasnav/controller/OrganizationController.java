@@ -256,9 +256,7 @@ public class OrganizationController {
     @ApiOperation(value = "Assign category to list of tags", nickname = "assignTagsCategory", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
-            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to \n" +
-                    "    //TODO: >>> use separate DTO that shows theme info + settings, as both the default settings and current settings should\n" +
-                    "    //be returned.do this action"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "tag/category")

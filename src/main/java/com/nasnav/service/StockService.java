@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import java.util.List;
 
+import com.nasnav.dto.Prices;
 import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.ProductVariantsEntity;
