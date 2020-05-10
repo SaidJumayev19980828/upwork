@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.cache.Caches.FILES;
 import static com.nasnav.constatnts.ConfigConstants.STATIC_FILES_URL;
 import static java.lang.String.format;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -290,7 +291,7 @@ public class FileService {
 	
 	
 	
-	@CacheResult(cacheName = "files")
+	@CacheResult(cacheName = FILES)
 	public String getResourceInternalUrl(String url) throws BusinessException {
 		String modUrl = reformUrl(url);
 		FileEntity fileInfo = filesRepo.findByUrl(modUrl);

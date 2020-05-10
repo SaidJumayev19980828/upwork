@@ -1,5 +1,9 @@
 package com.nasnav.service;
 
+import static com.nasnav.cache.Caches.BRANDS;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -10,6 +14,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.nasnav.cache.Caches;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dto.Organization_BrandRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
@@ -25,7 +30,7 @@ public class BrandService {
     private SecurityService securityService;
 
     
-    @CacheResult(cacheName = "brands")
+    @CacheResult(cacheName = BRANDS)
     public Organization_BrandRepresentationObject getBrandById(Long brandId){
 
         Optional<BrandsEntity> brandsEntityOptional = brandsRepository.findById(brandId);
@@ -37,7 +42,7 @@ public class BrandService {
     }
 
 
-    @CacheEvict(allEntries = true, cacheNames = {"brands","organizations_by_name", "organizations_by_id"})
+    @CacheEvict(allEntries = true, cacheNames = {BRANDS, ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public void deleteBrand(Long brandId) throws BusinessException {
         Long orgId = securityService.getCurrentUserOrganizationId();
 

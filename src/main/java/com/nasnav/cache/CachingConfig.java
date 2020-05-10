@@ -1,5 +1,16 @@
 package com.nasnav.cache;
 
+import static com.nasnav.cache.Caches.BRANDS;
+import static com.nasnav.cache.Caches.FILES;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_CATEGORIES;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_DOMAINS;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_EXTRA_ATTRIBUTES;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_SHOPS;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_TAGS;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_TAG_TREES;
+import static com.nasnav.cache.Caches.SHOPS_BY_ID;
 import static java.time.Duration.ofMinutes;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toMap;
@@ -29,39 +40,28 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class CachingConfig extends CachingConfigurerSupport{
 	
+	
+
+
 	List<String> cachesNames = asList(
-    		"files"
-    		, "brands"
-    		, "organizations_by_name"
-    		, "organizations_by_id"
-    		, "organizations_domains"
-    		, "organizations_shops"
-    		, "organizations_extra_attributes"
-    		, "organizations_categories"
-    		, "organizations_tag_trees"
-    		, "organizations_tags"
-    		, "shops_by_id"
+			FILES
+    		, BRANDS
+    		, ORGANIZATIONS_BY_NAME
+    		, ORGANIZATIONS_BY_ID
+    		, ORGANIZATIONS_DOMAINS
+    		, ORGANIZATIONS_SHOPS
+    		, ORGANIZATIONS_EXTRA_ATTRIBUTES
+    		, ORGANIZATIONS_CATEGORIES
+    		, ORGANIZATIONS_TAG_TREES
+    		, ORGANIZATIONS_TAGS
+    		, SHOPS_BY_ID
     		);
  
        
     private static final Long HEAP_SIZE = 100L;
-    private static final Long TIME_TO_LIVE = 120L;
+    private static final Long TIME_TO_LIVE_MIN = 30L;
     
     
-    
-     
-//    public CacheManager ehCacheManager() {
-//        CacheConfiguration<?,?> defaultCacheConfig = 
-//        		newCacheConfigurationBuilder(Object.class, Object.class, heap(HEAP_SIZE).offheap(1, MB))
-//        		.withExpiry( timeToLiveExpiration(ofMinutes(TIME_TO_LIVE)) )
-//        		.build();
-//            
-//        CacheManagerBuilder<CacheManager> cacheBuilder = newCacheManagerBuilder();
-//        
-//        cachesNames.forEach( name -> cacheBuilder.withCache(name, defaultCacheConfig));
-//        
-//        return cacheBuilder.build();
-//    }
     
     
     
@@ -79,7 +79,8 @@ public class CachingConfig extends CachingConfigurerSupport{
 
         CacheConfiguration<?,?> defaultCacheConfig = 
         		newCacheConfigurationBuilder(Object.class, Object.class, heap(HEAP_SIZE).offheap(1, MB))
-        		.withExpiry( timeToLiveExpiration(ofMinutes(TIME_TO_LIVE)) )
+        		.withValueSerializer(KryoSerializer.class)
+        		.withExpiry( timeToLiveExpiration(ofMinutes(TIME_TO_LIVE_MIN)) )        		
         		.build();
 
         Map<String, org.ehcache.config.CacheConfiguration<?, ?>> caches = createCacheConfigurations(defaultCacheConfig);

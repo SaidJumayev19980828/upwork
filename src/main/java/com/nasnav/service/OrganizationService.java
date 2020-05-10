@@ -1,5 +1,10 @@
 package com.nasnav.service;
 
+import static com.nasnav.cache.Caches.BRANDS;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_DOMAINS;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_EXTRA_ATTRIBUTES;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.validateName;
@@ -143,7 +148,7 @@ public class OrganizationService {
     
     
     
-    @CacheResult(cacheName = "organizations_by_name")
+    @CacheResult(cacheName = ORGANIZATIONS_BY_NAME)
     public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
         OrganizationEntity organizationEntity = organizationRepository.findByPname(organizationName);
         if (organizationEntity == null)
@@ -158,7 +163,7 @@ public class OrganizationService {
     
     
     
-    @CacheResult(cacheName = "organizations_by_id")
+    @CacheResult(cacheName = ORGANIZATIONS_BY_ID)
     public OrganizationRepresentationObject getOrganizationById(Long organizationId) throws BusinessException {
         OrganizationEntity organizationEntity = organizationRepository.findOneById(organizationId);
 
@@ -225,7 +230,7 @@ public class OrganizationService {
         return themeRepObj;
     }
     
-    @CacheResult(cacheName = "organizations_extra_attributes")
+    @CacheResult(cacheName = ORGANIZATIONS_EXTRA_ATTRIBUTES)
     public List<ExtraAttributesRepresentationObject> getOrganizationExtraAttributesById(Long organizationId){
         List<ExtraAttributesEntity> extraAttributes = null;
         if (organizationId == null) {
@@ -244,7 +249,7 @@ public class OrganizationService {
     
     
     
-    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
+    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public OrganizationResponse createOrganization(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
         validateOrganizationName(json);
         OrganizationEntity organizationEntity = organizationRepository.findByPname(json.pname);
@@ -282,7 +287,7 @@ public class OrganizationService {
     }
     
     
-    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
+    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public OrganizationResponse updateOrganizationData(OrganizationDTO.OrganizationModificationDTO json, MultipartFile file) throws BusinessException {
         validateOrganizationUpdateData(json);
 
@@ -386,7 +391,7 @@ public class OrganizationService {
     
     
     
-    @CacheEvict(allEntries = true, cacheNames = {"brands","organizations_by_name", "organizations_by_id"})
+    @CacheEvict(allEntries = true, cacheNames = {BRANDS ,ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public OrganizationResponse validateAndUpdateBrand(BrandDTO json, MultipartFile logo, MultipartFile banner) throws BusinessException {
         if (json.operation != null) {
             if (json.operation.equals("create"))
@@ -626,7 +631,7 @@ public class OrganizationService {
 	}
 
 
-	@CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
+	@CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
 	public ProductImageUpdateResponse updateOrganizationImage(MultipartFile file, OrganizationImageUpdateDTO imgMetaData) throws BusinessException {
         if(imgMetaData == null)
             throw new BusinessException("No Metadata provided for organization image!", "INVALID PARAM", NOT_ACCEPTABLE);
@@ -760,7 +765,7 @@ public class OrganizationService {
     
     
     
-    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
+    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public boolean deleteImage(Long imgId) throws BusinessException {
         OrganizationImagesEntity img = 
         		organizationImagesRepository
@@ -797,7 +802,7 @@ public class OrganizationService {
     
     
     
-    @CacheResult(cacheName = "organizations_domains")
+    @CacheResult(cacheName = ORGANIZATIONS_DOMAINS)
     public Pair getOrganizationAndSubdirsByUrl(String urlString) throws BusinessException {
         URIBuilder url = null;
 

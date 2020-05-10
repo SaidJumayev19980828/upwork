@@ -1,5 +1,8 @@
 package com.nasnav.service;
 
+import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_TAG_TREES;
 import static com.nasnav.commons.utils.EntityUtils.copyNonNullProperties;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
@@ -164,7 +167,7 @@ public class CategoryService {
 
     
     
-    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id", "organizations_tag_trees"})
+    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID, ORGANIZATIONS_TAG_TREES})
     public ResponseEntity<CategoryResponse> updateCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
         if (categoryJson.getId() == null) {
             throw new BusinessException("MISSING_PARAM: ID", "No category ID is provided", HttpStatus.NOT_ACCEPTABLE);
@@ -245,7 +248,7 @@ public class CategoryService {
     
     
     
-    @CacheResult(cacheName = "organizations_tag_trees")
+    @CacheResult(cacheName = ORGANIZATIONS_TAG_TREES)
     public List<TagsTreeNodeDTO> getOrganizationTagsTree(Long orgId) throws BusinessException {
 
         OrganizationEntity org = orgRepo.getOne(orgId);
@@ -347,7 +350,7 @@ public class CategoryService {
 
 
     
-	@CacheEvict(allEntries = true ,cacheNames = "organizations_tag_trees")
+	@CacheEvict(allEntries = true ,cacheNames = ORGANIZATIONS_TAG_TREES)
     public TagsEntity createOrUpdateTag(TagsDTO tagDTO) throws BusinessException{
         validateTagDto(tagDTO);
         

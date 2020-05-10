@@ -1,6 +1,8 @@
 package com.nasnav.service;
 
 
+import static com.nasnav.cache.Caches.ORGANIZATIONS_SHOPS;
+import static com.nasnav.cache.Caches.SHOPS_BY_ID;
 import static java.lang.String.format;
 
 import java.util.ArrayList;
@@ -58,7 +60,7 @@ public class ShopService {
     
 
     
-    @CacheResult(cacheName = "organizations_shops")
+    @CacheResult(cacheName = ORGANIZATIONS_SHOPS)
     public List<ShopRepresentationObject> getOrganizationShops(Long organizationId) throws BusinessException {
 
         List<ShopsEntity> shopsEntities = shopsRepository.findByOrganizationEntity_Id(organizationId);
@@ -98,7 +100,7 @@ public class ShopService {
     
     
     
-    @CacheEvict(allEntries = true, cacheNames = {"organizations_shops", "shops_by_id"})
+    @CacheEvict(allEntries = true, cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
     public ShopResponse shopModification(ShopJsonDTO shopJson) throws BusinessException{
         BaseUserEntity baseUser =  securityService.getCurrentUser();
         if(!(baseUser instanceof EmployeeUserEntity)) {

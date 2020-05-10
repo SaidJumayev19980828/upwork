@@ -16,6 +16,8 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
+import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
 import static java.lang.String.*;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
@@ -63,7 +65,7 @@ public class ThemeService {
 
     
     
-    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
+    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public ThemeClassResponse updateThemeClass(ThemeClassDTO dto) throws BusinessException {
         Optional<ThemeClassEntity> optionalThemeClass;
         
@@ -86,7 +88,7 @@ public class ThemeService {
     
     
 
-    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
+    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public ThemeResponse updateTheme(ThemeDTO dto) throws BusinessException {
         Optional<ThemeEntity> optionalThemeEntity;
         ThemeEntity theme = new ThemeEntity();
@@ -178,7 +180,7 @@ public class ThemeService {
 
 
     
-    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
+    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public void assignOrgThemeClass(Long orgId, List<Integer> classIds) throws BusinessException {
         Optional<OrganizationEntity> optionalOrg = orgRepo.findById(orgId);
         checkOrgExistence(optionalOrg, orgId);
@@ -210,7 +212,7 @@ public class ThemeService {
     }
     
     
-    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
+    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public void removeOrgThemeClass(Long orgId, Integer themeClassId) throws BusinessException {
         Optional<OrganizationEntity> optionalOrg = orgRepo.findById(orgId);
         checkOrgExistence(optionalOrg, orgId);
@@ -256,7 +258,7 @@ public class ThemeService {
 
 
     @Transactional
-    @CacheEvict(allEntries = true, cacheNames = { "organizations_by_name", "organizations_by_id"})
+    @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public void changeOrgTheme(OrganizationThemesSettingsDTO dto) throws BusinessException {
         OrganizationEntity org = securityService.getCurrentUserOrganization();
 
