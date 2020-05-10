@@ -506,26 +506,26 @@ public class ShopThreeSixtyService {
         validateProductSearch(name, shopId);
 
         ShopsEntity shop = shopRepo.findById(shopId).get();
-        //List<ThreeSixtyProductsDTO> productsList = new ArrayList<>();
         List<ThreeSixtyProductsDTO> products = productsRepo.find360Products(name.toLowerCase(), shopId);
 
-        List<Long> productIds = products.stream().map(p -> p.getId()).collect(Collectors.toList());
+        if (products != null && !products.isEmpty()) {
+            List<Long> productIds = products.stream().map(p -> p.getId()).collect(Collectors.toList());
+            Map<Long, List<ProductImagesEntity>> productsImagesMap = productImageService.getProductsImageList(productIds);
 
-        Map<Long, List<ProductImagesEntity>> productsImagesMap = productImageService.getProductsImageList(productIds);
+            Map<Long, Prices> productsPricesMap = stockRepo.getProductsPrices(productIds)
+                            .stream()
+                            .collect(Collectors.toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
 
-        Map<Long, Prices> productsPricesMap = stockRepo.getProductsPrices(productIds)
-                        .stream()
-                        .collect(Collectors.toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
+            for (ThreeSixtyProductsDTO dto : products) {
 
-        for (ThreeSixtyProductsDTO dto : products) {
+                if (productsImagesMap.get(dto.getId()) != null)
+                    dto.setImages(productsImagesMap.get(dto.getId()).stream()
+                                                                    .map(i -> of(i.getUri()).orElse(null))
+                                                                    .collect(Collectors.toList()));
 
-            if (productsImagesMap.get(dto.getId()) != null)
-                dto.setImages(productsImagesMap.get(dto.getId()).stream()
-                                                                .map(i -> of(i.getUri()).orElse(null))
-                                                                .collect(Collectors.toList()));
-
-            if (productsPricesMap.get(dto.getId()) != null)
-                dto.setPrices(productsPricesMap.get(dto.getId()));
+                if (productsPricesMap.get(dto.getId()) != null)
+                    dto.setPrices(productsPricesMap.get(dto.getId()));
+            }
         }
 
         List<TagsRepresentationObject> tagsList = getTagsList(name, shop.getOrganizationEntity().getId());
