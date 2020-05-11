@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.service.CsvDataImportService;
+import com.nasnav.service.CsvDataExportService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponses;
@@ -30,7 +30,7 @@ public class DataExportContoller {
 	
 	
 	@Autowired
-	private CsvDataImportService importService;
+	private CsvDataExportService exportService;
 
 	
 
@@ -46,7 +46,7 @@ public class DataExportContoller {
 	public ResponseEntity<String> generateProductsCsv(
 			@RequestHeader("User-Token") String token
 			, @RequestParam(name = "shop_id", required = true)Long shopId) throws SQLException, BusinessException, IllegalAccessException, InvocationTargetException {
-		ByteArrayOutputStream s = importService.generateProductsCsv(shopId);
+		ByteArrayOutputStream s = exportService.generateProductsCsv(shopId);
 		return ResponseEntity.ok()
 				.contentType(MediaType.parseMediaType("text/csv"))
 				.header(CONTENT_DISPOSITION, "attachment; filename=Products_Csv.csv")

@@ -4,8 +4,6 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.sql.SQLException;
 
 import javax.validation.Valid;
 

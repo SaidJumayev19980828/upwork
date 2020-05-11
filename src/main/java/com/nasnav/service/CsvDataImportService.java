@@ -4,16 +4,17 @@ import static java.util.Arrays.asList;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.validation.Valid;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.nasnav.commons.utils.MapBuilder;
 import com.nasnav.dto.ProductListImportDTO;
-import com.nasnav.enumerations.ImageCsvTemplateType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
@@ -31,14 +32,38 @@ public interface CsvDataImportService {
 				, IMG_CSV_HEADER_BARCODE
 				, IMG_CSV_HEADER_IMAGE_FILE);
 	
+	Map<String,String> PRODUCT_DATA_TO_COLUMN_MAPPING = MapBuilder.<String, String>map()
+					.put("name", "product_name")
+					.put("barcode", "barcode")
+					.put("tags", "tags")
+					.put("brand", "brand")
+					.put("price", "price")
+					.put("quantity", "quantity")
+					.put("description", "description")
+					.put("variantId", "variant_id")
+					.put("externalId", "external_id")
+					.put("productGroupKey", "product_group_key")
+					.put("discount", "discount")
+					.getMap();
+	
+	
+	Map<String,String> IMG_DATA_TO_COLUMN_MAPPING = MapBuilder.<String, String>map()
+					.put("variantId", "variant_id")
+					.put("externalId", "external_id")
+					.put("barcode", "barcode")
+					.put("productName", "product_name")
+					.put("productId", "product_id")
+					.getMap();
+	
+	Set<String> CSV_BASE_HEADERS = new HashSet<String>(PRODUCT_DATA_TO_COLUMN_MAPPING.values());
+	
 	
 	public ImportProductContext importProductListFromCSV(
 			@Valid MultipartFile file,
 			@Valid ProductListImportDTO importMetaData) throws BusinessException, ImportProductException ;
 
 	public ByteArrayOutputStream generateProductsCsvTemplate() throws IOException;
-	public ByteArrayOutputStream generateImagesCsvTemplate(ImageCsvTemplateType type) throws IOException;
+
 	List<String> getProductImportTemplateHeaders();
 
-	public ByteArrayOutputStream generateProductsCsv(Long shopId) throws InvocationTargetException, SQLException, IllegalAccessException, BusinessException;
 }
