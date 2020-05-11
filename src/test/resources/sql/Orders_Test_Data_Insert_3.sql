@@ -12,8 +12,8 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 2
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (103, 202, 'brand_3', 99001);
 
 --inserting categories
-INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
-INSERT INTO public.categories(id, name) VALUES (202, 'category_2');
+/*INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
+INSERT INTO public.categories(id, name) VALUES (202, 'category_2');*/
 
 --inserting shops
 INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (501, 'shop_1', 102, 99002);
@@ -68,9 +68,9 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (26
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (27, 73, 6);
 
 --inserting orders
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330033, 88, now(), now(), 99001, 0, 502);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330037, 88, now(), now(), 99002, 0, 501);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330038, 90, now(), now(), 99002, 1, 501);
+insert into public.orders(id, address,user_id,created_at, updated_at, organization_id,status,shop_id) values(330033, 'address',88, now(), now(), 99001, 0, 502);
+insert into public.orders(id, address,user_id,created_at, updated_at, organization_id,status,shop_id) values(330037, 'address', 88, now(), now(), 99002, 0, 501);
+insert into public.orders(id, address,user_id,created_at, updated_at, organization_id,status,shop_id) values(330038, 'address', 90, now(), now(), 99002, 1, 501);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330039, 88, now(), now(), 99001, 3, 501);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330040, 88, now(), now(), 99001, 1, 503);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330041, 90, now(), now(), 99001, 1, 502);

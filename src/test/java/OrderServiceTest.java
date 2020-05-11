@@ -21,12 +21,10 @@ import static org.springframework.http.HttpStatus.OK;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import com.nasnav.dto.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -58,10 +56,6 @@ import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
-import com.nasnav.dto.BasketItem;
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.OrderRepresentationObject;
-import com.nasnav.dto.ShippingAddress;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BasketsEntity;
@@ -1758,6 +1752,47 @@ public class OrderServiceTest {
 		//-------------------------------------------		
 	}
 
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql","/sql/Orders_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void updateOrderDeliveryAddressStatusNew() {
+		BasketItemDTO itemDTO = new BasketItemDTO(601L, 1, "KG");
+		List<BasketItemDTO> basket = new ArrayList<>();
+		basket.add(itemDTO);
+
+		String body = json().put("order_id",330033)
+							.put("delivery_address", "new address")
+							.put("basket",basket)
+							.put("status", "NEW").toString();
+
+		HttpEntity request = getHttpEntity(body, "123");
+		ResponseEntity<OrderResponse> res = template.postForEntity("/order/update", request, OrderResponse.class);
+		assertEquals(200, res.getStatusCodeValue());
+		OrdersEntity order = orderRepository.findById(330033).get();
+		assertEquals("new address",order.getAddress());
+	}
+
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql","/sql/Orders_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void updateOrderDeliveryAddressStatusNonNew() {
+		BasketItemDTO itemDTO = new BasketItemDTO(601L, 1, "KG");
+		List<BasketItemDTO> basket = new ArrayList<>();
+		basket.add(itemDTO);
+
+		String body = json().put("order_id",330038)
+				.put("delivery_address", "new address")
+				.put("basket",basket)
+				.put("status", "CLIENT_CANCELLED").toString();
+
+		HttpEntity request = getHttpEntity(body, "789");
+		ResponseEntity<OrderResponse> res = template.postForEntity("/order/update", request, OrderResponse.class);
+		assertEquals(200, res.getStatusCodeValue());
+		OrdersEntity order = orderRepository.findById(330033).get();
+		assertEquals("address",order.getAddress());
+	}
 
 
 

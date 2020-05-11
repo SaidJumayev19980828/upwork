@@ -731,6 +731,10 @@ public class OrderServiceImpl implements OrderService {
 		
 		orderEntity.setAmount( calculateOrderTotalValue(order) );
 		orderEntity.setShopsEntity( getOrderShop( order) );
+		if (order.getAddress() != null) {
+			if (orderEntity.getOrderStatus().equals(NEW))
+				orderEntity.setAddress(order.getAddress());
+		}
 		orderEntity = ordersRepository.save(orderEntity);
 
 		addItemsToBasket(order, orderEntity);
