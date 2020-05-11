@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.nasnav.dao.ProductImgsCustomRepository;
 import com.nasnav.dto.VariantWithNoImagesDTO;
@@ -30,6 +31,7 @@ import com.univocity.parsers.common.processor.BeanWriterProcessor;
 import com.univocity.parsers.csv.CsvWriter;
 import com.univocity.parsers.csv.CsvWriterSettings;
 
+@Service
 public class CsvDataExportServiceImpl implements CsvDataExportService {
 	
 	@Autowired
