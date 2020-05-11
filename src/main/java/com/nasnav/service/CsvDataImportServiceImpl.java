@@ -54,7 +54,6 @@ import com.nasnav.commons.utils.MapBuilder;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ProductImgsCustomRepository;
-import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.ProductImportMetadata;
@@ -74,6 +73,7 @@ import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.persistence.dto.query.result.products.export.ProductExportedData;
 import com.nasnav.service.helpers.ProductCsvRowProcessor;
+import com.nasnav.service.helpers.ProductCsvRowWriterProcessor;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
 import com.querydsl.core.types.dsl.Expressions;
@@ -110,8 +110,6 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	private JdbcTemplate template;
 
 	@Autowired
-	private ProductRepository productRepository;
-	@Autowired
 	private EmployeeUserRepository empRepo;
 	
 	@Autowired
@@ -142,7 +140,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	
 	
 	
-	private final Map<String,String> fieldToColumnHeaderMapping = 
+	private final Map<String,String> PRODUCT_DATA_TO_COLUMN_MAPPING = 
 			MapBuilder.<String, String>map()
 				.put("name", "product_name")
 				.put("barcode", "barcode")
@@ -158,7 +156,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 				.getMap();
 	
 	
-	private final Map<String,String> fieldToImgsTemplateColumnHeaderMapping = 
+	private final Map<String,String> IMG_DATA_TO_COLUMN_MAPPING = 
 			MapBuilder.<String, String>map()
 				.put("variantId", "variant_id")
 				.put("externalId", "external_id")
@@ -169,7 +167,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	
 	
 	
-	private final Set<String> CSV_BASE_HEADERS = new HashSet<String>(fieldToColumnHeaderMapping.values());
+	private final Set<String> CSV_BASE_HEADERS = new HashSet<String>(PRODUCT_DATA_TO_COLUMN_MAPPING.values());
 	
 	
 	@Transactional(rollbackFor = Throwable.class)
@@ -281,7 +279,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	
 	private BeanWriterProcessor<VariantWithNoImagesDTO> createImgsTemplateRowProcessor() {
 		
-		ColumnMapping mapper = createImgCsvAttrToColMapping(fieldToImgsTemplateColumnHeaderMapping);
+		ColumnMapping mapper = createCsvAttrToColMapping(IMG_DATA_TO_COLUMN_MAPPING);
 		
 		BeanWriterProcessor<VariantWithNoImagesDTO> rowProcessor = new BeanWriterProcessor<>(VariantWithNoImagesDTO.class);
 		rowProcessor.setColumnMapper(mapper);
@@ -293,7 +291,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 
-	private ColumnMapping createImgCsvAttrToColMapping(Map fields) {
+	private ColumnMapping createCsvAttrToColMapping(Map<String,String> fields) {
 		ColumnMapping mapping = new ColumnMapping();
 		mapping.attributesToColumnNames(fields);
 		return mapping;
@@ -321,7 +319,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 	private ColumnMapping createAttrToColMapping(ProductListImportDTO metaData) {
 		ColumnMapping mapping = new ColumnMapping();
-		mapping.attributesToColumnNames(fieldToColumnHeaderMapping);
+		mapping.attributesToColumnNames(PRODUCT_DATA_TO_COLUMN_MAPPING);
 		
 		return mapping;
 	}
@@ -509,6 +507,10 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	}
 
 
+	
+	
+	
+	
 	private List<CsvRow> getProducts(Long orgId, Long shopId) {
 
 		SQLQuery<?> stocks = getStocksQuery(orgId, shopId);
@@ -556,7 +558,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 
 
 	private CsvRow toCsvRow(ProductExportedData productData, Map<Long,List<ProductTagsBasicData>> productTags, Map<Integer, ProductFeaturesEntity> features) {
-		CsvRow row = readCsvRow(productData);
+		CsvRow row = createCsvRow(productData);
 		
 		setTags(row, productData, productTags);
 		setFeatures(row, productData, features);
@@ -605,7 +607,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	}
 
 
-	private CsvRow readCsvRow(ProductExportedData data) {
+	private CsvRow createCsvRow(ProductExportedData data) {
 		CsvRow row = new CsvRow();
 		row.setBarcode(data.getBarcode());
 		row.setBrand(data.getBrand());
@@ -743,31 +745,34 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		return writeCsvResult(headers, settings, products);
 	}
 
+	
+	
+	
 
 	private BeanWriterProcessor<CsvRow> createProductsRowProcessor() {
-		ColumnMapping mapper = createImgCsvAttrToColMapping(fieldToColumnHeaderMapping);
+		ColumnMapping mapper = createCsvAttrToColMapping(PRODUCT_DATA_TO_COLUMN_MAPPING);
 
-		BeanWriterProcessor<CsvRow> rowProcessor = new BeanWriterProcessor<>(CsvRow.class);
+		BeanWriterProcessor<CsvRow> rowProcessor = new ProductCsvRowWriterProcessor(CsvRow.class);
 		rowProcessor.setColumnMapper(mapper);
 		rowProcessor.setStrictHeaderValidationEnabled(true);
 		return rowProcessor;
 	}
 
 
-	private ByteArrayOutputStream writeCsvResult(List<String> headers, CsvWriterSettings settings, List data) {
-		ByteArrayOutputStream csvResult = new ByteArrayOutputStream();
-		Writer outputWriter = new OutputStreamWriter(csvResult);
+	private ByteArrayOutputStream writeCsvResult(List<String> headers, CsvWriterSettings settings, List<?> data) {
+		ByteArrayOutputStream csvOutStream = new ByteArrayOutputStream();
+		Writer outputWriter = new OutputStreamWriter(csvOutStream);
 		CsvWriter writer = new CsvWriter(outputWriter, settings);
 
 		writer.writeHeaders(headers.stream().toArray(String[]::new));
 		writer.processRecordsAndClose(data);
 
-		return csvResult;
+		return csvOutStream;
 	}
 	
 	
 	
-	private CsvWriterSettings createWritterSettings(BeanWriterProcessor rowProcessor) {
+	private CsvWriterSettings createWritterSettings(BeanWriterProcessor<?> rowProcessor) {
 		CsvWriterSettings settings = new CsvWriterSettings();
 		settings.setRowWriterProcessor(rowProcessor);		
 		settings.setMaxCharsPerColumn(-1);
