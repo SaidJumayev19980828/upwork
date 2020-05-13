@@ -31,10 +31,16 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 	List<StocksEntity> findByProductVariantsEntityIdOrderByPriceAsc(Long variantId);
 
 
-	List<StocksEntity> findByShopsEntity_Id(Long id);
+	@Query("SELECT stocks "
+			+ " FROM StocksEntity stocks "
+			+ " left join fetch stocks.shopsEntity shop "
+			+ " left join fetch stocks.productVariantsEntity variant "
+			+ " left join fetch variant.productEntity product "
+			+ " WHERE shop.id = :id ")
+	List<StocksEntity> findByShopsEntity_Id(@Param("id")Long id);
 
 
-	@Query("select stock from StocksEntity stock "
+	@Query("SELECT stock from StocksEntity stock "
 			+ " left join stock.productVariantsEntity var "
 			+ " left join var.productEntity prod "
 			+ " where prod.id in :productIds  " )

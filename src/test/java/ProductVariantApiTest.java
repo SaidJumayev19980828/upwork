@@ -3,9 +3,11 @@ import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.OK;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.json.JSONObject;
 import org.junit.Test;
@@ -31,6 +33,7 @@ import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.test.commons.TestCommons;
+import com.nasnav.test.helpers.TestHelper;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -61,6 +64,8 @@ public class ProductVariantApiTest {
 	@Autowired
 	private ProductVariantsRepository variantRepo;
 	
+	@Autowired
+	private TestHelper helper;
 	
 	
 	@Test
@@ -186,15 +191,15 @@ public class ProductVariantApiTest {
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/variant"
-									, HttpMethod.POST
+									, POST
 									, request
 									, String.class);
 		
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(OK, response.getStatusCode());
 		JSONObject body = new JSONObject(response.getBody());
 		Long id = body.getLong("variant_id");
 		
-		ProductVariantsEntity saved = variantRepo.findById(id).get();
+		ProductVariantsEntity saved = helper.getVariantFullData(id);
 		JSONObject extraAtrrJson = new JSONObject(json.getString("extra_attr"));
 		
 		assertEquals(json.getString("name"), saved.getName());
@@ -238,22 +243,21 @@ public class ProductVariantApiTest {
 		
 		ResponseEntity<String> response = 
 				template.exchange("/product/variant"
-									, HttpMethod.POST
+									, POST
 									, request
 									, String.class);
 		
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(OK, response.getStatusCode());
 		JSONObject body = new JSONObject(response.getBody());
 		Long id = body.getLong("variant_id");
 		
-		ProductVariantsEntity saved = variantRepo.findById(id).get();
+		ProductVariantsEntity saved = helper.getVariantFullData(id);
 		
 		assertEquals(json.getString("name"), saved.getName());
 		assertEquals(json.get("features"), saved.getFeatureSpec());
 		assertEquals(before.getBarcode(), saved.getBarcode());
 		assertEquals(before.getProductEntity().getId(), saved.getProductEntity().getId() );
 		assertEquals(before.getDescription(), saved.getDescription());
-		
 	}
 	
 
@@ -265,18 +269,18 @@ public class ProductVariantApiTest {
 		BaseUserEntity user = empRepo.getById(70L); //admin from another organization
 		
 		JSONObject json = createProductVariantRequest();
-		json.put("operation", Operation.UPDATE.getValue());
+		json.put("operation", UPDATE.getValue());
 		json.put("variant_id", TEST_VARIANT_ID);
 		
 		HttpEntity<?> request = TestCommons.getHttpEntity(json.toString(), user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
-															, HttpMethod.POST
+															, POST
 															, request
 															, String.class
 															);
 		
-		assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 	
 	
@@ -292,12 +296,12 @@ public class ProductVariantApiTest {
 		HttpEntity<?> request = TestCommons.getHttpEntity(json.toString(), user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
-															, HttpMethod.POST
+															, POST
 															, request
 															, String.class
 															);
 		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 	
 	
@@ -314,12 +318,12 @@ public class ProductVariantApiTest {
 		HttpEntity<?> request = TestCommons.getHttpEntity(json.toString(), user.getAuthenticationToken());
 		
 		ResponseEntity<String> response = template.exchange("/product/variant"
-															, HttpMethod.POST
+															, POST
 															, request
 															, String.class
 															);
 		
-		assertEquals(HttpStatus.NOT_ACCEPTABLE, response.getStatusCode());
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 	
 	

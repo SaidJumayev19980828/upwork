@@ -20,12 +20,6 @@ public interface StockService {
     Integer getStockQuantity(StocksEntity stock);
 
 
-    /**
-     * @return the sum of actual stock items quantities in the given list.
-     * Bundles and services stock items are excluded.
-     * */
-    Long getStockItemsQuantitySum(List<StocksEntity> stocks);
-
     
     /**
      * @return a list of stocks for the product variant that belongs to the given shop.

@@ -32,6 +32,17 @@ public class CollectionUtils {
 	
 	
 	
+	
+	public static <T,U> List<U> processInBatches(Collection<T> collection, int batchSize, Function<List<T>, List<U>> mapper){
+		return divideToBatches(collection, batchSize)
+				.stream()
+				.map(mapper)
+				.flatMap(List::stream)
+				.collect(toList());
+	}
+	
+	
+	
 	public static <T,U> List<T> distinctBy(Collection<T> collection, Function<? super T, ? extends U> keyExtractor){
 		Set<U> seen = ConcurrentHashMap.newKeySet();
 		return collection

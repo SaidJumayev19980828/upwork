@@ -10,6 +10,7 @@ import javax.persistence.Table;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Table(name="product_features")
 @Entity
@@ -31,5 +32,7 @@ public class ProductFeaturesEntity {
 	private String description;
 	
 	@ManyToOne
+	@ToString.Exclude
+    @EqualsAndHashCode.Exclude
 	private OrganizationEntity organization;
 }

@@ -16,6 +16,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.BinaryOperator.minBy;
@@ -73,7 +74,6 @@ import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductUpdateResponse;
-import com.nasnav.response.VariantUpdateResponse;
 import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.DataImportCachedData;
 import com.nasnav.service.model.VariantBasicData;
@@ -401,13 +401,21 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 	private void saveNewVariants(ProductDataImportContext context) {
-		List<VariantDTOWithExternalIdAndStock> variants = getVariants(context);
-		
-		IntStream
-		.range(0, variants.size())
-		.mapToObj(i -> new IndexedData<>(i, variants.get(i)))
-		.filter(variant -> Objects.isNull(variant.getData().getVariantId()))
-		.forEach(variant -> saveNewVariant(variant, context.getContext()));
+		try {
+			logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>> saving New variants ....");
+			List<VariantDTOWithExternalIdAndStock> variants = getNewVariants(context);
+			List<Long> savedVariants = productService.updateVariantBatch(variants);
+			
+			for(int i=0; i < variants.size(); i++) {
+				Long variantId = savedVariants.get(i);
+				VariantDTOWithExternalIdAndStock variant = variants.get(i);
+				saveExternalMapping(variant, variantId);
+				variant.getStock().setVariantId(variantId);
+			}
+		} catch (BusinessException e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(e);
+		}
 	}
 
 
@@ -415,38 +423,55 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 	private void saveExistingVariants(ProductDataImportContext context) {
-		ProductImportMetadata importMetaData = context.getContext().getImportMetaData();
-		boolean updateProductEnabled = importMetaData.isUpdateProduct();
-		List<VariantDTOWithExternalIdAndStock> variants = getVariants(context);
-		
-		IntStream
-		.range(0, variants.size())
-		.mapToObj(i -> new IndexedData<>(i, variants.get(i)))
-		.filter(variant -> Objects.nonNull(variant.getData().getVariantId()))
-		.filter(variant -> updateProductEnabled)
-		.forEach(variant -> saveVariant(variant, context.getContext()));
+		try {
+			logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>> saving Existing variants ....");
+			ProductImportMetadata importMetaData = context.getContext().getImportMetaData();
+			boolean updateProductEnabled = importMetaData.isUpdateProduct();
+			List<VariantDTOWithExternalIdAndStock> variants = getExistingVariants(context, updateProductEnabled);
+			List<Long> savedVariants = productService.updateVariantBatch(variants);
+			
+			for(int i=0; i < variants.size(); i++) {
+				Long variantId = savedVariants.get(i);
+				VariantDTOWithExternalIdAndStock variant = variants.get(i);
+				
+				saveExternalMapping(variant, variantId);				
+			}
+		} catch (BusinessException e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(e);
+		}		
 	}
 
 
 
 
 
-	private List<VariantDTOWithExternalIdAndStock> getVariants(ProductDataImportContext context) {
+	private List<VariantDTOWithExternalIdAndStock> getExistingVariants(ProductDataImportContext context, boolean isUpdateProductEnabled) {
 		return 
 			context
 			.getProductsData()
 			.stream()
 			.map(ProductData::getVariants)
 			.flatMap(List::stream)
+			.filter(variant -> nonNull(variant.getVariantId()))
+			.filter(variant -> isUpdateProductEnabled)
 			.collect(toList());
 	}
 	
 	
 	
-	private void saveNewVariant(IndexedData<VariantDTOWithExternalIdAndStock> variant, ImportProductContext context) {
-		Long id = saveVariant(variant, context);
-    	variant.getData().getStock().setVariantId(id);
+	private List<VariantDTOWithExternalIdAndStock> getNewVariants(ProductDataImportContext context) {
+		return 
+			context
+			.getProductsData()
+			.stream()
+			.map(ProductData::getVariants)
+			.flatMap(List::stream)
+			.filter(variant -> isNull(variant.getVariantId()))
+			.collect(toList());
 	}
+	
+	
 	
 	
 	
@@ -558,24 +583,6 @@ public class DataImportServiceImpl implements DataImportService {
 	
 	
 	
-	
-	
-    
-	
-	private Long saveVariant(IndexedData<VariantDTOWithExternalIdAndStock> variant, ImportProductContext context) {
-		try {
-			logger.info(format(">>>>>>>>>>>>>>>>>>>>>>>>>>>> saving variant[%d] ....", variant.getIndex()));
-			VariantUpdateResponse variantResponse = productService.updateVariant(variant.getData());	
-			Long variantId = variantResponse.getVariantId();
-			saveExternalMapping(variant.getData(), variantId);
-			return variantId;
-		}catch(BusinessException e) {
-			context.logNewError(e, variant.getData().toString(), variant.getIndex());
-			throw new RuntimeBusinessException(e);
-		}
-	}
-
-
 	
 	
 	

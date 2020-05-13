@@ -66,7 +66,7 @@ public class ProductVariantsEntity {
     private Integer removed;
     
 
-    @ManyToOne(cascade = CascadeType.DETACH, fetch = FetchType.EAGER)
+    @ManyToOne(cascade = CascadeType.DETACH, fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", referencedColumnName = "id")
     @JsonIgnore
     @ToString.Exclude
@@ -81,7 +81,7 @@ public class ProductVariantsEntity {
     private Set<StocksEntity> stocks;
     
     
-    @OneToMany(mappedBy = "variant", fetch = FetchType.EAGER, cascade=CascadeType.ALL)
+    @OneToMany(mappedBy = "variant", fetch = FetchType.LAZY, cascade=CascadeType.ALL)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

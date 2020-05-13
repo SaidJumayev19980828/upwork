@@ -1,6 +1,8 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
+import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
+import static com.nasnav.commons.utils.EntityUtils.areEqual;
 import static com.nasnav.commons.utils.EntityUtils.noneIsEmpty;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
@@ -17,9 +19,12 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PR
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
 import static com.nasnav.enumerations.OrderStatus.NEW;
+import static com.nasnav.exceptions.ErrorCodes.P$VAR$0001;
+import static com.nasnav.exceptions.ErrorCodes.P$VAR$0002;
 import static com.nasnav.service.ProductImageService.NO_IMG_FOUND_URL;
 import static com.querydsl.sql.SQLExpressions.select;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
@@ -27,7 +32,9 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -46,7 +53,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -59,6 +65,8 @@ import javax.persistence.criteria.Root;
 import javax.sql.DataSource;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -71,13 +79,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.enums.SortOrder;
-import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.BasketRepository;
@@ -142,6 +150,10 @@ import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.ProductsDeleteResponse;
 import com.nasnav.response.VariantUpdateResponse;
+import com.nasnav.service.helpers.CachingHelper;
+import com.nasnav.service.model.VariantBasicData;
+import com.nasnav.service.model.VariantCache;
+import com.nasnav.service.model.VariantIdentifier;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.Expressions;
@@ -150,12 +162,14 @@ import com.querydsl.sql.PostgreSQLTemplates;
 import com.querydsl.sql.SQLExpressions;
 import com.querydsl.sql.SQLQuery;
 import com.querydsl.sql.SQLQueryFactory;
-import com.sun.istack.logging.Logger;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 @Service
 public class ProductService {
 
-	private Logger logger = Logger.getLogger(ProductService.class);
+	private Logger logger = LogManager.getLogger();
 
 	//	@Value("${products.default.start}")
 	private Integer defaultStart = 0;
@@ -223,6 +237,9 @@ public class ProductService {
 
 	@Autowired
 	private JdbcTemplate template;
+	
+	@Autowired
+	private CachingHelper cachingHelper;
 
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
@@ -240,7 +257,7 @@ public class ProductService {
 
 
 
-
+	@Transactional
 	public ProductDetailsDTO getProduct(Long productId, Long shopId) throws BusinessException{
 		ProductEntity product =
 				productRepository
@@ -276,7 +293,7 @@ public class ProductService {
 				productDTO.setImages( getProductImages(product.getId() ) );
 				productDTO.setTags(tagsDTOList);
 		} catch (IllegalAccessException | InvocationTargetException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e );
+			logger.error(e,e);
 			throw new BusinessException(
 					format(ERR_PRODUCT_READ_FAIL, product.getId())
 					,"INTERNAL SERVER ERROR"
@@ -991,7 +1008,7 @@ public class ProductService {
 		try {
 			rootNode = mapper.readTree(productJson);
 		} catch (IOException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			logger.error(e,e);
 			throw new BusinessException("Failed to deserialize JSON string ["+ productJson + "]", "INTERNAL SERVER ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
@@ -1053,7 +1070,7 @@ public class ProductService {
 
 			BeanUtils.copyProperties(entity, productDto);
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			logger.error(e,e);
 			throw new BusinessException(e.getMessage(), "INTERNAL SERVER ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -1171,10 +1188,10 @@ public class ProductService {
 			try {
 				transactions.deleteProduct(productId);
 			} catch (DataIntegrityViolationException e) {
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				logger.error(e,e);
 				throw new BusinessException(format(ERR_PRODUCT_STILL_USED, productId), "INVAILID PARAM:product_id", HttpStatus.NOT_ACCEPTABLE);
 			} catch (Throwable e) {
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				logger.error(e,e);
 				throw new BusinessException(format(ERR_PRODUCT_DELETE_FAILED, productId), "INVAILID PARAM:product_id", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		}
@@ -1269,7 +1286,7 @@ public class ProductService {
 
 
 
-
+	@Transactional
 	public ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException {
 		validateProductImg(file, imgMetaData);
 
@@ -1479,16 +1496,16 @@ public class ProductService {
 			Optional<ProductVariantsEntity> variant = productVariantsRepository.findById(variantId);
 			if(variantId != null && !variant.isPresent())
 				throw new BusinessException(
-						String.format("Product variant with id [%d] doesnot exists!", variantId)
+						format("Product variant with id [%d] doesnot exists!", variantId)
 						, "INVALID PARAM:variant_id"
-						, HttpStatus.NOT_ACCEPTABLE);
+						, NOT_ACCEPTABLE);
 
 
 			if(variantNotForProduct(variant, productId))
 				throw new BusinessException(
-						String.format("Product variant with id [%d] doesnot belong to product with id [%d]!", variantId, productId)
+						format("Product variant with id [%d] doesnot belong to product with id [%d]!", variantId, productId)
 						, "INVALID PARAM:variant_id"
-						, HttpStatus.NOT_ACCEPTABLE);
+						, NOT_ACCEPTABLE);
 		}
 	}
 
@@ -1703,7 +1720,7 @@ public class ProductService {
 		try {
 			BeanUtils.copyProperties(baseInfo, source);
 		} catch (IllegalAccessException | InvocationTargetException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
+			logger.error(e,e);
 			throw new RuntimeException(
 					String.format( "Failed to copy data from class of type [%s] to a class of type [%s]"
 							, source.getClass().getName()
@@ -1816,7 +1833,7 @@ public class ProductService {
 		Long bundleOrgId = bundle.getOrganizationId();
 		Long itemOrgId = item.getOrganizationEntity().getId();
 
-		boolean areEqual = EntityUtils.areEqual(userOrgId, bundleOrgId, itemOrgId);
+		boolean areEqual = areEqual(userOrgId, bundleOrgId, itemOrgId);
 
 		if(!areEqual) {
 			throw new BusinessException(
@@ -1824,184 +1841,336 @@ public class ProductService {
 							+ "to add stock item from organiztion of id[%d] to "
 							+ "a bundle from organiztion of id[%d]", userOrgId, itemOrgId, bundleOrgId)
 					, "INVALID PARAM:bundle_id/stock_id"
-					, HttpStatus.FORBIDDEN);
+					, FORBIDDEN);
 		}
 	}
 
 
+	
 	public VariantUpdateResponse updateVariant(VariantUpdateDTO variant) throws BusinessException {
-		BaseUserEntity user =  securityService.getCurrentUser();
-		Long orgId = user.getOrganizationId();
+		Long variantId = updateVariantBatch(asList(variant)).stream().findFirst().orElse(-1L);
+		return new VariantUpdateResponse(variantId);
+	}
+	
+	
+	
+	
+	public List<Long> updateVariantBatch(List<? extends VariantUpdateDTO> variants) throws BusinessException{
+		VariantUpdateCache cache = createVariantUpdateCache(variants);
+		
+		validateVariants(variants, cache);
 
-		validateVariant(variant, orgId);
-
-		ProductVariantsEntity entity = saveVariantToDb(variant);
-		return new VariantUpdateResponse(entity.getId());
+		List<ProductVariantsEntity> entities = saveVariantsToDb(variants, cache);
+		return entities
+				.stream()
+				.map(ProductVariantsEntity::getId)
+				.collect(toList());
 	}
 
 
 
 
-	private void validateVariant(VariantUpdateDTO variant, Long orgId) throws BusinessException {
+	private VariantUpdateCache createVariantUpdateCache(List<? extends VariantUpdateDTO> variants) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		
+		List<VariantIdentifier> variantIdentifiers = createVariantIdentifierList(variants);
+		VariantCache variantCache = cachingHelper.createVariantCache(variantIdentifiers);		
+		Set<ProductFeaturesEntity> orgFeatures = getOrgProductFeatures(orgId);
+		Map<String, ExtraAttributesEntity> orgExtraAttributes = createExtraAttributeCache(orgId, variants);
+		Map<Long, ProductVariantsEntity> variantsEntities = getVariatsEntities(variants);
+		Set<Long> orgProductIds = productRepository.listProductIdByOrganizationId(orgId);
+		
+		return new VariantUpdateCache(variantCache, orgProductIds, orgFeatures, orgExtraAttributes, variantsEntities);
+	}
+
+
+
+
+
+
+	private Map<String, ExtraAttributesEntity> createExtraAttributeCache(Long orgId, List<? extends VariantUpdateDTO> variants) {
+		Map<String, ExtraAttributesEntity> orgExtraAttributes = getOrganizationExtraAttr(orgId);		
+		createAndAddNewExtraAttributes(variants, orgExtraAttributes);		
+		return orgExtraAttributes;
+	}
+
+
+
+
+	private void createAndAddNewExtraAttributes(List<? extends VariantUpdateDTO> variants,
+			Map<String, ExtraAttributesEntity> orgExtraAttributes) {
+		variants
+		.stream()
+		.map(VariantUpdateDTO::getExtraAttr)
+		.map(JSONObject::new)
+		.map(JSONObject::keySet)
+		.flatMap(Set::stream)
+		.distinct()
+		.filter(extraAttrName -> !orgExtraAttributes.containsKey(extraAttrName))
+		.map(this::createNewExtraAttribute)
+		.forEach(entity -> orgExtraAttributes.put(entity.getName(), entity));
+	}
+
+	
+	
+	
+
+
+	private Map<Long, ProductVariantsEntity> getVariatsEntities(List<? extends VariantUpdateDTO> variants) {
+		Set<Long> variantIds = 
+				variants
+				.stream()
+				.map(VariantUpdateDTO::getVariantId)
+				.distinct()
+				.collect(toSet());
+		return processInBatches(variantIds, 500, productVariantsRepository::findByIdIn)
+				.stream()
+				.collect(toMap(ProductVariantsEntity::getId, variant -> variant));
+	}
+
+
+
+
+	private Map<String, ExtraAttributesEntity> getOrganizationExtraAttr(Long orgId) {
+		return extraAttrRepo
+				.findByOrganizationId(orgId)
+				.stream()
+				.distinct()
+				.collect(toMap(ExtraAttributesEntity::getName, attr -> attr));
+	}
+
+
+
+
+	private Set<ProductFeaturesEntity> getOrgProductFeatures(Long orgId) {
+		return productFeaturesRepository
+				.findByOrganizationId(orgId)
+				.stream()
+				.distinct()
+				.collect(toSet());
+	}
+
+
+
+
+	private List<VariantIdentifier> createVariantIdentifierList(List<? extends VariantUpdateDTO> variants) {
+		return variants
+				.stream()
+				.map(VariantUpdateDTO::getVariantId)
+				.filter(Objects::nonNull)
+				.map(this::createVariantIdentifier)
+				.collect(toList());
+	}
+
+	
+	
+	
+	private VariantIdentifier createVariantIdentifier(Long id) {
+		VariantIdentifier variantIdentifier = new VariantIdentifier();
+		variantIdentifier.setVariantId(String.valueOf(id));
+		return variantIdentifier;
+	}
+
+
+
+	private void validateVariants(List<? extends VariantUpdateDTO> variants, VariantUpdateCache cache) throws BusinessException {
+		for(VariantUpdateDTO variant: variants) {
+			validateVariant(variant, cache);
+		}
+	}
+
+
+
+
+	private List<ProductVariantsEntity> saveVariantsToDb(List<? extends VariantUpdateDTO> variants, VariantUpdateCache cache) {
+		List<ProductVariantsEntity> entities = 
+				variants
+				.stream()
+				.map(variant -> createVariantEntity(variant, cache))
+				.collect(toList());
+		return productVariantsRepository.saveAll(entities);
+	}
+
+
+
+
+	private void validateVariant(VariantUpdateDTO variant ,VariantUpdateCache cache) throws BusinessException {
+		Set<Long> orgProductIds = cache.getOrgProductIdList();
+		
 		if(!variant.areRequiredAlwaysPropertiesPresent()) {
 			throw new BusinessException(
 					"Missing required parameters !"
 					, "MISSING PARAM"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
 
-		if( !productRepository.existsById( variant.getProductId() )) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		if( !orgProductIds.contains( variant.getProductId() )) {
 			throw new BusinessException(
-					String.format("Invalid parameters [product_id], no product exists with id[%d]!", variant.getProductId())
+					format("Invalid parameters [product_id], no product exists with id[%d] in organization[%d]!", variant.getProductId(), orgId)
 					, "INVALID PARAM:features"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
-
 
 		Operation opr = variant.getOperation();
 		validateOperation(opr);
 
-		if( opr.equals(Operation.CREATE) ) {
-			validateVariantForCreate(variant, orgId);
-		}else if( opr.equals(Operation.UPDATE) ) {
-			validateVariantForUpdate(variant, orgId);
+		if( opr.equals(CREATE) ) {
+			validateVariantForCreate(variant, cache);
+		}else if( opr.equals(UPDATE) ) {
+			validateVariantForUpdate(variant, cache);
 		}
-
-
 	}
 
 
 
 
-	private void validateVariantForUpdate(VariantUpdateDTO variant, Long userOrgId) throws BusinessException {
+	private void validateVariantForUpdate(VariantUpdateDTO variant, VariantUpdateCache cache) throws BusinessException {
 		if(!variant.areRequiredForUpdatePropertiesProvided()) {
 			throw new BusinessException(
 					"Missing required parameters !"
 					, "MISSING PARAM"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
 
-		validateUserCanUpdateVariant(variant, userOrgId);
-
-		validateFeatures(variant, userOrgId);
+		validateVariantExists(variant, cache);
+		validateUserCanUpdateVariant(variant, cache);
+		validateFeatures(variant, cache);
 	}
 
 
 
 
-	private void validateUserCanUpdateVariant(VariantUpdateDTO variant, Long userOrgId) throws BusinessException {
-		Long id = variant.getVariantId();
-		Optional<ProductVariantsEntity> variantOptional= productVariantsRepository.findById( id );
+	private void validateUserCanUpdateVariant(VariantUpdateDTO variant, VariantUpdateCache cache) throws BusinessException {
+		String id = ofNullable(variant.getVariantId())
+					.map(varId -> String.valueOf(varId))
+					.orElse("");
+		
+		Long userOrgId = securityService.getCurrentUserOrganizationId();
+		Long variantOrgId =	getVariantOrganizationId(id, cache);
 
-		if( !variantOptional.isPresent()) {
+		if(!Objects.equals(variantOrgId, userOrgId)) {
 			throw new BusinessException(
-					String.format("Invalid parameters [variant_id], no product variant exists with id [%d]!", id)
+					format("Product variant of id[%s], can't be changed a user from organization with id[%d]!", id , userOrgId)
 					, "INVALID PARAM:variant_id"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, FORBIDDEN);
 		}
+	}
 
-		Long variantOrgId = variantOptional.map(ProductVariantsEntity::getProductEntity)
-				.map(ProductEntity::getOrganizationId)
+
+
+
+	private Long getVariantOrganizationId(String id, VariantUpdateCache cache) throws BusinessException {
+		return ofNullable(cache)
+				.map(VariantUpdateCache::getVariantCache)
+				.map(VariantCache::getIdToVariantMap)
+				.map(map -> map.get(id))
+				.map(VariantBasicData::getOrganizationId)
 				.orElseThrow(
 						() -> new BusinessException(
-								String.format("Product variant of id[%d], Doesn't follow any organization!", id)
+								format("Product variant of id[%s], Doesn't follow any organization!", id)
 								, "INTERNAL SERVER ERROR"
-								, HttpStatus.INTERNAL_SERVER_ERROR)
+								, INTERNAL_SERVER_ERROR)
 				);
+	}
 
-		if(!java.util.Objects.equals(variantOrgId, userOrgId)) {
+
+
+
+	private void validateVariantExists(VariantUpdateDTO variant, VariantUpdateCache cache) throws BusinessException {
+		String id = ofNullable(variant.getVariantId())
+					.map(varId -> String.valueOf(varId))
+					.orElse("");
+		
+		if( !cache.getVariantCache().getIdToVariantMap().containsKey(id)) {
 			throw new BusinessException(
-					String.format("Product variant of id[%d], can't be changed a user from organization with id[%d]!", id , userOrgId)
+					format("Invalid parameters [variant_id], no product variant exists with id [%s]!", id)
 					, "INVALID PARAM:variant_id"
-					, HttpStatus.FORBIDDEN);
+					, NOT_ACCEPTABLE);
 		}
 	}
 
 
 
 
-	private void validateVariantForCreate(VariantUpdateDTO variant, Long userOrgId) throws BusinessException {
+	private void validateVariantForCreate(VariantUpdateDTO variant, VariantUpdateCache cache) throws BusinessException {
 		if(!variant.areRequiredForCreatePropertiesProvided()) {
 			throw new BusinessException(
 					"Missing required parameters !"
 					, "MISSING PARAM"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
 
-		validateFeatures(variant, userOrgId);
-
+		validateFeatures(variant, cache);
 	}
 
 
 
 
-	private void validateFeatures(VariantUpdateDTO variant, Long userOrgId) throws BusinessException {
+	private void validateFeatures(VariantUpdateDTO variant, VariantUpdateCache cache) throws BusinessException {
+		Long userOrgId = securityService.getCurrentUserOrganizationId();
 		String features = variant.getFeatures();
-		if(variant.isUpdated("features") && StringUtils.isBlankOrNull( features )) {
+		if(variant.isUpdated("features") && isBlankOrNull( features )) {
 			throw new BusinessException(
 					"Invalid parameters [features], the product variant features can't be null nor Empty!"
 					, "INVALID PARAM:features"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
 
 		if(!isJSONValid( features )) {
 			throw new BusinessException(
-					String.format("Invalid parameters [features], the product variant features should be a valid json string! The given value was [%s]" ,features )
+					format("Invalid parameters [features], the product variant features should be a valid json string! The given value was [%s]" ,features )
 					, "INVALID PARAM:features"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
-
-		if(hasInvalidFeatureKeys(features ,userOrgId)) {
+		
+		if(hasInvalidFeatureKeys(features, cache.getOrganziationFeatures())) {
 			throw new BusinessException(
-					String.format("Invalid parameter [features], a feature key doesnot exists or doesn't belong to organization with id[%d]" ,userOrgId )
+					format("Invalid parameter [features], a feature key doesnot exists or doesn't belong to organization with id[%d]" ,userOrgId )
 					, "INVALID PARAM:features"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
 	}
 
 
 
 
-	private boolean hasInvalidFeatureKeys(String features, Long userOrgId) {
+	private boolean hasInvalidFeatureKeys(String features, Set<ProductFeaturesEntity> orgFeatures) {
+		Set<Integer> productFeatureIds = orgFeatures.stream().map(ProductFeaturesEntity::getId).collect(toSet());
 		JSONObject featuresJson = new JSONObject(features);
-		return featuresJson.keySet()
+		return featuresJson
+				.keySet()
 				.stream()
 				.map(Integer::valueOf)
-				.map(productFeaturesRepository::findById)
-				.anyMatch(opt -> isInvalidFeatureKey(userOrgId, opt));
+				.anyMatch(id -> !productFeatureIds.contains(id));
 	}
 
+	
+	
 
 
 
-	private boolean isInvalidFeatureKey(Long userOrgId, Optional<ProductFeaturesEntity> opt) {
-		return !opt.isPresent()
-				|| opt.get().getOrganization() == null
-				|| !Objects.equals(opt.get().getOrganization().getId(), userOrgId);
-	}
-
-
-
-
-	private ProductVariantsEntity saveVariantToDb(VariantUpdateDTO variant) {
+	private ProductVariantsEntity createVariantEntity(VariantUpdateDTO variant, VariantUpdateCache cache) {
 		ProductVariantsEntity entity = new ProductVariantsEntity();
 
 		Operation opr = variant.getOperation();
-
+		Long id = variant.getVariantId();
+		
 		if( opr.equals( UPDATE)) {
-			entity = productVariantsRepository.findById( variant.getVariantId()).get();
+			entity = ofNullable(cache.getVariantsEntities())
+					.map( entities -> entities.get(id))
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE , P$VAR$0001, id) );
 		}
 
-
 		if(variant.isUpdated("productId")){
-			ProductEntity product = productRepository.findById( variant.getProductId() ).get();
+			ProductEntity product = new ProductEntity();
+			product.setId(variant.getProductId());
 			entity.setProductEntity(product);
 		}
 
 		if(variant.isUpdated("name")){
 			entity.setName( variant.getName());
 		}
-
 
 		if(variant.isUpdated("description")) {
 			entity.setDescription( variant.getDescription() );
@@ -2021,10 +2190,8 @@ public class ProductService {
 		}
 
 		if(!isBlankOrNull(variant.getExtraAttr())) {
-			saveExtraAttributesIntoEntity(variant, entity);
+			saveExtraAttributesIntoEntity(variant, entity, cache);
 		}
-
-		entity = productVariantsRepository.save(entity);
 
 		return entity;
 	}
@@ -2032,14 +2199,14 @@ public class ProductService {
 
 
 
-	private void saveExtraAttributesIntoEntity(VariantUpdateDTO variant, ProductVariantsEntity entity) {
+	private void saveExtraAttributesIntoEntity(VariantUpdateDTO variant, ProductVariantsEntity entity, VariantUpdateCache cache) {
 		try {
 			JSONObject  extraAttrJson = new JSONObject(variant.getExtraAttr());
 
 			extraAttrJson
 			.keySet()
 			.stream()
-			.map(attrName -> createVariantExtraAttribute(attrName, extraAttrJson.getString(attrName)))
+			.map(attrName -> createVariantExtraAttribute(attrName, extraAttrJson.getString(attrName), cache))
 			.forEach(entity::addExtraAttribute);
 		}catch(Throwable t) {
 			throw new RuntimeBusinessException(
@@ -2052,8 +2219,8 @@ public class ProductService {
 
 
 
-	private ProductExtraAttributesEntity createVariantExtraAttribute(String name, String value) {
-		ExtraAttributesEntity extraAttrEntity = getExtraAttributeOrCreateIt(name);
+	private ProductExtraAttributesEntity createVariantExtraAttribute(String name, String value, VariantUpdateCache cache) {
+		ExtraAttributesEntity extraAttrEntity = getExtraAttribute(name, cache);
 
 		ProductExtraAttributesEntity variantExtraAttr = new ProductExtraAttributesEntity();
 		variantExtraAttr.setExtraAttribute(extraAttrEntity);
@@ -2064,11 +2231,10 @@ public class ProductService {
 
 
 
-	private ExtraAttributesEntity getExtraAttributeOrCreateIt(String name) {
+	private ExtraAttributesEntity getExtraAttribute(String name, VariantUpdateCache cache) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		return extraAttrRepo
-				.findByNameAndOrganizationId(name, orgId)
-				.orElseGet(() -> createNewExtraAttribute(name));
+		return ofNullable(cache.getOrgExtraAttributes().get(name))
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$VAR$0002, name, orgId));
 	}
 
 
@@ -2138,15 +2304,15 @@ public class ProductService {
 			throw new BusinessException(
 					"Missing required parameters [operation]!"
 					, "MISSING PARAM:operation"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
 
-		if(!opr.equals(Operation.CREATE) &&
-				!opr.equals(Operation.UPDATE)) {
+		if(!opr.equals(CREATE) &&
+				!opr.equals(UPDATE)) {
 			throw new BusinessException(
-					String.format("Invalid parameters [operation], unsupported operation [%s]!", opr.getValue())
+					format("Invalid parameters [operation], unsupported operation [%s]!", opr.getValue())
 					, "INVALID PARAM:operation"
-					, HttpStatus.NOT_ACCEPTABLE);
+					, NOT_ACCEPTABLE);
 		}
 	}
 
@@ -2372,4 +2538,17 @@ public class ProductService {
 	public void deleteAllTagsForProducts(List<Long> products) {
 		productRepository.deleteAllTagsForProducts(products);
 	}
+}
+
+
+
+
+@Data
+@AllArgsConstructor
+class VariantUpdateCache{
+	private VariantCache variantCache;
+	private Set<Long> orgProductIdList;
+	private Set<ProductFeaturesEntity> organziationFeatures;
+	private Map<String, ExtraAttributesEntity> orgExtraAttributes;
+	private Map<Long, ProductVariantsEntity> variantsEntities;
 }

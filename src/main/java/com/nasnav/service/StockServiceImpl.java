@@ -152,18 +152,6 @@ public class StockServiceImpl implements StockService {
 
 
 
-    /**
-     * @return the sum of actual stock items quantities in the given list.
-     * Bundles and services stock items are excluded.
-     * */
-    public Long getStockItemsQuantitySum(List<StocksEntity> stocks) {
-        return stocks.stream()        		
-                .filter(this::isPhysicalProduct)
-                .mapToLong(stock -> stock.getQuantity())
-                .sum();
-    }
-    
-    
     
     
     public Boolean isPhysicalProduct(StocksEntity stock) {

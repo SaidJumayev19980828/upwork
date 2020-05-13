@@ -518,7 +518,7 @@ public class DataImportApiTest {
 
 		result.andExpect(status().is(200));
 
-		ProductEntity product = variantRepo.findById(310001L).get().getProductEntity();
+		ProductEntity product = variantRepo.getVariantFullData(310001L).get().getProductEntity();
 		assertEquals("Squishy shoes", product.getName());
 
         Optional<IntegrationMappingEntity> mapping = 
@@ -1106,7 +1106,7 @@ public class DataImportApiTest {
 				.getResponse()
 				.getContentAsString();
 
-		ProductEntity product = variantRepo.findById(310001L).get().getProductEntity();
+		ProductEntity product = helper.getVariantFullData(310001L).getProductEntity();
 		assertEquals("Squishy shoes", product.getName());
 	}
 
@@ -1145,7 +1145,7 @@ public class DataImportApiTest {
 
 		result.andExpect(status().is(200));
 
-		ProductEntity product = variantRepo.findById(310001L).get().getProductEntity();
+		ProductEntity product = helper.getVariantFullData(310001L).getProductEntity();
 		assertEquals("Squishy shoes", product.getName());
 	}
 
@@ -1159,7 +1159,7 @@ public class DataImportApiTest {
 
 		result.andExpect(status().is(200));
 
-		ProductEntity product = variantRepo.findById(310001L).get().getProductEntity();
+		ProductEntity product = helper.getVariantFullData(310001L).getProductEntity();
 		assertEquals("Squishy shoes", product.getName());
 
         Optional<IntegrationMappingEntity> mapping = 
@@ -1374,6 +1374,7 @@ public class DataImportApiTest {
 		List<StocksEntity> stocks = helper.getShopStocksFullData(shopId);
         List<ProductVariantsEntity> variants = stocks.stream()
 													.map(StocksEntity::getProductVariantsEntity)
+													.map(variant -> variantRepo.getVariantFullData(variant.getId()).get())
 													.collect(toList());
 
         Set<ProductEntity> products = variants.stream()

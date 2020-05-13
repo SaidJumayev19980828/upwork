@@ -1,5 +1,6 @@
 package com.nasnav.test.helpers;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -89,11 +90,12 @@ public class TestHelper {
 	@Transactional
 	public List<StocksEntity> getShopStocksFullData(Long shopId) {
 		List<StocksEntity> stocks = stockRepo.findByShopsEntity_Id(shopId);
-		stocks.forEach(s ->{
-			s.getShopsEntity();
-			s.getProductVariantsEntity().getProductEntity();
-			s.getOrganizationEntity();
-		});
+		for(StocksEntity stock: stocks) {
+			stock.getShopsEntity();
+			stock.getProductVariantsEntity().getId();
+			stock.getProductVariantsEntity().getProductEntity().getId();
+			stock.getOrganizationEntity();
+		};
 		
 		return stocks;
 	}
@@ -101,13 +103,8 @@ public class TestHelper {
 	
 	@Transactional
 	public ProductVariantsEntity getVariantFullData(Long id) {
-		ProductVariantsEntity updatedVariant = variantRepo.getOne(id);
-		
-		//just call them to make hibernate cache these entities while being in the transaction
-		updatedVariant.getProductEntity();
-		updatedVariant.getStocks();
-		
-		return updatedVariant;
+		Optional<ProductVariantsEntity> variant = variantRepo.getVariantFullData(id);		
+		return variant.get();
 	}
 	
 	
