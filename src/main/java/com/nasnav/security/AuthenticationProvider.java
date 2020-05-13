@@ -31,9 +31,9 @@ public class AuthenticationProvider extends AbstractUserDetailsAuthenticationPro
 	 BaseUserEntity userEntity =  Optional
 									   .ofNullable(token)
 									   .map(String::valueOf)
-									   .flatMap(userRepo::findByAuthenticationToken)
+									   .flatMap(securityService::getUserByAuthenticationToken)//userRepo::findByAuthenticationToken)
 									   .orElseThrow(() -> new UsernameNotFoundException("Cannot find user with authentication token=" + token));
-	 
+
 	 usernamePasswordAuthenticationToken.setDetails(userEntity); 
  }
  

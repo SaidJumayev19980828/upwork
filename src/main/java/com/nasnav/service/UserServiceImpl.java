@@ -527,7 +527,7 @@ public class UserServiceImpl implements UserService {
 		validateActivationRedirectUrl(redirect);
 		
 		activateUserInDB(user);
-		return redirectUser(securityService.login(user).getToken(), redirect);
+		return redirectUser(securityService.login(user, false).getToken(), redirect);
 	}
 
 
@@ -662,6 +662,6 @@ public class UserServiceImpl implements UserService {
 		checkUserActivation(user);
 		
 		activateUserInDB(user);
-		return securityService.login(user);
+		return securityService.login(user, false);
 	}
 }

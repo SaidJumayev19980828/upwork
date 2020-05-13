@@ -25,6 +25,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 
+import javax.servlet.http.HttpServletResponse;
+
 @RestController
 @RequestMapping("/user")
 @Api(description = "Set of endpoints for registering and updating user data.")
@@ -115,11 +117,24 @@ public class UserController {
     @PostMapping(value = "login",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public UserApiResponse login(@RequestBody UserDTOs.UserLoginObject login) throws BusinessException {
-    	return securityService.login(login);
+    public UserApiResponse login(@RequestBody UserDTOs.UserLoginObject login, HttpServletResponse response) throws BusinessException {
+        UserApiResponse userApiResponse = securityService.login(login);
+        response.addCookie(userApiResponse.getCookie());
+    	return userApiResponse;
     }
-    
-    
+
+    @ApiOperation(value = "logout user", nickname = "userLogout")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "User logged out"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Invalid credentials"),
+            @io.swagger.annotations.ApiResponse(code = 423, message = "Account unavailable"),
+    })
+    @PostMapping(value = "logout")
+    public UserApiResponse logout(@RequestHeader("User-Token") String token, HttpServletResponse response) throws BusinessException {
+        UserApiResponse userApiResponse = securityService.logout(token);
+        response.addCookie(userApiResponse.getCookie());
+        return userApiResponse;
+    }
     
     
     

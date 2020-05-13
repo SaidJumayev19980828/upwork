@@ -22,6 +22,7 @@ public class AppConfig {
     @Value("${email.port}")        		public int    mailHostPort;
     @Value("${email.ssl}")         		public boolean mailUseSSL;
     @Value("${paymnet.properties_dir}") public String paymentPropertiesDir = "";
+    @Value("${cookies.secureToken}")    public boolean secureTokens;
 
     
     

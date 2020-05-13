@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.cache.Caches.USER_TOKENS;
 import static com.nasnav.commons.utils.EntityUtils.createFailedLoginResponse;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.response.ResponseStatus.ACCOUNT_SUSPENDED;
@@ -17,7 +18,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.nasnav.AppConfig;
+import com.nasnav.dao.EmployeeUserTokenRepository;
+import com.nasnav.dao.UserTokenRepository;
+import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -38,14 +44,14 @@ import com.nasnav.dto.UserDTOs.UserLoginObject;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OAuth2UserEntity;
-import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegisteration;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.cache.annotation.CacheResult;
+import javax.servlet.http.Cookie;
 
 @Service
 public class SecurityServiceImpl implements SecurityService {
@@ -69,26 +75,53 @@ public class SecurityServiceImpl implements SecurityService {
 	@Autowired
 	private UserService userService;
 
+	@Autowired
+	private UserTokenRepository userTokenRepo;
 
+	@Autowired
+	private EmployeeUserTokenRepository empUserTokenRepo;
+
+	@Autowired
+	private AppConfig config;
+
+
+	//@CacheResult(cacheName = USER_TOKENS)
 	@Override
 	public Optional<UserDetails> findUserByAuthToken(String token){
 		return ofNullable(token)
-		 		.flatMap(userRepo::findByAuthenticationToken)
+		 		.flatMap(this::getUserByAuthenticationToken)//userRepo::findByAuthenticationToken)
 		 		.flatMap(this::getUser);
+	}
+
+
+	@Override
+	public Optional<BaseUserEntity> getUserByAuthenticationToken(String token) {
+		Optional<BaseUserEntity> user = userTokenRepo.getUserEntityByToken(token);
+		if (user.isPresent())
+			return user;
+
+		return empUserTokenRepo.getEmployeeUserEntityByToken(token);
 	}
 	
 	
 	
 	
-	
-	private Optional<UserDetails> getUser(BaseUserEntity userEntity) {		
+	private Optional<UserDetails> getUser(BaseUserEntity userEntity) {
 		List<GrantedAuthority> roles = getUserRoles(userEntity);
 		User user= new User(userEntity.getEmail(), userEntity.getEncryptedPassword(), true, true, true, true,roles);
         return Optional.of(user);		
 	}
 
 
+	@Override
+	@Transactional
+	public UserApiResponse logout(String token) {
+		userTokenRepo.deleteByToken(token);
+		empUserTokenRepo.deleteByToken(token);
+		Cookie c = createLoginCookie(null, true);
 
+		return new ApiResponseBuilder().setCookie(c).setSuccess(true).build();
+	}
 
 
 	private List<GrantedAuthority> getUserRoles(BaseUserEntity userEntity) {
@@ -112,9 +145,9 @@ public class SecurityServiceImpl implements SecurityService {
 		BaseUserEntity userEntity = userRepo.getByEmailIgnoreCaseAndOrganizationId(loginData.email, loginData.orgId, loginData.employee);
 		
 		validateLoginUser(userEntity);			
-		validateUserPassword(loginData, userEntity);		
-		
-		return login(userEntity);				
+		validateUserPassword(loginData, userEntity);
+
+		return login(userEntity, loginData.rememberMe);
 	}
 
 
@@ -140,14 +173,31 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	@Override
-	public UserApiResponse login(BaseUserEntity userEntity) throws BusinessException {
+	public UserApiResponse login(BaseUserEntity userEntity, boolean rememberMe) throws BusinessException {
 		// generate new AuthenticationToken and perform post login updates
 		userEntity = updatePostLogin(userEntity);
-		return createSuccessLoginResponse(userEntity);
+
+		Cookie cookie = createLoginCookie(userEntity.getAuthenticationToken(), rememberMe);
+
+		return createSuccessLoginResponse(userEntity, cookie);
 	}
 
 
+	private Cookie createLoginCookie(String token, boolean rememberMe) {
+		Cookie cookie = new Cookie("Authentication-Token", token);
 
+		cookie.setHttpOnly(true);
+		cookie.setDomain(/*EntityConstants.PROTOCOL+*/EntityConstants.NASNAV_DOMAIN);
+		cookie.setPath("/");
+
+		if (rememberMe)
+			cookie.setMaxAge(60 * 60 * EntityConstants.AUTH_TOKEN_VALIDITY);
+
+		if (config.secureTokens)
+			cookie.setSecure(true);
+
+		return cookie;
+	}
 
 
 	private void validateLoginUser(BaseUserEntity userEntity) {
@@ -201,18 +251,50 @@ public class SecurityServiceImpl implements SecurityService {
 		// TODO : change implementation later
 		return false;
 	}
-	
-	
-	
-	
+
+
+
+
+	//@CacheEvict(allEntries = true, cacheNames = {USER_TOKENS})
 	public BaseUserEntity updatePostLogin(BaseUserEntity userEntity) throws BusinessException {
 		LocalDateTime currentSignInDate = userEntity.getCurrentSignInDate();
 		userEntity.setLastSignInDate(currentSignInDate);
 		userEntity.setCurrentSignInDate(LocalDateTime.now());
-		userEntity.setAuthenticationToken(generateAuthenticationToken());
+
+		String authToken;
+		if (userEntity instanceof EmployeeUserEntity)
+			authToken = generateEmpUserToken( (EmployeeUserEntity) userEntity);
+		else
+			authToken = generateUserToken( (UserEntity) userEntity);
+
+		userEntity.setAuthenticationToken(authToken);
+
 		return userRepo.saveAndFlush(userEntity);
 	}
-	
+
+
+	private String generateUserToken(UserEntity user) {
+		UserTokensEntity token = new UserTokensEntity();
+		token.setToken(StringUtils.generateUUIDToken());
+		token.setUserEntity(user);
+		token.setUpdateTime(LocalDateTime.now());
+
+		userTokenRepo.save(token);
+
+		return token.getToken();
+	}
+
+
+	private String generateEmpUserToken(EmployeeUserEntity user) {
+		EmployeeUserTokensEntity token = new EmployeeUserTokensEntity();
+		token.setToken(StringUtils.generateUUIDToken());
+		token.setEmployeeUserEntity(user);
+		token.setUpdateTime(LocalDateTime.now());
+
+		empUserTokenRepo.save(token);
+
+		return token.getToken();
+	}
 	
 	
 	
@@ -226,7 +308,7 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	
 	
-	public UserApiResponse createSuccessLoginResponse(BaseUserEntity userEntity) {
+	public UserApiResponse createSuccessLoginResponse(BaseUserEntity userEntity, Cookie cookie) {
 		Long shopId = 0L;
 		if(userEntity instanceof EmployeeUserEntity)
 			shopId = EmployeeUserEntity.class.cast(userEntity).getShopId();		
@@ -242,6 +324,7 @@ public class SecurityServiceImpl implements SecurityService {
 					.setRoles( userRepo.getUserRoles(userEntity) )
 					.setOrganizationId( organizationId != null ? organizationId : 0L)
 					.setStoreId(shopId != null ? shopId : 0L)
+					.setCookie(cookie)
 					.build();
 	}
 
@@ -325,7 +408,7 @@ public class SecurityServiceImpl implements SecurityService {
 		
 		validateLoginUser(userEntity);			
 		
-		return login(userEntity);	
+		return login(userEntity, false);
 	}
 
 

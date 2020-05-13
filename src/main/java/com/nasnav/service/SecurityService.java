@@ -14,7 +14,8 @@ import com.nasnav.response.UserApiResponse;
 public interface SecurityService {
 	
 	Optional<UserDetails> findUserByAuthToken(String token);
-	
+
+    Optional<BaseUserEntity> getUserByAuthenticationToken(String token);
 	/**
      * login user to system
      *
@@ -23,8 +24,9 @@ public interface SecurityService {
 	 * @throws BusinessException 
      */
     UserApiResponse login(UserDTOs.UserLoginObject body) throws BusinessException;
-    
-    
+
+    UserApiResponse logout(String token);
+
     BaseUserEntity getCurrentUser();
     
     Long getCurrentUserOrganizationId();
@@ -36,5 +38,5 @@ public interface SecurityService {
 
 	UserApiResponse socialLogin(String socialLoginToken) throws BusinessException;
 
-	UserApiResponse login(BaseUserEntity userEntity) throws BusinessException;
+	UserApiResponse login(BaseUserEntity userEntity, boolean rememberMe) throws BusinessException;
 }

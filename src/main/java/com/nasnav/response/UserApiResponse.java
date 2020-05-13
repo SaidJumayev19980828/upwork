@@ -1,5 +1,6 @@
 package com.nasnav.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nasnav.commons.utils.StringUtils;
@@ -7,6 +8,7 @@ import com.nasnav.commons.utils.StringUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import javax.servlet.http.Cookie;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,9 +60,12 @@ public class UserApiResponse  implements Serializable {
     @JsonProperty(value = "email")
     private String email;
 
+    @JsonIgnore
+    private Cookie cookie;
+
     public UserApiResponse(boolean success, Long entityId, List<ResponseStatus> responseStatuses,
                            String token, List<String> roles, Long organizationId, Long storeId,
-                           String name, String email) {
+                           String name, String email, Cookie cookie) {
         this.entityId = entityId;
         this.name = name;
         this.email = email;
@@ -69,6 +74,7 @@ public class UserApiResponse  implements Serializable {
         this.roles = roles;
         this.organizationId = organizationId;
         this.storeId = storeId;
+        this.cookie = cookie;
     }
 
     public UserApiResponse(){
