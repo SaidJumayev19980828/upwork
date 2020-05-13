@@ -103,6 +103,9 @@ public class CategoryService {
     }
 
     
+    //TODO: >>> you can use Optional.orElseThrow to throw exceptions if the value doesn't exist.
+    //gives cleaner code
+    //TODO: >>> needs a test
     public TagsRepresentationObject getTagById(Long tagId) throws BusinessException {
 		Optional<TagsEntity> tag = orgTagsRepo.findById(tagId);
 		if (tag.isPresent())
