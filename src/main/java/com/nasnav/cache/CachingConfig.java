@@ -60,7 +60,7 @@ public class CachingConfig extends CachingConfigurerSupport{
        
     private static final Long HEAP_SIZE = 100L;
     private static final Long TIME_TO_LIVE_MIN = 30L;
-    
+    public static final int MAX_CACHED_OBJECT_SIZE_MB = 4;
     
     
     
@@ -80,7 +80,8 @@ public class CachingConfig extends CachingConfigurerSupport{
         CacheConfiguration<?,?> defaultCacheConfig = 
         		newCacheConfigurationBuilder(Object.class, Object.class, heap(HEAP_SIZE).offheap(1, MB))
         		.withValueSerializer(KryoSerializer.class)
-        		.withExpiry( timeToLiveExpiration(ofMinutes(TIME_TO_LIVE_MIN)) )        		
+        		.withExpiry( timeToLiveExpiration(ofMinutes(TIME_TO_LIVE_MIN)) )  
+        		.withSizeOfMaxObjectSize(MAX_CACHED_OBJECT_SIZE_MB, MB)
         		.build();
 
         Map<String, org.ehcache.config.CacheConfiguration<?, ?>> caches = createCacheConfigurations(defaultCacheConfig);

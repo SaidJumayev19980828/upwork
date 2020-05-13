@@ -1,5 +1,7 @@
 package com.nasnav.cache;
 
+import static com.nasnav.cache.CachingConfig.MAX_CACHED_OBJECT_SIZE_MB;
+
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
@@ -19,7 +21,7 @@ import com.esotericsoftware.kryo.io.Output;
  * */
 public class KryoSerializer implements Serializer<Object> {
 
-  private static final int SERIALIZE_BUFFER_SIZE = 8192;
+  private static final int SERIALIZE_BUFFER_SIZE = MAX_CACHED_OBJECT_SIZE_MB*1024*1024;
   private static ThreadLocal<Kryo> kryoThreadLocal;
 		  
 			
