@@ -1902,6 +1902,7 @@ public class ProductService {
 		variants
 		.stream()
 		.map(VariantUpdateDTO::getExtraAttr)
+		.filter(Objects::nonNull)
 		.map(JSONObject::new)
 		.map(JSONObject::keySet)
 		.flatMap(Set::stream)

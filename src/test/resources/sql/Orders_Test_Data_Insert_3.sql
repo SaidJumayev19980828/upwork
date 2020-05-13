@@ -12,8 +12,8 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 2
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (103, 202, 'brand_3', 99001);
 
 --inserting categories
-/*INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
-INSERT INTO public.categories(id, name) VALUES (202, 'category_2');*/
+INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
+INSERT INTO public.categories(id, name) VALUES (202, 'category_2');
 
 --inserting shops
 INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (501, 'shop_1', 102, 99002);

@@ -15,6 +15,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.OK;
 
@@ -1560,13 +1561,13 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void userDeleteOrderWithSoftDeletedProducts() {
 		long countAllBefore = orderRepository.count();
-		long countBefore = orderRepository.countByStatusAndUserId(OrderStatus.NEW.getValue() , 89L);
+		long countBefore = orderRepository.countByStatusAndUserId(NEW.getValue() , 89L);
 		
 		//-------------------------------------------
 		
 		ResponseEntity<String> response = template.exchange("/order/current"
-															, HttpMethod.DELETE
-															, new HttpEntity<>(TestCommons.getHeaders("456"))
+															, DELETE
+															, new HttpEntity<>(getHeaders("456"))
 															, String.class);
 		
 		//-------------------------------------------
@@ -1585,8 +1586,8 @@ public class OrderServiceTest {
 	@Test
 	public void testOrderListDeletion() {
 		ResponseEntity<String> response = template.exchange("/order?order_ids=330035&order_ids=330037",
-				HttpMethod.DELETE,
-				new HttpEntity<>(TestCommons.getHeaders("131415")),
+				DELETE,
+				new HttpEntity<>(getHeaders("131415")),
 				String.class);
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(14, orderRepository.findAll().size());
@@ -1595,7 +1596,7 @@ public class OrderServiceTest {
 	@Test
 	public void testOrderListDeletionUnAuthorized() {
 		ResponseEntity<String> response = template.exchange("/order?order_ids=330035&order_ids=330037",
-				HttpMethod.DELETE,
+				DELETE,
 				new HttpEntity<>(TestCommons.getHeaders("sdrf8s")),
 				String.class);
 		assertEquals(403, response.getStatusCodeValue());
@@ -1604,8 +1605,8 @@ public class OrderServiceTest {
 	@Test
 	public void testOrderListDeletionUnAuthenticated() {
 		ResponseEntity<String> response = template.exchange("/order?order_ids=330035&order_ids=330037",
-				HttpMethod.DELETE,
-				new HttpEntity<>(TestCommons.getHeaders("13141")),
+				DELETE,
+				new HttpEntity<>(getHeaders("13141")),
 				String.class);
 		assertEquals(401, response.getStatusCodeValue());
 	}
@@ -1613,8 +1614,8 @@ public class OrderServiceTest {
 	@Test
 	public void testOrderListDeletionOrderInDifferentOrg() {
 		ResponseEntity<String> response = template.exchange("/order?order_ids=330033&order_ids=330037",
-				HttpMethod.DELETE,
-				new HttpEntity<>(TestCommons.getHeaders("131415")),
+				DELETE,
+				new HttpEntity<>(getHeaders("131415")),
 				String.class);
 		assertEquals(406, response.getStatusCodeValue());
 	}
@@ -1623,7 +1624,7 @@ public class OrderServiceTest {
 	@Test
 	public void testOrderListDeletionNotNewOrder() {
 		ResponseEntity<String> response = template.exchange("/order?order_ids=330038&order_ids=330037",
-				HttpMethod.DELETE,
+				DELETE,
 				new HttpEntity<>(getHeaders("131415")),
 				String.class);
 		assertEquals(406, response.getStatusCodeValue());
@@ -1757,16 +1758,14 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql","/sql/Orders_Test_Data_Insert_3.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void updateOrderDeliveryAddressStatusNew() {
-		BasketItemDTO itemDTO = new BasketItemDTO(601L, 1, "KG");
-		List<BasketItemDTO> basket = new ArrayList<>();
-		basket.add(itemDTO);
+		JSONArray basket = createBasket( new Item(601L, 1));
 
 		String body = json().put("order_id",330033)
 							.put("delivery_address", "new address")
-							.put("basket",basket)
+							.put("basket", basket)
 							.put("status", "NEW").toString();
 
-		HttpEntity request = getHttpEntity(body, "123");
+		HttpEntity<?> request = getHttpEntity(body, "123");
 		ResponseEntity<OrderResponse> res = template.postForEntity("/order/update", request, OrderResponse.class);
 		assertEquals(200, res.getStatusCodeValue());
 		OrdersEntity order = orderRepository.findById(330033).get();
@@ -1787,7 +1786,7 @@ public class OrderServiceTest {
 				.put("basket",basket)
 				.put("status", "CLIENT_CANCELLED").toString();
 
-		HttpEntity request = getHttpEntity(body, "789");
+		HttpEntity<?> request = getHttpEntity(body, "789");
 		ResponseEntity<OrderResponse> res = template.postForEntity("/order/update", request, OrderResponse.class);
 		assertEquals(200, res.getStatusCodeValue());
 		OrdersEntity order = orderRepository.findById(330033).get();
