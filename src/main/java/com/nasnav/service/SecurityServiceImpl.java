@@ -95,6 +95,8 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	@Override
+	//TODO: >>> need to add caching to this method
+	//TODO: >>> the cache entry of a specific token should be evicted when logout is called with that specific token.
 	public Optional<BaseUserEntity> getUserByAuthenticationToken(String token) {
 		Optional<BaseUserEntity> user = userTokenRepo.getUserEntityByToken(token);
 		if (user.isPresent())
@@ -191,6 +193,15 @@ public class SecurityServiceImpl implements SecurityService {
 		cookie.setPath("/");
 
 		if (rememberMe)
+			//TODO: >>> braces for the if condition body
+			//TODO: >>> the validaty should increase to 1 month i guess.
+			//TODO: >>> the validity should be extended when the user uses the token. 
+			//as we don't need a database write each time a request is sent with a token, we can should instead do this extension
+			//if the token is going to expire in < 1/6 of the validity time for example.
+			//this will probably be added after the token security check.
+			//TODO: >>> the extension functionality will need a unit test , but that will need  AUTH_TOKEN_VALIDITY to be variable, so that we 
+			//decrease it to 1 second for example and make Thread.sleep to wait until it becomes nearly invalidated.
+			//which will require it to be in seconds instead of hours as well.
 			cookie.setMaxAge(60 * 60 * EntityConstants.AUTH_TOKEN_VALIDITY);
 
 		if (config.secureTokens)
@@ -277,7 +288,8 @@ public class SecurityServiceImpl implements SecurityService {
 		UserTokensEntity token = new UserTokensEntity();
 		token.setToken(StringUtils.generateUUIDToken());
 		token.setUserEntity(user);
-		token.setUpdateTime(LocalDateTime.now());
+		//TODO: >>> it is better to let hibernate handle this using @UpdateTimestamp in the entity
+		token.setUpdateTime(LocalDateTime.now());	
 
 		userTokenRepo.save(token);
 
@@ -289,6 +301,7 @@ public class SecurityServiceImpl implements SecurityService {
 		EmployeeUserTokensEntity token = new EmployeeUserTokensEntity();
 		token.setToken(StringUtils.generateUUIDToken());
 		token.setEmployeeUserEntity(user);
+		//TODO: >>> it is better to let hibernate handle this using @UpdateTimestamp in the entity
 		token.setUpdateTime(LocalDateTime.now());
 
 		empUserTokenRepo.save(token);

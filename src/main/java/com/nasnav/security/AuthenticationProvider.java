@@ -27,10 +27,16 @@ public class AuthenticationProvider extends AbstractUserDetailsAuthenticationPro
 
  @Override
  protected void additionalAuthenticationChecks(UserDetails userDetails, UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken) throws AuthenticationException {
+	 //TODO: >>> you need to change AuthenticationFilter class as well, which extracts the token from the headers. 
+	 //it should extract the token from the cookie instead.
+	 //TODO: >>> all of our tests will need changes, tokens will need to be added into the new tables instead of user tables.
+	 //TODO: >>> TestCommons.httpEntity method should be changed to add the token to a cookie instead of User-token.
+	 //TODO: >>> a full test run will be needed as well.
 	 Object token = usernamePasswordAuthenticationToken.getCredentials();
 	 BaseUserEntity userEntity =  Optional
-									   .ofNullable(token)
+									   .ofNullable(token)		//TODO: >>> use static imports if possible as it is cleaner
 									   .map(String::valueOf)
+									   //TODO >>> commented code is a dead code, dead code is not a clean code.
 									   .flatMap(securityService::getUserByAuthenticationToken)//userRepo::findByAuthenticationToken)
 									   .orElseThrow(() -> new UsernameNotFoundException("Cannot find user with authentication token=" + token));
 

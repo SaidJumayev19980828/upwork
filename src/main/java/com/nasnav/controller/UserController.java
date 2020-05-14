@@ -118,6 +118,7 @@ public class UserController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public UserApiResponse login(@RequestBody UserDTOs.UserLoginObject login, HttpServletResponse response) throws BusinessException {
+    	//TODO: >>> login test should check for the returned cookie
         UserApiResponse userApiResponse = securityService.login(login);
         response.addCookie(userApiResponse.getCookie());
     	return userApiResponse;
@@ -131,6 +132,9 @@ public class UserController {
     })
     @PostMapping(value = "logout")
     public UserApiResponse logout(@RequestHeader("User-Token") String token, HttpServletResponse response) throws BusinessException {
+    	//TODO: >>> logout should take the token from the session cookie sent in the request.
+    	//TODO: >>> need a test for logout, that checks that cookies are removed as expected
+    	//https://stackoverflow.com/questions/22853321/resttemplate-client-with-cookies
         UserApiResponse userApiResponse = securityService.logout(token);
         response.addCookie(userApiResponse.getCookie());
         return userApiResponse;
