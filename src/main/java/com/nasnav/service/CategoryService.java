@@ -102,16 +102,12 @@ public class CategoryService {
         this.productRepository = productRepository;
     }
 
-    
-    //TODO: >>> you can use Optional.orElseThrow to throw exceptions if the value doesn't exist.
-    //gives cleaner code
-    //TODO: >>> needs a test
-    public TagsRepresentationObject getTagById(Long tagId) throws BusinessException {
-		Optional<TagsEntity> tag = orgTagsRepo.findById(tagId);
-		if (tag.isPresent())
-    		return (TagsRepresentationObject)tag.get().getRepresentation();
 
-		throw new BusinessException("No tag found with given id!", "INVALID_PARAM: tag_id", HttpStatus.NOT_FOUND);
+    public TagsRepresentationObject getTagById(Long tagId) throws BusinessException {
+		return ofNullable(orgTagsRepo.findById(tagId))
+				.get()
+				.map(tag -> (TagsRepresentationObject) tag.getRepresentation())
+				.orElseThrow(() -> new BusinessException("No tag found with given id!", "INVALID_PARAM: tag_id", HttpStatus.NOT_FOUND));
 	}
 
     

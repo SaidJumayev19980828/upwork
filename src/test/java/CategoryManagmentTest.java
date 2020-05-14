@@ -599,6 +599,26 @@ public class CategoryManagmentTest {
         assertEquals(406, response.getStatusCode().value());
     }
 
+
+
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_5.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void getTag() {
+        ResponseEntity<TagsRepresentationObject> res =
+                template.getForEntity("/navbox/tag?tag_id=5001", TagsRepresentationObject.class);
+        assertEquals(200, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_5.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void getTagNonExistingTag() {
+        ResponseEntity<TagsRepresentationObject> res =
+                template.getForEntity("/navbox/tag?tag_id=-1", TagsRepresentationObject.class);
+        assertEquals(404, res.getStatusCodeValue());
+    }
     
     
     
