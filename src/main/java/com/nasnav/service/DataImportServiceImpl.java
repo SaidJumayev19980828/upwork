@@ -101,7 +101,6 @@ public class DataImportServiceImpl implements DataImportService {
     @Autowired
     private StockService stockService;
 
-    
     @Autowired
     private SecurityService security;
 
@@ -114,17 +113,14 @@ public class DataImportServiceImpl implements DataImportService {
     @Autowired
     private CategoryService categoryService;
     
-    
     @Autowired
 	private ProductFeaturesRepository featureRepo;
     
     @Autowired
     private OrganizationService organizationService;
     
-
     @Autowired
     private CachingHelper cachingHelper;
-    
     
     @Autowired
     private ProductRepository productRepo;
@@ -377,6 +373,9 @@ public class DataImportServiceImpl implements DataImportService {
 	private ProductDataImportContext saveProducts(ProductDataImportContext context) {
 		List<ProductData> productsData = context.getProductsData();
 		ImportProductContext importContext = context.getContext();
+		
+		
+		List<ProductData> existingProducts = productsData.stream().filter(ProductData::isExisting).filter(product -> context.getContext().getImportMetaData().isUpdateProduct()).collect(toList());
 		
 		IntStream
     	.range(0, productsData.size())
