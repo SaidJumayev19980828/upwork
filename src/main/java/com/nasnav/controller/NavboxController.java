@@ -60,14 +60,14 @@ public class NavboxController {
 	@ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 404, message = "No brand data for the supplied ID found"), })
 	@GetMapping(value = "/brand")
-	public ResponseEntity<?> getBrandById(@RequestParam(name = "brand_id") Long brandId) throws BusinessException {
+	public Organization_BrandRepresentationObject getBrandById(@RequestParam(name = "brand_id") Long brandId) throws BusinessException {
 
 		Organization_BrandRepresentationObject brandRepresentationObject = brandService.getBrandById(brandId);
 
 		if (brandRepresentationObject == null)
 			throw new BusinessException("Brand not found", "", NOT_FOUND);
 
-		return new ResponseEntity<>(brandRepresentationObject, OK);
+		return brandRepresentationObject;
 	}
 
 	
@@ -108,10 +108,9 @@ public class NavboxController {
 	@ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 404, message = "There are no shops matching this org_id"), })
 	@GetMapping("/shops")
-	public ResponseEntity<?> getShopsByOrganization(@RequestParam(name = "org_id") Long orgId)
+	public List<ShopRepresentationObject> getShopsByOrganization(@RequestParam(name = "org_id") Long orgId)
 			throws BusinessException {
-
-		return new ResponseEntity<>(shopService.getOrganizationShops(orgId), OK);
+		return shopService.getOrganizationShops(orgId);
 	}
 
 	
@@ -122,9 +121,9 @@ public class NavboxController {
 	@ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 404, message = "No shop matching the supplied ID found"), })
 	@GetMapping("/shop")
-	public ResponseEntity<?> getShopById(@RequestParam(name = "shop_id") Long shopId) throws BusinessException {
+	public ShopRepresentationObject getShopById(@RequestParam(name = "shop_id") Long shopId) throws BusinessException {
 
-		return new ResponseEntity<>(shopService.getShopById(shopId), OK);
+		return shopService.getShopById(shopId);
 	}
 
 
@@ -229,15 +228,22 @@ public class NavboxController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
 	})
 	@GetMapping(value="/tags",produces=MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> getTags(@RequestParam(name = "org_id") Long organizationId,
+	public List<TagsRepresentationObject> getTags(@RequestParam(name = "org_id") Long organizationId,
 									 @RequestParam(value = "category_name", required = false) String categoryName) throws BusinessException {
-		List<TagsRepresentationObject> response = categoryService.getOrganizationTags(organizationId, categoryName);
-		return new ResponseEntity<>(response, HttpStatus.OK);
+		return categoryService.getOrganizationTags(organizationId, categoryName);
 	}
 
 
-	
-	
+
+	@ApiOperation(value = "Get organization tag by its id", nickname = "tag")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
+	})
+	@GetMapping(value="/tag",produces=MediaType.APPLICATION_JSON_VALUE)
+	public TagsRepresentationObject getTags(@RequestParam(name = "tag_id") Long tagId) throws BusinessException {
+		return categoryService.getTagById(tagId);
+	}
 	
 
 	@ApiOperation(value = "Get list of nearby shops by location", nickname = "locationShops")

@@ -21,13 +21,7 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import javax.cache.annotation.CacheRemoveAll;
 import javax.cache.annotation.CacheResult;
@@ -108,8 +102,14 @@ public class CategoryService {
         this.productRepository = productRepository;
     }
 
-    
-    
+
+    public TagsRepresentationObject getTagById(Long tagId) throws BusinessException {
+		return ofNullable(orgTagsRepo.findById(tagId))
+				.get()
+				.map(tag -> (TagsRepresentationObject) tag.getRepresentation())
+				.orElseThrow(() -> new BusinessException("No tag found with given id!", "INVALID_PARAM: tag_id", HttpStatus.NOT_FOUND));
+	}
+
     
 //    @CacheResult(cacheName = "organizations_categories")
     public List<CategoryRepresentationObject> getCategories(Long organizationId, Long categoryId){
