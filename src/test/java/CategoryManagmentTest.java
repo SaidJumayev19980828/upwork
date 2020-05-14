@@ -608,6 +608,7 @@ public class CategoryManagmentTest {
         ResponseEntity<TagsRepresentationObject> res =
                 template.getForEntity("/navbox/tag?tag_id=5001", TagsRepresentationObject.class);
         assertEquals(200, res.getStatusCodeValue());
+        assertEquals(5001L, res.getBody().getId().longValue());
     }
 
 
