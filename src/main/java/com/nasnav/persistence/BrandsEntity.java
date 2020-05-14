@@ -1,7 +1,5 @@
 package com.nasnav.persistence;
 
-import java.util.Date;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -18,8 +16,6 @@ import com.nasnav.dto.Organization_BrandRepresentationObject;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode.Exclude;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "brands")

@@ -81,8 +81,6 @@ import net.jcip.annotations.NotThreadSafe;
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Products_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class ProductApiTest {
-
-	private static String ORG_ADMIN_TOKEN = "101112";
 	
 	private static String USER_TOKEN = "123";
 	
@@ -172,7 +170,6 @@ public class ProductApiTest {
 	private void validateCreatedProductResponse(ResponseEntity<ProductUpdateResponse> response) {
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		ProductUpdateResponse body = response.getBody();
-		assertTrue( body.isSuccess());
 		assertNotEquals(body.getProductId() , Long.valueOf(0L));
 		assertTrue(productRepository.existsById(body.getProductId()));
 	}

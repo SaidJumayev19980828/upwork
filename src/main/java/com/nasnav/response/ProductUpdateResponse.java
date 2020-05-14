@@ -15,6 +15,5 @@ import lombok.NoArgsConstructor;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class ProductUpdateResponse {
 	
-	private boolean success;
 	private Long productId;
 }

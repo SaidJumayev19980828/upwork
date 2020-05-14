@@ -1,13 +1,14 @@
 package com.nasnav.dao;
 
-import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.ProductEntity;
+import java.util.List;
+import java.util.Set;
+
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
-import java.util.Set;
+import com.nasnav.persistence.BrandsEntity;
+import com.nasnav.persistence.dto.query.result.products.BrandBasicData;
 
 public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 
@@ -34,4 +35,11 @@ public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 
 	@Query(value = "select s.id from shops s where s.brand_id = :brandId", nativeQuery = true)
 	List<Long> getShopsByBrandId(@Param("brandId") Long brandId);
+	
+	
+	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.products.BrandBasicData(brand.id, brand.name, org.id) "
+			+ " FROM BrandsEntity brand "
+			+ " left join brand.organizationEntity org"
+			+ " WHERE brand.id in :ids")
+	List<BrandBasicData> findByIdIn(@Param("ids")List<Long> ids);
 }
