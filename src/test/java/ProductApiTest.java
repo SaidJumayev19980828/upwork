@@ -1095,7 +1095,7 @@ public class ProductApiTest {
 
 	private boolean allProductsHaveTags(List<Long> productIds, Set<TagsEntity> tags) {
 		return productRepository
-				.findByIdIn(productIds)
+				.findFullDataByIdIn(productIds)
 				.stream()
 				.map(ProductEntity::getTags)
 				.allMatch(t -> Objects.equals(tags, t));
@@ -1106,7 +1106,7 @@ public class ProductApiTest {
 
 	private boolean allProductsHaveNoTags(List<Long> productIds) {
 		return productRepository
-				.findByIdIn(productIds)
+				.findFullDataByIdIn(productIds)
 				.stream()
 				.map(ProductEntity::getTags)
 				.allMatch(Set::isEmpty);

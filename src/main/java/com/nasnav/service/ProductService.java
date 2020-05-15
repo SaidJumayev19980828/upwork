@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
+import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
 import static com.nasnav.commons.utils.EntityUtils.areEqual;
 import static com.nasnav.commons.utils.EntityUtils.noneIsEmpty;
@@ -59,6 +60,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1082,7 +1084,7 @@ public class ProductService {
 	private Map<Long, ProductEntity> createProductCache(List<JSONObject> productsJson) {
 		List<Long> productIds = extractProductIds(productsJson);
 		
-		return processInBatches(productIds, 500, productRepository::findByIdIn)
+		return mapInBatches(productIds, 500, productRepository::findByIdIn)
 				.stream()
 				.collect(toMap(ProductEntity::getId, product -> product));
 	}
@@ -1104,7 +1106,7 @@ public class ProductService {
 	private Map<Long, BrandBasicData> createBrandsCache(List<JSONObject> productsJson) {
 		List<Long> brandIds = extractBrandIds(productsJson);
 		
-		return processInBatches(brandIds, 500, brandRepo::findByIdIn)
+		return mapInBatches(brandIds, 500, brandRepo::findByIdIn)
 				.stream()
 				.collect(toMap(BrandBasicData::getId, brand -> brand));
 	}
@@ -2033,7 +2035,7 @@ public class ProductService {
 				.map(VariantUpdateDTO::getVariantId)
 				.distinct()
 				.collect(toSet());
-		return processInBatches(variantIds, 500, productVariantsRepository::findByIdIn)
+		return mapInBatches(variantIds, 500, productVariantsRepository::findByIdIn)
 				.stream()
 				.collect(toMap(ProductVariantsEntity::getId, variant -> variant));
 	}
@@ -2514,26 +2516,58 @@ public class ProductService {
 
 		List<Long> productIds = productTagDTO.getProductIds();
 		List<Long> tagIds = productTagDTO.getTagIds();
-		Map<Long, ProductEntity> productsMap = validateAndGetProductMap(productIds);
-		Map<Long, TagsEntity> tagsMap = validateAndGetTagMap(tagIds);
+		
+		validateProductIdsExists(new HashSet<>(productIds));
+		validateTagIdsExists(new HashSet<>(tagIds));
 
-		List<Pair> productTagsList = new ArrayList<>();
+		Set<Pair> existingProductTags = new HashSet<>();
 		if(noneIsNull(productIds, tagIds) && noneIsEmpty(productIds, tagIds)) {
-			productTagsList = productRepository.getProductTags(productIds, tagIds);
+			existingProductTags = new HashSet<>(productRepository.getProductTags(productIds, tagIds));
 		}
-
-
+						
 		for(Long productId : productTagDTO.getProductIds()) {
 			for(Long tagId : productTagDTO.getTagIds()) {
-				if( !productTagsList.contains(new Pair(productId, tagId))) {
-					productsMap.get(productId).insertProductTag(tagsMap.get(tagId));
+				Pair newProductTag = new Pair(productId, tagId);
+				if( !existingProductTags.contains(newProductTag)) {
+					productRepository.insertProductTag(productId, tagId);
+					existingProductTags.add(newProductTag);
 				}
-			}
-			productRepository.save(productsMap.get(productId));
+			}			
 		}
+		
 		return true;
 	}
 
+
+
+
+	private void validateTagIdsExists(HashSet<Long> tagIds) {
+		Set<Long> existingIds = new HashSet<>(mapInBatches(tagIds, 500, orgTagRepo::getExistingTagIds));	
+		tagIds
+		.stream()
+		.filter(id -> !existingIds.contains(id))
+		.findFirst()
+		.ifPresent(nonExistingId -> 
+					{throw new RuntimeBusinessException(
+								format("Provided tag(%d) does't match any tag", nonExistingId)
+								, "INVALID PARAM:product_id"
+								, NOT_ACCEPTABLE);});
+	}
+
+
+
+	private void validateProductIdsExists(Set<Long> productIds) {
+		Set<Long> existingIds = new HashSet<>(mapInBatches(productIds, 500, productRepository::getExistingProductIds));	
+		productIds
+		.stream()
+		.filter(id -> !existingIds.contains(id))
+		.findFirst()
+		.ifPresent(nonExistingId -> 
+					{throw new RuntimeBusinessException(
+								format("Provided product_id(%d) does't match any existing product", nonExistingId)
+								, "INVALID PARAM:product_id"
+								, NOT_ACCEPTABLE);});
+	}
 
 
 
@@ -2559,10 +2593,10 @@ public class ProductService {
 
 	private void validateProductTagDTO(ProductTagDTO productTagDTO) throws BusinessException {
 		if(productTagDTO.getProductIds() == null)
-			throw new BusinessException("Provided products_ids can't be empty", "MISSING PARAM:products_ids", HttpStatus.NOT_ACCEPTABLE);
+			throw new BusinessException("Provided products_ids can't be empty", "MISSING PARAM:products_ids", NOT_ACCEPTABLE);
 
 		if(productTagDTO.getTagIds() == null)
-			throw new BusinessException("Provided tags_ids can't be empty", "MISSING PARAM:tags_ids", HttpStatus.NOT_ACCEPTABLE);
+			throw new BusinessException("Provided tags_ids can't be empty", "MISSING PARAM:tags_ids", NOT_ACCEPTABLE);
 	}
 
 
@@ -2572,17 +2606,17 @@ public class ProductService {
 
 	private Map<Long, ProductEntity> validateAndGetProductMap(List<Long> productIds) throws BusinessException {
 
-		Map<Long, ProductEntity> productsMap = new HashMap<>();
-
-		for(ProductEntity entity : productRepository.findByIdIn(productIds)) {
-			productsMap.put(entity.getId(), entity);
-		}
+		Map<Long, ProductEntity> productsMap = 
+				mapInBatches(productIds, 500, productRepository::findByIdIn)
+				.stream()
+				.collect(toMap(ProductEntity::getId, entity -> entity));
 
 		for(Long productId : productIds) {
 			if (productsMap.get(productId) == null)
 				throw new BusinessException(
-						format("Provided product_id(%d) does't match any existing product", productId),
-						"INVALID PARAM:product_id", HttpStatus.NOT_ACCEPTABLE);
+						format("Provided product_id(%d) does't match any existing product", productId)
+						, "INVALID PARAM:product_id"
+						, NOT_ACCEPTABLE);
 		}
 
 		return productsMap;
@@ -2594,21 +2628,19 @@ public class ProductService {
 
 
 	private Map<Long, TagsEntity> validateAndGetTagMap(List<Long> tagIds) throws BusinessException {
-
-		Map<Long, TagsEntity> tagsMap = new HashMap<>();
 		Long orgId = securityService.getCurrentUserOrganizationId();
 
-		for(TagsEntity entity : orgTagRepo.findByIdInAndOrganizationEntity_Id(tagIds, orgId)) {
-			tagsMap.put(entity.getId(), entity);
-		}
+		Map<Long, TagsEntity> tagsMap =
+				mapInBatches(tagIds, 500, tgs -> orgTagRepo.findByIdInAndOrganizationEntity_Id(tgs, orgId))
+				.stream()
+				.collect(toMap(TagsEntity::getId, entity -> entity));
 
 		for(Long tagId : tagIds) {
 			if (tagsMap.get(tagId) == null)
 				throw new BusinessException(
-						format("Provided tag_id(%d) doesn't match any existing tag for organization(%d)", tagId, orgId),
-						"INVALID PARAM:tag_id", HttpStatus.NOT_ACCEPTABLE);
+						format("Provided tag_id(%d) doesn't match any existing tag for organization(%d)", tagId, orgId)
+						,"INVALID PARAM:tag_id", NOT_ACCEPTABLE);
 		}
-
 		return tagsMap;
 	}
 

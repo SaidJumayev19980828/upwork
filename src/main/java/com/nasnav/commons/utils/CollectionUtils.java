@@ -34,7 +34,7 @@ public class CollectionUtils {
 	
 	
 	
-	public static <T,U> List<U> processInBatches(Collection<T> collection, int batchSize, Function<List<T>, List<U>> mapper){
+	public static <T,U> List<U> mapInBatches(Collection<T> collection, int batchSize, Function<List<T>, List<U>> mapper){
 		return divideToBatches(collection, batchSize)
 				.stream()
 				.map(mapper)
