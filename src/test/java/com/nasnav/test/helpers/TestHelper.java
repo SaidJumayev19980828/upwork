@@ -1,4 +1,6 @@
 package com.nasnav.test.helpers;
+import static java.util.Arrays.asList;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -128,10 +130,11 @@ public class TestHelper {
 	
 	@Transactional
 	public ProductEntity getProductFullData(Long productId) {
-		ProductEntity product = productRepo.findById(productId).get();
-		
-		product.getTags();
-		return product;
+		return productRepo
+				.findFullDataByIdIn(asList(productId))
+				.stream()
+				.findFirst()
+				.get();
 	}
 		
 

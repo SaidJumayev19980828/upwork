@@ -64,6 +64,7 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
 	@Query("SELECT products FROM ProductEntity products "
 			+ " LEFT JOIN FETCH products.productVariants variants "
+			+ " LEFT JOIN FETCH products.tags tags "
 			+ " LEFT JOIN FETCH variants.stocks stocks"
 			+ " LEFT JOIN FETCH stocks.organizationEntity"
 			+ " WHERE products.id in :productIdList")
@@ -141,6 +142,16 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     @Transactional
 	@Query(value = "DELETE FROM Product_tags t WHERE t.product_id in :productIds", nativeQuery = true)
 	void deleteAllTagsForProducts(@Param("productIds")List<Long> products);
+	
+	
+	@Modifying
+    @Transactional
+	@Query(value = "insert into product_tags (product_id, tag_id) values (:productId, :tagId)", nativeQuery = true)
+	void insertProductTag(@Param("productId")Long productId, @Param("tagId")Long tagId);
+	
+	
+	@Query("SELECT product.id from ProductEntity product where product.id in :ids")
+	List<Long> getExistingProductIds(@Param("ids")List<Long> productIds);
 }
 
 

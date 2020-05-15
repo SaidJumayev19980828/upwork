@@ -1372,14 +1372,20 @@ public class DataImportApiTest {
 		
 		
 		List<StocksEntity> stocks = helper.getShopStocksFullData(shopId);
-        List<ProductVariantsEntity> variants = stocks.stream()
-													.map(StocksEntity::getProductVariantsEntity)
-													.map(variant -> variantRepo.getVariantFullData(variant.getId()).get())
-													.collect(toList());
+        List<ProductVariantsEntity> variants = 
+        		stocks
+        		.stream()
+				.map(StocksEntity::getProductVariantsEntity)
+				.map(variant -> variantRepo.getVariantFullData(variant.getId()).get())
+				.collect(toList());
 
-        Set<ProductEntity> products = variants.stream()
-												.map(v -> v.getProductEntity())
-												.collect(toSet()); 
+        List<Long> productIds =
+        		variants
+        		.stream()
+				.map(ProductVariantsEntity::getProductEntity)
+				.map(ProductEntity::getId)
+				.collect(toList()); 
+        Set<ProductEntity> products = productRepo.findFullDataByIdIn(productIds);
         
         
         assertEquals(expected.getStocksNum().intValue() , stocks.size());
@@ -1388,8 +1394,6 @@ public class DataImportApiTest {
         assertTrue( propertyValuesIn(stocks, StocksEntity::getQuantity, expected.getQuantities())	);
         assertTrue( compareEntityBigDecimalFieldValues(stocks, StocksEntity::getPrice, expected.getPrices())	);
 
-        
-                
         
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getBarcode, expected.getBarcodes())	);
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getName, expected.getVariantNames()) );

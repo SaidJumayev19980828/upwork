@@ -1,6 +1,8 @@
 package com.nasnav.service;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
+import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
 import static com.nasnav.commons.utils.EntityUtils.areEqual;
 import static com.nasnav.commons.utils.EntityUtils.noneIsEmpty;
@@ -19,8 +21,17 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PR
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
 import static com.nasnav.enumerations.OrderStatus.NEW;
+import static com.nasnav.exceptions.ErrorCodes.P$BRA$0001;
+import static com.nasnav.exceptions.ErrorCodes.P$BRA$0002;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0001;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0002;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0003;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0004;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0005;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0006;
 import static com.nasnav.exceptions.ErrorCodes.P$VAR$0001;
 import static com.nasnav.exceptions.ErrorCodes.P$VAR$0002;
+import static com.nasnav.persistence.ProductTypes.BUNDLE;
 import static com.nasnav.service.ProductImageService.NO_IMG_FOUND_URL;
 import static com.querydsl.sql.SQLExpressions.select;
 import static java.lang.String.format;
@@ -34,6 +45,7 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
+import static org.apache.commons.beanutils.BeanUtils.copyProperties;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -48,12 +60,14 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -82,7 +96,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.enums.SortOrder;
@@ -123,6 +136,7 @@ import com.nasnav.dto.VariantDTO;
 import com.nasnav.dto.VariantFeatureDTO;
 import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.model.querydsl.sql.QBrands;
 import com.nasnav.model.querydsl.sql.QProductFeatures;
@@ -131,17 +145,16 @@ import com.nasnav.model.querydsl.sql.QProductVariants;
 import com.nasnav.model.querydsl.sql.QProducts;
 import com.nasnav.model.querydsl.sql.QStocks;
 import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.BundleEntity;
 import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ProductImagesEntity;
-import com.nasnav.persistence.ProductTypes;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.TagsEntity;
+import com.nasnav.persistence.dto.query.result.products.BrandBasicData;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.response.BundleResponse;
@@ -1001,30 +1014,118 @@ public class ProductService {
 
 
 	public ProductUpdateResponse updateProduct(String productJson, Boolean isBundle) throws BusinessException {
-		BaseUserEntity user =  securityService.getCurrentUser();
+		Long id = updateProductBatch(asList(productJson), isBundle)
+					.stream()
+					.findFirst()
+					.orElse(null);
+		return new ProductUpdateResponse(id);
+	}
+	
+	
+	
+	
+	public List<Long> updateProductBatch(List<String> productJsonList, Boolean isBundle){
+		ProductUpdateCache cache = createProductUpdateCache(productJsonList, isBundle);
+		List<ProductEntity> entities = prepareProductEntities(productJsonList, isBundle, cache);
+		Iterable<ProductEntity> saved = productRepository.saveAll(entities); 
+		return getProductIds(saved);
+	}
 
+
+
+	private List<Long> getProductIds(Iterable<ProductEntity> saved) {
+		return StreamSupport
+				.stream(saved.spliterator(), false)
+				.map(ProductEntity::getId)
+				.collect(toList());
+	}
+
+
+
+	private List<ProductEntity> prepareProductEntities(List<String> productJsonList, Boolean isBundle,
+			ProductUpdateCache cache) {
+		return productJsonList
+		.stream()
+		.map(json -> prepareProductEntity(json, isBundle, cache))
+		.collect(toList());
+	}
+	
+	
+	
+	
+	private ProductEntity prepareProductEntity(String productJson, Boolean isBundle, ProductUpdateCache cache) {
 		ObjectMapper mapper = createObjectMapper();
 		JsonNode rootNode;
 		try {
 			rootNode = mapper.readTree(productJson);
 		} catch (IOException e) {
 			logger.error(e,e);
-			throw new BusinessException("Failed to deserialize JSON string ["+ productJson + "]", "INTERNAL SERVER ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new RuntimeBusinessException(format("Failed to deserialize JSON string [%s]", productJson), "INTERNAL SERVER ERROR", INTERNAL_SERVER_ERROR);
 		}
 
-		validateProductDto(rootNode, user);
+		validateProductDto(rootNode, cache);
 
-		ProductEntity entity = prepareProdcutEntity(rootNode, user,isBundle);
-		ProductEntity saved = productRepository.save(entity);
-
-		return new ProductUpdateResponse(true, saved.getId());
+		return prepareProdcutEntity(rootNode, isBundle, cache);
 	}
 
 
 
 
-	private ProductEntity prepareProdcutEntity(JsonNode productJsonNode, BaseUserEntity user, Boolean isBundle)
-			throws BusinessException {
+	private ProductUpdateCache createProductUpdateCache(List<String> productJsonList, Boolean isBundle) {
+		List<JSONObject> productsJson = productJsonList.stream().map(JSONObject::new).collect(toList());
+		Map<Long, ProductEntity> products = createProductCache(productsJson);		
+		Map<Long, BrandBasicData> brands = createBrandsCache(productsJson);
+		
+		return new ProductUpdateCache(products, brands);
+	}
+
+
+
+	private Map<Long, ProductEntity> createProductCache(List<JSONObject> productsJson) {
+		List<Long> productIds = extractProductIds(productsJson);
+		
+		return mapInBatches(productIds, 500, productRepository::findByIdIn)
+				.stream()
+				.collect(toMap(ProductEntity::getId, product -> product));
+	}
+
+
+
+	private List<Long> extractProductIds(List<JSONObject> productsJson) {
+		return productsJson
+				.stream()
+				.filter(json -> json.has("product_id"))
+				.filter(json -> !json.isNull("product_id"))
+				.map(json -> json.getLong("product_id"))
+				.filter(Objects::nonNull)
+				.collect(toList());
+	}
+
+
+
+	private Map<Long, BrandBasicData> createBrandsCache(List<JSONObject> productsJson) {
+		List<Long> brandIds = extractBrandIds(productsJson);
+		
+		return mapInBatches(brandIds, 500, brandRepo::findByIdIn)
+				.stream()
+				.collect(toMap(BrandBasicData::getId, brand -> brand));
+	}
+
+
+
+	private List<Long> extractBrandIds(List<JSONObject> productsJson) {
+		return productsJson
+				.stream()
+				.filter(json -> json.has("brand_id"))
+				.filter(json -> !json.isNull("brand_id"))
+				.map(json -> json.getLong("brand_id"))
+				.filter(Objects::nonNull)
+				.collect(toList());
+	}
+
+
+
+	private ProductEntity prepareProdcutEntity(JsonNode productJsonNode, Boolean isBundle, ProductUpdateCache cache){
 
 		Long id = productJsonNode.path("product_id").asLong();
 		JsonNode operationNode = productJsonNode.path("operation");
@@ -1032,17 +1133,19 @@ public class ProductService {
 
 		ProductEntity entity;
 
-		if(Operation.CREATE.equals(operation)) {
+		if(CREATE.equals(operation)) {
 			entity = new ProductEntity();
-			if(isBundle)
-				entity.setProductType(ProductTypes.BUNDLE);
+			if(isBundle) {
+				entity.setProductType(BUNDLE);
+			}
 		}
 		else {
-			entity = productRepository.findById(id)
-					.orElseThrow(()-> new BusinessException("No prodcut exists with  ID: "+ id, "INVALID_PARAM:id" , HttpStatus.NOT_ACCEPTABLE));
+			entity = ofNullable(cache.getProducts())
+					.map(map -> map.get(id))
+					.orElseThrow(()-> new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0002, id));
 		}
 
-		updateProductEntityFromJson(entity, productJsonNode, user);
+		updateProductEntityFromJson(entity, productJsonNode);
 
 		return entity;
 	}
@@ -1050,48 +1153,47 @@ public class ProductService {
 
 
 
-	private void updateProductEntityFromJson(ProductEntity entity, JsonNode productJsonNode, BaseUserEntity user)
-			throws BusinessException {
+	private void updateProductEntityFromJson(ProductEntity entity, JsonNode productJsonNode){
 		ProductUpdateDTO productDto = new ProductUpdateDTO();
+		Long orgId = securityService.getCurrentUserOrganizationId();
 		try {
-
-			BeanUtils.copyProperties(productDto, entity);
+			copyProperties(productDto, entity);
 
 			//readerForUpdating makes the reader update the properties that ONLY exists in JSON string
 			//That's why we are parsing the JSON instead of spring (-_-)
 			ObjectMapper mapper = createObjectMapper();
 			productDto = mapper.readerForUpdating(productDto).readValue(productJsonNode.toString());
 
-			productDto.setOrganizationId(user.getOrganizationId());
+			productDto.setOrganizationId(orgId);
 
-			if(StringUtils.isBlankOrNull(productDto.getPname())) {
-				productDto.setPname(StringUtils.encodeUrl( productDto.getName() ));
+			if(isBlankOrNull(productDto.getPname())) {
+				productDto.setPname(encodeUrl( productDto.getName() ));
 			}
 
-			BeanUtils.copyProperties(entity, productDto);
+			copyProperties(entity, productDto);
 		} catch (Exception e) {
 			logger.error(e,e);
-			throw new BusinessException(e.getMessage(), "INTERNAL SERVER ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$PRO$0006, productJsonNode.toString());
 		}
 	}
 
 
 
 
-	private void validateProductDto(JsonNode productJsonNode, BaseUserEntity user) throws BusinessException {
+	private void validateProductDto(JsonNode productJsonNode, ProductUpdateCache cache) {
 		JsonNode operationNode = productJsonNode.path("operation");
 
 		if(operationNode.isMissingNode()) {
-			throw new BusinessException("No Operation provided! parameter operation should have values in[\"create\",\"update\"]!", "INVALID_PARAM:operation" , HttpStatus.NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ErrorCodes.P$PRO$0007);
 		}
 
 		String operationStr = operationNode.asText().toUpperCase();
 		Operation operation = Operation.valueOf(operationStr);
 
-		if(operation.equals(Operation.UPDATE)) {
-			validateProductDtoToUpdate(productJsonNode, user);
+		if(operation.equals(UPDATE)) {
+			validateProductDtoToUpdate(productJsonNode, cache);
 		}else {
-			validateProductDtoToCreate(productJsonNode, user);
+			validateProductDtoToCreate(productJsonNode, cache);
 		}
 
 	}
@@ -1100,55 +1202,59 @@ public class ProductService {
 
 
 	private ObjectMapper createObjectMapper() {
-		ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		ObjectMapper mapper = new ObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
 		return mapper;
 	}
 
 
 
 
-	private void validateProductDtoToCreate(JsonNode productJson, BaseUserEntity user ) throws BusinessException {
+	private void validateProductDtoToCreate(JsonNode productJson, ProductUpdateCache cache){
 
 		checkCreateProuctReqParams(productJson);
 
 		JsonNode brandId = productJson.path("brand_id");
-		validateBrandId(user, brandId);
+		validateBrandId(brandId, cache);
 	}
 
 
 
 
-	private void validateProductDtoToUpdate(JsonNode productJson, BaseUserEntity user)
-			throws BusinessException {
+	private void validateProductDtoToUpdate(JsonNode productJson, ProductUpdateCache cache) {
 		JsonNode id = productJson.path("product_id");
 		JsonNode brandId = productJson.path("brand_id");
 
-		if(id.isMissingNode())
-			throw new BusinessException("No product id provided!", "INVALID_PARAM:product_id" , HttpStatus.NOT_ACCEPTABLE);
+		if(id.isMissingNode()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0001);
+		}
+			
+		if(!id.isNull() && !cache.getProducts().containsKey(id.asLong())) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0002, id.asLong());
+		}
 
-		if(!id.isNull() && !productRepository.existsById(id.asLong()))
-			throw new BusinessException("No prodcut exists with ID: "+ id + " !", "INVALID_PARAM:product_id" , HttpStatus.NOT_ACCEPTABLE);
-
-		if(!brandId.isMissingNode() )
-			validateBrandId(user, brandId);
+		if(!brandId.isMissingNode() ) {
+			validateBrandId(brandId, cache);
+		}
 	}
 
 
 
 
-	private void checkCreateProuctReqParams(JsonNode productJson)
-			throws BusinessException {
+	private void checkCreateProuctReqParams(JsonNode productJson){
 		JsonNode name = productJson.path("name");
 		JsonNode brandId = productJson.path("brand_id");
 
-		if(name.isMissingNode())
-			throw new BusinessException("Product name Must be provided! ", "MISSING_PARAM:name" , HttpStatus.NOT_ACCEPTABLE);
+		if(name.isMissingNode()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0003);
+		}
 
-		if( name.isNull() )
-			throw new BusinessException("Product name cannot be Null ", "MISSING_PARAM:name" , HttpStatus.NOT_ACCEPTABLE);
+		if( name.isNull() ) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0004);
+		}
 
-		if(brandId.isMissingNode())
-			throw new BusinessException("Brand Id Must be provided!" , "MISSING_PARAM:brand_Id" , HttpStatus.NOT_ACCEPTABLE);
+		if(brandId.isMissingNode()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0005);
+		}
 	}
 
 
@@ -1156,21 +1262,26 @@ public class ProductService {
 
 
 
-	private void validateBrandId(BaseUserEntity user, JsonNode brandId) throws BusinessException {
+	private void validateBrandId(JsonNode brandId, ProductUpdateCache cache) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		
 		if(brandId.isMissingNode() || brandId.isNull()) //brand_id is optional and can be null
+		{
 			return;
+		}			
 
 		long id = brandId.asLong();
-		if(!brandRepo.existsById(id) )
-			throw new BusinessException("No Brand exists with ID: " + id + " !" , "INVALID_PARAM:brand_id" , HttpStatus.NOT_ACCEPTABLE);
+		if(!cache.getBrands().containsKey(id)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$BRA$0001 , id);
+		}
+			
+		Long brandOrgId = ofNullable(cache.getBrands())
+							.map(map -> map.get(id))
+							.map(BrandBasicData::getOrgId)
+							.orElse(-2L); 
 
-		BrandsEntity brand = brandRepo.findById(id)
-				.orElseThrow(() -> new BusinessException("No Brand exists with ID: " + id + " !", "INVALID_PARAM:brand_Id" , HttpStatus.NOT_ACCEPTABLE));
-
-		Long brandOrgId = brand.getOrganizationEntity().getId();
-		if( !brandOrgId.equals( user.getOrganizationId() )) {
-			String msg = String.format("Brand with id [%d] doesnot belong to organization with id [%d]", id, user.getOrganizationId());
-			throw new BusinessException(msg , "INVALID_PARAM:brand_Id" , HttpStatus.NOT_ACCEPTABLE);
+		if( !Objects.equals(brandOrgId, orgId)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$BRA$0002 , id, orgId);
 		}
 	}
 
@@ -1189,10 +1300,10 @@ public class ProductService {
 				transactions.deleteProduct(productId);
 			} catch (DataIntegrityViolationException e) {
 				logger.error(e,e);
-				throw new BusinessException(format(ERR_PRODUCT_STILL_USED, productId), "INVAILID PARAM:product_id", HttpStatus.NOT_ACCEPTABLE);
+				throw new BusinessException(format(ERR_PRODUCT_STILL_USED, productId), "INVAILID PARAM:product_id", NOT_ACCEPTABLE);
 			} catch (Throwable e) {
 				logger.error(e,e);
-				throw new BusinessException(format(ERR_PRODUCT_DELETE_FAILED, productId), "INVAILID PARAM:product_id", HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new BusinessException(format(ERR_PRODUCT_DELETE_FAILED, productId), "INVAILID PARAM:product_id", INTERNAL_SERVER_ERROR);
 			}
 		}
 		return new ProductsDeleteResponse(true, productIds);
@@ -1924,7 +2035,7 @@ public class ProductService {
 				.map(VariantUpdateDTO::getVariantId)
 				.distinct()
 				.collect(toSet());
-		return processInBatches(variantIds, 500, productVariantsRepository::findByIdIn)
+		return mapInBatches(variantIds, 500, productVariantsRepository::findByIdIn)
 				.stream()
 				.collect(toMap(ProductVariantsEntity::getId, variant -> variant));
 	}
@@ -2405,26 +2516,58 @@ public class ProductService {
 
 		List<Long> productIds = productTagDTO.getProductIds();
 		List<Long> tagIds = productTagDTO.getTagIds();
-		Map<Long, ProductEntity> productsMap = validateAndGetProductMap(productIds);
-		Map<Long, TagsEntity> tagsMap = validateAndGetTagMap(tagIds);
+		
+		validateProductIdsExists(new HashSet<>(productIds));
+		validateTagIdsExists(new HashSet<>(tagIds));
 
-		List<Pair> productTagsList = new ArrayList<>();
+		Set<Pair> existingProductTags = new HashSet<>();
 		if(noneIsNull(productIds, tagIds) && noneIsEmpty(productIds, tagIds)) {
-			productTagsList = productRepository.getProductTags(productIds, tagIds);
+			existingProductTags = new HashSet<>(productRepository.getProductTags(productIds, tagIds));
 		}
-
-
+						
 		for(Long productId : productTagDTO.getProductIds()) {
 			for(Long tagId : productTagDTO.getTagIds()) {
-				if( !productTagsList.contains(new Pair(productId, tagId))) {
-					productsMap.get(productId).insertProductTag(tagsMap.get(tagId));
+				Pair newProductTag = new Pair(productId, tagId);
+				if( !existingProductTags.contains(newProductTag)) {
+					productRepository.insertProductTag(productId, tagId);
+					existingProductTags.add(newProductTag);
 				}
-			}
-			productRepository.save(productsMap.get(productId));
+			}			
 		}
+		
 		return true;
 	}
 
+
+
+
+	private void validateTagIdsExists(HashSet<Long> tagIds) {
+		Set<Long> existingIds = new HashSet<>(mapInBatches(tagIds, 500, orgTagRepo::getExistingTagIds));	
+		tagIds
+		.stream()
+		.filter(id -> !existingIds.contains(id))
+		.findFirst()
+		.ifPresent(nonExistingId -> 
+					{throw new RuntimeBusinessException(
+								format("Provided tag(%d) does't match any tag", nonExistingId)
+								, "INVALID PARAM:product_id"
+								, NOT_ACCEPTABLE);});
+	}
+
+
+
+	private void validateProductIdsExists(Set<Long> productIds) {
+		Set<Long> existingIds = new HashSet<>(mapInBatches(productIds, 500, productRepository::getExistingProductIds));	
+		productIds
+		.stream()
+		.filter(id -> !existingIds.contains(id))
+		.findFirst()
+		.ifPresent(nonExistingId -> 
+					{throw new RuntimeBusinessException(
+								format("Provided product_id(%d) does't match any existing product", nonExistingId)
+								, "INVALID PARAM:product_id"
+								, NOT_ACCEPTABLE);});
+	}
 
 
 
@@ -2450,10 +2593,10 @@ public class ProductService {
 
 	private void validateProductTagDTO(ProductTagDTO productTagDTO) throws BusinessException {
 		if(productTagDTO.getProductIds() == null)
-			throw new BusinessException("Provided products_ids can't be empty", "MISSING PARAM:products_ids", HttpStatus.NOT_ACCEPTABLE);
+			throw new BusinessException("Provided products_ids can't be empty", "MISSING PARAM:products_ids", NOT_ACCEPTABLE);
 
 		if(productTagDTO.getTagIds() == null)
-			throw new BusinessException("Provided tags_ids can't be empty", "MISSING PARAM:tags_ids", HttpStatus.NOT_ACCEPTABLE);
+			throw new BusinessException("Provided tags_ids can't be empty", "MISSING PARAM:tags_ids", NOT_ACCEPTABLE);
 	}
 
 
@@ -2463,17 +2606,17 @@ public class ProductService {
 
 	private Map<Long, ProductEntity> validateAndGetProductMap(List<Long> productIds) throws BusinessException {
 
-		Map<Long, ProductEntity> productsMap = new HashMap<>();
-
-		for(ProductEntity entity : productRepository.findByIdIn(productIds)) {
-			productsMap.put(entity.getId(), entity);
-		}
+		Map<Long, ProductEntity> productsMap = 
+				mapInBatches(productIds, 500, productRepository::findByIdIn)
+				.stream()
+				.collect(toMap(ProductEntity::getId, entity -> entity));
 
 		for(Long productId : productIds) {
 			if (productsMap.get(productId) == null)
 				throw new BusinessException(
-						format("Provided product_id(%d) does't match any existing product", productId),
-						"INVALID PARAM:product_id", HttpStatus.NOT_ACCEPTABLE);
+						format("Provided product_id(%d) does't match any existing product", productId)
+						, "INVALID PARAM:product_id"
+						, NOT_ACCEPTABLE);
 		}
 
 		return productsMap;
@@ -2485,21 +2628,19 @@ public class ProductService {
 
 
 	private Map<Long, TagsEntity> validateAndGetTagMap(List<Long> tagIds) throws BusinessException {
-
-		Map<Long, TagsEntity> tagsMap = new HashMap<>();
 		Long orgId = securityService.getCurrentUserOrganizationId();
 
-		for(TagsEntity entity : orgTagRepo.findByIdInAndOrganizationEntity_Id(tagIds, orgId)) {
-			tagsMap.put(entity.getId(), entity);
-		}
+		Map<Long, TagsEntity> tagsMap =
+				mapInBatches(tagIds, 500, tgs -> orgTagRepo.findByIdInAndOrganizationEntity_Id(tgs, orgId))
+				.stream()
+				.collect(toMap(TagsEntity::getId, entity -> entity));
 
 		for(Long tagId : tagIds) {
 			if (tagsMap.get(tagId) == null)
 				throw new BusinessException(
-						format("Provided tag_id(%d) doesn't match any existing tag for organization(%d)", tagId, orgId),
-						"INVALID PARAM:tag_id", HttpStatus.NOT_ACCEPTABLE);
+						format("Provided tag_id(%d) doesn't match any existing tag for organization(%d)", tagId, orgId)
+						,"INVALID PARAM:tag_id", NOT_ACCEPTABLE);
 		}
-
 		return tagsMap;
 	}
 
@@ -2537,7 +2678,7 @@ public class ProductService {
 
 
 	public void deleteAllTagsForProducts(List<Long> products) {
-		productRepository.deleteAllTagsForProducts(products);
+		processInBatches(products, 500, productRepository::deleteAllTagsForProducts);
 	}
 }
 
@@ -2553,3 +2694,23 @@ class VariantUpdateCache{
 	private Map<String, ExtraAttributesEntity> orgExtraAttributes;
 	private Map<Long, ProductVariantsEntity> variantsEntities;
 }
+
+
+
+@Data
+@AllArgsConstructor
+class ProductUpdateCache{
+	private Map<Long, ProductEntity> products;
+	private Map<Long, BrandBasicData> brands;
+}
+
+
+
+
+@Data
+@AllArgsConstructor
+class ProductAndBrandPair{
+	private Long productId;
+	private Long brandId;
+}
+
