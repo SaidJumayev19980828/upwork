@@ -2,10 +2,8 @@ package com.nasnav.dto;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @EqualsAndHashCode(callSuper=false)
 public class ProductImportMetadata {
     private boolean dryrun;
@@ -14,8 +12,13 @@ public class ProductImportMetadata {
     private boolean updateStocks;
     private boolean deleteOldProducts;
     private boolean resetTags;
+    private boolean insertNewProducts;
 
     private Long shopId;
     private Integer currency;
     private String encoding;
+    
+    public ProductImportMetadata() {
+    	this.insertNewProducts = true;
+    }
 }

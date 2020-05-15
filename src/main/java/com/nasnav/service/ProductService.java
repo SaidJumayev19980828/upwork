@@ -2646,7 +2646,7 @@ public class ProductService {
 
 
 	public void deleteAllTagsForProducts(List<Long> products) {
-		productRepository.deleteAllTagsForProducts(products);
+		processInBatches(products, 500, productRepository::deleteAllTagsForProducts);
 	}
 }
 

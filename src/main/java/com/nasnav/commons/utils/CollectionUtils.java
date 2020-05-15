@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import reactor.core.publisher.Flux;
@@ -39,6 +40,15 @@ public class CollectionUtils {
 				.map(mapper)
 				.flatMap(List::stream)
 				.collect(toList());
+	}
+	
+	
+	
+	
+	public static <T> void processInBatches(Collection<T> collection, int batchSize, Consumer<List<T>> consumer){
+		divideToBatches(collection, batchSize)
+		.stream()
+		.forEach(consumer);
 	}
 	
 	
