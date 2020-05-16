@@ -1108,6 +1108,7 @@ public class ProductService {
 		
 		return mapInBatches(brandIds, 500, brandRepo::findByIdIn)
 				.stream()
+				.distinct()
 				.collect(toMap(BrandBasicData::getId, brand -> brand));
 	}
 
