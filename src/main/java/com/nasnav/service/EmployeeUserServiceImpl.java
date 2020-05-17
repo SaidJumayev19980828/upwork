@@ -272,7 +272,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 	public List<UserRepresentationObject> getUserList(String token, Long orgId, Long storeId, String role) throws BusinessException {
-		EmployeeUserEntity user = employeeUserRepository.findByAuthenticationToken(token).get();
+		EmployeeUserEntity user = (EmployeeUserEntity)securityService.getCurrentUser();
 		List<String> userRoles = empUserSvcHelper.getEmployeeUserRoles(user.getId());
 		Set<String> roles = new HashSet<>();
 		List<EmployeeUserEntity> usersEntites = new ArrayList<>();

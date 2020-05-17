@@ -41,7 +41,7 @@ public class FilesController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@ResponseStatus(HttpStatus.OK)
     public String updateShop(
-    		@RequestHeader (value = "User-Token") String userToken,
+    		@RequestHeader (name = "User-Token", required = false) String userToken,
     		@RequestParam("org_id") @Nullable Long orgId,
     		@RequestParam("file") MultipartFile file
     		) throws BusinessException {  

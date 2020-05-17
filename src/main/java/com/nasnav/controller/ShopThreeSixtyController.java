@@ -72,7 +72,7 @@ public class ShopThreeSixtyController {
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @PostMapping(value = "/publish", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ShopResponse publishJsonData(@RequestHeader("User-Token") String userToken,
+    public ShopResponse publishJsonData(@RequestHeader(name = "User-Token", required = false) String userToken,
                                         @RequestParam ("shop_id")Long shopId) throws BusinessException {
         return shop360Svc.publishJsonData(shopId);
     }
@@ -82,7 +82,7 @@ public class ShopThreeSixtyController {
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @PostMapping(value = "/shops", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ShopResponse updateThreeSixtyShop(@RequestHeader("User-Token") String userToken,
+    public ShopResponse updateThreeSixtyShop(@RequestHeader(name = "User-Token", required = false) String userToken,
                                              @RequestBody ShopThreeSixtyDTO shopThreeSixtyDTO)
             throws BusinessException {
         return shop360Svc.updateThreeSixtyShop(shopThreeSixtyDTO);
@@ -94,7 +94,7 @@ public class ShopThreeSixtyController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @PostMapping(value = "/json_data", consumes = MediaType.APPLICATION_JSON_VALUE,
                  produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ShopResponse updateThreeSixtyShopJsonData(@RequestHeader("User-Token") String userToken,
+    public ShopResponse updateThreeSixtyShopJsonData(@RequestHeader(name = "User-Token", required = false) String userToken,
                                                      @RequestParam("shop_id") Long shopId,
                                                      @RequestParam String type,
                                                      @RequestBody String json_data)
@@ -107,7 +107,7 @@ public class ShopThreeSixtyController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @PostMapping(value = "/product_positions",consumes = MediaType.APPLICATION_JSON_VALUE,
                  produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ShopResponse updateThreeSixtyShopProductPositions(@RequestHeader("User-Token") String userToken,
+    public ShopResponse updateThreeSixtyShopProductPositions(@RequestHeader(name = "User-Token", required = false) String userToken,
                                                              @RequestParam("shop_id") Long shopId,
                                                              @RequestBody String json_data)
             throws BusinessException, UnsupportedEncodingException {
@@ -118,7 +118,7 @@ public class ShopThreeSixtyController {
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @PostMapping(value = "/sections", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ShopResponse updateThreeSixtyShopSections(@RequestHeader("User-Token") String userToken,
+    public ShopResponse updateThreeSixtyShopSections(@RequestHeader(name = "User-Token", required = false) String userToken,
                                                      @RequestParam("shop_id") Long shopId,
                                                      @RequestBody List<ShopFloorsRequestDTO> jsonDTO)
             throws BusinessException, IOException {
@@ -140,7 +140,7 @@ public class ShopThreeSixtyController {
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "Deleted"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @DeleteMapping(value = "/floors")
-    public void deleteShop360Floors(@RequestHeader("User-Token") String userToken,
+    public void deleteShop360Floors(@RequestHeader(name = "User-Token", required = false) String userToken,
                                     @RequestParam("shop_id") Long shopId) throws BusinessException {
         shop360Svc.deleteShop360Floors(shopId);
     }
@@ -149,7 +149,7 @@ public class ShopThreeSixtyController {
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "Deleted"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @DeleteMapping(value = "/floor")
-    public void deleteShop360Floor(@RequestHeader("User-Token") String userToken,
+    public void deleteShop360Floor(@RequestHeader(name = "User-Token", required = false) String userToken,
                                    @RequestParam("shop_id") Long shopId,
                                    @RequestParam("floor_id") Long floorId) throws BusinessException {
         shop360Svc.deleteShop360Floor(shopId, floorId);
@@ -159,7 +159,7 @@ public class ShopThreeSixtyController {
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "Deleted"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @DeleteMapping(value = "/section")
-    public void deleteShop360Section(@RequestHeader("User-Token") String userToken,
+    public void deleteShop360Section(@RequestHeader(name = "User-Token", required = false) String userToken,
                                      @RequestParam("shop_id") Long shopId,
                                      @RequestParam("section_id") Long sectionId) throws BusinessException {
         shop360Svc.deleteShop360Section(shopId, sectionId);
@@ -169,7 +169,7 @@ public class ShopThreeSixtyController {
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "Deleted"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @DeleteMapping(value = "/scene")
-    public void deleteShop360Scene(@RequestHeader("User-Token") String userToken,
+    public void deleteShop360Scene(@RequestHeader(name = "User-Token", required = false) String userToken,
                                    @RequestParam("shop_id") Long shopId,
                                    @RequestParam("scene_id") Long sceneId) throws BusinessException {
         shop360Svc.deleteShop360Scene(shopId, sceneId);

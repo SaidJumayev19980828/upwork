@@ -20,6 +20,7 @@ INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (502, 'sho
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id,country,city ,address)
     VALUES (88, 'user1@nasnav.com','user1','123', 99002, 'Egypt', 'Cairo', '12 Abbas el-Akkad, Nasr City');
 
+INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (1, '123', now(), 88);
 
 --insering employee users
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
@@ -27,6 +28,8 @@ VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (69, 'testuser2@nasnav.com', 99002, '131415',  501);
 
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1, '101112', now(), 68);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (2, '131415', now(), 69);
 
 --inserting Roles
 insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);

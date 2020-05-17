@@ -38,6 +38,11 @@ INSERT INTO public.users(id, email,  user_name, authentication_token, organizati
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
     VALUES (88001, 'user1@nasnav.com','user1','88657aser', 99003);
 
+INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (1, '123', now(), 88);
+INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (2, '456', now(), 89);
+INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (3, '789', now(), 90);
+INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (4, '011', now(), 91);
+INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (5, '88657aser', now(), 88001);
 
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502);
@@ -50,6 +55,11 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (158, 'testuser3@nasnav.com', 99002, '222324',  506);
 
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1, '101112', now(), 68);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (2, '161718', now(), 69);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (3, 'abcdefg', now(), 70);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (4, '192021', now(), 71);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (5, '222324', now(), 158);
 
 
 --inserting Roles

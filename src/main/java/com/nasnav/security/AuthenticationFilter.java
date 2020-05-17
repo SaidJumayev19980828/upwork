@@ -10,6 +10,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -31,7 +32,19 @@ public class AuthenticationFilter extends AbstractAuthenticationProcessingFilter
     @Override
     public Authentication attemptAuthentication(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws AuthenticationException, IOException, ServletException {
 
-        String token= httpServletRequest.getHeader(TOKEN_HEADER);
+        String token = "";
+        Cookie[] cookies = httpServletRequest.getCookies();
+
+        if ( cookies != null && cookies.length != 0) {
+            for(Cookie c : cookies) {
+                if (c.getName().equals(TOKEN_HEADER)) {
+                    token = c.getValue();
+                    break;
+                }
+            }
+        } else {
+            token = httpServletRequest.getHeader(TOKEN_HEADER);
+        }
         UsernamePasswordAuthenticationToken requestAuthentication = new UsernamePasswordAuthenticationToken(token, token);
         return getAuthenticationManager().authenticate(requestAuthentication);
 

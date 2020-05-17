@@ -9,6 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -47,8 +48,10 @@ public class TestCommons {
     }
 
     public static HttpHeaders getHeaders(String authToken) {
+        HttpCookie cookie = new HttpCookie("User-Token", authToken);
         HttpHeaders headers = new HttpHeaders();
-        headers.add("User-Token", authToken);
+        headers.add("Cookie", cookie.toString());
+        //headers.add("User-Token", authToken);
         return headers;
     }
 

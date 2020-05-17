@@ -24,11 +24,7 @@ public class UserTokensEntity {
     @UpdateTimestamp
     private LocalDateTime updateTime;
 
-    
-    //TODO: >>> eager fetching is bad practice generally for performance.
-    //instead we should usually use lazy fetch and do join fetch queries to get the data in a single query.
-    //it is more work, but on the long run it shouldn't backlash like eager fetch. ProductVariantEntity was a pain to fix it eager fetchs.
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id")
     @JsonIgnore
     @EqualsAndHashCode.Exclude

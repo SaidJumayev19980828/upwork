@@ -42,7 +42,7 @@ public class OrdersController {
 	@PostMapping(value = "create",
 			produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
 			consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public OrderResponse createOrder(@RequestHeader(name = "User-Token") String userToken,
+	public OrderResponse createOrder(@RequestHeader(name = "User-Token", required = false) String userToken,
 									 @RequestBody OrderJsonDto orderJson) throws BusinessException {
 
 		return orderService.createNewOrder(orderJson);
@@ -60,7 +60,7 @@ public class OrdersController {
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public OrderResponse updateOrder(
             
-            @RequestHeader(name = "User-Token") String userToken,
+            @RequestHeader(name = "User-Token", required = false) String userToken,
             @RequestBody OrderJsonDto orderJson)
             		throws BusinessException {
     	
@@ -77,7 +77,7 @@ public class OrdersController {
 						   @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
     @GetMapping(value = "/info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
     public DetailedOrderRepObject getOrderInfo(
-            @RequestHeader(name = "User-Token") String userToken,
+            @RequestHeader(name = "User-Token", required = false) String userToken,
             @RequestParam(name = "order_id") Long orderId,
 			@RequestParam(name = "details_level", required = false) Integer detailsLevel) throws BusinessException {
 		
@@ -97,7 +97,7 @@ public class OrdersController {
 	})
 	@GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	public List<DetailedOrderRepObject> getOrdersList(
-											@RequestHeader(name = "User-Token") String userToken,
+											@RequestHeader(name = "User-Token", required = false) String userToken,
 											OrderSearchParam params) throws BusinessException {
 		
 		return  this.orderService.getOrdersList(params);
@@ -112,7 +112,7 @@ public class OrdersController {
 						   @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
     @GetMapping(value = "/current", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
     public DetailedOrderRepObject getCurrentNewOrder(
-            @RequestHeader(name = "User-Token") String userToken,
+            @RequestHeader(name = "User-Token", required = false) String userToken,
 			@RequestParam(name = "details_level", required = false) Integer detailsLevel) throws BusinessException {
 		
     	return this.orderService.getCurrentOrder(detailsLevel);
@@ -128,7 +128,7 @@ public class OrdersController {
 						   @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
     @DeleteMapping(value = "/current", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
     public void deleteNewOrder(
-            @RequestHeader(name = "User-Token") String userToken) {
+            @RequestHeader(name = "User-Token", required = false) String userToken) {
 		
     	 this.orderService.deleteCurrentOrders();    	
     }
@@ -138,7 +138,7 @@ public class OrdersController {
 	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
 	@DeleteMapping( produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
-	public void deleteOrders(@RequestHeader(name = "User-Token") String userToken,
+	public void deleteOrders(@RequestHeader(name = "User-Token", required = false) String userToken,
 							 @RequestParam("order_ids") List<Long> orderIds) throws BusinessException {
 
 		this.orderService.deleteOrders(orderIds);

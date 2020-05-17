@@ -27,6 +27,12 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (158, 'testuser3@nasnav.com', 99002, '222324',  501);
 
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1, '101112', now(), 68);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (2, '131415', now(), 69);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (3, '161718', now(), 70);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (4, '192021', now(), 71);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (5, '222324', now(), 158);
+
 insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_MANAGER', 99001);

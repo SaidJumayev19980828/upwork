@@ -1,16 +1,6 @@
 package com.nasnav.cache;
 
-import static com.nasnav.cache.Caches.BRANDS;
-import static com.nasnav.cache.Caches.FILES;
-import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
-import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
-import static com.nasnav.cache.Caches.ORGANIZATIONS_CATEGORIES;
-import static com.nasnav.cache.Caches.ORGANIZATIONS_DOMAINS;
-import static com.nasnav.cache.Caches.ORGANIZATIONS_EXTRA_ATTRIBUTES;
-import static com.nasnav.cache.Caches.ORGANIZATIONS_SHOPS;
-import static com.nasnav.cache.Caches.ORGANIZATIONS_TAGS;
-import static com.nasnav.cache.Caches.ORGANIZATIONS_TAG_TREES;
-import static com.nasnav.cache.Caches.SHOPS_BY_ID;
+import static com.nasnav.cache.Caches.*;
 import static java.time.Duration.ofMinutes;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toMap;
@@ -55,6 +45,7 @@ public class CachingConfig extends CachingConfigurerSupport{
     		, ORGANIZATIONS_TAG_TREES
     		, ORGANIZATIONS_TAGS
     		, SHOPS_BY_ID
+            , USER_TOKENS
     		);
  
        

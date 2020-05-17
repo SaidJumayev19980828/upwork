@@ -45,9 +45,28 @@ INSERT INTO public.employee_users(id, name,  email, organization_id, authenticat
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password)
 	VALUES (159, 'Walid', 'user1@nasnav.com', 99001, 'nopqrst',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
 
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1001, 'abcdefg', now(), 68);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1002, 'hijkllm', now(), 69);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1003, '123', now(), 70);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1004, '456', now(), 71);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1005, '131415', now(), 72);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1006, '161718', now(), 73);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1007, '192021', now(), 74);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1008, '222324', now(), 75);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1009, '252627', now(), 76);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1010, '282930', now(), 77);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1011, '313233', now(), 78);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1012, '343536', now(), 79);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1013, '373839', now(), 80);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1014, '404142', now(), 81);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1015, 'nopqrst', now(), 158);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1016, 'uvwxyz', now(), 159);
+
 --inserting Users
 INSERT INTO public.users(id, email,  user_name, authentication_token, address, country, city, phone_number, image, organization_id, encrypted_password)
     VALUES (88, 'user1@nasnav.com','user1','yuhjhu', '21 jump street', 'Egypt', 'Cairo', '+021092154875','/urls/images/fdsafag23.jpg',  99001, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
+
+INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (4, 'yuhjhu', now(), 88);
 
 --inserting Roles
 insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);

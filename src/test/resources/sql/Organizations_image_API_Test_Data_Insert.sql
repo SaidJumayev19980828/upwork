@@ -29,6 +29,10 @@ VALUES (69, 'testuser2@nasnav.com', 99002, '456',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (70, 'testuser3@nasnav.com', 99001, '789',  502);
 
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1, '123', now(), 68);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (2, '456', now(), 69);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (3, '789', now(), 70);
+
 --inserting Roles
 insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
 insert into public.roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);

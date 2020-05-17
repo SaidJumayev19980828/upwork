@@ -3,8 +3,7 @@ package com.nasnav.service;
 import static com.nasnav.cache.Caches.USER_TOKENS;
 import static com.nasnav.commons.utils.EntityUtils.createFailedLoginResponse;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
-import static com.nasnav.response.ResponseStatus.ACCOUNT_SUSPENDED;
-import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
+import static com.nasnav.response.ResponseStatus.*;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -21,6 +20,7 @@ import java.util.Optional;
 import com.nasnav.AppConfig;
 import com.nasnav.dao.EmployeeUserTokenRepository;
 import com.nasnav.dao.UserTokenRepository;
+import com.nasnav.enumerations.UserStatus;
 import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -85,7 +85,7 @@ public class SecurityServiceImpl implements SecurityService {
 	private AppConfig config;
 
 
-	//@CacheResult(cacheName = USER_TOKENS)
+
 	@Override
 	public Optional<UserDetails> findUserByAuthToken(String token){
 		return ofNullable(token)
@@ -97,6 +97,7 @@ public class SecurityServiceImpl implements SecurityService {
 	@Override
 	//TODO: >>> need to add caching to this method
 	//TODO: >>> the cache entry of a specific token should be evicted when logout is called with that specific token.
+	@CacheResult(cacheName = USER_TOKENS)
 	public Optional<BaseUserEntity> getUserByAuthenticationToken(String token) {
 		Optional<BaseUserEntity> user = userTokenRepo.getUserEntityByToken(token);
 		if (user.isPresent())
@@ -117,10 +118,11 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Override
 	@Transactional
+	@CacheEvict(allEntries = true, cacheNames = {USER_TOKENS})
 	public UserApiResponse logout(String token) {
 		userTokenRepo.deleteByToken(token);
 		empUserTokenRepo.deleteByToken(token);
-		Cookie c = createLoginCookie(null, true);
+		Cookie c = createCookie(null, true);
 
 		return new ApiResponseBuilder().setCookie(c).setSuccess(true).build();
 	}
@@ -179,22 +181,20 @@ public class SecurityServiceImpl implements SecurityService {
 		// generate new AuthenticationToken and perform post login updates
 		userEntity = updatePostLogin(userEntity);
 
-		Cookie cookie = createLoginCookie(userEntity.getAuthenticationToken(), rememberMe);
+		Cookie cookie = createCookie(userEntity.getAuthenticationToken(), rememberMe);
 
 		return createSuccessLoginResponse(userEntity, cookie);
 	}
 
 
-	private Cookie createLoginCookie(String token, boolean rememberMe) {
-		Cookie cookie = new Cookie("Authentication-Token", token);
+	private Cookie createCookie(String token, boolean rememberMe) {
+		Cookie cookie = new Cookie("User-Token", token);
 
 		cookie.setHttpOnly(true);
-		cookie.setDomain(/*EntityConstants.PROTOCOL+*/EntityConstants.NASNAV_DOMAIN);
+		cookie.setDomain(EntityConstants.NASNAV_DOMAIN);
 		cookie.setPath("/");
 
-		if (rememberMe)
-			//TODO: >>> braces for the if condition body
-			//TODO: >>> the validaty should increase to 1 month i guess.
+		if (rememberMe) {
 			//TODO: >>> the validity should be extended when the user uses the token. 
 			//as we don't need a database write each time a request is sent with a token, we can should instead do this extension
 			//if the token is going to expire in < 1/6 of the validity time for example.
@@ -202,7 +202,8 @@ public class SecurityServiceImpl implements SecurityService {
 			//TODO: >>> the extension functionality will need a unit test , but that will need  AUTH_TOKEN_VALIDITY to be variable, so that we 
 			//decrease it to 1 second for example and make Thread.sleep to wait until it becomes nearly invalidated.
 			//which will require it to be in seconds instead of hours as well.
-			cookie.setMaxAge(60 * 60 * EntityConstants.AUTH_TOKEN_VALIDITY);
+			cookie.setMaxAge(EntityConstants.AUTH_TOKEN_VALIDITY);
+		}
 
 		if (config.secureTokens)
 			cookie.setSecure(true);
@@ -266,7 +267,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 
-	//@CacheEvict(allEntries = true, cacheNames = {USER_TOKENS})
+	@CacheEvict(allEntries = true, cacheNames = {USER_TOKENS})
 	public BaseUserEntity updatePostLogin(BaseUserEntity userEntity) throws BusinessException {
 		LocalDateTime currentSignInDate = userEntity.getCurrentSignInDate();
 		userEntity.setLastSignInDate(currentSignInDate);
@@ -288,8 +289,6 @@ public class SecurityServiceImpl implements SecurityService {
 		UserTokensEntity token = new UserTokensEntity();
 		token.setToken(StringUtils.generateUUIDToken());
 		token.setUserEntity(user);
-		//TODO: >>> it is better to let hibernate handle this using @UpdateTimestamp in the entity
-		token.setUpdateTime(LocalDateTime.now());	
 
 		userTokenRepo.save(token);
 
@@ -301,8 +300,6 @@ public class SecurityServiceImpl implements SecurityService {
 		EmployeeUserTokensEntity token = new EmployeeUserTokensEntity();
 		token.setToken(StringUtils.generateUUIDToken());
 		token.setEmployeeUserEntity(user);
-		//TODO: >>> it is better to let hibernate handle this using @UpdateTimestamp in the entity
-		token.setUpdateTime(LocalDateTime.now());
 
 		empUserTokenRepo.save(token);
 

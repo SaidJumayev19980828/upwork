@@ -87,7 +87,7 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
-    public OrganizationResponse updateOrganizationData(@RequestHeader (value = "User-Token") String userToken,
+    public OrganizationResponse updateOrganizationData(@RequestHeader (name = "User-Token", required = false) String userToken,
                                                  @RequestPart("properties") String jsonString,
                                                  @RequestPart(value = "logo", required = false) @Valid MultipartFile file) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
@@ -123,7 +123,7 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "brand", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {"multipart/form-data"})
-    public OrganizationResponse updateBrandData(@RequestHeader (value = "User-Token") String userToken,
+    public OrganizationResponse updateBrandData(@RequestHeader (name = "User-Token", required = false) String userToken,
                                                  @RequestPart("properties") String jsonString,
                                                  @RequestPart(value = "logo", required = false) @Valid MultipartFile logo,
                                                  @RequestPart(value = "banner", required = false) @Valid MultipartFile banner) throws Exception {
@@ -135,7 +135,7 @@ public class OrganizationController {
 
     @DeleteMapping(value = "brand")
     @ResponseStatus(OK)
-    public void deleteBrand(@RequestHeader (value = "User-Token") String userToken,
+    public void deleteBrand(@RequestHeader (name = "User-Token", required = false) String userToken,
                             @RequestParam("brand_id") Long brandId) throws BusinessException {
         brandService.deleteBrand(brandId);
 
@@ -168,7 +168,7 @@ public class OrganizationController {
     @PostMapping(value = "products_feature"
             , produces = MediaType.APPLICATION_JSON_UTF8_VALUE
             , consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ProductFeatureUpdateResponse updateProductFeature(@RequestHeader("User-Token") String token
+    public ProductFeatureUpdateResponse updateProductFeature(@RequestHeader(name = "User-Token", required = false) String token
     		, @RequestBody ProductFeatureUpdateDTO featureDto) throws Exception {
         return orgService.updateProductFeature(featureDto);
     }
@@ -183,7 +183,7 @@ public class OrganizationController {
     @PostMapping(value = "image"
             , produces = MediaType.APPLICATION_JSON_UTF8_VALUE
             , consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ProductImageUpdateResponse updateOrganizationImage(@RequestHeader("User-Token") String token,
+    public ProductImageUpdateResponse updateOrganizationImage(@RequestHeader(name = "User-Token", required = false) String token,
                                                            @RequestPart(value = "image", required = false) @Valid MultipartFile file,
                                                            @RequestPart("properties") @Valid String jsonString) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
@@ -201,7 +201,7 @@ public class OrganizationController {
     })
     @ResponseStatus(HttpStatus.OK)
     @DeleteMapping(value = "image", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public boolean deleteProductImage(@RequestHeader("User-Token") String token,
+    public boolean deleteProductImage(@RequestHeader(name = "User-Token", required = false) String token,
                                       @RequestParam("image_id") @Valid Long imageId) throws BusinessException {
         return  orgService.deleteImage(imageId);
     }
@@ -214,7 +214,7 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "tag", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public TagResponse updateOrganizationTag(@RequestHeader (value = "User-Token") String userToken,
+    public TagResponse updateOrganizationTag(@RequestHeader (name = "User-Token", required = false) String userToken,
                                          @RequestBody TagsDTO tagDTO) throws BusinessException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         tagDTO.setHasCategory(true);
     	TagsEntity tag = categoryService.createOrUpdateTag(tagDTO);
@@ -229,7 +229,7 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @DeleteMapping(value = "tag", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<TagResponse> deleteOrganizationTag(@RequestHeader (value = "User-Token") String userToken,
+    public ResponseEntity<TagResponse> deleteOrganizationTag(@RequestHeader (name = "User-Token", required = false) String userToken,
                                                 @RequestParam (value = "tag_id")Long tagId) throws BusinessException {
         TagResponse tag = categoryService.deleteOrgTag(tagId);
         return new ResponseEntity<TagResponse>(tag, HttpStatus.OK);
@@ -247,7 +247,7 @@ public class OrganizationController {
     })
     @PostMapping(value = "tag/tree", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(OK)
-    public void createTagTree(@RequestHeader (value = "User-Token") String userToken,
+    public void createTagTree(@RequestHeader (name = "User-Token", required = false) String userToken,
                                             @RequestBody TagsTreeCreationDTO tree) throws BusinessException {
         categoryService.createTagTree(tree);
     }
@@ -261,7 +261,7 @@ public class OrganizationController {
     })
     @PostMapping(value = "tag/category")
     @ResponseStatus(OK)
-    public void assignTagsCategory(@RequestHeader (value = "User-Token") String userToken,
+    public void assignTagsCategory(@RequestHeader (name = "User-Token", required = false) String userToken,
                                   @RequestParam("category_id") Long categoryId,
                                   @RequestParam(value = "tags", required = false) List<Long> tagsIds) throws BusinessException {
         categoryService.assignTagsCategory(categoryId, tagsIds);
@@ -275,7 +275,7 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @GetMapping(value = "themes/class", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public List<ThemeClassDTO> getOrgThemeClasses(@RequestHeader (value = "User-Token") String userToken,
+    public List<ThemeClassDTO> getOrgThemeClasses(@RequestHeader (name = "User-Token", required = false) String userToken,
                                                   @RequestParam("org_id") Long orgId) throws Exception {
         return themeService.getOrgThemeClasses(orgId);
     }
@@ -289,7 +289,7 @@ public class OrganizationController {
     })
     @PostMapping(value = "themes/class")
     @ResponseStatus(OK)
-    public void assignOrgThemeClass(@RequestHeader (value = "User-Token") String userToken,
+    public void assignOrgThemeClass(@RequestHeader (name = "User-Token", required = false) String userToken,
                                    @RequestParam("org_id") Long orgId,
                                    @RequestParam(value = "class_id") List<Integer> classIds) throws BusinessException {
         themeService.assignOrgThemeClass(orgId, classIds);
@@ -304,7 +304,7 @@ public class OrganizationController {
     })
     @DeleteMapping(value = "themes/class")
     @ResponseStatus(OK)
-    public void removeOrgThemeClass(@RequestHeader (value = "User-Token") String userToken,
+    public void removeOrgThemeClass(@RequestHeader (name = "User-Token", required = false) String userToken,
                                     @RequestParam("org_id") Long orgId,
                                     @RequestParam(value = "class_id") Integer classId) throws BusinessException {
         themeService.removeOrgThemeClass(orgId, classId);
@@ -319,7 +319,7 @@ public class OrganizationController {
     })
     @PostMapping(value = "themes")
     @ResponseStatus(OK)
-    public void changeOrgTheme(@RequestHeader (value = "User-Token") String userToken,
+    public void changeOrgTheme(@RequestHeader (name = "User-Token", required = false) String userToken,
                                     @RequestBody OrganizationThemesSettingsDTO dto) throws BusinessException {
         themeService.changeOrgTheme(dto);
     }

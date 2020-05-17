@@ -5,8 +5,7 @@ import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
 import static com.nasnav.exceptions.ErrorCodes.UXACTVX0004;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
 import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
-import static com.nasnav.test.commons.TestCommons.TestUserEmail;
-import static com.nasnav.test.commons.TestCommons.json;
+import static com.nasnav.test.commons.TestCommons.*;
 import static java.lang.String.format;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.never;
@@ -17,6 +16,7 @@ import java.time.LocalDateTime;
 
 import javax.annotation.PreDestroy;
 import javax.mail.MessagingException;
+import javax.servlet.http.Cookie;
 
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
@@ -181,7 +181,7 @@ public class UserRegisterTest {
 		OrganizationEntity org = createOrganization();
 
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"name\":\"Ahmed\",\"email\":\"" + TestUserEmail + "\", \"org_id\":" + org.getId() + "}");
+				"{\"name\":\"Ahmed\",\"email\":\"" + TestUserEmail + "\", \"org_id\":" + org.getId() + "}", null);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/register", userJson,
 				UserApiResponse.class);
 		// Delete this user
@@ -197,12 +197,13 @@ public class UserRegisterTest {
 		//create new organization
 		OrganizationEntity org = createOrganization();
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"name\":\"Ahmed\",\"email\":\"" + TestUserEmail + "\", \"org_id\":" + org.getId() + "}");
+				"{\"name\":\"Ahmed\",\"email\":\"" + TestUserEmail + "\", \"org_id\":" + org.getId() + "}", null);
 
 		//create new organization
 		OrganizationEntity newOrg = createOrganization();
 		HttpEntity<Object> userJsonNewOrgId = getHttpEntity(
-				"{\"name\":\"Ahmed\",\"email\":\"" + TestUserEmail + "\", \"org_id\": " + newOrg.getId() + "}");
+				"{\"name\":\"Ahmed\",\"email\":\"" + TestUserEmail + "\", \"org_id\": " + newOrg.getId() + "}",
+				null);
 
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/register", userJson,
 				UserApiResponse.class);
@@ -229,7 +230,7 @@ public class UserRegisterTest {
 
 	public void testSameEmailAndOrgId() {
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 5}");
+				"{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 5}", null);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/register", userJson,
 				UserApiResponse.class);
 		// get userId for deletion after test
@@ -249,7 +250,7 @@ public class UserRegisterTest {
 	
 	@Test
 	public void testInvalidEmailRegistration() {
-		HttpEntity<Object> userJson = getHttpEntity("{\"name\":\"Ahmed\",\"email\":\"Foo.bar.com\"}");
+		HttpEntity<Object> userJson = getHttpEntity("{\"name\":\"Ahmed\",\"email\":\"Foo.bar.com\"}", null);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/register", userJson,
 				UserApiResponse.class);
 		// success should be false
@@ -262,7 +263,7 @@ public class UserRegisterTest {
 	@Test
 	public void testInvalidNameRegistration() {
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"name\":\"Ahmed234#\",\"email\":\"" + TestCommons.TestUserEmail + "\"}");
+				"{\"name\":\"Ahmed234#\",\"email\":\"" + TestCommons.TestUserEmail + "\"}", null);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/register", userJson,
 				UserApiResponse.class);
 		// success should be false
@@ -326,7 +327,7 @@ public class UserRegisterTest {
 		Assert.assertNotEquals("ABCX", token);
 
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\t\n" + "\t\"token\":\"" + token + "\",\n" + "\t\"password\":\"NewPassword\"\n" + "}");
+				"{\t\n" + "\t\"token\":\"" + token + "\",\n" + "\t\"password\":\"NewPassword\"\n" + "}", null);
 
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/recover", userJson,
 				UserApiResponse.class);
@@ -335,7 +336,8 @@ public class UserRegisterTest {
 		Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
 
 		userJson = getHttpEntity(
-				"{\"password\":\"" + "NewPassword" + "\"," + "\"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + " }");
+				"{\"password\":\"" + "NewPassword" + "\"," + "\"email\":\""
+						+ persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + " }", null);
 
 		response = template.postForEntity("/user/login", userJson, UserApiResponse.class);
 
@@ -350,7 +352,7 @@ public class UserRegisterTest {
 
 		getResponseFromGet("/user/recover?email=" + persistentUser.getEmail() + "&org_id=" + organization.getId(), UserApiResponse.class);
 
-		HttpEntity<Object> userJson = getHttpEntity("{\t\n" + "\t\"token\": \"QWER\",, \"password\"}");
+		HttpEntity<Object> userJson = getHttpEntity("{\t\n" + "\t\"token\": \"QWER\",, \"password\"}", null);
 
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/recover", userJson,
 				UserApiResponse.class);
@@ -368,7 +370,7 @@ public class UserRegisterTest {
 		// refresh user
 		persistentUser = (UserEntity) userService.getUserById((long)persistentUser.getId());
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"token\":\"" + persistentUser.getResetPasswordToken() + "\"," + "\"password\":\"123\"}");
+				"{\"token\":\"" + persistentUser.getResetPasswordToken() + "\"," + "\"password\":\"123\"}", null);
 
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/recover", userJson,
 				UserApiResponse.class);
@@ -387,7 +389,7 @@ public class UserRegisterTest {
 
 		HttpEntity<Object> userJson = getHttpEntity(
 				"{\t\n" + "\t\"employee\":false," + "\n\t\"token\":\"" + token + "\",\n" +
-						"\t\"password\":\"password\"\n" + "}");
+						"\t\"password\":\"password\"\n" + "}", null);
 
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/recover", userJson,
 				UserApiResponse.class);
@@ -406,12 +408,41 @@ public class UserRegisterTest {
 
 		// login using the new password
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"password\":\"" + newPassword + "\", \"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + " }");
+				"{\"password\":\"" + newPassword + "\", \"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + " }", null);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
 
 		
 		Assert.assertEquals(200, response.getStatusCode().value());
+		assertTrue(response.getHeaders().get("Set-Cookie").get(0) != null);
+	}
+
+
+
+	@Test
+	public void testUserLogout() {
+		//try to get new password to use it for login
+		String newPassword = "New_Password";
+
+		resetUserPassword(newPassword);
+
+		// login using the new password
+		HttpEntity<Object> userJson = getHttpEntity(
+				"{\"password\":\"" + newPassword + "\", \"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + " }", null);
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
+				UserApiResponse.class);
+
+
+		Assert.assertEquals(200, response.getStatusCode().value());
+		assertTrue(response.getHeaders().get("Set-Cookie").get(0) != null);
+
+
+		//test user logout
+		HttpEntity entity = getHttpEntity(response.getHeaders().get("Set-Cookie").get(0).substring(11,47));
+		response = template.postForEntity("/user/logout", entity, UserApiResponse.class);
+
+		Assert.assertEquals(200, response.getStatusCode().value());
+		System.out.println(response.getHeaders().get("Set-Cookie").get(0));
 	}
 
 
@@ -427,14 +458,15 @@ public class UserRegisterTest {
 		// use token to change password
 		String token = persistentUser.getResetPasswordToken();
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\t\n" + "\t\"token\":\"" + token + "\",\n" + "\t\"password\":\"New_Password\",\n" + "\"employee\": false" +"}");
+				"{\t\n" + "\t\"token\":\"" + token + "\",\n" + "\t\"password\":\"New_Password\",\n" +
+						"\"employee\": false" +"}", null);
 		System.out.println(userJson);
 		template.postForEntity("/user/recover", userJson, UserApiResponse.class);
 
 		// login using the new password
 		userJson = getHttpEntity(
 				"{\"password\":\"" + "New_Password" + "\", \"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +
-						organization.getId() +  "}");
+						organization.getId() +  "}", null);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
 
@@ -454,7 +486,7 @@ public class UserRegisterTest {
 		// login using the new password and email with different character case
 		String email = StringUtils.swapCase(persistentUser.getEmail());
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"password\":\"" + newPassword + "\", \"email\":\"" + email + "\", \"org_id\": " +  organization.getId() + " }");
+				"{\"password\":\"" + newPassword + "\", \"email\":\"" + email + "\", \"org_id\": " +  organization.getId() + " }", null);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
 
@@ -477,7 +509,7 @@ public class UserRegisterTest {
 		request.put("org_id", 99001L);
 		
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login"
-																, getHttpEntity(request.toString())
+																, getHttpEntity(request.toString(), null)
 																, UserApiResponse.class);
 
 		
@@ -493,7 +525,7 @@ public class UserRegisterTest {
 	public void testInvalidCredentialsLogin() {
 
 		HttpEntity<Object> userJson = getHttpEntity("{\t\n" + "\t\"password\":\"" + "Invalid_Password" + "\",\n"
-				+ "\t\"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + "}");
+				+ "\t\"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + "}", null);
 
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
@@ -513,7 +545,7 @@ public class UserRegisterTest {
 
 		// login using the new password
 		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"password\":\"" + newPassword + "\", \"email\":\"" + persistentUser.getEmail() + "\", \"org_id\":null }");
+				"{\"password\":\"" + newPassword + "\", \"email\":\"" + persistentUser.getEmail() + "\", \"org_id\":null }", null);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
 				UserApiResponse.class);
 
@@ -541,14 +573,14 @@ public class UserRegisterTest {
 		// registe new user
 		HttpEntity<Object> userJson = getHttpEntity(
 				"{\"name\":\"" + "Some New Name" + "\"," + "\"email\":\"" + "another_email@nasnav.com"
-						+ "\", \"org_id\": " +  organization.getId() + " }");
+						+ "\", \"org_id\": " +  organization.getId() + " }", null);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/register", userJson,
 				UserApiResponse.class);
 		Long userId = response.getBody().getEntityId();
 
 		// directly login without changing his passwrod
 		userJson = getHttpEntity("{\t\n" + "\t\"password\":\"" + INITIAL_PASSWORD + "\",\n"
-				+ "\t\"email\":\"" + "another_email@nasnav.com" + "\", \"org_id\": " +  organization.getId() + " }");
+				+ "\t\"email\":\"" + "another_email@nasnav.com" + "\", \"org_id\": " +  organization.getId() + " }", null);
 
 		response = template.postForEntity("/user/login", userJson, UserApiResponse.class);
 		// Delete this user
@@ -556,13 +588,6 @@ public class UserRegisterTest {
 		
 		Assert.assertTrue(response.getBody().getResponseStatuses().contains(NEED_ACTIVATION));
 		Assert.assertEquals(HttpStatus.LOCKED.value(), response.getStatusCode().value());
-	}
-	
-
-	private HttpEntity<Object> getHttpEntity(Object body) {
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(APPLICATION_JSON);
-		return new HttpEntity<>(body, headers);
 	}
 
 	private <T> ResponseEntity<T> getResponseFromGet(String URL, Class<T> classRef) {
@@ -590,7 +615,7 @@ public class UserRegisterTest {
 								.toString();
 		
 		// login using the new password
-		HttpEntity<Object> userJson = TestCommons.getHttpEntity(request, "DOESNOT-NEED-TOKEN");
+		HttpEntity<Object> userJson = getHttpEntity(request, "DOESNOT-NEED-TOKEN");
 		ResponseEntity<UserApiResponse> response = 
 				template.postForEntity("/user/login", userJson,	UserApiResponse.class);
 		
@@ -608,7 +633,7 @@ public class UserRegisterTest {
 	public void updateSelfUserTestSuccess() {
 		// update self data test success
 		String body = "{\"name\":\"John Doe\"}";
-		HttpEntity<Object> userJson = TestCommons.getHttpEntity(body, "123");
+		HttpEntity<Object> userJson = getHttpEntity(body, "123");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", userJson, UserApiResponse.class);
 
 		Assert.assertEquals(200, response.getStatusCode().value());
@@ -618,7 +643,7 @@ public class UserRegisterTest {
 	public void updateSelfUserInvalidDataTest() {
 		// update self data test success
 		String body = "{\"name\":\"123\", \"email\":\"gds\"}";
-		HttpEntity<Object> userJson = TestCommons.getHttpEntity(body, "123");
+		HttpEntity<Object> userJson = getHttpEntity(body, "123");
 		ResponseEntity<String> response = template.postForEntity("/user/update", userJson, String.class);
 
 		System.out.println(response.toString());
@@ -652,7 +677,7 @@ public class UserRegisterTest {
 		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
 		
 		JSONObject body = createActivationResendRequest(redirectUrl); 
-		HttpEntity<Object> userJson = getHttpEntity(body.toString());
+		HttpEntity<Object> userJson = getHttpEntity(body.toString(), null);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register/activate/resend", userJson, String.class);
 
 		Assert.assertEquals( 200, response.getStatusCodeValue());
@@ -674,7 +699,7 @@ public class UserRegisterTest {
 		JSONObject body = createActivationResendRequest(redirectUrl); 
 		body.put("email", "no.token.man@nasnav.com");
 		
-		HttpEntity<Object> userJson = getHttpEntity(body.toString());
+		HttpEntity<Object> userJson = getHttpEntity(body.toString(), null);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register/activate/resend", userJson, String.class);
 
 		Assert.assertEquals( 200, response.getStatusCodeValue());
@@ -697,7 +722,7 @@ public class UserRegisterTest {
 		JSONObject body = createActivationResendRequest(redirectUrl); 
 		body.put("email", "no.token.man@nasnav.com");
 		
-		HttpEntity<Object> userJson = getHttpEntity(body.toString());
+		HttpEntity<Object> userJson = getHttpEntity(body.toString(), null);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register/activate/resend", userJson, String.class);
 
 		Assert.assertEquals( 500, response.getStatusCodeValue());
@@ -738,7 +763,7 @@ public class UserRegisterTest {
 
 		body = "{\"name\":\"Ahmad\", \"email\":\"test@nasnav.com\", \"password\":\"password\"," +
 				"\"org_id\": 0, \"confirmation_flag\":true}";
-		userJson = TestCommons.getHttpEntity((Object)body);
+		userJson = getHttpEntity((Object)body);
 		response = template.postForEntity("/user/v2/register", userJson, String.class);
 
 		Assert.assertEquals( 406, response.getStatusCodeValue());
@@ -746,7 +771,7 @@ public class UserRegisterTest {
 
 		body = "{\"name\":\"Ahmad\", \"email\":\"test@nasnav.com\", \"password\":\"password\"," +
 				"\"org_id\": 99001, \"confirmation_flag\":fales}";
-		userJson = TestCommons.getHttpEntity((Object)body);
+		userJson = getHttpEntity((Object)body);
 		response = template.postForEntity("/user/v2/register", userJson, String.class);
 
 		Assert.assertEquals( 406, response.getStatusCodeValue());
@@ -763,7 +788,7 @@ public class UserRegisterTest {
 
 		body = "{\"name\":\"Ahmad\", \"email\":\"test@nasnav.com\", \"password\":\"password\"," +
 				"\"org_id\": null, \"confirmation_flag\":true}";
-		userJson = TestCommons.getHttpEntity((Object)body);
+		userJson = getHttpEntity((Object)body);
 		response = template.postForEntity("/user/v2/register", userJson, String.class);
 
 		Assert.assertEquals( 406, response.getStatusCodeValue());
@@ -774,7 +799,7 @@ public class UserRegisterTest {
 	public void newUserRegisterExistingUserTest() {
 		String body = "{\"name\": \"name\", \"email\":\"user1@nasnav.com\", \"password\":\"password\"," +
 				"\"org_id\": 99001, \"confirmation_flag\":true}";
-		HttpEntity<Object> userJson = TestCommons.getHttpEntity((Object) body);
+		HttpEntity<Object> userJson = getHttpEntity((Object) body);
 		ResponseEntity<String> response = template.postForEntity("/user/v2/register", userJson, String.class);
 		Assert.assertEquals( 406, response.getStatusCodeValue());
 	}
@@ -785,7 +810,7 @@ public class UserRegisterTest {
 		//first create account
 		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
 		String body = createUserRegisterV2Request(redirectUrl).toString();   
-		HttpEntity<Object> userJson = getHttpEntity(body);
+		HttpEntity<Object> userJson = getHttpEntity(body, null);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/v2/register", userJson, UserApiResponse.class);
 		Assert.assertEquals( 201, response.getStatusCodeValue());
 
@@ -812,7 +837,7 @@ public class UserRegisterTest {
 		//first create account
 		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
 		String body = createUserRegisterV2Request(redirectUrl).toString();   
-		HttpEntity<Object> userJson = getHttpEntity(body);
+		HttpEntity<Object> userJson = getHttpEntity(body, null);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/v2/register", userJson, UserApiResponse.class);
 		Assert.assertEquals( 201, response.getStatusCodeValue());
 
@@ -855,7 +880,7 @@ public class UserRegisterTest {
 		//first create account
 		String redirectUrl = "https://nasnav.org/dummy_org/login?redirect=checkout";
 		String body = createUserRegisterV2Request(redirectUrl).toString();  
-		HttpEntity<Object> userJson = getHttpEntity(body);
+		HttpEntity<Object> userJson = getHttpEntity(body, null);
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/v2/register", userJson, UserApiResponse.class);
 		Assert.assertEquals( 201, response.getStatusCodeValue());
 

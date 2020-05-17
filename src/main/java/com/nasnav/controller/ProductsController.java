@@ -136,7 +136,7 @@ public class ProductsController {
 	@GetMapping(value = "images",
             produces = APPLICATION_JSON_UTF8_VALUE)
     public List<ProductImgDetailsDTO> getProductImages(
-    		@RequestHeader (value = "User-Token") String userToken, @RequestParam("product_id") Long productId)
+    		@RequestHeader (name = "User-Token", required = false) String userToken, @RequestParam("product_id") Long productId)
             throws BusinessException {
 
 		return  productImgService.getProductImgs(productId);
@@ -156,7 +156,7 @@ public class ProductsController {
 	@ResponseStatus(HttpStatus.OK)
 	@DeleteMapping(value = "image",
             produces = APPLICATION_JSON_UTF8_VALUE)
-    public ProductImageDeleteResponse deleteProductImage(@RequestHeader("User-Token") String token
+    public ProductImageDeleteResponse deleteProductImage(@RequestHeader(name = "User-Token", required = false) String token
     		,@RequestParam("image_id") @Valid Long imageId)
             		throws BusinessException {
 		return  productImgService.deleteImage(imageId);
@@ -175,7 +175,7 @@ public class ProductsController {
     })
 	@ResponseStatus(OK)
 	@DeleteMapping(value = "image/all")
-    public void deleteAllProductImages(@RequestHeader("User-Token") String token
+    public void deleteAllProductImages(@RequestHeader(name = "User-Token", required = false) String token
     		, @RequestParam(name = "confirmed",defaultValue = "false", required = true) boolean isConfirmed)
             		throws BusinessException {
 		productImgService.deleteAllImages(isConfirmed);
@@ -292,7 +292,7 @@ public class ProductsController {
             produces = APPLICATION_JSON_UTF8_VALUE,
             consumes = MULTIPART_FORM_DATA_VALUE)
     public List<ProductImageUpdateResponse> importProductImagesBulk(
-    		@RequestHeader (value = "User-Token") String userToken,
+    		@RequestHeader (name = "User-Token", required = false) String userToken,
             @RequestPart("imgs_zip") @Valid MultipartFile zip,
             @RequestPart(name="imgs_barcode_csv", required=false )  MultipartFile csv,
             @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData)
@@ -316,7 +316,7 @@ public class ProductsController {
             produces = APPLICATION_JSON_UTF8_VALUE,
             consumes = MULTIPART_FORM_DATA_VALUE)
     public List<ProductImageUpdateResponse> importProductImagesBulkViaUrl(
-    		@RequestHeader (value = "User-Token") String userToken,
+    		@RequestHeader (name = "User-Token", required = false) String userToken,
             @RequestPart(name="imgs_barcode_csv", required=false )  MultipartFile csv,
             @RequestPart("properties") @Valid ProductImageBulkUpdateDTO metaData)
             		throws BusinessException {
@@ -337,7 +337,7 @@ public class ProductsController {
     })
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "tag", consumes = APPLICATION_JSON_UTF8_VALUE)
-    public void updateProductTags(@RequestHeader("User-Token") String token,
+    public void updateProductTags(@RequestHeader(name = "User-Token", required = false) String token,
                                             @RequestBody ProductTagDTO productTagDTO ) throws BusinessException {
         productService.updateProductTags(productTagDTO);
     }
@@ -354,7 +354,7 @@ public class ProductsController {
     })
     @ResponseStatus(OK)
     @DeleteMapping(value = "tag", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public void deleteProductTags(@RequestHeader("User-Token") String token,
+    public void deleteProductTags(@RequestHeader(name = "User-Token", required = false) String token,
                                             @RequestBody ProductTagDTO productTagDTO ) throws BusinessException {
         productService.deleteProductTags(productTagDTO);
     }
@@ -365,7 +365,7 @@ public class ProductsController {
 
     @GetMapping(value = "/image/bulk/template")
     @ResponseBody
-    public ResponseEntity<String> generateCsvTemplate(@RequestHeader("User-Token") String token
+    public ResponseEntity<String> generateCsvTemplate(@RequestHeader(name = "User-Token", required = false) String token
     		, @RequestParam(name="type", required = false) ImageCsvTemplateType type) throws IOException {
         ByteArrayOutputStream s = csvDataExportService.generateImagesCsvTemplate(type);
         return ResponseEntity
@@ -386,7 +386,7 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @DeleteMapping("all")
-    public void deleteAllProducts(@RequestHeader("User-Token") String token
+    public void deleteAllProducts(@RequestHeader(name = "User-Token", required = false) String token
     		, @RequestParam(name = "confirmed",defaultValue = "false", required = true) boolean isConfirmed) throws BusinessException {
     	productService.deleteAllProducts(isConfirmed);
     }
@@ -400,7 +400,7 @@ public class ProductsController {
     })
     @ResponseStatus(OK)
     @PostMapping(value = "hide")
-    public void hideProducts(@RequestHeader("User-Token") String token,
+    public void hideProducts(@RequestHeader(name = "User-Token", required = false) String token,
                              @RequestParam(required = false, defaultValue = "true") Boolean hide) {
         productService.hideProducts(hide);
     }

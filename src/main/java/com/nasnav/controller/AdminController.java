@@ -55,7 +55,7 @@ public class AdminController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @PostMapping(value = "organization", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public OrganizationResponse createOrganization(@RequestHeader (value = "User-Token") String userToken,
+    public OrganizationResponse createOrganization(@RequestHeader (name = "User-Token", required = false) String userToken,
                                              @RequestBody OrganizationDTO.OrganizationCreationDTO json)  throws BusinessException {
 	    return organizationService.createOrganization(json);
     }
@@ -67,7 +67,7 @@ public class AdminController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
 	})
 	@PostMapping(value = "category", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public ResponseEntity<?> createCategory(@RequestHeader (value = "User-Token") String userToken,
+	public ResponseEntity<?> createCategory(@RequestHeader (name = "User-Token", required = false) String userToken,
 	                                     @RequestBody CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
     	if (categoryJson.getOperation() != null)
 			if (categoryJson.getOperation().equals("update"))
@@ -85,7 +85,7 @@ public class AdminController {
 			@io.swagger.annotations.ApiResponse(code = 409, message = "Category is used by other entities"),
 	})
 	@DeleteMapping(value = "category", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public ResponseEntity<?> deleteCategory(@RequestHeader (value = "User-Token") String userToken,
+	public ResponseEntity<?> deleteCategory(@RequestHeader (name = "User-Token", required = false) String userToken,
 	                                     @RequestParam (value = "category_id") Long categoryId ) throws BusinessException {
 		if (categoryId == null ){
 			throw new BusinessException("MISSING_PRARM: Category_id", "",HttpStatus.NOT_ACCEPTABLE);
@@ -100,7 +100,7 @@ public class AdminController {
 			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to list organizations"),
 	})
 	@GetMapping(value = "list_organizations", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public List<OrganizationRepresentationObject> listOrganizations(@RequestHeader (value = "User-Token") String userToken) throws BusinessException {
+	public List<OrganizationRepresentationObject> listOrganizations(@RequestHeader (name = "User-Token", required = false) String userToken) throws BusinessException {
 		return organizationService.listOrganizations();
 	}
 
@@ -113,7 +113,7 @@ public class AdminController {
             @io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to list theme classes"),
     })
     @GetMapping(value = "themes/class", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public List<ThemeClassDTO> listThemeClasses(@RequestHeader (value = "User-Token") String userToken) {
+    public List<ThemeClassDTO> listThemeClasses(@RequestHeader (name = "User-Token", required = false) String userToken) {
         return themeService.listThemeClasses();
     }
     
@@ -125,7 +125,7 @@ public class AdminController {
             @io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to list theme"),
     })
     @GetMapping(value = "themes", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public List<ThemeDTO> listThemes(@RequestHeader (value = "User-Token") String userToken,
+    public List<ThemeDTO> listThemes(@RequestHeader (name = "User-Token", required = false) String userToken,
 									 @RequestParam(value = "class_id", required = false) Integer classId) {
         return themeService.listThemes(classId);
     }
@@ -139,7 +139,7 @@ public class AdminController {
 	})
 	@PostMapping(value = "themes/class", consumes = MediaType.APPLICATION_JSON_VALUE,
 										 produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public ThemeClassResponse updateThemeClass(@RequestHeader (value = "User-Token") String userToken,
+	public ThemeClassResponse updateThemeClass(@RequestHeader (name = "User-Token", required = false) String userToken,
 											   @RequestBody ThemeClassDTO jsonDTO) throws BusinessException {
 		return themeService.updateThemeClass(jsonDTO);
 	}
@@ -153,7 +153,7 @@ public class AdminController {
 	})
 	@PostMapping(value = "themes", consumes = MediaType.APPLICATION_JSON_VALUE,
 			produces = MediaType.APPLICATION_JSON_VALUE)
-	public ThemeResponse updateTheme(@RequestHeader (value = "User-Token") String userToken,
+	public ThemeResponse updateTheme(@RequestHeader (name = "User-Token", required = false) String userToken,
 									 @RequestBody ThemeDTO jsonDTO) throws BusinessException {
 		return themeService.updateTheme(jsonDTO);
 	}
@@ -166,7 +166,7 @@ public class AdminController {
 			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to delete theme class"),
 	})
 	@DeleteMapping(value = "themes/class")
-	public void deleteThemeClass(@RequestHeader (value = "User-Token") String userToken,
+	public void deleteThemeClass(@RequestHeader (name = "User-Token", required = false) String userToken,
 								 @RequestParam Integer id) throws BusinessException {
 		themeService.deleteThemeClass(id);
 	}
@@ -179,7 +179,7 @@ public class AdminController {
 			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to delete theme"),
 	})
 	@DeleteMapping(value = "themes")
-	public void deleteTheme(@RequestHeader (value = "User-Token") String userToken,
+	public void deleteTheme(@RequestHeader (name = "User-Token", required = false) String userToken,
 							@RequestParam String id) throws BusinessException {
 		themeService.deleteTheme(id);
 	}

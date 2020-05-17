@@ -24,7 +24,12 @@ INSERT INTO public.users(id, email,  user_name, authentication_token, organizati
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status, reset_password_token)
     VALUES (88005, 'no.token.man@nasnav.com','not activated but no token','77', 99001, '963', 200, null);
    
-   
+INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (1, '123', now(), 88001);
+INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (2, '456', now(), 88002);
+INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (3, '789', now(), 88003);
+INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (4, '951', now(), 88004);
+INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (5, '77', now(), 88005);
+
 --inserting Employee Users
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password)
 	VALUES (159, 'Walid', 'user2@nasnav.com', 99001, 'nopqrst',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
