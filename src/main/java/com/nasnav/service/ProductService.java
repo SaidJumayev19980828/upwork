@@ -2680,6 +2680,15 @@ public class ProductService {
 
 
 
+	public void includeProductIn360Search(Boolean include, List<Long> productIdsList) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		if (!(productIdsList == null || productIdsList.isEmpty())) {
+			divideToBatches(productIdsList, 500)
+					.forEach(batch -> productRepository.includeProductsIn360Search(batch, include, orgId));
+		}
+	}
+
+
 
 	public void deleteAllTagsForProducts(List<Long> products) {
 		processInBatches(products, 500, productRepository::deleteAllTagsForProducts);

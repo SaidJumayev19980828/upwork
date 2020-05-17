@@ -404,4 +404,19 @@ public class ProductsController {
                              @RequestParam(required = false, defaultValue = "true") Boolean hide) {
         productService.hideProducts(hide);
     }
+
+
+    @ApiOperation(value = "Include/exclude products from 360 search", nickname = "Include/excludeProduct", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Products Included/excluded successfully"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+    })
+    @ResponseStatus(OK)
+    @PostMapping(value = "set_360_search")
+    public void includeProductIn360Search(@RequestHeader("User-Token") String token,
+                             @RequestParam(required = false, defaultValue = "true") Boolean include,
+                             @RequestParam("product_id") List<Long> productIds) {
+        productService.includeProductIn360Search(include, productIds);
+    }
 }

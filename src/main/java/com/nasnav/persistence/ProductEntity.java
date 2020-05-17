@@ -126,6 +126,8 @@ public class ProductEntity {
     @Column(name="hide")
     private boolean hide;
 
+    @Column(name="search_360")
+    private boolean search360;
 
     //TODO : we only need this until the Column PRODUCTS.PRODUCT_TYPE is set as non-null
     public Integer getProductType(){

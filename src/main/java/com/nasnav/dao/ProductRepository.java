@@ -121,7 +121,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
 	@Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
             " from ProductEntity p join ProductVariantsEntity v on p = v.productEntity" +
-            " join StocksEntity s on s.productVariantsEntity = v where s.shopsEntity.id = :shopId" +
+            " join StocksEntity s on s.productVariantsEntity = v" +
+            " where s.shopsEntity.id = :shopId and p.search360 = true " +
             " and (v.barcode like %:name% or p.barcode like %:name% " +
             " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
     List<ThreeSixtyProductsDTO> find360Products(@Param("name") String name, @Param("shopId") Long shopId);
@@ -152,6 +153,15 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	
 	@Query("SELECT product.id from ProductEntity product where product.id in :ids")
 	List<Long> getExistingProductIds(@Param("ids")List<Long> productIds);
+
+
+    @Modifying
+    @Transactional
+    @Query(value = "update Products set search360 = :include where organization_id = :orgId and id in :ids",
+            nativeQuery = true)
+    void includeProductsIn360Search(@Param("ids") List<Long> ids,
+                           @Param("include") Boolean include,
+                           @Param("orgId") Long orgId);
 }
 
 
