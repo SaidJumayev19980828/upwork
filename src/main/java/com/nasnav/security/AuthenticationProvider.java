@@ -28,7 +28,6 @@ public class AuthenticationProvider extends AbstractUserDetailsAuthenticationPro
 
  @Override
  protected void additionalAuthenticationChecks(UserDetails userDetails, UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken) throws AuthenticationException {
-	 //TODO: >>> a full test run will be needed as well.
 	 Object token = usernamePasswordAuthenticationToken.getCredentials();
 	 BaseUserEntity userEntity =  ofNullable(token)
 								   .map(String::valueOf)

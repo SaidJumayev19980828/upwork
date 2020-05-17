@@ -29,8 +29,17 @@ INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (2, '456'
 INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (3, '789', now(), 88003);
 INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (4, '951', now(), 88004);
 INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (5, '77', now(), 88005);
+INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (6, '88', now(), 88005);
+INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (7, '99', now(), 88005);
 
 --inserting Employee Users
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password)
 	VALUES (159, 'Walid', 'user2@nasnav.com', 99001, 'nopqrst',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
 
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1, '101112', now(), 159);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (2, '131415', now(), 159);
+INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (3, '161718', now(), 159);
+
+
+insert into roles(id, name,  organization_id) values(1, 'ORGANIZATION_ADMIN', 99001);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 159, 1);

@@ -7,6 +7,7 @@ import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
 import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.lang.String.format;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -16,8 +17,8 @@ import java.time.LocalDateTime;
 
 import javax.annotation.PreDestroy;
 import javax.mail.MessagingException;
-import javax.servlet.http.Cookie;
 
+import com.nasnav.dto.UserRepresentationObject;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -901,6 +902,73 @@ public class UserRegisterTest {
 	}
 
 
+	@Test
+	public void testGettingSameEmpUserInfoDifferentTokens() {
+		//get user info by auth token 101112
+		HttpEntity entity = getHttpEntity("101112");
+		ResponseEntity<UserRepresentationObject> res = template.exchange("/user/info?is_employee=true",
+									HttpMethod.GET,
+									entity,
+									UserRepresentationObject.class);
+
+		assertEquals(200, res.getStatusCodeValue());
+		assertTrue(res.getBody().getId().equals(159L));
+
+		//another auth token 131415 for the same user
+		entity = getHttpEntity("131415");
+		res = template.exchange("/user/info?is_employee=true",
+				HttpMethod.GET,
+				entity,
+				UserRepresentationObject.class);
+
+		assertEquals(200, res.getStatusCodeValue());
+		assertTrue(res.getBody().getId().equals(159L));
+
+		//another auth token 161718 for the same user
+		entity = getHttpEntity("161718");
+		res = template.exchange("/user/info?is_employee=true",
+				HttpMethod.GET,
+				entity,
+				UserRepresentationObject.class);
+
+		assertEquals(200, res.getStatusCodeValue());
+		assertTrue(res.getBody().getId().equals(159L));
+	}
+
+
+
+	@Test
+	public void testGettingSameUserInfoDifferentTokens() {
+		//get user info by auth token 77
+		HttpEntity entity = getHttpEntity("77");
+		ResponseEntity<UserRepresentationObject> res = template.exchange("/user/info?is_employee=false",
+				HttpMethod.GET,
+				entity,
+				UserRepresentationObject.class);
+
+		assertEquals(200, res.getStatusCodeValue());
+		assertTrue(res.getBody().getId().equals(88005L));
+
+		//another auth token 88 for the same user
+		entity = getHttpEntity("88");
+		res = template.exchange("/user/info?is_employee=false",
+				HttpMethod.GET,
+				entity,
+				UserRepresentationObject.class);
+
+		assertEquals(200, res.getStatusCodeValue());
+		assertTrue(res.getBody().getId().equals(88005L));
+
+		//another auth token 99 for the same user
+		entity = getHttpEntity("99");
+		res = template.exchange("/user/info?is_employee=false",
+				HttpMethod.GET,
+				entity,
+				UserRepresentationObject.class);
+
+		assertEquals(200, res.getStatusCodeValue());
+		assertTrue(res.getBody().getId().equals(88005L));
+	}
 
 
 	private JSONObject createUserRegisterV2Request(String redirectUrl) {
