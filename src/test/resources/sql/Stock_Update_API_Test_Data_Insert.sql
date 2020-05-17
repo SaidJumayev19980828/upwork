@@ -52,11 +52,11 @@ VALUES (71, 'testuser4@nasnav.com', 99001, 'sfsd885d',  100011);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (72, 'testuser5@nasnav.com', 99001, 'esdffeded',  100012);
 
-INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1, '101112', now(), 68);
-INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (2, '131415', now(), 69);
-INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (3, '8874ssd', now(), 70);
-INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (4, 'sfsd885d', now(), 71);
-INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (5, 'esdffeded', now(), 72);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1, '101112', now(), 68, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (2, '131415', now(), 69, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (3, '8874ssd', now(), 70, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (4, 'sfsd885d', now(), 71, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (5, 'esdffeded', now(), 72, null);
 
 
 

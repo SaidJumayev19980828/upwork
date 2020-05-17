@@ -18,9 +18,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import com.nasnav.AppConfig;
-import com.nasnav.dao.EmployeeUserTokenRepository;
 import com.nasnav.dao.UserTokenRepository;
-import com.nasnav.enumerations.UserStatus;
 import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -79,9 +77,6 @@ public class SecurityServiceImpl implements SecurityService {
 	private UserTokenRepository userTokenRepo;
 
 	@Autowired
-	private EmployeeUserTokenRepository empUserTokenRepo;
-
-	@Autowired
 	private AppConfig config;
 
 
@@ -99,11 +94,14 @@ public class SecurityServiceImpl implements SecurityService {
 	//TODO: >>> the cache entry of a specific token should be evicted when logout is called with that specific token.
 	@CacheResult(cacheName = USER_TOKENS)
 	public Optional<BaseUserEntity> getUserByAuthenticationToken(String token) {
-		Optional<BaseUserEntity> user = userTokenRepo.getUserEntityByToken(token);
-		if (user.isPresent())
-			return user;
+		UserTokensEntity userTokens = userTokenRepo.getUserEntityByToken(token);
+		if (userTokens == null)
+			return Optional.empty();
 
-		return empUserTokenRepo.getEmployeeUserEntityByToken(token);
+		if (userTokens.getUserEntity() != null)
+			return ofNullable(userTokens.getUserEntity());
+
+		return ofNullable(userTokens.getEmployeeUserEntity());
 	}
 	
 	
@@ -121,7 +119,6 @@ public class SecurityServiceImpl implements SecurityService {
 	@CacheEvict(allEntries = true, cacheNames = {USER_TOKENS})
 	public UserApiResponse logout(String token) {
 		userTokenRepo.deleteByToken(token);
-		empUserTokenRepo.deleteByToken(token);
 		Cookie c = createCookie(null, true);
 
 		return new ApiResponseBuilder().setCookie(c).setSuccess(true).build();
@@ -273,11 +270,7 @@ public class SecurityServiceImpl implements SecurityService {
 		userEntity.setLastSignInDate(currentSignInDate);
 		userEntity.setCurrentSignInDate(LocalDateTime.now());
 
-		String authToken;
-		if (userEntity instanceof EmployeeUserEntity)
-			authToken = generateEmpUserToken( (EmployeeUserEntity) userEntity);
-		else
-			authToken = generateUserToken( (UserEntity) userEntity);
+		String authToken = generateUserToken(userEntity);
 
 		userEntity.setAuthenticationToken(authToken);
 
@@ -285,23 +278,15 @@ public class SecurityServiceImpl implements SecurityService {
 	}
 
 
-	private String generateUserToken(UserEntity user) {
+	private String generateUserToken(BaseUserEntity user) {
 		UserTokensEntity token = new UserTokensEntity();
 		token.setToken(StringUtils.generateUUIDToken());
-		token.setUserEntity(user);
-
+        if (user instanceof EmployeeUserEntity) {
+            token.setEmployeeUserEntity((EmployeeUserEntity) user);
+        } else {
+            token.setUserEntity((UserEntity) user);
+        }
 		userTokenRepo.save(token);
-
-		return token.getToken();
-	}
-
-
-	private String generateEmpUserToken(EmployeeUserEntity user) {
-		EmployeeUserTokensEntity token = new EmployeeUserTokensEntity();
-		token.setToken(StringUtils.generateUUIDToken());
-		token.setEmployeeUserEntity(user);
-
-		empUserTokenRepo.save(token);
 
 		return token.getToken();
 	}

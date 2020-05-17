@@ -27,7 +27,7 @@ INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (502, 'sho
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
     VALUES (88, 'user1@nasnav.com','user1','123', 99001);
 
-INSERT INTO public.user_tokens(id, token, update_time, user_id) VALUES (1, '123', now(), 88);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (6, '123', now(), null, 88);
 
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502);
@@ -40,11 +40,11 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (158, 'testuser3@nasnav.com', 99002, '222324',  501);
 
-INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (1, '101112', now(), 68);
-INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (2, '131415', now(), 69);
-INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (3, '161718', now(), 70);
-INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (4, '192021', now(), 71);
-INSERT INTO public.emp_user_tokens(id, token, update_time, user_id) VALUES (5, '222324', now(), 158);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1, '101112', now(), 68, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (2, '131415', now(), 69, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (3, '161718', now(), 70, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (4, '192021', now(), 71, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (5, '222324', now(), 158, null);
 
 --inserting Roles
 insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);

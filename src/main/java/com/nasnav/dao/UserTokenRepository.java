@@ -18,6 +18,8 @@ public interface UserTokenRepository extends CrudRepository<UserTokensEntity, Lo
     @Modifying
     void deleteByToken(String token);
 
-    @Query("select u from UserEntity u join UserTokensEntity t on t.userEntity = u where t.token = :token")
-    Optional<BaseUserEntity> getUserEntityByToken(@Param("token") String token);
+    @Query("select t from UserTokensEntity t left join fetch t.userEntity left join fetch t.employeeUserEntity" +
+            " where t.token = :token")
+    UserTokensEntity getUserEntityByToken(@Param("token") String token);
+
 }
