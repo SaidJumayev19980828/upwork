@@ -6,6 +6,7 @@ import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -157,6 +158,9 @@ public class DataImportApiTest {
 	
 	@Value("classpath:/files/product__list_upate.csv")
 	private Resource csvFileUpdate;
+	
+	@Value("classpath:/files/product__list_upate_null_features.csv")
+	private Resource csvFileUpdateNullFeatures;
 	
 	
 	@Value("classpath:/files/product__list_multitag_upate.csv")
@@ -816,6 +820,37 @@ public class DataImportApiTest {
 	
 	
 	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_5.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void uploadProductCSVUpdateNullFeaturesTest() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", true);
+		importProperties.put("update_stocks", true);
+        
+		ProductDataCount before = countProductData();			
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdateNullFeatures, importProperties);
+		
+		result.andExpect(status().is(200));
+		
+		ProductDataCount after = countProductData();		
+		assertExpectedRowNumInserted(before, after, 0);         
+
+		assertDataSavedWithoutUpdatingProductFeatures();     
+        
+        ImportProductContext report = readImportReport(result);
+        assertEquals(1, report.getUpdatedProducts().size());
+        assertTrue(report.getErrors().isEmpty());
+	}
+	
+	
+	
+	
+	
+	
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_3.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
@@ -848,6 +883,15 @@ public class DataImportApiTest {
         assertProductDataImported(TEST_UPDATE_SHOP, expected);
         assertProductUpdatedDataSavedWithStock();
 	}
+	
+	
+	
+	private void assertDataSavedWithoutUpdatingProductFeatures() {
+		ExpectedSavedData expected = getExpectedUpdatedDataWithNullFeatures();
+        assertProductDataImported(TEST_UPDATE_SHOP, expected);
+        assertProductUpdatedDataSavedWithStock();
+	}
+	
 
 
 
@@ -1452,7 +1496,7 @@ public class DataImportApiTest {
 		return variants
 				.stream()
 				.map(jsonStringGetter)
-				.filter(jsonStr -> jsonStr != null && !jsonStr.equals("{}"))
+				.filter(jsonStr -> jsonStr != null)
 				.map(JSONObject::new)
 				.allMatch(json -> expectedSpecs.stream().anyMatch(expected -> expected.similar(json)));
 	}
@@ -1622,6 +1666,32 @@ public class DataImportApiTest {
 	
 	
 	
+	
+	private ExpectedSavedData getExpectedUpdatedDataWithNullFeatures() {
+		ExpectedSavedData data = new ExpectedSavedData();		
+
+		data.setQuantities( setOf(101) );
+		data.setPrices( setOf(new BigDecimal("10.25")));
+		data.setCurrencies( setOf(EGP));
+		
+		data.setBarcodes( setOf("TT232222") );
+		data.setProductNames( setOf("Squishy shoes") );
+		data.setVariantsPNames(setOf("u_shoe") );
+		data.setProductPNames(setOf("u_shoe") );
+		data.setDescriptions( setOf("squishy") );
+		data.setTags( setOf("squishy things") );
+		data.setBrands( setOf(101L) );
+		data.setFeatureSpecs(  createExpectedNonChangedFeautreSpec());
+		data.setExtraAttributes( emptySet());
+		data.setStocksNum(1);
+		
+		return data;
+	}
+	
+	
+	
+	
+	
 	private ExpectedSavedData getExpectedUpdatedDataForMultipleTags() {
 		ExpectedSavedData data = new ExpectedSavedData();		
 
@@ -1699,6 +1769,16 @@ public class DataImportApiTest {
 		JSONObject spec1 = createFeatureSpec("XXL", "Lettuce Heart");
 		JSONObject spec2 = createFeatureSpec("M", "Fo7loqy");
 		specs.addAll( asList(spec1,spec2));
+		return specs;
+	}
+	
+	
+	
+	
+	private Set<JSONObject> createExpectedNonChangedFeautreSpec() {
+		Set<JSONObject> specs = new HashSet<>();
+		JSONObject spec1 = createFeatureSpec("6XL", "purple");
+		specs.addAll( asList(spec1));
 		return specs;
 	}
 	
@@ -1923,6 +2003,7 @@ class ExpectedSavedData{
 	
 	public ExpectedSavedData() {
 		extraAttributes = new HashSet<>();
+		extraAttributes.add(new JSONObject());
 		featureSpecs = new HashSet<>();
 		featureSpecs.add(new JSONObject("{}") );
 	}
@@ -1942,6 +2023,11 @@ class ExpectedSavedData{
 		if(this.variantDescriptions == null) {
 			this.variantDescriptions = descriptions;
 		}
+	}
+	
+	
+	public void setExtraAttributes(Set<JSONObject> extraAttributes) {
+		this.extraAttributes.addAll(extraAttributes);
 	}
 }
 

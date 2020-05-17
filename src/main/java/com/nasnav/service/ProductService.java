@@ -2148,7 +2148,10 @@ public class ProductService {
 
 		validateVariantExists(variant, cache);
 		validateUserCanUpdateVariant(variant, cache);
-		validateFeatures(variant, cache);
+		if(variant.isUpdated("features") ) {
+			validateFeatures(variant, cache);
+		}
+		
 	}
 
 
@@ -2223,7 +2226,7 @@ public class ProductService {
 	private void validateFeatures(VariantUpdateDTO variant, VariantUpdateCache cache) throws BusinessException {
 		Long userOrgId = securityService.getCurrentUserOrganizationId();
 		String features = variant.getFeatures();
-		if(variant.isUpdated("features") && isBlankOrNull( features )) {
+		if(isBlankOrNull( features )) {
 			throw new BusinessException(
 					"Invalid parameters [features], the product variant features can't be null nor Empty!"
 					, "INVALID PARAM:features"

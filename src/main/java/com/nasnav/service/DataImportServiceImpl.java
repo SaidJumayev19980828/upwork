@@ -6,6 +6,7 @@ import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
+import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.EntityConstants.Operation.UPDATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_BRAND_NAME_NOT_EXIST;
@@ -1016,7 +1017,6 @@ public class DataImportServiceImpl implements DataImportService {
         VariantDTOWithExternalIdAndStock variant = new VariantDTOWithExternalIdAndStock();
         variant.setVariantId(row.getVariantId());
         variant.setBarcode(row.getBarcode());
-        variant.setFeatures("{}");
         variant.setDescription(row.getDescription());
         variant.setName(row.getName());
         variant.setOperation(EntityConstants.Operation.CREATE);
@@ -1024,18 +1024,20 @@ public class DataImportServiceImpl implements DataImportService {
         variant.setExternalId(row.getExternalId());
         variant.setStock(variantStock);
         variant.setProductId(product.getProductId());
-        if (features != null) {
-            variant.setFeatures(features);
-        }
+        
         if(extraAtrributes != null) {
         	variant.setExtraAttr(extraAtrributes);
         }
         
-        cachingHelper
-        .getVariantFromCache(toVariantIdentifier(row), cache.getVariantsCache())
-        .ifPresent(variantEntity -> {
-        	setVariantDtoAsUpdated(variant, variantEntity);
-        });
+        Optional<VariantBasicData> variantBasicData = 
+        		cachingHelper
+        		.getVariantFromCache(toVariantIdentifier(row), cache.getVariantsCache());
+        if(variantBasicData.isPresent()){
+        	setVariantDtoAsUpdated(variant, variantBasicData.get(), features);
+        }else {
+        	String newVariantFeatures = isNotBlankOrNull(features)? features : "{}";
+        	variant.setFeatures(newVariantFeatures);
+        }
 
         return variant;
     }
@@ -1044,10 +1046,13 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-	private void setVariantDtoAsUpdated(VariantDTOWithExternalIdAndStock variant, VariantBasicData variantEntity) {
+	private void setVariantDtoAsUpdated(VariantDTOWithExternalIdAndStock variant, VariantBasicData variantEntity, String features) {
 		variant.setVariantId(variantEntity.getVariantId());
 		variant.setOperation(EntityConstants.Operation.UPDATE);
 		variant.getStock().setVariantId(variantEntity.getVariantId());
+		if (isNotBlankOrNull(features)) {
+            variant.setFeatures(features);	//features are updated only if they are passed to setFeatures in the DTO
+        }
 	}
 
 
@@ -1068,6 +1073,7 @@ public class DataImportServiceImpl implements DataImportService {
 	private String getFeaturesAsJsonString(ProductImportDTO row, Map<String, String> featureNameToIdMapping) {
 		return ofNullable(row.getFeatures())
 				.map(map -> toFeaturesIdToValueMap(map, featureNameToIdMapping))
+				.filter(map -> !map.isEmpty())	//if no features are provided, return null 
 				.map(JSONObject::new)
 				.map(JSONObject::toString)
 				.orElse(null);
