@@ -58,9 +58,10 @@ public class CachingConfig extends CachingConfigurerSupport{
     		);
  
        
-    private static final Long HEAP_SIZE = 100L;
+    private static final Long HEAP_SIZE = 16384L;
     private static final Long TIME_TO_LIVE_MIN = 30L;
     public static final int MAX_CACHED_OBJECT_SIZE_MB = 4;
+    public static final int MAX_OFF_HEAP_SIZE_MB = 512;
     
     
     
@@ -78,7 +79,7 @@ public class CachingConfig extends CachingConfigurerSupport{
     private CacheManager createInMemoryCacheManager() {
 
         CacheConfiguration<?,?> defaultCacheConfig = 
-        		newCacheConfigurationBuilder(Object.class, Object.class, heap(HEAP_SIZE).offheap(1, MB))
+        		newCacheConfigurationBuilder(Object.class, Object.class, heap(HEAP_SIZE).offheap(MAX_OFF_HEAP_SIZE_MB, MB))
         		.withValueSerializer(KryoSerializer.class)
         		.withExpiry( timeToLiveExpiration(ofMinutes(TIME_TO_LIVE_MIN)) )  
         		.withSizeOfMaxObjectSize(MAX_CACHED_OBJECT_SIZE_MB, MB)
