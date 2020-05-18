@@ -15,7 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.util.MultiValueMap;
 
 public class TestCommons {
-	private static final String PROPERTIES_FILE_PATH = "database.properties";
+	private static final String PROPERTIES_FILE_PATH = "test.database.properties";
 	
 
     public static String BaseURL = "";

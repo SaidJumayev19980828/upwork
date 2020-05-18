@@ -39,7 +39,7 @@ import com.nasnav.test.commons.TestCommons;
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @AutoConfigureMockMvc
-@PropertySource("classpath:database.properties")
+@PropertySource("classpath:test.database.properties")
 public class OrganizationImageApiTest {
 
     @Value("classpath:test_imgs_to_upload/nasnav--Test_Photo_UPDATED.png")
