@@ -157,7 +157,7 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
     @Modifying
     @Transactional
-    @Query(value = "update Products set search360 = :include where organization_id = :orgId and id in :ids",
+    @Query(value = "update Products set search_360 = :include where organization_id = :orgId and id in :ids",
             nativeQuery = true)
     void includeProductsIn360Search(@Param("ids") List<Long> ids,
                            @Param("include") Boolean include,

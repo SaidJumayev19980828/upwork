@@ -85,6 +85,9 @@ public class ShopThreeSixtyService {
     private ProductImageService productImageService;
 
     @Autowired
+    private CategoriesRepository categoriesRepo;
+
+    @Autowired
     private FileService fileSvc;
 
     public String getShop360JsonInfo(Long shopId, String type, Boolean publish) {
@@ -548,7 +551,8 @@ public class ShopThreeSixtyService {
     }
 
     private List<TagsRepresentationObject> getTagsList(String name, Long orgId) {
-        return tagsRepo.findByNameContainingAndOrganizationEntity_Id(name, orgId)
+        Long categoryId = categoriesRepo.findByName("COLLECTION");
+        return tagsRepo.findByNameAndOrganizationIdAndCategoryId(name.toLowerCase(), orgId, categoryId)
                 .stream()
                 .map(t -> (TagsRepresentationObject) t.getRepresentation())
                 .collect(Collectors.toList());

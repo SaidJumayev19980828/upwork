@@ -54,7 +54,10 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
     List<ProductTagsBasicData> getTagsByProductIdIn(@Param("productIds")List<Long> productIds);
 
 
-    List<TagsEntity> findByNameContainingAndOrganizationEntity_Id(String name, Long orgId);
+    @Query("select t from TagsEntity t where LOWER(t.name) like %:name% and t.organizationEntity.id = :orgId and t.categoriesEntity.id = :categoryId ")
+    List<TagsEntity> findByNameAndOrganizationIdAndCategoryId(@Param("name") String name,
+                                                              @Param("orgId") Long orgId,
+                                                              @Param("categoryId") Long categoryId);
     
     @Query("SELECT tag.id from TagsEntity tag where tag.id in :ids")
     List<Long> getExistingTagIds(@Param("ids") List<Long> tagIds);

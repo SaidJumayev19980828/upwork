@@ -1,4 +1,5 @@
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.lang.Math.random;
 import static java.lang.String.format;
 import static junit.framework.TestCase.assertEquals;
@@ -25,6 +26,7 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
@@ -949,6 +951,31 @@ public class ProductServiceTest {
 	}
 
 
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void setProducts360Search() {
+		// include products in search 360
+
+		HttpEntity req = getHttpEntity("131415");
+		//-----------------------------------------
+		ResponseEntity<String> response = template.postForEntity(
+				"/product/set_360_search?include=true&product_id=1002&product_id=1006",
+				req, String.class);
+		//-----------------------------------------
+		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(true, productRepository.findById(1002L).get().isSearch360());
+		assertEquals(true, productRepository.findById(1002L).get().isSearch360());
+
+		//exclude the above included products
+		response = template.postForEntity(
+				"/product/set_360_search?include=false&product_id=1002&product_id=1006",
+				req, String.class);
+		//-----------------------------------------
+		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(false, productRepository.findById(1002L).get().isSearch360());
+		assertEquals(false, productRepository.findById(1002L).get().isSearch360());
+	}
 }
 
 
