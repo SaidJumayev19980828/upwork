@@ -42,7 +42,7 @@ import net.jcip.annotations.NotThreadSafe;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-@PropertySource("classpath:database.properties")
+@PropertySource("classpath:test.database.properties")
 @NotThreadSafe
 @DirtiesContext
 @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Integration_Error_Api_Test_Data_Insert.sql"})

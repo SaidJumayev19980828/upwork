@@ -26,7 +26,7 @@ import org.springframework.core.io.ClassPathResource;
 public class TestEnvironmentInitializer extends RunListener {
 	
 	private static final String TABLE_STATS_QUERY = "SELECT relname as table_name,n_live_tup row_count FROM pg_stat_user_tables ORDER BY n_live_tup DESC";
-	private final String PROPERTIES_FILE_PATH = "database.properties";
+	private final String PROPERTIES_FILE_PATH = "test.database.properties";
 	private final String CLEAN_DB_SCRIPT = "/sql/database_cleanup.sql";
 
 	private Logger logger = Logger.getLogger(getClass());

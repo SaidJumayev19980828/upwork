@@ -88,7 +88,7 @@ import net.jcip.annotations.NotThreadSafe;
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @AutoConfigureMockMvc
-@PropertySource("classpath:database.properties")
+@PropertySource("classpath:test.database.properties")
 @NotThreadSafe 
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})

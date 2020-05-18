@@ -39,7 +39,7 @@ import com.nasnav.test.commons.TestCommons;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-@PropertySource("classpath:database.properties")
+@PropertySource("classpath:test.database.properties")
 public class OrganizationManagmentTest {
     @Value("classpath:sql/Organization_Test_Data_Insert.sql")
     private Resource organizationsDataInsert;

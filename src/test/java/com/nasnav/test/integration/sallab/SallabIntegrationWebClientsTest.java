@@ -53,7 +53,7 @@ import net.jodah.concurrentunit.Waiter;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@PropertySource("classpath:database.properties")
+@PropertySource("classpath:test.database.properties")
 @AutoConfigureWebTestClient
 @DirtiesContext
 public class SallabIntegrationWebClientsTest {

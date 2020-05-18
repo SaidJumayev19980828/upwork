@@ -65,7 +65,7 @@ import net.jcip.annotations.NotThreadSafe;
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @AutoConfigureMockMvc 
-@PropertySource("classpath:database.properties")
+@PropertySource("classpath:test.database.properties")
 @ContextConfiguration(initializers = BaseDirInitialzer.class) //overrides the property "files.basepath" to use temp dir 
 @NotThreadSafe
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD) //creates a new context with new temp dir for each test method
