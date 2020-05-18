@@ -49,13 +49,13 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (158, 'testuser3@nasnav.com', 99002, '222324',  506);
 
-INSERT INTO public.user_tokens(id, token, update_time, emp_user_id,user_id) VALUES (103, '101112', now(), 68, null);
-INSERT INTO public.user_tokens(id, token, update_time, emp_user_id,user_id) VALUES (104, '131415', now(), 69, null);
-INSERT INTO public.user_tokens(id, token, update_time, emp_user_id,user_id) VALUES (105, '161718', now(), 70, null);
-INSERT INTO public.user_tokens(id, token, update_time, emp_user_id,user_id) VALUES (106, '192021', now(), 71, null);
-INSERT INTO public.user_tokens(id, token, update_time, emp_user_id,user_id) VALUES (107, 'sdrf8s', now(), 72, null);
-INSERT INTO public.user_tokens(id, token, update_time, emp_user_id,user_id) VALUES (108, 'sdfe47', now(), 73, null);
-INSERT INTO public.user_tokens(id, token, update_time, emp_user_id,user_id) VALUES (109, '222324', now(), 158, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (103, '101112', now(), 68, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (104, '131415', now(), 69, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (105, '161718', now(), 70, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (106, '192021', now(), 71, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (107, 'sdrf8s', now(), 72, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (108, 'sdfe47', now(), 73, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (109, '222324', now(), 158, null);
 --inserting Roles
 insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
 insert into public.roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);

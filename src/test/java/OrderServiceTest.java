@@ -1758,9 +1758,7 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql","/sql/Orders_Test_Data_Insert_3.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void updateOrderDeliveryAddressStatusNew() {
-		BasketItemDTO itemDTO = new BasketItemDTO(601L, 1, "KG");
-		List<BasketItemDTO> basket = new ArrayList<>();
-		basket.add(itemDTO);
+		JSONArray basket = createBasket( new Item(601L, 1));
 
 		String body = json().put("order_id",330033)
 							.put("delivery_address", "new address")
@@ -1788,7 +1786,7 @@ public class OrderServiceTest {
 				.put("basket",basket)
 				.put("status", "CLIENT_CANCELLED").toString();
 
-		HttpEntity request = getHttpEntity(body, "789");
+		HttpEntity<?> request = getHttpEntity(body, "789");
 		ResponseEntity<OrderResponse> res = template.postForEntity("/order/update", request, OrderResponse.class);
 		assertEquals(200, res.getStatusCodeValue());
 		OrdersEntity order = orderRepository.findById(330033).get();
