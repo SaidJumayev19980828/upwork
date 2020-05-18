@@ -1,8 +1,18 @@
 package com.nasnav.test.commons;
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpHeaders.SET_COOKIE;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
+
+import javax.servlet.http.Cookie;
 
 import org.jdbi.v3.core.Jdbi;
 import org.json.JSONArray;
@@ -13,6 +23,7 @@ import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 
 public class TestCommons {
@@ -55,7 +66,7 @@ public class TestCommons {
         return headers;
     }
 
-    public static HttpEntity<Object> getHttpEntity(MultiValueMap json, String authToken, MediaType type) {
+    public static HttpEntity<Object> getHttpEntity(MultiValueMap<?, ?> json, String authToken, MediaType type) {
         HttpHeaders headers = getHeaders(authToken);
         headers.setContentType(type);
         return new HttpEntity<>(json, headers);
@@ -118,4 +129,30 @@ public class TestCommons {
     public static String readResource(Resource resource) throws IOException {
     	return new String( Files.readAllBytes(resource.getFile().toPath()) );
     }
+    
+    
+    
+    public static Optional<String> extractAuthTokenFromCookies(ResponseEntity<?> response) {
+		return 
+			ofNullable(response)
+			.map(ResponseEntity::getHeaders)
+			.map(headers -> headers.getFirst(SET_COOKIE))						
+			.map(TestCommons::readCookie)
+			.filter(cookie -> Objects.equals(cookie.get().getName(), TOKEN_HEADER))
+			.map(Optional::get)
+			.map(Cookie::getValue);
+	}
+
+
+	
+	private static Optional<Cookie> readCookie(String cookieStr){
+		return ofNullable(cookieStr)
+				.map(allCookieStr -> asList(allCookieStr.split(";")))
+				.orElse(emptyList())
+				.stream()
+				.map(cookieField -> cookieField.trim().split("="))
+				.filter(parts -> parts.length == 2)
+				.map(parts -> new Cookie(parts[0], parts[1]))
+				.findFirst();
+	}
 }

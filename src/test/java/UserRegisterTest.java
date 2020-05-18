@@ -2,23 +2,38 @@ import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJ
 import static com.nasnav.constatnts.EntityConstants.INITIAL_PASSWORD;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
-import static com.nasnav.exceptions.ErrorCodes.UXACTVX0004;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
+import static com.nasnav.response.ResponseStatus.EMAIL_EXISTS;
+import static com.nasnav.response.ResponseStatus.EMAIL_NOT_EXIST;
+import static com.nasnav.response.ResponseStatus.EXPIRED_TOKEN;
+import static com.nasnav.response.ResponseStatus.INVALID_EMAIL;
+import static com.nasnav.response.ResponseStatus.INVALID_NAME;
+import static com.nasnav.response.ResponseStatus.INVALID_PARAMETERS;
+import static com.nasnav.response.ResponseStatus.INVALID_PASSWORD;
 import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
-import static com.nasnav.test.commons.TestCommons.*;
+import static com.nasnav.test.commons.TestCommons.TestUserEmail;
+import static com.nasnav.test.commons.TestCommons.extractAuthTokenFromCookies;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.never;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import javax.annotation.PreDestroy;
 import javax.mail.MessagingException;
 
-import com.nasnav.dto.UserRepresentationObject;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -52,8 +67,11 @@ import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.controller.UserController;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.UserRepository;
+import com.nasnav.dao.UserTokenRepository;
+import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.MailService;
@@ -97,6 +115,9 @@ public class UserRegisterTest {
 	
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+	
+	@Autowired
+	private UserTokenRepository userTokenRepo;
 	
 	
 	@MockBean
@@ -229,6 +250,8 @@ public class UserRegisterTest {
 		organizationRepository.delete(newOrg);
 	}
 
+	
+	
 	public void testSameEmailAndOrgId() {
 		HttpEntity<Object> userJson = getHttpEntity(
 				"{\"name\":\"Ahmed\",\"email\":\"" + TestCommons.TestUserEmail + "\", \"org_id\": 5}", null);
@@ -242,12 +265,16 @@ public class UserRegisterTest {
 		
 		// response status should contain EMAIL_EXISTS
 		System.out.println(response.getBody());
-		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.EMAIL_EXISTS));
+		Assert.assertTrue(response.getBody().getResponseStatuses().contains(EMAIL_EXISTS));
 		Assert.assertEquals(406, response.getStatusCode().value());
 		// Delete this user
 		userService.deleteUser(userId);
 	}
 
+	
+	
+	
+	
 	
 	@Test
 	public void testInvalidEmailRegistration() {
@@ -257,10 +284,13 @@ public class UserRegisterTest {
 		// success should be false
 		
 		// response status should contain INVALID_EMAIL
-		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_EMAIL));
+		Assert.assertTrue(response.getBody().getResponseStatuses().contains(INVALID_EMAIL));
 		Assert.assertEquals(406, response.getStatusCode().value());
 	}
 
+	
+	
+	
 	@Test
 	public void testInvalidNameRegistration() {
 		HttpEntity<Object> userJson = getHttpEntity(
@@ -270,10 +300,14 @@ public class UserRegisterTest {
 		// success should be false
 		
 		// response status should contain INVALID_NAME
-		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_NAME));
+		Assert.assertTrue(response.getBody().getResponseStatuses().contains(INVALID_NAME));
 		Assert.assertEquals(406, response.getStatusCode().value());
 	}
 
+	
+	
+	
+	
 	@Test
 	public void testInvalidJsonForUserRegisteration() {
 		HttpEntity<Object> userJson = getHttpEntity("{,,}");
@@ -285,35 +319,50 @@ public class UserRegisterTest {
 	}
 
 	
+	
+	
 
 	@Test
 	public void testSendResetPasswordTokenForInvalidMail() {
 		ResponseEntity<UserApiResponse> response = getResponseFromGet("/user/recover?email=foo&org_id=" +
 				organization.getId() + "&employee=false", UserApiResponse.class);
         System.out.println("###############" + response.getBody().getMessages());
-		Assert.assertTrue(response.getBody().getMessages().contains(ResponseStatus.INVALID_EMAIL.name()));
+		Assert.assertTrue(response.getBody().getMessages().contains(INVALID_EMAIL.name()));
 		
-		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
+	
+	
+	
+	
 	@Test
 	public void testSendResetPasswordTokenForValidButFakeMail() {
 		ResponseEntity<UserApiResponse> response = getResponseFromGet("/user/recover?email=foo@foo.foo&org_id=" +
 						organization.getId() + "&employee=false",
 				UserApiResponse.class);
-		Assert.assertTrue(response.getBody().getMessages().contains(ResponseStatus.EMAIL_NOT_EXIST.name()));
+		Assert.assertTrue(response.getBody().getMessages().contains(EMAIL_NOT_EXIST.name()));
 		
-		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
+	
+	
+	
+	
 	@Test
 	public void testSendResetPasswordTokenForNoPassedMail() {
 		ResponseEntity<UserApiResponse> response = getResponseFromGet("/user/recover?email=&org_id=12&employee=false", UserApiResponse.class);
-		Assert.assertTrue(response.getBody().getMessages().contains(ResponseStatus.INVALID_EMAIL.name()));
+		Assert.assertTrue(response.getBody().getMessages().contains(INVALID_EMAIL.name()));
 		
-		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
+	
+	
+	
+	
+	
 	@Test
 	public void testPasswordShouldBeReset() {
 
@@ -334,7 +383,7 @@ public class UserRegisterTest {
 				UserApiResponse.class);
 
 		
-		Assert.assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
+		Assert.assertEquals(OK.value(), response.getStatusCode().value());
 
 		userJson = getHttpEntity(
 				"{\"password\":\"" + "NewPassword" + "\"," + "\"email\":\""
@@ -359,10 +408,14 @@ public class UserRegisterTest {
 				UserApiResponse.class);
 
 		
-		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_PARAMETERS));
-		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+		Assert.assertTrue(response.getBody().getResponseStatuses().contains(INVALID_PARAMETERS));
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
+	
+	
+	
+	
 	@Test
 	public void testSetInvalidPassword() {
 
@@ -377,10 +430,13 @@ public class UserRegisterTest {
 				UserApiResponse.class);
 
 		
-		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_PASSWORD));
-		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+		Assert.assertTrue(response.getBody().getResponseStatuses().contains(INVALID_PASSWORD));
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
+	
+	
+	
 	@Test
 	public void testExpiredToken() {
 		persistentUser.setResetPasswordSentAt(LocalDateTime.now().minusHours(EntityConstants.TOKEN_VALIDITY + 1));
@@ -396,54 +452,107 @@ public class UserRegisterTest {
 				UserApiResponse.class);
 
 		
-		Assert.assertTrue(response.getBody().getResponseStatuses().contains(ResponseStatus.EXPIRED_TOKEN));
-		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+		Assert.assertTrue(response.getBody().getResponseStatuses().contains(EXPIRED_TOKEN));
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 
+	
+	
 	@Test
 	public void testUserShouldLogin() {
 		//try to get new password to use it for login
-		String newPassword = "New_Password"; 
-		
+		String newPassword = "New_Password"; 		
 		resetUserPassword(newPassword);
-
-		// login using the new password
-		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"password\":\"" + newPassword + "\", \"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + " }", null);
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
-				UserApiResponse.class);
-
+		
+		String request = createLoginJson(newPassword);		
+		HttpEntity<Object> userJson = getHttpEntity(request, null);
+		
+		//---------------------------------------------------------------------
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson, UserApiResponse.class);
+		
+		Optional<String> login1Token = extractAuthTokenFromCookies(response);
 		
 		Assert.assertEquals(200, response.getStatusCode().value());
 		assertTrue(response.getHeaders().get("Set-Cookie").get(0) != null);
+		assertTrue(login1Token.isPresent());
+		
+		//---------------------------------------------------------------------
+		ResponseEntity<UserApiResponse> response2 = template.postForEntity("/user/login", userJson, UserApiResponse.class);
+		
+		Optional<String> login2Token = extractAuthTokenFromCookies(response2);
+		
+		Assert.assertEquals(200, response2.getStatusCode().value());
+		assertTrue(response2.getHeaders().get("Set-Cookie").get(0) != null);
+		assertTrue(login2Token.isPresent());
+		
+		//---------------------------------------------------------------------
+		assertNotEquals(login1Token.get(), login2Token.get());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void testUsingExpiredToken() {
+		ResponseEntity<String> response = template.exchange("/admin/list_organizations", GET, getHttpEntity("", "889966"), String.class);
+        Assert.assertEquals(401, response.getStatusCodeValue());
 	}
 
 
+	
+
+
+	private String createLoginJson(String newPassword) {
+		return json()
+				.put("password", newPassword)
+				.put("email", persistentUser.getEmail())
+				.put("org_id", organization.getId())
+				.toString();
+	}
+
+
+	
 
 	@Test
 	public void testUserLogout() {
-		//try to get new password to use it for login
-		String newPassword = "New_Password";
-
-		resetUserPassword(newPassword);
-
-		// login using the new password
-		HttpEntity<Object> userJson = getHttpEntity(
-				"{\"password\":\"" + newPassword + "\", \"email\":\"" + persistentUser.getEmail() + "\", \"org_id\": " +  organization.getId() + " }", null);
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/login", userJson,
-				UserApiResponse.class);
-
-
+		String token = "77";
+		assertTrue(userTokenRepo.existsByToken(token));
+		long userTokensCountBefore = userTokenRepo.countByUserEntity_Id(88005L);
+		assertTrue("we assume the user has multiple tokens in the test", userTokensCountBefore > 1);
+		
+		//--------------------------------------------------
+		HttpEntity<?> entity = getHttpEntity( token );
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/logout", entity, UserApiResponse.class);
+		long userTokensCountAfter = userTokenRepo.countByUserEntity_Id(88005L);
+		
+		//--------------------------------------------------		
 		Assert.assertEquals(200, response.getStatusCode().value());
-		assertTrue(response.getHeaders().get("Set-Cookie").get(0) != null);
-
-
-		//test user logout
-		HttpEntity entity = getHttpEntity(response.getHeaders().get("Set-Cookie").get(0).substring(11,47));
-		response = template.postForEntity("/user/logout", entity, UserApiResponse.class);
-
-		Assert.assertEquals(200, response.getStatusCode().value());
+		assertFalse(userTokenRepo.existsByToken(token));		
+		assertEquals("other tokens should remain intact", 1L, userTokensCountBefore - userTokensCountAfter);
 		System.out.println(response.getHeaders().get("Set-Cookie").get(0));
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void testUsingSemiExpiredToken() {
+		String token = "875488";
+		UserTokensEntity tokenEntityBefore = userTokenRepo.findByToken(token);
+		assertNotNull(tokenEntityBefore);
+		LocalDateTime tokenUpdateTimeBefore = tokenEntityBefore.getUpdateTime();
+		
+		ResponseEntity<String> response = template.exchange("/product/images?product_id=1234", GET, getHttpEntity("", token), String.class);
+        Assert.assertEquals(406, response.getStatusCodeValue());
+        
+        UserTokensEntity tokenEntityAfter = userTokenRepo.findByToken(token);
+		assertNotNull(tokenEntityAfter);
+		LocalDateTime tokenUpdateTimeAfter = tokenEntityAfter.getUpdateTime();
+		
+		assertTrue("After using a token, and if it is nearly expired, its expiration should be renewed", tokenUpdateTimeAfter.isAfter(tokenUpdateTimeBefore));
 	}
 
 
@@ -905,7 +1014,7 @@ public class UserRegisterTest {
 	@Test
 	public void testGettingSameEmpUserInfoDifferentTokens() {
 		//get user info by auth token 101112
-		HttpEntity entity = getHttpEntity("101112");
+		HttpEntity<?> entity = getHttpEntity("101112");
 		ResponseEntity<UserRepresentationObject> res = template.exchange("/user/info?is_employee=true",
 									HttpMethod.GET,
 									entity,
@@ -940,7 +1049,7 @@ public class UserRegisterTest {
 	@Test
 	public void testGettingSameUserInfoDifferentTokens() {
 		//get user info by auth token 77
-		HttpEntity entity = getHttpEntity("77");
+		HttpEntity<?> entity = getHttpEntity("77");
 		ResponseEntity<UserRepresentationObject> res = template.exchange("/user/info?is_employee=false",
 				HttpMethod.GET,
 				entity,

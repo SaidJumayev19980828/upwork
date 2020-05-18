@@ -1,6 +1,17 @@
 package com.nasnav.security;
 
 
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
+
+import java.io.IOException;
+import java.util.Objects;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -8,16 +19,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-
 public class AuthenticationFilter extends AbstractAuthenticationProcessingFilter {
 
-    public static final String TOKEN_HEADER = "User-Token";
+    
     
     
     
@@ -37,7 +41,7 @@ public class AuthenticationFilter extends AbstractAuthenticationProcessingFilter
 
         if ( cookies != null && cookies.length != 0) {
             for(Cookie c : cookies) {
-                if (c.getName().equals(TOKEN_HEADER)) {
+                if (Objects.equals(c.getName(), TOKEN_HEADER)) {
                     token = c.getValue();
                     break;
                 }
@@ -47,7 +51,6 @@ public class AuthenticationFilter extends AbstractAuthenticationProcessingFilter
         }
         UsernamePasswordAuthenticationToken requestAuthentication = new UsernamePasswordAuthenticationToken(token, token);
         return getAuthenticationManager().authenticate(requestAuthentication);
-
     }
 
     

@@ -1,3 +1,4 @@
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -74,7 +75,6 @@ import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductImagesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.security.AuthenticationFilter;
 import com.nasnav.service.ProductImageService;
 import com.nasnav.test.commons.TestCommons;
 
@@ -461,7 +461,7 @@ public class ProductImageApiTest {
 		    mockMvc.perform(MockMvcRequestBuilders.multipart("/product/image")
 								                 .file(filePart)
 								                 .part(jsonPart)
-								                 .header(AuthenticationFilter.TOKEN_HEADER, USER_TOKEN));
+								                 .header(TOKEN_HEADER, USER_TOKEN));
 		return result;
 	}
 	
@@ -484,7 +484,7 @@ public class ProductImageApiTest {
 		    mockMvc.perform(MockMvcRequestBuilders.multipart("/product/image")
 								                 .file(filePart)
 								                 .part(jsonPart)
-								                 .header(AuthenticationFilter.TOKEN_HEADER, USER_FROM_OTHER_ORG_TOKEN));
+								                 .header(TOKEN_HEADER, USER_FROM_OTHER_ORG_TOKEN));
 		return result;
 	}
 	
@@ -509,7 +509,7 @@ public class ProductImageApiTest {
 		    mockMvc.perform(MockMvcRequestBuilders.multipart("/product/image")
 								                 .file(filePart)
 								                 .part(jsonPart)
-								                 .header(AuthenticationFilter.TOKEN_HEADER, USER_TOKEN));
+								                 .header(TOKEN_HEADER, USER_TOKEN));
 		return result;
 	}
 	
@@ -764,7 +764,7 @@ public class ProductImageApiTest {
 		ResultActions result = 
 			    mockMvc.perform(MockMvcRequestBuilders.delete("/product/image")
 			    									 .param("image_id", origImgId.toString())
-									                 .header(AuthenticationFilter.TOKEN_HEADER, USER_TOKEN));		
+									                 .header(TOKEN_HEADER, USER_TOKEN));		
 		String response = result.andExpect(status().is(200))					            
 					             .andReturn()
 					             .getResponse()
@@ -802,7 +802,7 @@ public class ProductImageApiTest {
 		
 	    mockMvc.perform(delete("/product/image")
 							 .param("image_id", "9999999")
-			                 .header(AuthenticationFilter.TOKEN_HEADER, USER_TOKEN))
+			                 .header(TOKEN_HEADER, USER_TOKEN))
 	    		.andExpect(status().is(406));		
 		
 		

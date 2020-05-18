@@ -1,9 +1,11 @@
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.USD;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
-import static com.nasnav.test.commons.TestCommons.*;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
@@ -74,7 +76,6 @@ import com.nasnav.persistence.ProductExtraAttributesEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.TagsEntity;
-import com.nasnav.security.AuthenticationFilter;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
@@ -1885,10 +1886,11 @@ public class DataImportApiTest {
 		jsonPart.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 		
 		 ResultActions result = 
-		    mockMvc.perform(MockMvcRequestBuilders.multipart(url)
-								                 .file(filePart)
-								                 .part(jsonPart)
-								                 .header(AuthenticationFilter.TOKEN_HEADER, token));
+		    mockMvc.perform(MockMvcRequestBuilders
+		    				.multipart(url)
+			                 .file(filePart)
+			                 .part(jsonPart)
+			                 .header(TOKEN_HEADER, token));
 		return result;
 	}
 	

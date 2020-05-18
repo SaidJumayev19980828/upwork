@@ -45,7 +45,7 @@ public class CachingConfig extends CachingConfigurerSupport{
     		, ORGANIZATIONS_TAG_TREES
     		, ORGANIZATIONS_TAGS
     		, SHOPS_BY_ID
-            , USER_TOKENS
+            , USERS_BY_TOKENS
     		);
  
        

@@ -108,7 +108,7 @@ public class OrganizationController {
     })
     @GetMapping(value = "brands", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<List<?>> getOrganizationBrands(@RequestParam(value = "org_id") Long orgId) {
-        return new ResponseEntity<List<?>>(orgService.getOrganizationBrands(orgId), HttpStatus.OK);
+        return new ResponseEntity<List<?>>(orgService.getOrganizationBrands(orgId), OK);
     }
 
 

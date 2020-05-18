@@ -1,25 +1,34 @@
 package com.nasnav.service;
 
-import static com.nasnav.cache.Caches.USER_TOKENS;
+import static com.nasnav.cache.Caches.USERS_BY_TOKENS;
 import static com.nasnav.commons.utils.EntityUtils.createFailedLoginResponse;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
-import static com.nasnav.response.ResponseStatus.*;
+import static com.nasnav.constatnts.EntityConstants.AUTH_TOKEN_VALIDITY;
+import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
+import static com.nasnav.exceptions.ErrorCodes.U$LOG$0001;
+import static com.nasnav.response.ResponseStatus.ACCOUNT_SUSPENDED;
+import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
 import static java.lang.String.format;
+import static java.time.LocalDateTime.now;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.LOCKED;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import com.nasnav.AppConfig;
-import com.nasnav.dao.UserTokenRepository;
-import com.nasnav.persistence.*;
+import javax.cache.annotation.CacheResult;
+import javax.servlet.http.Cookie;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
@@ -28,28 +37,37 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.CommonUserRepository;
 import com.nasnav.dao.OAuth2UserRepository;
 import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.UserTokenRepository;
 import com.nasnav.dto.UserDTOs.UserLoginObject;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.OAuth2UserEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegisteration;
-import org.springframework.transaction.annotation.Transactional;
+import com.nasnav.service.model.security.UserAuthenticationData;
 
-import javax.cache.annotation.CacheResult;
-import javax.servlet.http.Cookie;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 @Service
 public class SecurityServiceImpl implements SecurityService {
@@ -82,41 +100,59 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	@Override
-	public Optional<UserDetails> findUserByAuthToken(String token){
+	@CacheResult(cacheName = USERS_BY_TOKENS)
+	public Optional<UserAuthenticationData> findUserDetailsByAuthToken(String token){
 		return ofNullable(token)
-		 		.flatMap(this::getUserByAuthenticationToken)//userRepo::findByAuthenticationToken)
-		 		.flatMap(this::getUser);
+		 		.flatMap(this::getUserByAuthenticationToken)
+		 		.map(this::createUserAuthData);
 	}
 
+	
+	
 
-	@Override
-	//TODO: >>> need to add caching to this method
-	//TODO: >>> the cache entry of a specific token should be evicted when logout is called with that specific token.
-	@CacheResult(cacheName = USER_TOKENS)
-	public Optional<BaseUserEntity> getUserByAuthenticationToken(String token) {
+	private Optional<UserTokensEntity> getUserByAuthenticationToken(String token) {
 		UserTokensEntity userTokens = userTokenRepo.getUserEntityByToken(token);
-		if (userTokens == null)
-			return Optional.empty();
-
-		if (userTokens.getUserEntity() != null)
-			return ofNullable(userTokens.getUserEntity());
-
-		return ofNullable(userTokens.getEmployeeUserEntity());
+		if (userTokens == null || isExpired(userTokens)) {
+			return empty();
+		}
+		return ofNullable(userTokens);
 	}
 	
 	
 	
 	
-	private Optional<UserDetails> getUser(BaseUserEntity userEntity) {
+	private boolean isExpired(UserTokensEntity userTokens) {
+		return ofNullable(userTokens)
+				.map(UserTokensEntity::getUpdateTime)
+				.map(updateTime -> Duration.between(updateTime, now()))
+				.filter(liveTime -> liveTime.getSeconds() >= AUTH_TOKEN_VALIDITY)
+				.isPresent();					
+	}
+
+
+
+	
+	
+
+	private UserAuthenticationData createUserAuthData(UserTokensEntity userTokens) {
+		BaseUserEntity userEntity = 
+				userTokens
+				.getBaseUser()
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, U$LOG$0001));
+		
 		List<GrantedAuthority> roles = getUserRoles(userEntity);
 		User user= new User(userEntity.getEmail(), userEntity.getEncryptedPassword(), true, true, true, true,roles);
-        return Optional.of(user);		
+        return new UserAuthenticationData(user, userEntity, userTokens);		
 	}
 
 
+	
+	
+	
+	
 	@Override
 	@Transactional
-	@CacheEvict(allEntries = true, cacheNames = {USER_TOKENS})
+	@CacheEvict(cacheNames = {USERS_BY_TOKENS})
 	public UserApiResponse logout(String token) {
 		userTokenRepo.deleteByToken(token);
 		Cookie c = createCookie(null, true);
@@ -125,11 +161,13 @@ public class SecurityServiceImpl implements SecurityService {
 	}
 
 
+	
+	
+	
 	private List<GrantedAuthority> getUserRoles(BaseUserEntity userEntity) {
-		
 		return userRepo.getUserRoles(userEntity).stream()												
-								.map(SimpleGrantedAuthority::new)
-								.collect(toList());
+						.map(SimpleGrantedAuthority::new)
+						.collect(toList());
 	}
 
 
@@ -175,20 +213,23 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Override
 	public UserApiResponse login(BaseUserEntity userEntity, boolean rememberMe) throws BusinessException {
-		// generate new AuthenticationToken and perform post login updates
-		userEntity = updatePostLogin(userEntity);
+		UserPostLoginData userData = updatePostLogin(userEntity);
 
-		Cookie cookie = createCookie(userEntity.getAuthenticationToken(), rememberMe);
+		Cookie cookie = createCookie(userData.getToken(), rememberMe);
 
-		return createSuccessLoginResponse(userEntity, cookie);
+		return createSuccessLoginResponse(userData, cookie);
 	}
 
 
+	
+	
+	
+	
 	private Cookie createCookie(String token, boolean rememberMe) {
 		Cookie cookie = new Cookie("User-Token", token);
 
 		cookie.setHttpOnly(true);
-		cookie.setDomain(EntityConstants.NASNAV_DOMAIN);
+		cookie.setDomain(NASNAV_DOMAIN);
 		cookie.setPath("/");
 
 		if (rememberMe) {
@@ -199,7 +240,7 @@ public class SecurityServiceImpl implements SecurityService {
 			//TODO: >>> the extension functionality will need a unit test , but that will need  AUTH_TOKEN_VALIDITY to be variable, so that we 
 			//decrease it to 1 second for example and make Thread.sleep to wait until it becomes nearly invalidated.
 			//which will require it to be in seconds instead of hours as well.
-			cookie.setMaxAge(EntityConstants.AUTH_TOKEN_VALIDITY);
+			cookie.setMaxAge(AUTH_TOKEN_VALIDITY);
 		}
 
 		if (config.secureTokens)
@@ -264,20 +305,22 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 
-	@CacheEvict(allEntries = true, cacheNames = {USER_TOKENS})
-	public BaseUserEntity updatePostLogin(BaseUserEntity userEntity) throws BusinessException {
+	public UserPostLoginData updatePostLogin(BaseUserEntity userEntity) throws BusinessException {
 		LocalDateTime currentSignInDate = userEntity.getCurrentSignInDate();
-		userEntity.setLastSignInDate(currentSignInDate);
-		userEntity.setCurrentSignInDate(LocalDateTime.now());
 
 		String authToken = generateUserToken(userEntity);
-
+		
+		userEntity.setLastSignInDate(currentSignInDate);
+		userEntity.setCurrentSignInDate(LocalDateTime.now());
 		userEntity.setAuthenticationToken(authToken);
+		BaseUserEntity savedUserData = userRepo.saveAndFlush(userEntity);
 
-		return userRepo.saveAndFlush(userEntity);
+		return new UserPostLoginData(savedUserData, authToken);
 	}
 
 
+	
+	
 	private String generateUserToken(BaseUserEntity user) {
 		UserTokensEntity token = new UserTokensEntity();
 		token.setToken(StringUtils.generateUUIDToken());
@@ -293,20 +336,16 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	
 	
-	private String generateAuthenticationToken() {
-		//it is nearly impossible for type 4 UUID to be repeated by chance.
-		//also each users table have unique index on auth tokens.
-		return StringUtils.generateUUIDToken();		
-	}
 	
 	
 	
 	
-	
-	public UserApiResponse createSuccessLoginResponse(BaseUserEntity userEntity, Cookie cookie) {
+	public UserApiResponse createSuccessLoginResponse(UserPostLoginData userData, Cookie cookie) {
 		Long shopId = 0L;
-		if(userEntity instanceof EmployeeUserEntity)
-			shopId = EmployeeUserEntity.class.cast(userEntity).getShopId();		
+		BaseUserEntity userEntity = userData.getUserEntity();
+		if(userEntity instanceof EmployeeUserEntity) {
+			shopId = EmployeeUserEntity.class.cast(userEntity).getShopId();
+		}
 		
 		Long organizationId = userEntity.getOrganizationId();
 		
@@ -315,7 +354,7 @@ public class SecurityServiceImpl implements SecurityService {
 					.setEntityId( userEntity.getId() )
 					.setName(userEntity.getName())
 					.setEmail(userEntity.getEmail())
-					.setToken( userEntity.getAuthenticationToken() )
+					.setToken( cookie.getValue())
 					.setRoles( userRepo.getUserRoles(userEntity) )
 					.setOrganizationId( organizationId != null ? organizationId : 0L)
 					.setStoreId(shopId != null ? shopId : 0L)
@@ -415,13 +454,48 @@ public class SecurityServiceImpl implements SecurityService {
 			throw new BusinessException(
 			               format("No User did OAuth2 login with token[%s]", socialLoginToken) 
 			               , "INVALID_TOKEN"
-			               , HttpStatus.UNAUTHORIZED);
+			               , UNAUTHORIZED);
 		}
-		
-		return oAuthUserRepo.findByLoginToken(socialLoginToken)
-							.map(OAuth2UserEntity::getUser)
-							.orElseThrow(() -> new InCompleteOAuthRegisteration());
+		return oAuthUserRepo
+				.findByLoginToken(socialLoginToken)
+				.map(OAuth2UserEntity::getUser)
+				.orElseThrow(() -> new InCompleteOAuthRegisteration());
+	}
+
+
+
+
+	@Override
+	@CacheEvict(cacheNames = {USERS_BY_TOKENS}, key = "#userToken.token")
+	public UserTokensEntity extendUserExpirationTokenIfNeeded(UserTokensEntity userToken) {
+		if(isSemiExpiredToken(userToken)) {
+			userToken.setUpdateTime(now());
+			return userTokenRepo.saveAndFlush(userToken);
+		}
+		return userToken;
+	}
+
+
+
+
+	private boolean isSemiExpiredToken(UserTokensEntity token) {
+		return ofNullable(token)
+				.map(UserTokensEntity::getUpdateTime)
+				.map(updateTime -> Duration.between(updateTime, now()))
+				.filter(liveTime -> liveTime.getSeconds() >= (long)(0.7*AUTH_TOKEN_VALIDITY))
+				.isPresent();			
 	}
 	
+}
+
+
+
+
+
+@Data
+@AllArgsConstructor
+class UserPostLoginData{
+	private BaseUserEntity userEntity;
+	private String token;
 }
 

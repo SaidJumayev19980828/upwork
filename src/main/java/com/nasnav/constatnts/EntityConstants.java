@@ -30,6 +30,8 @@ public final class EntityConstants {
     public static final String NASNAV_DOMAIN = "nasnav.com";
 
     public static final String PROTOCOL = "https://";
+    
+    public static final String TOKEN_HEADER = "User-Token";
 
     public enum Operation{
     	UPDATE("update"),

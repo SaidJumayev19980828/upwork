@@ -1,3 +1,4 @@
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -40,7 +41,6 @@ import com.nasnav.NavBox;
 import com.nasnav.dao.FilesRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.persistence.FileEntity;
-import com.nasnav.security.AuthenticationFilter;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -179,7 +179,7 @@ public class ProductImageBulkUploadTest {
 	    mockMvc.perform(MockMvcRequestBuilders.multipart(PRODUCT_IMG_BULK_URL)
 							                 .file(csvPart)
 							                 .part(jsonPart)
-							                 .header(AuthenticationFilter.TOKEN_HEADER, USER_TOKEN))
+							                 .header(TOKEN_HEADER, USER_TOKEN))
 	    		.andExpect(status().is(400));
 	    
 	    assertNoImgsImported();
@@ -237,7 +237,7 @@ public class ProductImageBulkUploadTest {
 	    									 .file(zipPart)
 							                 .file(csvPart)
 							                 .part(jsonPart)
-							                 .header(AuthenticationFilter.TOKEN_HEADER, USER_TOKEN))
+							                 .header(TOKEN_HEADER, USER_TOKEN))
 	    		.andExpect(status().is(406));
 	    
 	    assertNoImgsImported();
@@ -630,7 +630,7 @@ public class ProductImageBulkUploadTest {
 		return	mockMvc.perform(MockMvcRequestBuilders.multipart(PRODUCT_IMG_BULK_URL)
 	    									 .file(zipPart)
 							                 .part(jsonPart)
-							                 .header(AuthenticationFilter.TOKEN_HEADER, USER_TOKEN))
+							                 .header(TOKEN_HEADER, USER_TOKEN))
 			    		;
 	}
 	
@@ -663,7 +663,7 @@ public class ProductImageBulkUploadTest {
 								                 .file(zipPart)
 								                 .file(csvPart)
 								                 .part(jsonPart)
-								                 .header(AuthenticationFilter.TOKEN_HEADER, userToken));
+								                 .header(TOKEN_HEADER, userToken));
 		return result;
 	}
 

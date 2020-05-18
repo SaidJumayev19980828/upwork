@@ -12,7 +12,10 @@ public enum ErrorCodes {
 	, UXACTVX0003("Cannot send activation email to[%s], need to wait[%s]!")
 	, UXACTVX0004("Invalid redirection url[%s]!")
 	
-	,P$EXP$0001("No column found in csv for writing product feature[%s]!");
+	, U$LOG$0001("NO USER FOUND FOR A TOKEN!")
+	
+	, P$EXP$0001("No column found in csv for writing product feature[%s]!");
+	
 	
 	@Getter
 	@JsonValue
