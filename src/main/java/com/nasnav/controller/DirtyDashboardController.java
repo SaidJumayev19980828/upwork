@@ -80,7 +80,7 @@ public class DirtyDashboardController {
 	
 	
 	@GetMapping(value = "dashboard")
-    public ModelAndView dasboardPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+    public ModelAndView dasboardPage(@RequestHeader(name = "User-Token", required = false) String token, ModelMap model)	throws BusinessException {
 		BaseUserEntity user = securityService.getCurrentUser();
 		return prepareDasboardPage(token, model, user);
     }
@@ -104,20 +104,20 @@ public class DirtyDashboardController {
 	
 	
 	@GetMapping("upload_product_csv_form")
-	public ModelAndView csvUploadPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+	public ModelAndView csvUploadPage(@RequestHeader(name = "User-Token", required = false) String token, ModelMap model)	throws BusinessException {
 		model.addAttribute("token", token);
         return new ModelAndView("upload_product_csv_form", model);
     }
 	
 	
 	@GetMapping("org_mgr")
-	public ModelAndView orgMgrPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+	public ModelAndView orgMgrPage(@RequestHeader(name = "User-Token", required = false) String token, ModelMap model)	throws BusinessException {
 		model.addAttribute("token", token);
         return new ModelAndView("org_mgr", model);
     }
 
 	@GetMapping("org_info")
-	public ModelAndView orgInfoPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+	public ModelAndView orgInfoPage(@RequestHeader(name = "User-Token", required = false) String token, ModelMap model)	throws BusinessException {
 		Long organization_id = securityService.getCurrentUserOrganizationId();
 
 		model.addAttribute("org_id", organization_id);
@@ -126,31 +126,31 @@ public class DirtyDashboardController {
 	}
 
 	@GetMapping("brand_mgr")
-	public ModelAndView brandMgrPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+	public ModelAndView brandMgrPage(@RequestHeader(name = "User-Token", required = false) String token, ModelMap model)	throws BusinessException {
 		model.addAttribute("token", token);
 		return new ModelAndView("brand_mgr", model);
 	}
 
 	@GetMapping("cat_mgr")
-	public ModelAndView catMgrPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+	public ModelAndView catMgrPage(@RequestHeader(name = "User-Token", required = false) String token, ModelMap model)	throws BusinessException {
 		model.addAttribute("token", token);
 		return new ModelAndView("cat_mgr", model);
 	}
 
 	@GetMapping("products_feature")
-	public ModelAndView prodFeaturePage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+	public ModelAndView prodFeaturePage(@RequestHeader(name = "User-Token", required = false) String token, ModelMap model)	throws BusinessException {
 		model.addAttribute("token", token);
 		return new ModelAndView("products_feature", model);
 	}
 
 	@GetMapping("upload_product_image_csv_form")
-	public ModelAndView csvUploadImgPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+	public ModelAndView csvUploadImgPage(@RequestHeader(name = "User-Token", required = false) String token, ModelMap model)	throws BusinessException {
 		model.addAttribute("token", token);
 		return new ModelAndView("upload_product_image_csv_form", model);
 	}
 
 	@GetMapping("file_upload")
-	public ModelAndView fileUploadPage(@RequestHeader("User-Token") String token, ModelMap model)	throws BusinessException {
+	public ModelAndView fileUploadPage(@RequestHeader(name = "User-Token", required = false) String token, ModelMap model)	throws BusinessException {
 		BaseUserEntity user = securityService.getCurrentUser();
 		Boolean isNasnavAdmin = securityService.userHasRole(user, Roles.NASNAV_ADMIN);
 		Long organization_id = securityService.getCurrentUserOrganizationId();

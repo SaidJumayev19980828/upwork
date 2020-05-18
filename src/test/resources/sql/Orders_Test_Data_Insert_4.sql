@@ -31,6 +31,10 @@ INSERT INTO public.users(id, email,  user_name, authentication_token, organizati
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
     VALUES (90, 'user3@nasnav.com','user3','789', 99003);
 
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (70001, '123', now(), null, 88);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (70002, '456', now(), null, 89);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (70003, '789', now(), null, 90);
+
 
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502);
@@ -47,6 +51,14 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (158, 'testuser3@nasnav.com', 99002, '222324',  506);
 
+
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (70004, '101112', now(), 68, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (70005, '131415', now(), 69, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (70006, '161718', now(), 70, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (70007, '192021', now(), 71, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (70008, 'sdrf8s', now(), 72, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (70009, 'sdfe47', now(), 73, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (70010, '222324', now(), 158, null);
 --inserting Roles
 insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
 insert into public.roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);

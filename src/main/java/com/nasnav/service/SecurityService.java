@@ -2,29 +2,23 @@ package com.nasnav.service;
 
 import java.util.Optional;
 
-import org.springframework.security.core.userdetails.UserDetails;
-
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.UserTokensEntity;
 import com.nasnav.response.UserApiResponse;
+import com.nasnav.service.model.security.UserAuthenticationData;
 
 public interface SecurityService {
 	
-	Optional<UserDetails> findUserByAuthToken(String token);
-	
-	/**
-     * login user to system
-     *
-     * @param body json object containing email and password
-     * @return UserApiResponse object holding the status
-	 * @throws BusinessException 
-     */
+	Optional<UserAuthenticationData> findUserDetailsByAuthToken(String token);
+
     UserApiResponse login(UserDTOs.UserLoginObject body) throws BusinessException;
-    
-    
+
+    UserApiResponse logout(String token);
+
     BaseUserEntity getCurrentUser();
     
     Long getCurrentUserOrganizationId();
@@ -36,5 +30,7 @@ public interface SecurityService {
 
 	UserApiResponse socialLogin(String socialLoginToken) throws BusinessException;
 
-	UserApiResponse login(BaseUserEntity userEntity) throws BusinessException;
+	UserApiResponse login(BaseUserEntity userEntity, boolean rememberMe) throws BusinessException;
+	
+	UserTokensEntity extendUserExpirationTokenIfNeeded(UserTokensEntity token);
 }

@@ -53,7 +53,7 @@ public class DataImportContoller {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ImportProductContext> importProductList(
-    		@RequestHeader("User-Token") String token,
+    		@RequestHeader(name = "User-Token", required = false) String token,
             @RequestPart("csv") @Valid MultipartFile file,
             @RequestPart("properties") @Valid ProductListImportDTO importMetaData)
             		throws BusinessException, ImportProductException {
@@ -70,7 +70,7 @@ public class DataImportContoller {
 
     @GetMapping(value = "/productlist/template")
 	@ResponseBody
-	public ResponseEntity<String> generateCsvTemplate(@RequestHeader("User-Token") String token) throws IOException {
+	public ResponseEntity<String> generateCsvTemplate(@RequestHeader(name = "User-Token", required = false) String token) throws IOException {
 		ByteArrayOutputStream s = importService.generateProductsCsvTemplate();
 		return ResponseEntity.ok()
 				.contentType(MediaType.parseMediaType("text/csv"))

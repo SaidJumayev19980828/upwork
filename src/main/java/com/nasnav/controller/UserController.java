@@ -25,6 +25,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 @RestController
 @RequestMapping("/user")
 @Api(description = "Set of endpoints for registering and updating user data.")
@@ -54,7 +57,7 @@ public class UserController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public UserApiResponse createEmployeeUser(@RequestHeader (value = "User-Token", required = true) String userToken,
+    public UserApiResponse createEmployeeUser(@RequestHeader (name = "User-Token", required = false) String userToken,
                                               @RequestBody UserDTOs.EmployeeUserCreationObject employeeUserJson) {
         return this.employeeUserService.createEmployeeUser(userToken, employeeUserJson);
     }
@@ -115,11 +118,28 @@ public class UserController {
     @PostMapping(value = "login",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public UserApiResponse login(@RequestBody UserDTOs.UserLoginObject login) throws BusinessException {
-    	return securityService.login(login);
+    public UserApiResponse login(@RequestBody UserDTOs.UserLoginObject login, HttpServletResponse response) throws BusinessException {
+        UserApiResponse userApiResponse = securityService.login(login);
+        response.addCookie(userApiResponse.getCookie());
+    	return userApiResponse;
     }
-    
-    
+
+    @ApiOperation(value = "logout user", nickname = "userLogout")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "User logged out"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Invalid credentials"),
+            @io.swagger.annotations.ApiResponse(code = 423, message = "Account unavailable"),
+    })
+    @PostMapping(value = "logout")
+    public UserApiResponse logout(@RequestHeader(name = "User-Token", required = false) String token,
+                                  HttpServletRequest request,
+                                  HttpServletResponse response) throws BusinessException {
+        if (token == null || token.isEmpty())
+            token = request.getCookies()[0].getValue();
+        UserApiResponse userApiResponse = securityService.logout(token);
+        response.addCookie(userApiResponse.getCookie());
+        return userApiResponse;
+    }
     
     
     
@@ -134,7 +154,7 @@ public class UserController {
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public UserApiResponse updateEmployeeUser(@RequestHeader (value = "User-Token", required = true) String userToken,
+    public UserApiResponse updateEmployeeUser(@RequestHeader (name = "User-Token", required = false) String userToken,
                                               @RequestBody UserDTOs.EmployeeUserUpdatingObject json) throws BusinessException {
         if (json.employee) {
             return this.employeeUserService.updateEmployeeUser(userToken, json);
@@ -155,7 +175,7 @@ public class UserController {
             @io.swagger.annotations.ApiResponse(code = 404, message = "User not found"),
     })
     @GetMapping(value = "info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public UserRepresentationObject getUserData(@RequestHeader (value = "User-Token") String userToken,
+    public UserRepresentationObject getUserData(@RequestHeader (name = "User-Token", required = false) String userToken,
                                       @RequestParam (value = "id", required = false) Long id
                                       ,@RequestParam (value = "is_employee", required = false) Boolean isEmployee) throws BusinessException{
 
@@ -176,7 +196,7 @@ public class UserController {
     })
     @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(OK)
-    public List<UserRepresentationObject> getUserList(@RequestHeader (value = "User-Token") String userToken,
+    public List<UserRepresentationObject> getUserList(@RequestHeader (name = "User-Token", required = false) String userToken,
                                       @RequestParam (value = "org_id", required = false) Long orgId,
                                       @RequestParam (value = "store_id", required = false) Long storeId,
                                       @RequestParam (value = "role", required = false) String role) throws BusinessException{

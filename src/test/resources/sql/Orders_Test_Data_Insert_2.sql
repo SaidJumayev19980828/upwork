@@ -31,11 +31,17 @@ INSERT INTO public.users(id, email,  user_name, authentication_token, organizati
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
     VALUES (90, 'user3@nasnav.com','user3','789', 99003);
 
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700001, '123', now(), null, 88);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '456', now(), null, 89);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '789', now(), null, 90);
 
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (72, 'testuser6@nasnav.com', 99003, 'sdrf8s',  504);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (73, 'testuser7@nasnav.com', 99003, 'sdfe47',  505);
+
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700004, 'sdrf8s', now(), 72, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700005, 'sdfe47', now(), 73, null);
 
 --inserting Roles
 insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);

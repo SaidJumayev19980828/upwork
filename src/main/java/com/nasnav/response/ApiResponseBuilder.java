@@ -1,5 +1,6 @@
 package com.nasnav.response;
 
+import javax.servlet.http.Cookie;
 import java.io.Serializable;
 import java.util.List;
 
@@ -19,13 +20,14 @@ public class ApiResponseBuilder implements Serializable {
     private Long storeId;
     private String name;
     private String email;
+    private Cookie cookie;
 
     public ApiResponseBuilder() {
     }
 
     public UserApiResponse build() {
         return new UserApiResponse(success, entityId, responseStatuses,
-                token, roles, organizationId, storeId, name, email);
+                token, roles, organizationId, storeId, name, email, cookie);
     }
 
     public ApiResponseBuilder setSuccess(boolean success) {
@@ -75,6 +77,11 @@ public class ApiResponseBuilder implements Serializable {
 
     public ApiResponseBuilder setEmail(String email) {
         this.email = email;
+        return this;
+    }
+
+    public ApiResponseBuilder setCookie(Cookie cookie) {
+        this.cookie = cookie;
         return this;
     }
 }

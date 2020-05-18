@@ -596,7 +596,7 @@ public class ThemesApiTest {
 
     @Test
     public void changeOrgThemeNotSameOrg() {
-        String body = "{\"theme_id\":\"5001\"}";
+        String body = "{\"theme_id\":5001}";
         HttpEntity<?> request =  getHttpEntity(body,"161718");
 
         ResponseEntity<String> response =

@@ -81,6 +81,9 @@ public class UserDTOs {
         @ApiModelProperty(value = "Organization id that client wants to log into", example = "123", required = true)
         @JsonProperty("org_id")
         public Long orgId;
+
+        @JsonProperty("remember_me")
+        public boolean rememberMe;
     }
 
     @Getter

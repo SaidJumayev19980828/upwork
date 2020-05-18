@@ -44,7 +44,7 @@ public class DataExportContoller {
 	@GetMapping(value = "/products")
 	@ResponseBody
 	public ResponseEntity<String> generateProductsCsv(
-			@RequestHeader("User-Token") String token
+			@RequestHeader(name = "User-Token", required = false) String token
 			, @RequestParam(name = "shop_id", required = true)Long shopId) throws SQLException, BusinessException, IllegalAccessException, InvocationTargetException {
 		ByteArrayOutputStream s = exportService.generateProductsCsv(shopId);
 		return ResponseEntity.ok()

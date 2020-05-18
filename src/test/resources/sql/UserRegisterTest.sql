@@ -24,8 +24,25 @@ INSERT INTO public.users(id, email,  user_name, authentication_token, organizati
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status, reset_password_token)
     VALUES (88005, 'no.token.man@nasnav.com','not activated but no token','77', 99001, '963', 200, null);
    
-   
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700001, '123', now(), null, 88001);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '456', now(), null, 88002);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '789', now(), null, 88003);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700004, '951', now(), null, 88004);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700005, '77', now(), null, 88005);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700006, '88', now(), null, 88005);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700007, '99', now(), null, 88005);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700008, '889966', NOW() - INTERVAL '1 YEAR', null, 88005);
+
+
 --inserting Employee Users
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password)
 	VALUES (159, 'Walid', 'user2@nasnav.com', 99001, 'nopqrst',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
 
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700009, '875488', NOW() - INTERVAL '29 DAY', 159, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700010, '101112', now(), 159, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700011, '131415', now(), 159, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700012, '161718', now(), 159, null);
+
+
+insert into roles(id, name,  organization_id) values(1, 'ORGANIZATION_ADMIN', 99001);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 159, 1);

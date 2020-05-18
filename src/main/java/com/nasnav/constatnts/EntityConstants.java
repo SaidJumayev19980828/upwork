@@ -22,11 +22,16 @@ public final class EntityConstants {
 
     /*Number of hours that token stay valid during*/
     public static final int TOKEN_VALIDITY = 2;
+
+    //Number of seconds that login token stay valid during
+    public static final int AUTH_TOKEN_VALIDITY = 2592000; // 1 month
     
     
     public static final String NASNAV_DOMAIN = "nasnav.com";
 
     public static final String PROTOCOL = "https://";
+    
+    public static final String TOKEN_HEADER = "User-Token";
 
     public enum Operation{
     	UPDATE("update"),

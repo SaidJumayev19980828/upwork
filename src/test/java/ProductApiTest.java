@@ -866,7 +866,7 @@ public class ProductApiTest {
 	}
 
 	private ResponseEntity<String> deleteProduct(BaseUserEntity user, Long productId) {
-		HttpEntity<?> request =  getHttpEntity("" , user.getAuthenticationToken());
+		HttpEntity<?> request =  getHttpEntity(user.getAuthenticationToken());
 
 		ResponseEntity<String> response =
 				template.exchange("/product?product_id=" + productId

@@ -80,6 +80,11 @@ VALUES (71, 'testuser4@nasnav.com', 99001, 'ggr45r5',  100003);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (72, 'testuser5@nasnav.com', 99001, 'edddre2',  100004);
 
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1, '101112', now(), 68, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (2, '131415', now(), 69, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (3, '898dssd', now(), 70, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (4, 'ggr45r5', now(), 71, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (5, 'edddre2', now(), 72, null);
 
 --inserting Roles
 insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
@@ -103,7 +108,8 @@ INSERT INTO public.users(id, email, user_name, authentication_token, organizatio
 INSERT INTO public.users(id, email, user_name, authentication_token, organization_id,country,city ,address)
     VALUES (89, 'user2@nasnav.com', 'user2','456', 99002, 'Egypt', 'Cairo', '12 Abbas el-Akkad, Nasr City');
 
-   
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (6, '123', now(), null, 88);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (7, '456', now(), null, 89);
 
 --inserting orders
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(630001, 88, now(), now(), 99001, 0, 100001);

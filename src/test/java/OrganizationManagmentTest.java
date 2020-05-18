@@ -1,5 +1,5 @@
-import static com.nasnav.test.commons.TestCommons.*;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
 import java.net.URI;
@@ -9,7 +9,6 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
-import com.nasnav.persistence.OrganizationEntity;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
@@ -33,8 +32,8 @@ import org.springframework.util.MultiValueMap;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.response.OrganizationResponse;
-import com.nasnav.test.commons.TestCommons;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

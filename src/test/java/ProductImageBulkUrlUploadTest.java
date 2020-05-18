@@ -1,4 +1,4 @@
-import static com.nasnav.security.AuthenticationFilter.TOKEN_HEADER;
+import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
