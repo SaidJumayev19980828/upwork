@@ -1,12 +1,13 @@
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
 import javax.sql.DataSource;
 
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -30,21 +32,20 @@ import com.nasnav.dto.OrganizationImagesRepresentationObject;
 import com.nasnav.dto.OrganizationRepresentationObject;
 import com.nasnav.test.commons.TestCommons;
 
+import net.jcip.annotations.NotThreadSafe;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @AutoConfigureMockMvc
+@NotThreadSafe
 @PropertySource("classpath:test.database.properties")
+@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Organizations_image_API_Test_Data_Insert.sql"})
+@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 public class OrganizationImageApiTest {
 
     @Value("classpath:test_imgs_to_upload/nasnav--Test_Photo_UPDATED.png")
     private Resource file;
-
-    @Value("classpath:sql/Organizations_image_API_Test_Data_Insert.sql")
-    private Resource organizationsDataInsert;
-    
-    @Value("classpath:sql/database_cleanup.sql")
-    private Resource databaseCleanup;
 
     @Autowired
     private DataSource datasource;
@@ -57,22 +58,6 @@ public class OrganizationImageApiTest {
 
     
     
-    @Before
-    public void setup(){
-        performSqlScript(databaseCleanup);
-        performSqlScript(organizationsDataInsert);
-    }
-    
-    
-    
-
-    @After
-    public void cleanup(){
-        performSqlScript(databaseCleanup);
-    }
-    
-    
-
     void performSqlScript(Resource resource) {
         try (Connection con = datasource.getConnection()) {
             ScriptUtils.executeSqlScript(con, resource);

@@ -414,7 +414,7 @@ public class ProductsController {
     })
     @ResponseStatus(OK)
     @PostMapping(value = "set_360_search")
-    public void includeProductIn360Search(@RequestHeader("User-Token") String token,
+    public void includeProductIn360Search(@RequestHeader(name = "User-Token", required = false) String token,
                              @RequestParam(required = false, defaultValue = "true") Boolean include,
                              @RequestParam("product_id") List<Long> productIds) {
         productService.includeProductIn360Search(include, productIds);

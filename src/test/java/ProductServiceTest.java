@@ -957,7 +957,7 @@ public class ProductServiceTest {
 	public void setProducts360Search() {
 		// include products in search 360
 
-		HttpEntity req = getHttpEntity("131415");
+		HttpEntity<?> req = getHttpEntity("131415");
 		//-----------------------------------------
 		ResponseEntity<String> response = template.postForEntity(
 				"/product/set_360_search?include=true&product_id=1002&product_id=1006",

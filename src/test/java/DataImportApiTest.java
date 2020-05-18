@@ -35,6 +35,8 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
+import javax.servlet.http.Cookie;
+
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -1975,7 +1977,8 @@ public class DataImportApiTest {
 		    				.multipart(url)
 			                 .file(filePart)
 			                 .part(jsonPart)
-			                 .header(TOKEN_HEADER, token));
+			                 .header(TOKEN_HEADER, token)
+			                 .cookie(new Cookie(TOKEN_HEADER, token)));
 		return result;
 	}
 	
