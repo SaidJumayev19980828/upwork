@@ -25,13 +25,24 @@ import static java.util.logging.Level.SEVERE;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Duration;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -779,7 +790,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 				.uri(httpUrl)
 				.exchange()
 				.doOnEach(signal -> logFailedImageFetch(signal, httpUrl))
-				.onErrorContinue(this::doNothing)
+				.onErrorReturn(ClientResponse.create(INTERNAL_SERVER_ERROR).build())
 				.filter(res -> Objects.equals(res.statusCode(), OK))
 				.flatMap(res -> res.bodyToMono(byte[].class))				
 				.map(bytes -> readUrlAsMultipartFile(httpUrl, bytes));
@@ -798,11 +809,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 		}
 	}
 	
-	
-	
-	private void doNothing(Throwable e, Object obj) {
-		
-	}
 	
 	
 	

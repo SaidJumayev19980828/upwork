@@ -1153,7 +1153,7 @@ public class DataImportServiceImpl implements DataImportService {
 					new BusinessException(
 				            format(ERR_BRAND_NAME_NOT_EXIST, row.getBrand())
 				            , "INVALID DATA:brand"
-				            , HttpStatus.NOT_ACCEPTABLE));
+				            , NOT_ACCEPTABLE));
 	}
 
 
