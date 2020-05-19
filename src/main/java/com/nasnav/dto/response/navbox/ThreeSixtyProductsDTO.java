@@ -3,6 +3,7 @@ package com.nasnav.dto.response.navbox;
 import com.nasnav.dto.Prices;
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -18,5 +19,6 @@ public class ThreeSixtyProductsDTO {
         this.id = id;
         this.name = name;
         this.description = description;
+        images = new ArrayList<>();
     }
 }
