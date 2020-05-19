@@ -243,8 +243,8 @@ public class SecurityServiceImpl implements SecurityService {
 			cookie.setMaxAge(AUTH_TOKEN_VALIDITY);
 		}
 
-//		if (config.secureTokens)
-//			cookie.setSecure(true);
+		if (config.secureTokens)
+			cookie.setSecure(true);
 
 		return cookie;
 	}
