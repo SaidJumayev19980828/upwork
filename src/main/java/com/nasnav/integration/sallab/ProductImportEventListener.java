@@ -413,6 +413,7 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 				.put("Product Code", product.getProductCode())
 				.put("Style", product.getEnglishStyle())
 				.put("Glaze", product.getEnglishGlaze())
+				.put("Info", product.getName())
 				.getMap();
 		return extraAttributes;
 	}
