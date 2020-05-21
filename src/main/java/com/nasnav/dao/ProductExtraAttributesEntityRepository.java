@@ -13,7 +13,7 @@ public interface ProductExtraAttributesEntityRepository extends JpaRepository<Pr
 	
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.products.export.VariantExtraAtrribute(variant.id, attr.id, attr_def.name, attr.value)"
 			+ " FROM StocksEntity stock "
-			+ " JOIN stock.variantEntity variant "
+			+ " JOIN stock.productVariantsEntity variant "
 			+ " LEFT JOIN variant.extraAttributes attr "
 			+ " JOIN attr.extraAttribute attr_def"
 			+ " WHERE stock.shopsEntity.id = :shopId")

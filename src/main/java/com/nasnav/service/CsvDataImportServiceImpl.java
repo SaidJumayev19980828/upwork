@@ -33,6 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ExtraAttributesRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.ProductImportMetadata;
@@ -41,6 +42,7 @@ import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportProductException;
 import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.ExtraAttributesEntity;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.service.helpers.ProductCsvRowProcessor;
@@ -81,7 +83,8 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 	@Autowired
 	private DataImportService dataImportService;
 	
-	
+	@Autowired
+	private ExtraAttributesRepository extraAttrRepo;
 	
 	
 	
@@ -374,8 +377,16 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 					.sorted()
 					.collect(toList());
 		
+		List<String> extraAttributes = 
+				extraAttrRepo.findByOrganizationId(orgId)
+				.stream()
+				.map(ExtraAttributesEntity::getName)
+				.sorted()
+				.collect(toList());
+		
 		List<String> baseHeaders = new ArrayList<>(CSV_BASE_HEADERS);
 		baseHeaders.addAll(features);
+		baseHeaders.addAll(extraAttributes);
 		return baseHeaders;
 	}
 

@@ -99,3 +99,14 @@ insert into product_tags(product_id, tag_id) values(1006, 5001);
 insert into product_tags(product_id, tag_id) values(1007, 5001);
 insert into product_tags(product_id, tag_id) values(1008, 5001);
 
+-- insertign extra attributes
+INSERT INTO public.extra_attributes (id, key_name, attribute_type, organization_id, icon) VALUES(100001, 'Extra Prop', 'String'::character varying, 99001, null);
+INSERT INTO public.extra_attributes (id, key_name, attribute_type, organization_id, icon) VALUES(100002, 'more data', 'String'::character varying, 99001, null);
+
+INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100001, 'extra data', 310001);
+INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100001, 'good info', 310002);
+INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100002, 'bla bla', 310001);
+INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100002, 'yep!', 310002);
+
+
+

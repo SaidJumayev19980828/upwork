@@ -14,7 +14,7 @@ public enum ErrorCodes {
 	
 	, U$LOG$0001("NO USER FOUND FOR A TOKEN!")
 	
-	,P$EXP$0001("No column found in csv for writing product feature[%s]!")
+	,P$EXP$0001("No column found in csv for writing additional field with name[%s]!")
 	,P$VAR$0001("No Variant found with id[%d]!") 
 	,P$VAR$0002("No Extra Attribute exists with name[%s] for organization[%id]")
 	

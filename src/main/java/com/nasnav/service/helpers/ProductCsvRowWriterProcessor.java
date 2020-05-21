@@ -27,6 +27,7 @@ public class ProductCsvRowWriterProcessor extends BeanWriterProcessor<CsvRow>{
 	public Object[] write(CsvRow input, NormalizedString[] headers, int[] indexesToWrite) {
 		List<Object> rowData = asList(super.write(input, headers, indexesToWrite));
 		addFeaturesData(input, headers, indexesToWrite, rowData);
+		addExtraAttributesData(input, headers, indexesToWrite, rowData);
 		return rowData.toArray();
 	}
 
@@ -34,16 +35,33 @@ public class ProductCsvRowWriterProcessor extends BeanWriterProcessor<CsvRow>{
 	
 
 
+	private void addExtraAttributesData(CsvRow input, NormalizedString[] headers, int[] indexesToWrite,
+			List<Object> rowData) {
+		Map<String,String> attributes = input.getExtraAttributes();		
+		insertAdditionalDataToRow(headers, rowData, attributes);
+	}
+
+
+	
+
 	private void addFeaturesData(CsvRow input, NormalizedString[] headers, int[] indexesToWrite, List<Object> rowData) {
+		Map<String,String> features = input.getFeatures();		
+		insertAdditionalDataToRow(headers, rowData, features);
+	}
+
+
+	
+
+	private void insertAdditionalDataToRow(NormalizedString[] headers, List<Object> rowData,
+			Map<String, String> additionalData) {
 		if(rowData.size() != headers.length) {
 			addPadding(rowData, headers.length);
 		}
 		
 		Map<String,Integer> headerIndices = createHeadersIndicesMap(headers);		
-		Map<String,String> features = input.getFeatures();
 		
-		for(String featureName: features.keySet()) {
-			String featureValue = features.get(featureName);
+		for(String featureName: additionalData.keySet()) {
+			String featureValue = additionalData.get(featureName);
 			Integer columnIndex = headerIndices.get(featureName);
 			if(Objects.isNull(columnIndex)) {
 				throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$EXP$0001, featureName);

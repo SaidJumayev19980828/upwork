@@ -21,6 +21,7 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import com.nasnav.dao.ProductExtraAttributesEntityRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.model.querydsl.sql.QBrands;
@@ -30,6 +31,7 @@ import com.nasnav.model.querydsl.sql.QStocks;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.persistence.dto.query.result.products.export.ProductExportedData;
+import com.nasnav.persistence.dto.query.result.products.export.VariantExtraAtrribute;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.sql.SQLExpressions;
@@ -56,6 +58,9 @@ public class DataExportServiceImpl implements DataExportService{
 	@Autowired
 	private SecurityService security;
 	
+	@Autowired
+	private ProductExtraAttributesEntityRepository prodExtraAttributeRepo;
+	
 	@Override
 	public List<CsvRow> exportProductsData(Long orgId, Long shopId) {
 		SQLQuery<?> stocks = getStocksQuery(orgId, shopId);
@@ -64,16 +69,27 @@ public class DataExportServiceImpl implements DataExportService{
 				template.query(stocks.getSQL().getSQL(),
 						new BeanPropertyRowMapper<>(ProductExportedData.class));
 		
+		Map<Long, List<VariantExtraAtrribute>> extraAttributes = fetchVariantsExtraAttributes(shopId);
+		
 		Map<Long,List<ProductTagsBasicData>> productTags = createProductTagsMap(result);
-		Map<Integer, ProductFeaturesEntity> features = createFeaturesMap();
+		Map<Integer, ProductFeaturesEntity> features = createFeaturesMap();		
 		return result
 				.stream()
-				.map(product -> toCsvRow(product, productTags, features))
+				.map(product -> toCsvRow(product, productTags, features, extraAttributes))
 				.collect(toList());
 	}
 	
 	
 	
+	private Map<Long, List<VariantExtraAtrribute>> fetchVariantsExtraAttributes(Long shopId) {
+		return prodExtraAttributeRepo
+				.findByVariantShopId(shopId)
+				.stream()
+				.collect(groupingBy(VariantExtraAtrribute::getVariantId));
+	}
+
+
+
 	private Map<Integer, ProductFeaturesEntity> createFeaturesMap() {
 		Long orgId = security.getCurrentUserOrganizationId();
 		return feautreRepo
@@ -101,16 +117,32 @@ public class DataExportServiceImpl implements DataExportService{
 
 
 
-	private CsvRow toCsvRow(ProductExportedData productData, Map<Long,List<ProductTagsBasicData>> productTags, Map<Integer, ProductFeaturesEntity> features) {
+	private CsvRow toCsvRow(ProductExportedData productData
+			, Map<Long,List<ProductTagsBasicData>> productTags
+			, Map<Integer, ProductFeaturesEntity> features
+			, Map<Long, List<VariantExtraAtrribute>> extraAttributes) {
 		CsvRow row = createCsvRow(productData);
 		
 		setTags(row, productData, productTags);
 		setFeatures(row, productData, features);
+		setExtraAttributes(row, productData, extraAttributes);
 		return row;
 	}
 	
 	
 	
+	private void setExtraAttributes(CsvRow row, ProductExportedData productData,
+			Map<Long, List<VariantExtraAtrribute>> extraAttributes) {
+		Map<String,String> extraAttrMap  = 
+				extraAttributes
+				.getOrDefault(productData.getVariantId(), emptyList())
+				.stream()
+				.collect(toMap(VariantExtraAtrribute::getName, VariantExtraAtrribute::getValue));
+		row.setExtraAttributes(extraAttrMap);
+	}
+
+
+
 	private void setFeatures(CsvRow row, ProductExportedData productData,
 			Map<Integer, ProductFeaturesEntity> featuresMap) {
 		Map<String,String> features = 
