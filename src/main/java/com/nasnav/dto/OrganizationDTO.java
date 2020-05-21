@@ -1,12 +1,13 @@
 package com.nasnav.dto;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.Map;
 
 @NoArgsConstructor
 @Data
@@ -52,6 +53,6 @@ public class OrganizationDTO {
         public String socialInstagram;
 
         @JsonProperty("extra_info")
-        public Map info;
+        public Map<?,?> info;
     }
 }

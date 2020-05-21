@@ -11,7 +11,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.List;
 
-import com.nasnav.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -23,6 +22,17 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nasnav.dto.CategoryRepresentationObject;
+import com.nasnav.dto.ExtraAttributesRepresentationObject;
+import com.nasnav.dto.OrganizationRepresentationObject;
+import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.Pair;
+import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductsFiltersResponse;
+import com.nasnav.dto.ProductsResponse;
+import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.dto.TagsRepresentationObject;
+import com.nasnav.dto.TagsTreeNodeDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.service.BrandService;
