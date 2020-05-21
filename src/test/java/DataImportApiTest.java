@@ -821,6 +821,35 @@ public class DataImportApiTest {
 	
 	
 	
+	@Test
+	public void uploadProductCSVInsertNewProductsDisabledTest() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", true);
+		importProperties.put("update_stocks", true);
+		importProperties.put("insert_new_products", false);
+        
+		ProductDataCount before = countProductData();			
+		
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvFileUpdate, importProperties);
+		
+		result.andExpect(status().is(200));
+		
+		ProductDataCount after = countProductData();		
+		assertExpectedRowNumInserted(before, after, 0);         
+
+		assertOnlyUpdatedDataSaved();       
+        
+        ImportProductContext report = readImportReport(result);
+        assertEquals(0, report.getCreatedProducts().size());
+        assertEquals(1, report.getUpdatedProducts().size());
+        assertTrue(report.getErrors().isEmpty());
+	}
+	
+	
+	
+	
+	
 	
 	
 	@Test
@@ -874,6 +903,17 @@ public class DataImportApiTest {
         assertDataSaved();     
         validateDeletedOldProducts(before ,result, productToBeDeleted, variantToBeDeleted);
 	}
+
+
+
+
+
+
+	private void assertOnlyUpdatedDataSaved() {
+		ExpectedSavedData expected = getExpectedUpdatedDataWithStocks();
+        assertProductDataImported(TEST_UPDATE_SHOP, expected);
+        assertProductUpdatedDataSavedWithStock();
+    }
 
 
 
@@ -1667,6 +1707,30 @@ public class DataImportApiTest {
 	
 	
 	
+	private ExpectedSavedData getExpectedUpdatedDataWithStocks() {
+		ExpectedSavedData data = new ExpectedSavedData();		
+
+		data.setQuantities( setOf(101) );
+		data.setPrices( setOf(new BigDecimal("10.25")));
+		data.setCurrencies( setOf(EGP));
+		
+		data.setBarcodes( setOf("TT232222") );
+		data.setProductNames( setOf("Squishy shoes") );
+		data.setVariantsPNames(setOf("u_shoe") );
+		data.setProductPNames(setOf("u_shoe") );
+		data.setDescriptions( setOf("squishy") );
+		data.setTags( setOf("squishy things") );
+		data.setBrands( setOf(101L) );
+		data.setFeatureSpecs(  createExpectedFeautreSpecOnlyUpdatedProducts());
+		data.setExtraAttributes(  createExpectedExtraAttrUpdatedProduct());
+		data.setStocksNum(1);
+		
+		return data;
+	}
+	
+	
+	
+	
 	
 	
 	private ExpectedSavedData getExpectedUpdatedDataWithNullFeatures() {
@@ -1765,6 +1829,16 @@ public class DataImportApiTest {
 	
 	
 	
+	private Set<JSONObject> createExpectedExtraAttrUpdatedProduct() {
+		return setOf(					
+					json()
+					 .put("extra", "ext1")
+					 .put("not-feature-col", "no")
+				);
+	}
+	
+	
+	
 	
 	private Set<JSONObject> createExpectedFeautreSpec() {
 		Set<JSONObject> specs = new HashSet<>();
@@ -1773,6 +1847,17 @@ public class DataImportApiTest {
 		specs.addAll( asList(spec1,spec2));
 		return specs;
 	}
+	
+	
+	
+	private Set<JSONObject> createExpectedFeautreSpecOnlyUpdatedProducts() {
+		Set<JSONObject> specs = new HashSet<>();
+		JSONObject spec1 = createFeatureSpec("XXL", "Lettuce Heart");
+		specs.addAll( asList(spec1));
+		return specs;
+	}
+	
+	
 	
 	
 	

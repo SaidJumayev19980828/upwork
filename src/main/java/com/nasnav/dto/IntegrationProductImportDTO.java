@@ -16,6 +16,10 @@ public class IntegrationProductImportDTO {
 	
 	private boolean updateProduct;	
 	private boolean updateStocks;
+	private boolean deleteOldProducts;
+    private boolean resetTags;
+    private boolean insertNewProducts;
+    
 	private Integer currency;	
 	private String encoding;
 	private Integer pageNum;

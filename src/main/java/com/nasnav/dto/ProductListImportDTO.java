@@ -17,6 +17,7 @@ public class ProductListImportDTO {
 	private boolean updateStocks;
 	private boolean deleteOldProducts;
 	private boolean resetTags;
+    private boolean insertNewProducts;
 	
 	private Long shopId;
 	private Integer currency;	

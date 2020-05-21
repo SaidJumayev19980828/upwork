@@ -834,6 +834,9 @@ public class IntegrationServiceImpl implements IntegrationService {
 		commonImportMetaData.setEncoding(metadata.getEncoding());
 		commonImportMetaData.setUpdateProduct(metadata.isUpdateProduct());
 		commonImportMetaData.setUpdateStocks(metadata.isUpdateStocks());
+		commonImportMetaData.setResetTags(metadata.isResetTags());
+		commonImportMetaData.setDeleteOldProducts(metadata.isDeleteOldProducts());
+		commonImportMetaData.setInsertNewProducts(metadata.isInsertNewProducts());
 		return commonImportMetaData;
 	}
 	

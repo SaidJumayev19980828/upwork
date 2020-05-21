@@ -127,6 +127,7 @@ public class CsvDataImportServiceImpl implements CsvDataImportService {
 		importMetadata.setEncoding(csvImportMetaData.getEncoding());
 		importMetadata.setDeleteOldProducts(csvImportMetaData.isDeleteOldProducts());
 		importMetadata.setResetTags(csvImportMetaData.isResetTags());
+		importMetadata.setInsertNewProducts(csvImportMetaData.isInsertNewProducts());
 
 		return importMetadata;
 	}
