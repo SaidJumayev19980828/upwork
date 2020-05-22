@@ -1078,23 +1078,23 @@ public class ProductService {
 
 
 	private Map<Long, ProductEntity> createProductCache(List<JSONObject> productsJson) {
-		List<Long> productIds = extractProductIds(productsJson);
+		Set<Long> productIds = extractProductIds(productsJson);
 		
 		return mapInBatches(productIds, 500, productRepository::findByIdIn)
 				.stream()
-				.collect(toMap(ProductEntity::getId, product -> product));
+				.collect(toMap(ProductEntity::getId, product -> product , (prod1, prod2) -> prod2));
 	}
 
 
 
-	private List<Long> extractProductIds(List<JSONObject> productsJson) {
+	private Set<Long> extractProductIds(List<JSONObject> productsJson) {
 		return productsJson
 				.stream()
 				.filter(json -> json.has("product_id"))
 				.filter(json -> !json.isNull("product_id"))
 				.map(json -> json.getLong("product_id"))
 				.filter(Objects::nonNull)
-				.collect(toList());
+				.collect(toSet());
 	}
 
 
