@@ -31,6 +31,7 @@ public class IntegrationProductImportDTO {
 		this.dryrun = true;
 		this.updateProduct = false;
 		this.updateStocks = false;
+		this.insertNewProducts = true;
 		currency = 1;
 		encoding = "UTF-8";
 		pageNum = 1;

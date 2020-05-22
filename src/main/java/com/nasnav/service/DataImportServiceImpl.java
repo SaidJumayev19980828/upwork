@@ -834,7 +834,7 @@ public class DataImportServiceImpl implements DataImportService {
 	    		.values()
 	    		.stream()
 	    		.filter(EntityUtils::noneIsEmpty)
-	    		.map(singleProductRows -> toProductDataWrapped(importMetaData, cache, singleProductRows))
+	    		.map(singleProductRows -> toProductData(singleProductRows,importMetaData, cache))
 	    		.collect(toList());
     	
     	List<ProductData> newProductsData = 
@@ -924,18 +924,7 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-	private ProductData toProductDataWrapped(ProductImportMetadata importMetaData,
-			DataImportCachedData cache, List<? extends ProductImportDTO> productData) {
-		try {
-			return toProductData(productData, importMetaData, cache);
-		} catch (BusinessException e) {
-			logger.error(e,e);
-			throw new RuntimeBusinessException(e);
-		}
-	}
-
-
-    private ProductData toProductData(List<? extends ProductImportDTO> productDataRows, ProductImportMetadata importMetaData, DataImportCachedData cache) throws BusinessException {
+    private ProductData toProductData(List<? extends ProductImportDTO> productDataRows, ProductImportMetadata importMetaData, DataImportCachedData cache) {
     	ProductImportDTO pivotProductRow = getPivotProductDataRow(productDataRows, cache);
     	ProductUpdateDTO productDto = createProductDto(pivotProductRow, cache);
     	List<VariantDTOWithExternalIdAndStock> productVariantsData =
@@ -966,12 +955,12 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-	private <T extends ProductImportDTO> ProductImportDTO getPivotProductDataRow(List<T> productDataRows, DataImportCachedData cache) throws BusinessException {
+	private <T extends ProductImportDTO> ProductImportDTO getPivotProductDataRow(List<T> productDataRows, DataImportCachedData cache){
 		T firstProductRow = 
     			productDataRows
     			.stream()
     			.findFirst()
-    			.orElseThrow(() -> new BusinessException("No Product Data found!", "INVALID PARAM: csv", NOT_ACCEPTABLE));
+    			.orElseThrow(() -> new RuntimeBusinessException("No Product Data found!", "INVALID PARAM: csv", NOT_ACCEPTABLE));
 		return productDataRows
     			.stream()
     			.filter(productDataRow -> hasExistingVariant(productDataRow, cache))
@@ -1114,7 +1103,7 @@ public class DataImportServiceImpl implements DataImportService {
     
 
 
-    private ProductUpdateDTO createProductDto(ProductImportDTO row, DataImportCachedData cache) throws BusinessException {
+    private ProductUpdateDTO createProductDto(ProductImportDTO row, DataImportCachedData cache){
 
         ProductUpdateDTO product = new ProductUpdateDTO();
         product.setDescription(row.getDescription());
@@ -1123,19 +1112,15 @@ public class DataImportServiceImpl implements DataImportService {
         product.setOperation(EntityConstants.Operation.CREATE);
         product.setPname(row.getPname());
         
+        ofNullable(row.getBrand())
+        .map(brand -> getBrandId(row, cache.getBrandsCache()))
+        .ifPresent(product::setBrandId);
+        
         Optional<Long> productId = getProductId(row, cache);
-
         if (productId.isPresent()) {
         	product.setId(productId.get());
         	product.setOperation(UPDATE);
-			if(row.getBrand() != null) {
-				Long brandId = getBrandId(row, cache.getBrandsCache());
-				product.setBrandId(brandId);
-			}
-		} else {
-			Long brandId = getBrandId(row, cache.getBrandsCache());
-			product.setBrandId(brandId);
-        }
+		}
 
         return product;
     }
@@ -1144,13 +1129,13 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-	private Long getBrandId(ProductImportDTO row, Map<String, BrandsEntity> brandsCache) throws BusinessException {
+	private Long getBrandId(ProductImportDTO row, Map<String, BrandsEntity> brandsCache) {
 		return ofNullable(row.getBrand())
 				.map(String::toUpperCase)
 				.map(brandsCache::get)
 				.map(BrandsEntity::getId)
 				.orElseThrow(() ->
-					new BusinessException(
+					new RuntimeBusinessException(
 				            format(ERR_BRAND_NAME_NOT_EXIST, row.getBrand())
 				            , "INVALID DATA:brand"
 				            , NOT_ACCEPTABLE));

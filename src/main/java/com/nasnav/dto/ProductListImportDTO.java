@@ -5,10 +5,8 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class ProductListImportDTO {
@@ -22,4 +20,8 @@ public class ProductListImportDTO {
 	private Long shopId;
 	private Integer currency;	
 	private String encoding;	
+	
+	public ProductListImportDTO(){
+		this.insertNewProducts = true;
+	}
 }

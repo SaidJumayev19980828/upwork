@@ -10,16 +10,16 @@ import com.nasnav.test.integration.msdynamics.MicrosoftDynamicsIntegrationTest;
 import com.nasnav.test.integration.msdynamics.MicrosoftDynamicsIntegrationWebClientsTest;
 import com.nasnav.test.integration.sallab.ElSallabIntegrationTest;
 
-//@RunWith(Suite.class)
-//@SuiteClasses({ 
-//	 IntegrationApiTest.class	
-//	, IntegrationErrorsApiTest.class
-//	, IntegrationDictApiTest.class
-//	, MicrosoftDynamicsIntegrationTest.class
-//	, IntegrationServiceTest.class
-//	, MicrosoftDynamicsIntegrationWebClientsTest.class
-//	, ElSallabIntegrationTest.class
-//	})
+@RunWith(Suite.class)
+@SuiteClasses({ 
+	 IntegrationApiTest.class	
+	, IntegrationErrorsApiTest.class
+	, IntegrationDictApiTest.class
+	, MicrosoftDynamicsIntegrationTest.class
+	, IntegrationServiceTest.class
+	, MicrosoftDynamicsIntegrationWebClientsTest.class
+	, ElSallabIntegrationTest.class
+	})
 public class IntegrationTestSuite {
 
 }

@@ -540,15 +540,11 @@ public class ProductService {
 
 	private Set<ProductImgDTO> getProductImages(Long productId) {
 
-		List<ProductImagesEntity> productImages = productImagesRepository.findByProductEntity_IdOrderByPriority(productId);
-
-		if (productImages != null && !productImages.isEmpty()) {
-			return productImages
-					.stream()
-					.map(ProductImgDTO::new)
-					.collect(toSet());
-		}
-		return null;
+		return productImagesRepository
+				.findByProductEntity_IdOrderByPriority(productId)
+				.stream()
+				.map(ProductImgDTO::new)
+				.collect(toSet());
 	}
 
 
@@ -1045,9 +1041,9 @@ public class ProductService {
 	private List<ProductEntity> prepareProductEntities(List<String> productJsonList, Boolean isBundle,
 			ProductUpdateCache cache) {
 		return productJsonList
-		.stream()
-		.map(json -> prepareProductEntity(json, isBundle, cache))
-		.collect(toList());
+				.stream()
+				.map(json -> prepareProductEntity(json, isBundle, cache))
+				.collect(toList());
 	}
 	
 	

@@ -191,7 +191,7 @@ public class ElSallabIntegrationTest {
 		expected.products = 2L;
 		expected.variants = 5L;
 		expected.tags = expected.products*3;
-		expected.extraAttr = expected.variants*5;
+		expected.extraAttr = expected.variants*6;
 		expected.stocks = expected.variants;
 		expected.pages = 1;
 		
@@ -237,7 +237,7 @@ public class ElSallabIntegrationTest {
 		expected.products = 1L;
 		expected.variants = 2L;
 		expected.tags = expected.products*3;
-		expected.extraAttr = expected.variants*5;
+		expected.extraAttr = expected.variants*6;
 		expected.stocks = expected.variants;
 		expected.pages = 3;
 		
