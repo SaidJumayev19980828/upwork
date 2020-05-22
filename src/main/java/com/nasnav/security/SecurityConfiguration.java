@@ -106,6 +106,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/organization/themes/class"							, setOf(NASNAV_ADMIN)),
 						patternOf( "/organization/themes"								, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/upload/**"											, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/export/*"											, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/integration/import/shops"							, setOf(ORGANIZATION_MANAGER)),
 						patternOf( "/integration/import/products"						, setOf(ORGANIZATION_MANAGER)),
 						patternOf( "/integration/import/product_images"					, setOf(ORGANIZATION_MANAGER)),

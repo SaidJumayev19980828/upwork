@@ -1,5 +1,6 @@
 package com.nasnav.service.helpers;
 
+import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
 import static com.nasnav.exceptions.ErrorCodes.P$EXP$0001;
 import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
@@ -8,7 +9,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Map.Entry;
 
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.service.model.importproduct.csv.CsvRow;
@@ -60,14 +61,22 @@ public class ProductCsvRowWriterProcessor extends BeanWriterProcessor<CsvRow>{
 		
 		Map<String,Integer> headerIndices = createHeadersIndicesMap(headers);		
 		
-		for(String featureName: additionalData.keySet()) {
-			String featureValue = additionalData.get(featureName);
-			Integer columnIndex = headerIndices.get(featureName);
-			if(Objects.isNull(columnIndex)) {
-				throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$EXP$0001, featureName);
-			}
-			rowData.set(columnIndex, featureValue);
-		}
+		additionalData
+		.entrySet()
+		.stream()
+		.filter(data -> isNotBlankOrNull(data.getKey()))
+		.forEach(data -> addToRow(data, headerIndices, rowData));
+	}
+
+
+
+	private void addToRow(Entry<String, String> data, Map<String, Integer> headerIndices, List<Object> rowData) {
+		String key = data.getKey();
+		String value = data.getValue();	
+		Integer columnIndex = 
+				ofNullable(headerIndices.get(key))
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$EXP$0001, key));
+		rowData.set(columnIndex, value);
 	}
 
 

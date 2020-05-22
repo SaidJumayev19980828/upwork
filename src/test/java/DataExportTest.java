@@ -2,6 +2,7 @@ import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.OK;
 
 import org.junit.Test;
@@ -46,5 +47,18 @@ public class DataExportTest {
 		
 		assertEquals(OK, response.getStatusCode());
 		assertFalse(response.getBody().isEmpty());
+	}
+	
+	
+	
+	
+	@Test
+	public void testProductExportNoAuthz(){		
+		ResponseEntity<String> response = 
+				template.exchange("/export/products?shop_id=502", GET, getHttpEntity("101112"), String.class);
+		
+		System.out.println(">>>>>>>\n" + response.getBody());
+		
+		assertEquals(FORBIDDEN, response.getStatusCode());
 	}
 }
