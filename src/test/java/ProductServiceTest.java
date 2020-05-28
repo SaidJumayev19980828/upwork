@@ -609,7 +609,6 @@ public class ProductServiceTest {
 		assertEquals(PRODUCT_PRODUCT_BARCODE, product.getString("barcode"));		
 		assertEquals(PRODUCT_DESC, product.getString("description"));
 		assertEquals(ProductTypes.DEFAULT, product.getInt("product_type"));
-		assertEquals(PRODUCT_IMG_URL, product.getString("image_url"));
 		assertTrue(product.has("variant_features"));
 		assertTrue(product.has("variants"));
 		assertFeatureArrayRetrieved(product);

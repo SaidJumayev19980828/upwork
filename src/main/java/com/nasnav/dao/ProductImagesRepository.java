@@ -7,10 +7,10 @@ import java.util.Set;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
-
-import com.nasnav.persistence.ProductImagesEntity;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.nasnav.persistence.ProductImagesEntity;
 
 public interface ProductImagesRepository extends CrudRepository<ProductImagesEntity, Long>{
 
@@ -46,4 +46,6 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 	void deleteByProductEntity_organizationId(@Param("orgId") Long orgId);
 
 	Long countByProductEntity_OrganizationId(long l);
+
+	Set<ProductImagesEntity> findByProductEntity_IdAndTypeOrderByPriority(Long productId, int productImage);
 }

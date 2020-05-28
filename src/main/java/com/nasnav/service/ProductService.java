@@ -33,6 +33,7 @@ import static com.nasnav.exceptions.ErrorCodes.P$VAR$0001;
 import static com.nasnav.exceptions.ErrorCodes.P$VAR$0002;
 import static com.nasnav.persistence.ProductTypes.BUNDLE;
 import static com.nasnav.service.ProductImageService.NO_IMG_FOUND_URL;
+import static com.nasnav.service.ProductImageService.PRODUCT_IMAGE;
 import static com.querydsl.sql.SQLExpressions.select;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -541,7 +542,7 @@ public class ProductService {
 	private Set<ProductImgDTO> getProductImages(Long productId) {
 
 		return productImagesRepository
-				.findByProductEntity_IdOrderByPriority(productId)
+				.findByProductEntity_IdAndTypeOrderByPriority(productId, PRODUCT_IMAGE)
 				.stream()
 				.map(ProductImgDTO::new)
 				.collect(toSet());
