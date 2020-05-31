@@ -5,8 +5,6 @@ import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
 import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
 import static com.nasnav.commons.utils.EntityUtils.areEqual;
-import static com.nasnav.commons.utils.EntityUtils.noneIsEmpty;
-import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
@@ -37,6 +35,8 @@ import static com.nasnav.service.ProductImageService.PRODUCT_IMAGE;
 import static com.querydsl.sql.SQLExpressions.select;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
@@ -68,6 +68,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.persistence.EntityManager;
@@ -100,6 +101,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.enums.SortOrder;
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.BasketRepository;
@@ -156,6 +158,7 @@ import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.persistence.dto.query.result.products.BrandBasicData;
+import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.request.BundleSearchParam;
 import com.nasnav.request.ProductSearchParam;
 import com.nasnav.response.BundleResponse;
@@ -165,6 +168,7 @@ import com.nasnav.response.ProductUpdateResponse;
 import com.nasnav.response.ProductsDeleteResponse;
 import com.nasnav.response.VariantUpdateResponse;
 import com.nasnav.service.helpers.CachingHelper;
+import com.nasnav.service.model.ProductTagPair;
 import com.nasnav.service.model.VariantBasicData;
 import com.nasnav.service.model.VariantCache;
 import com.nasnav.service.model.VariantIdentifier;
@@ -2518,31 +2522,99 @@ public class ProductService {
 		List<Long> productIds = productTagDTO.getProductIds();
 		List<Long> tagIds = productTagDTO.getTagIds();
 		
-		validateProductIdsExists(new HashSet<>(productIds));
-		validateTagIdsExists(new HashSet<>(tagIds));
-
-		Set<Pair> existingProductTags = new HashSet<>();
-		if(noneIsNull(productIds, tagIds) && noneIsEmpty(productIds, tagIds)) {
-			existingProductTags = new HashSet<>(productRepository.getProductTags(productIds, tagIds));
-		}
-						
-		for(Long productId : productTagDTO.getProductIds()) {
-			for(Long tagId : productTagDTO.getTagIds()) {
-				Pair newProductTag = new Pair(productId, tagId);
-				if( !existingProductTags.contains(newProductTag)) {
-					productRepository.insertProductTag(productId, tagId);
-					existingProductTags.add(newProductTag);
-				}
-			}			
-		}
+		Set<ProductTagPair> newProductTags = createProductTagPairs(productIds, tagIds);
+		
+		addTagsToProducts(newProductTags);
 		
 		return true;
 	}
 
 
 
+	private Set<ProductTagPair> createProductTagPairs(List<Long> productIds, List<Long> tagIds) {
+		return productIds
+				.parallelStream()
+				.flatMap(id -> getProductTagPairs(id, tagIds))
+				.distinct()				
+				.collect(toSet());
+	}
 
-	private void validateTagIdsExists(HashSet<Long> tagIds) {
+
+
+	public void addTagsToProducts(Set<ProductTagPair> newProductTags) {
+		Set<Long> prodIds = getProductIds(newProductTags);
+		Set<Long> tgIds = getTagIds(newProductTags);
+		
+		validateProductIdsExists(prodIds);
+		validateTagIdsExists(tgIds);
+
+		Set<ProductTagPair> existingProductTags = getExistingProductTags(prodIds);
+		
+		saveProductTagsToDB(newProductTags, existingProductTags);
+	}
+
+
+	
+	
+
+	private void saveProductTagsToDB(Set<ProductTagPair> newProductTags, Set<ProductTagPair> existingProductTags) {
+		ofNullable(newProductTags)
+		.orElse(emptySet())
+		.stream()
+		.filter(pair -> !existingProductTags.contains(pair))
+		.forEach(productTag -> productRepository.insertProductTag(productTag.getProductId(), productTag.getTagId()) );
+	}
+
+
+
+	private Set<Long> getProductIds(Set<ProductTagPair> newProductTags) {
+		return newProductTags
+				.parallelStream()
+				.map(ProductTagPair::getProductId)
+				.collect(toSet());
+	}
+
+
+
+	private Set<Long> getTagIds(Set<ProductTagPair> newProductTags) {
+		return newProductTags
+				.parallelStream()
+				.map(ProductTagPair::getTagId)
+				.collect(toSet());
+	}
+
+
+
+	private Set<ProductTagPair> getExistingProductTags(Set<Long> prodIds) {
+		return ofNullable(prodIds)
+				.filter(EntityUtils::noneIsEmpty)
+				.map(ids -> mapInBatches(ids, 500, orgTagRepo::getTagsByProductIdIn))
+				.orElse(emptyList())
+				.parallelStream()
+				.map(this::toProductTagPair)
+				.collect(toSet());
+	}
+
+	
+	
+	
+	private ProductTagPair toProductTagPair(ProductTagsBasicData basicData) {
+		return new ProductTagPair(basicData.getProductId(), basicData.getTagId());
+	}
+	
+	
+	
+	
+	private Stream<ProductTagPair> getProductTagPairs(Long productId, List<Long> tagIds){
+		return ofNullable(tagIds)
+				.orElse(emptyList())
+				.parallelStream()
+				.map(tagId -> new ProductTagPair(productId, tagId));
+	}
+
+
+
+	private void validateTagIdsExists(Set<Long> tagIds) {
 		Set<Long> existingIds = new HashSet<>(mapInBatches(tagIds, 500, orgTagRepo::getExistingTagIds));	
 		tagIds
 		.stream()

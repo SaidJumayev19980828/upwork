@@ -79,6 +79,7 @@ import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.DataImportCachedData;
+import com.nasnav.service.model.ProductTagPair;
 import com.nasnav.service.model.VariantBasicData;
 import com.nasnav.service.model.VariantCache;
 import com.nasnav.service.model.VariantIdentifier;
@@ -386,8 +387,6 @@ public class DataImportServiceImpl implements DataImportService {
 		boolean updateProductEnabled = importMetaData.isUpdateProduct();
 		boolean insertNewProducts = importMetaData.isInsertNewProducts();
 		
-		//product data is mutable, so we MUST seperate them here
-		//we need to switch to an immutable approach
 		List<ProductData> newProducts = context.getProductsData().getNewProductsData();
 		List<ProductData> existingProducts = context.getProductsData().getExistingProductsData();
 		
@@ -670,12 +669,13 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 	private void saveProductsTagsToDB(Map<String, TagsEntity> tagsMap, List<ProductData> data, boolean isResetTags){
-		Map<Long,List<TagAndProductId>> productsPerTag = 
+		Set<ProductTagPair> productTags = 
 				data
-				.stream()
+				.parallelStream()
 				.map(product -> toTagAndProductIdPairs(product, tagsMap))
 				.flatMap(List::stream)
-				.collect(groupingBy(TagAndProductId::getTagId));
+				.distinct()
+				.collect(toSet());
 
 		List<Long> productIds = 
 				data
@@ -685,15 +685,11 @@ public class DataImportServiceImpl implements DataImportService {
 				.filter(Objects::nonNull)
 				.collect(toList());
 		
-        if( isResetTags && !productsPerTag.keySet().isEmpty()) {
+        if( isResetTags && !productTags.isEmpty()) {
         	productService.deleteAllTagsForProducts(productIds);
         }
 		
-		productsPerTag
-			.entrySet()
-			.stream()
-			.forEach(this::saveProductsUnderTagId);
-		
+		productService.addTagsToProducts(productTags);
 	}
 
 	
@@ -725,12 +721,11 @@ public class DataImportServiceImpl implements DataImportService {
 	
 	
 	
-	private List<TagAndProductId> toTagAndProductIdPairs(ProductData data, Map<String, TagsEntity> tagsMap) {
+	private List<ProductTagPair> toTagAndProductIdPairs(ProductData data, Map<String, TagsEntity> tagsMap) {
 		return data
 				.getTagsNames()
 				.stream()
-				.map(tagName -> toTagAndProductIdPair(data, tagsMap, tagName
-						))
+				.map(tagName -> toTagAndProductIdPair(data, tagsMap, tagName))
 				.collect(toList());
 	}
 	
@@ -738,7 +733,7 @@ public class DataImportServiceImpl implements DataImportService {
 	
 	
 	
-	private TagAndProductId toTagAndProductIdPair(ProductData data, Map<String, TagsEntity> tagsMap, String tagName){
+	private ProductTagPair toTagAndProductIdPair(ProductData data, Map<String, TagsEntity> tagsMap, String tagName){
 		Long orgId = security.getCurrentUserOrganizationId();
 		Long tagId = ofNullable(tagsMap.get(tagName))
 					.map(TagsEntity::getId)
@@ -748,11 +743,7 @@ public class DataImportServiceImpl implements DataImportService {
 	        				, "INVLAID PRODUCT DATA"
 	        				, NOT_ACCEPTABLE
 	        			));
-		TagAndProductId pair = new TagAndProductId();
-		pair.setProductId(data.getProductDto().getId());
-		pair.setTagName(tagName);
-		pair.setTagId(tagId);
-		return pair;
+		return new ProductTagPair(data.getProductDto().getId(), tagId);
 	}
 
 	
