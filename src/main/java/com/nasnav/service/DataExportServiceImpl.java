@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.sql.DataSource;
-
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -41,12 +39,6 @@ import com.querydsl.sql.SQLQueryFactory;
 @Service
 public class DataExportServiceImpl implements DataExportService{
 	@Autowired
-	private ProductService productService;
-
-	@Autowired
-	private DataSource dataSource;
-
-	@Autowired
 	private JdbcTemplate template;
 	
 	@Autowired
@@ -60,6 +52,9 @@ public class DataExportServiceImpl implements DataExportService{
 	
 	@Autowired
 	private ProductExtraAttributesEntityRepository prodExtraAttributeRepo;
+	
+	@Autowired
+	private SQLQueryFactory queryFactory;
 	
 	@Override
 	public List<CsvRow> exportProductsData(Long orgId, Long shopId) {
@@ -231,14 +226,12 @@ public class DataExportServiceImpl implements DataExportService{
 
 
 	private SQLQuery<?> getStocksQuery(Long orgId, Long shopId) {
-		SQLQueryFactory query = new SQLQueryFactory(productService.createQueryDslConfig() , dataSource);
-
 		QStocks stock = QStocks.stocks;
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
 		QBrands brand = QBrands.brands;
 
-		SQLQuery<?> fromClause = getProductsBaseQuery(query, orgId, shopId);
+		SQLQuery<?> fromClause = getProductsBaseQuery(queryFactory, orgId, shopId);
 		SQLQuery<?> productsQuery = fromClause.select(
 											stock.quantity,
 											stock.price,
@@ -256,7 +249,7 @@ public class DataExportServiceImpl implements DataExportService{
 													.partitionBy(product.id)
 													.orderBy(stock.price).as("row_num"));
 
-		SQLQuery<?> stocks = query.from(productsQuery.as("total_products"));
+		SQLQuery<?> stocks = queryFactory.from(productsQuery.as("total_products"));
 
 		stocks.select((Expressions.template(CsvRow.class,"*")));
 

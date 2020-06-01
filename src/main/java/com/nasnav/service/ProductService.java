@@ -5,6 +5,7 @@ import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
 import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
 import static com.nasnav.commons.utils.EntityUtils.areEqual;
+import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
@@ -78,7 +79,6 @@ import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-import javax.sql.DataSource;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.logging.log4j.LogManager;
@@ -175,11 +175,10 @@ import com.nasnav.service.model.VariantIdentifier;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.sql.Configuration;
-import com.querydsl.sql.PostgreSQLTemplates;
 import com.querydsl.sql.SQLExpressions;
 import com.querydsl.sql.SQLQuery;
 import com.querydsl.sql.SQLQueryFactory;
+import com.querydsl.sql.dml.SQLInsertClause;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -251,13 +250,13 @@ public class ProductService {
 	private ProductImgsCustomRepository productImgsCustomRepo;
 
 	@Autowired
-	private DataSource dataSource;
-
-	@Autowired
 	private JdbcTemplate template;
 	
 	@Autowired
 	private CachingHelper cachingHelper;
+	
+	@Autowired
+	private SQLQueryFactory queryFactory;
 
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
@@ -335,19 +334,25 @@ public class ProductService {
 		Map<Long,List<TagsRepresentationObject>> result = new HashMap<>();
 
 		List<Pair> productsTags = productRepository.getTagsByProductIdIn(productsIds);
-		List<TagsEntity> productsTagsDTOs =  orgTagRepo.findByIdIn(productsTags.stream()
-																			   .map(p -> p.getSecond())
-																			   .distinct()
-																			   .collect(toList()));
+		List<TagsEntity> productsTagsDTOs =  
+				orgTagRepo
+					.findByIdIn(productsTags.stream()
+					.map(p -> p.getSecond())
+					.distinct()
+					.collect(toList()));
 		for (Long productId: productsIds) {
-			List<Long> productTagsIds = productsTags.stream()
-													.filter(pair -> pair.getFirst().equals(productId))
-													.map(pair -> pair.getSecond())
-													.collect(Collectors.toList());
-			List<TagsRepresentationObject> productTagsDTOs = productsTagsDTOs.stream()
-															   .filter(tag -> productTagsIds.contains(tag.getId()))
-															   .map(tag -> (TagsRepresentationObject)tag.getRepresentation())
-															   .collect(toList());
+			List<Long> productTagsIds = 
+					productsTags
+					.stream()
+					.filter(pair -> pair.getFirst().equals(productId))
+					.map(pair -> pair.getSecond())
+					.collect(toList());
+			List<TagsRepresentationObject> productTagsDTOs = 
+					productsTagsDTOs
+					.stream()
+					.filter(tag -> productTagsIds.contains(tag.getId()))
+					.map(tag -> (TagsRepresentationObject)tag.getRepresentation())
+				   	.collect(toList());
 			result.put(productId, productTagsDTOs);
 		}
 
@@ -358,8 +363,6 @@ public class ProductService {
 	
 	
 	private List<Long> filterProductsWithMultipleVariants(List<Long> productsIds) {
-		SQLQueryFactory queryFactory = new SQLQueryFactory(createQueryDslConfig() , dataSource);
-
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
 
@@ -376,13 +379,6 @@ public class ProductService {
 	}
 
 
-
-
-	public Configuration createQueryDslConfig() {
-		Configuration config = new Configuration(new PostgreSQLTemplates());
-		config.setUseLiterals(true);
-		return config;
-	}
 
 
 	
@@ -582,7 +578,7 @@ public class ProductService {
 				.collect(toList());
 	}
 
-
+	@Transactional
 	public ProductsResponse getProducts(ProductSearchParam requestParams) throws BusinessException, InvocationTargetException, IllegalAccessException, SQLException {
 		ProductSearchParam params = getProductSearchParams(requestParams);
 
@@ -613,16 +609,13 @@ public class ProductService {
 		QProductVariants variant = QProductVariants.productVariants;
 		QProductTags productTags = QProductTags.productTags;
 
-		
-		SQLQueryFactory query = new SQLQueryFactory(createQueryDslConfig() , dataSource);
-
-		SQLQuery<?> productTagsQuery = getProductTagsQuery(query, productTags, params);
+		SQLQuery<?> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
 
 		BooleanBuilder predicate = getQueryPredicate(params, product, stock);
 
 		OrderSpecifier<?> order = getProductQueryOrder(params, product, stock);
 
-		SQLQuery<?> fromClause = getProductsBaseQuery(query, predicate);
+		SQLQuery<?> fromClause = getProductsBaseQuery(queryFactory, predicate);
 
 		SQLQuery<?> productsQuery =
 				fromClause.select(
@@ -655,7 +648,7 @@ public class ProductService {
 			productsQuery.orderBy(order);
 
 		SQLQuery<?> stocks = 
-				query
+				queryFactory
 				.from(productsQuery.as("total_products"))
 				.where(Expressions.numberPath(Long.class, "row_num").eq(1L));
 
@@ -667,21 +660,19 @@ public class ProductService {
 	public ProductsFiltersResponse getProductAvailableFilters(ProductSearchParam param) throws BusinessException, IllegalAccessException, InvocationTargetException, SQLException {
 		ProductSearchParam finalParams = getProductSearchParams(param);
 
-		SQLQueryFactory factory = new SQLQueryFactory(createQueryDslConfig(), dataSource);
-
 		QStocks stock = QStocks.stocks;
 		QProducts product = QProducts.products;
 
 		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock);
 
-		SQLQuery<?> baseQuery = getProductsBaseQuery(factory, predicate);
+		SQLQuery<?> baseQuery = getProductsBaseQuery(queryFactory, predicate);
 
 		Prices prices = getProductPrices(baseQuery,stock);
 
-		List<Organization_BrandRepresentationObject> brands = getProductBrands(factory, baseQuery, product);
+		List<Organization_BrandRepresentationObject> brands = getProductBrands(queryFactory, baseQuery, product);
 
         Map<String, List<String>> variantsFeatures =
-				getProductVariantFeatures(factory, baseQuery);
+				getProductVariantFeatures(queryFactory, baseQuery);
 
 		ProductsFiltersResponse response = new ProductsFiltersResponse(prices, brands, variantsFeatures);
 
@@ -2550,21 +2541,54 @@ public class ProductService {
 
 		Set<ProductTagPair> existingProductTags = getExistingProductTags(prodIds);
 		
-		saveProductTagsToDB(newProductTags, existingProductTags);
+		batchInsertProductTagsToDB(newProductTags, existingProductTags);
 	}
 
 
 	
 	
 
-	private void saveProductTagsToDB(Set<ProductTagPair> newProductTags, Set<ProductTagPair> existingProductTags) {
-		ofNullable(newProductTags)
-		.orElse(emptySet())
-		.stream()
-		.filter(pair -> !existingProductTags.contains(pair))
-		.forEach(productTag -> productRepository.insertProductTag(productTag.getProductId(), productTag.getTagId()) );
+	private void batchInsertProductTagsToDB(Set<ProductTagPair> newProductTags, Set<ProductTagPair> existingProductTags) {
+		QProductTags productTags = QProductTags.productTags; 
+		SQLInsertClause insertClause = queryFactory.insert(productTags);
+		
+		Set<ProductTagPair> validProductTags =
+			ofNullable(newProductTags)
+			.orElse(emptySet())
+			.stream()
+			.filter(pair -> !existingProductTags.contains(pair))
+			.filter(this::isValidProducTagPair)
+			.collect(toSet());
+		
+		validProductTags.forEach(productTag -> insertProductTag(productTags, insertClause, productTag));
+		
+		if(!validProductTags.isEmpty()) {
+			insertClause.execute();
+		}
+	}
+	
+	
+	
+	
+	private boolean isValidProducTagPair(ProductTagPair pair) {
+		return noneIsNull(pair, pair.getProductId(), pair.getTagId());
 	}
 
+
+
+	private void  insertProductTag(QProductTags productTags, SQLInsertClause insert,
+			ProductTagPair productTag) {
+		Long productId = productTag.getProductId();
+		Long tagId = productTag.getTagId();
+		
+		insert
+		.set(productTags.productId ,productId)
+		.set(productTags.tagId, tagId)
+		.addBatch();
+	}
+
+	
+	
 
 
 	private Set<Long> getProductIds(Set<ProductTagPair> newProductTags) {

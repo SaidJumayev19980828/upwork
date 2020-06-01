@@ -1553,7 +1553,7 @@ public class DataImportApiTest {
 		
 		data.setQuantities( setOf(101,102) );
 		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6")));
-		data.setCurrencies(setOf(TransactionCurrency.EGP));
+		data.setCurrencies(setOf(EGP));
 		
 		data.setBarcodes( setOf("1354ABN", "87847777EW") );
 		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
@@ -1575,7 +1575,7 @@ public class DataImportApiTest {
 		
 		data.setQuantities( setOf(101,102, 22) );
 		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6"), new BigDecimal("15.23")));
-		data.setCurrencies(setOf(TransactionCurrency.EGP));
+		data.setCurrencies(setOf(EGP));
 		
 		data.setBarcodes( setOf("1354ABN", "87847777EW", "111222A") );
 		data.setProductNames( setOf("Squishy shoes") );

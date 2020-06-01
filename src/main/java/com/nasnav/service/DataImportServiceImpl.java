@@ -15,7 +15,6 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_TAGS_NOT_
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
@@ -63,7 +62,6 @@ import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.ProductImportMetadata;
-import com.nasnav.dto.ProductTagDTO;
 import com.nasnav.dto.ProductUpdateDTO;
 import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.dto.TagsDTO;
@@ -692,29 +690,6 @@ public class DataImportServiceImpl implements DataImportService {
 		productService.addTagsToProducts(productTags);
 	}
 
-	
-	
-	private void saveProductsUnderTagId(Map.Entry<Long, List<TagAndProductId>> productsUnderTag) {
-		List<Long> productIds = 
-				productsUnderTag
-				.getValue()
-				.stream()
-				.map(TagAndProductId::getProductId)
-				.collect(toList());
-		
-		ProductTagDTO productTagDTO = new ProductTagDTO();		
-        productTagDTO.setProductIds(productIds);
-        productTagDTO.setTagIds(asList(productsUnderTag.getKey()));       
-        
-        try {
-			productService.updateProductTags(productTagDTO);
-		} catch (BusinessException e) {
-			logger.error(e,e);
-			throw new RuntimeBusinessException(e);
-		}
-	}
-
-	
 	
 	
 	
