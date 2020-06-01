@@ -2748,12 +2748,17 @@ public class ProductService {
 
 
 
-	public void hideProducts(Boolean hide) {
+	public void hideProducts(Boolean hide, List<Long> productsIds) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		List<Long> productIdsList = productImgsCustomRepo.getProductsWithNoImages(orgId)
-									.stream()
-									.map(p -> p.getProductId())
-									.collect(toList());
+		List<Long> productIdsList;
+		if (isBlankOrNull(productsIds)) {
+			productIdsList = productImgsCustomRepo.getProductsWithNoImages(orgId)
+					.stream()
+					.map(p -> p.getProductId())
+					.collect(toList());
+		} else {
+			productIdsList = productsIds;
+		}
 
 		if (!(productIdsList == null || productIdsList.isEmpty())) {
 			divideToBatches(productIdsList, 500)

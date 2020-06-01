@@ -392,7 +392,7 @@ public class ProductsController {
     }
 
 
-    @ApiOperation(value = "Hide/show all products which has no images", nickname = "hide/showProduct", code = 200)
+    @ApiOperation(value = "Hide/show products list ", nickname = "hide/showProduct", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Products hidden/shown successfully"),
             @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
@@ -401,8 +401,9 @@ public class ProductsController {
     @ResponseStatus(OK)
     @PostMapping(value = "hide")
     public void hideProducts(@RequestHeader(name = "User-Token", required = false) String token,
-                             @RequestParam(required = false, defaultValue = "true") Boolean hide) {
-        productService.hideProducts(hide);
+                             @RequestParam(required = false, defaultValue = "true") Boolean hide,
+                             @RequestParam(name = "product_id") List<Long> productsIds) {
+        productService.hideProducts(hide, productsIds);
     }
 
 

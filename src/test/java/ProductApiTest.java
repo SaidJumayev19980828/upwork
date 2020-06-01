@@ -1188,7 +1188,7 @@ public class ProductApiTest {
 		HttpEntity<?> request =  getHttpEntity("" , "131415");
 		
 		ResponseEntity<String> response = 
-				template.exchange("/product/hide?hide=true" ,POST, request, String.class);
+				template.exchange("/product/hide?hide=true&product_id=" ,POST, request, String.class);
 		
 		assertEquals(OK, response.getStatusCode());
 		
@@ -1199,6 +1199,29 @@ public class ProductApiTest {
 		assertEquals("all products with no images will be hidden", unhiddenProductsBefore, hiddenProductsAfter);
 	}
 
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Products_API_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void productListHideApiTest() {
+		Long orgId = 99002L;
+		long unhiddenProductsBefore = productRepository.countByHideAndOrganizationId(false, orgId);
+		assertEquals(10L, unhiddenProductsBefore);
+
+		HttpEntity<?> request =  getHttpEntity( "131415");
+
+		ResponseEntity<String> response =
+				template.exchange("/product/hide?hide=true&product_id=1013&product_id=1014" ,
+						POST, request, String.class);
+
+		assertEquals(OK, response.getStatusCode());
+
+		long unhiddenProductsAfter = productRepository.countByHideAndOrganizationId(false, orgId);
+		long hiddenProductsAfter = productRepository.countByHideAndOrganizationId(true, orgId);
+
+		assertEquals(8L, unhiddenProductsAfter);
+		assertEquals(2L, hiddenProductsAfter);
+	}
 
 	
 
