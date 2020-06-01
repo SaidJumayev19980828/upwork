@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -119,6 +120,8 @@ import reactor.netty.http.client.HttpClient;
 
 @Service
 public class ProductImageServiceImpl implements ProductImageService {
+
+	private static final int IMG_DOWNLOAD_TIMEOUT_SEC = 90;
 
 	private Logger logger = Logger.getLogger(ProductService.class);
 	
@@ -789,9 +792,10 @@ public class ProductImageServiceImpl implements ProductImageService {
 				.get()
 				.uri(httpUrl)
 				.exchange()
+				.timeout(Duration.ofSeconds(IMG_DOWNLOAD_TIMEOUT_SEC), Mono.error(() -> new TimeoutException()))
 				.doOnEach(signal -> logFailedImageFetch(signal, httpUrl))
 				.onErrorReturn(ClientResponse.create(INTERNAL_SERVER_ERROR).build())
-				.filter(res -> Objects.equals(res.statusCode(), OK))
+				.filter(res -> res.rawStatusCode() >= 400)
 				.flatMap(res -> res.bodyToMono(byte[].class))				
 				.map(bytes -> readUrlAsMultipartFile(httpUrl, bytes));
 	}
