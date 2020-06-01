@@ -645,9 +645,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 						.flatMap(pair -> toImportedImages(pair, metaData, variantCache))
 						.distinct()
 				)
-				.buffer()
+				.collectList()
 				.map(HashSet::new)
-				.single(new HashSet<>())
 				.blockOptional()
 				.orElse(new HashSet<>());
 	}
@@ -758,7 +757,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 			
 		return Flux
 				.zip(imgFile, importedImgsMetaData.buffer(), (file, mDataList) ->  combineImageFileAndMetaData(file, mDataList, url))
-				.flatMap(importedImg -> importedImg) ;
+				.flatMap(importedImg -> importedImg);
 	}
 
 	
@@ -795,7 +794,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 				.timeout(Duration.ofSeconds(IMG_DOWNLOAD_TIMEOUT_SEC), Mono.error(() -> new TimeoutException()))
 				.doOnEach(signal -> logFailedImageFetch(signal, httpUrl))
 				.onErrorReturn(ClientResponse.create(INTERNAL_SERVER_ERROR).build())
-				.filter(res -> res.rawStatusCode() >= 400)
+				.filter(res -> res.rawStatusCode() < 400)
 				.flatMap(res -> res.bodyToMono(byte[].class))				
 				.map(bytes -> readUrlAsMultipartFile(httpUrl, bytes));
 	}

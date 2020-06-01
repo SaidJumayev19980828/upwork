@@ -115,6 +115,7 @@ import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductImgsCustomRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.ProductsCustomRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.BundleDTO;
@@ -178,7 +179,6 @@ import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.sql.SQLExpressions;
 import com.querydsl.sql.SQLQuery;
 import com.querydsl.sql.SQLQueryFactory;
-import com.querydsl.sql.dml.SQLInsertClause;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -257,6 +257,9 @@ public class ProductService {
 	
 	@Autowired
 	private SQLQueryFactory queryFactory;
+	
+	@Autowired
+	private ProductsCustomRepository productsCustomRepo;
 
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
@@ -2549,8 +2552,6 @@ public class ProductService {
 	
 
 	private void batchInsertProductTagsToDB(Set<ProductTagPair> newProductTags, Set<ProductTagPair> existingProductTags) {
-		QProductTags productTags = QProductTags.productTags; 
-		SQLInsertClause insertClause = queryFactory.insert(productTags);
 		
 		Set<ProductTagPair> validProductTags =
 			ofNullable(newProductTags)
@@ -2560,12 +2561,12 @@ public class ProductService {
 			.filter(this::isValidProducTagPair)
 			.collect(toSet());
 		
-		validProductTags.forEach(productTag -> insertProductTag(productTags, insertClause, productTag));
-		
-		if(!validProductTags.isEmpty()) {
-			insertClause.execute();
-		}
+		productsCustomRepo.batchInsertProductTags(validProductTags);
 	}
+
+
+
+	
 	
 	
 	
@@ -2575,17 +2576,6 @@ public class ProductService {
 	}
 
 
-
-	private void  insertProductTag(QProductTags productTags, SQLInsertClause insert,
-			ProductTagPair productTag) {
-		Long productId = productTag.getProductId();
-		Long tagId = productTag.getTagId();
-		
-		insert
-		.set(productTags.productId ,productId)
-		.set(productTags.tagId, tagId)
-		.addBatch();
-	}
 
 	
 	

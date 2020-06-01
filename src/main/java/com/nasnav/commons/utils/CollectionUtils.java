@@ -26,9 +26,9 @@ public class CollectionUtils {
 				.fromIterable(nullFree)
 				.window(maxSize)				
 				.flatMap(batch -> batch.buffer())
-				.buffer()
-				.single(emptyList())
-				.block();
+				.collectList()
+				.blockOptional()
+				.orElse(emptyList());
 	} 
 	
 	

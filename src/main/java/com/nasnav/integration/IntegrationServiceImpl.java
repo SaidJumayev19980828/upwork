@@ -1850,8 +1850,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 		ImportedImagesUrlMappingPage urlToIdMappingPage = getImgsUrlFromExternalSystem(param, pageCount, pageNum);
 		
 		return	getImportedImagesPage(urlToIdMappingPage, metaData)
-					.blockOptional(Duration.ofMinutes(PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN))
-					.orElse(new ImportedImagesPage(0, emptySet()));
+					.defaultIfEmpty(new ImportedImagesPage(0, emptySet()))
+					.block(Duration.ofMinutes(PRODUCT_IMPORT_REQUEST_TIMEOUT_MIN));
 	}
 
 
@@ -1874,9 +1874,8 @@ public class IntegrationServiceImpl implements IntegrationService {
 	private Mono<ImportedImagesPage> getImportedImagesPage(ImportedImagesUrlMappingPage mappingPage, ProductImageBulkUpdateDTO metaData){		
 		return integrationUtils
 				.readImgsFromUrls(mappingPage.getImgToProductsMapping(), metaData, mappingPage.getImgsWebClient())
-				.buffer()
+				.collectList()
 				.map(HashSet::new)
-				.single()
 				.map(imgs -> new ImportedImagesPage(mappingPage.getTotal(), imgs));
 	}
 
