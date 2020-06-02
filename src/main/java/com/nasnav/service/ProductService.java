@@ -637,6 +637,7 @@ public class ProductService {
 						product.description.as("description"),
 						product.name.as("name"),
 						product.pName.as("pname"),
+						product.search_360.as("has_360_view"),
 						product.createdAt.as("creation_date"),
 						product.updatedAt.as("update_date"),
 						SQLExpressions.rowNumber()
@@ -2481,7 +2482,7 @@ public class ProductService {
 		productRep.setBarcode(product.getBarcode());
 		productRep.setCreationDate(Optional.ofNullable(product.getCreationDate().toString()).orElse(null));
 		productRep.setUpdateDate(Optional.ofNullable(product.getUpdateDate().toString()).orElse(null));
-
+		productRep.setHas_360_view(product.isSearch360());
 	}
 
 	
