@@ -38,6 +38,8 @@ public class QProducts extends com.querydsl.sql.RelationalPathBase<QProducts> {
 
     public final BooleanPath hide = createBoolean("hide");
 
+    public final BooleanPath search_360 = createBoolean("search_360");
+
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final BooleanPath infoUpdated = createBoolean("infoUpdated");
@@ -103,6 +105,7 @@ public class QProducts extends com.querydsl.sql.RelationalPathBase<QProducts> {
         addMetadata(createdAt, ColumnMetadata.named("created_at").withIndex(10).ofType(Types.TIMESTAMP).withSize(29).withDigits(6).notNull());
         addMetadata(description, ColumnMetadata.named("description").withIndex(4).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(hide, ColumnMetadata.named("hide").withIndex(13).ofType(Types.BIT).withSize(1));
+        addMetadata(search_360, ColumnMetadata.named("search_360").withIndex(17).ofType(Types.BIT).withSize(1));
         addMetadata(id, ColumnMetadata.named("id").withIndex(1).ofType(Types.BIGINT).withSize(19).notNull());
         addMetadata(infoUpdated, ColumnMetadata.named("info_updated").withIndex(6).ofType(Types.BIT).withSize(1));
         addMetadata(itemId, ColumnMetadata.named("item_id").withIndex(12).ofType(Types.VARCHAR).withSize(2147483647));

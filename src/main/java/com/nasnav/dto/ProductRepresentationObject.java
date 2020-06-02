@@ -29,4 +29,5 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private String creationDate;
     private String updateDate;
     private Long quantity;
+    private Boolean has_360_view;
 }
