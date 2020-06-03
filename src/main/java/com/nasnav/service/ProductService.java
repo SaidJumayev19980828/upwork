@@ -33,7 +33,6 @@ import static com.nasnav.exceptions.ErrorCodes.P$VAR$0002;
 import static com.nasnav.persistence.ProductTypes.BUNDLE;
 import static com.nasnav.service.ProductImageService.NO_IMG_FOUND_URL;
 import static com.nasnav.service.ProductImageService.PRODUCT_IMAGE;
-import static com.querydsl.sql.SQLExpressions.select;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -144,7 +143,6 @@ import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.model.querydsl.sql.QBrands;
 import com.nasnav.model.querydsl.sql.QProductFeatures;
-import com.nasnav.model.querydsl.sql.QProductTags;
 import com.nasnav.model.querydsl.sql.QProductVariants;
 import com.nasnav.model.querydsl.sql.QProducts;
 import com.nasnav.model.querydsl.sql.QStocks;
@@ -610,15 +608,12 @@ public class ProductService {
 		QStocks stock = QStocks.stocks;
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
-		QProductTags productTags = QProductTags.productTags;
-
-		SQLQuery<?> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
 
 		BooleanBuilder predicate = getQueryPredicate(params, product, stock);
 
 		OrderSpecifier<?> order = getProductQueryOrder(params, product, stock);
 
-		SQLQuery<?> fromClause = getProductsBaseQuery(queryFactory, predicate);
+		SQLQuery<?> fromClause = productsCustomRepo.getProductsBaseQuery(predicate, params);
 
 		SQLQuery<?> productsQuery =
 				fromClause.select(
@@ -645,9 +640,6 @@ public class ProductService {
 								.partitionBy(product.id)
 								.orderBy(stock.price).as("row_num"));
 
-		if (productTagsQuery != null)
-			productsQuery.where(product.id.in((com.querydsl.core.types.Expression<? extends Long>) productTagsQuery));
-
 		if (order != null)
 			productsQuery.orderBy(order);
 
@@ -669,7 +661,7 @@ public class ProductService {
 
 		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock);
 
-		SQLQuery<?> baseQuery = getProductsBaseQuery(queryFactory, predicate);
+		SQLQuery<?> baseQuery = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
 
 		Prices prices = getProductPrices(baseQuery,stock);
 
@@ -704,8 +696,6 @@ public class ProductService {
 		return template.query(query.getSQL().getSQL(),
 				new BeanPropertyRowMapper<>(Organization_BrandRepresentationObject.class));
 	}
-
-
 	
 	
 	private Map<String, List<String>> getProductVariantFeatures(SQLQueryFactory factory, SQLQuery<?> baseQuery) throws SQLException {
@@ -739,19 +729,6 @@ public class ProductService {
 				.collect(
 						groupingBy(com.nasnav.dto.response.navbox.VariantFeatureDTO::getName
 									, mapping(d -> d.getValue().replace("\"", ""), toList())));
-	}
-
-
-	
-
-	private SQLQuery<?> getProductsBaseQuery(SQLQueryFactory query, BooleanBuilder predicate) {
-		QStocks stock = QStocks.stocks;
-		QProducts product = QProducts.products;
-		QProductVariants variant = QProductVariants.productVariants;
-		return query.from(stock)
-					.innerJoin(variant).on(stock.variantId.eq(variant.id))
-					.innerJoin(product).on(variant.productId.eq(product.id))
-					.where(predicate);
 	}
 
 
@@ -811,28 +788,6 @@ public class ProductService {
 		return predicate;
 	}
 
-	
-	
-	
-	
-	private SQLQuery<Long> getProductTagsQuery(SQLQueryFactory query, QProductTags productTags, ProductSearchParam params) {
-		if (params.getTags() == null)
-			return null;
-
-		return query.select(Expressions.numberPath(Long.class, "id"))
-					.from(
-							select(
-									productTags.productId.as("id")
-									, productTags.tagId.count().as("count"))
-							.from(productTags)
-							.where(productTags.tagId.in(params.getTags()))
-							.groupBy(productTags.productId)
-							.having(productTags.tagId.count().eq((long) params.getTags().size()))
-							.as("productTags"));
-	}
-
-	
-	
 	
 
 	ProductSearchParam getProductSearchParams(ProductSearchParam oldParams) throws BusinessException, InvocationTargetException, IllegalAccessException {
