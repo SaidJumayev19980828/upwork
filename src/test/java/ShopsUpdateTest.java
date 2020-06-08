@@ -168,12 +168,12 @@ public class ShopsUpdateTest {
     public void testUpdateShopDifferentData(){
         //create a shop first
         String body = "{\"org_id\":99001,\n" +
-                "  \"address_country\": \"Egypt\",\n" +
-                "  \"address_floor\": \"Second\",\n" +
-                "  \"address_lat\": 30.0595581,\n" +
-                "  \"address_lng\": 31.2234449,\n" +
-                "  \"address_street\": \"Omar Bin Khatab\",\n" +
-                "  \"address_streetno\": 24,\n" +
+                "  \"address\"{"+
+                "  \"area_id\": 10001,\n" +
+                "  \"flat_number\": \"Second\",\n" +
+                "  \"latitude\": 30.0595581,\n" +
+                "  \"longitude\": 31.2234449,\n" +
+                "  \"address_line_1\": \"Omar Bin Khatab\"}\n" +
                 "  \"banner\": \"/banners/banner_256.jpg\",\n" +
                 "  \"brand_id\": 101,\n" +
                 "  \"logo\": \"/brands/hugo_logo.jpg\",\n" +
@@ -198,7 +198,7 @@ public class ShopsUpdateTest {
         ShopsEntity newShop = shopsRepository.findById(jsonResponse.getLong("store_id")).get();
 
         //check if unchanged data remains
-        Assert.assertEquals(oldShop.getFloor(), newShop.getFloor());
+        Assert.assertEquals(oldShop.getAddressesEntity().getFlatNumber(), newShop.getAddressesEntity().getFlatNumber());
         Assert.assertEquals(oldShop.getBanner(), newShop.getBanner());
         Assert.assertEquals(oldShop.getLogo(), newShop.getLogo());
         

@@ -23,7 +23,7 @@ public class UserRepresentationObject {
     @JsonProperty("mobile")
     public String mobile;
     @JsonProperty("address")
-    public Address address;
+    public AddressRepObj address;
 
     @JsonProperty("organization_id")
     public Long organizationId;

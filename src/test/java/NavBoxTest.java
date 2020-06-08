@@ -123,12 +123,12 @@ public class NavBoxTest {
         shop.setPname("sts");
         shop.setLogo("/bright/logo/image.png");
         shop.setBanner("/some/shop/banner.png");
-        shop.setCountry("EG");
+        /*shop.setCountry("EG");
         shop.setCity("Cairo");
         shop.setStreet("Bambino Street");
         shop.setFloor("3");
         shop.setLat(BigDecimal.valueOf(30.072994));
-        shop.setLng(BigDecimal.valueOf(31.346011));
+        shop.setLng(BigDecimal.valueOf(31.346011));*/
         shopsRepository.save(shop);
         
         long objectId = shop.getId();

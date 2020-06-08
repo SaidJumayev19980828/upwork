@@ -8,7 +8,7 @@ import javax.persistence.EntityListeners;
 import javax.persistence.Table;
 
 import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.dto.Address;
+import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.persistence.listeners.UserEntityListener;
@@ -70,10 +70,10 @@ public class UserEntity extends BaseUserEntity{
         obj.phoneNumber = this.getPhoneNumber();
         obj.image = this.getImage();
         //TODO set mobile after including in in DB
-        Address address = new Address();
+        AddressRepObj address = new AddressRepObj();
         address.setCountry(this.getAddressCountry());
         address.setCity(this.getAddressCity());
-        address.setStreet(this.getAddress());
+        address.setAddressLine1(this.getAddress());
         obj.address = address;
         return obj;
     }

@@ -3,9 +3,14 @@ package com.nasnav.service.helpers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import com.nasnav.dao.AreaRepository;
 import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dto.AddressDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.AddressesEntity;
+import com.nasnav.persistence.AreasEntity;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -31,6 +36,9 @@ public class ShopServiceHelper extends BeanUtils{
 
     @Autowired
     private BrandsRepository brandsRepo;
+
+    @Autowired
+    private AreaRepository areaRepo;
     
 
     public String[] getNullProperties(ShopJsonDTO shopJson) {
@@ -57,23 +65,20 @@ public class ShopServiceHelper extends BeanUtils{
             shopsEntity.setPname(StringUtils.encodeUrl(shopJson.getName()));
         }
 
-        if (shopJson.isUpdated("country"))
-            shopsEntity.setCountry(shopJson.getCountry());
+        if (shopJson.isUpdated("address")) {
+            AddressesEntity address = new AddressesEntity();
+            AddressDTO addressJson = shopJson.getAddress();
+            BeanUtils.copyProperties(addressJson, address);
 
-        if (shopJson.isUpdated("street"))
-            shopsEntity.setStreet(shopJson.getStreet());
-
-        if (shopJson.isUpdated("streetNumber"))
-            shopsEntity.setStreetNumber(shopJson.getStreetNumber());
-
-        if (shopJson.isUpdated("floor"))
-            shopsEntity.setFloor(shopJson.getFloor());
-
-        if (shopJson.isUpdated("lat"))
-            shopsEntity.setLat(shopJson.getLat());
-
-        if (shopJson.isUpdated("lng"))
-            shopsEntity.setLng(shopJson.getLng());
+            if (addressJson.getAreaId() != null) {
+                Optional<AreasEntity> area = areaRepo.findById(addressJson.getAreaId());
+                if (!area.isPresent())
+                    throw new BusinessException(String.format("Provided area_id (%d) doesn't match any existing area!", addressJson.getAreaId()),
+                            "INVALID_PARAM: area_id", HttpStatus.NOT_ACCEPTABLE);
+                address.setAreasEntity(area.get());
+            }
+            shopsEntity.setAddressesEntity(address);
+        }
 
         if (shopJson.isUpdated("brandId")) {
             if (brandsRepo.findById(shopJson.getBrandId()).isPresent())
