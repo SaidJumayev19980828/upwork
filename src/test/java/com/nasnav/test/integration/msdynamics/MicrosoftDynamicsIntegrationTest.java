@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import com.nasnav.dto.AddressDTO;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -589,10 +590,11 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	private JSONObject createOrderRequestWithBasketItems(OrderStatus status, Item... items) {
 		JSONArray basket = createBasket( items);
-		
+
 		JSONObject request = new JSONObject();
 		request.put("status", status.name());
 		request.put("basket", basket);
+		request.put("address_id", 1001);
 		return request;
 	}
 	

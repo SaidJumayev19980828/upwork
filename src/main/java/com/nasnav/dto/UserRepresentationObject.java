@@ -22,8 +22,8 @@ public class UserRepresentationObject {
     public String phoneNumber;
     @JsonProperty("mobile")
     public String mobile;
-    @JsonProperty("address")
-    public AddressRepObj address;
+    @JsonProperty("addresses")
+    public Set<AddressRepObj> addresses;
 
     @JsonProperty("organization_id")
     public Long organizationId;

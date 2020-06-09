@@ -1,14 +1,14 @@
 package com.nasnav.service.helpers;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import com.nasnav.dao.AddressRepository;
+import com.nasnav.dto.AddressDTO;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.AddressesEntity;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -40,6 +40,8 @@ public class EmployeeUserServiceHelper {
 	private EmployeeUserRepository employeeUserRepository;
 	private RoleRepository roleRepository;
 	private RoleEmployeeUserRepository roleEmployeeUserRepository;
+	@Autowired
+	private AddressRepository addressRepo;
 	private RoleService roleService;
 	private MailService mailService;
 	private List<String> nonStoreRolesList = Arrays.asList("NASNAV_ADMIN", "ORGANIZATION_ADMIN", "ORGANIZATION_MANAGER", "ORGANIZATION_EMPLOYEE");
@@ -147,7 +149,7 @@ public class EmployeeUserServiceHelper {
 		return !Collections.disjoint(roles, nonStoreRolesList);
 	}
 
-	public UserApiResponse updateEmployeeUser(Integer userType, EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+	public UserApiResponse updateEmployeeUser(Integer userType, EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) throws BusinessException {
 		List<ResponseStatus> failResponseStatusList = new ArrayList<>();
 		List<ResponseStatus> successResponseStatusList = new ArrayList<>();
 		List<String> rolesList;
@@ -219,12 +221,33 @@ public class EmployeeUserServiceHelper {
 		return  UserApiResponse.createMessagesApiResponse(true, successResponseStatusList);
 	}
 
-	EmployeeUserEntity updateRemainingEmployeeUserInfo(EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+	EmployeeUserEntity updateRemainingEmployeeUserInfo(EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) throws BusinessException {
 		if (employeeUserJson.getAvatar() != null)
 			employeeUserEntity.setAvatar(employeeUserJson.getAvatar());
 
 		if (employeeUserJson.getPhoneNumber() != null)
 			employeeUserEntity.setPhoneNumber(employeeUserJson.getPhoneNumber());
+
+		if (employeeUserJson.getAddress() != null) {
+			AddressesEntity address = new AddressesEntity();
+			AddressDTO addressDTO = employeeUserJson.getAddress();
+			Set<AddressesEntity> userAddresses = employeeUserEntity.getAddresses();
+			if (addressDTO.getId() != null) {
+				Optional<AddressesEntity> oldAddress = addressRepo.findByIdAndEmpUserId(addressDTO.getId(), employeeUserEntity.getId());
+				if (!oldAddress.isPresent()) {
+					throw new BusinessException("Provided address_id doesn't match any existing address!",
+							"INVALID_PARAM: address_id", HttpStatus.NOT_ACCEPTABLE);
+				}
+				userAddresses.remove(oldAddress.get());
+				addressRepo.unlinkAddressFromEmployeeUser(addressDTO.getId(), employeeUserEntity.getId());
+			}
+			BeanUtils.copyProperties(employeeUserJson.getAddress(), address, new String[] {"id"});
+			// if the new address is not empty, then add it to list of addresses
+			if (!address.equals(new AddressesEntity())) {
+				userAddresses.add(addressRepo.save(address));
+			}
+			employeeUserEntity.setAddresses(userAddresses);
+		}
 
 		return employeeUserEntity;
 	}

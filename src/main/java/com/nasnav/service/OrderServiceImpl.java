@@ -66,6 +66,9 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
+import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
@@ -75,19 +78,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.UserRepository;
-import com.nasnav.dto.BasketItem;
-import com.nasnav.dto.BasketItemDTO;
-import com.nasnav.dto.BasketItemDetails;
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.OrderJsonDto;
-import com.nasnav.dto.OrderRepresentationObject;
-import com.nasnav.dto.ShippingAddress;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
@@ -98,15 +89,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BasketsEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.PaymentEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
@@ -141,7 +124,10 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	private ShopsRepository shopsRepo;
-	
+
+	@Autowired
+	private AddressRepository addressRepo;
+
 	@Autowired
 	private IntegrationService integrationService;
 	
@@ -588,16 +574,16 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 
-	private OrdersEntity createNewOrderEntity(OrderJsonDto order, List<BasketItemDTO> basketItems, Long shopId) {
+	private OrdersEntity createNewOrderEntity(OrderJsonDto order, List<BasketItemDTO> basketItems, Long shopId) throws BusinessException {
 		BaseUserEntity user = securityService.getCurrentUser();
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
 		ShopsEntity shop = shopsRepo.findById(shopId).get();
 
 		OrdersEntity orderEntity = new OrdersEntity();
-		
-		String address = ofNullable(order.getAddress())
-								.orElse( getUserAddressAsStr());
-		orderEntity.setAddress(address);
+
+		if (order.getAddressId() != null) {
+			orderEntity.setAddressEntity(getOrderDeliveryAddress(order));
+		}
 		orderEntity.setAmount( calculateBasketTotalValue(basketItems) );
 		// TODO ordersEntity.setPayment_type(payment_type);
 		orderEntity.setShopsEntity(shop);
@@ -607,33 +593,25 @@ public class OrderServiceImpl implements OrderService {
 		orderEntity.setOrganizationEntity( org );
 		return orderEntity;
 	}
-	
-	
-	
-	
 
-	private String getUserAddressAsStr() {
-		BaseUserEntity baseUser = securityService.getCurrentUser();
-		String address = null;
-		
-		if(baseUser instanceof UserEntity) {			
-			UserEntity user = (UserEntity)baseUser;
-			
-			address = format("%s, %s, %s "
-								, nullSafe(user.getAddress())
-								, nullSafe(user.getAddressCity())
-								, nullSafe(user.getAddressCountry()));
+	AddressesEntity getOrderDeliveryAddress(OrderJsonDto order) throws BusinessException {
+		AddressesEntity address = null;
+		Long userId = securityService.getCurrentUser().getId();
+		if (order.getAddressId() != null) {
+			Optional<AddressesEntity> optionalAddress = addressRepo.findByIdAndUserId(order.getAddressId(), userId);
+			if (optionalAddress.isPresent()) {
+				address = optionalAddress.get();
+			} else {
+				throw new BusinessException("address_id is invalid!", "INVALID_PARAM: address_id", NOT_ACCEPTABLE);
+			}
+		} else {
+			Optional<AddressesEntity> optionalAddress = addressRepo.findOneByUserId(userId);
+			if (optionalAddress.isPresent())
+				address = optionalAddress.get();
 		}
-		
 		return address;
 	}
-
 	
-	
-	
-
-
-
 
 	private ShopsEntity getOrderShop(OrderJsonDto order) {
 		List<StocksEntity> stocksEntites = getBasketStocks( order.getBasket() );
@@ -661,7 +639,11 @@ public class OrderServiceImpl implements OrderService {
 		OrderResponse orderResponse = updateCurrentOrderStatus(orderJsonDto, orderEntity, newStatus);
 		
 		if ( newStatus.equals(NEW)) {
+			if (orderJsonDto.getAddressId() != null) {
+				orderEntity.setAddressEntity(getOrderDeliveryAddress(orderJsonDto));
+			}
 			orderResponse = updateOrderBasket(orderJsonDto, orderEntity);
+
 		}else if(newStatus.equals(CLIENT_CONFIRMED) 
 					&& Objects.equals(oldStatus, NEW)) {
 			reduceStocks(orderEntity);
@@ -731,9 +713,9 @@ public class OrderServiceImpl implements OrderService {
 		
 		orderEntity.setAmount( calculateOrderTotalValue(order) );
 		orderEntity.setShopsEntity( getOrderShop( order) );
-		if (order.getAddress() != null) {
+		if (order.getAddressId() != null) {
 			if (orderEntity.getOrderStatus().equals(NEW))
-				orderEntity.setAddress(order.getAddress());
+				orderEntity.setAddressEntity(addressRepo.findById(order.getAddressId()).get());
 		}
 		orderEntity = ordersRepository.save(orderEntity);
 
@@ -1025,10 +1007,13 @@ public class OrderServiceImpl implements OrderService {
 		obj.setSubtotal(entity.getAmount());
 		obj.setShipping(new BigDecimal(0));
 		obj.setTotal(obj.getShipping().add(obj.getSubtotal()));
-		//TODO set shipping address, shipping price
-		ShippingAddress address = new ShippingAddress();
-		address.setDetails(entity.getAddress());
-		obj.setShippingAddress(address);
+
+		//TODO set shipping price
+
+		if (entity.getAddressEntity() != null) {
+			AddressRepObj address = (AddressRepObj) entity.getAddressEntity().getRepresentation();
+			obj.setShippingAddress(address);
+		}
 
 		return obj;
 	}

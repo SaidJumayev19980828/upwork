@@ -2,11 +2,15 @@ package com.nasnav.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
+@NoArgsConstructor
 @Data
 public class AddressDTO extends BaseRepresentationObject {
+
+    private Long id;
 
     @JsonProperty("flat_number")
     private String flatNumber;

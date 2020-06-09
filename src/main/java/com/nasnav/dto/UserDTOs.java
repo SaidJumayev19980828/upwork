@@ -157,29 +157,12 @@ public class UserDTOs {
         @JsonProperty("birth_date")
         private String birthDate;
 
-        @ApiModelProperty(value = "Address", example = "50 Kira st. Nasr City", required = false)
         @JsonProperty("address")
-        private String address;
-
-        @ApiModelProperty(value = "Country", example = "Egypt", required = false)
-        @JsonProperty("country")
-        private String addressCountry;
-
-        @ApiModelProperty(value = "City", example = "Cairo", required = false)
-        @JsonProperty("city")
-        private String addressCity;
+        private AddressDTO address;
 
         @ApiModelProperty(value = "Phone Number", example = "01012345678", required = false)
         @JsonProperty("phone_number")
         private String phoneNumber;
-
-        @ApiModelProperty(value = "Postal Code", example = "11595", required = false)
-        @JsonProperty("post_code")
-        private String postCode;
-
-        @ApiModelProperty(value = "Flat Number", example = "8", required = false)
-        @JsonProperty("flat_number")
-        private Integer flatNumber;
 
         @ApiModelProperty(value = "User Image", example = "/images/image_568.jpg", required = false)
         @JsonProperty("image")

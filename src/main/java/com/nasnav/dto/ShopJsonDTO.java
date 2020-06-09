@@ -52,9 +52,14 @@ public class ShopJsonDTO extends BaseJsonDTO{
         this.name = name;
     }
 
-    void setBrandId(Long brandId) {
+    public void setBrandId(Long brandId) {
         setPropertyAsUpdated("brandId");
         this.brandId = brandId;
+    }
+
+    public void setAddress(AddressDTO address) {
+        setPropertyAsUpdated("address");
+        this.address = address;
     }
 
 }

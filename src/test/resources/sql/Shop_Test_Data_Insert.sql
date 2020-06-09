@@ -1,16 +1,3 @@
-----------------------------deleting previous data----------------------------
-delete from public.stocks where organization_id between 99000 and 99999;
-delete from public.shops where organization_id between 99000 and 99999;
-delete from public.role_employee_users WHERE employee_user_id IN (SELECT id FROM public.employee_users where organization_id between 99000 and 99999); 
-delete from public.users where organization_id between 99000 and 99999;
-delete from public.employee_users where organization_id between 99000 and 99999;
-delete from public.roles;
-delete from public.products where organization_id between 99000 and 99999;
-delete from public.brands where organization_id between 99000 and 99999;
-delete from public.organizations where id between 99000 and 99999;
-
-----------------------------inserting dummy data----------------------------
-
 --inserting organizations
 INSERT INTO public.organizations(id, name) VALUES (99001, 'organization_1');
 INSERT INTO public.organizations(id, name) VALUES (99002, 'organization_2');

@@ -1,11 +1,12 @@
 import static com.nasnav.test.commons.TestCommons.*;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.util.List;
+import java.util.Optional;
 
+import com.nasnav.dao.AddressRepository;
+import com.nasnav.persistence.AddressesEntity;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -68,6 +69,9 @@ public class EmployeeUserCreationTest {
 	
 	@Autowired
 	EmployeeUserRepository empRepository;
+
+	@Autowired
+	private AddressRepository addressRepo;
 
 	@Value("classpath:sql/EmpUsers_Test_Data_Insert.sql")
 	private Resource userDataInsert;
@@ -698,5 +702,34 @@ public class EmployeeUserCreationTest {
 	}
 	
 	
-	
+	@Test
+	public void updateEmployeeAddressTest() {
+		JSONObject address = json().put("address_line_1", "address line");
+		JSONObject body = json().put("employee", true)
+								.put("address", address);
+		HttpEntity request = getHttpEntity(body.toString(), "hijkllm");
+
+		//adding address to employee
+		ResponseEntity<String> response = template.postForEntity("/user/update", request, String.class);
+		assertEquals(200, response.getStatusCodeValue());
+
+		Optional<AddressesEntity> entity = addressRepo.findOneByEmployeeUserId(69L);
+		assertTrue(entity.isPresent());
+		AddressesEntity addressesEntity = entity.get();
+		assertEquals("address line", addressesEntity.getAddressLine1());
+
+
+
+
+		//unlinking the address from employee
+		address = json().put("id", addressesEntity.getId());
+		body = body.put("address", address);
+		request = getHttpEntity(body.toString(), "hijkllm");
+		response = template.postForEntity("/user/update", request, String.class);
+
+		assertEquals(200, response.getStatusCodeValue());
+		assertFalse(addressRepo.findByIdAndEmpUserId(addressesEntity.getId(), 69L).isPresent());
+		addressRepo.delete(addressesEntity);
+
+	}
 }

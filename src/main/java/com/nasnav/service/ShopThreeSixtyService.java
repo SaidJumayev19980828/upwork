@@ -541,7 +541,7 @@ public class ShopThreeSixtyService {
 
 
     private void validateProductSearch(String name, Long shopId) throws BusinessException {
-        if (StringUtils.isBlankOrNull(name))
+        if (name == null)
             throw new BusinessException("Provide search parameter",
                     "MISSING_PARAMS: name", NOT_ACCEPTABLE);
 

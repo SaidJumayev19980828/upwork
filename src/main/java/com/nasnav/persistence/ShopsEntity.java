@@ -51,8 +51,8 @@ public class ShopsEntity implements BaseEntity{
     private OrganizationEntity organizationEntity;
 
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "address_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "address_id")
     @JsonIgnore
     @Exclude
     @lombok.ToString.Exclude
@@ -68,8 +68,9 @@ public class ShopsEntity implements BaseEntity{
         shopRepresentationObject.setName(getName());
         shopRepresentationObject.setPname(getPname());
 
-        shopRepresentationObject.setAddress((AddressRepObj) getAddressesEntity().getRepresentation());
-
+        if (getAddressesEntity() != null) {
+            shopRepresentationObject.setAddress((AddressRepObj) getAddressesEntity().getRepresentation());
+        }
         //TODO database to support from to time as multiple duration through day
         shopRepresentationObject.setOpenWorkingDays(null);
         return shopRepresentationObject;

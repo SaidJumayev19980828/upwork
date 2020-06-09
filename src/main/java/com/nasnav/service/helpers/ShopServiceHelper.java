@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.AreaRepository;
 import com.nasnav.dao.BrandsRepository;
 import com.nasnav.dto.AddressDTO;
@@ -39,6 +40,9 @@ public class ShopServiceHelper extends BeanUtils{
 
     @Autowired
     private AreaRepository areaRepo;
+
+    @Autowired
+    private AddressRepository addressRepo;
     
 
     public String[] getNullProperties(ShopJsonDTO shopJson) {
@@ -66,18 +70,24 @@ public class ShopServiceHelper extends BeanUtils{
         }
 
         if (shopJson.isUpdated("address")) {
-            AddressesEntity address = new AddressesEntity();
-            AddressDTO addressJson = shopJson.getAddress();
-            BeanUtils.copyProperties(addressJson, address);
+            AddressesEntity address = null;
+            if (shopJson.getAddress() != null) {
+                address = new AddressesEntity();
+                AddressDTO addressJson = shopJson.getAddress();
+                BeanUtils.copyProperties(addressJson, address, new String[]{"id"});
 
-            if (addressJson.getAreaId() != null) {
-                Optional<AreasEntity> area = areaRepo.findById(addressJson.getAreaId());
-                if (!area.isPresent())
-                    throw new BusinessException(String.format("Provided area_id (%d) doesn't match any existing area!", addressJson.getAreaId()),
-                            "INVALID_PARAM: area_id", HttpStatus.NOT_ACCEPTABLE);
-                address.setAreasEntity(area.get());
+                if (addressJson.getAreaId() != null) {
+                    Optional<AreasEntity> area = areaRepo.findById(addressJson.getAreaId());
+                    if (!area.isPresent())
+                        throw new BusinessException(String.format("Provided area_id (%d) doesn't match any existing area!", addressJson.getAreaId()),
+                                "INVALID_PARAM: area_id", HttpStatus.NOT_ACCEPTABLE);
+                    address.setAreasEntity(area.get());
+                }
+                shopsEntity.setAddressesEntity(addressRepo.save(address));
+            } else {
+                shopsEntity.setAddressesEntity(address);
             }
-            shopsEntity.setAddressesEntity(address);
+
         }
 
         if (shopJson.isUpdated("brandId")) {

@@ -209,7 +209,7 @@ public class OrderServiceTest {
 		
 		OrdersEntity order = orderRepository.findById(body.getOrderId()).get();
 		assertEquals("user1", order.getName());
-		assertNotNull(order.getAddress());
+		assertNotNull(order.getAddressEntity());
 	}
 	
 	
@@ -283,7 +283,7 @@ public class OrderServiceTest {
 		
 		OrdersEntity order = orderRepository.findById(orderId).get();
 		assertEquals("user1", order.getName());
-		assertNotNull(order.getAddress());		
+		assertNotNull(order.getAddressEntity());
 	}
 
 
@@ -301,7 +301,7 @@ public class OrderServiceTest {
 										   "{\"quantity\": 1,\"stock_id\": 602,\"unit\": \"kg\"}," +
 										   "{ \"quantity\": 1,\"stock_id\": 603,\"unit\": \"kg\"}," +
 										   "{ \"quantity\": 1,\"stock_id\": 604,\"unit\": \"kg\"}]," +
-										   "\"delivery_address\": \"Somewhere behind a grocery store\"}";
+										   "\"address_id\": 1001}";
 		ResponseEntity<OrderResponse> response = template.postForEntity("/order/create"
 						, getHttpEntity(requestBody, persistentUser.getAuthenticationToken()), OrderResponse.class);
 
@@ -332,7 +332,7 @@ public class OrderServiceTest {
 		assertNotNull(orderId);
 		OrdersEntity order = orderRepository.findById(orderId).get();
 		assertEquals("user1", order.getName());
-		assertNotNull(order.getAddress());
+		assertNotNull(order.getAddressEntity());
 	}
 
 
@@ -1161,6 +1161,7 @@ public class OrderServiceTest {
 		JSONObject request = new JSONObject();
 		request.put("status", status.name());
 		request.put("basket", basket);
+		request.put("address_id", 1001);
 		return request;
 	}
 	
@@ -1209,7 +1210,7 @@ public class OrderServiceTest {
 		order.setDeliveryDate( entity.getDeliveryDate() );
 		order.setOrderId( orderId );
 		order.setShipping( BigDecimal.ZERO );
-		order.setShippingAddress( createExpectedShippingAddr() );
+		order.setShippingAddress( null );
 		order.setShopId( entity.getShopsEntity().getId() );
 		order.setStatus( status );
 		order.setSubtotal( price );
@@ -1224,9 +1225,8 @@ public class OrderServiceTest {
 	
 	
 
-	private ShippingAddress createExpectedShippingAddr() {
-		ShippingAddress addr = new ShippingAddress();
-		addr.setDetails("");
+	private AddressRepObj createExpectedShippingAddr() {
+		AddressRepObj addr = new AddressRepObj();
 		return addr;
 	}
 	
@@ -1762,7 +1762,7 @@ public class OrderServiceTest {
 		JSONArray basket = createBasket( new Item(601L, 1));
 
 		String body = json().put("order_id",330033)
-							.put("delivery_address", "new address")
+							.put("address_id", 1002)
 							.put("basket", basket)
 							.put("status", "NEW").toString();
 
@@ -1770,7 +1770,7 @@ public class OrderServiceTest {
 		ResponseEntity<OrderResponse> res = template.postForEntity("/order/update", request, OrderResponse.class);
 		assertEquals(200, res.getStatusCodeValue());
 		OrdersEntity order = orderRepository.findById(330033).get();
-		assertEquals("new address",order.getAddress());
+		assertEquals("new address",order.getAddressEntity().getAddressLine1());
 	}
 
 
@@ -1783,7 +1783,7 @@ public class OrderServiceTest {
 		basket.add(itemDTO);
 
 		String body = json().put("order_id",330038)
-				.put("delivery_address", "new address")
+				.put("address_id", 1001)
 				.put("basket",basket)
 				.put("status", "CLIENT_CANCELLED").toString();
 
@@ -1791,7 +1791,7 @@ public class OrderServiceTest {
 		ResponseEntity<OrderResponse> res = template.postForEntity("/order/update", request, OrderResponse.class);
 		assertEquals(200, res.getStatusCodeValue());
 		OrdersEntity order = orderRepository.findById(330033).get();
-		assertEquals("address",order.getAddress());
+		assertEquals("address line",order.getAddressEntity().getAddressLine1());
 	}
 
 

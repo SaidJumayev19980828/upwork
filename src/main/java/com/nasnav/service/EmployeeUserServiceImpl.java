@@ -118,7 +118,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	}
 
 	@Override
-	public UserApiResponse updateEmployeeUser(String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+	public UserApiResponse updateEmployeeUser(String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) throws BusinessException {
 		EmployeeUserEntity updateUser,currentUser = getCurrentUser();
 
 		// check if same user doing the update

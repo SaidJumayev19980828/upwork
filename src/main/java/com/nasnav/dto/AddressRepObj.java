@@ -10,6 +10,8 @@ import java.math.BigDecimal;
 @Data
 public class AddressRepObj extends BaseRepresentationObject {
 
+    private Long id;
+
     @JsonProperty("flat_number")
     private String flatNumber;
 

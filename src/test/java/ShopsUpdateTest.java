@@ -1,12 +1,24 @@
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
+import static org.junit.Assert.*;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collection;
 
 import javax.sql.DataSource;
 
+import com.nasnav.dao.AddressRepository;
+import com.nasnav.dto.AddressDTO;
+import com.nasnav.dto.ShopJsonDTO;
+import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.AddressesEntity;
+import com.nasnav.service.ShopService;
+import org.apache.http.protocol.HTTP;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
@@ -24,6 +36,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
@@ -34,6 +47,8 @@ import com.nasnav.test.commons.TestCommons;
 import net.jcip.annotations.NotThreadSafe;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shop_Test_Data_Insert.sql"})
+@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 @AutoConfigureWebTestClient
 @PropertySource("classpath:test.database.properties")
 @NotThreadSafe
@@ -45,33 +60,14 @@ public class ShopsUpdateTest {
     @Autowired
     private ShopsRepository shopsRepository;
 
-    @Value("classpath:/sql/Shop_Test_Data_Insert.sql")
-    private Resource userDataInsert;
-
-    @Value("classpath:/sql/database_cleanup.sql")
-    private Resource userDataDelete;
-
     @Autowired
     private DataSource datasource;
 
-    @Before
-    public void setup() {
-        PerformSqlScript(userDataInsert);
-    }
+    @Autowired
+    private AddressRepository addressRepo;
 
-    @After
-    public void cleanUp() {
-        PerformSqlScript(userDataDelete);
-    }
-
-    public void PerformSqlScript(Resource resource){
-        try (Connection con = datasource.getConnection()) {
-            ScriptUtils.executeSqlScript(con, resource);
-        } catch (
-                SQLException e) {
-            e.printStackTrace();
-        }
-    }
+    @Autowired
+    private ShopService shopService;
 
     @Test
     public void testCreateShopDifferentRoles(){
@@ -166,34 +162,33 @@ public class ShopsUpdateTest {
     
     @Test
     public void testUpdateShopDifferentData(){
+        JSONObject address = json().put("flat_number", "Second")
+                                .put("latitude", 30.0595581)
+                                .put("longitude", 31.2234449)
+                                .put("address_line_1", "Omar Bin Khatab");
         //create a shop first
-        String body = "{\"org_id\":99001,\n" +
-                "  \"address\"{"+
-                "  \"area_id\": 10001,\n" +
-                "  \"flat_number\": \"Second\",\n" +
-                "  \"latitude\": 30.0595581,\n" +
-                "  \"longitude\": 31.2234449,\n" +
-                "  \"address_line_1\": \"Omar Bin Khatab\"}\n" +
-                "  \"banner\": \"/banners/banner_256.jpg\",\n" +
-                "  \"brand_id\": 101,\n" +
-                "  \"logo\": \"/brands/hugo_logo.jpg\",\n" +
-                "  \"mall_id\": 901,\n" +
-                "  \"photo\": \"/photos/photo_512.jpg\",\n" +
-                "  \"shop_name\": \"Eventure For Shipping\"\n" + "}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"161718");
-        ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
+        JSONObject body = json().put("org_id", 99001)
+                                .put("address", address)
+                                .put("banner", "/banners/banner_256.jpg")
+                                .put("brand_id", 101)
+                                .put("logo", "/brands/hugo_logo.jpg")
+                                .put("photo", "/photos/photo_512.jpg")
+                                .put("shop_name", "Eventure For Shipping");
+
+        HttpEntity<Object> request = TestCommons.getHttpEntity(body.toString(),"161718");
+        ResponseEntity<String> response = template.postForEntity("/shop/update", request, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         
 
         //get created shop entity
         ShopsEntity oldShop = shopsRepository.findById(jsonResponse.getLong("store_id")).get();
         //update shop data and check if other data remain the same
-        body = "{\"org_id\":99001,\n" +
+        String bodyString = "{\"org_id\":99001,\n" +
                 "\"id\":" + oldShop.getId() +",\n" +
                 "  \"brand_id\": 102,\n" +
                 "  \"name\": \"Different Shop\"\n" + "}";
-        json = TestCommons.getHttpEntity(body,"161718");
-        response = template.postForEntity("/shop/update", json, String.class);
+        request = TestCommons.getHttpEntity(bodyString,"161718");
+        response = template.postForEntity("/shop/update", request, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         ShopsEntity newShop = shopsRepository.findById(jsonResponse.getLong("store_id")).get();
 
@@ -207,5 +202,36 @@ public class ShopsUpdateTest {
         Assert.assertEquals("Different Shop", newShop.getName());
 
         shopsRepository.deleteById(jsonResponse.getLong("store_id"));
+    }
+
+
+    @Test
+    public void updateShopAddressTest() throws BusinessException {
+        JSONObject address = json().put("address_line_1", "address line");
+
+        JSONObject body = json().put("id", 501)
+                                .put("org_id", 99002)
+                                .put("address", address);
+
+
+        HttpEntity request = getHttpEntity(body.toString(), "161718");
+
+        //adding address to shop
+        ResponseEntity<String> response = template.postForEntity("/shop/update", request, String.class);
+
+        assertEquals(200, response.getStatusCodeValue());
+
+        ShopRepresentationObject shop = shopService.getShopById(501L);
+
+        assertTrue(shop.getAddress() != null);
+        assertEquals("address line", shop.getAddress().getAddressLine1());
+
+        // setting address to null (delinking address from shop)
+        String json = "{\"id\": 501, \"org_id\": 99002, \"address\": null}";
+        request = getHttpEntity(json, "161718");
+        response = template.postForEntity("/shop/update", request, String.class);
+
+        assertEquals(200, response.getStatusCodeValue());
+        addressRepo.deleteById(shop.getAddress().getId());
     }
 }
