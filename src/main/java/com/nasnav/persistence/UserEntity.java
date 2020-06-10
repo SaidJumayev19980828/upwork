@@ -28,16 +28,6 @@ public class UserEntity extends BaseUserEntity{
     @Column(name="user_name")
     private String name;
 
-
-    @Column(name="address")
-    private String address;
-
-    @Column(name="country")
-    private String addressCountry;
-
-    @Column(name="city")
-    private String addressCity;
-
     @Column(name="image")
     private String image;
 
