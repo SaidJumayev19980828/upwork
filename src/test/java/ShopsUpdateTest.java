@@ -157,21 +157,6 @@ public class ShopsUpdateTest {
                                 .put("longitude", 31.2234449)
                                 .put("address_line_1", "Omar Bin Khatab");
         //create a shop first
-        String body = "{\"org_id\":99001,\n" +
-                "  \"address_country\": \"Egypt\",\n" +
-                "  \"address_floor\": \"Second\",\n" +
-                "  \"address_lat\": 30.0595581,\n" +
-                "  \"address_lng\": 31.2234449,\n" +
-                "  \"address_street\": \"Omar Bin Khatab\",\n" +
-                "  \"address_streetno\": 24,\n" +
-                "  \"banner\": \"/banners/banner_256.jpg\",\n" +
-                "  \"brand_id\": 101,\n" +
-                "  \"logo\": \"/brands/hugo_logo.jpg\",\n" +
-                "  \"mall_id\": 901,\n" +
-                "  \"photo\": \"/photos/photo_512.jpg\",\n" +
-                "  \"shop_name\": \"Eventure For Shipping\"\n" + "}";
-        HttpEntity<Object> json = getHttpEntity(body,"161718");
-        ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject body = json().put("org_id", 99001)
                                 .put("address", address)
                                 .put("banner", "/banners/banner_256.jpg")
@@ -192,8 +177,8 @@ public class ShopsUpdateTest {
                 "\"id\":" + oldShop.getId() +",\n" +
                 "  \"brand_id\": 102,\n" +
                 "  \"name\": \"Different Shop\"\n" + "}";
-        json = getHttpEntity(bodyString,"161718");
-        response = template.postForEntity("/shop/update", json, String.class);
+        request = getHttpEntity(bodyString,"161718");
+        response = template.postForEntity("/shop/update", request, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         ShopsEntity newShop = shopsRepository.findById(jsonResponse.getLong("store_id")).get();
 

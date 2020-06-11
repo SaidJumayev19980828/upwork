@@ -27,6 +27,7 @@ import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.service.SecurityService;
 
+import static com.nasnav.exceptions.ErrorCodes.AREA$001;
 import static com.nasnav.exceptions.ErrorCodes.P$BRA$0001;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
@@ -82,9 +83,9 @@ public class ShopServiceHelper extends BeanUtils{
 
                 if (addressJson.getAreaId() != null) {
                     Optional<AreasEntity> area = areaRepo.findById(addressJson.getAreaId());
-                    if (!area.isPresent())
-                        throw new BusinessException(String.format("Provided area_id (%d) doesn't match any existing area!", addressJson.getAreaId()),
-                                "INVALID_PARAM: area_id", HttpStatus.NOT_ACCEPTABLE);
+                    if (!area.isPresent()) {
+                        throw new RuntimeBusinessException(NOT_ACCEPTABLE, AREA$001, addressJson.getAreaId());
+                    }
                     address.setAreasEntity(area.get());
                 }
                 shopsEntity.setAddressesEntity(addressRepo.save(address));
