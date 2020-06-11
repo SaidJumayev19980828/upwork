@@ -37,4 +37,6 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
 	ShopsEntity findByIdAndOrganizationEntity_Id(Long id, Long orgId);
 
 	List<ShopsEntity> findByIdIn(Set<Long> shopIdList);
+
+    Boolean existsByIdAndOrganizationEntity_Id(Long id, Long orgId);
 }
