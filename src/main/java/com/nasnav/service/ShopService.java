@@ -218,12 +218,11 @@ public class ShopService {
 
     public void deleteShop(Long shopId)  {
         Long orgId = securityService.getCurrentUserOrganizationId();
-        ShopsEntity shop = shopsRepository.findByIdAndOrganizationEntity_Id(shopId, orgId);
-        if (shop == null) {
-            throw new RuntimeBusinessException(NOT_FOUND, S$0002, shop.getId());
+        if (!shopsRepository.existsByIdAndOrganizationEntity_Id(shopId, orgId)) {
+            throw new RuntimeBusinessException(NOT_FOUND, S$0002, shopId);
         }
-        validateShopLinksBeforeDelete(shop.getId());
-        shopsRepository.delete(shop);
+        validateShopLinksBeforeDelete(shopId);
+        shopsRepository.deleteById(shopId);
     }
 
     private void validateShopLinksBeforeDelete(Long shopId) {
