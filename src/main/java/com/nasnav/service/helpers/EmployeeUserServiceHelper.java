@@ -149,7 +149,7 @@ public class EmployeeUserServiceHelper {
 		return !Collections.disjoint(roles, nonStoreRolesList);
 	}
 
-	public UserApiResponse updateEmployeeUser(Integer userType, EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) throws BusinessException {
+	public UserApiResponse updateEmployeeUser(Integer userType, EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
 		List<ResponseStatus> failResponseStatusList = new ArrayList<>();
 		List<ResponseStatus> successResponseStatusList = new ArrayList<>();
 		List<String> rolesList;
@@ -221,33 +221,12 @@ public class EmployeeUserServiceHelper {
 		return  UserApiResponse.createMessagesApiResponse(true, successResponseStatusList);
 	}
 
-	EmployeeUserEntity updateRemainingEmployeeUserInfo(EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) throws BusinessException {
+	EmployeeUserEntity updateRemainingEmployeeUserInfo(EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
 		if (employeeUserJson.getAvatar() != null)
 			employeeUserEntity.setAvatar(employeeUserJson.getAvatar());
 
 		if (employeeUserJson.getPhoneNumber() != null)
 			employeeUserEntity.setPhoneNumber(employeeUserJson.getPhoneNumber());
-
-		if (employeeUserJson.getAddress() != null) {
-			AddressesEntity address = new AddressesEntity();
-			AddressDTO addressDTO = employeeUserJson.getAddress();
-			Set<AddressesEntity> userAddresses = employeeUserEntity.getAddresses();
-			if (addressDTO.getId() != null) {
-				Optional<AddressesEntity> oldAddress = addressRepo.findByIdAndEmpUserId(addressDTO.getId(), employeeUserEntity.getId());
-				if (!oldAddress.isPresent()) {
-					throw new BusinessException("Provided address_id doesn't match any existing address!",
-							"INVALID_PARAM: address_id", HttpStatus.NOT_ACCEPTABLE);
-				}
-				userAddresses.remove(oldAddress.get());
-				addressRepo.unlinkAddressFromEmployeeUser(addressDTO.getId(), employeeUserEntity.getId());
-			}
-			BeanUtils.copyProperties(employeeUserJson.getAddress(), address, new String[] {"id"});
-			// if the new address is not empty, then add it to list of addresses
-			if (!address.equals(new AddressesEntity())) {
-				userAddresses.add(addressRepo.save(address));
-			}
-			employeeUserEntity.setAddresses(userAddresses);
-		}
 
 		return employeeUserEntity;
 	}

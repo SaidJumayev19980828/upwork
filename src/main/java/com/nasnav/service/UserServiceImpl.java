@@ -38,6 +38,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dto.AddressDTO;
@@ -305,7 +306,7 @@ public class UserServiceImpl implements UserService {
 			if (userJson.getAddress() != null) {
 				AddressesEntity address = new AddressesEntity();
 				AddressDTO addressDTO = userJson.getAddress();
-				Set<AddressesEntity> userAddresses = userEntity.getAddresses();
+				Set<AddressesEntity> userAddresses = addressRepo.findByUserId(userEntity.getId());
 				if (addressDTO.getId() != null) {
 					Optional<AddressesEntity> oldAddress = addressRepo.findByIdAndUserId(addressDTO.getId(), userEntity.getId());
 					if (!oldAddress.isPresent()) {
@@ -317,7 +318,8 @@ public class UserServiceImpl implements UserService {
 				}
 				BeanUtils.copyProperties(userJson.getAddress(), address, new String[] {"id"});
 				if (!address.equals(new AddressesEntity())) {
-					userAddresses.add(addressRepo.save(address));
+					address = addressRepo.save(address);
+					userAddresses.add(address);
 				}
 				userEntity.setAddresses(userAddresses);
 			}
@@ -585,12 +587,18 @@ public class UserServiceImpl implements UserService {
 
 	private UserRepresentationObject getUserRepresentationWithUserRoles(BaseUserEntity user) {
 		UserRepresentationObject userRepObj = user.getRepresentation();
+		userRepObj.setAddresses(getUserAddresses(userRepObj.getId()));
 		userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user)));
 		return userRepObj;
 	}
 	
 	
-	
+	private Set getUserAddresses(Long userId){
+		return addressRepo.findByUserId(userId)
+						  .stream()
+						  .map(AddressesEntity::getRepresentation)
+						  .collect(Collectors.toSet());
+	}
 
 	
 	private BusinessException getNoUserHaveThisIdException(Long id) {

@@ -10,6 +10,7 @@ import org.springframework.beans.BeanUtils;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.util.Set;
 
 
 @Table(name = "addresses")
@@ -52,6 +53,13 @@ public class AddressesEntity implements BaseEntity {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private AreasEntity areasEntity;
+
+
+    @ManyToMany(mappedBy = "addresses")
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
+    private Set<UserEntity> users;
 
     @Override
     public BaseRepresentationObject getRepresentation() {

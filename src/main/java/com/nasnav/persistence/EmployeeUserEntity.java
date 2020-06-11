@@ -64,14 +64,6 @@ public class EmployeeUserEntity extends BaseUserEntity {
     @Column(name = "avatar")
     private String avatar;
 
-    @OneToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
-    @JsonIgnore
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @JoinTable(name = "user_addresses"
-            ,joinColumns = {@JoinColumn(name="emp_user_id")}
-            ,inverseJoinColumns = {@JoinColumn(name="address_id")})
-    private Set<AddressesEntity> addresses;
 
     public static EmployeeUserEntity createEmployeeUser(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
         // parse Json to EmployeeUserEntity
@@ -91,8 +83,6 @@ public class EmployeeUserEntity extends BaseUserEntity {
         BeanUtils.copyProperties(this, obj);
         obj.setImage(this.avatar);
         obj.id = this.getId();
-
-        obj.addresses = addresses.stream().map(a-> (AddressRepObj)a.getRepresentation()).collect(Collectors.toSet());
 
         return obj;
     }

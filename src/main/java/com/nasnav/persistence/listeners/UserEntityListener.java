@@ -76,8 +76,12 @@ public class UserEntityListener {
 		if (!userAddresses.isEmpty()) {
 			AddressesEntity userAddress = userAddresses.get(0);
 			address.setAddress(userAddress.getAddressLine1());
-			address.setCity(userAddress.getAreasEntity().getCitiesEntity().getName());
-			address.setCountry(userAddress.getAreasEntity().getCitiesEntity().getCountriesEntity().getName());
+			if (userAddress.getAreasEntity() != null && userAddress.getAreasEntity().getCitiesEntity() != null) {
+				address.setCity(userAddress.getAreasEntity().getCitiesEntity().getName());
+				if (userAddress.getAreasEntity().getCitiesEntity().getCountriesEntity() != null) {
+					address.setCountry(userAddress.getAreasEntity().getCitiesEntity().getCountriesEntity().getName());
+				}
+			}
 		}
 		return address;
 	}

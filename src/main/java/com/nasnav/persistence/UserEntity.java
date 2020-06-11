@@ -15,8 +15,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Data
 @Entity
@@ -37,7 +37,7 @@ public class UserEntity extends BaseUserEntity{
     @Column(name="mobile")
     private String mobile;
 
-    @OneToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -47,9 +47,14 @@ public class UserEntity extends BaseUserEntity{
     private Set<AddressesEntity> addresses;
 
 
+    public void insertUserAddress(AddressesEntity address) {this.addresses.add(address);}
+
+
+    public void removeUserAddress(AddressesEntity address) {this.addresses.remove(address);}
 
     public UserEntity() {
     	userStatus = NOT_ACTIVATED.getValue();
+    	addresses = new HashSet<>();
     }
 
     
@@ -74,10 +79,6 @@ public class UserEntity extends BaseUserEntity{
         obj.phoneNumber = this.getPhoneNumber();
         obj.image = this.getImage();
         obj.mobile = this.getMobile();
-
-        Set<AddressRepObj> userAddresses = this.getAddresses().stream().map(a-> (AddressRepObj)a.getRepresentation()).collect(Collectors.toSet());;
-
-        obj.addresses = userAddresses;
 
         return obj;
     }

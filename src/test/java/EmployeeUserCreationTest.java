@@ -700,36 +700,4 @@ public class EmployeeUserCreationTest {
 		assertTrue("the logged in user should be the employee user, "
 				+ "and its token should exists in EMPLOYEE_USER table", employeeUserLoggedIn );
 	}
-	
-	
-	@Test
-	public void updateEmployeeAddressTest() {
-		JSONObject address = json().put("address_line_1", "address line");
-		JSONObject body = json().put("employee", true)
-								.put("address", address);
-		HttpEntity request = getHttpEntity(body.toString(), "hijkllm");
-
-		//adding address to employee
-		ResponseEntity<String> response = template.postForEntity("/user/update", request, String.class);
-		assertEquals(200, response.getStatusCodeValue());
-
-		Optional<AddressesEntity> entity = addressRepo.findOneByEmployeeUserId(69L);
-		assertTrue(entity.isPresent());
-		AddressesEntity addressesEntity = entity.get();
-		assertEquals("address line", addressesEntity.getAddressLine1());
-
-
-
-
-		//unlinking the address from employee
-		address = json().put("id", addressesEntity.getId());
-		body = body.put("address", address);
-		request = getHttpEntity(body.toString(), "hijkllm");
-		response = template.postForEntity("/user/update", request, String.class);
-
-		assertEquals(200, response.getStatusCodeValue());
-		assertFalse(addressRepo.findByIdAndEmpUserId(addressesEntity.getId(), 69L).isPresent());
-		addressRepo.delete(addressesEntity);
-
-	}
 }

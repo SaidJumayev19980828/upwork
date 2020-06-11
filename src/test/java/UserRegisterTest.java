@@ -145,9 +145,10 @@ public class UserRegisterTest {
 		persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", organization.getId());
 		if (persistentUser == null) {
 			persistentUser = createUser();
+
 			persistentUser = userRepository.save(persistentUser);
-		}		
-		
+		}
+
 	}
 
 

@@ -8,13 +8,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.Set;
 
 public interface AddressRepository extends JpaRepository<AddressesEntity, Long> {
-
-    @Query(value = "select * from addresses a join user_Addresses ua on ua.address_id = a.id" +
-                   " where ua.address_id = :addressId and ua.emp_user_id = :userId ", nativeQuery = true)
-    Optional<AddressesEntity> findByIdAndEmpUserId(@Param("addressId") Long addressId,
-                                                   @Param("userId") Long userId);
 
     @Query(value = "select * from addresses a join user_Addresses ua on ua.address_id = a.id" +
             " where ua.address_id = :addressId and ua.user_id = :userId ", nativeQuery = true)
@@ -22,21 +18,17 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
                                       @Param("userId") Long userId);
 
     @Query(value = "select * from addresses a join user_Addresses ua on ua.address_id = a.id" +
-            " where ua.user_id = :userId limit 1", nativeQuery = true)
-    Optional<AddressesEntity> findOneByUserId(@Param("userId") Long userId);
+            " where ua.user_id = :userId ", nativeQuery = true)
+    Set<AddressesEntity> findByUserId(@Param("userId") Long userId);
+
 
     @Query(value = "select * from addresses a join user_Addresses ua on ua.address_id = a.id" +
-            " where ua.emp_user_id = :userId limit 1", nativeQuery = true)
-    Optional<AddressesEntity> findOneByEmployeeUserId(@Param("userId") Long userId);
+            " where ua.user_id = :userId limit 1", nativeQuery = true)
+    Optional<AddressesEntity> findOneByUserId(@Param("userId") Long userId);
 
     @Modifying
     @Transactional
     @Query(value = "delete from user_Addresses where address_id = :addressId and user_id = :userId", nativeQuery = true)
-     void unlinkAddressFromUser(@Param("addressId") Long addressId, @Param("userId") Long userId);
-
-    @Modifying
-    @Transactional
-    @Query(value = "delete from user_Addresses where address_id = :addressId and emp_user_id = :userId", nativeQuery = true)
-    void unlinkAddressFromEmployeeUser(@Param("addressId") Long addressId, @Param("userId") Long userId);
+    void unlinkAddressFromUser(@Param("addressId") Long addressId, @Param("userId") Long userId);
 
 }
