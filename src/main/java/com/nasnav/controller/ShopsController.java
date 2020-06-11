@@ -1,12 +1,9 @@
 package com.nasnav.controller;
 
+import com.nasnav.exceptions.RuntimeBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.dto.StockUpdateDTO;
@@ -36,11 +33,9 @@ public class ShopsController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @PostMapping(value = "/update", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ShopResponse updateShop(@RequestHeader(name = "User-Token", required = false) String userToken,
-                                     @RequestBody ShopJsonDTO shopJson) throws BusinessException {
+                                     @RequestBody ShopJsonDTO shopJson) {
         return shopService.shopModification(shopJson);
     }
-    
-    
     
     
     
@@ -51,5 +46,17 @@ public class ShopsController {
     @PostMapping(value = "/stock", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public StockUpdateResponse updateStock(@RequestBody StockUpdateDTO stockUpdateReq) throws BusinessException {      
         return stockService.updateStock(stockUpdateReq);
+    }
+
+
+
+    @ApiOperation(value = "delete shop by its ID", nickname = "deleteShop")
+    @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "INSUFFICIENT RIGHTS or UNAUTHENTICATED"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
+    @DeleteMapping(value = "/delete")
+    public void deleteShop(@RequestHeader(name = "User-Token", required = false) String userToken,
+                           @RequestParam("shop_id") Long id) {
+        shopService.deleteShop(id);
     }
 }

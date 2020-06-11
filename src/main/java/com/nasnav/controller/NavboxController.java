@@ -118,8 +118,7 @@ public class NavboxController {
 	@ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 404, message = "There are no shops matching this org_id"), })
 	@GetMapping("/shops")
-	public List<ShopRepresentationObject> getShopsByOrganization(@RequestParam(name = "org_id") Long orgId)
-			throws BusinessException {
+	public List<ShopRepresentationObject> getShopsByOrganization(@RequestParam(name = "org_id") Long orgId) {
 		return shopService.getOrganizationShops(orgId);
 	}
 
@@ -131,7 +130,7 @@ public class NavboxController {
 	@ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 404, message = "No shop matching the supplied ID found"), })
 	@GetMapping("/shop")
-	public ShopRepresentationObject getShopById(@RequestParam(name = "shop_id") Long shopId) throws BusinessException {
+	public ShopRepresentationObject getShopById(@RequestParam(name = "shop_id") Long shopId) {
 
 		return shopService.getShopById(shopId);
 	}

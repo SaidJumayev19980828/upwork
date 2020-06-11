@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.nasnav.dao.BrandsRepository;
-import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -19,6 +19,9 @@ import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.service.SecurityService;
+
+import static com.nasnav.exceptions.ErrorCodes.P$BRA$0001;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 @Service
 public class ShopServiceHelper extends BeanUtils{
@@ -51,7 +54,7 @@ public class ShopServiceHelper extends BeanUtils{
     
     
 
-    public ShopsEntity setAdditionalShopProperties(ShopsEntity shopsEntity, ShopJsonDTO shopJson) throws BusinessException {
+    public ShopsEntity setAdditionalShopProperties(ShopsEntity shopsEntity, ShopJsonDTO shopJson) {
         if (shopJson.isUpdated("name")) {
             shopsEntity.setName(shopJson.getName());
             shopsEntity.setPname(StringUtils.encodeUrl(shopJson.getName()));
@@ -76,11 +79,11 @@ public class ShopServiceHelper extends BeanUtils{
             shopsEntity.setLng(shopJson.getLng());
 
         if (shopJson.isUpdated("brandId")) {
-            if (brandsRepo.findById(shopJson.getBrandId()).isPresent())
+            if (brandsRepo.findById(shopJson.getBrandId()).isPresent()) {
                 shopsEntity.setBrandId(shopJson.getBrandId());
-            else
-                throw new BusinessException("Provided brand_id doesn't match any existing brand",
-                        "INVALID_PARAM: brand_id", HttpStatus.NOT_ACCEPTABLE);
+            } else {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$BRA$0001, shopJson.getBrandId());
+            }
         }
 
         if (shopJson.isUpdated("banner"))
