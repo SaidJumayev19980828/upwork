@@ -4,6 +4,8 @@ package com.nasnav.service;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_SHOPS;
 import static com.nasnav.cache.Caches.SHOPS_BY_ID;
 import static java.lang.String.format;
+import static org.springframework.http.HttpStatus.*;
+import static com.nasnav.exceptions.ErrorCodes.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,22 +14,16 @@ import java.util.stream.Collectors;
 
 import javax.cache.annotation.CacheResult;
 
+import com.nasnav.dao.*;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.OrganizationImagesRepository;
-import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dto.OrganizationImagesRepresentationObject;
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.dto.ShopRepresentationObject;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationImagesEntity;
-import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import com.nasnav.service.helpers.ShopServiceHelper;
@@ -42,14 +38,22 @@ public class ShopService {
     private final EmployeeUserServiceHelper employeeUserServicehelper;
     private final ShopServiceHelper shopServiceHelper;
     private final OrganizationImagesRepository orgImgRepo;
-    
-    
-    
+
+    @Autowired
+    private StockRepository stockRepo;
+
+    @Autowired
+    private OrdersRepository orderRepo;
+
+    @Autowired
+    private ShopThreeSixtyRepository shopThreeSixtyRepo;
+
+    @Autowired
+    private EmployeeUserRepository empUserRepo;
     
     @Autowired
     public ShopService(ShopsRepository shopsRepository, EmployeeUserServiceHelper employeeUserServicehelper,
-                       EmployeeUserRepository employeeUserRepository, ShopServiceHelper shopServiceHelper,
-                       OrganizationImagesRepository orgImgRepo){
+                       ShopServiceHelper shopServiceHelper,OrganizationImagesRepository orgImgRepo){
         this.shopsRepository = shopsRepository;
         this.employeeUserServicehelper = employeeUserServicehelper;
         this.shopServiceHelper = shopServiceHelper;
@@ -61,12 +65,12 @@ public class ShopService {
 
     
     @CacheResult(cacheName = ORGANIZATIONS_SHOPS)
-    public List<ShopRepresentationObject> getOrganizationShops(Long organizationId) throws BusinessException {
+    public List<ShopRepresentationObject> getOrganizationShops(Long organizationId) {
 
         List<ShopsEntity> shopsEntities = shopsRepository.findByOrganizationEntity_Id(organizationId);
 
         if(shopsEntities==null || shopsEntities.isEmpty())
-            throw new BusinessException("No shops found","", HttpStatus.NOT_FOUND);
+            throw new RuntimeBusinessException(NOT_FOUND, S$0003);
 
         return shopsEntities.stream().map(shopsEntity -> {
             ShopRepresentationObject shopRepresentationObject = ((ShopRepresentationObject) shopsEntity.getRepresentation());
@@ -81,12 +85,12 @@ public class ShopService {
 
     
 //    @CacheResult(cacheName = "shops_by_id")
-    public ShopRepresentationObject getShopById(Long shopId) throws BusinessException {
+    public ShopRepresentationObject getShopById(Long shopId) {
 
         Optional<ShopsEntity> shopsEntityOptional = shopsRepository.findById(shopId);
 
         if(shopsEntityOptional==null || !shopsEntityOptional.isPresent())
-            throw new BusinessException("Shop not found","", HttpStatus.NOT_FOUND);
+            throw new RuntimeBusinessException(NOT_FOUND, S$0003);
 
         ShopRepresentationObject shopRepObj = (ShopRepresentationObject)shopsEntityOptional.get().getRepresentation();
         List<OrganizationImagesEntity> imageEntities = orgImgRepo.findByShopsEntityId(shopId);
@@ -101,11 +105,10 @@ public class ShopService {
     
     
     @CacheEvict(allEntries = true, cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
-    public ShopResponse shopModification(ShopJsonDTO shopJson) throws BusinessException{
+    public ShopResponse shopModification(ShopJsonDTO shopJson) {
         BaseUserEntity baseUser =  securityService.getCurrentUser();
         if(!(baseUser instanceof EmployeeUserEntity)) {
-        	throw new BusinessException("User is not an authorized to modify shops!",
-                    "INSUFFICIENT RIGHTS", HttpStatus.FORBIDDEN);
+            throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001,"shops");
         }
         
         EmployeeUserEntity user = (EmployeeUserEntity)baseUser;
@@ -123,9 +126,9 @@ public class ShopService {
     
     
 
-    private ShopResponse createShop(ShopJsonDTO shopJson, Long employeeUserOrgId, List<String> userRoles) throws BusinessException{
+    private ShopResponse createShop(ShopJsonDTO shopJson, Long employeeUserOrgId, List<String> userRoles) {
         if (!userRoles.contains("ORGANIZATION_MANAGER") || !employeeUserOrgId.equals(shopJson.getOrgId())){
-        	throw new BusinessException("User is not an authorized to modify this shop!", "INSUFFICIENT RIGHTS", HttpStatus.FORBIDDEN);
+        	throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001, "this shop");
         }
         
         ShopsEntity shopsEntity = new ShopsEntity();
@@ -133,7 +136,7 @@ public class ShopService {
         shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson);
 
         shopsRepository.save(shopsEntity);
-        return new ShopResponse(shopsEntity.getId(), HttpStatus.OK);
+        return new ShopResponse(shopsEntity.getId(), OK);
     }
     
     
@@ -141,7 +144,7 @@ public class ShopService {
     
 
     private ShopResponse updateShop(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId,
-                                    List<String> userRoles) throws BusinessException{
+                                    List<String> userRoles) {
 
         validateShopUpdate(shopJson, employeeUserOrgId, employeeUserShopId, userRoles);
         
@@ -150,14 +153,14 @@ public class ShopService {
         
         shopsRepository.save(shopsEntity);
         
-        return new ShopResponse(shopsEntity.getId(), HttpStatus.OK);
+        return new ShopResponse(shopsEntity.getId(), OK);
     }
 
 
 
 
 	private void validateShopUpdate(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId,
-			List<String> userRoles) throws BusinessException {
+			List<String> userRoles) {
 		
 		validateShop(shopJson);
 		validateUserToUpdateShop(shopJson, employeeUserOrgId, employeeUserShopId, userRoles);
@@ -166,10 +169,10 @@ public class ShopService {
 
 
 
-	private  void validateShop(ShopJsonDTO shopJson) throws BusinessException {
+	private  void validateShop(ShopJsonDTO shopJson)  {
 		ShopsEntity shopsEntity = shopsRepository.findById(shopJson.getId()).get();
         if ( shopsEntity == null) {
-        	throw new BusinessException(format("No shop exists with id[%d]!",shopJson.getId()), "INVALID STORE", HttpStatus.NOT_FOUND);
+            throw new RuntimeBusinessException(NOT_FOUND, S$0002, shopJson.getId());
         }
 	}
 
@@ -177,16 +180,16 @@ public class ShopService {
 
 
 	private void validateUserToUpdateShop(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId,
-			List<String> userRoles) throws BusinessException {
+			List<String> userRoles) {
         Long orgId = securityService.getCurrentUserOrganizationId();
 		if (!userRoles.contains("ORGANIZATION_MANAGER") && !userRoles.contains("STORE_MANAGER")){
-        	throw new BusinessException("User is not an authorized to modify this shop!", "INSUFFICIENT RIGHTS", HttpStatus.FORBIDDEN);
+        	throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001, "this shop");
         }
         if (userRoles.contains("ORGANIZATION_MANAGER") && !employeeUserOrgId.equals(orgId)){
-        	throw new BusinessException("User is not an authorized to modify this shop!", "INSUFFICIENT RIGHTS", HttpStatus.FORBIDDEN);
+            throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001, "this shop");
         }
         if (userRoles.contains("STORE_MANAGER") && !employeeUserShopId.equals(shopJson.getId())){
-        	throw new BusinessException("User is not an authorized to modify this shop!", "INSUFFICIENT RIGHTS", HttpStatus.FORBIDDEN);
+            throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001, "this shop");
         }
 	}
     
@@ -212,5 +215,47 @@ public class ShopService {
         return shops.stream().map(s -> (ShopRepresentationObject)s.getRepresentation()).collect(Collectors.toList());
     }
 
+
+    public void deleteShop(Long shopId)  {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        if (!shopsRepository.existsByIdAndOrganizationEntity_Id(shopId, orgId)) {
+            throw new RuntimeBusinessException(NOT_FOUND, S$0002, shopId);
+        }
+        validateShopLinksBeforeDelete(shopId);
+        shopsRepository.deleteById(shopId);
+    }
+
+    private void validateShopLinksBeforeDelete(Long shopId) {
+        List<Long> linkedStocks = stockRepo.findByShopsEntity_Id(shopId)
+                                            .stream()
+                                            .map(StocksEntity::getId)
+                                            .collect(Collectors.toList());
+        if (!linkedStocks.isEmpty()) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "stocks "+linkedStocks.toString());
+        }
+
+
+        List<Long> linkedOrders = orderRepo.findByShopsEntityId(shopId)
+                                            .stream()
+                                            .map(OrdersEntity::getId)
+                                            .collect(Collectors.toList());
+        if (!linkedOrders.isEmpty()) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "orders "+linkedOrders.toString());
+        }
+
+        ShopThreeSixtyEntity linkedShop360 = shopThreeSixtyRepo.findByShopsEntity_Id(shopId);
+        if (linkedShop360 != null) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "360 shop ("+linkedShop360.getId()+")");
+        }
+
+
+        List<Long> linkedEmployees = empUserRepo.findByShopId(shopId)
+                                                .stream()
+                                                .map(EmployeeUserEntity::getId)
+                                                .collect(Collectors.toList());
+        if (!linkedEmployees.isEmpty()) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "employees "+linkedEmployees.toString());
+        }
+    }
 	
 }

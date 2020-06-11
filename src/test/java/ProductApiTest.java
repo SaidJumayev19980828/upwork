@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.nasnav.dto.ProductsFiltersResponse;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -1066,9 +1067,30 @@ public class ProductApiTest {
 		assertTrue("each product should have the 2 tags", allProductsHaveTags(productIds, tags) );
     }
 
-    
-    
 
+
+	@Test
+	public void testGetProductsFilters() {
+		ProductSearchParam param = new ProductSearchParam();
+		List<Long> tagsList = new ArrayList<>();
+		tagsList.add(5001L);
+		param.org_id = 99001L;
+		param.tags = tagsList;
+
+		ResponseEntity<ProductsFiltersResponse> response =
+				template.getForEntity("/navbox/filters?" + param.toString(), ProductsFiltersResponse.class);
+
+		Assert.assertEquals(200, response.getStatusCodeValue());
+		Assert.assertEquals(2, response.getBody().getBrands().size());
+
+
+		//trying to filter products by nonlinked tags
+		tagsList.add(0, 5002L);
+		param.tags = tagsList;
+		response = template.getForEntity("/navbox/filters?" + param.toString(), ProductsFiltersResponse.class);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+		Assert.assertEquals(0, response.getBody().getBrands().size());
+	}
 
 
 	private ResponseEntity<String> runUpdateTagsRequest(BaseUserEntity user, List<Long> productIds,

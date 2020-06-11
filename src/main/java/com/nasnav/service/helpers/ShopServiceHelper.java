@@ -8,6 +8,7 @@ import java.util.Optional;
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.AreaRepository;
 import com.nasnav.dao.BrandsRepository;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.AddressesEntity;
@@ -26,6 +27,9 @@ import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.service.SecurityService;
 
+import static com.nasnav.exceptions.ErrorCodes.P$BRA$0001;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+
 @Service
 public class ShopServiceHelper extends BeanUtils{
 
@@ -43,7 +47,7 @@ public class ShopServiceHelper extends BeanUtils{
 
     @Autowired
     private AddressRepository addressRepo;
-    
+
 
     public String[] getNullProperties(ShopJsonDTO shopJson) {
         final BeanWrapper src = new BeanWrapperImpl(shopJson);
@@ -63,7 +67,7 @@ public class ShopServiceHelper extends BeanUtils{
     
     
 
-    public ShopsEntity setAdditionalShopProperties(ShopsEntity shopsEntity, ShopJsonDTO shopJson) throws BusinessException {
+    public ShopsEntity setAdditionalShopProperties(ShopsEntity shopsEntity, ShopJsonDTO shopJson) {
         if (shopJson.isUpdated("name")) {
             shopsEntity.setName(shopJson.getName());
             shopsEntity.setPname(StringUtils.encodeUrl(shopJson.getName()));
@@ -91,11 +95,11 @@ public class ShopServiceHelper extends BeanUtils{
         }
 
         if (shopJson.isUpdated("brandId")) {
-            if (brandsRepo.findById(shopJson.getBrandId()).isPresent())
+            if (brandsRepo.findById(shopJson.getBrandId()).isPresent()) {
                 shopsEntity.setBrandId(shopJson.getBrandId());
-            else
-                throw new BusinessException("Provided brand_id doesn't match any existing brand",
-                        "INVALID_PARAM: brand_id", HttpStatus.NOT_ACCEPTABLE);
+            } else {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$BRA$0001, shopJson.getBrandId());
+            }
         }
 
         if (shopJson.isUpdated("banner"))

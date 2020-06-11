@@ -5,37 +5,27 @@ import static org.junit.Assert.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Collection;
+import static org.springframework.http.HttpMethod.*;
+
 
 import javax.sql.DataSource;
 
 import com.nasnav.dao.AddressRepository;
-import com.nasnav.dto.AddressDTO;
-import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.AddressesEntity;
 import com.nasnav.service.ShopService;
-import org.apache.http.protocol.HTTP;
 import org.json.JSONObject;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.skyscreamer.jsonassert.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -73,7 +63,7 @@ public class ShopsUpdateTest {
     public void testCreateShopDifferentRoles(){
         // create shop using Org_Mananger role (test success)
         String body = "{\"org_id\":99001,\"shop_name\":\"Test_shop\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"161718");
+        HttpEntity<Object> json = getHttpEntity(body,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         shopsRepository.deleteById(jsonResponse.getLong("store_id"));
@@ -82,14 +72,14 @@ public class ShopsUpdateTest {
         Assert.assertEquals(200, response.getStatusCode().value());
 
         // create shop using Store_Mananger role (test fail)
-        json = TestCommons.getHttpEntity(body,"192021");
+        json = getHttpEntity(body,"192021");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
         Assert.assertEquals(403, response.getStatusCode().value());
 
         // create shop using Nasnav_Admin role (test fail)
-        json = TestCommons.getHttpEntity(body,"101112");
+        json = getHttpEntity(body,"101112");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
@@ -97,7 +87,7 @@ public class ShopsUpdateTest {
         Assert.assertEquals(403, response.getStatusCode().value());
 
         // create shop using Org_Admin role (test fail)
-        json = TestCommons.getHttpEntity(body,"131415");
+        json = getHttpEntity(body,"131415");
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
@@ -112,7 +102,7 @@ public class ShopsUpdateTest {
     @Test
     public void testCreateShopDifferentOrganization(){
         String body = "{\"org_id\":99002,\"shop_name\":\"Test_shop\"}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"161718");
+        HttpEntity<Object> json = getHttpEntity(body,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
@@ -138,7 +128,7 @@ public class ShopsUpdateTest {
                 "  \"mall_id\": 901,\n" +
                 "  \"photo\": \"/photos/photo_512.jpg\",\n" +
                 "  \"shop_name\": \"Eventure For Shipping\"\n" + "}";
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"161718");
+        HttpEntity<Object> json = getHttpEntity(body,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         
@@ -167,6 +157,21 @@ public class ShopsUpdateTest {
                                 .put("longitude", 31.2234449)
                                 .put("address_line_1", "Omar Bin Khatab");
         //create a shop first
+        String body = "{\"org_id\":99001,\n" +
+                "  \"address_country\": \"Egypt\",\n" +
+                "  \"address_floor\": \"Second\",\n" +
+                "  \"address_lat\": 30.0595581,\n" +
+                "  \"address_lng\": 31.2234449,\n" +
+                "  \"address_street\": \"Omar Bin Khatab\",\n" +
+                "  \"address_streetno\": 24,\n" +
+                "  \"banner\": \"/banners/banner_256.jpg\",\n" +
+                "  \"brand_id\": 101,\n" +
+                "  \"logo\": \"/brands/hugo_logo.jpg\",\n" +
+                "  \"mall_id\": 901,\n" +
+                "  \"photo\": \"/photos/photo_512.jpg\",\n" +
+                "  \"shop_name\": \"Eventure For Shipping\"\n" + "}";
+        HttpEntity<Object> json = getHttpEntity(body,"161718");
+        ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject body = json().put("org_id", 99001)
                                 .put("address", address)
                                 .put("banner", "/banners/banner_256.jpg")
@@ -187,8 +192,8 @@ public class ShopsUpdateTest {
                 "\"id\":" + oldShop.getId() +",\n" +
                 "  \"brand_id\": 102,\n" +
                 "  \"name\": \"Different Shop\"\n" + "}";
-        request = TestCommons.getHttpEntity(bodyString,"161718");
-        response = template.postForEntity("/shop/update", request, String.class);
+        json = getHttpEntity(bodyString,"161718");
+        response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         ShopsEntity newShop = shopsRepository.findById(jsonResponse.getLong("store_id")).get();
 
@@ -234,4 +239,51 @@ public class ShopsUpdateTest {
         assertEquals(200, response.getStatusCodeValue());
         addressRepo.deleteById(shop.getAddress().getId());
     }
+
+
+    @Test
+    public void deleteShopTest() {
+        // create shop first
+        JSONObject body = json().put("name", "new shop")
+                                .put("org_id", 99001);
+        HttpEntity<Object> request = getHttpEntity(body.toString(),"161718");
+        ResponseEntity<String> response = template.postForEntity("/shop/update", request, String.class);
+        JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
+        ShopsEntity oldShop = shopsRepository.findById(jsonResponse.getLong("store_id")).get();
+
+        // delete the created shop
+        response = template.exchange("/shop/delete?shop_id="+oldShop.getId(),
+                                        DELETE, request, String.class);
+
+        assertEquals(200, response.getStatusCodeValue());
+        assertFalse(shopsRepository.findById(oldShop.getId()).isPresent());
+    }
+
+
+    @Test
+    public void deleteShopDifferentLinkedEntitiesTest() {
+        // delete shop 503 linked to stock
+        HttpEntity<Object> request = getHttpEntity("161718");
+        ResponseEntity<String> response = template.exchange("/shop/delete?shop_id=503",
+                                                DELETE, request, String.class);
+        assertEquals(406, response.getStatusCodeValue());
+
+
+        // delete shop 504 linked to order
+        response = template.exchange("/shop/delete?shop_id=504",
+                                    DELETE, request, String.class);
+        assertEquals(406, response.getStatusCodeValue());
+
+
+        // delete shop 505 linked to shop360
+        response = template.exchange("/shop/delete?shop_id=505",
+                                    DELETE, request, String.class);
+        assertEquals(406, response.getStatusCodeValue());
+
+        // delete shop 502 linked to employee
+        response = template.exchange("/shop/delete?shop_id=502",
+                DELETE, request, String.class);
+        assertEquals(406, response.getStatusCodeValue());
+    }
+
 }
