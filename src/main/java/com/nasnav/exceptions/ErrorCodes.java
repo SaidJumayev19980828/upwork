@@ -13,6 +13,8 @@ public enum ErrorCodes {
 	, UXACTVX0004("Invalid redirection url[%s]!")
 	
 	, U$LOG$0001("NO USER FOUND FOR A TOKEN!")
+
+	,U$AUTH$0001("User is not an authorized to modify %s!")
 	
 	,P$EXP$0001("No column found in csv for writing additional field with name[%s]!")
 	,P$VAR$0001("No Variant found with id[%d]!") 
@@ -28,7 +30,10 @@ public enum ErrorCodes {
 	
 	,P$BRA$0001("No Brand exists with ID:[%d]!")
 	,P$BRA$0002("Brand with id [%d] doesnot belong to organization with id [%d]")
-	
+
+	,S$0001("Shop is linked to %s !")
+	,S$0002( "No Shop exists with ID: [%d]!")
+	,S$0003("No shops found!")
 	;
 	
 	@Getter
