@@ -30,9 +30,12 @@ public class HTMLConfigurer {
 				if (data.get(key)instanceof String) {
 //					System.out.println(key + " #->  " + data.getString(key));
 					modified = modified.replace("$" + key, data.getString(key));
-				} else if (data.get(key)instanceof BigDecimal || data.get(key)instanceof Double) {
+				} else if (data.get(key)instanceof BigDecimal) {
 						System.out.println(key + " !->  " + data.getBigDecimal(key).toString());
 						modified = modified.replace("$" + key, data.getBigDecimal(key).toString());
+				} else if (data.get(key)instanceof Integer) {
+					System.out.println(key + " !->  " + data.getBigDecimal(key).toString());
+					modified = modified.replace("$" + key, new Integer(data.getInt(key)).toString());
 				} else {
 					System.out.println(key + " ?->  " + data.get(key).getClass());
 				}

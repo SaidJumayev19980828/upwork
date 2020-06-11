@@ -1,6 +1,6 @@
 <html>
 <head>
-    <script type="text/javascript" src="http://flw-pms-dev.eu-west-1.elasticbeanstalk.com/flwv3-pug/getpaidx/api/flwpbf-inline.js"></script>
+    <script src="$script_url"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function(event) {
             document.getElementById("submit").addEventListener("click", function(e) {
@@ -29,7 +29,7 @@
                             response.tx.chargeResponseCode == "0"
                         ) {
                             // redirect to a success page
-                            window.location.href = "$success_url" + "?flwref=" + flw_ref;
+                            window.location.href = "$success_url" + "?ref=" + flw_ref;
                         } else {
                             // redirect to a failure page.
                         }

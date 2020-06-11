@@ -17,6 +17,8 @@ public class RaveAccount extends Account {
     protected String encryptionKey;
     protected String successUrl;
     protected String failureUrl;
+    protected String scriptUrl;
+    protected String apiUrl;
 
 
     public RaveAccount(Properties props) {
@@ -28,5 +30,7 @@ public class RaveAccount extends Account {
             this.encryptionKey = props.getProperty("rave.enc_key");
             this.successUrl = props.getProperty("rave.success_url");
             this.failureUrl = props.getProperty("rave.failure_url");
+            this.apiUrl = props.getProperty("rave.api_url");
+            this.scriptUrl = props.getProperty("rave.script_url");
     }
 }

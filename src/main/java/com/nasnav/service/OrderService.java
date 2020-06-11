@@ -18,6 +18,14 @@ public interface OrderService {
 	public class OrderValue {
 		public BigDecimal amount;
 		public TransactionCurrency currency;
+
+		public String toString() {
+			if (amount == null) {
+				return "NULL";
+			}
+			return amount.toString() + " " + currency;
+		}
+
 	}
 
 	public OrderResponse createNewOrder(OrderJsonDto orderJson) throws BusinessException;
