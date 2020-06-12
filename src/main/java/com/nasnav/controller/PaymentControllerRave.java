@@ -54,7 +54,7 @@ public class PaymentControllerRave {
     @Autowired
     private AppConfig config;
 
-    private final RaveAccount account;
+    private RaveAccount account;
 
     @Autowired
     public PaymentControllerRave(
@@ -64,8 +64,6 @@ public class PaymentControllerRave {
         this.ordersRepository = ordersRepository;
         this.orderService = orderService;
         this.paymentsRepository = paymentsRepository;
-        this.account = new RaveAccount(Tools.getPropertyForAccount("rave", reveLogger, config.paymentPropertiesDir));
-        reveLogger.debug("Payment Account: {}, API: {}", this.account.getAccountId(), this.account.getApiUrl());
     }
 
     @ApiIgnore
@@ -79,6 +77,9 @@ public class PaymentControllerRave {
     @GetMapping(value = "/success")
     public ResponseEntity<?> paymentSuccess(@RequestParam(name = "ref") String flwRef) throws BusinessException {
 
+        if (this.account == null) {
+            return  new ResponseEntity<>("{\"status\": \"FAILED\"}", HttpStatus.NOT_ACCEPTABLE);
+        }
         // Verify transaction at the source
         JSONObject data = new JSONObject();
 //        data.put("txref", this.transactionData.transactionId);
@@ -173,6 +174,11 @@ public class PaymentControllerRave {
     @RequestMapping(value = "/initialize")
     public ResponseEntity<?> initPayment(@RequestParam(name = "order_id") String orderList) throws BusinessException {
         ArrayList<OrdersEntity> orders = Tools.getOrdersFromString(ordersRepository, orderList, ",");
+
+        // Load the appropriate receiver account. TODO: based on the order data
+        this.account = new RaveAccount(Tools.getPropertyForAccount("rave", reveLogger, config.paymentPropertiesDir));
+        reveLogger.debug("Payment Account: {}, API: {}", this.account.getAccountId(), this.account.getApiUrl());
+
         if (orders.size() == 0) {
             reveLogger.error("No valid orders provided ({})", orderList);
             throw new BusinessException("No valid order IDs recognized", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
