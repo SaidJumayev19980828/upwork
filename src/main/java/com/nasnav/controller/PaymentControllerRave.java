@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+import com.nasnav.AppConfig;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.enumerations.PaymentStatus;
@@ -50,8 +51,8 @@ public class PaymentControllerRave {
 
     private final PaymentsRepository paymentsRepository;
 
-//    @Autowired
-//    private AppConfig config;
+    @Autowired
+    private AppConfig config;
 
     private final RaveAccount account;
 
@@ -63,7 +64,7 @@ public class PaymentControllerRave {
         this.ordersRepository = ordersRepository;
         this.orderService = orderService;
         this.paymentsRepository = paymentsRepository;
-        this.account = new RaveAccount(Tools.getPropertyForAccount("rave", reveLogger, "/"));
+        this.account = new RaveAccount(Tools.getPropertyForAccount("rave", reveLogger, config.paymentPropertiesDir));
         reveLogger.debug("Payment Account: {}, API: {}", this.account.getAccountId(), this.account.getApiUrl());
     }
 

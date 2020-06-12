@@ -122,6 +122,7 @@ public class Tools {
 			logger.warn("Unknown account: {}", accountName);
 			return null;
 		}
+		logger.debug("Attempting to load account properties file: {}", file);
 		try  {
 			InputStream stream =
 					Tools.class.getClass().getResourceAsStream(file);
