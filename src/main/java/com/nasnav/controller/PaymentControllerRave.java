@@ -64,6 +64,7 @@ public class PaymentControllerRave {
         this.orderService = orderService;
         this.paymentsRepository = paymentsRepository;
         this.account = new RaveAccount(Tools.getPropertyForAccount("rave", reveLogger, "/"));
+        reveLogger.debug("Payment Account: {}, API: {}", this.account.getAccountId(), this.account.getApiUrl());
     }
 
     @ApiIgnore

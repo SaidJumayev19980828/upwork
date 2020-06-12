@@ -130,10 +130,7 @@ public class Tools {
 					propertiesDir + file
 				));
 			}
-//System.out.println(" USER DIR: " + System.getProperty("user.dir"));
-//System.out.println(" PROP DIR: " + propertiesDir);
-//System.out.println(" FILE: " + file);
-//System.out.println(" STRAM: " + stream);
+			logger.info("Loaded account properties file: {}", file);
 			Properties props = new Properties();
 			props.load(stream);
 			return props;
