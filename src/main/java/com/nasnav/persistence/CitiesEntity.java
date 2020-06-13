@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import javax.persistence.*;
-import java.util.Date;
 
 @Table(name = "cities")
 @Entity
@@ -16,9 +15,7 @@ public class CitiesEntity {
     private Long id;
     
     private String name;
-    
 
-    
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "country_id", referencedColumnName = "id")

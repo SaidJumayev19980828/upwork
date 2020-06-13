@@ -50,8 +50,8 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1, 'abcdefg', now(), 68, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (2, 'hijkllm', now(), 69, null);
 
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id,country,city ,address)
-    VALUES (88, 'user1@nasnav.com','user1','123eerd', 99001, 'Egypt', 'Cairo', '12 Abbas el-Akkad, Nasr City');
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
+    VALUES (88, 'user1@nasnav.com','user1','123eerd', 99001);
 
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (3, '123eerd', now(), null, 88);
@@ -131,3 +131,6 @@ insert into public.orders(id,user_id,created_at, updated_at, organization_id,sta
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330033, 60003, 5, 600.0, 1);
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330034, 60002, 5, 600.0, 1);
 
+INSERT INTO public.addresses values(1001, null, '12 Abbas el-Akkad, Nasr City, Cairo, Egypt ', null, null, null, null, null, null, null);
+
+INSERT INTO public.User_addresses values(1001, 88, 1001, false);

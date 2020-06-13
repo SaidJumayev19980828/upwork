@@ -63,8 +63,8 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1016, 'uvwxyz', now(), 159, null);
 
 --inserting Users
-INSERT INTO public.users(id, email,  user_name, authentication_token, address, country, city, phone_number, image, organization_id, encrypted_password)
-    VALUES (88, 'user1@nasnav.com','user1','yuhjhu', '21 jump street', 'Egypt', 'Cairo', '+021092154875','/urls/images/fdsafag23.jpg',  99001, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
+INSERT INTO public.users(id, email,  user_name, authentication_token, phone_number, image, organization_id, encrypted_password)
+    VALUES (88, 'user1@nasnav.com','user1','yuhjhu', '+021092154875','/urls/images/fdsafag23.jpg',  99001, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (4, 'yuhjhu', now(), null, 88);
 

@@ -23,7 +23,7 @@ public interface EmployeeUserService extends CommonUserServiceInterface {
 	 * @param employeeUserJson json object containing email, password, name, org_id, store_id, role string
 	 * @return UserApiResponse object holding the employee user id
 	 */
-	public UserApiResponse updateEmployeeUser(String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson);
+	public UserApiResponse updateEmployeeUser(String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) throws BusinessException;
 
 
 	public List<UserRepresentationObject> getUserList(String token, Long orgId, Long storeId, String role) throws BusinessException;

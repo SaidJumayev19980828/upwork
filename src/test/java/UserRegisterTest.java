@@ -34,6 +34,8 @@ import java.util.Optional;
 import javax.annotation.PreDestroy;
 import javax.mail.MessagingException;
 
+import com.nasnav.dao.AddressRepository;
+import com.nasnav.persistence.AddressesEntity;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -112,6 +114,8 @@ public class UserRegisterTest {
 	@Autowired
 	private OrganizationRepository organizationRepository;
 
+	@Autowired
+	private AddressRepository addressRepo;
 	
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
@@ -141,9 +145,10 @@ public class UserRegisterTest {
 		persistentUser = userRepository.getByEmailAndOrganizationId("unavailable@nasnav.com", organization.getId());
 		if (persistentUser == null) {
 			persistentUser = createUser();
+
 			persistentUser = userRepository.save(persistentUser);
-		}		
-		
+		}
+
 	}
 
 
@@ -1078,6 +1083,39 @@ public class UserRegisterTest {
 		assertEquals(200, res.getStatusCodeValue());
 		assertTrue(res.getBody().getId().equals(88005L));
 	}
+
+
+	@Test
+	public void updateEmployeeAddressTest() {
+		JSONObject address = json().put("address_line_1", "address line");
+		JSONObject body = json().put("employee", false)
+				.put("address", address);
+		HttpEntity request = getHttpEntity(body.toString(), "123");
+
+		//adding address to user
+		ResponseEntity<String> response = template.postForEntity("/user/update", request, String.class);
+		assertEquals(200, response.getStatusCodeValue());
+
+		Optional<AddressesEntity> entity = addressRepo.findOneByUserId(88001L);
+		assertTrue(entity.isPresent());
+		AddressesEntity addressesEntity = entity.get();
+		assertEquals("address line", addressesEntity.getAddressLine1());
+
+
+
+
+		//unlinking the address from user
+		address = json().put("id", addressesEntity.getId());
+		body = body.put("address", address);
+		request = getHttpEntity(body.toString(), "123");
+		response = template.postForEntity("/user/update", request, String.class);
+
+		assertEquals(200, response.getStatusCodeValue());
+		assertFalse(addressRepo.findByIdAndUserId(addressesEntity.getId(), 88001L).isPresent());
+		addressRepo.delete(addressesEntity);
+
+	}
+
 
 
 	private JSONObject createUserRegisterV2Request(String redirectUrl) {

@@ -10,13 +10,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 /*@JsonPropertyOrder({
         "user_id",
         "store_id",
         "price",
         "status"
 })*/
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
 @EqualsAndHashCode(callSuper=false)
 public class DetailedOrderRepObject extends BaseRepresentationObject{
@@ -52,7 +53,7 @@ public class DetailedOrderRepObject extends BaseRepresentationObject{
     private String paymentStatus;
 
     @JsonProperty("shipping_address")
-    private ShippingAddress shippingAddress;
+    private AddressRepObj shippingAddress;
 
     @JsonProperty("items")
     private List<BasketItem> items;

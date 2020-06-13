@@ -9,8 +9,7 @@ import java.math.BigDecimal;
 
 @Data
 @ApiModel(value = "Shops data")
-@JsonPropertyOrder({"org_id", "id", "name", "address_country", "address_street", "address_streetno",
-        "address_floor", "address_lat", "address_lng", "brand_id", "logo", "banner", "photo"})
+@JsonPropertyOrder({"org_id", "id", "name", "address", "brand_id", "logo", "banner", "photo"})
 
 public class ShopJsonDTO extends BaseJsonDTO{
 
@@ -21,23 +20,7 @@ public class ShopJsonDTO extends BaseJsonDTO{
 
     private String name;
 
-    @JsonProperty("address_country")
-    private String country;
-
-    @JsonProperty("address_street")
-    private String street;
-
-    @JsonProperty("address_streetno")
-    private String streetNumber;
-
-    @JsonProperty("address_floor")
-    private String floor;
-
-    @JsonProperty("address_lat")
-    private BigDecimal lat;
-
-    @JsonProperty("address_lng")
-    private BigDecimal lng;
+    private AddressDTO address;
 
     @JsonProperty("brand_id")
     private Long brandId;
@@ -69,39 +52,14 @@ public class ShopJsonDTO extends BaseJsonDTO{
         this.name = name;
     }
 
-    void setCountry(String country) {
-        setPropertyAsUpdated("country");
-        this.country = country;
-    }
-
-    void setStreet(String street) {
-        setPropertyAsUpdated("street");
-        this.street = street;
-    }
-
-    void setStreetNumber(String streetNumber) {
-        setPropertyAsUpdated("streetNumber");
-        this.streetNumber = streetNumber;
-    }
-
-    void setFloor(String floor) {
-        setPropertyAsUpdated("floor");
-        this.floor = floor;
-    }
-
-    void setLat(BigDecimal lat) {
-        setPropertyAsUpdated("lat");
-        this.lat = lat;
-    }
-
-    void setLng(BigDecimal lng) {
-        setPropertyAsUpdated("lng");
-        this.lng = lng;
-    }
-
-    void setBrandId(Long brandId) {
+    public void setBrandId(Long brandId) {
         setPropertyAsUpdated("brandId");
         this.brandId = brandId;
+    }
+
+    public void setAddress(AddressDTO address) {
+        setPropertyAsUpdated("address");
+        this.address = address;
     }
 
 }
