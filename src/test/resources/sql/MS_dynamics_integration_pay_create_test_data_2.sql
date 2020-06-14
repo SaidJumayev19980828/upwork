@@ -50,8 +50,8 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1, 'abcdefg', now(), null, 68);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (2, 'hijkllm', now(), null, 69);
 
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id,country,city ,address)
-    VALUES (88, 'user1@nasnav.com','user1','123eerd', 99001, 'Egypt', 'Cairo', '12 Abbas el-Akkad, Nasr City');
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
+    VALUES (88, 'user1@nasnav.com','user1','123eerd', 99001);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1, '123eerd', now(), null, 88);
 

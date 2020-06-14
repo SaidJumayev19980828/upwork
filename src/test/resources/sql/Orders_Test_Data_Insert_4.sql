@@ -24,8 +24,8 @@ INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (505, 'sho
 INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (506, 'shop_6', 102, 99002);
 
 --inserting users
-INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id,country,city ,address)
-    VALUES (88, 'user1@nasnav.com','user1','123', 99001, 'Egypt', 'Cairo', '12 Abbas el-Akkad, Nasr City');
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
+    VALUES (88, 'user1@nasnav.com','user1','123', 99001);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
     VALUES (89, 'user2@nasnav.com','user2','456', 99002);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
@@ -79,8 +79,10 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (25
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (26, 72, 6);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (27, 73, 6);
 
+INSERT INTO public.addresses values(1001, null, 'address line', null, null, null, null, null, null, null);
+
 --inserting orders
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330033, 88, now(), now(), 99001, 0, 502);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330033, 88, now(), now(), 99001, 0, 502, 1001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330037, 88, now(), now(), 99002, 0, 501);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330038, 90, now(), now(), 99002, 1, 501);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330039, 88, now(), now(), 99001, 3, 501);

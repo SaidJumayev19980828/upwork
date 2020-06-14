@@ -103,10 +103,10 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (24
 
 
 --inserting customers
-INSERT INTO public.users(id, email, user_name, authentication_token, organization_id,country,city ,address)
-    VALUES (88, 'user1@nasnav.com', 'user1','123', 99001, 'Egypt', 'Cairo', '12 Abbas el-Akkad, Nasr City');
-INSERT INTO public.users(id, email, user_name, authentication_token, organization_id,country,city ,address)
-    VALUES (89, 'user2@nasnav.com', 'user2','456', 99002, 'Egypt', 'Cairo', '12 Abbas el-Akkad, Nasr City');
+INSERT INTO public.users(id, email, user_name, authentication_token, organization_id)
+    VALUES (88, 'user1@nasnav.com', 'user1','123', 99001);
+INSERT INTO public.users(id, email, user_name, authentication_token, organization_id)
+    VALUES (89, 'user2@nasnav.com', 'user2','456', 99002);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (6, '123', now(), null, 88);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (7, '456', now(), null, 89);

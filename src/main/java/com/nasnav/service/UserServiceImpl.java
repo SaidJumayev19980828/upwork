@@ -37,16 +37,12 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
+import com.nasnav.dao.AddressRepository;
+import com.nasnav.dto.AddressDTO;
+import com.nasnav.persistence.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -73,10 +69,6 @@ import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 
@@ -92,7 +84,9 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private SecurityService securityService;
 	
-	
+	@Autowired
+	private AddressRepository addressRepo;
+
 	@Autowired
 	private CommonUserRepository commonUserRepo;
 	
@@ -309,6 +303,26 @@ public class UserServiceImpl implements UserService {
 				  Arrays.asList(ObjectArrays.concat(getNullProperties(userJson), defaultIgnoredProperties, String.class))).toArray(new String[0]);
 		if (failResponseStatusList.isEmpty()) {
 			BeanUtils.copyProperties(userJson, userEntity, allIgnoredProperties);
+			if (userJson.getAddress() != null) {
+				AddressesEntity address = new AddressesEntity();
+				AddressDTO addressDTO = userJson.getAddress();
+				Set<AddressesEntity> userAddresses = addressRepo.findByUserId(userEntity.getId());
+				if (addressDTO.getId() != null) {
+					Optional<AddressesEntity> oldAddress = addressRepo.findByIdAndUserId(addressDTO.getId(), userEntity.getId());
+					if (!oldAddress.isPresent()) {
+						throw new BusinessException("Provided address_id doesn't match any existing address!",
+								"INVALID_PARAM: address_id", HttpStatus.NOT_ACCEPTABLE);
+					}
+					userAddresses.remove(oldAddress.get());
+					addressRepo.unlinkAddressFromUser(addressDTO.getId(), userEntity.getId());
+				}
+				BeanUtils.copyProperties(userJson.getAddress(), address, new String[] {"id"});
+				if (!address.equals(new AddressesEntity())) {
+					address = addressRepo.save(address);
+					userAddresses.add(address);
+				}
+				userEntity.setAddresses(userAddresses);
+			}
 			userRepository.saveAndFlush(userEntity);
 			if (successResponseStatusList.isEmpty()) {
 				successResponseStatusList.add(ResponseStatus.ACTIVATED);
@@ -573,12 +587,18 @@ public class UserServiceImpl implements UserService {
 
 	private UserRepresentationObject getUserRepresentationWithUserRoles(BaseUserEntity user) {
 		UserRepresentationObject userRepObj = user.getRepresentation();
+		userRepObj.setAddresses(getUserAddresses(userRepObj.getId()));
 		userRepObj.setRoles(new HashSet<>(commonUserRepo.getUserRoles(user)));
 		return userRepObj;
 	}
 	
 	
-	
+	private Set getUserAddresses(Long userId){
+		return addressRepo.findByUserId(userId)
+						  .stream()
+						  .map(AddressesEntity::getRepresentation)
+						  .collect(Collectors.toSet());
+	}
 
 	
 	private BusinessException getNoUserHaveThisIdException(Long id) {
