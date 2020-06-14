@@ -27,9 +27,9 @@ public class OrderJsonDto{
 	@JsonProperty("basket")
 	private List<BasketItemDTO> basket;
 
-	@ApiModelProperty(value = "Delivery address id", example = "123")
-	@JsonProperty("address_id")
-	private Long addressId;
+	@ApiModelProperty(value = "Delivery address", example = "Somewhere behind a grocery store")
+	@JsonProperty("delivery_address")
+	private String address;
 	
 	
 	

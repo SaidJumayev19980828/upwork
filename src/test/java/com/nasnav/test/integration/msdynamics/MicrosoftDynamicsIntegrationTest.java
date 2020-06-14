@@ -28,12 +28,14 @@ import static org.springframework.http.HttpStatus.OK;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import com.nasnav.dao.*;
-import com.nasnav.persistence.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -61,14 +63,26 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.IntegrationMappingRepository;
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.TagsRepository;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.dto.UserDTOs.UserRegistrationObject;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
+import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.PaymentEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.TagsEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.OrderService;
 import com.nasnav.test.model.Item;
@@ -149,9 +163,6 @@ public class MicrosoftDynamicsIntegrationTest {
 
 	@Autowired
 	private TagsRepository tagRepo;
-
-	@Autowired
-	private AddressRepository addressRepo;
 	
 	 @Rule
 	 public MockServerRule mockServerRule = new MockServerRule(this);
@@ -578,11 +589,10 @@ public class MicrosoftDynamicsIntegrationTest {
 	
 	private JSONObject createOrderRequestWithBasketItems(OrderStatus status, Item... items) {
 		JSONArray basket = createBasket( items);
-
+		
 		JSONObject request = new JSONObject();
 		request.put("status", status.name());
 		request.put("basket", basket);
-		request.put("address_id", 1001);
 		return request;
 	}
 	
@@ -637,14 +647,15 @@ public class MicrosoftDynamicsIntegrationTest {
 		regObj.email = email;
 		regObj.name = "Nasnav";
 		regObj.orgId = ORG_ID;
-
+		
+		
 		UserEntity user = UserEntity.registerUser(regObj);
 		user.setPhoneNumber("000111444");
-		user = userRepo.saveAndFlush(user);
-
-		user.insertUserAddress(addressRepo.findById(1001L).get());
+//		user.setAddress("nasnav st.");
+//		user.setAddressCity("Cairo");
+//		user.setAddressCountry("Egypt");
 		userRepo.saveAndFlush(user);
-
+		
 		return email;
 	}
 	

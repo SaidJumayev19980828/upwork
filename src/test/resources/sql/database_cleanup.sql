@@ -20,11 +20,6 @@ DELETE FROM public.product_images WHERE
 DELETE FROM public.product_variants WHERE product_id IN (SELECT id FROM public.products WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.products WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.roles WHERE organization_id BETWEEN 99000 AND 99999;
-DELETE FROM public.user_addresses WHERE user_id in (select id from public.users WHERE organization_id BETWEEN 99000 AND 99999);
-DELETE FROM public.addresses where id between 1001 and 1002;
-DELETE FROM public.areas where id = 1001;
-DELETE FROM public.cities where id = 1001;
-DELETE FROM public.countries where id = 1001;
 DELETE FROM public.user_tokens WHERE user_id in (select id from users WHERE organization_id BETWEEN 99000 AND 99999)
   or employee_user_id in (select id from employee_users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.users WHERE organization_id BETWEEN 99000 AND 99999;

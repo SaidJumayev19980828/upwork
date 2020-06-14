@@ -1,12 +1,11 @@
 import static com.nasnav.test.commons.TestCommons.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.util.List;
-import java.util.Optional;
 
-import com.nasnav.dao.AddressRepository;
-import com.nasnav.persistence.AddressesEntity;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -69,9 +68,6 @@ public class EmployeeUserCreationTest {
 	
 	@Autowired
 	EmployeeUserRepository empRepository;
-
-	@Autowired
-	private AddressRepository addressRepo;
 
 	@Value("classpath:sql/EmpUsers_Test_Data_Insert.sql")
 	private Resource userDataInsert;
@@ -700,4 +696,7 @@ public class EmployeeUserCreationTest {
 		assertTrue("the logged in user should be the employee user, "
 				+ "and its token should exists in EMPLOYEE_USER table", employeeUserLoggedIn );
 	}
+	
+	
+	
 }

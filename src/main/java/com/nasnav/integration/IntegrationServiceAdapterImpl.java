@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.nasnav.dto.AddressRepObj;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -194,12 +193,9 @@ public class IntegrationServiceAdapterImpl implements IntegrationServiceAdapter 
 
 
 	private OrderData createOrderData(OrdersEntity order) {
-
 		OrderData data = new OrderData();
 		data.setOrderId(order.getId());
-		if (order.getAddressEntity() != null) {
-			data.setAddress((AddressRepObj) order.getAddressEntity().getRepresentation());
-		}
+		data.setAddress(order.getAddress());
 		data.setShopId(order.getShopsEntity().getId());
 		data.setTotalValue(order.getAmount());
 		data.setUserId(order.getUserId());

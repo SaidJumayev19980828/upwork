@@ -2,7 +2,6 @@ package com.nasnav.persistence.listeners;
 
 import javax.persistence.PostPersist;
 
-import com.nasnav.persistence.AddressesEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -12,9 +11,7 @@ import com.nasnav.integration.events.data.CustomerData;
 import com.nasnav.persistence.UserEntity;
 import com.sun.istack.logging.Logger;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+
 
 
 @Component
@@ -68,21 +65,10 @@ public class UserEntityListener {
 
 
 	private AddressData createAddressData(UserEntity user) {
-		List<AddressesEntity> userAddresses = user.getAddresses().stream()
-												 .filter(Objects::nonNull)
-												 .collect(Collectors.toList());
-
 		AddressData address = new AddressData();
-		if (!userAddresses.isEmpty()) {
-			AddressesEntity userAddress = userAddresses.get(0);
-			address.setAddress(userAddress.getAddressLine1());
-			if (userAddress.getAreasEntity() != null && userAddress.getAreasEntity().getCitiesEntity() != null) {
-				address.setCity(userAddress.getAreasEntity().getCitiesEntity().getName());
-				if (userAddress.getAreasEntity().getCitiesEntity().getCountriesEntity() != null) {
-					address.setCountry(userAddress.getAreasEntity().getCitiesEntity().getCountriesEntity().getName());
-				}
-			}
-		}
+		address.setAddress( user.getAddress() );
+		address.setCity( user.getAddressCity() );
+		address.setCountry( user.getAddressCountry() );
 		return address;
 	}
 	

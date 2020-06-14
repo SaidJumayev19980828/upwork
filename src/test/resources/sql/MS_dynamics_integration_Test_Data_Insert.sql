@@ -47,12 +47,3 @@ INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67006, 'PRODU
 -- Mandatory integration parameters
 INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(6601, 'INTEGRATION_MODULE', TRUE);
 INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(6602, 'MAX_REQUESTS_PER_SECOND', TRUE);
-
-INSERT INTO public.countries values(1001, 'E');
-
-INSERT INTO public.cities values(1001, 1001, 'C');
-
-INSERT INTO public.areas values(1001, 1001, 'new cairo');
-
-INSERT INTO public.addresses values(1001, null, 'address line', null, null, null, null, 1001, null, null);
-

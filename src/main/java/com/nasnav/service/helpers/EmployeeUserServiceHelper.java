@@ -1,14 +1,14 @@
 package com.nasnav.service.helpers;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.nasnav.dao.AddressRepository;
-import com.nasnav.dto.AddressDTO;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.AddressesEntity;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -40,8 +40,6 @@ public class EmployeeUserServiceHelper {
 	private EmployeeUserRepository employeeUserRepository;
 	private RoleRepository roleRepository;
 	private RoleEmployeeUserRepository roleEmployeeUserRepository;
-	@Autowired
-	private AddressRepository addressRepo;
 	private RoleService roleService;
 	private MailService mailService;
 	private List<String> nonStoreRolesList = Arrays.asList("NASNAV_ADMIN", "ORGANIZATION_ADMIN", "ORGANIZATION_MANAGER", "ORGANIZATION_EMPLOYEE");

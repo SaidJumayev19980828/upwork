@@ -1,5 +1,9 @@
 package com.nasnav.persistence;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -8,10 +12,14 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.nasnav.dto.AddressRepObj;
+import com.nasnav.dto.Address;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.ShopRepresentationObject;
 
@@ -32,10 +40,26 @@ public class ShopsEntity implements BaseEntity{
     
     @Column(name = "p_name")
     private String pname;
+
+    private String country;
+    private String city;
+    private String zip;
+    private String street;
+    
+    @Column(name = "street_number")
+    private String streetNumber;
+    
+    private String floor;
     
     @Column(name = "phone_number")
     private String phoneNumber;
-
+    
+    @Column(precision=10, scale=2)
+    private BigDecimal lat;
+    
+    @Column(precision=10, scale=2)
+    private BigDecimal lng;
+    
     @Column(name = "brand_id")
     private Long brandId;
 
@@ -50,27 +74,23 @@ public class ShopsEntity implements BaseEntity{
     @lombok.ToString.Exclude
     private OrganizationEntity organizationEntity;
 
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "address_id")
-    @JsonIgnore
-    @Exclude
-    @lombok.ToString.Exclude
-    private AddressesEntity addressesEntity;
-
     @Override
     public BaseRepresentationObject getRepresentation() {
         ShopRepresentationObject shopRepresentationObject = new ShopRepresentationObject();
-
         shopRepresentationObject.setId(getId());
         shopRepresentationObject.setLogo(getLogo());
         shopRepresentationObject.setBanner(getBanner());
         shopRepresentationObject.setName(getName());
         shopRepresentationObject.setPname(getPname());
+        Address address = new Address();
+        address.setCity(getCity());
+        address.setCountry(getCountry());
+        address.setStreet(getStreet());
+        address.setFloor(getFloor());
+        address.setLat(String.valueOf(getLat()));
+        address.setLng(String.valueOf(getLng()));
 
-        if (getAddressesEntity() != null) {
-            shopRepresentationObject.setAddress((AddressRepObj) getAddressesEntity().getRepresentation());
-        }
+        shopRepresentationObject.setAddress(address);
         //TODO database to support from to time as multiple duration through day
         shopRepresentationObject.setOpenWorkingDays(null);
         return shopRepresentationObject;

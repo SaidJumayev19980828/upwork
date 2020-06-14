@@ -2,21 +2,19 @@ package com.nasnav.persistence;
 
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
+import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.dto.AddressRepObj;
+import com.nasnav.dto.Address;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.persistence.listeners.UserEntityListener;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.ToString;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @Data
 @Entity
@@ -28,33 +26,26 @@ public class UserEntity extends BaseUserEntity{
     @Column(name="user_name")
     private String name;
 
+
+    @Column(name="address")
+    private String address;
+
+    @Column(name="country")
+    private String addressCountry;
+
+    @Column(name="city")
+    private String addressCity;
+
     @Column(name="image")
     private String image;
 
     @Column(name="user_status")
     private Integer userStatus;
-
-    @Column(name="mobile")
-    private String mobile;
-
-    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
-    @JsonIgnore
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @JoinTable(name = "user_addresses"
-            ,joinColumns = {@JoinColumn(name="user_id")}
-            ,inverseJoinColumns = {@JoinColumn(name="address_id")})
-    private Set<AddressesEntity> addresses;
-
-
-    public void insertUserAddress(AddressesEntity address) {this.addresses.add(address);}
-
-
-    public void removeUserAddress(AddressesEntity address) {this.addresses.remove(address);}
-
+    
+    
+    
     public UserEntity() {
     	userStatus = NOT_ACTIVATED.getValue();
-    	addresses = new HashSet<>();
     }
 
     
@@ -78,8 +69,12 @@ public class UserEntity extends BaseUserEntity{
         obj.email = this.getEmail();
         obj.phoneNumber = this.getPhoneNumber();
         obj.image = this.getImage();
-        obj.mobile = this.getMobile();
-
+        //TODO set mobile after including in in DB
+        Address address = new Address();
+        address.setCountry(this.getAddressCountry());
+        address.setCity(this.getAddressCity());
+        address.setStreet(this.getAddress());
+        obj.address = address;
         return obj;
     }
 }

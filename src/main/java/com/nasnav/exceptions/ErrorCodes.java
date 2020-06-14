@@ -34,8 +34,6 @@ public enum ErrorCodes {
 	,S$0001("Shop is linked to %s !")
 	,S$0002( "No Shop exists with ID: [%d]!")
 	,S$0003("No shops found!")
-
-	,AREA$001("No Area exists with ID:[%d]!")
 	;
 	
 	@Getter

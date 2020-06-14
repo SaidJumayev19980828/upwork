@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.nasnav.dto.AddressDTO;
-import com.nasnav.dto.AddressRepObj;
 import lombok.Data;
 
 @Data
@@ -17,7 +15,7 @@ public class OrderData {
 	private Long organizationId;
 	private Long userId;
 	private Long shopId;
-	private AddressRepObj address;
+	private String address;
 	private BigDecimal totalValue;
 	private List<OrderItemData> items;
 	private Optional<PaymentData> paymentData;	//in case of cash-on-delivery, payment can be null

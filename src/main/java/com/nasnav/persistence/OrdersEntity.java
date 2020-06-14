@@ -8,7 +8,18 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Type;
@@ -35,6 +46,9 @@ public class OrdersEntity implements BaseEntity{
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id", unique = true, nullable = false)
 	private Long id;
+
+	@Column(name = "address", length = 150)
+	private String address;
 
 	@Column(name = "email", length = 40)
 	private String email;
@@ -86,10 +100,6 @@ public class OrdersEntity implements BaseEntity{
 	private Boolean equipped;
 	private BigDecimal amount;
 
-	@OneToOne(cascade = CascadeType.ALL)
-	@JoinColumn(name = "address_id", referencedColumnName = "id")
-	@JsonIgnore
-	private AddressesEntity addressEntity;
 
 	//TODO decide between relational or not
 	//@JsonIgnore

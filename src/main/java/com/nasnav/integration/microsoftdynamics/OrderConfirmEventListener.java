@@ -194,7 +194,7 @@ public class OrderConfirmEventListener extends AbstractMSDynamicsEventListener<O
 		salesOrder.setShippingFeesCode("Non");
 		salesOrder.setTotalOrderDiscount(ZERO);
 		
-		salesOrder.setAddress(data.getAddress().getAddressLine1());
+		salesOrder.setAddress(data.getAddress());
 		salesOrder.setCustomerId(customerExtId);
 		salesOrder.setItems(items);
 		salesOrder.setStore(storeExtId);

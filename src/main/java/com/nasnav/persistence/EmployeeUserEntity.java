@@ -1,21 +1,18 @@
 package com.nasnav.persistence;
 
 import java.time.LocalDateTime;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.UserDTOs;
 
 import com.nasnav.dto.UserRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.springframework.beans.BeanUtils;
 
 @Data
@@ -64,7 +61,6 @@ public class EmployeeUserEntity extends BaseUserEntity {
     @Column(name = "avatar")
     private String avatar;
 
-
     public static EmployeeUserEntity createEmployeeUser(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
         // parse Json to EmployeeUserEntity
         EmployeeUserEntity employeeUser = new EmployeeUserEntity();
@@ -83,7 +79,6 @@ public class EmployeeUserEntity extends BaseUserEntity {
         BeanUtils.copyProperties(this, obj);
         obj.setImage(this.avatar);
         obj.id = this.getId();
-
         return obj;
     }
 }
