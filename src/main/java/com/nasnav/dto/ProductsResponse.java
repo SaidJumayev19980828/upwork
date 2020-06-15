@@ -12,6 +12,7 @@ public class ProductsResponse {
 
     private Long total;
     private List<ProductRepresentationObject> products;
+    private List<TagsRepresentationObject> collections;
     
     
     public ProductsResponse() {

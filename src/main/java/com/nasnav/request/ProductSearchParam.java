@@ -28,6 +28,7 @@ public class ProductSearchParam {
     public SortOrder order;
     public BigDecimal minPrice;
     public BigDecimal maxPrice;
+    public Boolean has_360_view;
 
     public void setSort(String sort) {
         this.sort = ProductSortOptions.valueOf(sort.toUpperCase());

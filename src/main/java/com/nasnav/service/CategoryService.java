@@ -22,6 +22,7 @@ import static org.springframework.http.HttpStatus.OK;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.cache.annotation.CacheRemoveAll;
 import javax.cache.annotation.CacheResult;
@@ -712,6 +713,14 @@ public class CategoryService {
 			orgTagsRepo.setTagsListCategory(categortId, orgId, tagsIds);
 	}
 
+
+	public List<TagsRepresentationObject> getTagsList(String name, Long orgId) {
+		Long categoryId = categoryRepository.findByName("COLLECTION");
+		return orgTagsRepo.findByNameAndOrganizationIdAndCategoryId(name.toLowerCase(), orgId, categoryId)
+				.stream()
+				.map(t -> (TagsRepresentationObject) t.getRepresentation())
+				.collect(Collectors.toList());
+	}
 }
 
 

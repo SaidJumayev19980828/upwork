@@ -260,6 +260,9 @@ public class ProductService {
 	private ProductsCustomRepository productsCustomRepo;
 
 	@Autowired
+	private CategoryService categoryService;
+
+	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
 	                      ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
 	                      ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
@@ -596,7 +599,11 @@ public class ProductService {
 				template.query(stocks.getSQL().getSQL(),
 						new BeanPropertyRowMapper<>(ProductRepresentationObject.class));
 
-		return getProductResponseFromStocks(result, productsCount);
+		String searchName = params.name != null ? params.name.toLowerCase() : "";
+		List<TagsRepresentationObject> collections =
+				categoryService.getTagsList(searchName, params.org_id);
+
+		return getProductResponseFromStocks(result, productsCount, collections);
 	}
 
 
@@ -667,8 +674,7 @@ public class ProductService {
 
 		List<Organization_BrandRepresentationObject> brands = getProductBrands(queryFactory, baseQuery, product);
 
-        Map<String, List<String>> variantsFeatures =
-				getProductVariantFeatures(queryFactory, baseQuery);
+        Map<String, List<String>> variantsFeatures = getProductVariantFeatures(queryFactory, baseQuery);
 
 		ProductsFiltersResponse response = new ProductsFiltersResponse(prices, brands, variantsFeatures);
 
@@ -785,6 +791,9 @@ public class ProductService {
 		if(params.shop_id != null && params.org_id == null)
 			predicate.and( stock.shopId.eq(params.shop_id) );
 
+		if(params.has_360_view != null)
+			predicate.and( product.search_360.eq(params.has_360_view));
+
 		return predicate;
 	}
 
@@ -882,34 +891,41 @@ public class ProductService {
 		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE)
 			sortByPrice(productsRep, order);
 
-		return new ProductsResponse(productsCount, productsRep);
+		return new ProductsResponse(productsCount, productsRep, new ArrayList<>());
 
 	}
 
 	private ProductsResponse getProductResponseFromStocks(List<ProductRepresentationObject> stocks,
-														  Long productsCount) {
-		if(stocks == null || stocks.isEmpty())
-			return new ProductsResponse();
+														  Long productsCount,
+														  List<TagsRepresentationObject> collections) {
+		if(stocks != null && !stocks.isEmpty()) {
 
-		List<Long> productIdList = stocks.stream()
-				.map(ProductRepresentationObject::getId)
-				.collect(Collectors.toList());
+			List<Long> productIdList = stocks.stream()
+					.map(ProductRepresentationObject::getId)
+					.collect(Collectors.toList());
 
-		Map<Long, String> productCoverImages = imgService.getProductsCoverImages(productIdList);
+			Map<Long, Prices> productsPricesMap = stockRepository.getProductsPrices(productIdList)
+					.stream()
+					.collect(Collectors.toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
 
-		Map<Long, List<TagsRepresentationObject>> productsTags = getProductsTagsDTOList(productIdList);
+			Map<Long, String> productCoverImages = imgService.getProductsCoverImages(productIdList);
 
-		List<Long> productsVariantsCountFlag = filterProductsWithMultipleVariants(productIdList);
+			Map<Long, List<TagsRepresentationObject>> productsTags = getProductsTagsDTOList(productIdList);
 
-		stocks.stream()
-			.map(s -> setAdditionalInfo(s, productCoverImages))
-			.map(s -> setProductTags(s, productsTags))
-			.map(s -> setProductMultipleVariants(s, productsVariantsCountFlag))
-			.collect(Collectors.toList());
+			List<Long> productsVariantsCountFlag = filterProductsWithMultipleVariants(productIdList);
 
-		return new ProductsResponse(productsCount, stocks);
+			stocks.stream()
+					.map(s -> setAdditionalInfo(s, productCoverImages))
+					.map(s -> setProductTags(s, productsTags))
+					.map(s -> setProductMultipleVariants(s, productsVariantsCountFlag))
+					.map(s -> setProductPrices(s, productsPricesMap))
+					.collect(Collectors.toList());
+		}
+
+		return new ProductsResponse(productsCount, stocks, collections);
 
 	}
+
 
 	private ProductRepresentationObject setProductMultipleVariants(ProductRepresentationObject product,
 																   List<Long> productsWithMultipleVariants) {
@@ -918,12 +934,23 @@ public class ProductService {
 
 		return product;
 	}
+
+
 	private ProductRepresentationObject setProductTags(ProductRepresentationObject product,
 													   Map<Long, List<TagsRepresentationObject>>tagsMap) {
 		List<TagsRepresentationObject> tags = tagsMap.get(product.getId());
 		product.setTags(tags);
 		return product;
 	}
+
+
+	private ProductRepresentationObject setProductPrices(ProductRepresentationObject product,
+													   Map<Long, Prices> pricesMap) {
+		Prices prices = pricesMap.get(product.getId());
+		product.setPrices(prices);
+		return product;
+	}
+
 
 	private void sortByPrice(List<ProductRepresentationObject> productsRep, String order) {
 		if (order.equals("desc")) {

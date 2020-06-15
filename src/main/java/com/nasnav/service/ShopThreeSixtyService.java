@@ -85,7 +85,7 @@ public class ShopThreeSixtyService {
     private ProductImageService productImageService;
 
     @Autowired
-    private CategoriesRepository categoriesRepo;
+    private CategoryService categoryService;
 
     @Autowired
     private FileService fileSvc;
@@ -531,7 +531,7 @@ public class ShopThreeSixtyService {
             }
         }
 
-        List<TagsRepresentationObject> tagsList = getTagsList(name, shop.getOrganizationEntity().getId());
+        List<TagsRepresentationObject> tagsList = categoryService.getTagsList(name, shop.getOrganizationEntity().getId());
 
         JSONObject response = new JSONObject();
         response.put("products", products);
@@ -541,21 +541,13 @@ public class ShopThreeSixtyService {
 
 
     private void validateProductSearch(String name, Long shopId) throws BusinessException {
-        if (StringUtils.isBlankOrNull(name))
+        if (name == null)
             throw new BusinessException("Provide search parameter",
                     "MISSING_PARAMS: name", NOT_ACCEPTABLE);
 
         if (!shopRepo.existsById(shopId))
             throw new BusinessException("Provided shop_id doesn't match any existing shop!",
                     "INVALID_PARAM: shop_id", NOT_ACCEPTABLE);
-    }
-
-    private List<TagsRepresentationObject> getTagsList(String name, Long orgId) {
-        Long categoryId = categoriesRepo.findByName("COLLECTION");
-        return tagsRepo.findByNameAndOrganizationIdAndCategoryId(name.toLowerCase(), orgId, categoryId)
-                .stream()
-                .map(t -> (TagsRepresentationObject) t.getRepresentation())
-                .collect(Collectors.toList());
     }
 
 
