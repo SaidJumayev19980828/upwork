@@ -355,8 +355,9 @@ public class ProductsController {
     @ResponseStatus(OK)
     @DeleteMapping(value = "tag", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public void deleteProductTags(@RequestHeader(name = "User-Token", required = false) String token,
-                                            @RequestBody ProductTagDTO productTagDTO ) throws BusinessException {
-        productService.deleteProductTags(productTagDTO);
+                                  @RequestParam("products_ids") List<Long> productIds,
+                                  @RequestParam("tags_ids") List<Long> tagIds) throws BusinessException {
+        productService.deleteProductTags(productIds, tagIds);
     }
 
 

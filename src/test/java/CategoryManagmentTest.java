@@ -703,10 +703,9 @@ public class CategoryManagmentTest {
     
     @Test
     public void deleteProductTagsSuccess() {
-        String body = "{\"products_ids\":[1006], \"tags_ids\":[5006]}";
-
-        HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/product/tag", DELETE, json, String.class);
+        HttpEntity<Object> json = getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/product/tag?products_ids=1006&tags_ids=5006",
+                DELETE, json, String.class);
 
         assertEquals(200, response.getStatusCode().value());
     }
@@ -716,10 +715,9 @@ public class CategoryManagmentTest {
     
     @Test
     public void deleteProductTagsNonExistingLink() {
-        String body = "{\"products_ids\":[1005], \"tags_ids\":[5006]}";
-
-        HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/product/tag", DELETE, json, String.class);
+        HttpEntity<Object> json = getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/product/tag?products_ids=1005&tags_ids=5006",
+                DELETE, json, String.class);
 
         assertEquals(406, response.getStatusCode().value());
     }
@@ -729,10 +727,9 @@ public class CategoryManagmentTest {
     
     @Test
     public void deleteProductTagsMissingProductId() {
-        String body = "{\"tags_ids\":[5006]}";
-
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/product/tag", DELETE, json, String.class);
+        HttpEntity<Object> json = TestCommons.getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/product/tag?tags_ids=5006&products_ids=",
+                DELETE, json, String.class);
 
         assertEquals(406, response.getStatusCode().value());
     }
@@ -743,10 +740,9 @@ public class CategoryManagmentTest {
     
     @Test
     public void deleteProductTagsMissingTagId() {
-        String body = "{\"products_ids\":[1005]}";
-
-        HttpEntity<Object> json = TestCommons.getHttpEntity(body,"hijkllm");
-        ResponseEntity<String> response = template.exchange("/product/tag", DELETE, json, String.class);
+        HttpEntity<Object> json = TestCommons.getHttpEntity("hijkllm");
+        ResponseEntity<String> response = template.exchange("/product/tag?products_ids=1005&tags_ids=",
+                DELETE, json, String.class);
 
         assertEquals(406, response.getStatusCode().value());
     }

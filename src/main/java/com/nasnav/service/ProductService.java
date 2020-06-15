@@ -2437,7 +2437,7 @@ public class ProductService {
 		productRep.setBarcode(product.getBarcode());
 		productRep.setCreationDate(Optional.ofNullable(product.getCreationDate().toString()).orElse(null));
 		productRep.setUpdateDate(Optional.ofNullable(product.getUpdateDate().toString()).orElse(null));
-		productRep.setHas_360_view(product.isSearch360());
+		productRep.setHas_360_view(product.getSearch360());
 	}
 
 	
@@ -2467,7 +2467,7 @@ public class ProductService {
 
 
 	public boolean updateProductTags(ProductTagDTO productTagDTO) throws BusinessException {
-		validateProductTagDTO(productTagDTO);
+		validateProductTagDTO(productTagDTO.getProductIds(), productTagDTO.getTagIds());
 
 		List<Long> productIds = productTagDTO.getProductIds();
 		List<Long> tagIds = productTagDTO.getTagIds();
@@ -2614,16 +2614,16 @@ public class ProductService {
 
 
 
-	public boolean deleteProductTags(ProductTagDTO productTagDTO) throws BusinessException {
-		validateProductTagDTO(productTagDTO);
+	public boolean deleteProductTags(List<Long> productIds, List<Long> tagIds) throws BusinessException {
+		validateProductTagDTO(productIds, tagIds);
 
-		Map<Long, ProductEntity> productsMap = validateAndGetProductMap(productTagDTO.getProductIds());
-		Map<Long, TagsEntity> tagsMap = validateAndGetTagMap(productTagDTO.getTagIds());
+		Map<Long, ProductEntity> productsMap = validateAndGetProductMap(productIds);
+		Map<Long, TagsEntity> tagsMap = validateAndGetTagMap(tagIds);
 
-		List<Pair> productTagsList = productRepository.getProductTags(productTagDTO.getProductIds(), productTagDTO.getTagIds());
+		List<Pair> productTagsList = productRepository.getProductTags(productIds, tagIds);
 
-		for(Long productId : productTagDTO.getProductIds()) {
-			for(Long tagId : productTagDTO.getTagIds()) {
+		for(Long productId : productIds) {
+			for(Long tagId : tagIds) {
 				if( productTagsList.contains(new Pair(productId, tagId)))
 					productsMap.get(productId).removeProductTag(tagsMap.get(tagId));
 				else
@@ -2634,11 +2634,12 @@ public class ProductService {
 		return true;
 	}
 
-	private void validateProductTagDTO(ProductTagDTO productTagDTO) throws BusinessException {
-		if(productTagDTO.getProductIds() == null)
+
+	private void validateProductTagDTO(List<Long> productIds, List<Long> tagIds) throws BusinessException {
+		if(isBlankOrNull(productIds))
 			throw new BusinessException("Provided products_ids can't be empty", "MISSING PARAM:products_ids", NOT_ACCEPTABLE);
 
-		if(productTagDTO.getTagIds() == null)
+		if(isBlankOrNull(tagIds))
 			throw new BusinessException("Provided tags_ids can't be empty", "MISSING PARAM:tags_ids", NOT_ACCEPTABLE);
 	}
 

@@ -963,8 +963,8 @@ public class ProductServiceTest {
 				req, String.class);
 		//-----------------------------------------
 		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(true, productRepository.findById(1002L).get().isSearch360());
-		assertEquals(true, productRepository.findById(1002L).get().isSearch360());
+		assertEquals(true, productRepository.findById(1002L).get().getSearch360().booleanValue());
+		assertEquals(true, productRepository.findById(1002L).get().getSearch360().booleanValue());
 
 		//exclude the above included products
 		response = template.postForEntity(
@@ -972,8 +972,8 @@ public class ProductServiceTest {
 				req, String.class);
 		//-----------------------------------------
 		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(false, productRepository.findById(1002L).get().isSearch360());
-		assertEquals(false, productRepository.findById(1002L).get().isSearch360());
+		assertEquals(false, productRepository.findById(1002L).get().getSearch360().booleanValue());
+		assertEquals(false, productRepository.findById(1002L).get().getSearch360().booleanValue());
 	}
 }
 
