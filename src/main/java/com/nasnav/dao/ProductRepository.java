@@ -54,12 +54,12 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     List<ProductEntity> findByIdInAndBrandIdOrderByNameDesc(List<Long> ids, Long brandId);
     List<ProductEntity> findByIdInAndBrandIdOrderByPnameAsc(List<Long> ids, Long brandId);
     List<ProductEntity> findByIdInAndBrandIdOrderByPnameDesc(List<Long> ids, Long brandId);
-
-//    List<ProductEntity> findByIdInAndCategoryIdOrderByPriceAsc(List<Long> ids,Long categoryId);
-//    List<ProductEntity> findByIdInAndCategoryIdOrderByPriceDesc(List<Long> ids,Long categoryId);
 	
 	Optional<ProductEntity> findByBarcodeAndOrganizationId(String barcode, Long orgId);
 	Optional<ProductEntity> findByName(String name);
+
+	@Query("SELECT p.id from ProductEntity p where p.organizationId = :orgId")
+    List<Long> findProductsIdsByOrganizationId(@Param("orgId") Long orgId);
 
 
 	@Query("SELECT products FROM ProductEntity products "
