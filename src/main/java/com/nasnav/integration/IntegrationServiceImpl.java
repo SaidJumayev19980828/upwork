@@ -33,6 +33,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.*;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -313,7 +314,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		return paramRepo.findByType_typeName( paramName ) 
 						.stream()
 						.map(IntegrationParamEntity::getOrganizationId)
-						.collect(Collectors.toList());
+						.collect(toList());
 	}
 	
 	
@@ -488,13 +489,13 @@ public class IntegrationServiceImpl implements IntegrationService {
 				mandatoryIntegrationParams
 					.stream()
 					.map(IntegrationParamTypeEntity::getTypeName)
-					.collect(Collectors.toSet());
+					.collect(toSet());
 		
 		Boolean mandatoryParamsExists = 
 				params.stream()
 						.map(IntegrationParamEntity::getType)
 						.map(IntegrationParamTypeEntity::getTypeName)
-						.collect(Collectors.toSet())
+						.collect(toSet())
 						.containsAll(mandatoryParamNames);
 		
 		return mandatoryParamsExists;
@@ -1401,7 +1402,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		OrganizationIntegrationInfo info = infoEntry.getValue();
 		Map<String,String> params = info.getParameters()
 										.stream()
-										.collect(Collectors.toMap(IntegrationParamEntity::getParameterTypeName
+										.collect(toMap(IntegrationParamEntity::getParameterTypeName
 																, IntegrationParamEntity::getParamValue));		
 		dto.setOrganizationId(orgId);
 		dto.setIntegrationModule(info.getIntegrationModule().getClass().getName());

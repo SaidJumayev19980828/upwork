@@ -2,6 +2,7 @@ import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.lang.Math.random;
 import static java.lang.String.format;
+import static java.util.stream.Collectors.*;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpStatus.OK;
@@ -228,7 +229,7 @@ public class ProductServiceTest {
 		List<StocksEntity> expectedStocks = testData.stocksEntities
 										.stream()
 										.filter(stock -> Objects.equals(stock.getShopsEntity().getId(), shopId))
-										.collect(Collectors.toList());
+										.collect(toList());
 		JSONArray expectedStocksJSON = createExpectedStocks(expectedStocks);
 		JSONArray stocks = variant.getJSONArray("stocks");
 		
@@ -514,7 +515,7 @@ public class ProductServiceTest {
 	private List<ShopsEntity> createDummyShops(OrganizationEntity org, int shopsNum) {
 		return IntStream.range(0, shopsNum)
 				.mapToObj(i -> createDummyShop(org))				
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 	
 	
@@ -543,7 +544,7 @@ public class ProductServiceTest {
 		
 		return shopsEntities.stream()
 							.map(shop -> createDummyStock(variant, org, shop))
-							.collect(Collectors.toList());
+							.collect(toList());
 	}
 	
 	

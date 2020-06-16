@@ -1,4 +1,5 @@
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
+import static java.util.stream.Collectors.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -597,7 +598,7 @@ public class ProductImageBulkUploadTest {
 									.mapToObj(responseJson::getJSONObject)
 									.map(obj -> obj.getString("image_url"))
 									.distinct()
-									.collect(Collectors.toList());
+									.collect(toList());
 		assertEquals("a single image was imported for the product and its variants, so they all should reference the same url"
 						, 1, urls.size());
 	}

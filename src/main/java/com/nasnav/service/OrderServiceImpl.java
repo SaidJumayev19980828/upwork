@@ -42,6 +42,7 @@ import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.*;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -455,7 +456,7 @@ public class OrderServiceImpl implements OrderService {
 		List<String> possibleStatusList = Arrays.asList( OrderStatus.values() )
 												.stream()
 												.map(OrderStatus::toString)
-												.collect(Collectors.toList());
+												.collect(toList());
 		return possibleStatusList;
 	}
 	
@@ -482,11 +483,11 @@ public class OrderServiceImpl implements OrderService {
 		Map<Long, List<BasketItemDTO>> groupedBaskets = new HashMap<>();
 
 		for(Long shopId : shopStocksMap.keySet()) {
-			List<Long> stocks = shopStocksMap.get(shopId).stream().map(StocksEntity::getId).collect(Collectors.toList());
+			List<Long> stocks = shopStocksMap.get(shopId).stream().map(StocksEntity::getId).collect(toList());
 
 			List<BasketItemDTO> shopBaskets= baskets.stream()
 													.filter(basket -> stocks.contains(basket.getStockId()))
-												    .collect(Collectors.toList());
+												    .collect(toList());
 
 			groupedBaskets.put(shopId, shopBaskets);
 		}
@@ -504,7 +505,7 @@ public class OrderServiceImpl implements OrderService {
 		
 		List<Long> itemStockIds = basket.stream()
 										.map(BasketItemDTO::getStockId)
-										.collect(Collectors.toList());
+										.collect(toList());
 		
 		List<StocksEntity> stocks =  (List<StocksEntity>) stockRepository.findAllById(itemStockIds);
 		return stocks;
@@ -1054,7 +1055,7 @@ public class OrderServiceImpl implements OrderService {
 	private List<BasketItem> getBasketItems(List<BasketItemDetails> itemsDetailsList) {
 		return itemsDetailsList.stream()
 							.map(this::toBasketItem)
-							.collect(Collectors.toList());
+							.collect(toList());
 	}
 	
 	
@@ -1095,7 +1096,7 @@ public class OrderServiceImpl implements OrderService {
 		Set<Long> ordersIds = new HashSet<>();
 
 		if ( detailsLevel >= 2) {
-			ordersIds = ordersEntityList.stream().map(OrdersEntity::getId).collect(Collectors.toSet());
+			ordersIds = ordersEntityList.stream().map(OrdersEntity::getId).collect(toSet());
 		}
 
 		Map<Long, List<BasketItemDetails>> basketItemsDetailsMap = getBasketItemsDetailsMap(detailsLevel == 3 ? ordersIds : new HashSet<>() );
@@ -1105,7 +1106,7 @@ public class OrderServiceImpl implements OrderService {
 		
 		return ordersEntityList.stream()
 								.map(order -> getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap))
-								.collect(Collectors.toList());
+								.collect(toList());
 	}
 	
 	
@@ -1130,7 +1131,7 @@ public class OrderServiceImpl implements OrderService {
 	private Map<Long, BigDecimal> getOrderItemsQuantity(Set<Long> orderIds) {
 		List<BasketsEntity> basketsEntities = basketRepository.findByOrdersEntity_IdIn(orderIds)
 				.stream()
-				.collect( Collectors.toList());
+				.collect( toList());
 
 		Map<Long, BigDecimal> ordersQuantities = new HashMap<>();
 		for(BasketsEntity basket: basketsEntities) {
@@ -1298,7 +1299,7 @@ public class OrderServiceImpl implements OrderService {
 				ordersRepository.findByUserIdAndStatus(user.getId(), NEW.getValue())
 								.stream()
 								.map(OrdersEntity::getId)
-								.collect(Collectors.toList());
+								.collect(toList());
 		
 		basketRepository.deleteByOrderIdIn(userNewOrders);		
 		ordersRepository.deleteByStatusAndUserId( NEW.getValue(), user.getId());

@@ -44,6 +44,7 @@ import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.*;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -264,6 +265,9 @@ public class ProductService {
 	private ProductsCustomRepository productsCustomRepo;
 
 	@Autowired
+	private CategoryService categoryService;
+
+	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
 	                      ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
 	                      ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
@@ -329,10 +333,10 @@ public class ProductService {
 		return orgTagRepo.findByIdIn(productRepository.getTagsByProductId(productId)
 				.stream()
 				.mapToLong(BigInteger::longValue).boxed()
-				.collect(Collectors.toList()))
+				.collect(toList()))
 				.stream()
 				.map(tag ->(TagsRepresentationObject) tag.getRepresentation())
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 
 	private Map<Long,List<TagsRepresentationObject>> getProductsTagsDTOList(List<Long> productsIds) {
@@ -624,7 +628,10 @@ public class ProductService {
 				template.query(stocks.getSQL().getSQL(),
 						new BeanPropertyRowMapper<>(ProductRepresentationObject.class));
 
-		return getProductResponseFromStocks(result, productsCount);
+		String searchName = ofNullable(params.name).map(String::toLowerCase).orElse("");
+		List<TagsRepresentationObject> collections = categoryService.findCollections(searchName, params.org_id);
+
+		return getProductResponseFromStocks(result, productsCount, collections);
 	}
 
 
@@ -694,8 +701,7 @@ public class ProductService {
 
 		List<Organization_BrandRepresentationObject> brands = getProductBrands(queryFactory, baseQuery, product);
 
-        Map<String, List<String>> variantsFeatures =
-				getProductVariantFeatures(queryFactory, baseQuery);
+        Map<String, List<String>> variantsFeatures = getProductVariantFeatures(queryFactory, baseQuery);
 
 		ProductsFiltersResponse response = new ProductsFiltersResponse(prices, brands, variantsFeatures);
 
@@ -812,6 +818,9 @@ public class ProductService {
 		if(params.shop_id != null && params.org_id == null)
 			predicate.and( stock.shopId.eq(params.shop_id) );
 
+		if(params.has_360_view != null)
+			predicate.and( product.search_360.eq(params.has_360_view));
+
 		return predicate;
 	}
 
@@ -897,46 +906,54 @@ public class ProductService {
 
 		List<Long> productIdList = products.stream()
 				.map(ProductEntity::getId)
-				.collect(Collectors.toList());
+				.collect(toList());
 
 		Map<Long, String> productCoverImages = imgService.getProductsCoverImages(productIdList);
 
 		List<ProductRepresentationObject> productsRep =
 				products.stream()
 					  .map(prod -> getProductRepresentation(prod, productCoverImages))
-					  .collect(Collectors.toList());
+					  .collect(toList());
 
 		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE)
 			sortByPrice(productsRep, order);
 
-		return new ProductsResponse(productsCount, productsRep);
+		return new ProductsResponse(productsCount, productsRep, new ArrayList<>());
 
 	}
 
 	private ProductsResponse getProductResponseFromStocks(List<ProductRepresentationObject> stocks,
-														  Long productsCount) {
-		if(stocks == null || stocks.isEmpty())
-			return new ProductsResponse();
+														  Long productsCount,
+														  List<TagsRepresentationObject> collections) {
+		if(stocks != null && !stocks.isEmpty()) {
 
-		List<Long> productIdList = stocks.stream()
-				.map(ProductRepresentationObject::getId)
-				.collect(Collectors.toList());
+			List<Long> productIdList = stocks.stream()
+					.map(ProductRepresentationObject::getId)
+					.collect(toList());
 
-		Map<Long, String> productCoverImages = imgService.getProductsCoverImages(productIdList);
+			Map<Long, Prices> productsPricesMap =
+					mapInBatches(productIdList, 500, stockRepository::getProductsPrices)
+					.stream()
+					.collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
 
-		Map<Long, List<TagsRepresentationObject>> productsTags = getProductsTagsDTOList(productIdList);
+			Map<Long, String> productCoverImages = imgService.getProductsCoverImages(productIdList);
 
-		List<Long> productsVariantsCountFlag = filterProductsWithMultipleVariants(productIdList);
+			Map<Long, List<TagsRepresentationObject>> productsTags = getProductsTagsDTOList(productIdList);
 
-		stocks.stream()
-			.map(s -> setAdditionalInfo(s, productCoverImages))
-			.map(s -> setProductTags(s, productsTags))
-			.map(s -> setProductMultipleVariants(s, productsVariantsCountFlag))
-			.collect(Collectors.toList());
+			List<Long> productsVariantsCountFlag = filterProductsWithMultipleVariants(productIdList);
 
-		return new ProductsResponse(productsCount, stocks);
+			stocks.stream()
+					.map(s -> setAdditionalInfo(s, productCoverImages))
+					.map(s -> setProductTags(s, productsTags))
+					.map(s -> setProductMultipleVariants(s, productsVariantsCountFlag))
+					.map(s -> setProductPrices(s, productsPricesMap))
+					.collect(toList());
+		}
+
+		return new ProductsResponse(productsCount, stocks, collections);
 
 	}
+
 
 	private ProductRepresentationObject setProductMultipleVariants(ProductRepresentationObject product,
 																   List<Long> productsWithMultipleVariants) {
@@ -945,12 +962,23 @@ public class ProductService {
 
 		return product;
 	}
+
+
 	private ProductRepresentationObject setProductTags(ProductRepresentationObject product,
 													   Map<Long, List<TagsRepresentationObject>>tagsMap) {
 		List<TagsRepresentationObject> tags = tagsMap.get(product.getId());
 		product.setTags(tags);
 		return product;
 	}
+
+
+	private ProductRepresentationObject setProductPrices(ProductRepresentationObject product,
+													   Map<Long, Prices> pricesMap) {
+		Prices prices = pricesMap.get(product.getId());
+		product.setPrices(prices);
+		return product;
+	}
+
 
 	private void sortByPrice(List<ProductRepresentationObject> productsRep, String order) {
 		if (order.equals("desc")) {
@@ -1342,7 +1370,7 @@ public class ProductService {
 			String bundleIds = bundles.stream()
 								.map(BundleEntity::getId)
 								.map(String::valueOf)
-								.collect(Collectors.joining(","));
+								.collect(joining(","));
 
 			throw new BusinessException(
 					String.format(ERR_CANNOT_DELETE_BUNDLE_ITEM, productId, bundleIds)
@@ -1714,7 +1742,7 @@ public class ProductService {
 				.getResultList()
 				.stream()
 				.map(this::toBundleDTO)
-				.collect(Collectors.toList());
+				.collect(toList());
 
 		Long count = getQueryCount(builder, predicatesArr);
 
@@ -1778,7 +1806,7 @@ public class ProductService {
 		List<StocksEntity> bundleStock = 	entity.getProductVariants()
 				.stream()
 				.flatMap( var -> var.getStocks().stream())
-				.collect(Collectors.toList());
+				.collect(toList());
 
 		if(bundleStock.size() != 1) {
 			throw new IllegalStateException(
@@ -1797,7 +1825,7 @@ public class ProductService {
 															.stream()
 															.map(prod -> getProductRepresentation(prod, productCoverImages))
 															.map(this::toProductBaseInfo)
-															.collect(Collectors.toList());
+															.collect(toList());
 		dto.setProducts( productlist );
 
 		return dto;

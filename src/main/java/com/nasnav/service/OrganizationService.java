@@ -10,6 +10,7 @@ import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.validateName;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.*;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -190,13 +191,13 @@ public class OrganizationService {
 
         List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_Id(orgRepObj.getId());
         if (brandsEntityList != null && !brandsEntityList.isEmpty()) {
-            List<Organization_BrandRepresentationObject> repList = brandsEntityList.stream().map(rep -> ((Organization_BrandRepresentationObject) rep.getRepresentation())).collect(Collectors.toList());
+            List<Organization_BrandRepresentationObject> repList = brandsEntityList.stream().map(rep -> ((Organization_BrandRepresentationObject) rep.getRepresentation())).collect(toList());
             orgRepObj.setBrands(repList);
         }
 
         List <OrganizationImagesEntity> orgImgEntities = organizationImagesRepository.findByOrganizationEntityId(orgRepObj.getId());
         if (orgImgEntities != null && !orgImgEntities.isEmpty()) {
-            List<OrganizationImagesRepresentationObject> imagesList = orgImgEntities.stream().map(rep -> ((OrganizationImagesRepresentationObject) rep.getRepresentation())).collect(Collectors.toList());
+            List<OrganizationImagesRepresentationObject> imagesList = orgImgEntities.stream().map(rep -> ((OrganizationImagesRepresentationObject) rep.getRepresentation())).collect(toList());
             orgRepObj.setImages(imagesList);
         }
 
@@ -241,7 +242,7 @@ public class OrganizationService {
         List<ExtraAttributesRepresentationObject> response;
         response = extraAttributes.stream()
                 .map(extraAttribute -> (ExtraAttributesRepresentationObject) extraAttribute.getRepresentation())
-                .collect(Collectors.toList());
+                .collect(toList());
         return response;
     }
     
@@ -349,7 +350,7 @@ public class OrganizationService {
             return brands;
         List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_Id(orgId);
         brands = brandsEntityList.stream().map(brand -> (Organization_BrandRepresentationObject) brand.getRepresentation())
-                 .collect(Collectors.toList());
+                 .collect(toList());
         return brands;
     }
 
@@ -447,7 +448,7 @@ public class OrganizationService {
 		List<ProductFeaturesEntity> entities = featureRepo.findByOrganizationId(orgId);
 		return entities.stream()
 					.map(ProductFeatureDTO::new)
-					.collect(Collectors.toList());
+					.collect(toList());
 	}
 	
 	

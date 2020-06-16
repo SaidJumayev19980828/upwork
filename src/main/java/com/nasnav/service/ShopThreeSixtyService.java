@@ -21,6 +21,7 @@ import javax.imageio.ImageIO;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
 
 import java.awt.*;
@@ -85,7 +86,7 @@ public class ShopThreeSixtyService {
     private ProductImageService productImageService;
 
     @Autowired
-    private CategoriesRepository categoriesRepo;
+    private CategoryService categoryService;
 
     @Autowired
     private FileService fileSvc;
@@ -150,7 +151,7 @@ public class ShopThreeSixtyService {
         List<ShopFloorDTO> floors = shopFloorsRepo.findByShopThreeSixtyEntity_IdOrderById(shop.getId())
                                                           .stream()
                                                           .map(f -> (ShopFloorDTO) f.getRepresentation())
-                                                          .collect(Collectors.toList());
+                                                          .collect(toList());
         return floors;
     }
 
@@ -506,32 +507,36 @@ public class ShopThreeSixtyService {
 
 
     public String getShop360Products(Long shopId, String name) throws BusinessException {
-        validateProductSearch(name, shopId);
 
+        if (!shopRepo.existsById(shopId))
+            throw new BusinessException("Provided shop_id doesn't match any existing shop!",
+                    "INVALID_PARAM: shop_id", NOT_ACCEPTABLE);
+
+        name = ofNullable(name).map(String::toLowerCase).orElse("");
         ShopsEntity shop = shopRepo.findById(shopId).get();
-        List<ThreeSixtyProductsDTO> products = productsRepo.find360Products(name.toLowerCase(), shopId);
+        List<ThreeSixtyProductsDTO> products = productsRepo.find360Products(name, shopId);
 
         if (products != null && !products.isEmpty()) {
-            List<Long> productIds = products.stream().map(p -> p.getId()).collect(Collectors.toList());
+            List<Long> productIds = products.stream().map(p -> p.getId()).collect(toList());
             Map<Long, List<ProductImagesEntity>> productsImagesMap = productImageService.getProductsImageList(productIds);
 
             Map<Long, Prices> productsPricesMap = stockRepo.getProductsPrices(productIds)
                             .stream()
-                            .collect(Collectors.toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
+                            .collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
 
             for (ThreeSixtyProductsDTO dto : products) {
 
                 if (productsImagesMap.get(dto.getId()) != null)
                     dto.setImages(productsImagesMap.get(dto.getId()).stream()
                                                                     .map(i -> of(i.getUri()).orElse(null))
-                                                                    .collect(Collectors.toList()));
+                                                                    .collect(toList()));
 
                 if (productsPricesMap.get(dto.getId()) != null)
                     dto.setPrices(productsPricesMap.get(dto.getId()));
             }
         }
 
-        List<TagsRepresentationObject> tagsList = getTagsList(name, shop.getOrganizationEntity().getId());
+        List<TagsRepresentationObject> tagsList = categoryService.findCollections(name, shop.getOrganizationEntity().getId());
 
         JSONObject response = new JSONObject();
         response.put("products", products);
@@ -539,24 +544,6 @@ public class ShopThreeSixtyService {
         return response.toString();
     }
 
-
-    private void validateProductSearch(String name, Long shopId) throws BusinessException {
-        if (name == null)
-            throw new BusinessException("Provide search parameter",
-                    "MISSING_PARAMS: name", NOT_ACCEPTABLE);
-
-        if (!shopRepo.existsById(shopId))
-            throw new BusinessException("Provided shop_id doesn't match any existing shop!",
-                    "INVALID_PARAM: shop_id", NOT_ACCEPTABLE);
-    }
-
-    private List<TagsRepresentationObject> getTagsList(String name, Long orgId) {
-        Long categoryId = categoriesRepo.findByName("COLLECTION");
-        return tagsRepo.findByNameAndOrganizationIdAndCategoryId(name.toLowerCase(), orgId, categoryId)
-                .stream()
-                .map(t -> (TagsRepresentationObject) t.getRepresentation())
-                .collect(Collectors.toList());
-    }
 
 
     public ShopResponse publishJsonData(Long shopId) throws BusinessException {

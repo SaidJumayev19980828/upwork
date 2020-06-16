@@ -16,6 +16,7 @@ import lombok.EqualsAndHashCode;
 public class ProductRepresentationObject extends ProductBaseInfo{
     
     private BigDecimal price;
+    private Prices prices;
     private Long brandId;
     private Long categoryId;
     private String barcode;

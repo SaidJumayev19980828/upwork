@@ -12,6 +12,7 @@ import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -1181,7 +1182,7 @@ public class OrderServiceTest {
 				Arrays.asList(items)
 						.stream()
 						.map(this::toJsonObject)				
-						.collect(Collectors.toList())
+						.collect(toList())
 				);
 	}
 	
@@ -1307,7 +1308,7 @@ public class OrderServiceTest {
 		List<Long> basketItemsBefore = basketRepository.findByOrdersEntity_Id(orderId)
 														.stream()
 														.map(BasketsEntity::getId)
-														.collect(Collectors.toList());
+														.collect(toList());
 		return basketItemsBefore;
 	}
 	

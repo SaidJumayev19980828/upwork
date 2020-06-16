@@ -17,6 +17,8 @@ import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.Role;
 import com.nasnav.persistence.UserEntity;
 
+import static java.util.stream.Collectors.*;
+
 
 @Repository
 public class CommonUserRepositoryImpl implements CommonUserRepository {
@@ -59,7 +61,7 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 		return rolesOfEmployeeUser.stream()
 						.filter(role -> role != null)
 						.map(Role::getName)
-						.collect(Collectors.toList());	
+						.collect(toList());
 	}
 	
 	
