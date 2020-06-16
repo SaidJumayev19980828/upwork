@@ -1,12 +1,11 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
-import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
-import static com.nasnav.commons.utils.StringUtils.nullSafe;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_CALC_ORDER_FAILED;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ITEM_QUANTITY;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ORDER_STATUS;
@@ -37,12 +36,15 @@ import static com.nasnav.enumerations.Roles.CUSTOMER;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
@@ -66,9 +68,6 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
-import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
@@ -77,8 +76,24 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.BasketRepository;
+import com.nasnav.dao.CartItemRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.UserRepository;
+import com.nasnav.dto.AddressRepObj;
+import com.nasnav.dto.BasketItem;
+import com.nasnav.dto.BasketItemDTO;
+import com.nasnav.dto.BasketItemDetails;
+import com.nasnav.dto.DetailedOrderRepObject;
+import com.nasnav.dto.OrderJsonDto;
+import com.nasnav.dto.OrderRepresentationObject;
+import com.nasnav.dto.response.navbox.Cart;
+import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
@@ -89,7 +104,17 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
+import com.nasnav.persistence.AddressesEntity;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.PaymentEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
@@ -131,7 +156,13 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private IntegrationService integrationService;
 	
-
+	@Autowired
+	private CartItemRepository cartItemRepo;
+	
+	@Autowired
+	private ProductService productService;
+	
+	
 	private Map<OrderStatus, Set<OrderStatus>> nextOrderStatusSet;
 	private Set<OrderStatus> orderStatusForCustomers;
 	private Set<OrderStatus> orderStatusForManagers;
@@ -1424,5 +1455,65 @@ public class OrderServiceImpl implements OrderService {
 		order.setPaymentStatus(PaymentStatus.PAID);
 		order.setPaymentEntity(payment);
 		ordersRepository.save(order);
+	}
+
+
+
+
+
+	@Override
+	public Cart getCart() {
+		BaseUserEntity user = securityService.getCurrentUser();
+		if(user instanceof EmployeeUserEntity) {
+			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+		}
+		
+		List<CartItemData> cartItems = cartItemRepo.findCurrentCartItemsByUser_Id(user.getId());		
+		return new Cart(toCartItemsDto(cartItems));	
+	}
+
+
+
+
+
+
+	private List<CartItem> toCartItemsDto(List<CartItemData> cartItems) {
+		return cartItems
+				.stream()
+				.map(this::createCartItemDto)
+				.collect(toList());
+	}
+
+
+
+	
+	
+	private CartItem createCartItemDto(CartItemData itemData) {
+		CartItem itemDto = new CartItem();
+		
+		Map<String,String> variantFeatures = parseVariantFeatures(itemData.getFeatureSpec());
+		
+		itemDto.setBrandId(itemData.getBrandId());
+		itemDto.setBrandLogo(itemData.getBrandLogo());
+		itemDto.setBrandName(itemData.getBrandName());
+		
+		itemDto.setCoverImg(itemData.getCoverImg());
+		itemDto.setPrice(itemData.getPrice());
+		itemDto.setQuantity(itemData.getQuantity());
+		itemDto.setVariantFeatures(variantFeatures);
+		
+		itemDto.setId(itemData.getId());
+		itemDto.setProductId(itemData.getProductId());
+		itemDto.setVariantId(itemData.getVariantId());
+		itemDto.setStockId(itemData.getStockId());
+		return itemDto;
+	}
+	
+	
+	
+
+
+	private Map<String, String> parseVariantFeatures(String featureSpec) {
+		return productService.parseVariantFeatures(featureSpec);
 	}
 }

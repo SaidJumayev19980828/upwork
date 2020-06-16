@@ -119,6 +119,6 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 -- insert order items
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330033, 601, 14, 600.0, 1);
 
-INSERT INTO public.addresses values(1001, null, 'address line', null, null, null, null, null, null, null);
+INSERT INTO public.addresses(id, address_line_1) values(1001, 'address line');
 
 INSERT INTO public.User_addresses values(1001, 88, 1001, false);

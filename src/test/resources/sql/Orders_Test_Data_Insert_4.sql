@@ -79,7 +79,8 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (25
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (26, 72, 6);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (27, 73, 6);
 
-INSERT INTO public.addresses values(1001, null, 'address line', null, null, null, null, null, null, null);
+INSERT INTO public.addresses(id, address_line_1) values(1001, 'address line');
+
 
 --inserting orders
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330033, 88, now(), now(), 99001, 0, 502, 1001);

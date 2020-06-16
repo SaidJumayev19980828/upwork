@@ -4,6 +4,7 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
 import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
+import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.areEqual;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
@@ -36,10 +37,12 @@ import static com.nasnav.service.ProductImageService.PRODUCT_IMAGE;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
+import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -58,6 +61,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.SQLException;
 import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -424,7 +428,7 @@ public class ProductService {
 		variantObj.setId(variant.getId());
 		variantObj.setBarcode( variant.getBarcode() );
 		variantObj.setStocks( getStockList(variant, shopId) );
-		variantObj.setVariantFeatures( getVariantFeaturesValues(variant) );
+		variantObj.setVariantFeatures( getVariantFeaturesValuesWithNullDefault(variant) );
 		variantObj.setImages( getProductVariantImages(variant.getId()) );
 		variantObj.setExtraAttributes( getExtraAttributesList(variant));
 		return variantObj;
@@ -458,38 +462,62 @@ public class ProductService {
 	}
 
 
+	
+	
+	
+	
+	private Map<String,String> getVariantFeaturesValuesWithNullDefault(ProductVariantsEntity variant) {
+		Map<String,String> features = getVariantFeaturesValues(variant);
+		return features.isEmpty()? null : features;
+	}
+	
+	
+	
 
 
 	private Map<String,String> getVariantFeaturesValues(ProductVariantsEntity variant) {
-		if(variant == null || !hasFeatures(variant))
-			return null;
+		if(variant == null || !hasFeatures(variant)) {
+			return emptyMap();
+		}
+		return parseVariantFeatures(variant.getFeatureSpec());
+	}
 
+
+
+	public Map<String, String> parseVariantFeatures(String variantFeatures) {
+		String normalizedStr = ofNullable(variantFeatures).orElse("{}");
 		JacksonJsonParser parser = new JacksonJsonParser();
-		Map<String, Object> keyValueMap =  parser.parseMap(variant.getFeatureSpec());
+		Map<String, Object> keyValueMap =  parser.parseMap(normalizedStr);
 		return keyValueMap.entrySet()
 				.stream()
 				.map(this::getVariantFeatureMapEntry)
-				.filter(entry -> entry != null)
-				.collect(Collectors.toMap(Map.Entry::getKey , Map.Entry::getValue));
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.collect(toMap(Map.Entry::getKey , Map.Entry::getValue));
 	}
 
 
 
 
 
-	private Map.Entry<String,String> getVariantFeatureMapEntry(Map.Entry<String,Object> entry) {
-		if(entry == null || entry.getKey() == null)
-			return null;
+	private Optional<Map.Entry<String,String>> getVariantFeatureMapEntry(Map.Entry<String,Object> entry) {
+		if(anyIsNull(entry, entry.getKey())) {
+			return empty();
+		}
 
 		Integer id = Integer.parseInt(entry.getKey());
-		Optional<ProductFeaturesEntity> featureOptional = productFeaturesRepository.findById(id);
-		if(!featureOptional.isPresent())
-			return null;
+		return	productFeaturesRepository
+					.findById(id)
+					.map(feature -> createFeatureKeyValuePair(entry, feature));
+	}
 
+
+
+	private SimpleEntry<String,String> createFeatureKeyValuePair(Map.Entry<String, Object> entry,
+			ProductFeaturesEntity featureOptional) {
 		return new AbstractMap.SimpleEntry<>(
-				featureOptional.get().getPname()
+				featureOptional.getPname()
 				, entry.getValue().toString());
-
 	}
 
 
@@ -527,7 +555,7 @@ public class ProductService {
 				.filter(optionalFeature -> optionalFeature != null && optionalFeature.isPresent())
 				.map(Optional::get)
 				.map(VariantFeatureDTO::new)
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 
 
@@ -603,7 +631,6 @@ public class ProductService {
 
 
 
-	@SuppressWarnings("unchecked")
 	private SQLQuery<?> getProductsQuery(ProductSearchParam params) {
 		QStocks stock = QStocks.stocks;
 		QProducts product = QProducts.products;
