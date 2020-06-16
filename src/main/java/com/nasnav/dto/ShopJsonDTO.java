@@ -4,13 +4,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.annotations.ApiModel;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 
 @Data
 @ApiModel(value = "Shops data")
 @JsonPropertyOrder({"org_id", "id", "name", "address", "brand_id", "logo", "banner", "photo"})
-
+@EqualsAndHashCode(callSuper=false)
 public class ShopJsonDTO extends BaseJsonDTO{
 
     @JsonProperty("org_id")

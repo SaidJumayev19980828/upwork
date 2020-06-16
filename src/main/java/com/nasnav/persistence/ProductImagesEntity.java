@@ -10,8 +10,9 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.nasnav.dto.BaseRepresentationObject;
 
+import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.dto.ProductImageDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -47,8 +48,16 @@ public class ProductImagesEntity implements BaseEntity{
 	
 	@Override
 	public BaseRepresentationObject getRepresentation() {
-		// TODO Auto-generated method stub
-		return null;
+		ProductImageDTO dto = new ProductImageDTO();
+
+		dto.setImagePath(getUri());
+		dto.setProductId(getProductEntity().getId());
+		if (getProductVariantsEntity() != null) {
+            dto.setVariantId(getProductVariantsEntity().getId());
+        }
+		dto.setBarcode(getProductEntity().getBarcode());
+
+		return dto;
 	}
 
 }

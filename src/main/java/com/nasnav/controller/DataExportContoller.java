@@ -52,4 +52,23 @@ public class DataExportContoller {
 				.header(CONTENT_DISPOSITION, "attachment; filename=Products_Csv.csv")
 				.body(s.toString());
 	}
+
+
+
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "Products images data exported"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+			@io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+	})
+	@GetMapping(value = "/products/images")
+	@ResponseBody
+	public ResponseEntity<String> generateProductsImagesCsv(
+			@RequestHeader(name = "User-Token", required = false) String token) {
+		ByteArrayOutputStream s = exportService.generateProductsImagesCsv();
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType("text/csv"))
+				.header(CONTENT_DISPOSITION, "attachment; filename=Products_With_Images_Csv.csv")
+				.body(s.toString());
+	}
 }

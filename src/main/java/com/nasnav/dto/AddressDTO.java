@@ -2,12 +2,14 @@ package com.nasnav.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
 @NoArgsConstructor
 @Data
+@EqualsAndHashCode(callSuper=false)
 public class AddressDTO extends BaseRepresentationObject {
 
     private Long id;
