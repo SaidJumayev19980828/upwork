@@ -2,6 +2,7 @@ package com.nasnav.security;
 
 
 import static com.nasnav.constatnts.ConfigConstants.STATIC_FILES_URL;
+import static com.nasnav.enumerations.Roles.CUSTOMER;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
@@ -117,6 +118,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/integration/dictionary"							, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 						patternOf( "/integration/errors"								, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 						patternOf( "/integration/**"									, setOf(NASNAV_ADMIN)),
+						patternOf( "/cart/**"											, setOf(CUSTOMER)),
 						patternOf( "/**")
 						);
 

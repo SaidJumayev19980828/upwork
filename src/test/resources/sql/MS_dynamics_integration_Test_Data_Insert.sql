@@ -52,7 +52,7 @@ INSERT INTO public.countries values(1001, 'E');
 
 INSERT INTO public.cities values(1001, 1001, 'C');
 
-INSERT INTO public.areas values(1001, 1001, 'new cairo');
+INSERT INTO public.areas(id, city_id, "name") values(1001, 1001, 'new cairo');
 
-INSERT INTO public.addresses values(1001, null, 'address line', null, null, null, null, 1001, null, null);
+INSERT INTO public.addresses(id, address_line_1) values(1001, 'address line');
 
