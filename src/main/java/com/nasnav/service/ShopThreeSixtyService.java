@@ -1,30 +1,14 @@
 package com.nasnav.service;
 
-import com.nasnav.commons.utils.StringUtils;
-import com.nasnav.dao.*;
-import com.nasnav.dto.*;
-import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.*;
-import com.nasnav.response.ShopResponse;
-import org.apache.tika.io.IOUtils;
-import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
-import javax.imageio.ImageIO;
-
 import static java.util.Collections.emptyList;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.*;
-import static org.springframework.http.HttpStatus.*;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.OK;
 
-import java.awt.*;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,9 +18,51 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.Optional;
+
+import javax.imageio.ImageIO;
+
+import org.apache.tika.io.IOUtils;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.nasnav.dao.FilesRepository;
+import com.nasnav.dao.ProductPositionsRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ShopFloorsRepository;
+import com.nasnav.dao.ShopScenesRepository;
+import com.nasnav.dao.ShopSectionsRepository;
+import com.nasnav.dao.ShopThreeSixtyRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dto.Prices;
+import com.nasnav.dto.ShopFloorDTO;
+import com.nasnav.dto.ShopFloorsRequestDTO;
+import com.nasnav.dto.ShopScenesRequestDTO;
+import com.nasnav.dto.ShopSectionsRequestDTO;
+import com.nasnav.dto.ShopThreeSixtyDTO;
+import com.nasnav.dto.TagsRepresentationObject;
+import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.FileEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ProductImagesEntity;
+import com.nasnav.persistence.ProductPositionEntity;
+import com.nasnav.persistence.ShopFloorsEntity;
+import com.nasnav.persistence.ShopScenesEntity;
+import com.nasnav.persistence.ShopSectionsEntity;
+import com.nasnav.persistence.ShopThreeSixtyEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.response.ShopResponse;
 
 @Service
 public class ShopThreeSixtyService {
@@ -71,13 +97,7 @@ public class ShopThreeSixtyService {
     private ProductRepository productsRepo;
 
     @Autowired
-    private ProductImagesRepository productImagesRepository;
-
-    @Autowired
     private StockRepository stockRepo;
-
-    @Autowired
-    private TagsRepository tagsRepo;
 
     @Autowired
     private SecurityService securitySvc;
@@ -579,7 +599,6 @@ public class ShopThreeSixtyService {
 
 
     public void deleteShop360Floor(Long shopId, Long floorId) throws BusinessException {
-        Long orgId = securitySvc.getCurrentUserOrganizationId();
         ShopThreeSixtyEntity shopThreeSixtyEntity = shop360Repo.getFirstByShopsEntity_Id(shopId);
 
         validateShop360Link(shopThreeSixtyEntity);
