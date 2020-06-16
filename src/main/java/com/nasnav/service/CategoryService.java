@@ -714,12 +714,11 @@ public class CategoryService {
 	}
 
 
-	public List<TagsRepresentationObject> getTagsList(String name, Long orgId) {
-		Long categoryId = categoryRepository.findByName("COLLECTION");
-		return orgTagsRepo.findByNameAndOrganizationIdAndCategoryId(name.toLowerCase(), orgId, categoryId)
+	public List<TagsRepresentationObject> findCollections(String name, Long orgId) {
+		return orgTagsRepo.findByNameAndOrganizationIdAndCategoryId(name.toLowerCase(), orgId)
 				.stream()
 				.map(t -> (TagsRepresentationObject) t.getRepresentation())
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 }
 

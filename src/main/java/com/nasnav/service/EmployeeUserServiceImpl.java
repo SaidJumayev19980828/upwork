@@ -32,6 +32,8 @@ import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 
+import static java.util.stream.Collectors.*;
+
 @Service
 public class EmployeeUserServiceImpl implements EmployeeUserService {
 
@@ -339,7 +341,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 				usersEntites = employeeUserRepository.findByOrganizationIdAndShopIdAndIdIn(orgId, storeId, employeesIds);
 		}
 
-		userRepObjs = usersEntites.stream().map(entity -> entity.getRepresentation()).collect(Collectors.toList());
+		userRepObjs = usersEntites.stream().map(entity -> entity.getRepresentation()).collect(toList());
 		for(UserRepresentationObject obj : userRepObjs)
 			obj.setRoles(new HashSet<>(empUserSvcHelper.getEmployeeUserRoles(obj.getId())));
 

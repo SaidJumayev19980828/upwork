@@ -41,6 +41,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.*;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -328,10 +329,10 @@ public class ProductService {
 		return orgTagRepo.findByIdIn(productRepository.getTagsByProductId(productId)
 				.stream()
 				.mapToLong(BigInteger::longValue).boxed()
-				.collect(Collectors.toList()))
+				.collect(toList()))
 				.stream()
 				.map(tag ->(TagsRepresentationObject) tag.getRepresentation())
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 
 	private Map<Long,List<TagsRepresentationObject>> getProductsTagsDTOList(List<Long> productsIds) {
@@ -473,7 +474,7 @@ public class ProductService {
 				.stream()
 				.map(this::getVariantFeatureMapEntry)
 				.filter(entry -> entry != null)
-				.collect(Collectors.toMap(Map.Entry::getKey , Map.Entry::getValue));
+				.collect(toMap(Map.Entry::getKey , Map.Entry::getValue));
 	}
 
 
@@ -530,7 +531,7 @@ public class ProductService {
 				.filter(optionalFeature -> optionalFeature != null && optionalFeature.isPresent())
 				.map(Optional::get)
 				.map(VariantFeatureDTO::new)
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 
 
@@ -599,9 +600,8 @@ public class ProductService {
 				template.query(stocks.getSQL().getSQL(),
 						new BeanPropertyRowMapper<>(ProductRepresentationObject.class));
 
-		String searchName = params.name != null ? params.name.toLowerCase() : "";
-		List<TagsRepresentationObject> collections =
-				categoryService.getTagsList(searchName, params.org_id);
+		String searchName = ofNullable(params.name).map(String::toLowerCase).orElse("");
+		List<TagsRepresentationObject> collections = categoryService.findCollections(searchName, params.org_id);
 
 		return getProductResponseFromStocks(result, productsCount, collections);
 	}
@@ -879,14 +879,14 @@ public class ProductService {
 
 		List<Long> productIdList = products.stream()
 				.map(ProductEntity::getId)
-				.collect(Collectors.toList());
+				.collect(toList());
 
 		Map<Long, String> productCoverImages = imgService.getProductsCoverImages(productIdList);
 
 		List<ProductRepresentationObject> productsRep =
 				products.stream()
 					  .map(prod -> getProductRepresentation(prod, productCoverImages))
-					  .collect(Collectors.toList());
+					  .collect(toList());
 
 		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE)
 			sortByPrice(productsRep, order);
@@ -902,11 +902,12 @@ public class ProductService {
 
 			List<Long> productIdList = stocks.stream()
 					.map(ProductRepresentationObject::getId)
-					.collect(Collectors.toList());
+					.collect(toList());
 
-			Map<Long, Prices> productsPricesMap = stockRepository.getProductsPrices(productIdList)
+			Map<Long, Prices> productsPricesMap =
+					mapInBatches(productIdList, 500, stockRepository::getProductsPrices)
 					.stream()
-					.collect(Collectors.toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
+					.collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
 
 			Map<Long, String> productCoverImages = imgService.getProductsCoverImages(productIdList);
 
@@ -919,7 +920,7 @@ public class ProductService {
 					.map(s -> setProductTags(s, productsTags))
 					.map(s -> setProductMultipleVariants(s, productsVariantsCountFlag))
 					.map(s -> setProductPrices(s, productsPricesMap))
-					.collect(Collectors.toList());
+					.collect(toList());
 		}
 
 		return new ProductsResponse(productsCount, stocks, collections);
@@ -1342,7 +1343,7 @@ public class ProductService {
 			String bundleIds = bundles.stream()
 								.map(BundleEntity::getId)
 								.map(String::valueOf)
-								.collect(Collectors.joining(","));
+								.collect(joining(","));
 
 			throw new BusinessException(
 					String.format(ERR_CANNOT_DELETE_BUNDLE_ITEM, productId, bundleIds)
@@ -1714,7 +1715,7 @@ public class ProductService {
 				.getResultList()
 				.stream()
 				.map(this::toBundleDTO)
-				.collect(Collectors.toList());
+				.collect(toList());
 
 		Long count = getQueryCount(builder, predicatesArr);
 
@@ -1778,7 +1779,7 @@ public class ProductService {
 		List<StocksEntity> bundleStock = 	entity.getProductVariants()
 				.stream()
 				.flatMap( var -> var.getStocks().stream())
-				.collect(Collectors.toList());
+				.collect(toList());
 
 		if(bundleStock.size() != 1) {
 			throw new IllegalStateException(
@@ -1797,7 +1798,7 @@ public class ProductService {
 															.stream()
 															.map(prod -> getProductRepresentation(prod, productCoverImages))
 															.map(this::toProductBaseInfo)
-															.collect(Collectors.toList());
+															.collect(toList());
 		dto.setProducts( productlist );
 
 		return dto;

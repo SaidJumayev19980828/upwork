@@ -353,7 +353,7 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @ResponseStatus(OK)
-    @DeleteMapping(value = "tag", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @DeleteMapping(value = "tag")
     public void deleteProductTags(@RequestHeader(name = "User-Token", required = false) String token,
                                             @RequestBody ProductTagDTO productTagDTO ) throws BusinessException {
         productService.deleteProductTags(productTagDTO);

@@ -11,6 +11,7 @@ import static com.nasnav.test.commons.TestCommons.jsonArray;
 import static com.nasnav.test.commons.TestCommons.readResource;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.*;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -604,7 +605,7 @@ public class MicrosoftDynamicsIntegrationTest {
 				asList(items)
 					.stream()
 					.map(Item::toJsonObject)				
-					.collect(Collectors.toList())
+					.collect(toList())
 				);
 	}
 	

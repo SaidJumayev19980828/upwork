@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.*;
 
 @Table(name = "shop_sections")
 @Entity
@@ -57,11 +58,11 @@ public class ShopSectionsEntity implements BaseEntity {
         section.setId(getId());
         section.setName(getName());
 
-        List<ShopScenesEntity> scenesEntities = getShopScenes().stream().collect(Collectors.toList());
+        List<ShopScenesEntity> scenesEntities = getShopScenes().stream().collect(toList());
         section.setShopScenes(scenesEntities.stream()
                                              .map(scene -> (ShopScenesDTO) scene.getRepresentation())
                                              .sorted(comparing(ShopScenesDTO::getId))
-                                             .collect(Collectors.toList()));
+                                             .collect(toList()));
 
         if (getImage() != null)
             section.setImage(createImage(getImage()));

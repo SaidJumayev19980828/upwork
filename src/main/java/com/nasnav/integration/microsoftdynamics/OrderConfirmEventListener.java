@@ -10,6 +10,7 @@ import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.logging.Level.SEVERE;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 import java.lang.reflect.InvocationTargetException;
@@ -219,7 +220,7 @@ public class OrderConfirmEventListener extends AbstractMSDynamicsEventListener<O
 		return data.getItems()
 				.stream()
 				.map(it -> toSalesOrderItem(it, shopExtId, data.getOrganizationId()))
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 
 

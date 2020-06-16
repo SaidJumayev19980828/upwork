@@ -4,6 +4,7 @@ package com.nasnav.service;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_SHOPS;
 import static com.nasnav.cache.Caches.SHOPS_BY_ID;
 import static java.lang.String.format;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 
@@ -77,7 +78,7 @@ public class ShopService {
             //TODO why working days won't be returned from the API unlike getShopById API
             shopRepresentationObject.setOpenWorkingDays(null);
             return shopRepresentationObject;
-        }).collect(Collectors.toList());
+        }).collect(toList());
     }
     
     
@@ -96,7 +97,7 @@ public class ShopService {
         List<OrganizationImagesEntity> imageEntities = orgImgRepo.findByShopsEntityId(shopId);
         if(imageEntities != null && !imageEntities.isEmpty())
             shopRepObj.setImages(imageEntities.stream().map(entity -> (OrganizationImagesRepresentationObject) entity.getRepresentation())
-                                                       .collect(Collectors.toList()));
+                                                       .collect(toList()));
 
         return  shopRepObj;
     }
@@ -212,7 +213,7 @@ public class ShopService {
         else
             shops =  shopsRepository.getShopsByLocation(orgId, name, minLong, maxLong, minLat, maxLat);
 
-        return shops.stream().map(s -> (ShopRepresentationObject)s.getRepresentation()).collect(Collectors.toList());
+        return shops.stream().map(s -> (ShopRepresentationObject)s.getRepresentation()).collect(toList());
     }
 
 
@@ -229,7 +230,7 @@ public class ShopService {
         List<Long> linkedStocks = stockRepo.findByShopsEntity_Id(shopId)
                                             .stream()
                                             .map(StocksEntity::getId)
-                                            .collect(Collectors.toList());
+                                            .collect(toList());
         if (!linkedStocks.isEmpty()) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "stocks "+linkedStocks.toString());
         }
@@ -238,7 +239,7 @@ public class ShopService {
         List<Long> linkedOrders = orderRepo.findByShopsEntityId(shopId)
                                             .stream()
                                             .map(OrdersEntity::getId)
-                                            .collect(Collectors.toList());
+                                            .collect(toList());
         if (!linkedOrders.isEmpty()) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "orders "+linkedOrders.toString());
         }
@@ -252,7 +253,7 @@ public class ShopService {
         List<Long> linkedEmployees = empUserRepo.findByShopId(shopId)
                                                 .stream()
                                                 .map(EmployeeUserEntity::getId)
-                                                .collect(Collectors.toList());
+                                                .collect(toList());
         if (!linkedEmployees.isEmpty()) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "employees "+linkedEmployees.toString());
         }

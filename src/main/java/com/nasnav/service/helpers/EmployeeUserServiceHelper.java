@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.EntityUtils;
 import static com.nasnav.commons.utils.StringUtils.*;
+import static java.util.stream.Collectors.*;
+
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.EmployeeUserRepository;
@@ -60,7 +62,7 @@ public class EmployeeUserServiceHelper {
 
 	public void createRoles(List<String> rolesList, Long employeeUserId, Long org_id) {
 		List<Role> existingRoles = roleRepository.findAll();
-		List<String> existingRolesListNames = existingRoles.stream().map( role -> role.getName()).collect(Collectors.toList());
+		List<String> existingRolesListNames = existingRoles.stream().map( role -> role.getName()).collect(toList());
 		Integer roleId;
 		Roles roleEnum;
 		roleEmployeeUserRepository.deleteByEmployeeUserId(employeeUserId); //delete all existing rolesemployeeuser relations
@@ -114,7 +116,7 @@ public class EmployeeUserServiceHelper {
 	public Integer roleCanCreateUser(Long id) {
 		// get list of roles belong to current user
 		List<Role> rolesList = roleRepository.getRolesOfEmployeeUser(id);
-		List<Roles> rolesListNames = rolesList.stream().map( role -> Roles.valueOf(role.getName())).collect(Collectors.toList());
+		List<Roles> rolesListNames = rolesList.stream().map( role -> Roles.valueOf(role.getName())).collect(toList());
 		if (rolesListNames.contains(Roles.NASNAV_ADMIN)) {
 			return 1;
 		} else if (rolesListNames.contains(Roles.ORGANIZATION_ADMIN)) {

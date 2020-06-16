@@ -2,6 +2,7 @@ import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.*;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -644,7 +645,7 @@ public class ProductApiTest {
 		List<Long> variantIds = variantRepo.findByProductEntity_Id(productId)
 										.stream()
 										.map(ProductVariantsEntity::getId)
-										.collect(Collectors.toList());
+										.collect(toList());
 		return variantIds;
 	}
 

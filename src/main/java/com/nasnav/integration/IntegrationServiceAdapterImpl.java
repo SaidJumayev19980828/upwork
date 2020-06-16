@@ -16,6 +16,7 @@ import static java.time.LocalDateTime.now;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -215,7 +216,7 @@ public class IntegrationServiceAdapterImpl implements IntegrationServiceAdapter 
 				.orElse(emptySet())
 				.stream()
 				.map(this::toOrderItemData)
-				.collect(Collectors.toList());
+				.collect(toList());
 	}
 	
 	
