@@ -37,6 +37,8 @@ public enum ErrorCodes {
 	,S$0002( "No Shop exists with ID: [%d]!")
 	,S$0003("No shops found!")
 
+	,S$360$0001("No 360 shop found!")
+
 	,AREA$001("No Area exists with ID:[%d]!")
 	
 	,O$CRT$0001("Cannot create a cart for an employee user!")

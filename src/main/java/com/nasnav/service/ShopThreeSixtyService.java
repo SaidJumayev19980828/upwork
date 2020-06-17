@@ -1,12 +1,12 @@
 package com.nasnav.service;
 
+import static com.nasnav.exceptions.ErrorCodes.S$360$0001;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.*;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -26,6 +26,7 @@ import java.util.Optional;
 
 import javax.imageio.ImageIO;
 
+import com.nasnav.exceptions.RuntimeBusinessException;
 import org.apache.tika.io.IOUtils;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -166,7 +167,7 @@ public class ShopThreeSixtyService {
     public List<ShopFloorDTO> getSections(Long shopId) {
         ShopThreeSixtyEntity shop = shop360Repo.getFirstByShopsEntity_Id(shopId);
         if (shop == null)
-            return new ArrayList<>();
+            throw new RuntimeBusinessException(NOT_FOUND, S$360$0001);
 
         List<ShopFloorDTO> floors = shopFloorsRepo.findByShopThreeSixtyEntity_IdOrderById(shop.getId())
                                                           .stream()

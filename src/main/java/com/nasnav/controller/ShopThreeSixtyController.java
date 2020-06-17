@@ -52,10 +52,10 @@ public class ShopThreeSixtyController {
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @GetMapping(value = "/sections", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity getShop360Sections(@RequestParam("shop_id") Long shopId) {
+    public Map getShop360Sections(@RequestParam("shop_id") Long shopId) {
         Map<String, List> res = new HashMap<>();
         res.put("floors", shop360Svc.getSections(shopId));
-        return new ResponseEntity<>(res, HttpStatus.OK);
+        return res;
     }
 
 
