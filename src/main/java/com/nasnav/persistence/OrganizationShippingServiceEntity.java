@@ -20,9 +20,9 @@ public class OrganizationShippingServiceEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 	
-	@ManyToOne
-	@JoinColumn(name="shipping_service_id", referencedColumnName = "id")
-	private ShippingServiceEntity service;
+	
+	@Column(name="shipping_service_id")
+	private String serviceId;
 	
 	@ManyToOne
 	@JoinColumn(name="organization_id", referencedColumnName = "id")

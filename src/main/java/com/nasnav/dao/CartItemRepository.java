@@ -23,4 +23,6 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " WHERE user.id = :user_id")
 	List<CartItemData> findCurrentCartItemsByUser_Id(@Param("user_id") Long userId);
 	
+	
+	List<>
 }

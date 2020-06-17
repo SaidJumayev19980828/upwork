@@ -10,5 +10,6 @@ public class ShippingDetails {
 	private ShippingAddress source;
 	private ShippingAddress destination;
 	private Map<String,String> additionalData;
+	private Map<String,String> serviceParameters;
 	private List<ShipmentItems> items; 
 }
