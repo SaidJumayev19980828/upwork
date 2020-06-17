@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.commons.utils.MapBuilder;
@@ -319,7 +318,7 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 		Set<String> tags = getTags(product);
 		Map<String, String> extraAttributes = getExtraAttributes(product);
 		String productName = getProductName(product);
-		
+		String description = ofNullable(product.getName()).orElse(product.getDescription());
 		
 		dto.setBarcode(product.getItemNoC());
 		dto.setBrand(product.getEnglishFactory());
@@ -327,7 +326,7 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 		dto.setName(productName);
 		dto.setPrice(price);
 		dto.setQuantity(quantity);
-		dto.setDescription(product.getDescription());
+		dto.setDescription(description);
 		dto.setFeatures(variantFeatures);
 		dto.setTags(tags);
 		dto.setExtraAttributes(extraAttributes);
@@ -339,11 +338,8 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 
 
 	private String getProductName(Product product) {
-		String productName = Stream.of( product.getEnglishModel(), product.getName(), product.getId())
-								.filter(Objects::nonNull)
-								.findFirst()
-								.orElse("Cool Product ...");
-		return productName;
+		return  ofNullable( product.getName())
+					.orElse("Cool Product ...");
 	}
 
 
