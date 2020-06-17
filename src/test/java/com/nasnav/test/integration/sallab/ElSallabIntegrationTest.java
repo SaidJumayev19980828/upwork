@@ -188,7 +188,7 @@ public class ElSallabIntegrationTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void importProductsTest() throws Throwable {
 		Count expected = new Count();
-		expected.products = 2L;
+		expected.products = 5L;
 		expected.variants = 5L;
 		expected.tags = expected.products*3;
 		expected.extraAttr = expected.variants*6;
@@ -234,7 +234,7 @@ public class ElSallabIntegrationTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void importProductsWithPaginationTest() throws Throwable {
 		Count expected = new Count();
-		expected.products = 1L;
+		expected.products = 2L;
 		expected.variants = 2L;
 		expected.tags = expected.products*3;
 		expected.extraAttr = expected.variants*6;
