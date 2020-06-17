@@ -1,11 +1,9 @@
 package com.nasnav.controller;
 
+import com.nasnav.dto.response.navbox.CartItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.exceptions.BusinessException;
@@ -32,4 +30,31 @@ public class CartController {
 	public Cart getCart(@RequestHeader(name = "User-Token", required = false) String userToken) throws BusinessException {
 		return orderService.getCart();
 	}
+
+
+
+	@ApiOperation(value = "add an item to the cart", nickname = "addCartItem")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 403, message = "employee user can't have cart"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "stock not found")
+	})
+	@PostMapping(value = "/item", consumes = MediaType.APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
+	public Cart addCartItem(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestBody CartItem item) {
+		return orderService.addCartItem(item);
+	}
+
+
+
+	@ApiOperation(value = "delete an item from the cart", nickname = "deleteCartItem")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 403, message = "employee user can't delete cart item"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "item not found")
+	})
+	@DeleteMapping(value = "/item", produces=MediaType.APPLICATION_JSON_VALUE)
+	public Cart deleteCartItem(@RequestHeader(name = "User-Token", required = false) String userToken, @RequestParam("item_id") Long itemId) {
+		return orderService.deleteCartItem(itemId);
+	}
+
 }

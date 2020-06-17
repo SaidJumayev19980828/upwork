@@ -36,7 +36,7 @@ import static com.nasnav.enumerations.Roles.CUSTOMER;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
@@ -69,6 +69,7 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
@@ -105,16 +106,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
-import com.nasnav.persistence.AddressesEntity;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BasketsEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.PaymentEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
@@ -1474,9 +1466,53 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+	@Override
+	public Cart addCartItem(CartItem item){
+		BaseUserEntity user = securityService.getCurrentUser();
+		if(user instanceof EmployeeUserEntity) {
+			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+		}
 
 
+		CartItemEntity cartItem = new CartItemEntity();
+		cartItem.setUser((UserEntity) user);
+		Optional<StocksEntity> stock = stockRepository.findById(ofNullable(item.getStockId()).orElse(-1L));
 
+		validateCartItem(stock, item);
+
+		cartItem.setStock(stock.get());
+		cartItem.setQuantity(item.getQuantity());
+		cartItem.setCoverImage(item.getCoverImg());
+		cartItemRepo.save(cartItem);
+
+		List<CartItemData> cartItems = cartItemRepo.findCurrentCartItemsByUser_Id(user.getId());
+		return new Cart(toCartItemsDto(cartItems));
+	}
+
+
+	@Override
+	public Cart deleteCartItem(Long itemId){
+		BaseUserEntity user = securityService.getCurrentUser();
+		if(user instanceof EmployeeUserEntity) {
+			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+		}
+
+		cartItemRepo.deleteByIdAndUser_Id(itemId, user.getId());
+
+		List<CartItemData> cartItems = cartItemRepo.findCurrentCartItemsByUser_Id(user.getId());
+		return new Cart(toCartItemsDto(cartItems));
+	}
+
+
+	private void validateCartItem(Optional<StocksEntity> stock, CartItem item) {
+		if (!stock.isPresent()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE ,P$STO$0001,item.getStockId());
+		}
+
+		if (item.getQuantity() == null || item.getQuantity() <= 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0002);
+		}
+	}
 
 	private List<CartItem> toCartItemsDto(List<CartItemData> cartItems) {
 		return cartItems
