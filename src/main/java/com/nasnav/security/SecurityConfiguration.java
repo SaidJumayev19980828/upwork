@@ -119,6 +119,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/integration/errors"								, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 						patternOf( "/integration/**"									, setOf(NASNAV_ADMIN)),
 						patternOf( "/cart/**"											, setOf(CUSTOMER)),
+						patternOf( "/shipping/offers"									, setOf(CUSTOMER)),
 						patternOf( "/**")
 						);
 

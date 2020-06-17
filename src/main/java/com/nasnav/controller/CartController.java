@@ -17,7 +17,7 @@ import io.swagger.annotations.ApiResponses;
 
 @RestController
 @RequestMapping("/cart")
-@Api(description = "Methods for accessing public information about shops and products.")
+@Api(description = "Methods for accessing cart")
 public class CartController {
 	
 	@Autowired
