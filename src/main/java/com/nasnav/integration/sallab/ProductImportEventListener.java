@@ -383,11 +383,16 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 
 
 	private Map<String, String> getVariantFeatures(Product product) {
+		String size = ofNullable(product.getSize())
+						.map(s -> s.replace("×", "x"))
+						.map(s -> s.replace("*", "x"))
+						.map(String::toLowerCase)
+						.orElse(null);
 		Map<String, String> variantFeatures = 
 				MapBuilder
 				.<String,String>map()
 				.putNonNull("Color", product.getEnglishColor())
-				.putNonNull("Size", product.getSize())
+				.putNonNull("Size", size)
 				.putNonNull("Class", product.getEnglishClass())
 				.getMap();
 		return variantFeatures;
