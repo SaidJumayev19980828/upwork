@@ -11,6 +11,7 @@ import java.util.Set;
 
 import javax.validation.Valid;
 
+import com.google.common.collect.ImmutableMap;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.commons.utils.MapBuilder;
@@ -47,13 +48,13 @@ public interface CsvDataImportService {
 					.getMap();
 	
 	
-	Map<String,String> IMG_DATA_TO_COLUMN_MAPPING = MapBuilder.<String, String>map()
-					.put("variantId", "variant_id")
-					.put("externalId", "external_id")
-					.put("barcode", "barcode")
-					.put("productName", "product_name")
-					.put("productId", "product_id")
-					.getMap();
+	Map<String,String> IMG_DATA_TO_COLUMN_MAPPING = ImmutableMap.<String, String>builder()
+													.put("variantId", "variant_id")
+													.put("externalId", "external_id")
+													.put("barcode", "barcode")
+													.put("productName", "product_name")
+													.put("productId", "product_id")
+													.build();
 	
 	Set<String> CSV_BASE_HEADERS = new HashSet<String>(PRODUCT_DATA_TO_COLUMN_MAPPING.values());
 	

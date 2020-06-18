@@ -1,9 +1,9 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.enumerations.ImageCsvTemplateType.EMPTY;
 import static com.nasnav.enumerations.ImageCsvTemplateType.PRODUCTS_WITH_NO_IMGS;
-import static com.nasnav.service.CsvDataImportService.IMG_CSV_BASE_HEADERS;
-import static com.nasnav.service.CsvDataImportService.PRODUCT_DATA_TO_COLUMN_MAPPING;
+import static com.nasnav.service.CsvDataImportService.*;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 
@@ -11,11 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import com.nasnav.dao.*;
 import com.nasnav.dto.ProductImageDTO;
@@ -84,11 +80,11 @@ public class CsvDataExportServiceImpl implements CsvDataExportService {
 	public ByteArrayOutputStream generateProductsImagesCsv() {
 		Long orgId = security.getCurrentUserOrganizationId();
 
-		List<String> headers = Arrays.asList(new String[] {"product_id", "variant_id", "barcode", "image_path"});
+		List<String> headers = Arrays.asList("product_id", "variant_id", "barcode", "image_path");
 
 		List<Long> productIdsList = productRepo.findProductsIdsByOrganizationId(orgId);
 
-		List<ProductImageDTO> images =  productImagesRepo.findByProductsIds(productIdsList)
+		List<ProductImageDTO> images =  mapInBatches(productIdsList, 500, productImagesRepo::findByProductsIds)
 														.stream()
 														.map(i -> (ProductImageDTO) i.getRepresentation())
 														.collect(toList());
@@ -129,7 +125,14 @@ public class CsvDataExportServiceImpl implements CsvDataExportService {
 
 	private BeanWriterProcessor<ProductImageDTO> createProductImgsRowProcessor() {
 
-		ColumnMapping mapper = createCsvAttrToColMapping(IMG_DATA_TO_COLUMN_MAPPING);
+		Map<String, String> imgDataToColumnMapping = new HashMap<>(IMG_DATA_TO_COLUMN_MAPPING);
+
+		imgDataToColumnMapping.remove("externalId");
+		imgDataToColumnMapping.remove("productName");
+		imgDataToColumnMapping.remove("externalId");
+		imgDataToColumnMapping.put("imagePath", "image_path");
+
+		ColumnMapping mapper = createCsvAttrToColMapping(imgDataToColumnMapping);
 
 		BeanWriterProcessor<ProductImageDTO> rowProcessor = new BeanWriterProcessor<>(ProductImageDTO.class);
 		rowProcessor.setColumnMapper(mapper);
@@ -173,7 +176,7 @@ public class CsvDataExportServiceImpl implements CsvDataExportService {
 	
 	private BeanWriterProcessor<VariantWithNoImagesDTO> createImgsTemplateRowProcessor() {
 		
-		ColumnMapping mapper = createCsvAttrToColMapping(importService.IMG_DATA_TO_COLUMN_MAPPING);
+		ColumnMapping mapper = createCsvAttrToColMapping(IMG_DATA_TO_COLUMN_MAPPING);
 		
 		BeanWriterProcessor<VariantWithNoImagesDTO> rowProcessor = new BeanWriterProcessor<>(VariantWithNoImagesDTO.class);
 		rowProcessor.setColumnMapper(mapper);
