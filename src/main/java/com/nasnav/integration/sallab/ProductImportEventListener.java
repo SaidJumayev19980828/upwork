@@ -317,9 +317,10 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 		Map<String, String> extraAttributes = getExtraAttributes(product);
 		String productName = getProductName(product);
 		String description = ofNullable(product.getName()).orElse(product.getDescription());
+		String brandName = ofNullable(product.getEnglishFactory()).orElse("Other Brands");
 		
 		dto.setBarcode(product.getItemNoC());
-		dto.setBrand(product.getEnglishFactory());
+		dto.setBrand(brandName);
 		dto.setExternalId(product.getItemNoC());
 		dto.setName(productName);
 		dto.setPrice(price);
