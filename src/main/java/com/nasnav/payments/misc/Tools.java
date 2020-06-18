@@ -116,6 +116,8 @@ public class Tools {
 			file = "/provider.banquemisr.properties";
 		} else if ("qnb".equalsIgnoreCase(accountName)) {
 			file = "/provider.qnb.properties";
+		} else if ("rasports".equalsIgnoreCase(accountName)) {
+			file = "/provider.rasports.properties";
 		} else if ("rave".equalsIgnoreCase(accountName)) {
 			file = "/provider.rave.properties";
 		} else {
@@ -123,6 +125,7 @@ public class Tools {
 			return null;
 		}
 		logger.debug("Attempting to load account properties file: {}", file);
+		Properties props = null;
 		try  {
 			InputStream stream =
 					Tools.class.getClass().getResourceAsStream(file);
@@ -132,12 +135,12 @@ public class Tools {
 				));
 			}
 			logger.info("Loaded account properties file: {}", file);
-			Properties props = new Properties();
+			props = new Properties();
 			props.load(stream);
-			return props;
+			stream.close();
 		} catch (IOException e) {
 			logger.error("Unable to load account property file: {}", file);
-			return null;
 		}
+		return props;
 	}
 }
