@@ -378,19 +378,19 @@ public class ElSallabIntegrationTest {
 				      VerificationTimes.exactly(additionalPageCount)
 				    );
 			
-			mockServerRule.getClient().verify(
-				      request()
-				        .withMethod("GET")
-				        .withPath("/ElSallab.Webservice/SallabService.svc/getItemPriceBreakdown"),
-				      VerificationTimes.exactly(variantCount)
-				    );
-			
-			mockServerRule.getClient().verify(
-				      request()
-				        .withMethod("GET")
-				        .withPath("/ElSallab.Webservice/SallabService.svc/getItemStockBalance"),
-				      VerificationTimes.exactly(variantCount)
-				    );
+//			mockServerRule.getClient().verify(
+//				      request()
+//				        .withMethod("GET")
+//				        .withPath("/ElSallab.Webservice/SallabService.svc/getItemPriceBreakdown"),
+//				      VerificationTimes.exactly(variantCount)
+//				    );
+//			
+//			mockServerRule.getClient().verify(
+//				      request()
+//				        .withMethod("GET")
+//				        .withPath("/ElSallab.Webservice/SallabService.svc/getItemStockBalance"),
+//				      VerificationTimes.exactly(variantCount)
+//				    );
 			
 		}
 	}
