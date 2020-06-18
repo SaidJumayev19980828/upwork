@@ -10,7 +10,9 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
+import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -35,11 +37,7 @@ import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.dto.TagsTreeNodeDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.ProductSearchParam;
-import com.nasnav.service.BrandService;
 import com.nasnav.service.CategoryService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.ProductService;
-import com.nasnav.service.ShopService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -65,6 +63,9 @@ public class NavboxController {
 
 	@Autowired
 	private CategoryService categoryService;
+
+	@Autowired
+	private AddressService addressService;
 
 	@ApiOperation(value = "Get information about brand by its ID", nickname = "brandInfo")
 	@ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
@@ -284,5 +285,16 @@ public class NavboxController {
 		Pair domain = organizationService.getOrganizationAndSubdirsByUrl(url);
 
 		return new ResponseEntity<>("{\"id\":" + domain.getFirst() + ", \"sub_dir\":" + domain.getSecond() + "}", HttpStatus.OK);
+	}
+
+
+
+	@ApiOperation(value = "Get all countries, cities and areas", nickname = "countires")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK")
+	})
+	@GetMapping(value="/countries", produces=MediaType.APPLICATION_JSON_VALUE)
+	public Map getCountries() {
+		return addressService.getCountries();
 	}
 }

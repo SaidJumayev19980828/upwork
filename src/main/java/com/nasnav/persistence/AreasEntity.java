@@ -1,6 +1,7 @@
 package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.nasnav.dto.AreasRepObj;
 import com.nasnav.dto.BaseRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -30,6 +31,10 @@ public class AreasEntity implements BaseEntity {
 
     @Override
     public BaseRepresentationObject getRepresentation() {
-        return null;
+        AreasRepObj obj = new AreasRepObj();
+        obj.setId(getId());
+        obj.setName(getName());
+
+        return obj;
     }
 }
