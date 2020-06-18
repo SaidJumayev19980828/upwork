@@ -1,14 +1,16 @@
 package com.nasnav.dao;
 
-import com.nasnav.persistence.AddressesEntity;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-import java.util.Set;
+import com.nasnav.persistence.AddressesEntity;
 
 public interface AddressRepository extends JpaRepository<AddressesEntity, Long> {
 
@@ -30,5 +32,12 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
     @Transactional
     @Query(value = "delete from user_Addresses where address_id = :addressId and user_id = :userId", nativeQuery = true)
     void unlinkAddressFromUser(@Param("addressId") Long addressId, @Param("userId") Long userId);
+    
+    @Query("SELECT FROM AddressesEntity addr "
+    		+ " LEFT JOIN FETCH areasEntity area "
+    		+ " LEFT JOIN FETCH area.citiesEntity city "
+    		+ " LEFT JOIN FETCH city.countriesEntity country"
+    		+ " WHERE addr.id in :ids")
+    List<AddressesEntity> findByIdIn(@Param("ids")List<Long> ids);
 
 }

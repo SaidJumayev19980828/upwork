@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 public class ShippingAddress{
     private String name;
-    private Long postalCode;
+    private String postalCode;
     private Long country;
     private Long city;
     private String notes;
