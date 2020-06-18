@@ -1,36 +1,24 @@
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNull;
-import static org.springframework.http.HttpMethod.GET;
+import static junit.framework.TestCase.*;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLException;
 
-import javax.sql.DataSource;
-
-import com.nasnav.persistence.AddressesEntity;
+import com.gargoylesoftware.htmlunit.javascript.host.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.skyscreamer.jsonassert.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
@@ -48,6 +36,8 @@ import net.jcip.annotations.NotThreadSafe;
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:test.database.properties")
+@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/ExtraAttributes_Test_Data_Insert.sql"})
+@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 @NotThreadSafe
 public class NavBoxTest {
 
@@ -56,27 +46,12 @@ public class NavBoxTest {
     @Autowired
     private TestRestTemplate template;
 
-    @Value("classpath:sql/ExtraAttributes_Test_Data_Insert.sql")
-    private Resource extraAttributesDataInsert;
-
-    @Value("classpath:sql/database_cleanup.sql")
-    private Resource extraAttributesDataDelete;
-
-    @Autowired
-    private DataSource datasource;
-
     @Autowired  private BrandsRepository brandsRepository;
     @Autowired  private ShopsRepository shopsRepository;
     @Autowired  private OrganizationRepository organizationRepository;
 
     @Mock
     private NavboxController navboxController;
-
-    @Before
-    public void setup() {
-        headers = new HttpHeaders();
-//        headers.se.setContentType(MediaType.APPLICATION_JSON);
-    }
 
     @Test
     public void testBrands() {
@@ -88,9 +63,7 @@ public class NavBoxTest {
         brandsRepository.save(brand);
         long objectId = brand.getId();
 
-        ResponseEntity<String> response =  template.exchange(
-                "/navbox/brand/?brand_id=" + objectId,
-                HttpMethod.GET, new HttpEntity<>(headers), String.class);
+        ResponseEntity<String> response =  template.getForEntity("/navbox/brand/?brand_id=" + objectId, String.class);
         brandsRepository.delete(brand);
         JSONObject json = new JSONObject(response.getBody());
 
@@ -100,9 +73,7 @@ public class NavBoxTest {
         Assert.assertEquals("/some/banner/image.png", json.get("banner"));
 
         // test non-existent brand_id
-        response =  template.exchange(
-                "/navbox/brand/?brand_id=" + 1243124312341243L,
-                HttpMethod.GET, new HttpEntity<>(headers), String.class);
+        response =  template.getForEntity("/navbox/brand/?brand_id=" + 1243124312341243L, String.class);
         Assert.assertEquals(404, response.getStatusCode().value());
     }
 
@@ -112,8 +83,6 @@ public class NavBoxTest {
     
     
     @Test
-    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/ExtraAttributes_Test_Data_Insert.sql"})
-    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
     public void testShops() {
         // TODO: no support for opening times yet
         ShopsEntity shop = shopsRepository.findById(100001L).get();
@@ -128,26 +97,12 @@ public class NavBoxTest {
         
         long objectId = shop.getId();
 
-        ResponseEntity<String> orgResponse =  
-        		template.exchange(
-		                "/navbox/shops?org_id=" + orgId
-		                ,GET
-		                , new HttpEntity<>(headers)
-		                , String.class);
+        ResponseEntity<String> orgResponse = template.getForEntity("/navbox/shops?org_id=" + orgId, String.class);
         
-        ResponseEntity<String> shopResponse =  
-        		template.exchange(
-        				"/navbox/shop?shop_id=" + objectId
-        				, GET
-        				, new HttpEntity<>(headers)
-        				, String.class);
-
-//        shopsRepository.delete(shop);
-//        organizationRepository.delete(org);
+        ResponseEntity<String> shopResponse = template.getForEntity("/navbox/shop?shop_id=" + objectId, String.class);
 
         JSONArray jsona = new JSONArray(orgResponse.getBody());
         Assert.assertEquals(1, jsona.length());
-//        Assert.assertTrue(json.getBoolean("success"));
         JSONObject json = jsona.getJSONObject(0);
         Assert.assertEquals(objectId, json.getInt("id"));
         Assert.assertEquals("SomeTestShop", json.get("name"));
@@ -158,54 +113,17 @@ public class NavBoxTest {
         json = new JSONObject(shopResponse.getBody());
 
         // test non-existent org_id
-        orgResponse =  template.exchange(
-                "/navbox/shops?org_id=" + 1243124312341243L,
-                HttpMethod.GET, new HttpEntity<>(headers), String.class);
+        orgResponse =  template.getForEntity("/navbox/shops?org_id=" + 1243124312341243L, String.class);
+        assertEquals(404, orgResponse.getStatusCodeValue());
 
         // test non-existent shop_id
-        shopResponse =  template.exchange(
-                "/navbox/shop?shop_id=" + 1243124312341243L,
-                HttpMethod.GET, new HttpEntity<>(headers), String.class);
+        shopResponse =  template.getForEntity("/navbox/shop?shop_id=" + 1243124312341243L, String.class);
+        assertEquals(404, shopResponse.getStatusCodeValue());
     }
-    
-    
-    
+
 
     @Test
-    public void testExtraAttributes() {
-        prepareExtraAttributesTestData();
-        performExtraAttributesResponseTest();
-        RemoveExtraAttributesTestData();
-    }
-    
-    
-    
-
-    @Test
-    public void testGetOrgByName() {
-        RemoveExtraAttributesTestData();
-        prepareExtraAttributesTestData();
-        testOrganizationsGetByName();
-        RemoveExtraAttributesTestData();
-    }
-
-    private void prepareExtraAttributesTestData(){
-        try (Connection con = datasource.getConnection()) {
-            ScriptUtils.executeSqlScript(con, this.extraAttributesDataInsert);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void RemoveExtraAttributesTestData(){
-        try (Connection con = datasource.getConnection()) {
-            ScriptUtils.executeSqlScript(con, this.extraAttributesDataDelete);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void performExtraAttributesResponseTest(){
+    public void performExtraAttributesResponseTest(){
         //// testing extra attributes with no organization filter ////
         ResponseEntity<String> response = template.getForEntity("/navbox/attributes", String.class);
         System.out.println(response.getBody());
@@ -227,6 +145,8 @@ public class NavBoxTest {
         assertNull("there are no attributes with organization = 403",response.getBody());
     }
 
+
+    @Test
     public void testOrganizationsGetByName() {
         ResponseEntity<String> response = template.getForEntity("/navbox/organization?p_name=org-number-two", String.class);
         Assert.assertTrue(response.getStatusCodeValue() == 200);
@@ -242,6 +162,14 @@ public class NavBoxTest {
 
         response = template.getForEntity("/navbox/organization?p_name=2", String.class);
         Assert.assertTrue(response.getStatusCodeValue() == 404);
+    }
+
+
+    @Test
+    public void getCountries() {
+        ResponseEntity<Map> response = template.getForEntity("/navbox/countries", Map.class);
+        assertEquals(200, response.getStatusCodeValue());
+        assertTrue(response.getBody().get("UK") != null);
     }
 
 }
