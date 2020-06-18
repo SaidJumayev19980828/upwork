@@ -18,6 +18,7 @@ public class UpgAccount extends Account {
     protected String upgMerchantId;
     protected String upgTerminalId;
     protected String upgSecureKey;
+    protected String upgScriptUrl;
 //    protected String upgCallbackUrl;
 
     public void init(Properties props) {
@@ -27,6 +28,7 @@ public class UpgAccount extends Account {
         this.upgSecureKey = props.getProperty("upg.key");
 //        this.upgCallbackUrl = props.getProperty("upg.callback");
         super.accountId = "UPG:" +super.accountId;
+        this.upgScriptUrl = props.getProperty("upg.script_url");
 
     }
     

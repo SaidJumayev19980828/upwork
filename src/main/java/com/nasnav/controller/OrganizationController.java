@@ -359,7 +359,7 @@ public class OrganizationController {
                 list.append("\"script\": \"");
                 UpgAccount account = new UpgAccount();
                 account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir));
-                list.append("https://upgstaging.egyptianbanks.com:3006/js/Lightbox.js");
+                list.append(account.getUpgScriptUrl());
             }
             list.append("\"}");
         }
