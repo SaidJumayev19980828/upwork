@@ -19,8 +19,13 @@ INSERT INTO public.product_features(id, name, p_name, description, organization_
 
 
 --inserting shops
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (501, 'shop_1', 102, 99002);
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (502, 'shop_2', 101, 99001);
+INSERT INTO public.addresses(id, address_line_1) values(12300001, 'somewhere in london sewers...');
+INSERT INTO public.addresses(id, address_line_1) values(12300002, 'Graveyard...');
+
+INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id ) VALUES (501, 'shop_1', 102, 99002, 12300001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id ) VALUES (502, 'shop_2', 101, 99001, 12300002);
+
+
 
 --insering employees
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
@@ -42,8 +47,8 @@ INSERT INTO public.users(id, email,  user_name, authentication_token, organizati
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700001, '123', now(), null, 88);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '456', now(), null, 89);
 
-INSERT INTO public.addresses(id, address_line_1) values(1001, 'address line');
-INSERT INTO public.User_addresses values(1001, 88, 1001, false);
+INSERT INTO public.addresses(id, address_line_1) values(12300003, 'address line');
+INSERT INTO public.User_addresses(id, user_id ,address_id ,principal ) values(12300003, 88, 12300003, false);
 
 --inserting Roles
 insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);

@@ -33,8 +33,8 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
     @Query(value = "delete from user_Addresses where address_id = :addressId and user_id = :userId", nativeQuery = true)
     void unlinkAddressFromUser(@Param("addressId") Long addressId, @Param("userId") Long userId);
     
-    @Query("SELECT FROM AddressesEntity addr "
-    		+ " LEFT JOIN FETCH areasEntity area "
+    @Query("SELECT addr FROM AddressesEntity addr "
+    		+ " LEFT JOIN FETCH addr.areasEntity area "
     		+ " LEFT JOIN FETCH area.citiesEntity city "
     		+ " LEFT JOIN FETCH city.countriesEntity country"
     		+ " WHERE addr.id in :ids")

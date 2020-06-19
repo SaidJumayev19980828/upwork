@@ -27,11 +27,13 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.nasnav.NavBox;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 
 import net.jcip.annotations.NotThreadSafe;
 
+@SuppressWarnings("deprecation")
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
@@ -76,9 +78,11 @@ public class ShippingTest {
 	public void getShippingOffers() throws Exception {
         HttpEntity<?> request =  getHttpEntity("123");
         ResponseEntity<String> response = 
-        		template.exchange("/shipping/offers?customer_address=1001", GET, request, String.class);
+        		template.exchange("/shipping/offers?customer_address=12300003", GET, request, String.class);
         
         ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JSR310Module());
+        
         String body = ofNullable(response.getBody()).orElse("[]");
         List<ShippingOfferDTO> offers = mapper.readValue(body, new TypeReference<List<ShippingOfferDTO>>(){});
         
@@ -86,9 +90,9 @@ public class ShippingTest {
         assertEquals(1, offers.size());
         
         ShippingOfferDTO offer = offers.get(0);
-        assertEquals(2, offer.getShipments());
-        assertEquals(new BigDecimal("50"), offer.getTotal());
-        assertEquals(new BigDecimal("25"), offer.getShipments().get(0).getShippingFee());
+        assertEquals(2, offer.getShipments().size());
+        assertEquals(0 , offer.getTotal().compareTo(new BigDecimal("51.00")));
+        offer.getShipments().forEach(shipment -> assertEquals(0 , shipment.getShippingFee().compareTo(new BigDecimal("25.50"))));
 	}
 	
 	

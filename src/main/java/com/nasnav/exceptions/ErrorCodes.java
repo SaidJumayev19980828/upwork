@@ -34,10 +34,15 @@ public enum ErrorCodes {
 	,S$0001("Shop is linked to %s !")
 	,S$0002( "No Shop exists with ID: [%d]!")
 	,S$0003("No shops found!")
+	,S$0004("Shop with id[%d] has invalid address id[%d]")
 
 	,AREA$001("No Area exists with ID:[%d]!")
+	,ADDR$ADDR$0002("Address with id[%d] doesn't exists!")
 	
 	,O$CRT$0001("Cannot create a cart for an employee user!")
+	
+	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
+	
 	;
 	
 	@Getter
