@@ -146,6 +146,7 @@ public class CsvDataExportServiceImpl implements CsvDataExportService {
 		CsvWriterSettings settings = new CsvWriterSettings();
 		settings.setRowWriterProcessor(rowProcessor);		
 		settings.setMaxCharsPerColumn(-1);
+		settings.setQuoteAllFields(true);
 		return settings;
 	}
 	
