@@ -15,6 +15,7 @@ import java.util.List;
 
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.model.Parameter;
+import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.Shipment;
 import com.nasnav.shipping.model.ShipmentItems;
 import com.nasnav.shipping.model.ShipmentTracker;
@@ -23,6 +24,7 @@ import com.nasnav.shipping.model.ShippingEta;
 import com.nasnav.shipping.model.ShippingOffer;
 import com.nasnav.shipping.model.ShippingServiceInfo;
 
+import lombok.Getter;
 import reactor.core.publisher.Mono;
 
 public class TestShippingService implements ShippingService {
@@ -31,6 +33,9 @@ public class TestShippingService implements ShippingService {
 	private static final String ID = "TEST";
 	private static final String NAME = "Dummy shipping service";
 	public static final int BILL_FILE_SIZE = 100;
+	
+	@Getter
+	private List<ServiceParameter> serviceParameters;
 	
 
 	@Override
@@ -92,6 +97,15 @@ public class TestShippingService implements ShippingService {
 					collectingAndThen(
 						toList()
 						, stocks -> new Shipment(getFlatRate(), getFlatEta(), stocks)));
+	}
+
+
+
+
+
+	@Override
+	public void setServiceParameters(List<ServiceParameter> params) {
+		this.serviceParameters = params;
 	}
 	
 

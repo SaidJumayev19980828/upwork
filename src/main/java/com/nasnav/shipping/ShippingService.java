@@ -2,6 +2,7 @@ package com.nasnav.shipping;
 
 import java.util.List;
 
+import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.ShipmentTracker;
 import com.nasnav.shipping.model.ShippingDetails;
 import com.nasnav.shipping.model.ShippingOffer;
@@ -11,6 +12,8 @@ import reactor.core.publisher.Mono;
 
 public interface ShippingService {
 	ShippingServiceInfo getServiceInfo();
+	
+	void setServiceParameters(List<ServiceParameter> params);
 	
 	/**
 	 * @param item items to shipped are grouped by the pickup address, several pickup addresses can be provided, and 
