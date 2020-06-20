@@ -34,7 +34,6 @@ DELETE FROM public.product_variants WHERE product_id IN (SELECT id FROM public.p
 DELETE FROM public.products WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.roles WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.user_addresses WHERE user_id in (select id from public.users WHERE organization_id BETWEEN 99000 AND 99999);
-DELETE FROM public.addresses where id between 1001 and 1002;
 DELETE FROM public.areas where id between 100001 and 100005;
 DELETE FROM public.cities where id in (100001, 100002, 100003);
 DELETE FROM public.countries where id in (100001, 100002);
@@ -51,6 +50,7 @@ DELETE FROM public.shop_sections WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop_floors WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop360s WHERE shop_id in (select id from public.shops WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.addresses where id between 12300001 and 12300100;
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.tag_graph_edges 
 WHERE child_id IN (

@@ -95,4 +95,10 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 			" from StocksEntity s join ProductVariantsEntity v on s.productVariantsEntity = v join ProductEntity p on v.productEntity = p" +
 			" where p.id in :productIds group by p.id")
 	List<Prices> getProductsPrices(@Param("productIds") List<Long> productIds);
+	
+	
+	@Query("SELECT stock FROM StocksEntity stock "
+			+ " LEFT JOIN FETCH stock.shopsEntity shop "
+			+ " WHERE stock.id = :id")
+	Optional<StocksEntity> findWithAdditionalData(@Param("id")Long id); 
 }
