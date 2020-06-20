@@ -79,29 +79,29 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (26
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (27, 73, 6);
 
 
-INSERT INTO public.addresses(id, address_line_1) values(1001, 'address line');
-INSERT INTO public.addresses(id, address_line_1) values(1002, 'new address');
+INSERT INTO public.addresses(id, address_line_1) values(12300001, 'address line');
+INSERT INTO public.addresses(id, address_line_1) values(12300002, 'new address');
 
-INSERT INTO public.user_addresses VALUES (1001, 88, 1001, false);
-INSERT INTO public.user_addresses VALUES (1002, 88, 1002, false);
+INSERT INTO public.user_addresses VALUES (12300001, 88, 12300001, false);
+INSERT INTO public.user_addresses VALUES (12300002, 88, 12300002, false);
 
 --inserting orders
-insert into public.orders(id, address,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330033, 'address',88, now(), now(), 99001, 0, 502, 1001);
-insert into public.orders(id, address,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330037, 'address', 88, now(), now(), 99002, 0, 501, 1001);
-insert into public.orders(id, address,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330038, 'address', 90, now(), now(), 99002, 1, 501, 1001);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330039, 88, now(), now(), 99001, 3, 501, 1001);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330040, 88, now(), now(), 99001, 1, 503, 1001);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330041, 90, now(), now(), 99001, 1, 502, 1001);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330042, 88, now(), now(), 99001, 2, 502, 1001);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330043, 88, now(), now(), 99002, 3, 502, 1001);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330034, 89, now(), now(), 99003, 0, 504, 1001);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330035, 89, now(), now(), 99002, 0, 501, 1001);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330036, 90, now(), now(), 99003, 3, 504, 1001);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330044, 89, now(), now(), 99003, 1, 505, 1001);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330045, 89, now(), now(), 99001, 0, 502, 1001);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330046, 90, now(), now(), 99003, 1, 505, 1001);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330047, 89, now(), now(), 99001, 1, 502, 1001);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330048, 89, now(), now(), 99002, 0, 502, 1001);
+insert into public.orders(id, address,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330033, 'address',88, now(), now(), 99001, 0, 502, 12300001);
+insert into public.orders(id, address,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330037, 'address', 88, now(), now(), 99002, 0, 501, 12300001);
+insert into public.orders(id, address,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330038, 'address', 90, now(), now(), 99002, 1, 501, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330039, 88, now(), now(), 99001, 3, 501, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330040, 88, now(), now(), 99001, 1, 503, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330041, 90, now(), now(), 99001, 1, 502, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330042, 88, now(), now(), 99001, 2, 502, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330043, 88, now(), now(), 99002, 3, 502, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330034, 89, now(), now(), 99003, 0, 504, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330035, 89, now(), now(), 99002, 0, 501, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330036, 90, now(), now(), 99003, 3, 504, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330044, 89, now(), now(), 99003, 1, 505, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330045, 89, now(), now(), 99001, 0, 502, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330046, 90, now(), now(), 99003, 1, 505, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330047, 89, now(), now(), 99001, 1, 502, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, address_id) values(330048, 89, now(), now(), 99002, 0, 502, 12300001);
 
 
 

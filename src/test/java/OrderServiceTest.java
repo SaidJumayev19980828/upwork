@@ -6,13 +6,12 @@ import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.enumerations.PaymentStatus.PAID;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
-import static com.nasnav.test.commons.TestCommons.*;
 import static com.nasnav.test.commons.TestCommons.getHeaders;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -24,10 +23,12 @@ import static org.springframework.http.HttpStatus.OK;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
-import com.nasnav.dto.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -59,6 +60,10 @@ import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
+import com.nasnav.dto.BasketItem;
+import com.nasnav.dto.BasketItemDTO;
+import com.nasnav.dto.DetailedOrderRepObject;
+import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BasketsEntity;
@@ -72,7 +77,6 @@ import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.OrderService;
 import com.nasnav.service.UserService;
-import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
 
 import lombok.AllArgsConstructor;
@@ -302,7 +306,7 @@ public class OrderServiceTest {
 										   "{\"quantity\": 1,\"stock_id\": 602,\"unit\": \"kg\"}," +
 										   "{ \"quantity\": 1,\"stock_id\": 603,\"unit\": \"kg\"}," +
 										   "{ \"quantity\": 1,\"stock_id\": 604,\"unit\": \"kg\"}]," +
-										   "\"address_id\": 1001}";
+										   "\"address_id\": 12300001}";
 		ResponseEntity<OrderResponse> response = template.postForEntity("/order/create"
 						, getHttpEntity(requestBody, persistentUser.getAuthenticationToken()), OrderResponse.class);
 
@@ -1162,7 +1166,7 @@ public class OrderServiceTest {
 		JSONObject request = new JSONObject();
 		request.put("status", status.name());
 		request.put("basket", basket);
-		request.put("address_id", 1001);
+		request.put("address_id", 12300001);
 		return request;
 	}
 	
@@ -1224,12 +1228,6 @@ public class OrderServiceTest {
 	}
 	
 	
-	
-
-	private AddressRepObj createExpectedShippingAddr() {
-		AddressRepObj addr = new AddressRepObj();
-		return addr;
-	}
 	
 	
 	
@@ -1763,7 +1761,7 @@ public class OrderServiceTest {
 		JSONArray basket = createBasket( new Item(601L, 1));
 
 		String body = json().put("order_id",330033)
-							.put("address_id", 1002)
+							.put("address_id", 12300002)
 							.put("basket", basket)
 							.put("status", "NEW").toString();
 

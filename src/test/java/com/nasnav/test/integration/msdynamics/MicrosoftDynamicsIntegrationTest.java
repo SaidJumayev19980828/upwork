@@ -583,7 +583,7 @@ public class MicrosoftDynamicsIntegrationTest {
 		JSONObject request = new JSONObject();
 		request.put("status", status.name());
 		request.put("basket", basket);
-		request.put("address_id", 1001);
+		request.put("address_id", 12300001);
 		return request;
 	}
 	
@@ -643,7 +643,7 @@ public class MicrosoftDynamicsIntegrationTest {
 		user.setPhoneNumber("000111444");
 		user = userRepo.saveAndFlush(user);
 
-		user.insertUserAddress(addressRepo.findById(1001L).get());
+		user.insertUserAddress(addressRepo.findById(12300001L).get());
 		userRepo.saveAndFlush(user);
 
 		return email;

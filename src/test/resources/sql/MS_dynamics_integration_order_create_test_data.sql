@@ -131,6 +131,6 @@ insert into public.orders(id,user_id,created_at, updated_at, organization_id,sta
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330033, 60003, 5, 600.0, 1);
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330034, 60002, 5, 600.0, 1);
 
-INSERT INTO public.addresses(id, address_line_1) values(1001, '12 Abbas el-Akkad, Nasr City, Cairo, Egypt ');
+INSERT INTO public.addresses(id, address_line_1) values(12300001, '12 Abbas el-Akkad, Nasr City, Cairo, Egypt ');
 
-INSERT INTO public.User_addresses values(1001, 88, 1001, false);
+INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);

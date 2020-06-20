@@ -48,11 +48,11 @@ INSERT INTO public.integration_mapping_type (id, type_name) VALUES(67006, 'PRODU
 INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(6601, 'INTEGRATION_MODULE', TRUE);
 INSERT INTO public.integration_param_type(id, type_name, is_mandatory)VALUES(6602, 'MAX_REQUESTS_PER_SECOND', TRUE);
 
-INSERT INTO public.countries values(1001, 'E');
+INSERT INTO public.countries values(100001, 'E');
 
-INSERT INTO public.cities values(1001, 1001, 'C');
+INSERT INTO public.cities values(100001, 100001, 'C');
 
-INSERT INTO public.areas(id, city_id, "name") values(1001, 1001, 'new cairo');
+INSERT INTO public.areas(id, city_id, "name") values(100001, 100001, 'new cairo');
 
-INSERT INTO public.addresses(id, address_line_1) values(1001, 'address line');
+INSERT INTO public.addresses(id, address_line_1) values(12300001, 'address line');
 
