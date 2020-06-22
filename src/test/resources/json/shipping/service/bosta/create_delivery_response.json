@@ -1,0 +1,9 @@
+{
+    "_id": "8xY8LmHtJ",
+    "trackingNumber": "6272455",
+    "message": "Delivery created successfully!",
+    "state": {
+        "code": 10,
+        "value": "pending"
+    }
+}
