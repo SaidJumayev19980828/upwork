@@ -10,6 +10,7 @@ import lombok.Data;
 public class ShippingServiceInfo {
 	private String id;
 	private String name;
+	private boolean publicService;
 	private List<Parameter> serviceParams;
 	private List<Parameter> additionalDataParams; 
 }

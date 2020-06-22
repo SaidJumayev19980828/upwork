@@ -25,6 +25,7 @@ import com.nasnav.shipping.model.ShippingOffer;
 import com.nasnav.shipping.model.ShippingServiceInfo;
 
 import lombok.Getter;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public class TestShippingService implements ShippingService {
@@ -32,7 +33,8 @@ public class TestShippingService implements ShippingService {
 	
 	private static final String ID = "TEST";
 	private static final String NAME = "Dummy shipping service";
-	public static final int BILL_FILE_SIZE = 100;
+	private static final String BILL_FILE= "NOT EMPTY";
+	public static final int BILL_FILE_SIZE = BILL_FILE.length();
 	
 	@Getter
 	private List<ServiceParameter> serviceParameters;
@@ -42,7 +44,7 @@ public class TestShippingService implements ShippingService {
 	public ShippingServiceInfo getServiceInfo() {
 		List<Parameter> serviceParamerters = asList( new Parameter("Hot Line", STRING));
 		List<Parameter> additionalData = asList(new Parameter("Shop Id", LONG));
-		return new ShippingServiceInfo(ID, NAME, serviceParamerters, additionalData);
+		return new ShippingServiceInfo(ID, NAME, false, serviceParamerters, additionalData);
 	}
 
 	
@@ -65,12 +67,12 @@ public class TestShippingService implements ShippingService {
 	
 	
 	@Override
-	public Mono<ShipmentTracker> requestShipment(List<ShippingDetails> items) {
+	public Flux<ShipmentTracker> requestShipment(List<ShippingDetails> items) {
 		ShipmentTracker tracker = new ShipmentTracker();
 		tracker.setShipmentExternalId(randomUUID().toString());
 		tracker.setTracker(randomUUID().toString());
-		tracker.setAirwayBillFile(new Byte[BILL_FILE_SIZE]);
-		return Mono.just(tracker);
+		tracker.setAirwayBillFile("NOT EMPTY");
+		return Flux.fromIterable(asList(tracker));
 	}
 	
 	

@@ -186,4 +186,17 @@ public class StringUtils extends org.springframework.util.StringUtils{
 				.filter(Objects::nonNull)
 				.anyMatch(prefix -> str.toLowerCase().startsWith(prefix.toLowerCase()));
 	}
+	
+	
+	
+	public static Long parseLongWithDefault(String string, Long defaultVal) {
+		return ofNullable(string)
+				.map(str -> {
+					try{ 
+						return Long.parseLong(str);
+						}catch(Throwable t) {
+							return defaultVal;}
+					})
+				.orElse(defaultVal);
+	}
 }

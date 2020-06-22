@@ -47,7 +47,11 @@ public enum ErrorCodes {
 	,O$CRT$0002("Quantity must be greater than equal zero!")
 	
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
-	
+	,SHP$SRV$0001("Invalid service parameter [%s]!")
+	,SHP$SRV$0002("Missing Service parameters for shipping service[%s]!")
+	,SHP$SRV$0003("Missing Service parameter with name[%s] for shipping service[%s]!")
+	,SHP$SRV$0004("Failed to get valid response from external shipping service [%s]! returned response is[%s]")
+	,SHP$SRV$0005("Shipping service [%s] doesnot support city with id[%d]!")
 	;
 	
 	@Getter

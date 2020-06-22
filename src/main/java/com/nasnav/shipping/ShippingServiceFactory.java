@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableMap;
 import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.ShippingServiceInfo;
 import com.nasnav.shipping.services.TestShippingService;
+import com.nasnav.shipping.services.bosta.BostaLevisShippingService;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,7 +37,8 @@ public final class ShippingServiceFactory {
 	 * add new shipping services here
 	 * */
 	private static final List<Class<? extends ShippingService>> activeShippingServices = 
-			asList( TestShippingService.class);
+			asList( TestShippingService.class
+					,BostaLevisShippingService.class);
 	
 	
 	private static Map<String, Class<? extends ShippingService>> services ;
