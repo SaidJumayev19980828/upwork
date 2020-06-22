@@ -52,6 +52,9 @@ public enum ErrorCodes {
 	,SHP$SRV$0003("Missing Service parameter with name[%s] for shipping service[%s]!")
 	,SHP$SRV$0004("Failed to get valid response from external shipping service [%s]! returned response is[%s]")
 	,SHP$SRV$0005("Shipping service [%s] doesnot support city with id[%d]!")
+	,SHP$SRV$0006("No Shipping service exits with id[%s]!")
+	,SHP$SRV$0007("Invalid Shipping service parameters structure [%s]!")
+	,SHP$SRV$0008("The given value [%s] for Service parameter [%s] of shipping service [%s] has invlaid type!")
 	;
 	
 	@Getter

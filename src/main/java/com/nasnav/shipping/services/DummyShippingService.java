@@ -2,6 +2,7 @@ package com.nasnav.shipping.services;
 
 import static com.nasnav.shipping.model.ParameterType.LONG;
 import static com.nasnav.shipping.model.ParameterType.STRING;
+import static com.nasnav.shipping.model.ParameterType.STRING_ARRAY;
 import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -28,10 +29,10 @@ import lombok.Getter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public class TestShippingService implements ShippingService {
+public class DummyShippingService implements ShippingService {
 	
 	
-	private static final String ID = "TEST";
+	public static final String ID = "TEST";
 	private static final String NAME = "Dummy shipping service";
 	private static final String BILL_FILE= "NOT EMPTY";
 	public static final int BILL_FILE_SIZE = BILL_FILE.length();
@@ -42,7 +43,8 @@ public class TestShippingService implements ShippingService {
 
 	@Override
 	public ShippingServiceInfo getServiceInfo() {
-		List<Parameter> serviceParamerters = asList( new Parameter("Hot Line", STRING));
+		List<Parameter> serviceParamerters = 
+				asList( new Parameter("Hot Line", STRING), new Parameter("Shops", STRING_ARRAY));
 		List<Parameter> additionalData = asList(new Parameter("Shop Id", LONG));
 		return new ShippingServiceInfo(ID, NAME, false, serviceParamerters, additionalData);
 	}

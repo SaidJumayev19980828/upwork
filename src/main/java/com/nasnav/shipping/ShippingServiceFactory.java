@@ -3,6 +3,7 @@ package com.nasnav.shipping;
 import static java.util.Arrays.asList;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 import java.lang.reflect.InvocationTargetException;
@@ -17,7 +18,7 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.ImmutableMap;
 import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.ShippingServiceInfo;
-import com.nasnav.shipping.services.TestShippingService;
+import com.nasnav.shipping.services.DummyShippingService;
 import com.nasnav.shipping.services.bosta.BostaLevisShippingService;
 
 import lombok.AllArgsConstructor;
@@ -37,7 +38,7 @@ public final class ShippingServiceFactory {
 	 * add new shipping services here
 	 * */
 	private static final List<Class<? extends ShippingService>> activeShippingServices = 
-			asList( TestShippingService.class
+			asList( DummyShippingService.class
 					,BostaLevisShippingService.class);
 	
 	
@@ -105,6 +106,39 @@ public final class ShippingServiceFactory {
 			logger.error(e,e);
 			return empty();
 		}
+	}
+	
+	
+	
+	public static List<ShippingServiceInfo> getAllServices(){
+		return activeShippingServices
+				.stream()
+				.map(ShippingServiceFactory::createShippingServiceInstance)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.map(ShippingService::getServiceInfo)
+				.collect(toList());
+	} 
+	
+	
+	
+	
+	public static List<ShippingServiceInfo> getAllPublicServices(){
+		return getAllServices()
+				.stream()
+				.filter(ShippingServiceInfo::isPublicService)
+				.collect(toList());
+	} 
+	
+	
+	
+	public static Optional<ShippingServiceInfo> getServiceInfo(String serviceId) {
+		return ofNullable(serviceId)
+				.map(getInstance().services::get)
+				.map(ShippingServiceFactory::createShippingServiceInstance)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.map(ShippingService::getServiceInfo);
 	}
 }
 

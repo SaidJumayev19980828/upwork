@@ -12,6 +12,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface ShippingService {
+	
 	ShippingServiceInfo getServiceInfo();
 	
 	void setServiceParameters(List<ServiceParameter> params);
