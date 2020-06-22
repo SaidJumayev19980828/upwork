@@ -1,23 +1,15 @@
 package com.nasnav.persistence;
 
-import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.Map;
-import java.util.Set;
-
-import javax.persistence.*;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.ToString;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrganizationRepresentationObject;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.json.JSONObject;
+
+import javax.persistence.*;
+import java.util.Set;
 
 @Entity
 @Table(name = "organizations")

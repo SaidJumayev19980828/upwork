@@ -9,7 +9,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.dto.request.cart.CartCheckoutAdditionalData;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,6 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -28,6 +29,9 @@ import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.response.ThemeClassResponse;
 
 import net.jcip.annotations.NotThreadSafe;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -77,7 +81,7 @@ public class CartTest {
         		template.exchange("/cart", GET, request, Cart.class);
 
         assertEquals(OK, response.getStatusCode());
-        assertEquals(2, response.getBody().getItems().size());
+        assertEquals(3, response.getBody().getItems().size());
 	}
 
 
@@ -200,5 +204,99 @@ public class CartTest {
 		item.put("quantity", 1);
 
 		return item;
+	}
+
+
+	@Test
+	public void checkoutCartSuccess() {
+		// remove first item with 0 quantity
+		cartItemRepo.deleteByQuantityAndUser_Id(0, 88L);
+
+		JSONObject body = createCartCheckoutBody();
+
+		HttpEntity request = getHttpEntity(body.toString(), "123");
+		ResponseEntity<List> res = template.postForEntity("/cart/checkout", request, List.class);
+		assertEquals(200, res.getStatusCodeValue());
+		assertTrue(!res.getBody().isEmpty());
+	}
+
+
+	@Test
+	public void checkoutCartNoAuthZ() {
+		HttpEntity<?> request =  getHttpEntity("not_found");
+		ResponseEntity<String> response = template.postForEntity("/cart/checkout", request, String.class);
+
+		assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+
+
+	@Test
+	public void checkoutCartNoAuthN() {
+		HttpEntity<?> request =  getHttpEntity("101112");
+		ResponseEntity<String> response = template.postForEntity("/cart/checkout", request, String.class);
+
+		assertEquals(FORBIDDEN, response.getStatusCode());
+	}
+
+
+	@Test
+	public void checkoutCartNoAddressId() {
+		JSONObject body = createCartCheckoutBody();
+		body.put("customer_address", -1);
+
+		HttpEntity request = getHttpEntity(body.toString(), "123");
+		ResponseEntity<String> response = template.postForEntity("/cart/checkout", request, String.class);
+		assertEquals(406, response.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void checkoutCartInvalidAddressId() {
+		JSONObject body = new JSONObject();
+		body.put("shipping_service_id", "Bosta");
+
+		HttpEntity request = getHttpEntity(body.toString(), "123");
+		ResponseEntity<String> response = template.postForEntity("/cart/checkout", request, String.class);
+		assertEquals(406, response.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void checkoutCartDifferentCurrencies() {
+		//first add item with different currency
+		JSONObject item = createCartItem();
+		item.put("stock_id", 606);
+		HttpEntity<?> request = getHttpEntity(item.toString(), "123");
+		ResponseEntity<Cart> response = template.exchange("/cart/item", POST, request, Cart.class);
+		assertEquals(200, response.getStatusCodeValue());
+
+		//then try to checkout cart
+		JSONObject body = createCartCheckoutBody();
+
+		request = getHttpEntity(body.toString(), "123");
+		ResponseEntity<String> res = template.postForEntity("/cart/checkout", request, String.class);
+		assertEquals(406, res.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void checkoutCartZeroStock() {
+		JSONObject body = createCartCheckoutBody();
+
+		HttpEntity<?> request = getHttpEntity(body.toString(), "123");
+		ResponseEntity<String> res = template.postForEntity("/cart/checkout", request, String.class);
+		assertEquals(406, res.getStatusCodeValue());
+	}
+
+
+	private JSONObject createCartCheckoutBody() {
+		JSONObject body = new JSONObject();
+		List<CartCheckoutAdditionalData> additionalData = new ArrayList<CartCheckoutAdditionalData>();
+		additionalData.add(new CartCheckoutAdditionalData());
+		body.put("customer_address", 12300001);
+		body.put("shipping_service_id", "Bosta");
+		body.put("additional_data", additionalData);
+
+		return body;
 	}
 }

@@ -1,10 +1,8 @@
 package com.nasnav.service;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.OrderJsonDto;
+import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.TransactionCurrency;
@@ -13,6 +11,9 @@ import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 
 public interface OrderService {
@@ -61,4 +62,6 @@ public interface OrderService {
 	public Cart addCartItem(CartItem item);
 
 	public Cart deleteCartItem(Long itemId);
+
+	public List<DetailedOrderRepObject> checkoutCart(CartCheckoutDTO dto) throws BusinessException;
 }

@@ -69,7 +69,10 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.dao.*;
+import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.persistence.*;
+import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
@@ -78,15 +81,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.BasketItemDTO;
@@ -154,7 +150,12 @@ public class OrderServiceImpl implements OrderService {
 	
 	@Autowired
 	private ProductService productService;
-	
+
+	@Autowired
+	private MetaOrderRepository metaOrderRepo;
+
+	/*@Autowired
+	private ShippingService shippingService;*/
 	
 	private Map<OrderStatus, Set<OrderStatus>> nextOrderStatusSet;
 	private Set<OrderStatus> orderStatusForCustomers;
@@ -622,16 +623,10 @@ public class OrderServiceImpl implements OrderService {
 		AddressesEntity address = null;
 		Long userId = securityService.getCurrentUser().getId();
 		if (order.getAddressId() != null) {
-			Optional<AddressesEntity> optionalAddress = addressRepo.findByIdAndUserId(order.getAddressId(), userId);
-			if (optionalAddress.isPresent()) {
-				address = optionalAddress.get();
-			} else {
-				throw new BusinessException("address_id is invalid!", "INVALID_PARAM: address_id", NOT_ACCEPTABLE);
-			}
+			address = ofNullable(addressRepo.findByIdAndUserId(order.getAddressId(), userId)).
+					orElseThrow(() -> new BusinessException("address_id is invalid!", "INVALID_PARAM: address_id", NOT_ACCEPTABLE));
 		} else {
-			Optional<AddressesEntity> optionalAddress = addressRepo.findOneByUserId(userId);
-			if (optionalAddress.isPresent())
-				address = optionalAddress.get();
+			Optional<AddressesEntity> optionalAddress = ofNullable(addressRepo.findOneByUserId(userId)).orElse(null);
 		}
 		return address;
 	}
@@ -1266,7 +1261,7 @@ public class OrderServiceImpl implements OrderService {
 	public DetailedOrderRepObject getCurrentOrder(Integer detailsLevel) throws BusinessException {
 		BaseUserEntity user = securityService.getCurrentUser();
 		
-		OrdersEntity entity = ordersRepository.findFirstByUserIdAndStatusOrderByUpdateDateDesc( user.getId(), OrderStatus.NEW.getValue() )
+		OrdersEntity entity = ordersRepository.findFirstByUserIdAndStatusOrderByUpdateDateDesc( user.getId(), NEW.getValue() )
 											 .orElseThrow(() -> getNoCurrentOrderFoundException() );
 		
 		return getDetailedOrderInfo(entity, ORDER_FULL_DETAILS_LEVEL);
@@ -1474,12 +1469,15 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 
-		CartItemEntity cartItem = new CartItemEntity();
-		cartItem.setUser((UserEntity) user);
 		Optional<StocksEntity> stock = stockRepository.findById(ofNullable(item.getStockId()).orElse(-1L));
 
 		validateCartItem(stock, item);
 
+
+		CartItemEntity cartItem = ofNullable(cartItemRepo.findByStock_IdAndUser_Id(stock.get().getId(), user.getId()))
+								  .orElse(new CartItemEntity());
+
+		cartItem.setUser((UserEntity) user);
 		cartItem.setStock(stock.get());
 		cartItem.setQuantity(item.getQuantity());
 		cartItem.setCoverImage(item.getCoverImg());
@@ -1512,6 +1510,11 @@ public class OrderServiceImpl implements OrderService {
 		if (item.getQuantity() == null || item.getQuantity() <= 0) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0002);
 		}
+
+		if (item.getQuantity() > stock.get().getQuantity()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0003);
+		}
+
 	}
 
 	private List<CartItem> toCartItemsDto(List<CartItemData> cartItems) {
@@ -1553,4 +1556,131 @@ public class OrderServiceImpl implements OrderService {
 	private Map<String, String> parseVariantFeatures(String featureSpec) {
 		return productService.parseVariantFeatures(featureSpec);
 	}
+
+
+
+	@Override
+	@Transactional
+	public List<DetailedOrderRepObject> checkoutCart(CartCheckoutDTO dto) throws BusinessException {
+		BaseUserEntity user = securityService.getCurrentUser();
+		if(user instanceof EmployeeUserEntity) {
+			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+		}
+
+		validateCartCheckoutDTO(dto);
+
+		AddressesEntity userAddress = ofNullable(addressRepo.findByIdAndUserId(dto.getAddressId(), user.getId()))
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, dto.getAddressId()));
+
+		List<CartCheckoutData> userCartItems = cartItemRepo.getCheckoutCartByUser_Id(user.getId());
+
+		if (userCartItems.isEmpty()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0001);
+		}
+
+		validateCartCheckoutItem(userCartItems);
+
+		Map<Long, List<CartCheckoutData>> shopCartsMap =
+				userCartItems
+				.stream()
+				.collect(groupingBy(CartCheckoutData::getShopId));
+
+
+
+		createOrder(shopCartsMap, (UserEntity) user, userAddress, dto.getServiceId());
+
+		cartItemRepo.deleteByUser_Id(user.getId());
+
+		return getOrdersList(new OrderSearchParam());
+	}
+
+
+	private void validateCartCheckoutDTO(CartCheckoutDTO dto){
+		if (dto.getAddressId() == null) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0001);
+		}
+		if (dto.getServiceId() == null) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0002);
+		}
+		if (dto.getAdditionalData() == null || dto.getAdditionalData().isEmpty()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0003);
+		}
+		/*
+		TODO validate additional data
+		ShippingServiceInfo info = shippingService.getServiceInfo();
+		info.getAdditionalDataParams()
+		if (dto.getAdditionalData().get(0).getName() == null) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0003);
+		}*/
+
+	}
+
+
+	private void createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, UserEntity user,
+							 AddressesEntity address, String serviceId) {
+		OrganizationEntity org = securityService.getCurrentUserOrganization();
+
+		MetaOrderEntity order = new MetaOrderEntity();
+		order.setOrganization(org);
+		order.setUser(user);
+		order = metaOrderRepo.save(order);
+		MetaOrderEntity finalOrder = order;
+
+		shopCartsMap.entrySet().stream().forEach(e -> createSubOrders(finalOrder, e.getValue(), address, serviceId));
+		//TODO set shipping service
+
+	}
+
+
+	private void createSubOrders(MetaOrderEntity order, List<CartCheckoutData> subOrders,
+								 AddressesEntity shippingAddress, String serviceId) {
+
+		ShopsEntity shop = shopsRepo.findById(subOrders.get(0).getShopId()).get();
+		OrdersEntity subOrder = new OrdersEntity();
+		subOrder.setUserId(order.getUser().getId());
+		subOrder.setShopsEntity(shop);
+		subOrder.setOrganizationEntity(order.getOrganization());
+		subOrder.setMetaOrder(order);
+		subOrder.setAddressEntity(shippingAddress);
+		subOrder.setStatus(CLIENT_CONFIRMED.getValue());
+
+		BigDecimal totalAmount = ZERO;
+		subOrder.setAmount(totalAmount);
+
+		subOrder = ordersRepository.save(subOrder);
+
+		ShipmentEntity shipment = new ShipmentEntity();
+		shipment.setSubOrder(subOrder);
+		shipment.setStatus(0);//TODO ENUM ?
+		shipment.setShippingServiceId(serviceId);
+
+		for(CartCheckoutData data : subOrders) {
+			BasketsEntity basket = new BasketsEntity();
+			basket.setStocksEntity(stockRepository.getOne(data.getStockId()));
+			basket.setPrice(new BigDecimal(data.getQuantity()).multiply(data.getPrice()));
+			basket.setQuantity(new BigDecimal(data.getQuantity()));
+			basket.setCurrency(data.getCurrency());
+			basket.setOrdersEntity(subOrder);
+
+			basketRepository.save(basket);
+			totalAmount = totalAmount.add(basket.getPrice());
+		}
+		subOrder.setAmount(totalAmount);
+		ordersRepository.save(subOrder);
+	}
+
+	private void validateCartCheckoutItem(List<CartCheckoutData> userCartItems) {
+		Integer currency = userCartItems.get(0).getCurrency();
+		for(CartCheckoutData item : userCartItems) {
+			if (item.getQuantity() == null || item.getQuantity() <= 0) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0002);
+			}
+
+			if (!item.getCurrency().equals(currency)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0004);
+			}
+			//TODO validate shipping data
+		}
+	}
+
 }

@@ -80,7 +80,8 @@ insert into public.product_variants(id, "name" , product_id ) values(310005, 'va
 insert into public.product_variants(id, "name" , product_id ) values(310006, 'var' 	, 1006);
 insert into public.product_variants(id, "name" , product_id ) values(310007, 'var' 	, 1007);
 insert into public.product_variants(id, "name" , product_id ) values(310008, 'var' 	, 1008);
-
+insert into public.product_variants(id, "name" , product_id ) values(310009, 'var' 	, 1008);
+insert into public.product_variants(id, "name" , product_id ) values(310010, 'var' 	, 1008);
 
 
 --inserting stocks
@@ -88,7 +89,8 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(602, 501, 8, 99001, 1200.0, 310002);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(603, 501, 4, 99002, 200.00, 310003);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(604, 502, 6, 99001, 700.00, 310004);
-
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(605, 502, 0, 99001, 700.00, 310009, 0);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(606, 502, 1, 99001, 700.00, 310010, 1);
 
 
 --INSERT dummy images
@@ -112,5 +114,9 @@ INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 -- insert cart
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(602, '99001/img2.jpg', '{"Color":"Blue"}', 2, 88);
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(604, '99001/cover_img.jpg', '{"Color":"Yellow"}', 4, 88);
+INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(604, '99001/cover_img.jpg', '{"Color":"Yellow"}', 0, 88);
 
 
+INSERT INTO public.addresses(id, address_line_1) values(12300001, 'address line');
+
+INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);

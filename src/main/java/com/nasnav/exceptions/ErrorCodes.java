@@ -41,10 +41,17 @@ public enum ErrorCodes {
 	,S$360$0001("No 360 shop found!")
 
 	,AREA$001("No Area exists with ID:[%d]!")
+	,ADDR$ADDR$0001("Must provide customer address!")
 	,ADDR$ADDR$0002("Address with id[%d] doesn't exists!")
 	
 	,O$CRT$0001("Cannot create a cart for an employee user!")
 	,O$CRT$0002("Quantity must be greater than equal zero!")
+	,O$CRT$0003("Quantity is greater than available stock!")
+	,O$CRT$0004("Currencies of items are different!")
+
+	,O$CHK$0001("Must have at least one item in cart!")
+	,O$CHK$0002("Must provide shipping service provider")
+	,O$CHK$0003("Must provide shipping service additional data")
 	
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
 	

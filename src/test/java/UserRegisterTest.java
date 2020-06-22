@@ -1111,7 +1111,7 @@ public class UserRegisterTest {
 		response = template.postForEntity("/user/update", request, String.class);
 
 		assertEquals(200, response.getStatusCodeValue());
-		assertFalse(addressRepo.findByIdAndUserId(addressesEntity.getId(), 88001L).isPresent());
+		assertFalse(addressRepo.findByIdAndUserId(addressesEntity.getId(), 88001L) != null);
 		addressRepo.delete(addressesEntity);
 
 	}

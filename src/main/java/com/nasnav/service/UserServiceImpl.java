@@ -308,12 +308,10 @@ public class UserServiceImpl implements UserService {
 				AddressDTO addressDTO = userJson.getAddress();
 				Set<AddressesEntity> userAddresses = addressRepo.findByUserId(userEntity.getId());
 				if (addressDTO.getId() != null) {
-					Optional<AddressesEntity> oldAddress = addressRepo.findByIdAndUserId(addressDTO.getId(), userEntity.getId());
-					if (!oldAddress.isPresent()) {
-						throw new BusinessException("Provided address_id doesn't match any existing address!",
-								"INVALID_PARAM: address_id", HttpStatus.NOT_ACCEPTABLE);
-					}
-					userAddresses.remove(oldAddress.get());
+					AddressesEntity oldAddress = ofNullable(addressRepo.findByIdAndUserId(addressDTO.getId(), userEntity.getId()))
+							.orElseThrow(() -> new BusinessException("Provided address_id doesn't match any existing address!",
+									"INVALID_PARAM: address_id", HttpStatus.NOT_ACCEPTABLE));
+					userAddresses.remove(oldAddress);
 					addressRepo.unlinkAddressFromUser(addressDTO.getId(), userEntity.getId());
 				}
 				BeanUtils.copyProperties(userJson.getAddress(), address, new String[] {"id"});

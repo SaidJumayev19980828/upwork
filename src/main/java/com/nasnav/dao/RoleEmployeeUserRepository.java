@@ -19,6 +19,6 @@ public interface RoleEmployeeUserRepository extends JpaRepository<RoleEmployeeUs
     @Transactional
     void deleteByEmployeeUserId(Long employeeUserId);
 
-    @Query("select roleEmp.employeeUserId from RoleEmployeeUser roleEmp where roleEmp.roleId in (select id from Roles roles where roles.name in :rolesNames)")
+    @Query("select roleEmp.employeeUserId from RoleEmployeeUser roleEmp where roleEmp.roleId in (select id from Role roles where roles.name in :rolesNames)")
     List<Long> findEmployeeUsersIds(@Param("rolesNames") List<String> rolesNames);
 }
