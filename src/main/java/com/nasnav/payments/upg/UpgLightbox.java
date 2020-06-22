@@ -95,10 +95,10 @@ public class UpgLightbox {
 		OrderService.OrderValue orderValue = Tools.getTotalOrderValue(orders, orderService, upgLogger);
 
 		JSONObject result = new JSONObject();
-		result.put("PaymentMethodFromLightBox", 0);
+		result.put("PaymentMethodFromLightBox", "null");
 //		result.put("Currency", Integer.toString(818));     // only EGP support right now
 		result.put("AmountTrxn", orderValue.amount.multiply(new BigDecimal(100)).intValue()); // amount in cents
-//		result.put("OrderId", Long.toString(order.getId()));  // Gateway fails on sending orderId
+//		result.put("OrderId", "");  // Gateway fails on sending orderId
 		result.put("MID", account.getUpgMerchantId());
 		result.put("TID", account.getUpgTerminalId());
 		result.put("TrxDateTime", dateFormat.format(now));
@@ -106,10 +106,11 @@ public class UpgLightbox {
 //		result.put("ReturnUrl", "/");
 
 		JSONObject chash = new JSONObject();
-		chash.put("Amount", orderValue.amount.multiply(new BigDecimal(100)).intValue()); // amount in cents
-		chash.put("MerchantId", account.getUpgMerchantId());
-		chash.put("TerminalId", account.getUpgTerminalId());
-		chash.put("DateTimeLocalTrxn", dateFormat.format(now));
+		chash.put("Amount", result.getBigDecimal("AmountTrxn")); // amount in cents
+		chash.put("MerchantId", result.getString("MID"));
+		chash.put("MerchantReference", result.getString("MerchantReference"));      // This is used by the new upgstaglightbox.egyptianbanks.com
+		chash.put("TerminalId", result.getString("TID"));
+		chash.put("DateTimeLocalTrxn", result.getString("TrxDateTime"));
 
 		result.put("SecureHash", calculateHash(chash, account.getUpgSecureKey()));
 		return result;
@@ -118,7 +119,7 @@ public class UpgLightbox {
 	public static PaymentEntity verifyPayment(JSONObject json, ArrayList<OrdersEntity> orders, Logger upgLogger, UpgAccount account, OrderService orderService) throws BusinessException {
 //System.out.println("Received: " + json.toString(2));
 		JSONObject verifier = new JSONObject();
-		for (String param: new String[] {"TxnDate", "Amount", "Currency", "PaidThrough"}) {
+		for (String param: new String[] {"Amount", "Currency", "MerchantReference", "PaidThrough", "TxnDate"}) {
 			verifier.put(param, json.getString(param));
 		}
 		verifier.put("MerchantId", account.getUpgMerchantId());
@@ -128,7 +129,6 @@ public class UpgLightbox {
 			upgLogger.error("Calculated hash {} does not match the received one {}", hash, json.get("SecureHash"));
 			return null;
 		}
-//System.out.println("received hash: " + json.get("SecureHash") + "\ncalculated: " + hash);
 
 		long paidAmount = 0;
 		try {
@@ -136,17 +136,7 @@ public class UpgLightbox {
 		} catch (Exception ex) {;}
 		StringBuilder orderList = new StringBuilder();
 		OrderService.OrderValue orderValue = Tools.getTotalOrderValue(orders, orderService, upgLogger);
-/*
-		for (OrdersEntity order : orders) {
 
-			orderAmount += order.getAmount().longValue() * 100;
-System.out.println("Order: " + order.getId() + " : " + order.getAmount() + " sum: " + orderAmount);
-			if (orderList.length() > 0) {
-				orderList.append(',');
-			}
-			orderList.append(order.getId());
-		}
-*/
 		if (orderValue.amount.movePointRight(2).longValue() != paidAmount) {
 			upgLogger.error("Paid amount: {} does not equal order {} amount: {}", json.getString("Amount"), orderList.toString(), orderValue.amount.movePointRight(2));
 			return null;
@@ -176,7 +166,7 @@ System.out.println("Order: " + order.getId() + " : " + order.getAmount() + " sum
 			args.append('&');
 		}
 		String concat = args.toString().substring(0, args.length() - 1);
-//System.out.println("CONCAT: " + concat);
+//		System.out.println("CONCAT: " + concat);
 		try {
 			byte[] keyBytes = Hex.decodeHex(hashKey);
 			Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
