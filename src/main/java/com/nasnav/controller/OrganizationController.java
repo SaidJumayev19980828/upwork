@@ -10,6 +10,7 @@ import javax.validation.Valid;
 import com.nasnav.AppConfig;
 import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.dto.*;
+import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
 import com.nasnav.payments.upg.UpgAccount;
@@ -44,6 +45,7 @@ import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.TagResponse;
 import com.nasnav.service.CategoryService;
 import com.nasnav.service.OrganizationService;
+import com.nasnav.service.ShippingManagementService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -72,6 +74,9 @@ public class OrganizationController {
 
     @Autowired
     private BrandService brandService;
+    
+    @Autowired
+    private ShippingManagementService shippingMngService;
 
     private Logger classLogger = LogManager.getLogger(OrganizationController.class);
 
@@ -366,6 +371,26 @@ public class OrganizationController {
         list.append(" }");
 
         return new ResponseEntity<>(list.toString(), HttpStatus.OK);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    @ApiOperation(value = "register the organization to a shipping service", nickname = "changeOrgTheme", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "shipping/service")
+    @ResponseStatus(OK)
+    public void registerToShippingService(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                    @RequestBody ShippingServiceRegistration registration) throws BusinessException {
+    	shippingMngService.registerToShippingService(registration);
     }
 
 }

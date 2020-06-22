@@ -1,19 +1,25 @@
 package com.nasnav.shipping.model;
 
+import org.json.JSONArray;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 import lombok.Getter;
 
+@Getter
+
 public enum ParameterType {
-	STRING("String"), LONG("Long"), STRING_ARRAY("StringArray");
+	STRING("String", String.class), LONG("Long", Long.class), STRING_ARRAY("StringArray", JSONArray.class);
 	
-	@Getter
 	@JsonValue
     private final String value;
+	@JsonValue
+	private final Class<?> javaType;
 	
 	@JsonCreator
-	ParameterType(String value) {
+	ParameterType(String value, Class<?> javaType) {
         this.value = value;
+        this.javaType = javaType;
     }
 }
