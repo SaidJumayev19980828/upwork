@@ -52,9 +52,14 @@ public enum ErrorCodes {
 	,O$CHK$0001("Must have at least one item in cart!")
 	,O$CHK$0002("Must provide shipping service provider")
 	,O$CHK$0003("Must provide shipping service additional data")
-	
+
+	,ORG$SHIP$0001("Organization is not registered with any shipping provider!")
+
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
-	
+
+	,SHP$SVC$0001("Shipping service is not available!")
+
+
 	;
 	
 	@Getter

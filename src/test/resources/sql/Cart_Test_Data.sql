@@ -116,6 +116,9 @@ INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(604, '99001/cover_img.jpg', '{"Color":"Yellow"}', 4, 88);
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(604, '99001/cover_img.jpg', '{"Color":"Yellow"}', 0, 88);
 
+INSERT INTO public.shipping_service values('Bosta', '{ "name": "Shop","type": "long","value": "14" }', '{ "name": "Shop","type": "long","value": "14" }');
+
+INSERT INTO public.organization_shipping_service values('Bosta', 99001, '{ "name": "Shop","type": "long","value": "14" }', 99001);
 
 INSERT INTO public.addresses(id, address_line_1) values(12300001, 'address line');
 

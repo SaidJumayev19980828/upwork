@@ -3,7 +3,7 @@ package com.nasnav.dto.request.cart;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
-import java.util.List;
+import java.util.Map;
 
 @Data
 public class CartCheckoutDTO {
@@ -12,5 +12,5 @@ public class CartCheckoutDTO {
     @JsonProperty("shipping_service_id")
     private String serviceId;
     @JsonProperty("additional_data")
-    private List<CartCheckoutAdditionalData> additionalData;
+    private Map<String, String> additionalData;
 }

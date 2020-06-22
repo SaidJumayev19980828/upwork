@@ -14,15 +14,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import com.nasnav.shipping.ShippingService;
-import com.nasnav.shipping.model.Parameter;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.Shipment;
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingDetails;
-import com.nasnav.shipping.model.ShippingEta;
-import com.nasnav.shipping.model.ShippingOffer;
-import com.nasnav.shipping.model.ShippingServiceInfo;
+import com.nasnav.shipping.model.*;
 
 import lombok.Getter;
 import reactor.core.publisher.Mono;
@@ -72,10 +64,13 @@ public class TestShippingService implements ShippingService {
 		tracker.setAirwayBillFile(new Byte[BILL_FILE_SIZE]);
 		return Mono.just(tracker);
 	}
-	
-	
-	
-	
+
+	@Override
+	public Mono<ShipmentValidation> validateShipment(List<ShippingDetails> items) {
+		return null;
+	}
+
+
 	private ShippingEta getFlatEta() {
 		return new ShippingEta(now().plusDays(1), now().plusDays(2));
 	}

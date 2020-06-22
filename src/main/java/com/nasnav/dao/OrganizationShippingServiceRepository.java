@@ -8,4 +8,6 @@ import com.nasnav.persistence.OrganizationShippingServiceEntity;
 
 public interface OrganizationShippingServiceRepository extends JpaRepository<OrganizationShippingServiceEntity, Long> {
 	List<OrganizationShippingServiceEntity> getByOrganization_Id(Long orgId);
+
+	OrganizationShippingServiceEntity getByOrganization_IdAndServiceId(Long orgId, String serviceId);
 }

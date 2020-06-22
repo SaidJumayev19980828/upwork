@@ -8,8 +8,7 @@ import static org.springframework.http.HttpStatus.*;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dto.request.cart.CartCheckoutAdditionalData;
+import com.nasnav.dao.*;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,19 +18,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
 import com.nasnav.dto.response.navbox.Cart;
-import com.nasnav.response.ThemeClassResponse;
 
 import net.jcip.annotations.NotThreadSafe;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -47,7 +45,7 @@ public class CartTest {
 
 	@Autowired
 	private CartItemRepository cartItemRepo;
-	
+
 	
 	@Test
 	public void getCartNoAuthz() {
@@ -209,7 +207,7 @@ public class CartTest {
 
 	@Test
 	public void checkoutCartSuccess() {
-		// remove first item with 0 quantity
+		// remove items with 0 quantity
 		cartItemRepo.deleteByQuantityAndUser_Id(0, 88L);
 
 		JSONObject body = createCartCheckoutBody();
@@ -291,8 +289,9 @@ public class CartTest {
 
 	private JSONObject createCartCheckoutBody() {
 		JSONObject body = new JSONObject();
-		List<CartCheckoutAdditionalData> additionalData = new ArrayList<CartCheckoutAdditionalData>();
-		additionalData.add(new CartCheckoutAdditionalData());
+		Map<String, String> additionalData = new HashMap<>();
+		additionalData.put("name", "Shop");
+		additionalData.put("value", "14");
 		body.put("customer_address", 12300001);
 		body.put("shipping_service_id", "Bosta");
 		body.put("additional_data", additionalData);

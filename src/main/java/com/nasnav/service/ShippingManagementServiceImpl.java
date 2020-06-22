@@ -1,8 +1,6 @@
 package com.nasnav.service;
 
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
-import static com.nasnav.exceptions.ErrorCodes.S$0004;
-import static com.nasnav.exceptions.ErrorCodes.SHP$OFFR$0001;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.shipping.model.ParameterType.STRING;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Collections.emptyList;
@@ -21,6 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,13 +85,36 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
 		List<ShippingDetails> shippingDetails = createShippingDetailsFromCart(customerAddrId);
 		
-		return getOffersFromOraganizationShippingServices(shippingDetails);
+		return getOffersFromOrganizationShippingServices(shippingDetails);
 	}
 
 
 
+	@Override
+	public void validateCartCheckoutAdditionalData(CartCheckoutDTO dto) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		OrganizationShippingServiceEntity orgShippingSvc =
+				ofNullable(orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, dto.getServiceId()))
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SHIP$0001));
 
-	private List<ShippingOfferDTO> getOffersFromOraganizationShippingServices(List<ShippingDetails> shippingDetails) {
+
+		Optional<ShippingService> shippingService = getShippingService(orgShippingSvc);
+		if (!shippingService.isPresent()) {
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SVC$0001);
+		}
+
+		List<ShippingDetails> shippingDetails = createShippingDetailsFromCart(dto.getAddressId());
+		for(ShippingDetails shippingDetail : shippingDetails) {
+			shippingDetail.setAdditionalData(dto.getAdditionalData());
+		}
+
+		shippingService.get().validateShipment(shippingDetails);
+
+	}
+
+
+
+	private List<ShippingOfferDTO> getOffersFromOrganizationShippingServices(List<ShippingDetails> shippingDetails) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		return Flux
 				.fromIterable(orgShippingServiceRepo.getByOrganization_Id(orgId))

@@ -2,11 +2,7 @@ package com.nasnav.shipping;
 
 import java.util.List;
 
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingDetails;
-import com.nasnav.shipping.model.ShippingOffer;
-import com.nasnav.shipping.model.ShippingServiceInfo;
+import com.nasnav.shipping.model.*;
 
 import reactor.core.publisher.Mono;
 
@@ -33,4 +29,6 @@ public interface ShippingService {
 	 * @return shipment tracking information, including the airway bill.
 	 * */
 	Mono<ShipmentTracker> requestShipment(List<ShippingDetails> items);
+
+	Mono<ShipmentValidation> validateShipment(List<ShippingDetails> items);
 }

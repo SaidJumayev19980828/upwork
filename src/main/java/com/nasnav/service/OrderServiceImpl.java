@@ -73,6 +73,8 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
+import com.nasnav.shipping.ShippingService;
+import com.nasnav.shipping.ShippingServiceFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeanUtils;
@@ -154,8 +156,8 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private MetaOrderRepository metaOrderRepo;
 
-	/*@Autowired
-	private ShippingService shippingService;*/
+	@Autowired
+	private ShippingManagementService shippingManagementService;
 	
 	private Map<OrderStatus, Set<OrderStatus>> nextOrderStatusSet;
 	private Set<OrderStatus> orderStatusForCustomers;
@@ -1605,14 +1607,8 @@ public class OrderServiceImpl implements OrderService {
 		if (dto.getAdditionalData() == null || dto.getAdditionalData().isEmpty()) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0003);
 		}
-		/*
-		TODO validate additional data
-		ShippingServiceInfo info = shippingService.getServiceInfo();
-		info.getAdditionalDataParams()
-		if (dto.getAdditionalData().get(0).getName() == null) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0003);
-		}*/
 
+		shippingManagementService.validateCartCheckoutAdditionalData(dto);
 	}
 
 
