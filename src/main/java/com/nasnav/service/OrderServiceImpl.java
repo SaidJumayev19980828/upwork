@@ -35,6 +35,7 @@ import static com.nasnav.enumerations.OrderStatus.STORE_PREPARED;
 import static com.nasnav.enumerations.Roles.CUSTOMER;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
+import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
@@ -1586,7 +1587,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-		createOrder(shopCartsMap, (UserEntity) user, userAddress, dto.getServiceId());
+		createOrder(shopCartsMap, (UserEntity) user, userAddress, dto.getServiceId(), dto.getAdditionalData());
 
 		cartItemRepo.deleteByUser_Id(user.getId());
 
@@ -1610,7 +1611,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private void createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, UserEntity user,
-							 AddressesEntity address, String serviceId) {
+							 AddressesEntity address, String serviceId, Map additionalData) {
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
 
 		MetaOrderEntity order = new MetaOrderEntity();
@@ -1619,16 +1620,15 @@ public class OrderServiceImpl implements OrderService {
 		order = metaOrderRepo.save(order);
 		MetaOrderEntity finalOrder = order;
 
-		shopCartsMap.entrySet().stream().forEach(e -> createSubOrders(finalOrder, e.getValue(), address, serviceId));
-		//TODO set shipping service
+		shopCartsMap.entrySet().stream().forEach(e -> createSubOrders(finalOrder, e.getValue(), address, serviceId, additionalData));
 
 	}
 
 
-	private void createSubOrders(MetaOrderEntity order, List<CartCheckoutData> subOrders,
-								 AddressesEntity shippingAddress, String serviceId) {
+	private void createSubOrders(MetaOrderEntity order, List<CartCheckoutData> cartCheckoutData,
+								 AddressesEntity shippingAddress, String serviceId, Map additionalData) {
 
-		ShopsEntity shop = shopsRepo.findById(subOrders.get(0).getShopId()).get();
+		ShopsEntity shop = shopsRepo.findById(cartCheckoutData.get(0).getShopId()).get();
 		OrdersEntity subOrder = new OrdersEntity();
 		subOrder.setUserId(order.getUser().getId());
 		subOrder.setShopsEntity(shop);
@@ -1644,10 +1644,10 @@ public class OrderServiceImpl implements OrderService {
 
 		ShipmentEntity shipment = new ShipmentEntity();
 		shipment.setSubOrder(subOrder);
-		shipment.setStatus(0);//TODO ENUM ?
+		shipment.setStatus(DRAFT.getValue());
 		shipment.setShippingServiceId(serviceId);
-
-		for(CartCheckoutData data : subOrders) {
+		shipment.setParameters(additionalData.toString());
+		for(CartCheckoutData data : cartCheckoutData) {
 			BasketsEntity basket = new BasketsEntity();
 			basket.setStocksEntity(stockRepository.getOne(data.getStockId()));
 			basket.setPrice(new BigDecimal(data.getQuantity()).multiply(data.getPrice()));
@@ -1672,7 +1672,6 @@ public class OrderServiceImpl implements OrderService {
 			if (!item.getCurrency().equals(currency)) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0004);
 			}
-			//TODO validate shipping data
 		}
 	}
 
