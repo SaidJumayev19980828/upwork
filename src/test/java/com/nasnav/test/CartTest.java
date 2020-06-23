@@ -1,15 +1,21 @@
 package com.nasnav.test;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.springframework.http.HttpMethod.*;
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dto.response.navbox.CartItem;
+import java.util.List;
+
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,8 +30,9 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
+import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dto.response.navbox.Cart;
-import com.nasnav.response.ThemeClassResponse;
+import com.nasnav.dto.response.navbox.CartItem;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -78,8 +85,27 @@ public class CartTest {
 
         assertEquals(OK, response.getStatusCode());
         assertEquals(2, response.getBody().getItems().size());
+        assertProductNamesReturned(response);
 	}
 
+
+
+
+
+	private void assertProductNamesReturned(ResponseEntity<Cart> response) {
+		List<String> expectedProductNames = asList("product_1", "product_4");
+        boolean isProductNamesReturned = 
+        		response
+        		.getBody()
+        		.getItems()
+        		.stream()
+        		.map(CartItem::getProducName)
+        		.allMatch(name -> expectedProductNames.contains(name));
+        assertTrue(isProductNamesReturned);
+	}
+
+	
+	
 
 	@Test
 	public void addCartItemSuccess() {
@@ -96,6 +122,8 @@ public class CartTest {
 	}
 
 
+	
+	
 	@Test
 	public void addCartItemNoStock() {
 		JSONObject item = createCartItem();
@@ -109,6 +137,7 @@ public class CartTest {
 	}
 
 
+	
 	@Test
 	public void addCartItemNoQuantity() {
 		JSONObject item = createCartItem();
@@ -121,6 +150,9 @@ public class CartTest {
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
 
+	
+	
+	
 
 	@Test
 	public void addCartItemNegativeQuantity() {
@@ -135,6 +167,7 @@ public class CartTest {
 	}
 
 
+	
 	@Test
 	public void addCartNoAuthz() {
 		JSONObject item = createCartItem();
@@ -145,6 +178,8 @@ public class CartTest {
 		assertEquals(UNAUTHORIZED, response.getStatusCode());
 	}
 
+	
+	
 
 	@Test
 	public void addCartNoAuthN() {
