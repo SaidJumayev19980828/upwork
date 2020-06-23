@@ -1875,6 +1875,16 @@ public class OrderServiceTest {
 										, String.class);
 		return updateResponse;			
 	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_5.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void orderFinalizeTest() {
+//		orderService.checkoutOrder(orderId);
+	}
 
 
 }
