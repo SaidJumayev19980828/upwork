@@ -197,7 +197,7 @@ public class CartTest {
 
 	private JSONObject createCartItem() {
 		JSONObject item = new JSONObject();
-		item.put("stock_id", 601);
+		item.put("stock_id", 606);
 		item.put("cover_img", "img");
 		item.put("quantity", 1);
 
@@ -244,7 +244,7 @@ public class CartTest {
 
 		HttpEntity request = getHttpEntity(body.toString(), "123");
 		ResponseEntity<String> response = template.postForEntity("/cart/checkout", request, String.class);
-		assertEquals(406, response.getStatusCodeValue());
+		assertEquals(500, response.getStatusCodeValue());
 	}
 
 
@@ -293,7 +293,7 @@ public class CartTest {
 		additionalData.put("name", "Shop");
 		additionalData.put("value", "14");
 		body.put("customer_address", 12300001);
-		body.put("shipping_service_id", "Bosta");
+		body.put("shipping_service_id", "TEST");
 		body.put("additional_data", additionalData);
 
 		return body;

@@ -1470,17 +1470,18 @@ public class OrderServiceImpl implements OrderService {
 			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
 		}
 
-
-		Optional<StocksEntity> stock = stockRepository.findById(ofNullable(item.getStockId()).orElse(-1L));
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		Long stockId = ofNullable(item.getStockId()).orElse(-1L);
+		StocksEntity stock = ofNullable(stockRepository.findByIdAndOrganizationEntity_Id(stockId, orgId))
+								.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE ,P$STO$0001,item.getStockId()));
 
 		validateCartItem(stock, item);
 
-
-		CartItemEntity cartItem = ofNullable(cartItemRepo.findByStock_IdAndUser_Id(stock.get().getId(), user.getId()))
+		CartItemEntity cartItem = ofNullable(cartItemRepo.findByStock_IdAndUser_Id(stock.getId(), user.getId()))
 								  .orElse(new CartItemEntity());
 
 		cartItem.setUser((UserEntity) user);
-		cartItem.setStock(stock.get());
+		cartItem.setStock(stock);
 		cartItem.setQuantity(item.getQuantity());
 		cartItem.setCoverImage(item.getCoverImg());
 		cartItemRepo.save(cartItem);
@@ -1504,16 +1505,12 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private void validateCartItem(Optional<StocksEntity> stock, CartItem item) {
-		if (!stock.isPresent()) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE ,P$STO$0001,item.getStockId());
-		}
-
+	private void validateCartItem(StocksEntity stock, CartItem item) {
 		if (item.getQuantity() == null || item.getQuantity() <= 0) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0002);
 		}
 
-		if (item.getQuantity() > stock.get().getQuantity()) {
+		if (item.getQuantity() > stock.getQuantity()) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0003);
 		}
 

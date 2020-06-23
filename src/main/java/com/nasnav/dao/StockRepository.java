@@ -100,5 +100,7 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 	@Query("SELECT stock FROM StocksEntity stock "
 			+ " LEFT JOIN FETCH stock.shopsEntity shop "
 			+ " WHERE stock.id = :id")
-	Optional<StocksEntity> findWithAdditionalData(@Param("id")Long id); 
+	Optional<StocksEntity> findWithAdditionalData(@Param("id")Long id);
+
+	StocksEntity findByIdAndOrganizationEntity_Id(Long id, Long orgId);
 }
