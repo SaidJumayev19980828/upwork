@@ -62,7 +62,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -70,14 +69,14 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
-import com.nasnav.shipping.ShippingService;
-import com.nasnav.shipping.ShippingServiceFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -111,6 +110,7 @@ import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
+import springfox.documentation.spring.web.json.Json;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -137,6 +137,9 @@ public class OrderServiceImpl implements OrderService {
 	private EntityManager em;
 
 	@Autowired
+	private ObjectMapper mapper;
+
+	@Autowired
 	private SecurityService securityService;
 
 	@Autowired
@@ -156,6 +159,9 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	private MetaOrderRepository metaOrderRepo;
+
+	@Autowired
+	private ShipmentRepository shipmentRepo;
 
 	@Autowired
 	private ShippingManagementService shippingManagementService;
@@ -627,9 +633,7 @@ public class OrderServiceImpl implements OrderService {
 		Long userId = securityService.getCurrentUser().getId();
 		if (order.getAddressId() != null) {
 			address = ofNullable(addressRepo.findByIdAndUserId(order.getAddressId(), userId)).
-					orElseThrow(() -> new BusinessException("address_id is invalid!", "INVALID_PARAM: address_id", NOT_ACCEPTABLE));
-		} else {
-			Optional<AddressesEntity> optionalAddress = ofNullable(addressRepo.findOneByUserId(userId)).orElse(null);
+					orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, order.getAddressId()));
 		}
 		return address;
 	}
@@ -1449,7 +1453,9 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-
+	private Cart getUserCart(Long userId) {
+		return new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId)));
+	}
 
 
 	@Override
@@ -1458,9 +1464,8 @@ public class OrderServiceImpl implements OrderService {
 		if(user instanceof EmployeeUserEntity) {
 			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
 		}
-		
-		List<CartItemData> cartItems = cartItemRepo.findCurrentCartItemsByUser_Id(user.getId());		
-		return new Cart(toCartItemsDto(cartItems));	
+
+		return getUserCart(user.getId());
 	}
 
 
@@ -1472,10 +1477,8 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		Long stockId = ofNullable(item.getStockId()).orElse(-1L);
-		StocksEntity stock = ofNullable(stockRepository.findByIdAndOrganizationEntity_Id(stockId, orgId))
-								.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE ,P$STO$0001,item.getStockId()));
-
+		StocksEntity stock = ofNullable(item.getStockId()).map(id -> stockRepository.findByIdAndOrganizationEntity_Id(id, orgId))
+							.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE ,P$STO$0001,item.getStockId()));
 		validateCartItem(stock, item);
 
 		CartItemEntity cartItem = ofNullable(cartItemRepo.findByStock_IdAndUser_Id(stock.getId(), user.getId()))
@@ -1487,8 +1490,7 @@ public class OrderServiceImpl implements OrderService {
 		cartItem.setCoverImage(item.getCoverImg());
 		cartItemRepo.save(cartItem);
 
-		List<CartItemData> cartItems = cartItemRepo.findCurrentCartItemsByUser_Id(user.getId());
-		return new Cart(toCartItemsDto(cartItems));
+		return getUserCart(user.getId());
 	}
 
 
@@ -1501,8 +1503,7 @@ public class OrderServiceImpl implements OrderService {
 
 		cartItemRepo.deleteByIdAndUser_Id(itemId, user.getId());
 
-		List<CartItemData> cartItems = cartItemRepo.findCurrentCartItemsByUser_Id(user.getId());
-		return new Cart(toCartItemsDto(cartItems));
+		return getUserCart(user.getId());
 	}
 
 
@@ -1578,16 +1579,12 @@ public class OrderServiceImpl implements OrderService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0001);
 		}
 
-		validateCartCheckoutItem(userCartItems);
+		validateCartCheckoutItems(userCartItems);
 
-		Map<Long, List<CartCheckoutData>> shopCartsMap =
-				userCartItems
-				.stream()
-				.collect(groupingBy(CartCheckoutData::getShopId));
+		Map<Long, List<CartCheckoutData>> shopCartsMap = userCartItems.stream()
+																	.collect(groupingBy(CartCheckoutData::getShopId));
 
-
-
-		createOrder(shopCartsMap, (UserEntity) user, userAddress, dto.getServiceId(), dto.getAdditionalData());
+		createOrder(shopCartsMap, userAddress, dto);
 
 		cartItemRepo.deleteByUser_Id(user.getId());
 
@@ -1602,32 +1599,63 @@ public class OrderServiceImpl implements OrderService {
 		if (dto.getServiceId() == null) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0002);
 		}
-		if (dto.getAdditionalData() == null || dto.getAdditionalData().isEmpty()) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0003);
+		if (!(dto.getAdditionalData() == null || dto.getAdditionalData().isEmpty())) {
+			shippingManagementService.validateShippingAdditionalData(dto);
 		}
 
-		shippingManagementService.validateCartCheckoutAdditionalData(dto);
 	}
 
 
-	private void createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, UserEntity user,
-							 AddressesEntity address, String serviceId, Map additionalData) {
+	private void createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto) {
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
+		UserEntity user = (UserEntity)securityService.getCurrentUser();
 
 		MetaOrderEntity order = new MetaOrderEntity();
 		order.setOrganization(org);
 		order.setUser(user);
-		order = metaOrderRepo.save(order);
 		MetaOrderEntity finalOrder = order;
 
-		shopCartsMap.entrySet().stream().forEach(e -> createSubOrders(finalOrder, e.getValue(), address, serviceId, additionalData));
+		shopCartsMap.entrySet().stream().forEach(e -> createSubOrders(finalOrder, e.getValue(), address, dto));
 
+		metaOrderRepo.save(finalOrder);
 	}
 
 
 	private void createSubOrders(MetaOrderEntity order, List<CartCheckoutData> cartCheckoutData,
-								 AddressesEntity shippingAddress, String serviceId, Map additionalData) {
+								 AddressesEntity shippingAddress, CartCheckoutDTO dto) {
 
+		OrdersEntity subOrder =  createSubOrder(order, shippingAddress, cartCheckoutData);
+		BigDecimal totalAmount = ZERO;
+		for(CartCheckoutData data : cartCheckoutData) {
+			BasketsEntity basket = createBasketItem(data, subOrder);
+			subOrder.addBasketItem(basket);
+			totalAmount = totalAmount.add(basket.getPrice());
+		}
+		subOrder.setAmount(totalAmount);
+		subOrder = ordersRepository.save(subOrder);
+
+		createShipment(subOrder, dto);
+
+
+		//TODO add suborders to order using hibernate
+		// order.addSubOrder(subOrder);
+	}
+
+
+	private BasketsEntity createBasketItem(CartCheckoutData data, OrdersEntity subOrder) {
+		BasketsEntity basket = new BasketsEntity();
+		basket.setStocksEntity(stockRepository.getOne(data.getStockId()));
+		basket.setPrice(new BigDecimal(data.getQuantity()).multiply(data.getPrice()));
+		basket.setQuantity(new BigDecimal(data.getQuantity()));
+		basket.setCurrency(data.getCurrency());
+		basket.setOrdersEntity(subOrder);
+
+		return basket;
+	}
+
+
+	private OrdersEntity createSubOrder(MetaOrderEntity order, AddressesEntity shippingAddress,
+										List<CartCheckoutData> cartCheckoutData) {
 		ShopsEntity shop = shopsRepo.findById(cartCheckoutData.get(0).getShopId()).get();
 		OrdersEntity subOrder = new OrdersEntity();
 		subOrder.setUserId(order.getUser().getId());
@@ -1640,36 +1668,34 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal totalAmount = ZERO;
 		subOrder.setAmount(totalAmount);
 
-		subOrder = ordersRepository.save(subOrder);
+		return subOrder;
+	}
 
+
+	private void createShipment(OrdersEntity subOrder, CartCheckoutDTO dto) {
 		ShipmentEntity shipment = new ShipmentEntity();
 		shipment.setSubOrder(subOrder);
 		shipment.setStatus(DRAFT.getValue());
-		shipment.setShippingServiceId(serviceId);
-		shipment.setParameters(additionalData.toString());
-		for(CartCheckoutData data : cartCheckoutData) {
-			BasketsEntity basket = new BasketsEntity();
-			basket.setStocksEntity(stockRepository.getOne(data.getStockId()));
-			basket.setPrice(new BigDecimal(data.getQuantity()).multiply(data.getPrice()));
-			basket.setQuantity(new BigDecimal(data.getQuantity()));
-			basket.setCurrency(data.getCurrency());
-			basket.setOrdersEntity(subOrder);
-
-			basketRepository.save(basket);
-			totalAmount = totalAmount.add(basket.getPrice());
+		shipment.setShippingServiceId(dto.getServiceId());
+		if ( dto.getAdditionalData() == null || dto.getAdditionalData().isEmpty()) {
+			shipment.setParameters("{}");
+		} else {
+			JSONObject additionalData = new JSONObject(dto.getAdditionalData());
+			shipment.setParameters(additionalData.toString());
 		}
-		subOrder.setAmount(totalAmount);
-		ordersRepository.save(subOrder);
+
+		shipmentRepo.save(shipment);
 	}
 
-	private void validateCartCheckoutItem(List<CartCheckoutData> userCartItems) {
-		Integer currency = userCartItems.get(0).getCurrency();
+
+	private void validateCartCheckoutItems(List<CartCheckoutData> userCartItems) {
+		Integer currency = (userCartItems.stream().findFirst().orElse(new CartCheckoutData())).getCurrency();
 		for(CartCheckoutData item : userCartItems) {
 			if (item.getQuantity() == null || item.getQuantity() <= 0) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0002);
 			}
 
-			if (!item.getCurrency().equals(currency)) {
+			if (!Objects.equals(item.getCurrency(), currency)) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0004);
 			}
 		}

@@ -5,9 +5,11 @@ import com.nasnav.dto.BaseRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.internal.CriteriaImpl;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Table(name = "meta_orders")
@@ -40,5 +42,21 @@ public class MetaOrderEntity implements BaseEntity {
     @Override
     public BaseRepresentationObject getRepresentation() {
         return null;
+    }
+
+    public MetaOrderEntity() {
+        subOrders = new HashSet<>();
+    }
+
+    public void addSubOrder(OrdersEntity subOrder) {
+        subOrder.setMetaOrder(this);
+        subOrders.add(subOrder);
+    }
+
+
+
+    public void removeSubOrder(OrdersEntity subOrder) {
+        subOrder.setMetaOrder(null);
+        subOrders.remove(subOrder);
     }
 }

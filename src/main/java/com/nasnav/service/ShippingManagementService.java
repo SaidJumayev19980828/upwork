@@ -8,5 +8,5 @@ import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 public interface ShippingManagementService {
 
 	List<ShippingOfferDTO> getShippingOffers(Long customerAddress);
-	void validateCartCheckoutAdditionalData(CartCheckoutDTO dto);
+	void validateShippingAdditionalData(CartCheckoutDTO dto);
 }

@@ -91,14 +91,14 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 
 	@Override
-	public void validateCartCheckoutAdditionalData(CartCheckoutDTO dto) {
+	public void validateShippingAdditionalData(CartCheckoutDTO dto) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		OrganizationShippingServiceEntity orgShippingSvc =
+
+		Optional<ShippingService> shippingService =
 				ofNullable(orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, dto.getServiceId()))
+				.map(this::getShippingService)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SHIP$0001));
 
-
-		Optional<ShippingService> shippingService = getShippingService(orgShippingSvc);
 		if (!shippingService.isPresent()) {
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SVC$0001);
 		}
@@ -306,7 +306,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		
 		AddressesEntity customerAddress =
 				ofNullable(addresses.get(customerAddrId))
-				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, ADDR$ADDR$0002, customerAddrId));
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, customerAddrId));
 		
 		ShippingAddress pickupAddr = createShippingAddress(shopAddress);
 		ShippingAddress customerAddr = createShippingAddress( customerAddress); 

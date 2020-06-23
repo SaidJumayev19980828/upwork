@@ -15,18 +15,18 @@ import com.nasnav.persistence.CountriesEntity;
 
 public interface AddressRepository extends JpaRepository<AddressesEntity, Long> {
 
-    @Query(value = "select * from addresses a join user_Addresses ua on ua.address_id = a.id" +
-            " where ua.address_id = :addressId and ua.user_id = :userId ", nativeQuery = true)
+    @Query(value = "select addr from UserEntity usr left join usr.addresses addr" +
+            " where usr.id =:userId and addr.id = :addressId")
     AddressesEntity findByIdAndUserId(@Param("addressId") Long addressId,
                                       @Param("userId") Long userId);
 
-    @Query(value = "select * from addresses a join user_Addresses ua on ua.address_id = a.id" +
-            " where ua.user_id = :userId ", nativeQuery = true)
+    @Query(value = "select addr from UserEntity usr left join usr.addresses addr" +
+            " where usr.id = :userId ", nativeQuery = true)
     Set<AddressesEntity> findByUserId(@Param("userId") Long userId);
 
 
-    @Query(value = "select * from addresses a join user_Addresses ua on ua.address_id = a.id" +
-            " where ua.user_id = :userId limit 1", nativeQuery = true)
+    @Query(value = "select addr from UserEntity usr left join usr.addresses addr" +
+            " where usr.id = :userId limit 1", nativeQuery = true)
     Optional<AddressesEntity> findOneByUserId(@Param("userId") Long userId);
 
     @Modifying

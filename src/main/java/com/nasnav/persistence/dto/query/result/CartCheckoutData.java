@@ -3,11 +3,13 @@ package com.nasnav.persistence.dto.query.result;
 import com.nasnav.persistence.AddressesEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class CartCheckoutData {
     private Long id;
     private Long stockId;

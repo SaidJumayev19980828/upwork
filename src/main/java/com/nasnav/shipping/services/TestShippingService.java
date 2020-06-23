@@ -67,7 +67,7 @@ public class TestShippingService implements ShippingService {
 
 	@Override
 	public Mono<ShipmentValidation> validateShipment(List<ShippingDetails> items) {
-		return null;
+		return Mono.empty();
 	}
 
 

@@ -12,10 +12,7 @@ import static com.nasnav.constatnts.EntityConstants.TOKEN_VALIDITY;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
-import static com.nasnav.exceptions.ErrorCodes.UXACTVX0001;
-import static com.nasnav.exceptions.ErrorCodes.UXACTVX0002;
-import static com.nasnav.exceptions.ErrorCodes.UXACTVX0003;
-import static com.nasnav.exceptions.ErrorCodes.UXACTVX0004;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
 import static com.nasnav.response.ResponseStatus.EMAIL_EXISTS;
 import static com.nasnav.response.ResponseStatus.EXPIRED_TOKEN;
@@ -309,8 +306,7 @@ public class UserServiceImpl implements UserService {
 				Set<AddressesEntity> userAddresses = addressRepo.findByUserId(userEntity.getId());
 				if (addressDTO.getId() != null) {
 					AddressesEntity oldAddress = ofNullable(addressRepo.findByIdAndUserId(addressDTO.getId(), userEntity.getId()))
-							.orElseThrow(() -> new BusinessException("Provided address_id doesn't match any existing address!",
-									"INVALID_PARAM: address_id", HttpStatus.NOT_ACCEPTABLE));
+							.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, addressDTO.getId()));
 					userAddresses.remove(oldAddress);
 					addressRepo.unlinkAddressFromUser(addressDTO.getId(), userEntity.getId());
 				}

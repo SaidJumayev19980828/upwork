@@ -79,7 +79,7 @@ public class CartTest {
         		template.exchange("/cart", GET, request, Cart.class);
 
         assertEquals(OK, response.getStatusCode());
-        assertEquals(3, response.getBody().getItems().size());
+        assertEquals(2, response.getBody().getItems().size());
 	}
 
 
@@ -244,7 +244,7 @@ public class CartTest {
 
 		HttpEntity request = getHttpEntity(body.toString(), "123");
 		ResponseEntity<String> response = template.postForEntity("/cart/checkout", request, String.class);
-		assertEquals(500, response.getStatusCodeValue());
+		assertEquals(406, response.getStatusCodeValue());
 	}
 
 
