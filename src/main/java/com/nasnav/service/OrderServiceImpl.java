@@ -72,6 +72,8 @@ import javax.persistence.criteria.Root;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.dto.response.navbox.SubOrder;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import org.apache.logging.log4j.LogManager;
@@ -1562,7 +1564,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional
-	public List<DetailedOrderRepObject> checkoutCart(CartCheckoutDTO dto) throws BusinessException {
+	public Order checkoutCart(CartCheckoutDTO dto) throws BusinessException {
 		BaseUserEntity user = securityService.getCurrentUser();
 		if(user instanceof EmployeeUserEntity) {
 			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
@@ -1584,11 +1586,48 @@ public class OrderServiceImpl implements OrderService {
 		Map<Long, List<CartCheckoutData>> shopCartsMap = userCartItems.stream()
 																	.collect(groupingBy(CartCheckoutData::getShopId));
 
-		createOrder(shopCartsMap, userAddress, dto);
+		MetaOrderEntity order = createOrder(shopCartsMap, userAddress, dto);
 
 		cartItemRepo.deleteByUser_Id(user.getId());
 
-		return getOrdersList(new OrderSearchParam());
+		return getOrderResponse(order);
+	}
+
+
+	private Order getOrderResponse(MetaOrderEntity order) {
+		UserEntity user = (UserEntity)securityService.getCurrentUser();
+
+		BigDecimal subtotal = order.getSubOrders()
+									.stream()
+									.map(OrdersEntity::getAmount)
+									.reduce(ZERO, BigDecimal::add);
+		BigDecimal shipping = ZERO;
+		Order rep = new Order();
+		rep.setUserId(user.getId());
+		rep.setUserName(user.getName());
+		rep.setOrderId(order.getId());
+		rep.setSubtotal(subtotal);
+		//rep.setShipping();
+		rep.setTotal(subtotal.subtract(shipping));
+		rep.setCurrency(order.getSubOrders().stream().findFirst().get().getBasketsEntity().stream().findFirst().get().getCurrency().toString());
+		rep.setCreationDate(order.getCreatedAt());
+		rep.setSubOrders(order.getSubOrders().stream().map(s -> this.getSubOrder(s)).collect(toList()));
+
+		return rep;
+	}
+
+
+	private SubOrder getSubOrder(OrdersEntity order) {
+		SubOrder subOrder = new SubOrder();
+		subOrder.setShopId(order.getShopsEntity().getId());
+		subOrder.setShopName(order.getShopsEntity().getName());
+		subOrder.setSubOrderId(order.getId());
+		subOrder.setSubtotal(order.getAmount());
+		//subOrder.setCurrency(order.get);
+		subOrder.setDeliveryAddress((AddressRepObj)order.getAddressEntity().getRepresentation());
+		//subOrder.setItems(order.getBasketsEntity().stream().map(b -> ));
+
+		return subOrder;
 	}
 
 
@@ -1606,22 +1645,25 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private void createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto) {
+	private MetaOrderEntity createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto) {
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
 		UserEntity user = (UserEntity)securityService.getCurrentUser();
 
 		MetaOrderEntity order = new MetaOrderEntity();
 		order.setOrganization(org);
 		order.setUser(user);
-		MetaOrderEntity finalOrder = order;
 
-		shopCartsMap.entrySet().stream().forEach(e -> createSubOrders(finalOrder, e.getValue(), address, dto));
+		Set<OrdersEntity> subOrders = new HashSet<>();
+		for(Map.Entry<Long, List<CartCheckoutData>> e : shopCartsMap.entrySet()){
+			subOrders.add(createSubOrders(order, e.getValue(), address, dto));
+		}
 
-		metaOrderRepo.save(finalOrder);
+		order.setSubOrders(subOrders);
+		return metaOrderRepo.save(order);
 	}
 
 
-	private void createSubOrders(MetaOrderEntity order, List<CartCheckoutData> cartCheckoutData,
+	private OrdersEntity createSubOrders(MetaOrderEntity order, List<CartCheckoutData> cartCheckoutData,
 								 AddressesEntity shippingAddress, CartCheckoutDTO dto) {
 
 		OrdersEntity subOrder =  createSubOrder(order, shippingAddress, cartCheckoutData);
@@ -1636,7 +1678,7 @@ public class OrderServiceImpl implements OrderService {
 
 		createShipment(subOrder, dto);
 
-
+		return subOrder;
 		//TODO add suborders to order using hibernate
 		// order.addSubOrder(subOrder);
 	}

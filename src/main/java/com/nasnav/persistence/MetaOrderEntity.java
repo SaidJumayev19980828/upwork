@@ -37,6 +37,7 @@ public class MetaOrderEntity implements BaseEntity {
     private OrganizationEntity organization;
 
     @OneToMany(mappedBy = "metaOrder", cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
+    @Transient
     private Set<OrdersEntity> subOrders;
 
     @Override

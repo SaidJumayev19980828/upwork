@@ -1,11 +1,10 @@
 package com.nasnav.controller;
 
-import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.response.OrderResponse;
 import com.nasnav.service.OrderService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -69,8 +68,8 @@ public class CartController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "stock not found")
 	})
 	@PostMapping(value = "/checkout", consumes = MediaType.APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
-	public List<DetailedOrderRepObject> checkoutCart(@RequestHeader(name = "User-Token", required = false) String userToken,
-													 @RequestBody CartCheckoutDTO dto) throws BusinessException {
+	public Order checkoutCart(@RequestHeader(name = "User-Token", required = false) String userToken,
+							  @RequestBody CartCheckoutDTO dto) throws BusinessException {
 		return orderService.checkoutCart(dto);
 	}
 }
