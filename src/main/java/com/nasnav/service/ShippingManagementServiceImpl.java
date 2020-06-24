@@ -13,13 +13,10 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.shipping.model.*;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,14 +44,6 @@ import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.dto.query.result.CartItemShippingData;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
-import com.nasnav.shipping.model.Parameter;
-import com.nasnav.shipping.model.ParameterType;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.Shipment;
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShippingAddress;
-import com.nasnav.shipping.model.ShippingDetails;
-import com.nasnav.shipping.model.ShippingOffer;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -112,6 +101,15 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	}
 
+	@Override
+	public List<BigDecimal> calculateShippingFees(List<ShippingDetails> shippingDetails) {
+		return new ArrayList<>();
+	}
+
+	@Override
+	public List<ShippingEta> calculateShippingETA(List<ShippingDetails> shippingDetails) {
+		return new ArrayList<>();
+	}
 
 
 	private List<ShippingOfferDTO> getOffersFromOrganizationShippingServices(List<ShippingDetails> shippingDetails) {

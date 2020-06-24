@@ -1,9 +1,9 @@
 package com.nasnav.dto.response.navbox;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.BasketItem;
-import com.nasnav.shipping.model.Shipment;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -20,7 +20,6 @@ public class SubOrder {
     private Long subOrderId;
     private BigDecimal subtotal;
     private BigDecimal total;
-    private String currency;
     private String status;
     @JsonProperty("creation_date")
     private LocalDateTime creationDate;
@@ -30,6 +29,9 @@ public class SubOrder {
     @JsonProperty("delivery_address")
     private AddressRepObj deliveryAddress;
     private List<BasketItem> items;
+
+    @JsonIgnore
+    private BigDecimal shipping;
     /*
         "shipment": {
         "service_id": "BOSTA",
