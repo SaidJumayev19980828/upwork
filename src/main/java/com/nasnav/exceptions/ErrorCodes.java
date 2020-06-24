@@ -40,8 +40,12 @@ public enum ErrorCodes {
 
 	,S$360$0001("No 360 shop found!")
 
+	,TYP$0001("Missing or invalid type, available types are [%s]!")
+
 	,AREA$001("No Area exists with ID:[%d]!")
+	,ADDR$ADDR$0001("%s with name [%s] already exists!")
 	,ADDR$ADDR$0002("Address with id[%d] doesn't exists!")
+	,ADDR$ADDR$0003("Must provide id of parent $s")
 	
 	,O$CRT$0001("Cannot create a cart for an employee user!")
 	,O$CRT$0002("Quantity must be greater than equal zero!")

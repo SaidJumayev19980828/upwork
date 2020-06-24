@@ -2,6 +2,8 @@ package com.nasnav.controller;
 
 import java.util.List;
 
+import com.nasnav.dto.*;
+import com.nasnav.service.AddressService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -16,11 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nasnav.dto.CategoryDTO;
-import com.nasnav.dto.OrganizationDTO;
-import com.nasnav.dto.OrganizationRepresentationObject;
-import com.nasnav.dto.ThemeClassDTO;
-import com.nasnav.dto.ThemeDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ThemeClassResponse;
@@ -47,6 +44,9 @@ public class AdminController {
 
 	@Autowired
 	private ThemeService themeService;
+
+	@Autowired
+	private AddressService addressService;
 
     @ApiOperation(value = "Create/update an Organization", nickname = "OrganizationCreation", code = 200)
     @ApiResponses(value = {
@@ -182,5 +182,18 @@ public class AdminController {
 	public void deleteTheme(@RequestHeader (name = "User-Token", required = false) String userToken,
 							@RequestParam String id) throws BusinessException {
 		themeService.deleteTheme(id);
+	}
+
+
+	@ApiOperation(value = "Add area, city, country to be used for shipping", nickname = "addCountry", code = 200)
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid Parameter"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to delete theme"),
+	})
+	@PostMapping(value = "country")
+	public void addCountry(@RequestHeader (name = "User-Token", required = false) String userToken,
+						   @RequestBody CountryInfoDTO dto) {
+		addressService.addCountry(dto);
 	}
 }
