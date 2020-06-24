@@ -81,7 +81,7 @@ public class UpgLightbox {
 		paymentsRepository.saveAndFlush(payment);
 
 		for (OrdersEntity order : orders) {
-			orderService.checkoutOrder(order.getId());
+			orderService.finalizeOrder(order.getId());
 			orderService.setOrderAsPaid(payment, order);			
 		}
 		ordersRepository.flush();

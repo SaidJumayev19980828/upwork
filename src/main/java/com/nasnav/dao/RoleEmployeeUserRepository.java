@@ -21,4 +21,20 @@ public interface RoleEmployeeUserRepository extends JpaRepository<RoleEmployeeUs
 
     @Query("select roleEmp.employeeUserId from RoleEmployeeUser roleEmp where roleEmp.roleId in (select id from Roles roles where roles.name in :rolesNames)")
     List<Long> findEmployeeUsersIds(@Param("rolesNames") List<String> rolesNames);
+    
+    
+    @Query("SELECT emp.email "
+    		+ " FROM RoleEmployeeUser roleEmp "
+    		+ " LEFT JOIN EmployeeUserEntity emp on roleEmp.employeeUserId = emp.id "
+    		+ " WHERE roleEmp.roleId = (select id from Roles roles where roles.name = :roleName) "
+    		+ "   AND emp.shopId = :shopId")
+    List<String> findEmailOfEmployeeWithRoleAndShop(@Param("roleName") String roleName, @Param("shopId")Long shopId);
+    
+    
+    @Query("SELECT emp.email "
+    		+ " FROM RoleEmployeeUser roleEmp "
+    		+ " LEFT JOIN EmployeeUserEntity emp on roleEmp.employeeUserId = emp.id "
+    		+ " WHERE roleEmp.roleId = (select id from Roles roles where roles.name = :roleName) "
+    		+ "   AND emp.organizationId = :orgId")
+    List<String> findEmailOfEmployeeWithRoleAndOrganization(@Param("roleName") String roleName, @Param("orgId")Long orgId);
 }

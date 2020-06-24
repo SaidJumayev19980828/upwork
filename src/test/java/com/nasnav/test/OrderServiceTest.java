@@ -1,4 +1,5 @@
 package com.nasnav.test;
+import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.DELIVERED;
@@ -14,6 +15,7 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -30,14 +32,18 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import javax.mail.MessagingException;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
@@ -56,6 +62,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nasnav.NavBox;
 import com.nasnav.controller.OrdersController;
 import com.nasnav.dao.BasketRepository;
+import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
@@ -75,7 +82,9 @@ import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.response.OrderResponse;
+import com.nasnav.service.MailService;
 import com.nasnav.service.OrderService;
 import com.nasnav.service.UserService;
 import com.nasnav.test.helpers.TestHelper;
@@ -139,6 +148,12 @@ public class OrderServiceTest {
 	
 	@Autowired
 	private PaymentsRepository paymentRepository;
+	
+	@Autowired
+	private CartItemRepository cartRepo;
+	
+	@MockBean
+	private MailService mailService;
 	
 	@Test
 	public void unregisteredUser() {
@@ -1675,7 +1690,7 @@ public class OrderServiceTest {
 		assertEquals(15, stockBefore.getQuantity().intValue());
 		
 		//-------------------------------------------
-		orderService.checkoutOrder(orderId);
+		orderService.finalizeOrder(orderId);
 		//-------------------------------------------
 		
 		OrdersEntity saved = orderRepository.findById(orderId).get();
@@ -1730,7 +1745,7 @@ public class OrderServiceTest {
 		validateStockQuantityBefore(before);
 		
 		//-------------------------------------------
-		orderService.checkoutOrder(orderId);
+		orderService.finalizeOrder(orderId);
 		//-------------------------------------------
 				
 		OrdersEntity saved = orderRepository.findById(orderId).get();
@@ -1882,8 +1897,77 @@ public class OrderServiceTest {
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_5.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void orderFinalizeTest() {
-//		orderService.checkoutOrder(orderId);
+	public void orderFinalizeTest() throws BusinessException, MessagingException, IOException {
+		Long orderId = 310001L;
+		
+		//get stocks before
+		Item stock1 = getStockItemQty(601L);
+		Item stock2 = getStockItemQty(602L);
+		//get cart count before
+		List<CartItemData> cartBefore = cartRepo.findCurrentCartItemsByUser_Id(88L); 
+		boolean cartHasStk = 
+				cartBefore
+				.stream()
+				.map(CartItemData::getStockId)
+				.anyMatch(stkId -> stkId.equals(602L));
+		assertTrue(cartHasStk);
+		
+		//---------------------------------------------------------------------
+		orderService.finalizeOrder(orderId);
+		
+		//---------------------------------------------------------------------		
+		//assert stock reduced
+		Item stock1After = getStockItemQty(601L);
+		Item stock2After = getStockItemQty(602L);
+		
+		assertEquals(14, stock1.getQuantity() - stock1After.getQuantity());
+		assertEquals(2, stock2.getQuantity() - stock2After.getQuantity());
+		
+		//assert cart count reduced
+		List<CartItemData> cartAfter = cartRepo.findCurrentCartItemsByUser_Id(orderId); 
+		boolean cartHasStkAfer = 
+				cartAfter
+				.stream()
+				.map(CartItemData::getStockId)
+				.anyMatch(stkId -> stkId.equals(602L));
+		assertFalse(cartHasStkAfer);
+		
+		//assert email methods called
+		Mockito
+		.verify(mailService)
+		.send(
+			  Mockito.eq("user1@nasnav.com")
+			, Mockito.eq("Bill")
+			, Mockito.anyString()
+			, Mockito.anyMap());
+		
+		Mockito
+		.verify(mailService)
+		.send(
+			  Mockito.eq("testuser6@nasnav.com")
+			, Mockito.eq("New Order")
+			, Mockito.anyString()
+			, Mockito.anyMap());
+		
+		Mockito
+		.verify(mailService)
+		.send(
+			  Mockito.eq("testuser7@nasnav.com")
+			, Mockito.eq("New Order")
+			, Mockito.anyString()
+			, Mockito.anyMap());
+	}
+
+
+
+
+
+
+	private Item getStockItemQty(Long stockId) {
+		return stockRepository
+				.findById(stockId)
+				.map(stk -> new Item(stk.getId(), stk.getQuantity()))
+				.get();
 	}
 
 

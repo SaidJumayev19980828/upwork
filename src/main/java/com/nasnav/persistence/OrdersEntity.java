@@ -110,6 +110,10 @@ public class OrdersEntity implements BaseEntity{
 	@JoinColumn(name = "payment_id", referencedColumnName = "id")
 	private PaymentEntity paymentEntity;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "meta_order_id", referencedColumnName = "id")
+	private MetaOrderEntity metaOrder;
+
 
 	@Override
 	public BaseRepresentationObject getRepresentation() {

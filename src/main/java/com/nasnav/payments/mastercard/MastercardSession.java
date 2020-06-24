@@ -190,8 +190,12 @@ public class MastercardSession {
         }
         if (json.getString("successIndicator").equals(paymentIndicator)) {
             for (OrdersEntity order: this.includedOrders) {
-            	OrdersEntity saved = orderService.checkoutOrder(order.getId());
-            	orderService.setOrderAsPaid(payment, saved);
+            	//TODO: if finalize order will modify the order, then it should return 
+            	//the saved entity
+            	orderService.finalizeOrder(order.getId());
+            	orderService.setOrderAsPaid(payment, order);
+            	//TODO: payment should reference a meta-order instead
+            	payment.setOrdersEntity(order);
             }
             ordersRepository.flush();
             

@@ -46,6 +46,12 @@ public enum ErrorCodes {
 	,O$CRT$0001("Cannot create a cart for an employee user!")
 	,O$CRT$0002("Quantity must be greater than equal zero!")
 	
+	,O$MAIL$0001("Failed to send notification email about order[%d] to email[%s]!")
+	
+	,O$SHP$0001("Sub-Order with id[%d] has no shop!")
+	
+	,O$ORG$0001("Sub-Order with id[%d] has no Organization!")
+	
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
 	,SHP$SRV$0001("Invalid service parameter [%s]!")
 	,SHP$SRV$0002("Missing Service parameters for shipping service[%s]!")

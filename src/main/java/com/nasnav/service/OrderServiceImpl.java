@@ -6,6 +6,7 @@ import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
+import static com.nasnav.constatnts.EmailConstants.ORDER_NOTIFICATION_TEMPLATE;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_CALC_ORDER_FAILED;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ITEM_QUANTITY;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ORDER_STATUS;
@@ -38,10 +39,15 @@ import static com.nasnav.enumerations.Roles.STORE_MANAGER;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$MAIL$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
 import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
@@ -51,6 +57,7 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -64,6 +71,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -78,12 +86,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.RoleEmployeeUserRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
@@ -102,6 +113,7 @@ import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
@@ -111,6 +123,7 @@ import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.CartItemEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PaymentEntity;
@@ -165,6 +178,14 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private ProductService productService;
 	
+	@Autowired
+	private MetaOrderRepository metaOrderRepo;
+	
+	@Autowired
+	private MailService mailService;
+	
+	@Autowired
+	private RoleEmployeeUserRepository empRoleRepo;
 	
 	private Map<OrderStatus, Set<OrderStatus>> nextOrderStatusSet;
 	private Set<OrderStatus> orderStatusForCustomers;
@@ -688,22 +709,10 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
-	@Override
-	@Transactional(rollbackFor = Throwable.class)
-	public OrdersEntity checkoutOrder(OrdersEntity order) {
-//		validateBasketItems(order);		//TODO: this should be added when we add refund, because exceptions will refund the user
-		order.setStatus(CLIENT_CONFIRMED.getValue());	
-		OrdersEntity saved = ordersRepository.save(order);
-		reduceStocks(saved);
-		return saved;
-	}
-	
-	
-	
 	
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public OrdersEntity checkoutOrder(Long orderId) throws BusinessException {
+	public void finalizeOrder(Long orderId) throws BusinessException {
 		//TODO: this should be done if the payment API became authenticated
 //		Long userId = 
 //				ofNullable(securityService.getCurrentUser())
@@ -711,17 +720,158 @@ public class OrderServiceImpl implements OrderService {
 //				.orElseThrow(() -> new RuntimeBusinessException("No user provided for the checkout!", "INVALID OPERATION", NOT_ACCEPTABLE));
 //		OrdersEntity order = ordersRepository.findByIdAndUserId(orderId, userId);
 		//-------------------------------------------
-		OrdersEntity order = 
-				ordersRepository
-				.findById(orderId)
+		MetaOrderEntity order = 
+				metaOrderRepo
+				.findFullDataById(orderId)
 				.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS, orderId));	
-
-		return checkoutOrder(order);
+		
+		order.getSubOrders().forEach(this::finalizeSubOrder);
+		
+		order.getSubOrders().forEach(this::sendNotificationEmailToStoreManager);
+		sendBillEmail(order);
 	}
 	
 	
 	
 	
+	
+	private void sendNotificationEmailToStoreManager(OrdersEntity order) {
+		Long orderId = order.getId();
+		
+		List<String> to = getStoreManagersEmails(order);
+		String subject = format("New Order[%d] Created!", orderId);
+		List<String> cc = getOrganizationManagersEmails(order);
+		Map<String,String> parametersMap = createNotificationEmailParams(order);
+		String template = ORDER_NOTIFICATION_TEMPLATE;
+		try {
+			if(to.isEmpty()) {
+				to = cc;
+				cc = emptyList();
+			}
+			mailService.send(to, subject, cc, template, parametersMap);
+		} catch (IOException | MessagingException e) {
+			logger.error(e, e);
+		}
+	}
+	
+	
+	
+	
+	
+	private Map<String, String> createNotificationEmailParams(OrdersEntity order) {
+		Map<String,String> params = new HashMap<>();
+		String orderTime = 
+				DateTimeFormatter
+				.ofPattern("dd/MM/YYYY - hh:mm")
+				.format(order.getCreationDate());
+		params.put("#order_id#", order.getId().toString());
+		params.put("#order_create_time#", orderTime);
+		params.put("#dashboard_link#", "https://uat.nasnav.org/dashboard/mange-orders");
+		return params;
+	}
+
+
+
+
+
+	private List<String> getStoreManagersEmails(OrdersEntity order) {
+		Long shopId = 
+				ofNullable(order)
+				.map(OrdersEntity::getShopsEntity)
+				.map(ShopsEntity::getId)
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0001 , order.getId()));
+		return empRoleRepo.findEmailOfEmployeeWithRoleAndShop(STORE_MANAGER.getValue(), shopId);
+	}
+	
+	
+	
+	
+	private List<String> getOrganizationManagersEmails(OrdersEntity order) {
+		Long orgId = 
+				ofNullable(order)
+				.map(OrdersEntity::getOrganizationEntity)
+				.map(OrganizationEntity::getId)
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$ORG$0001 , order.getId()));
+		return empRoleRepo.findEmailOfEmployeeWithRoleAndOrganization(STORE_MANAGER.getValue(), orgId);
+	}
+
+
+
+
+
+	private void sendBillEmail(MetaOrderEntity order) {
+		Long orderId = order.getId();
+		
+		Optional<String> email = 
+				ofNullable(order)
+				.map(MetaOrderEntity::getUser)
+				.map(UserEntity::getEmail);
+		
+		if(!email.isPresent()) {
+			return;
+		}
+		
+		String subject = format("Your Order has been Created!", orderId);
+		Map<String,String> parametersMap = createBillEmailParams(order);
+		String template = ORDER_NOTIFICATION_TEMPLATE;
+		try {
+			mailService.send(email.get(), subject,  template, parametersMap);
+		} catch (IOException | MessagingException e) {
+			logger.error(e, e);
+		}
+	}
+
+
+
+
+
+	private Map<String, String> createBillEmailParams(MetaOrderEntity order) {
+		Map<String,String> params = new HashMap<>();
+		LocalDateTime orderTime = 
+				order
+				.getSubOrders()
+				.stream()
+				.map(OrdersEntity::getCreationDate)
+				.filter(Objects::nonNull)
+				.findFirst()
+				.orElse(now());
+		String orderTimeStr = 
+				DateTimeFormatter
+				.ofPattern("dd/MM/YYYY - hh:mm")
+				.format(orderTime);
+		params.put("#order_id#", order.getId().toString());
+		params.put("#order_create_time#", orderTimeStr);
+		params.put("#dashboard_link#", "https://uat.nasnav.org/dashboard/mange-orders");
+		return params;
+	}
+
+
+
+
+
+	private void finalizeSubOrder(OrdersEntity order) {
+		reduceStocks(order);
+		clearOrderItemsFromCart(order);
+	}
+	
+	
+	
+
+	private void clearOrderItemsFromCart(OrdersEntity order) {
+		Long userId = securityService.getCurrentUser().getId();
+		List<Long> stockIds = 
+				order
+				.getBasketsEntity()
+				.stream()
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getId)
+				.collect(toList());
+		cartItemRepo.deleteByStockIdInAndUser_Id(stockIds, userId);
+	}
+
+
+
+
 
 	private void reduceStocks(OrdersEntity orderEntity) {
 	   orderEntity.getBasketsEntity().forEach(this::reduceItemStock);		
