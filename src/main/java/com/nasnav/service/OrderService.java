@@ -13,6 +13,7 @@ import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -64,5 +65,5 @@ public interface OrderService {
 
 	public Cart deleteCartItem(Long itemId);
 
-	public Order checkoutCart(CartCheckoutDTO dto) throws BusinessException;
+	public Order checkoutCart(CartCheckoutDTO dto) throws BusinessException, IOException;
 }

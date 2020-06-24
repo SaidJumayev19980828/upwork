@@ -42,6 +42,7 @@ import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static java.util.stream.Collectors.groupingBy;
@@ -50,6 +51,7 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -76,6 +78,9 @@ import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
+import com.nasnav.shipping.model.ServiceParameter;
+import com.nasnav.shipping.model.ShippingAddress;
+import com.nasnav.shipping.model.ShippingDetails;
 import com.nasnav.shipping.model.ShippingEta;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -148,6 +153,9 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	private AddressRepository addressRepo;
+
+	@Autowired
+	private OrganizationShippingServiceRepository orgShippingServiceRepo;
 
 	@Autowired
 	private IntegrationService integrationService;
@@ -1563,7 +1571,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional
-	public Order checkoutCart(CartCheckoutDTO dto) {
+	public Order checkoutCart(CartCheckoutDTO dto) throws IOException {
 		BaseUserEntity user = securityService.getCurrentUser();
 		if(user instanceof EmployeeUserEntity) {
 			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
@@ -1586,30 +1594,35 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private Order getOrderResponse(MetaOrderEntity order, CartCheckoutDTO dto) {
+	private Order getOrderResponse(MetaOrderEntity order, CartCheckoutDTO dto) throws IOException{
 		UserEntity user = (UserEntity)securityService.getCurrentUser();
 
 		Map<Long, List<BasketItemDetails>> itemsMap =
 				getBasketItemsDetailsMap(order.getSubOrders().stream().map(OrdersEntity::getId).collect(toSet()));
 
+		TransactionCurrency currency = TransactionCurrency.getTransactionCurrency(
+																			order.getSubOrders()
+																					.stream()
+																					.findFirst()
+																					.get()
+																					.getBasketsEntity()
+																					.stream()
+																					.findFirst()
+																					.get()
+																					.getCurrency());
+
 		Order rep = new Order();
 		rep.setUserId(user.getId());
 		rep.setUserName(user.getName());
 		rep.setOrderId(order.getId());
-		/*rep.setCurrency(TransactionCurrency.getTransactionCurrency(
-															order.getSubOrders()
-																 .stream()
-																 .findFirst()
-																 .get()
-																 .getBasketsEntity()
-																 .stream()
-																 .findFirst()
-																 .get()
-																 .getCurrency()
-											).name()
-			);*/
+		rep.setCurrency(currency == null ? "" : currency.name());
 		rep.setCreationDate(order.getCreatedAt());
-		rep.setSubOrders(order.getSubOrders().stream().map(s -> this.getSubOrder(s, itemsMap, dto)).collect(toList()));
+		List<SubOrder> subOrders = new ArrayList<>();
+		for (OrdersEntity s : order.getSubOrders()) {
+			SubOrder subOrder = this.getSubOrder(s, itemsMap, dto);
+			subOrders.add(subOrder);
+		}
+		rep.setSubOrders(subOrders);
 
 		BigDecimal subtotal = order.getSubOrders()
 								   .stream()
@@ -1629,10 +1642,26 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private SubOrder getSubOrder(OrdersEntity order, Map<Long, List<BasketItemDetails>> itemsMap, CartCheckoutDTO dto) {
+	private ShippingDetails getShippingDetails(OrdersEntity order, CartCheckoutDTO dto, List<BasketItem> items) throws IOException {
+		ShippingAddress source = new ShippingAddress();
+		ShippingAddress destination = new ShippingAddress();
+		BeanUtils.copyProperties(order.getShopsEntity().getAddressesEntity(), source);
+		BeanUtils.copyProperties(addressRepo.getOne(dto.getAddressId()), destination);
 
-		BigDecimal shippingFees = ZERO;//shippingManagementService.calculateShippingFees().get(0);
-		ShippingEta eta = null;//shippingManagementService.calculateShippingETA().get(0);
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		Map<String, String> serviceParameters = mapper.readValue(
+				orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, dto.getServiceId()).getServiceParameters()
+				, Map.class);
+		ShippingDetails shippingDetails = new ShippingDetails();
+		shippingDetails.setSource(source);
+		shippingDetails.setDestination(destination);
+		shippingDetails.setAdditionalData(dto.getAdditionalData());
+		shippingDetails.setServiceParameters(serviceParameters);
+
+		return shippingDetails;
+	}
+
+	private SubOrder getSubOrder(OrdersEntity order, Map<Long, List<BasketItemDetails>> itemsMap, CartCheckoutDTO dto) throws IOException {
 
 		SubOrder subOrder = new SubOrder();
 		subOrder.setShopId(order.getShopsEntity().getId());
@@ -1640,10 +1669,14 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setSubOrderId(order.getId());
 		subOrder.setCreationDate(order.getCreationDate());
 		subOrder.setSubtotal(order.getAmount());
+		subOrder.setDeliveryAddress((AddressRepObj)order.getAddressEntity().getRepresentation());
 
 		subOrder.setItems(itemsMap.get(order.getId()).stream().map(this::toBasketItem).collect(toList()));
 
-		subOrder.setDeliveryAddress((AddressRepObj)order.getAddressEntity().getRepresentation());
+		ShippingDetails shippingDetails = getShippingDetails(order, dto, subOrder.getItems());
+		BigDecimal shippingFees = shippingManagementService.calculateShippingFees(singletonList(shippingDetails)).get(0);
+		ShippingEta eta = shippingManagementService.calculateShippingETA(singletonList(shippingDetails)).get(0);
+
 		subOrder.setShipment(new Shipment(dto.getServiceId(), dto.getServiceId(), shippingFees, eta));
 
 		subOrder.setShipping(subOrder.getShipment().getShippingFee());

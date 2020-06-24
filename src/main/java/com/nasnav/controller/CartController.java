@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -69,7 +70,7 @@ public class CartController {
 	})
 	@PostMapping(value = "/checkout", consumes = MediaType.APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
 	public Order checkoutCart(@RequestHeader(name = "User-Token", required = false) String userToken,
-							  @RequestBody CartCheckoutDTO dto) throws BusinessException {
+							  @RequestBody CartCheckoutDTO dto) throws BusinessException, IOException {
 		return orderService.checkoutCart(dto);
 	}
 }
