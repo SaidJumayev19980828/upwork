@@ -4,12 +4,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.AreasRepObj;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.CitiesRepObj;
+import com.nasnav.dto.CountriesRepObj;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import javax.persistence.*;
 import java.util.Set;
+
+import static java.util.stream.Collectors.toList;
 
 @Table(name = "countries")
 @Entity
@@ -30,7 +33,11 @@ public class CountriesEntity implements BaseEntity{
 
     @Override
     public BaseRepresentationObject getRepresentation() {
-        return null;
+        CountriesRepObj obj = new CountriesRepObj();
+        obj.setId(getId());
+        obj.setName(getName());
+
+        return obj;
     }
 
 }

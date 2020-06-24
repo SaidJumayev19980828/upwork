@@ -40,8 +40,8 @@ public class CitiesEntity implements BaseEntity{
     public BaseRepresentationObject getRepresentation() {
         CitiesRepObj obj = new CitiesRepObj();
 
+        obj.setId(getId());
         obj.setName(getName());
-        obj.setAreas(getAreas().stream().map(area -> (AreasRepObj) area.getRepresentation()).collect(toList()));
 
         return obj;
     }

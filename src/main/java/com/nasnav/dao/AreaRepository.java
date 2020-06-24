@@ -1,8 +1,13 @@
 package com.nasnav.dao;
 
 import com.nasnav.persistence.AreasEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.CrudRepository;
 
-public interface AreaRepository extends JpaRepository<AreasEntity, Long> {
+import java.util.Optional;
 
+public interface AreaRepository extends CrudRepository<AreasEntity, Long> {
+
+    Optional<AreasEntity> findByName(String name);
+
+    boolean existsByNameIgnoreCase(String name);
 }
