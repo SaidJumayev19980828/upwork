@@ -32,6 +32,9 @@ public class AddressRepObj extends BaseRepresentationObject {
     @JsonProperty("postal_code")
     private String postalCode;
 
+    @JsonProperty("phone_number")
+    private String phoneNumber;
+
     private String area;
     private String city;
     private String country;

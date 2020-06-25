@@ -122,11 +122,9 @@ public class UserDTOs {
         private Long updatedUserId;
 
         @ApiModelProperty(value = "If user is an employee or not", example = "true", required = false)
-        @JsonProperty("employee")
         public boolean employee;
 
         @ApiModelProperty(value = "User's email", example = "testuser@nasnav.com", required = false)
-        @JsonProperty("email")
         public String email;
 
         @ApiModelProperty(value = "Organization id that client wants to log into", example = "123", required = false)
@@ -134,11 +132,9 @@ public class UserDTOs {
         public Long orgId;
 
         @ApiModelProperty(value = "User's name", example = "John Smith", required = false)
-        @JsonProperty("name")
         private String name;
 
         @ApiModelProperty(value = "Roles Separated by Comma", example = "STORE_ADMIN,ORGANIZATION_EMPLOYEE", required = false)
-        @JsonProperty("role")
         private String role;
 
         @ApiModelProperty(value = "Store Id", example = "1234", required = false)
@@ -146,26 +142,24 @@ public class UserDTOs {
         private Long storeId;
 
         @ApiModelProperty(value = "Avatar", example = "1234", required = false)
-        @JsonProperty("avatar")
         private String avatar;
 
         @ApiModelProperty(value = "Gender", example = "Male", required = false)
-        @JsonProperty("gender")
         private String gender;
 
         @ApiModelProperty(value = "Birth Date", example = "08/08/2010", required = false)
         @JsonProperty("birth_date")
         private String birthDate;
 
-        @JsonProperty("address")
         private AddressDTO address;
 
         @ApiModelProperty(value = "Phone Number", example = "01012345678", required = false)
         @JsonProperty("phone_number")
         private String phoneNumber;
 
+        private String mobile;
+
         @ApiModelProperty(value = "User Image", example = "/images/image_568.jpg", required = false)
-        @JsonProperty("image")
         private String image;
     }
 }

@@ -638,10 +638,6 @@ public class OrderServiceImpl implements OrderService {
 			} else {
 				throw new BusinessException("address_id is invalid!", "INVALID_PARAM: address_id", NOT_ACCEPTABLE);
 			}
-		} else {
-			Optional<AddressesEntity> optionalAddress = addressRepo.findOneByUserId(userId);
-			if (optionalAddress.isPresent())
-				address = optionalAddress.get();
 		}
 		return address;
 	}

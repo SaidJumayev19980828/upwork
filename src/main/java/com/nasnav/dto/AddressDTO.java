@@ -34,4 +34,6 @@ public class AddressDTO extends BaseRepresentationObject {
 
     @JsonProperty("area_id")
     private Long areaId;
+
+    private Boolean principal;
 }

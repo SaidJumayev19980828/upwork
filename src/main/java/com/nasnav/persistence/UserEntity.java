@@ -6,7 +6,6 @@ import javax.persistence.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.persistence.listeners.UserEntityListener;

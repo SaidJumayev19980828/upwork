@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.commons.utils.StringUtils.validateNameAndEmail;
 import static com.nasnav.constatnts.EmailConstants.ACCOUNT_EMAIL_PARAMETER;
 import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
@@ -31,6 +32,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
@@ -41,6 +43,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import com.nasnav.dao.AddressRepository;
+import com.nasnav.dao.AreaRepository;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.persistence.*;
 import org.apache.http.client.utils.URIBuilder;
@@ -53,6 +56,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 import org.springframework.web.servlet.view.RedirectView;
 
@@ -93,6 +97,8 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private OrganizationRepository orgRepo;
 
+	@Autowired
+	private AreaRepository areaRepo;
 
 	@Autowired
 	public UserServiceImpl(UserRepository userRepository, MailService mailService, PasswordEncoder passwordEncoder) {
@@ -274,20 +280,21 @@ public class UserServiceImpl implements UserService {
 		return userRepository.save(user);
 	}
 
+
+	@Transactional
 	@Override
 	public UserApiResponse updateUser(String userToken, UserDTOs.EmployeeUserUpdatingObject userJson) throws BusinessException {
-
 		UserEntity userEntity = (UserEntity) securityService.getCurrentUser();
 		List<ResponseStatus> failResponseStatusList = new ArrayList<>();
 		List<ResponseStatus> successResponseStatusList = new ArrayList<>();
-		if (StringUtils.isNotBlankOrNull(userJson.getName()))
-			if (StringUtils.validateName(userJson.getName())) {
+		if (isNotBlankOrNull(userJson.getName()))
+			if (validateName(userJson.getName())) {
 				userEntity.setName(userJson.getName());
 			} else {
 				failResponseStatusList.add(ResponseStatus.INVALID_NAME);
 			}
-		if (StringUtils.isNotBlankOrNull(userJson.email)){
-			if (StringUtils.validateEmail(userJson.email)) {
+		if (isNotBlankOrNull(userJson.email)){
+			if (validateEmail(userJson.email)) {
 				userEntity.setEmail(userJson.email);
 				generateResetPasswordToken(userEntity);
 				userEntity = userRepository.saveAndFlush(userEntity);
@@ -304,24 +311,14 @@ public class UserServiceImpl implements UserService {
 		if (failResponseStatusList.isEmpty()) {
 			BeanUtils.copyProperties(userJson, userEntity, allIgnoredProperties);
 			if (userJson.getAddress() != null) {
-				AddressesEntity address = new AddressesEntity();
-				AddressDTO addressDTO = userJson.getAddress();
-				Set<AddressesEntity> userAddresses = addressRepo.findByUserId(userEntity.getId());
-				if (addressDTO.getId() != null) {
-					Optional<AddressesEntity> oldAddress = addressRepo.findByIdAndUserId(addressDTO.getId(), userEntity.getId());
-					if (!oldAddress.isPresent()) {
-						throw new BusinessException("Provided address_id doesn't match any existing address!",
-								"INVALID_PARAM: address_id", HttpStatus.NOT_ACCEPTABLE);
+				Long addressId = setUserAddresses(userJson, userEntity).getId();
+				addressRepo.linkAddressToUser(userEntity.getId(), addressId);
+				if (userJson.getAddress().getPrincipal() != null) {
+					if (userJson.getAddress().getPrincipal().booleanValue()) {
+						addressRepo.makeAddressNotPrincipal(userEntity.getId());
+						addressRepo.makeAddressPrincipal(userEntity.getId(), addressId);
 					}
-					userAddresses.remove(oldAddress.get());
-					addressRepo.unlinkAddressFromUser(addressDTO.getId(), userEntity.getId());
 				}
-				BeanUtils.copyProperties(userJson.getAddress(), address, new String[] {"id"});
-				if (!address.equals(new AddressesEntity())) {
-					address = addressRepo.save(address);
-					userAddresses.add(address);
-				}
-				userEntity.setAddresses(userAddresses);
 			}
 			userRepository.saveAndFlush(userEntity);
 			if (successResponseStatusList.isEmpty()) {
@@ -333,13 +330,35 @@ public class UserServiceImpl implements UserService {
 	}
 
 
+	private AddressesEntity setUserAddresses(UserDTOs.EmployeeUserUpdatingObject userJson, UserEntity userEntity) throws BusinessException {
+		AddressesEntity address = new AddressesEntity();
+		AddressDTO addressDTO = userJson.getAddress();
+		if (addressDTO.getId() != null) {
+			Optional<AddressesEntity> oldAddress = addressRepo.findByIdAndUserId(addressDTO.getId(), userEntity.getId());
+			if (!oldAddress.isPresent()) {
+				throw new BusinessException("Provided address_id doesn't match any existing address!",
+						"INVALID_PARAM: address_id", HttpStatus.NOT_ACCEPTABLE);
+			}
+			addressRepo.unlinkAddressFromUser(addressDTO.getId(), userEntity.getId());
+		}
+		BeanUtils.copyProperties(addressDTO, address, new String[] {"id"});
+		if (addressDTO.getAreaId() != null) {
+			if (areaRepo.existsById(addressDTO.getAreaId())) {
+				address.setAreasEntity(areaRepo.findById(userJson.getAddress().getAreaId()).get());
+			}
+		}
+		address = addressRepo.save(address);
+
+		return address;
+	}
+
 	/**
 	 * validateBusinessRules passed user entity against business rules
 	 *
 	 * @param userJson User entity to be validated
 	 */
 	private void validateBusinessRules(UserDTOs.UserRegistrationObject userJson) {
-		StringUtils.validateNameAndEmail(userJson.name, userJson.email, userJson.getOrgId());
+		validateNameAndEmail(userJson.name, userJson.email, userJson.getOrgId());
 	}
 
 	@Override
@@ -381,14 +400,14 @@ public class UserServiceImpl implements UserService {
 	 */
 	private UserEntity getUserEntityByEmailAndOrgId(String email, Long orgId) {
 		// first ensure that email is valid
-		if (!StringUtils.validateEmail(email)) {
+		if (!validateEmail(email)) {
 			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
 					Collections.singletonList(ResponseStatus.INVALID_EMAIL));
 			throw new EntityValidationException("INVALID_EMAIL :" + email, userApiResponse, HttpStatus.NOT_ACCEPTABLE);
 		}
 		// load user entity by email
 		UserEntity userEntity = this.userRepository.getByEmailAndOrganizationId(email, orgId);
-		if (StringUtils.isBlankOrNull(userEntity)) {
+		if (isBlankOrNull(userEntity)) {
 			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
 					Collections.singletonList(ResponseStatus.EMAIL_NOT_EXIST));
 			throw new EntityValidationException("EMAIL_NOT_EXIST", userApiResponse, HttpStatus.NOT_ACCEPTABLE);
@@ -436,7 +455,7 @@ public class UserServiceImpl implements UserService {
 	 * @return unique generated ResetPasswordToken.
 	 */
 	private String generateResetPasswordToken() {
-		String generatedToken = StringUtils.generateUUIDToken();
+		String generatedToken = generateUUIDToken();
 		boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateResetPasswordToken();
@@ -451,7 +470,7 @@ public class UserServiceImpl implements UserService {
 	 * @return unique generated ResetPasswordToken.
 	 */
 	private String reGenerateResetPasswordToken() {
-		String generatedToken = StringUtils.generateUUIDToken();
+		String generatedToken = generateUUIDToken();
 		boolean existsByToken = userRepository.existsByResetPasswordToken(generatedToken);
 		if (existsByToken) {
 			return reGenerateResetPasswordToken();
@@ -463,7 +482,7 @@ public class UserServiceImpl implements UserService {
 	public UserApiResponse recoverUser(UserDTOs.PasswordResetObject data) {
 		validateNewPassword(data.password);
 		UserEntity userEntity = userRepository.getByResetPasswordToken(data.token);
-		if (StringUtils.isNotBlankOrNull(userEntity)) {
+		if (isNotBlankOrNull(userEntity)) {
 			// if resetPasswordToken is not active, throw exception for invalid
 			// resetPasswordToken
 			checkResetPasswordTokenExpiry(userEntity);
@@ -481,7 +500,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	private void validateNewPassword(String newPassword) {
-		if (StringUtils.isBlankOrNull(newPassword) || newPassword.length() > PASSWORD_MAX_LENGTH
+		if (isBlankOrNull(newPassword) || newPassword.length() > PASSWORD_MAX_LENGTH
 				|| newPassword.length() < PASSWORD_MIN_LENGTH) {
 			throw new EntityValidationException("INVALID_PASSWORD  ",
 					UserApiResponse.createStatusApiResponse(singletonList(INVALID_PASSWORD)),
@@ -593,11 +612,11 @@ public class UserServiceImpl implements UserService {
 	}
 	
 	
-	private Set getUserAddresses(Long userId){
+	private List getUserAddresses(Long userId){
 		return addressRepo.findByUserId(userId)
 						  .stream()
 						  .map(AddressesEntity::getRepresentation)
-						  .collect(Collectors.toSet());
+						  .collect(toList());
 	}
 
 	
