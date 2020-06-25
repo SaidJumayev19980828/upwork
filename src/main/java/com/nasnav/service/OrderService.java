@@ -31,6 +31,8 @@ public interface OrderService {
 
 	}
 
+	String BILL_EMAIL_SUBJECT = "Your Order has been Created!";
+
 	public OrderResponse createNewOrder(OrderJsonDto orderJson) throws BusinessException;
 
 	public OrderResponse updateExistingOrder(OrderJsonDto orderJson) throws BusinessException;

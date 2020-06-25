@@ -6,6 +6,7 @@ import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
+import static com.nasnav.constatnts.EmailConstants.ORDER_BILL_TEMPLATE;
 import static com.nasnav.constatnts.EmailConstants.ORDER_NOTIFICATION_TEMPLATE;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_CALC_ORDER_FAILED;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ITEM_QUANTITY;
@@ -70,7 +71,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
@@ -791,7 +791,7 @@ public class OrderServiceImpl implements OrderService {
 				.map(OrdersEntity::getOrganizationEntity)
 				.map(OrganizationEntity::getId)
 				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$ORG$0001 , order.getId()));
-		return empRoleRepo.findEmailOfEmployeeWithRoleAndOrganization(STORE_MANAGER.getValue(), orgId);
+		return empRoleRepo.findEmailOfEmployeeWithRoleAndOrganization(ORGANIZATION_MANAGER.getValue(), orgId);
 	}
 
 
@@ -810,9 +810,9 @@ public class OrderServiceImpl implements OrderService {
 			return;
 		}
 		
-		String subject = format("Your Order has been Created!", orderId);
+		String subject = format(BILL_EMAIL_SUBJECT, orderId);
 		Map<String,String> parametersMap = createBillEmailParams(order);
-		String template = ORDER_NOTIFICATION_TEMPLATE;
+		String template = ORDER_BILL_TEMPLATE;
 		try {
 			mailService.send(email.get(), subject,  template, parametersMap);
 		} catch (IOException | MessagingException e) {
@@ -826,10 +826,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private Map<String, String> createBillEmailParams(MetaOrderEntity order) {
 		Map<String,String> params = new HashMap<>();
-		
-		params.put("#order_id#", order.getId().toString());
 		params.put("#order_details#", createOrderDetailsStr(order));
-		params.put("#dashboard_link#", "https://uat.nasnav.org/dashboard/mange-orders");
 		return params;
 	}
 
@@ -858,8 +855,34 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private String createSubOrderDetails(OrdersEntity order){
-		return "";
+		String template = 
+				"From shop\t\t:\t\t%s\n"
+				+ "Total\t\t:\t\t%s\n"
+				+ "\t\tItem\t\tprice";
+		String orderDetails = format(template, order.getShopsEntity().getName(), order.getAmount().setScale(2).toString());
+		String orderItemsLines = createSubOrderItemsStr(order);
+		return orderDetails + "\n" +orderItemsLines;
 	}
+
+
+
+	private String createSubOrderItemsStr(OrdersEntity order) {
+		return order
+				.getBasketsEntity()
+				.stream()
+				.map(this::createOrderItemLine)
+				.collect(joining("\n"));
+	}
+
+	
+	
+	private String createOrderItemLine(BasketsEntity item) {
+		String template = "\t\t%s\t\t%s";
+		String productName = item.getStocksEntity().getProductVariantsEntity().getProductEntity().getName();
+		String price = item.getPrice().setScale(2).toString();
+		return format(template, productName, price);
+	}
+
 
 
 
@@ -910,7 +933,7 @@ public class OrderServiceImpl implements OrderService {
 	
 
 	private void clearOrderItemsFromCart(OrdersEntity order) {
-		Long userId = securityService.getCurrentUser().getId();
+		Long userId = order.getUserId();
 		List<Long> stockIds = 
 				order
 				.getBasketsEntity()

@@ -1,5 +1,4 @@
 package com.nasnav.test;
-import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.DELIVERED;
@@ -8,6 +7,7 @@ import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.enumerations.PaymentStatus.PAID;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
+import static com.nasnav.service.OrderService.BILL_EMAIL_SUBJECT;
 import static com.nasnav.test.commons.TestCommons.getHeaders;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
@@ -1924,36 +1924,39 @@ public class OrderServiceTest {
 		assertEquals(2, stock2.getQuantity() - stock2After.getQuantity());
 		
 		//assert cart count reduced
-		List<CartItemData> cartAfter = cartRepo.findCurrentCartItemsByUser_Id(orderId); 
+		List<CartItemData> cartAfter = cartRepo.findCurrentCartItemsByUser_Id(88L); 
 		boolean cartHasStkAfer = 
 				cartAfter
 				.stream()
 				.map(CartItemData::getStockId)
 				.anyMatch(stkId -> stkId.equals(602L));
 		assertFalse(cartHasStkAfer);
+		assertFalse("if the cart had items not in the order, they should remain", cartAfter.isEmpty());
 		
 		//assert email methods called
 		Mockito
 		.verify(mailService)
 		.send(
 			  Mockito.eq("user1@nasnav.com")
-			, Mockito.eq("Bill")
+			, Mockito.eq(BILL_EMAIL_SUBJECT)
 			, Mockito.anyString()
 			, Mockito.anyMap());
 		
 		Mockito
 		.verify(mailService)
 		.send(
-			  Mockito.eq("testuser6@nasnav.com")
-			, Mockito.eq("New Order")
+			  Mockito.eq(asList("testuser6@nasnav.com"))
+			, Mockito.anyString()
+			, Mockito.eq(asList("testuser2@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.anyMap());
 		
 		Mockito
 		.verify(mailService)
 		.send(
-			  Mockito.eq("testuser7@nasnav.com")
-			, Mockito.eq("New Order")
+			  Mockito.eq(asList("testuser7@nasnav.com"))
+			, Mockito.anyString()
+			, Mockito.eq(asList("testuser2@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.anyMap());
 	}

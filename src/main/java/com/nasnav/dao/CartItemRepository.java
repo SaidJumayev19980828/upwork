@@ -27,6 +27,7 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 	List<CartItemData> findCurrentCartItemsByUser_Id(@Param("user_id") Long userId);
 
 	CartItemEntity findByIdAndUser_Id(Long id, Long userId);
+	
 	@Transactional
 	@Modifying
 	void deleteByIdAndUser_Id(Long id, Long userId);
@@ -45,13 +46,15 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 	
 	
 
+	@Transactional
+	@Modifying
 	@Query("DELETE FROM CartItemEntity cart "
 			+ " WHERE cart.id in ( "
 			+ " SELECT item.id "
 			+ " FROM CartItemEntity item "
 			+ " LEFT JOIN item.stock stock "
 			+ " LEFT JOIN item.user usr "
-			+ " WHERE stock.id in :stock_Ids"
+			+ " WHERE stock.id in :stock_ids"
 			+ " AND usr.id = :user_id"
 			+ ")")
 	void deleteByStockIdInAndUser_Id(@Param("stock_ids")List<Long> stockIds, @Param("user_id")Long userId);

@@ -57,7 +57,7 @@ public class MetaOrderEntity implements BaseEntity {
 
     @Override
     public BaseRepresentationObject getRepresentation() {
-        return null;
+        return new BaseRepresentationObject();
     }
 
     public MetaOrderEntity() {

@@ -37,7 +37,7 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (69, 'testuser2@nasnav.com', 99002, '131415',  501);
+	VALUES (69, 'testuser2@nasnav.com', 99001, '131415',  503);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (70, 'testuser4@nasnav.com', 99001, '161718',  503);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
@@ -69,7 +69,6 @@ insert into public.roles(id, name,  organization_id) values(7, 'ORGANIZATION_MAN
 --inserting Roles EmployeeUsers relations
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 69, 6);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 69, 7);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (24, 70, 4);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (25, 71, 5);
@@ -103,9 +102,9 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id) VALUES(310001 , now(),88, 99001);
 
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) 
-values(330031, 88, now(), now(), 99001, 0, 504, 310001);
+values(330031, 88, now(), now(), 99001, 0, 501, 310001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) 
-values(330032, 88, now(), now(), 99002, 0, 505, 310001);
+values(330032, 88, now(), now(), 99001, 0, 502, 310001);
 
 INSERT INTO public.shipment
 (sub_order_id, shipping_service_id, parameters, created_at, updated_at, status)

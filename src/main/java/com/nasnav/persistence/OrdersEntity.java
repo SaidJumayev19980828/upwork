@@ -10,6 +10,7 @@ import java.util.Set;
 
 import javax.persistence.*;
 
+import org.apache.commons.lang3.builder.HashCodeExclude;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -23,6 +24,8 @@ import com.nasnav.persistence.listeners.OrdersEntityListener;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.EqualsAndHashCode.Exclude;
+import lombok.ToString;
 
 @Entity
 @Table(name="orders")
@@ -88,30 +91,37 @@ public class OrdersEntity implements BaseEntity{
 
 	@OneToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "address_id", referencedColumnName = "id")
-	@JsonIgnore
+	@Exclude
+	@ToString.Exclude
 	private AddressesEntity addressEntity;
 
-	//TODO decide between relational or not
-	//@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "shop_id", nullable = false)
+	@Exclude
+	@ToString.Exclude
 	private ShopsEntity shopsEntity;
 
-	//TODO decide if deprecated or not
-	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "organization_id", nullable = false)
+	@Exclude
+	@ToString.Exclude
 	private OrganizationEntity organizationEntity;
 
 	@OneToMany(mappedBy = "ordersEntity", cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
+	@Exclude
+	@ToString.Exclude
     private Set<BasketsEntity> basketsEntity;
 
 	@ManyToOne(cascade = CascadeType.MERGE)
 	@JoinColumn(name = "payment_id", referencedColumnName = "id")
+	@Exclude
+	@ToString.Exclude
 	private PaymentEntity paymentEntity;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "meta_order_id", referencedColumnName = "id")
+	@EqualsAndHashCode.Exclude
+	@ToString.Exclude
 	private MetaOrderEntity metaOrder;
 
 
