@@ -13,6 +13,5 @@ public interface ShippingManagementService {
 	List<ShippingOfferDTO> getShippingOffers(Long customerAddress);
 	void validateShippingAdditionalData(CartCheckoutDTO dto);
 
-	List<BigDecimal> calculateShippingFees(List<ShippingDetails> shippingDetails);
-	List<ShippingEta> calculateShippingETA(List<ShippingDetails> shippingDetails);
+	List<ShippingOfferDTO> getOffersFromOrganizationShippingServices(List<ShippingDetails> shippingDetails);
 }

@@ -29,20 +29,4 @@ public class SubOrder {
     @JsonProperty("delivery_address")
     private AddressRepObj deliveryAddress;
     private List<BasketItem> items;
-
-    @JsonIgnore
-    private BigDecimal shipping;
-    /*
-        "shipment": {
-        "service_id": "BOSTA",
-                "service_name": "bosta",
-                "shop_id": 445,
-                "shop_name": "Cairo Festival",
-                "shipping_fee": 25,
-                "eta": {
-            "from": "12-06-2020",
-                    "to": "14-06-2020"
-}*/
-
-
 }

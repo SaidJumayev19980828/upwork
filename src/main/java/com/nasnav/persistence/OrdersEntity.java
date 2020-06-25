@@ -114,6 +114,8 @@ public class OrdersEntity implements BaseEntity{
 	@JoinColumn(name = "meta_order_id", referencedColumnName = "id")
 	private MetaOrderEntity metaOrder;
 
+	@OneToOne(mappedBy="subOrder")
+	private ShipmentEntity shipment;
 
 	@Override
 	public BaseRepresentationObject getRepresentation() {

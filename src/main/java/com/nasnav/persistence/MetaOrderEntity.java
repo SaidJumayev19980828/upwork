@@ -5,7 +5,6 @@ import com.nasnav.dto.BaseRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.internal.CriteriaImpl;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -42,7 +41,7 @@ public class MetaOrderEntity implements BaseEntity {
 
     @Override
     public BaseRepresentationObject getRepresentation() {
-        return null;
+        return new BaseRepresentationObject();
     }
 
     public MetaOrderEntity() {

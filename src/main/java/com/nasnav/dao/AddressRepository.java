@@ -21,12 +21,12 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
                                       @Param("userId") Long userId);
 
     @Query(value = "select addr from UserEntity usr left join usr.addresses addr" +
-            " where usr.id = :userId ", nativeQuery = true)
+            " where usr.id = :userId ")
     Set<AddressesEntity> findByUserId(@Param("userId") Long userId);
 
 
-    @Query(value = "select addr from UserEntity usr left join usr.addresses addr" +
-            " where usr.id = :userId limit 1", nativeQuery = true)
+    @Query(value = "select addr from user_addresses ua left join addresses addr on ua.address_id = addr.id" +
+            " where ua.user_id = :userId limit 1", nativeQuery = true)
     Optional<AddressesEntity> findOneByUserId(@Param("userId") Long userId);
 
     @Modifying

@@ -81,38 +81,34 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	@Override
 	public void validateShippingAdditionalData(CartCheckoutDTO dto) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-
-		Optional<ShippingService> shippingService =
-				ofNullable(orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, dto.getServiceId()))
-				.map(this::getShippingService)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SHIP$0001));
-
-		if (!shippingService.isPresent()) {
-			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SVC$0001);
-		}
+		ShippingService shippingService = getShippingService(dto.getServiceId());
 
 		List<ShippingDetails> shippingDetails = createShippingDetailsFromCart(dto.getAddressId());
 		for(ShippingDetails shippingDetail : shippingDetails) {
 			shippingDetail.setAdditionalData(dto.getAdditionalData());
 		}
 
-		shippingService.get().validateShipment(shippingDetails);
-
+		shippingService.validateShipment(shippingDetails);
 	}
+
+
+	private ShippingService getShippingService(String serviceId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+
+		Optional<ShippingService> shippingService =
+				ofNullable(orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, serviceId))
+						.map(this::getShippingService)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SHIP$0001));
+
+		if (!shippingService.isPresent()) {
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SVC$0001);
+		}
+		return shippingService.get();
+	}
+
 
 	@Override
-	public List<BigDecimal> calculateShippingFees(List<ShippingDetails> shippingDetails) {
-		return new ArrayList<>();
-	}
-
-	@Override
-	public List<ShippingEta> calculateShippingETA(List<ShippingDetails> shippingDetails) {
-		return new ArrayList<>();
-	}
-
-
-	private List<ShippingOfferDTO> getOffersFromOrganizationShippingServices(List<ShippingDetails> shippingDetails) {
+	public List<ShippingOfferDTO> getOffersFromOrganizationShippingServices(List<ShippingDetails> shippingDetails) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		return Flux
 				.fromIterable(orgShippingServiceRepo.getByOrganization_Id(orgId))
@@ -134,7 +130,6 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		List<ShippingAdditionalDataDTO> additionalParams = getAdditionalParametersDtoList(data);
 		List<ShipmentDTO> shipments = getShipmentDtoList(data);
 		BigDecimal total = calculateTotal(shipments);
-		
 		offerDto.setAdditionalData(additionalParams);
 		offerDto.setServiceId(data.getService().getId());
 		offerDto.setServiceName(data.getService().getName());
@@ -188,6 +183,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		dto.setShopId(stock.getShopsEntity().getId());
 		dto.setShopName(stock.getShopsEntity().getName());
 		dto.setStocks(stocks);
+		dto.setSubOrderId(shipment.getSubOrderId());
 		return dto;
 	}
 

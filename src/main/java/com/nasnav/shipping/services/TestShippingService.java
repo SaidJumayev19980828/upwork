@@ -91,7 +91,7 @@ public class TestShippingService implements ShippingService {
 				.collect(
 					collectingAndThen(
 						toList()
-						, stocks -> new Shipment(getFlatRate(), getFlatEta(), stocks)));
+						, stocks -> new Shipment(getFlatRate(), getFlatEta(), stocks, request.getSubOrderId())));
 	}
 
 

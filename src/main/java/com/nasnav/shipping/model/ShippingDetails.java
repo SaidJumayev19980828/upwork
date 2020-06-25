@@ -11,5 +11,6 @@ public class ShippingDetails {
 	private ShippingAddress destination;
 	private Map<String,?> additionalData;
 	private Map<String,String> serviceParameters;
-	private List<ShipmentItems> items; 
+	private List<ShipmentItems> items;
+	private Long subOrderId;
 }
