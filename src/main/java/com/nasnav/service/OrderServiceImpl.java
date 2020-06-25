@@ -39,7 +39,6 @@ import static com.nasnav.enumerations.Roles.STORE_MANAGER;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$MAIL$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
 import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
@@ -51,6 +50,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -70,6 +70,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
@@ -86,7 +87,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.CartItemRepository;
@@ -113,7 +113,6 @@ import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
@@ -827,6 +826,44 @@ public class OrderServiceImpl implements OrderService {
 
 	private Map<String, String> createBillEmailParams(MetaOrderEntity order) {
 		Map<String,String> params = new HashMap<>();
+		
+		params.put("#order_id#", order.getId().toString());
+		params.put("#order_details#", createOrderDetailsStr(order));
+		params.put("#dashboard_link#", "https://uat.nasnav.org/dashboard/mange-orders");
+		return params;
+	}
+
+
+
+
+
+	private String createOrderDetailsStr(MetaOrderEntity order) {
+		String metaOrderInfo = createMetaOrderInfo(order);
+		String subOrderDetails = createSubOrderDetailsStr(order);
+		
+		return metaOrderInfo + "/n" + subOrderDetails;
+	}
+
+
+
+
+
+	private String createSubOrderDetailsStr(MetaOrderEntity order) {
+		return order
+				.getSubOrders()
+				.stream()
+				.map(this::createSubOrderDetails)
+				.collect(joining("\n\n"));
+	}
+
+
+	private String createSubOrderDetails(OrdersEntity order){
+		return "";
+	}
+
+
+
+	private String createMetaOrderInfo(MetaOrderEntity order) {
 		LocalDateTime orderTime = 
 				order
 				.getSubOrders()
@@ -839,10 +876,25 @@ public class OrderServiceImpl implements OrderService {
 				DateTimeFormatter
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(orderTime);
-		params.put("#order_id#", order.getId().toString());
-		params.put("#order_create_time#", orderTimeStr);
-		params.put("#dashboard_link#", "https://uat.nasnav.org/dashboard/mange-orders");
-		return params;
+		String total = getMetaOrderTotal(order).toPlainString();
+		String template = 
+				"Id\t\t:\t\t%d"
+				+ "\nCreated at\t\t:\t\t%s"
+				+ "\nTotal\t\t:\t\t%s"; 
+		return format( template, order.getId(), orderTimeStr, total);
+	}
+
+
+
+
+
+	private BigDecimal getMetaOrderTotal(MetaOrderEntity order) {
+		return order
+		.getSubOrders()
+		.stream()
+		.map(OrdersEntity::getAmount)
+		.reduce(ZERO, BigDecimal::add)
+		.setScale(2, BigDecimal.ROUND_HALF_EVEN);
 	}
 
 
