@@ -1,15 +1,7 @@
 package com.nasnav.controller;
 
-import com.nasnav.AppConfig;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
-import com.nasnav.dao.PaymentsRepository;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.payments.upg.UpgLightbox;
-import com.nasnav.payments.misc.Tools;
-import com.nasnav.payments.upg.UpgSession;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.service.OrderService;
+import java.util.ArrayList;
+import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,14 +10,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.nasnav.AppConfig;
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
+import com.nasnav.dao.PaymentsRepository;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.payments.misc.Tools;
+import com.nasnav.payments.upg.UpgLightbox;
+import com.nasnav.payments.upg.UpgSession;
+import com.nasnav.persistence.OrdersEntity;
+
 import springfox.documentation.annotations.ApiIgnore;
-
-import static java.util.stream.Collectors.toList;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -46,9 +49,6 @@ public class PaymentControllerUpg {
     @Autowired
     private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
     
-    @Autowired
-    private OrderService orderService;
-
     @Autowired
     public PaymentControllerUpg(
             OrdersRepository ordersRepository,
@@ -84,8 +84,6 @@ public class PaymentControllerUpg {
     public ResponseEntity<?> upgGetData(@RequestParam(name = "order_id") String ordersList) throws BusinessException {
         ArrayList<OrdersEntity> orders = Tools.getOrdersFromString(ordersRepository, ordersList, ",");
 
-        validateOrdersForCheckOut(orders);
-        
         String accountName = Tools.getAccount(Tools.getOrdersFromString(ordersRepository, ordersList, ","), "upg", orgPaymentGatewaysRep);
 
         Properties props = Tools.getPropertyForAccount(accountName, upgLogger, config.paymentPropertiesDir);
@@ -100,15 +98,6 @@ public class PaymentControllerUpg {
         return new ResponseEntity<>(data.toString(), HttpStatus.OK);
     }
     
-    
-    private void validateOrdersForCheckOut(List<OrdersEntity> orders) {
-		List<Long> orderIds = 
-				orders
-				.stream()
-				.map(OrdersEntity::getId)
-				.collect(toList());        
-		orderService.validateOrderIdsForCheckOut(orderIds);
-	}
 
     @PostMapping(value = "callback")
     public ResponseEntity<?> upgCallback(@RequestBody String content) throws BusinessException {

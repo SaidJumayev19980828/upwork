@@ -1562,27 +1562,8 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	//TODO: i don't like that validations is also doing a stock update from external system, but for now, i can't put this action
-	//somewhere else, as the validation-checkout are not done at the same point now. 
-	//validation is done before payment and checkout after it!
-	@Override
-	@Transactional(noRollbackFor = StockValidationException.class)	//the validation may update the stock from external system as well
-	public void validateOrdersForCheckOut(List<OrdersEntity> orders){
-		orders.forEach(this::validateOrderForCheckout);
-	}
 	
-	
-	
-	@Override
-	@Transactional(noRollbackFor = StockValidationException.class)	//the validation may update the stock from external system as well
-	public void validateOrderIdsForCheckOut(List<Long> orderIds){
-		List<OrdersEntity> orders = ordersRepository.findByIdIn(orderIds);
-		validateOrdersForCheckOut(orders);
-	}
-	
-	
-	
-	
+	//TODO the external stock check must be included in the checkout logic
 	private void validateOrderForCheckout(OrdersEntity order) {
 		validateOrderStatusForCheckOut(order);
 		Long orgId = order.getOrganizationEntity().getId();

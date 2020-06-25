@@ -219,7 +219,6 @@ public class MastercardSession {
     	}    	
         this.includedOrders = orders;
         
-        validateOrdersForCheckOut(this.includedOrders);
         
         this.orderUid = Tools.getOrderUid(orders, classLogger);
         this.orderValue = Tools.getTotalOrderValue(orders, orderService, classLogger);
@@ -287,17 +286,6 @@ public class MastercardSession {
     }
 
     
-    
-	private void validateOrdersForCheckOut(List<OrdersEntity> orders) {
-		List<Long> orderIds = 
-				orders
-				.stream()
-				.map(OrdersEntity::getId)
-				.collect(toList());        
-        orderService.validateOrderIdsForCheckOut(orderIds);
-	}
-	
-	
 
     public String getSessionId() {
         return this.sessionId;

@@ -1756,19 +1756,6 @@ public class OrderServiceTest {
 
 	
 	
-	@Test(expected = Throwable.class)
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_3.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void testOrderCheckoutValidateNotEnoughStock() throws BusinessException {
-		Long orderId = 330037L; 
-		StocksEntity stockBefore = stockRepository.findById(602L).get();
-		assertEquals(0, stockBefore.getQuantity().intValue());
-		
-		//-------------------------------------------
-		orderService.validateOrderIdsForCheckOut(asList(orderId));
-		//-------------------------------------------		
-	}
-
 
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql","/sql/Orders_Test_Data_Insert_3.sql"})

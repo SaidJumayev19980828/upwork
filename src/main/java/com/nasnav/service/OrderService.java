@@ -49,11 +49,7 @@ public interface OrderService {
 
 	public void deleteCurrentOrders();
 	
-	public void validateOrdersForCheckOut(List<OrdersEntity> orders); 
-	
 	void finalizeOrder(Long orderId) throws BusinessException;
-
-	void validateOrderIdsForCheckOut(List<Long> orderIds);
 
 	public void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
 	
