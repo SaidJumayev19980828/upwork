@@ -9,6 +9,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import com.nasnav.dao.*;
+import com.nasnav.dto.response.navbox.Order;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -213,9 +214,9 @@ public class CartTest {
 		JSONObject body = createCartCheckoutBody();
 
 		HttpEntity request = getHttpEntity(body.toString(), "123");
-		ResponseEntity<List> res = template.postForEntity("/cart/checkout", request, List.class);
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
 		assertEquals(200, res.getStatusCodeValue());
-		assertTrue(!res.getBody().isEmpty());
+		assertTrue(res.getBody().getOrderId() != null);
 	}
 
 

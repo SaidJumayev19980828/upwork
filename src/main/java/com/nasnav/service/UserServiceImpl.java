@@ -28,6 +28,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
 
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dto.AddressDTO;
+import com.nasnav.dto.AddressRepObj;
 import com.nasnav.persistence.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -590,8 +592,9 @@ public class UserServiceImpl implements UserService {
 	private Set getUserAddresses(Long userId){
 		return addressRepo.findByUserId(userId)
 						  .stream()
-						  .map(AddressesEntity::getRepresentation)
-						  .collect(Collectors.toSet());
+				          .filter(Objects::nonNull)
+						  .map(addr -> (AddressRepObj) addr.getRepresentation())
+						  .collect(toSet());
 	}
 
 	

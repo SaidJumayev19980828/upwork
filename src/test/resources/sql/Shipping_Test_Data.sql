@@ -126,6 +126,6 @@ INSERT INTO public.shipping_service(id, service_parameters, additional_parameter
 INSERT INTO public.shipping_service(id, service_parameters, additional_parameters)VALUES('GENERIC', '[{"name":"cities", "type":"StringArray"}]', '[{"name":"city", "type":"String"}]');
 
 
-INSERT INTO public.organization_shipping_service(shipping_service_id, organization_id, service_parameters)VALUES('TEST', 99001, '{"hotline":"19888"}');
+INSERT INTO public.organization_shipping_service(shipping_service_id, organization_id, service_parameters, id)VALUES('TEST', 99001, '{"hotline":"19888"}', 11001);
 
 

@@ -1096,7 +1096,7 @@ public class UserRegisterTest {
 		ResponseEntity<String> response = template.postForEntity("/user/update", request, String.class);
 		assertEquals(200, response.getStatusCodeValue());
 
-		Optional<AddressesEntity> entity = addressRepo.findOneByUserId(88001L);
+		Optional<AddressesEntity> entity = addressRepo.findByUserId(88001L).stream().findFirst();
 		assertTrue(entity.isPresent());
 		AddressesEntity addressesEntity = entity.get();
 		assertEquals("address line", addressesEntity.getAddressLine1());

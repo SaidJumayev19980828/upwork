@@ -1068,7 +1068,7 @@ public class OrderServiceImpl implements OrderService {
 		//TODO set item unit //
 		item.setTotalPrice(itemDetails.getPrice());
 		item.setThumb( itemDetails.getProductCoverImage() );
-		//item.setCurrency(TransactionCurrency.getTransactionCurrency(itemDetails.getCurrency()).name());
+		item.setCurrency(ofNullable(TransactionCurrency.getTransactionCurrency(itemDetails.getCurrency())).orElse(EGP).name());
 		
 		return item;
 	}
@@ -1734,7 +1734,7 @@ public class OrderServiceImpl implements OrderService {
 		for(CartCheckoutData data : cartCheckoutData) {
 			BasketsEntity basket = createBasketItem(data, subOrder);
 			subOrder.addBasketItem(basket);
-			totalAmount = totalAmount.add(basket);
+			totalAmount = totalAmount.add(basket.getPrice());
 		}
 		subOrder.setAmount(totalAmount);
 		return ordersRepository.save(subOrder);
