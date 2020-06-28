@@ -1,9 +1,23 @@
 package com.nasnav.service;
 
-import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
+import static com.nasnav.exceptions.ErrorCodes.ORG$SHIP$0001;
+import static com.nasnav.exceptions.ErrorCodes.S$0004;
+import static com.nasnav.exceptions.ErrorCodes.SHP$OFFR$0001;
+import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0003;
+import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0006;
+import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0007;
+import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0008;
+import static com.nasnav.exceptions.ErrorCodes.SHP$SVC$0001;
+import static com.nasnav.exceptions.ErrorCodes.SHP$USR$0001;
+import static com.nasnav.shipping.ShippingServiceFactory.getServiceInfo;
 import static com.nasnav.shipping.model.ParameterType.STRING;
 import static java.math.BigDecimal.ZERO;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
@@ -13,15 +27,21 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
-import com.nasnav.dto.request.cart.CartCheckoutDTO;
-import com.nasnav.shipping.model.*;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.utils.EntityUtils;
@@ -29,25 +49,45 @@ import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.OrganizationShippingServiceRepository;
 import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.UserRepository;
+import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingAdditionalDataDTO;
 import com.nasnav.dto.request.shipping.ShippingEtaDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
+import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.AddressesEntity;
 import com.nasnav.persistence.AreasEntity;
 import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.CitiesEntity;
 import com.nasnav.persistence.CountriesEntity;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.OrganizationShippingServiceEntity;
+import com.nasnav.persistence.ShipmentEntity;
 import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.dto.query.result.CartItemShippingData;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
+import com.nasnav.shipping.model.Parameter;
+import com.nasnav.shipping.model.ParameterType;
+import com.nasnav.shipping.model.ServiceParameter;
+import com.nasnav.shipping.model.Shipment;
+import com.nasnav.shipping.model.ShipmentItems;
+import com.nasnav.shipping.model.ShipmentReceiver;
+import com.nasnav.shipping.model.ShipmentTracker;
+import com.nasnav.shipping.model.ShippingAddress;
+import com.nasnav.shipping.model.ShippingDetails;
+import com.nasnav.shipping.model.ShippingOffer;
+import com.nasnav.shipping.model.ShippingServiceInfo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Service
 public class ShippingManagementServiceImpl implements ShippingManagementService {
@@ -69,6 +109,11 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	@Autowired
 	private StockRepository stockRepo;
 	
+	@Autowired
+	private ObjectMapper jsonMapper;
+	
+	@Autowired
+	private UserRepository userRepo;
 	
 	@Override
 	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
@@ -92,13 +137,17 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	}
 
 
+	
+	
+	
 	private ShippingService getShippingService(String serviceId) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 
 		Optional<ShippingService> shippingService =
-				ofNullable(orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, serviceId))
-						.map(this::getShippingService)
-						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SHIP$0001));
+					orgShippingServiceRepo
+					.getByOrganization_IdAndServiceId(orgId, serviceId)
+					.map(this::getShippingService)
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SHIP$0001));
 
 		if (!shippingService.isPresent()) {
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SVC$0001);
@@ -107,6 +156,9 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	}
 
 
+	
+	
+	
 	@Override
 	public List<ShippingOfferDTO> getOffersFromOrganizationShippingServices(List<ShippingDetails> shippingDetails) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
@@ -143,10 +195,10 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	private BigDecimal calculateTotal(List<ShipmentDTO> shipments) {
 		return ofNullable(shipments)
-			.orElse(emptyList())
-			.stream()
-			.map(ShipmentDTO::getShippingFee)
-			.reduce(ZERO, BigDecimal::add);
+				.orElse(emptyList())
+				.stream()
+				.map(ShipmentDTO::getShippingFee)
+				.reduce(ZERO, BigDecimal::add);
 	}
 
 
@@ -154,10 +206,10 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	private List<ShipmentDTO> getShipmentDtoList(ShippingOffer data) {
 		return data
-		.getShipments()
-		.stream()
-		.map(this::createShipmentDTO)
-		.collect(toList());
+				.getShipments()
+				.stream()
+				.map(this::createShipmentDTO)
+				.collect(toList());
 	}
 
 
@@ -213,8 +265,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	
-	
-	private Optional<ShippingService> getShippingService(OrganizationShippingServiceEntity orgShippingService){
+	@Override
+	public Optional<ShippingService> getShippingService(OrganizationShippingServiceEntity orgShippingService){
 		String id = orgShippingService.getServiceId();
 		List<ServiceParameter> serviceParameters = parseServiceParameters(orgShippingService);
 		
@@ -225,14 +277,13 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 
-	private List<ServiceParameter> parseServiceParameters(OrganizationShippingServiceEntity orgShippingService) {
+	public List<ServiceParameter> parseServiceParameters(OrganizationShippingServiceEntity orgShippingService) {
 		String serviceParamsString = ofNullable(orgShippingService.getServiceParameters()).orElse("{}");
 		
-		ObjectMapper mapper = new ObjectMapper();
 		TypeReference<HashMap<String, String>> typeRef = new TypeReference<HashMap<String, String>>() {};
 		Map<String, String> paramMap = new HashMap<>();
 		try {
-			paramMap = mapper.readValue(serviceParamsString, typeRef) ;
+			paramMap = jsonMapper.readValue(serviceParamsString, typeRef) ;
 		} catch (IOException e) {
 			logger.error(e,e);
 		}
@@ -366,7 +417,169 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 					.stream()
 					.collect(toMap(AddressesEntity::getId, addr -> addr));
 	}
+
+
+
+
+	@Override
+	public void registerToShippingService(ShippingServiceRegistration registration) {
+		String serviceId = registration.getServiceId(); 
+		ShippingServiceInfo info = 
+				getServiceInfo(serviceId)
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE , SHP$SRV$0006, serviceId));
+		
+		String serviceParamsString = 
+				ofNullable(registration.getServiceParameters())
+				.map(this::serialize)
+				.map(str -> str.isEmpty()? "{}": str)
+				.orElse("{}");
+		
+		validateServiceParameters(serviceId, info, serviceParamsString);
+		
+		persistServiceParameters(serviceId, serviceParamsString);
+	}
 	
+	
+	
+	
+	
+	private String serialize(Map<String,Object> map) {
+		try {
+			return jsonMapper.writeValueAsString(map);
+		} catch (JsonProcessingException e) {
+			logger.error(e,e);
+			throw new RuntimeException(e); 
+		}
+	}
+
+
+
+
+	private void persistServiceParameters(String serviceId, String serviceParamsString) {
+		OrganizationEntity organization = securityService.getCurrentUserOrganization();
+		OrganizationShippingServiceEntity orgService = 
+				orgShippingServiceRepo
+				.getByOrganization_IdAndServiceId(organization.getId(), serviceId)
+				.orElse(new OrganizationShippingServiceEntity());
+		
+		orgService.setServiceId(serviceId);
+		orgService.setServiceParameters(serviceParamsString);
+		orgService.setOrganization(organization);
+		
+		orgShippingServiceRepo.save(orgService);
+	}
+
+
+
+
+	private void validateServiceParameters(String serviceId, ShippingServiceInfo info, String serviceParamsString) {
+		try {
+			JSONObject paramsJson = new JSONObject(serviceParamsString);
+			info
+			.getServiceParams()
+			.stream()
+			.forEach(param -> validateServiceParameter(param, paramsJson, serviceId));
+		}catch(JSONException t) {
+			logger.error(t,t);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0007, serviceParamsString);
+		}
+	}
+	
+	
+	
+	
+	
+	private void validateServiceParameter(Parameter param, JSONObject paramsJson, String serviceId) {
+		try {
+			Object paramVal = ofNullable(paramsJson.get(param.getName())).orElse("null");
+			if(isNull(paramVal)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0003, param.getName(), serviceId);
+			}
+			if(!param.getType().getJavaType().isInstance(paramVal)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0008, paramVal.toString(), param.getName(), serviceId);
+			}
+		}catch(JSONException e) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0003, param.getName(), serviceId);
+		}
+	}
+
+
+
+
+	@Override
+	@Transactional
+	public Mono<ShipmentTracker> requestShipment(OrdersEntity subOrder) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		
+		ShippingDetails shippingDetails = createShippingDetailsFromOrder(subOrder);
+		ShipmentEntity shipment = subOrder.getShipment();
+		return ofNullable(shipment)
+				.map(ShipmentEntity::getShippingServiceId)
+				.flatMap(serviceId -> orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, serviceId))
+				.flatMap(this::getShippingService)
+				.map(service -> service.requestShipment(asList(shippingDetails)))
+				.map(trackerFlux -> trackerFlux.singleOrEmpty())
+				.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0001, subOrder.getId()));
+	}
+
+
+
+
+	@Override
+	public ShippingDetails createShippingDetailsFromOrder(OrdersEntity subOrder) {
+		ShippingDetails shippingData = new ShippingDetails();
+		ShippingAddress customerAddr = createShippingAddress(subOrder.getAddressEntity());
+		ShippingAddress shopAddr = createShippingAddress(subOrder.getShopsEntity().getAddressesEntity());
+		Map<String,String> additionalData = parseJsonAsMap(subOrder.getShipment().getParameters());
+		ShipmentReceiver receiver = createShipmentReceiver(subOrder.getUserId());
+		List<ShipmentItems> items = createShipmentItemsFromOrder(subOrder);
+		
+		shippingData.setAdditionalData(additionalData);
+		shippingData.setDestination(customerAddr);
+		shippingData.setReceiver(receiver);
+		shippingData.setSource(shopAddr);
+		shippingData.setItems(items);
+		return shippingData;
+	}
+
+
+
+
+	private List<ShipmentItems> createShipmentItemsFromOrder(OrdersEntity subOrder) {
+		return subOrder
+		.getBasketsEntity()
+		.stream()
+		.map(BasketsEntity::getStocksEntity)
+		.map(StocksEntity::getId)
+		.map(ShipmentItems::new)
+		.collect(toList());
+	}
+	
+	
+	
+	private ShipmentReceiver createShipmentReceiver(Long userId) {
+		UserEntity customer = 
+				userRepo
+				.findById(userId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$USR$0001, userId));
+		ShipmentReceiver receiver = new ShipmentReceiver();
+		receiver.setEmail(customer.getEmail());
+		receiver.setFirstName(customer.getName());
+		receiver.setPhone(customer.getPhoneNumber());
+		return receiver;
+	}
+
+
+
+
+	private Map<String,String> parseJsonAsMap(String json){
+		try {
+			return jsonMapper.readValue(json, new TypeReference<Map<String,String>>() {});
+		} catch (IOException e) {
+			logger.error(e,e);
+			return emptyMap();
+		}
+	}
 }
 
 

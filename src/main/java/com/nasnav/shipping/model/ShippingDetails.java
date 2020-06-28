@@ -9,6 +9,7 @@ import lombok.Data;
 public class ShippingDetails {
 	private ShippingAddress source;
 	private ShippingAddress destination;
+	private ShipmentReceiver receiver;
 	private Map<String,?> additionalData;
 	private Map<String,String> serviceParameters;
 	private List<ShipmentItems> items;

@@ -54,12 +54,21 @@ public enum ErrorCodes {
 	,O$CHK$0003("Must provide shipping service additional data")
 
 	,ORG$SHIP$0001("Organization is not registered with any shipping provider!")
-
+	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
+	,SHP$SRV$0001("Invalid service parameter [%s]!")
+	,SHP$SRV$0002("Missing Service parameters for shipping service[%s]!")
+	,SHP$SRV$0003("Missing Service parameter with name[%s] for shipping service[%s]!")
+	,SHP$SRV$0004("Failed to get valid response from external shipping service [%s]! returned response is[%s]")
+	,SHP$SRV$0005("Shipping service [%s] doesnot support city with id[%d]!")
+	,SHP$SRV$0006("No Shipping service exits with id[%s]!")
+	,SHP$SRV$0007("Invalid Shipping service parameters structure [%s]!")
+	,SHP$SRV$0008("The given value [%s] for Service parameter [%s] of shipping service [%s] has invlaid type!")
 
 	,SHP$SVC$0001("Shipping service is not available!")
 
 
+	,SHP$USR$0001("Cannot request shipment! User with id[%d] doesn't exists!")
 	;
 	
 	@Getter

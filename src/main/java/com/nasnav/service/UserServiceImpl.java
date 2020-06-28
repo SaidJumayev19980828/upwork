@@ -12,7 +12,11 @@ import static com.nasnav.constatnts.EntityConstants.TOKEN_VALIDITY;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
-import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0001;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0002;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0003;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0004;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
 import static com.nasnav.response.ResponseStatus.EMAIL_EXISTS;
 import static com.nasnav.response.ResponseStatus.EXPIRED_TOKEN;
@@ -28,20 +32,24 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
-import com.nasnav.dao.AddressRepository;
-import com.nasnav.dto.AddressDTO;
-import com.nasnav.dto.AddressRepObj;
-import com.nasnav.persistence.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,15 +67,23 @@ import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EmailConstants;
+import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.CommonUserRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.UserRepository;
+import com.nasnav.dto.AddressDTO;
+import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.AddressesEntity;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 
@@ -307,7 +323,9 @@ public class UserServiceImpl implements UserService {
 				AddressDTO addressDTO = userJson.getAddress();
 				Set<AddressesEntity> userAddresses = addressRepo.findByUserId(userEntity.getId());
 				if (addressDTO.getId() != null) {
-					AddressesEntity oldAddress = ofNullable(addressRepo.findByIdAndUserId(addressDTO.getId(), userEntity.getId()))
+					AddressesEntity oldAddress = 
+							addressRepo
+							.findByIdAndUserId(addressDTO.getId(), userEntity.getId())
 							.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, addressDTO.getId()));
 					userAddresses.remove(oldAddress);
 					addressRepo.unlinkAddressFromUser(addressDTO.getId(), userEntity.getId());
@@ -589,11 +607,12 @@ public class UserServiceImpl implements UserService {
 	}
 	
 	
-	private Set getUserAddresses(Long userId){
+	private Set<AddressRepObj> getUserAddresses(Long userId){
 		return addressRepo.findByUserId(userId)
 						  .stream()
 				          .filter(Objects::nonNull)
-						  .map(addr -> (AddressRepObj) addr.getRepresentation())
+						  .map(AddressesEntity::getRepresentation)
+						  .map(AddressRepObj.class::cast)
 						  .collect(toSet());
 	}
 

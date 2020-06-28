@@ -24,23 +24,41 @@ import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_O
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_STATUS_NOT_ALLOWED_FOR_ROLE;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_UPDATED_ORDER_WITH_NO_ID;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
-import static com.nasnav.enumerations.OrderStatus.*;
+import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
+import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
+import static com.nasnav.enumerations.OrderStatus.DELIVERED;
+import static com.nasnav.enumerations.OrderStatus.DISPATCHED;
+import static com.nasnav.enumerations.OrderStatus.NEW;
+import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
+import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
+import static com.nasnav.enumerations.OrderStatus.STORE_PREPARED;
+import static com.nasnav.enumerations.OrderStatus.findEnum;
 import static com.nasnav.enumerations.Roles.CUSTOMER;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
-import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0001;
+import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$CHK$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$CHK$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0004;
+import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
-import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -49,6 +67,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -65,16 +84,6 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dao.*;
-import com.nasnav.dto.request.cart.CartCheckoutDTO;
-import com.nasnav.dto.request.shipping.ShipmentDTO;
-import com.nasnav.dto.request.shipping.ShippingOfferDTO;
-import com.nasnav.dto.response.navbox.*;
-import com.nasnav.dto.response.navbox.Shipment;
-import com.nasnav.persistence.*;
-import com.nasnav.persistence.dto.query.result.CartCheckoutData;
-import com.nasnav.shipping.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -84,8 +93,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.BasketRepository;
+import com.nasnav.dao.CartItemRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.MetaOrderRepository;
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.OrganizationShippingServiceRepository;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ShipmentRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.BasketItemDTO;
@@ -93,6 +113,14 @@ import com.nasnav.dto.BasketItemDetails;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.OrderRepresentationObject;
+import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.dto.request.shipping.ShipmentDTO;
+import com.nasnav.dto.request.shipping.ShippingOfferDTO;
+import com.nasnav.dto.response.navbox.Cart;
+import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.dto.response.navbox.Shipment;
+import com.nasnav.dto.response.navbox.SubOrder;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
@@ -103,12 +131,30 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
+import com.nasnav.persistence.AddressesEntity;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.CartItemEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.PaymentEntity;
+import com.nasnav.persistence.ShipmentEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
+import com.nasnav.shipping.model.ServiceParameter;
+import com.nasnav.shipping.model.ShipmentItems;
+import com.nasnav.shipping.model.ShippingAddress;
+import com.nasnav.shipping.model.ShippingDetails;
+import com.nasnav.shipping.model.ShippingEta;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -633,8 +679,9 @@ public class OrderServiceImpl implements OrderService {
 		AddressesEntity address = null;
 		Long userId = securityService.getCurrentUser().getId();
 		if (order.getAddressId() != null) {
-			address = ofNullable(addressRepo.findByIdAndUserId(order.getAddressId(), userId)).
-					orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, order.getAddressId()));
+			address = addressRepo
+						.findByIdAndUserId(order.getAddressId(), userId)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, order.getAddressId()));
 		}
 		return address;
 	}
@@ -660,8 +707,10 @@ public class OrderServiceImpl implements OrderService {
 										.map(OrderStatus::findEnum)
 										.orElse(NEW);
 
-		OrdersEntity orderEntity =  ordersRepository.findById( orderJsonDto.getId() )
-													.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS));
+		OrdersEntity orderEntity =  
+				ordersRepository
+				.findById( orderJsonDto.getId() )
+				.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS));
 		OrderStatus oldStatus = orderEntity.getOrderStatus();
 		OrderResponse orderResponse = updateCurrentOrderStatus(orderJsonDto, orderEntity, newStatus);
 		
@@ -1571,19 +1620,43 @@ public class OrderServiceImpl implements OrderService {
 
 		validateCartCheckoutDTO(dto);
 
-		AddressesEntity userAddress = ofNullable(addressRepo.findByIdAndUserId(dto.getAddressId(), user.getId()))
+		MetaOrderEntity order = createMetaOrder(dto, user);
+
+		return getOrderResponse(order, dto);
+	}
+
+
+
+
+
+	private MetaOrderEntity createMetaOrder(CartCheckoutDTO dto, BaseUserEntity user) {
+		AddressesEntity userAddress = 
+				addressRepo
+				.findByIdAndUserId(dto.getAddressId(), user.getId())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, dto.getAddressId()));
 
+		Map<Long, List<CartCheckoutData>> checkOutData = getAndValidateCheckoutData(user); 
+		MetaOrderEntity order = createOrder( checkOutData, userAddress, dto );
+		return order;
+	}
+
+
+
+
+
+	private Map<Long, List<CartCheckoutData>> getAndValidateCheckoutData(BaseUserEntity user) {
 		List<CartCheckoutData> userCartItems = cartItemRepo.getCheckoutCartByUser_Id(user.getId());
 
 		validateCartCheckoutItems(userCartItems);
 
-		MetaOrderEntity order = createOrder( userCartItems.stream().collect(groupingBy(CartCheckoutData::getShopId)), userAddress, dto );
-
-		cartItemRepo.deleteByUser_Id(user.getId());
-
-		return getOrderResponse(order, dto);
+		Map<Long,List<CartCheckoutData>> checkOutData = 
+				userCartItems
+				.stream()
+				.collect(groupingBy(CartCheckoutData::getShopId));
+		return checkOutData;
 	}
+
+	
 
 
 	private Order getOrderResponse(MetaOrderEntity order, CartCheckoutDTO dto) throws IOException{
@@ -1592,49 +1665,64 @@ public class OrderServiceImpl implements OrderService {
 		Map<Long, List<BasketItemDetails>> itemsMap =
 				getBasketItemsDetailsMap(order.getSubOrders().stream().map(OrdersEntity::getId).collect(toSet()));
 
-		TransactionCurrency currency = order.getSubOrders()
-											.stream()
-											.findFirst()
-											.map(OrdersEntity::getBasketsEntity)
-											.orElse(new HashSet<BasketsEntity>())
-											.stream()
-											.findFirst()
-											.map(BasketsEntity::getCurrency)
-											.map(TransactionCurrency::getTransactionCurrency).orElse(EGP);
+		TransactionCurrency currency = getOrderCurrency(order);
 
-		Order rep = new Order();
-		rep.setUserId(user.getId());
-		rep.setUserName(user.getName());
-		rep.setOrderId(order.getId());
-		rep.setCurrency(currency.name());
-		rep.setCreationDate(order.getCreatedAt());
-		List<SubOrder> subOrders = new ArrayList<>();
-		for (OrdersEntity s : order.getSubOrders()) {
-			SubOrder subOrder = this.getSubOrder(s, itemsMap, dto);
-			subOrders.add(subOrder);
-		}
-		rep.setSubOrders(subOrders);
+		Order orderDto = new Order();
+		orderDto.setUserId(user.getId());
+		orderDto.setUserName(user.getName());
+		orderDto.setOrderId(order.getId());
+		orderDto.setCurrency(currency.name());
+		orderDto.setCreationDate(order.getCreatedAt());
+		List<SubOrder> subOrders = 
+				order
+				.getSubOrders()
+				.stream()
+				.map(subOrder -> getSubOrder(subOrder, itemsMap, dto))
+				.collect(toList());
+				
+		orderDto.setSubOrders(subOrders);
 
 		BigDecimal subtotal = order.getSubOrders()
 								   .stream()
 								   .map(OrdersEntity::getAmount)
 								   .reduce(ZERO, BigDecimal::add);
 
-		BigDecimal shipping = rep.getSubOrders()
+		BigDecimal shipping = orderDto.getSubOrders()
 								 .stream()
 								 .map(SubOrder::getShipment)
 								 .map(Shipment::getShippingFee)
 								 .reduce(ZERO, BigDecimal::add);
 
-		rep.setSubtotal(subtotal);
-		rep.setShipping(shipping);
-		rep.setTotal(subtotal.add(shipping));
+		orderDto.setSubtotal(subtotal);
+		orderDto.setShipping(shipping);
+		orderDto.setTotal(subtotal.add(shipping));
 
-		return rep;
+		return orderDto;
 	}
 
 
-	private List<ShippingDetails> getShippingDetailsList(Set<OrdersEntity> orders, CartCheckoutDTO dto) throws IOException {
+
+
+
+	private TransactionCurrency getOrderCurrency(MetaOrderEntity order) {
+		return order
+		.getSubOrders()
+		.stream()
+		.findFirst()
+		.map(OrdersEntity::getBasketsEntity)
+		.orElse(new HashSet<BasketsEntity>())
+		.stream()
+		.findFirst()
+		.map(BasketsEntity::getCurrency)
+		.map(TransactionCurrency::getTransactionCurrency)
+		.orElse(EGP);
+	}
+
+	
+	
+	
+
+	private List<ShippingDetails> getShippingDetailsList(Set<OrdersEntity> orders, CartCheckoutDTO dto) {
 		List<ShippingDetails> shippingDetailsList = new ArrayList<>();
 		for(OrdersEntity order : orders) {
 			ShippingAddress source = new ShippingAddress();
@@ -1642,13 +1730,7 @@ public class OrderServiceImpl implements OrderService {
 			BeanUtils.copyProperties(order.getShopsEntity().getAddressesEntity(), source);
 			BeanUtils.copyProperties(addressRepo.getOne(dto.getAddressId()), destination);
 
-			Long orgId = securityService.getCurrentUserOrganizationId();
-
-			String serviceParameters = ofNullable(orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, dto.getServiceId()))
-					.map(OrganizationShippingServiceEntity::getServiceParameters)
-					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SHIP$0001));
-
-			Map<String, String> serviceParametersMap = mapper.readValue(serviceParameters, Map.class);
+			Map<String, String> serviceParametersMap = getShippingServiceParams(dto);
 
 			ShippingDetails shippingDetails = new ShippingDetails();
 			shippingDetails.setSource(source);
@@ -1667,24 +1749,58 @@ public class OrderServiceImpl implements OrderService {
 		return shippingDetailsList;
 	}
 
-	private SubOrder getSubOrder(OrdersEntity order, Map<Long, List<BasketItemDetails>> itemsMap, CartCheckoutDTO dto) throws IOException {
 
+
+
+
+	private Map<String, String> getShippingServiceParams(CartCheckoutDTO dto) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		Map<String, String> serviceParametersMap = 
+				orgShippingServiceRepo
+				.getByOrganization_IdAndServiceId(orgId, dto.getServiceId())
+				.map(shippingManagementService::parseServiceParameters)
+				.orElse(emptyList())
+				.stream()
+				.collect(toMap(ServiceParameter::getParameter, ServiceParameter::getValue));
+		return serviceParametersMap;
+	}
+
+	private SubOrder getSubOrder(OrdersEntity order, Map<Long, List<BasketItemDetails>> itemsMap, CartCheckoutDTO dto) {
+
+		String status = 
+				ofNullable(findEnum(order.getStatus()))
+				.orElse(NEW)
+				.name();
+		
+		List<BasketItem> items = 
+				itemsMap
+				.get(order.getId())
+				.stream()
+				.map(this::toBasketItem)
+				.collect(toList());
+		
+		ShippingEta eta = new ShippingEta(order.getShipment().getFrom(), order.getShipment().getTo());
+		Shipment shipmentDto = new Shipment(dto.getServiceId(), dto.getServiceId(), order.getShipment().getShippingFee(), eta);
+		
+		Long totalQuantity = 
+				items
+				.stream()
+				.map(BasketItem::getQuantity)
+				.reduce(0, Integer::sum)
+				.longValue();
+		
 		SubOrder subOrder = new SubOrder();
 		subOrder.setShopId(order.getShopsEntity().getId());
 		subOrder.setShopName(order.getShopsEntity().getName());
 		subOrder.setSubOrderId(order.getId());
 		subOrder.setCreationDate(order.getCreationDate());
 		subOrder.setSubtotal(order.getAmount());
-		subOrder.setStatus(ofNullable(findEnum(order.getStatus())).orElse(NEW).name());
+		subOrder.setStatus(status);
 		subOrder.setDeliveryAddress((AddressRepObj)order.getAddressEntity().getRepresentation());
-
-		subOrder.setItems(itemsMap.get(order.getId()).stream().map(this::toBasketItem).collect(toList()));
-
-		ShippingEta eta = new ShippingEta(order.getShipment().getFrom(), order.getShipment().getTo());
-		subOrder.setShipment(new Shipment(dto.getServiceId(), dto.getServiceId(), order.getShipment().getShippingFee(), eta));
-
-		subOrder.setTotalQuantity(subOrder.getItems().stream().map(i -> i.getQuantity().longValue()).reduce(0l, Long::sum));
-		subOrder.setTotal(subOrder.getSubtotal().add(subOrder.getShipment().getShippingFee()));
+		subOrder.setItems(items);
+		subOrder.setShipment(shipmentDto);
+		subOrder.setTotalQuantity(totalQuantity);
+		subOrder.setTotal(order.getAmount());
 		return subOrder;
 	}
 
@@ -1703,49 +1819,147 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private MetaOrderEntity createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto) throws IOException {
+	private MetaOrderEntity createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto) {
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
 		UserEntity user = (UserEntity)securityService.getCurrentUser();
 
 		MetaOrderEntity order = new MetaOrderEntity();
+
+		Set<OrdersEntity> subOrders = createSubOrders(shopCartsMap, address, dto, order);
+		
 		order.setOrganization(org);
 		order.setUser(user);
-
-		Set<OrdersEntity> subOrders = new HashSet<>();
-		for(Map.Entry<Long, List<CartCheckoutData>> e : shopCartsMap.entrySet()){
-			subOrders.add(createSubOrders(order, e.getValue(), address, dto));
-		}
 		order.setSubOrders(subOrders);
-		order = metaOrderRepo.save(order);
-		List<ShippingDetails> shippingDetails = getShippingDetailsList(subOrders, dto);
-		List<ShippingOfferDTO> shippingOffers = shippingManagementService.getOffersFromOrganizationShippingServices(shippingDetails);
+		return metaOrderRepo.save(order);
+	}
+
+
+
+
+
+	private Set<OrdersEntity> createSubOrders(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address,
+			CartCheckoutDTO dto, MetaOrderEntity order) {
+		Set<OrdersEntity> subOrders = 
+				shopCartsMap
+				.values()
+				.stream()
+				.map(checkOutData -> createSubOrder(order, checkOutData, address, dto))
+				.collect(toSet());
+		
+		List<ShippingOfferDTO> shippingOffers =
+				subOrders
+				.stream()
+				.map(shippingManagementService::createShippingDetailsFromOrder)
+				.collect(collectingAndThen(toList(), shippingManagementService::getOffersFromOrganizationShippingServices));
+		
 		for(OrdersEntity subOrder : subOrders) {
 			subOrder.setShipment(createShipment(subOrder, dto, shippingOffers));
 		}
-		return order;
+		return subOrders;
 	}
+	
+	
+	
+	
 
 
-	private OrdersEntity createSubOrders(MetaOrderEntity order, List<CartCheckoutData> cartCheckoutData,
+	private OrdersEntity createSubOrder(MetaOrderEntity order, List<CartCheckoutData> cartCheckoutData,
 								 AddressesEntity shippingAddress, CartCheckoutDTO dto) {
-
+		Map<Long, StocksEntity> stocksCache = createStockCache(cartCheckoutData);
+		
 		OrdersEntity subOrder =  createSubOrder(order, shippingAddress, cartCheckoutData);
-		BigDecimal totalAmount = ZERO;
-		for(CartCheckoutData data : cartCheckoutData) {
-			BasketsEntity basket = createBasketItem(data, subOrder);
-			subOrder.addBasketItem(basket);
-			totalAmount = totalAmount.add(basket.getPrice());
-		}
-		subOrder.setAmount(totalAmount);
+		
+		saveOrderItemsIntoSubOrder(cartCheckoutData, stocksCache, subOrder);
+		
+		subOrder.setAmount(calculateSubOrderTotal(subOrder));
 		return ordersRepository.save(subOrder);
-		//TODO add suborders to order using hibernate
-		// order.addSubOrder(subOrder);
 	}
 
 
-	private BasketsEntity createBasketItem(CartCheckoutData data, OrdersEntity subOrder) {
+
+
+
+	private void saveOrderItemsIntoSubOrder(List<CartCheckoutData> cartCheckoutData, Map<Long, StocksEntity> stocksCache,
+			OrdersEntity subOrder) {
+		List<BasketsEntity> items = 
+				cartCheckoutData
+				.stream()
+				.map(data -> createBasketItem(data, subOrder, stocksCache))
+				.collect(toList());		
+		items.forEach(subOrder::addBasketItem);
+	}
+
+
+
+
+
+	private BigDecimal calculateSubOrderTotal(OrdersEntity subOrder) {
+		BigDecimal itemsTotal = 
+				subOrder
+				.getBasketsEntity()
+				.stream()
+				.map(this::calcBasketItemValue)
+				.reduce(ZERO, BigDecimal::add);
+		return itemsTotal.add(subOrder.getShipment().getShippingFee());
+		
+	}
+	
+	
+	
+	private BigDecimal calcBasketItemValue(BasketsEntity item) {
+		return item.getPrice().multiply(item.getQuantity());
+	}
+
+
+
+
+
+	private Map<Long, StocksEntity> createStockCache(List<CartCheckoutData> cartCheckoutData) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		List<Long> itemStocks = 
+				cartCheckoutData
+				.stream()
+				.map(CartCheckoutData::getStockId)
+				.collect(toList());
+		
+		Map<Long, StocksEntity> stocksCache = 
+				stockRepository
+				.findByIdInAndOrganizationEntity_Id(itemStocks, orgId)
+				.stream()
+				.collect(groupingBy(StocksEntity::getId))
+				.entrySet()
+				.stream()
+				.map(this::createStockEntityWithIdEntry)
+				.collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+		return stocksCache;
+	}
+	
+	
+	
+	
+	private Map.Entry<Long, StocksEntity> createStockEntityWithIdEntry(Map.Entry<Long, List<StocksEntity>> entry){
+		Long stockId = entry.getKey();
+		StocksEntity stock = 
+				entry
+				.getValue()
+				.stream()
+				.findFirst()
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$STO$0001, stockId));
+		return new SimpleEntry<Long, StocksEntity>(stockId, stock);
+	}
+
+	
+	
+
+	private BasketsEntity createBasketItem(CartCheckoutData data, OrdersEntity subOrder, Map<Long, StocksEntity> stocksCache) {
+		StocksEntity stock = 
+				ofNullable(data)
+				.map(CartCheckoutData::getStockId)
+				.map(stocksCache::get)
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$STO$0001, data.getStockId()));
+		
 		BasketsEntity basket = new BasketsEntity();
-		basket.setStocksEntity(stockRepository.getOne(data.getStockId()));
+		basket.setStocksEntity(stock);
 		basket.setPrice(new BigDecimal(data.getQuantity()).multiply(data.getPrice()));
 		basket.setQuantity(new BigDecimal(data.getQuantity()));
 		basket.setCurrency(data.getCurrency());
@@ -1784,17 +1998,18 @@ public class OrderServiceImpl implements OrderService {
 			JSONObject additionalData = new JSONObject(dto.getAdditionalData());
 			shipment.setParameters(additionalData.toString());
 		}
-		ShipmentDTO shipmentDTO = shippingOffers.stream()
+		ShipmentDTO shipmentDTO = 
+				shippingOffers
+				.stream()
 				.findFirst()
 				.map(ShippingOfferDTO::getShipments)
-				.get()
+				.orElse(emptyList())
 				.stream()
-				.filter(s -> s.getSubOrderId().equals(subOrder.getId()))
+				.filter(shp -> Objects.equals(shp.getSubOrderId(), subOrder.getId()))
 				.findFirst()
 				.get();
 
 		shipment.setShippingFee(shipmentDTO.getShippingFee());
-
 		shipment.setFrom(shipmentDTO.getEta().getFrom());
 		shipment.setTo(shipmentDTO.getEta().getTo());
 

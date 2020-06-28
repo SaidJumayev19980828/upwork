@@ -1090,7 +1090,7 @@ public class UserRegisterTest {
 		JSONObject address = json().put("address_line_1", "address line");
 		JSONObject body = json().put("employee", false)
 				.put("address", address);
-		HttpEntity request = getHttpEntity(body.toString(), "123");
+		HttpEntity<?> request = getHttpEntity(body.toString(), "123");
 
 		//adding address to user
 		ResponseEntity<String> response = template.postForEntity("/user/update", request, String.class);
@@ -1111,7 +1111,7 @@ public class UserRegisterTest {
 		response = template.postForEntity("/user/update", request, String.class);
 
 		assertEquals(200, response.getStatusCodeValue());
-		assertFalse(addressRepo.findByIdAndUserId(addressesEntity.getId(), 88001L) != null);
+		assertFalse(addressRepo.findByIdAndUserId(addressesEntity.getId(), 88001L).isPresent());
 		addressRepo.delete(addressesEntity);
 
 	}

@@ -17,7 +17,7 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
 
     @Query(value = "select addr from UserEntity usr left join usr.addresses addr" +
             " where usr.id =:userId and addr.id = :addressId")
-    AddressesEntity findByIdAndUserId(@Param("addressId") Long addressId,
+    Optional<AddressesEntity> findByIdAndUserId(@Param("addressId") Long addressId,
                                       @Param("userId") Long userId);
 
     @Query(value = "select addr from UserEntity usr left join usr.addresses addr" +

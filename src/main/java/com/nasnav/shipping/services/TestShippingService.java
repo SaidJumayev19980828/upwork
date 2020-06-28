@@ -14,9 +14,19 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import com.nasnav.shipping.ShippingService;
-import com.nasnav.shipping.model.*;
+import com.nasnav.shipping.model.Parameter;
+import com.nasnav.shipping.model.ServiceParameter;
+import com.nasnav.shipping.model.Shipment;
+import com.nasnav.shipping.model.ShipmentItems;
+import com.nasnav.shipping.model.ShipmentTracker;
+import com.nasnav.shipping.model.ShipmentValidation;
+import com.nasnav.shipping.model.ShippingDetails;
+import com.nasnav.shipping.model.ShippingEta;
+import com.nasnav.shipping.model.ShippingOffer;
+import com.nasnav.shipping.model.ShippingServiceInfo;
 
 import lombok.Getter;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public class TestShippingService implements ShippingService {
@@ -34,7 +44,7 @@ public class TestShippingService implements ShippingService {
 	public ShippingServiceInfo getServiceInfo() {
 		List<Parameter> serviceParamerters = asList( new Parameter("Hot Line", STRING));
 		List<Parameter> additionalData = asList(new Parameter("Shop Id", LONG));
-		return new ShippingServiceInfo(ID, NAME, serviceParamerters, additionalData);
+		return new ShippingServiceInfo(ID, NAME, false, serviceParamerters, additionalData);
 	}
 
 	
@@ -57,12 +67,12 @@ public class TestShippingService implements ShippingService {
 	
 	
 	@Override
-	public Mono<ShipmentTracker> requestShipment(List<ShippingDetails> items) {
+	public Flux<ShipmentTracker> requestShipment(List<ShippingDetails> items) {
 		ShipmentTracker tracker = new ShipmentTracker();
 		tracker.setShipmentExternalId(randomUUID().toString());
 		tracker.setTracker(randomUUID().toString());
 		tracker.setAirwayBillFile(new Byte[BILL_FILE_SIZE]);
-		return Mono.just(tracker);
+		return Flux.just(tracker);
 	}
 
 	@Override
