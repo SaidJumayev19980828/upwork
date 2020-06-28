@@ -35,14 +35,9 @@ import static com.nasnav.enumerations.OrderStatus.STORE_PREPARED;
 import static com.nasnav.enumerations.Roles.CUSTOMER;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
-import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
-import static com.nasnav.exceptions.ErrorCodes.G$USR$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
 import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -57,7 +52,6 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -88,10 +82,8 @@ import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ShipmentRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
@@ -102,7 +94,6 @@ import com.nasnav.dto.BasketItemDetails;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.OrderRepresentationObject;
-import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.OrderFailedStatus;
@@ -120,11 +111,9 @@ import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.CartItemEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PaymentEntity;
-import com.nasnav.persistence.ShipmentEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
@@ -133,7 +122,6 @@ import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
-import com.nasnav.shipping.model.ShipmentTracker;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -176,15 +164,6 @@ public class OrderServiceImpl implements OrderService {
 	
 	@Autowired
 	private ProductService productService;
-	
-	@Autowired
-	private MetaOrderRepository metaOrderRepo;
-	
-	@Autowired
-	private ShippingManagementService shippingMgrService;
-	
-	@Autowired
-	private ShipmentRepository shipmentRepo;
 	
 	
 	private Map<OrderStatus, Set<OrderStatus>> nextOrderStatusSet;
@@ -1585,100 +1564,5 @@ public class OrderServiceImpl implements OrderService {
 
 	private Map<String, String> parseVariantFeatures(String featureSpec) {
 		return productService.parseVariantFeatures(featureSpec);
-	}
-
-
-
-
-
-	@Override
-	@Transactional
-	public OrderConfrimResponseDTO confrimOrder(Long orderId) {
-		EmployeeUserEntity storeMgr = getAndValidateUser();
-		Long mgrShop = storeMgr.getShopId();
-		
-		OrdersEntity subOrder = getAndValidateOrderForConfirmation(orderId, mgrShop);
-		
-		confirmSubOrderAndMetaOrder(subOrder);
-		
-		return  shippingMgrService
-				.requestShipment(subOrder)
-				.doOnNext(trackerData -> saveShipmentTracker(trackerData, subOrder))
-				.map(trackerData -> new OrderConfrimResponseDTO(trackerData.getAirwayBillFile()))
-				.blockOptional(Duration.ofSeconds(120))
-				.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0001, subOrder.getId()));
-	}
-
-
-
-
-
-	private OrdersEntity getAndValidateOrderForConfirmation(Long orderId, Long mgrShop) {
-		OrdersEntity order = 
-				ordersRepository
-				.findByIdAndShopsEntity_Id(orderId, mgrShop)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0001, mgrShop, orderId));
-		
-		OrderStatus status = order.getOrderStatus(); 
-		if(CLIENT_CONFIRMED != status) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0002, orderId, status.name());
-		}
-		return order;
-	}
-
-
-
-
-
-	private void confirmSubOrderAndMetaOrder(OrdersEntity order) {
-		order.setStatus(STORE_CONFIRMED.getValue());
-		ordersRepository.save(order);
-		
-		MetaOrderEntity metaOrder = order.getMetaOrder();		
-		if(isAllOtherOrdersConfirmed(order.getId(), metaOrder)) {
-			metaOrder.setStatus(STORE_CONFIRMED.getValue());
-			metaOrderRepo.save(metaOrder);
-		}
-	}
-
-
-	
-	
-	private void saveShipmentTracker(ShipmentTracker tracker, OrdersEntity order) {
-		ShipmentEntity shipment = 
-				ofNullable(order)
-				.map(OrdersEntity::getShipment)
-				.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0001, order.getId()));
-		
-		shipment.setExternalId(tracker.getShipmentExternalId());
-		shipment.setTrackNumber(tracker.getTracker());
-		shipment.setStatus(REQUSTED.getValue());
-		ShipmentEntity saved = shipmentRepo.save(shipment);
-		order.setShipment(saved);
-	}
-
-
-
-	private EmployeeUserEntity getAndValidateUser() {
-		BaseUserEntity user = securityService.getCurrentUser();
-		
-		if(!(user instanceof EmployeeUserEntity)) {
-			throw new RuntimeBusinessException(FORBIDDEN, G$USR$0001);
-		}
-		
-		EmployeeUserEntity storeMgr = (EmployeeUserEntity)user;
-		return storeMgr;
-	}
-
-
-
-
-
-	private boolean isAllOtherOrdersConfirmed(Long orderId, MetaOrderEntity metaOrder) {
-		return metaOrder
-		.getSubOrders()
-		.stream()
-		.filter(ord -> !Objects.equals(ord.getId(), orderId))
-		.allMatch(ord -> Objects.equals(STORE_CONFIRMED.getValue() , ord.getStatus()));
 	}
 }

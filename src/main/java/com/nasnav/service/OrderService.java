@@ -5,7 +5,6 @@ import java.util.List;
 
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.OrderJsonDto;
-import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.enumerations.TransactionCurrency;
@@ -62,6 +61,4 @@ public interface OrderService {
 	public Cart addCartItem(CartItem item);
 
 	public Cart deleteCartItem(Long itemId);
-
-	public OrderConfrimResponseDTO confrimOrder(Long orderId);
 }

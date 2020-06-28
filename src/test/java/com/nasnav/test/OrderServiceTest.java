@@ -6,8 +6,6 @@ import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.enumerations.PaymentStatus.PAID;
-import static com.nasnav.enumerations.ShippingStatus.DRAFT;
-import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.test.commons.TestCommons.getHeaders;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
@@ -16,17 +14,12 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -72,7 +65,6 @@ import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.BasketItemDTO;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.OrderRepresentationObject;
-import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BasketsEntity;
@@ -1802,105 +1794,6 @@ public class OrderServiceTest {
 		assertEquals("address line",order.getAddressEntity().getAddressLine1());
 	}
 
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql","/sql/Orders_Test_Data_Insert_6.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void confirmOrderAuthZTest() {
-		HttpEntity<?> request = getHttpEntity("NOT EXISTENT");
-		ResponseEntity<String> res = template.postForEntity("/order/confirm?order_id=330031", request, String.class);
-		assertEquals(UNAUTHORIZED, res.getStatusCode());
-	}
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void confirmOrderAuthNTest() {
-		HttpEntity<?> request = getHttpEntity("131415");
-		ResponseEntity<String> res = template.postForEntity("/order/confirm?order_id=330031", request, String.class);
-		assertEquals(FORBIDDEN, res.getStatusCode());
-	}
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void confirmOrderManagerFromAnotherStoreTest() {
-		HttpEntity<?> request = getHttpEntity("sdfe47");
-		ResponseEntity<String> res = template.postForEntity("/order/confirm?order_id=330031", request, String.class);
-		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
-	}
-	
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void confirmOrderNonExistingOrderTest() {
-		HttpEntity<?> request = getHttpEntity("sdrf8s");
-		ResponseEntity<String> res = template.postForEntity("/order/confirm?order_id=999999", request, String.class);
-		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
-	}
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void confirmOrderAlreadyConfrimedTest() {
-		HttpEntity<?> request = getHttpEntity("sdfe47");
-		ResponseEntity<String> res = template.postForEntity("/order/confirm?order_id=330032", request, String.class);
-		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
-	}
-	
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void confirmOrderTest() {
-		Long orderId = 330031L;
-		OrdersEntity subOrder = orderRepository.findByIdAndShopsEntity_Id(orderId, 501L).get();
-		
-		assertEquals(CLIENT_CONFIRMED.getValue(), subOrder.getStatus());
-		assertEquals(CLIENT_CONFIRMED.getValue(), subOrder.getMetaOrder().getStatus());
-		assertNull(subOrder.getShipment().getExternalId());
-		assertNull(subOrder.getShipment().getTrackNumber());
-		assertEquals(DRAFT.getValue(), subOrder.getShipment().getStatus());
-		//-------------------------------------------------
-		HttpEntity<?> request = getHttpEntity("sdrf8s");
-		ResponseEntity<OrderConfrimResponseDTO> res = 
-				template.postForEntity("/order/confirm?order_id=330031", request, OrderConfrimResponseDTO.class);
-		
-		//-------------------------------------------------		
-		assertEquals(OK, res.getStatusCode());
-		assertFalse(res.getBody().getShippingBill().isEmpty());
-		
-		OrdersEntity subOrderAfter = orderRepository.findByIdAndShopsEntity_Id(orderId, 501L).get();
-		assertEquals(STORE_CONFIRMED.getValue(), subOrderAfter.getStatus());
-		assertEquals(STORE_CONFIRMED.getValue(), subOrderAfter.getMetaOrder().getStatus());
-		assertNotNull(subOrderAfter.getShipment().getExternalId());
-		assertNotNull(subOrderAfter.getShipment().getTrackNumber());
-		assertEquals(REQUSTED.getValue(), subOrderAfter.getShipment().getStatus());
-	}
-	
-	
-	
-	
-	
 
 
 

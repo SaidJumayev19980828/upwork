@@ -557,8 +557,8 @@ public class IntegrationServiceTest {
 	
 	
 	
-	//TODO : this test blocks forever when running junit tests, fix it
-//	@Test
+	
+	@Test
 	public void testHandlingMultipleOrgEventWithRate() throws InvalidIntegrationEventException, TimeoutException, InterruptedException {
 		Waiter waiter = new Waiter();
 		Integer eventsNum1 = 100;
