@@ -42,6 +42,8 @@ public enum ErrorCodes {
 
 	,TYP$0001("Missing or invalid type, available types are [%s]!")
 
+	,ORG$EXTRATTR$0001("No extra attribute exists with ID:[%d]!")
+
 	,AREA$001("No Area exists with ID:[%d]!")
 	,ADDR$ADDR$0001("%s with name [%s] already exists!")
 	,ADDR$ADDR$0002("Address with id[%d] doesn't exists!")
