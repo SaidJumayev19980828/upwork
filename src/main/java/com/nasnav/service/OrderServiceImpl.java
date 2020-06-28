@@ -1544,7 +1544,7 @@ public class OrderServiceImpl implements OrderService {
 		itemDto.setPrice(itemData.getPrice());
 		itemDto.setQuantity(itemData.getQuantity());
 		itemDto.setVariantFeatures(variantFeatures);
-		itemDto.setProducName(itemData.getProductName());
+		itemDto.setName(itemData.getProductName());
 		
 		itemDto.setId(itemData.getId());
 		itemDto.setProductId(itemData.getProductId());
