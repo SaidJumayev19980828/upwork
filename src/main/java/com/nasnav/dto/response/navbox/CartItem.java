@@ -22,5 +22,5 @@ public class CartItem {
 	private String brandName;
 	private Long brandId;
 	private String brandLogo;
-	private String producName;
+	private String name;
 }

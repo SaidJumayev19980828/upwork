@@ -1,16 +1,17 @@
 package com.nasnav.dto;
 
+import static java.math.BigDecimal.ZERO;
+import static java.util.Optional.ofNullable;
+
 import java.math.BigDecimal;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-
 import com.nasnav.persistence.StocksEntity;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.BeanUtils;
 
 @Data
 @NoArgsConstructor
@@ -27,8 +28,8 @@ public class StockDTO extends BaseRepresentationObject {
     public StockDTO(StocksEntity entity, Long shopId){
     	this.id = entity.getId();
         this.shopId = shopId;
-        this.quantity = entity.getQuantity();
-        this.price = entity.getPrice();
+        this.quantity = ofNullable(entity.getQuantity()).orElse(0);
+        this.price = ofNullable(entity.getPrice()).orElse(ZERO);
         this.discount = entity.getDiscount();
     }
 

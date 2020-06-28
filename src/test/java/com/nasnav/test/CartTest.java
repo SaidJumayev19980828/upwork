@@ -99,7 +99,7 @@ public class CartTest {
         		.getBody()
         		.getItems()
         		.stream()
-        		.map(CartItem::getProducName)
+        		.map(CartItem::getName)
         		.allMatch(name -> expectedProductNames.contains(name));
         assertTrue(isProductNamesReturned);
 	}
