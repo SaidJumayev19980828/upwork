@@ -50,6 +50,13 @@ public enum ErrorCodes {
 	,O$CRT$0001("Cannot create a cart for an employee user!")
 	,O$CRT$0002("Quantity must be greater than equal zero!")
 	
+	,O$CFRM$0001("No order exists for shop[%d] with id[%d]!")
+	,O$CFRM$0002("Cannot Confirm order with id[%d]! Invalid order Status [%s]!")
+	
+	,O$SHP$0001("Failed to create shipment for order[%d]!")
+	
+	,G$USR$0001("User is not an employee!")
+	
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
 	,SHP$SRV$0001("Invalid service parameter [%s]!")
 	,SHP$SRV$0002("Missing Service parameters for shipping service[%s]!")
@@ -59,6 +66,8 @@ public enum ErrorCodes {
 	,SHP$SRV$0006("No Shipping service exits with id[%s]!")
 	,SHP$SRV$0007("Invalid Shipping service parameters structure [%s]!")
 	,SHP$SRV$0008("The given value [%s] for Service parameter [%s] of shipping service [%s] has invlaid type!")
+	
+	,SHP$USR$0001("Cannot request shipment! User with id[%d] doesn't exists!")
 	;
 	
 	@Getter
