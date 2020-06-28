@@ -47,7 +47,4 @@ public class ShipmentEntity {
 	@Column(name="track_number")
 	private String trackNumber;
 	
-	@Column(name="shipping_service_id")
-	private String sericeId;
-	
 }
