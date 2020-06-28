@@ -8,13 +8,24 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.enumerations.OrderStatus;
@@ -23,6 +34,8 @@ import com.nasnav.persistence.listeners.OrdersEntityListener;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.EqualsAndHashCode.Exclude;
+import lombok.ToString;
 
 @Entity
 @Table(name="orders")
@@ -88,28 +101,43 @@ public class OrdersEntity implements BaseEntity{
 
 	@OneToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "address_id", referencedColumnName = "id")
-	@JsonIgnore
+	@Exclude
+	@ToString.Exclude
 	private AddressesEntity addressEntity;
 
-	//TODO decide between relational or not
-	//@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "shop_id", nullable = false)
+	@Exclude
+	@ToString.Exclude
 	private ShopsEntity shopsEntity;
 
-	//TODO decide if deprecated or not
-	@JsonIgnore
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "organization_id", nullable = false)
+	@Exclude
+	@ToString.Exclude
 	private OrganizationEntity organizationEntity;
 
 	@OneToMany(mappedBy = "ordersEntity", cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
+	@Exclude
+	@ToString.Exclude
     private Set<BasketsEntity> basketsEntity;
 
 	@ManyToOne(cascade = CascadeType.MERGE)
 	@JoinColumn(name = "payment_id", referencedColumnName = "id")
+	@Exclude
+	@ToString.Exclude
 	private PaymentEntity paymentEntity;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "meta_order_id", referencedColumnName = "id")
+	@Exclude
+	@ToString.Exclude
+	private MetaOrderEntity metaOrder;
+
+	@OneToOne(mappedBy="subOrder")
+	@Exclude
+    @ToString.Exclude
+	private ShipmentEntity shipment;
 
 	@Override
 	public BaseRepresentationObject getRepresentation() {
