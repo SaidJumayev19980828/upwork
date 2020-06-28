@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.OrderJsonDto;
+import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.OrderService;
@@ -143,4 +144,24 @@ public class OrdersController {
 
 		this.orderService.deleteOrders(orderIds);
 	}
+	
+	
+	
+	
+	@ApiOperation(value = "Confirm an order", nickname = "orderConfirm")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Order Confirmed"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "confirm",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public OrderConfrimResponseDTO confrimOrder(
+            @RequestHeader(name = "User-Token", required = false) String userToken,
+            @RequestParam("order_id") Long orderId)
+            		throws BusinessException {
+    	
+    	return orderService.confrimOrder(orderId);
+    }
 }
