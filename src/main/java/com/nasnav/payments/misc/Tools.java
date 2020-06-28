@@ -1,5 +1,6 @@
 package com.nasnav.payments.misc;
 
+import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.exceptions.BusinessException;
@@ -42,6 +43,13 @@ public class Tools {
 		}
 	}
 
+	public static ArrayList<OrdersEntity> getOrdersForMetaOrder(OrdersRepository ordersRepository, Long metaOrderId) throws BusinessException {
+		if (metaOrderId == null) {
+			throw new BusinessException("(Meta) OrderId is NULL", "INVALID_ORDER", HttpStatus.NOT_ACCEPTABLE);
+		}
+		return new ArrayList<>(ordersRepository.findByMetaOrderId(metaOrderId));
+	}
+
 	public static String getAccount(ArrayList<OrdersEntity> orders, String gateway, OrganizationPaymentGatewaysRepository gatewaysRepo) throws BusinessException {
 		long orgId = -1;
 		for (OrdersEntity order: orders) {
@@ -54,6 +62,10 @@ public class Tools {
 			}
 		}
 		Optional<OrganizationPaymentGatewaysEntity> account = gatewaysRepo.findByOrganizationIdAndGateway(orgId, gateway);
+		if (!account.isPresent()) {
+			// use default account
+			account = gatewaysRepo.getDefaultGateway(gateway);
+		}
 
 		return account.map(OrganizationPaymentGatewaysEntity::getAccount).orElse(null);
 	}

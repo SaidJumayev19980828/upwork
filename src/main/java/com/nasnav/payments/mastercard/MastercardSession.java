@@ -199,6 +199,8 @@ public class MastercardSession {
             payment.setExecuted(new Date());
             payment.setStatus(PaymentStatus.PAID);
             paymentsRepository.saveAndFlush(payment);
+
+// #FINALIZE            orderService.finalizeOrder(payment.getMetaOrderId());
             return;
         }
         throw new BusinessException("Provided payment code does not match successIndicator", "INTVALID_CODE", CONFLICT);
@@ -209,7 +211,9 @@ public class MastercardSession {
 
 
 
-    public boolean initialize(ArrayList<OrdersEntity> orders) throws BusinessException {
+    public boolean initialize(OrdersRepository ordersRepository, Long metaOrderId) throws BusinessException {
+        ArrayList<OrdersEntity> orders = Tools.getOrdersForMetaOrder(ordersRepository, metaOrderId);
+
     	if(Objects.isNull(orders)) {
     		throw new BusinessException("No orders provided for payment!", "INVALID PARAM: order_id", NOT_ACCEPTABLE);
     	}    	
@@ -266,6 +270,7 @@ public class MastercardSession {
                 payment.setCurrency(orderValue.currency);
                 payment.setObject("{\"successIndicator\": \"" + indicator + "\"}");
                 payment.setUserId(userId);
+                payment.setMetaOrderId(metaOrderId);
                 paymentsRepository.saveAndFlush(payment);
                 for (OrdersEntity oe: this.includedOrders) {
 //System.out.println("###" + payment + " : " + oe);

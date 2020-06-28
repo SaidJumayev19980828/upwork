@@ -45,8 +45,8 @@ public class UpgLightbox {
 	private static DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
 	public ResponseEntity<?> callback(String content, OrdersRepository ordersRepository, PaymentsRepository paymentsRepository, UpgAccount account, OrderService orderService, Logger upgLogger) throws BusinessException {
-		ArrayList<OrdersEntity> orders = new ArrayList<>();
 		JSONObject jsonObject = null;
+		ArrayList<OrdersEntity> orders = new ArrayList<>();
 		try {
 			jsonObject = new JSONObject(content);
 		} catch (JSONException ex) { ; }
@@ -57,24 +57,17 @@ public class UpgLightbox {
 		// get the order id from merchant reference
 		String ref = jsonObject.getString("MerchantReference");
 		ResponseEntity response = null;
+		long metaOrderId = -1;
 		try {
-			String orderList = ref.substring(0, ref.indexOf('-'));
-			for (String num: orderList.split("\\.")) {
-				long orderId = Long.parseLong(num);
-				Optional<OrdersEntity> oo = ordersRepository.findById(orderId);
-				if (!oo.isPresent()) {
-					upgLogger.error("Order: {} does not exist", orderId);
-					response = new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to find applicable order\"}", BAD_REQUEST);
-				} else {
-					orders.add(oo.get());
-				}
-			}
+			String metaOrderStr = ref.substring(0, ref.indexOf('-'));
+			metaOrderId = Long.parseLong(metaOrderStr);
+			orders = new ArrayList<>(ordersRepository.findByMetaOrderId(metaOrderId));
 		} catch (Exception ex) { ; }
 		if (orders.size() <= 0) {
-			upgLogger.error("Unable to retrieve order ID from the reference: {}", ref);
+			upgLogger.error("Unable to retrieve orders from the reference: {}", ref);
 			return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to process Order ID\"}", BAD_GATEWAY);
 		}
-		PaymentEntity payment = UpgLightbox.verifyPayment(jsonObject, orders, upgLogger, account, orderService);
+		PaymentEntity payment = UpgLightbox.verifyPayment(jsonObject, metaOrderId, orders, upgLogger, account, orderService);
 		if (payment == null) {
 			return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to verify payment confirmation\"}", BAD_REQUEST);
 		}
@@ -85,12 +78,14 @@ public class UpgLightbox {
 			orderService.setOrderAsPaid(payment, order);			
 		}
 		ordersRepository.flush();
-		
+// #FINALIZE            orderService.finalizeOrder(payment.getMetaOrderId());
+
 		return response == null ? new ResponseEntity<>("{\"status\": \"SUCCESS\"}", OK) : response;
 	}
 
-	public JSONObject getJsonConfig(ArrayList<OrdersEntity> orders, UpgAccount account, OrderService orderService, Logger upgLogger) throws BusinessException {
+	public JSONObject getJsonConfig(long metaOrderId, UpgAccount account, OrdersRepository ordersRepository, OrderService orderService, Logger upgLogger) throws BusinessException {
 		Date now = new Date();
+		ArrayList<OrdersEntity> orders = Tools.getOrdersForMetaOrder(ordersRepository, metaOrderId);
 		String orderUid = Tools.getOrderUid(orders, upgLogger);
 		OrderService.OrderValue orderValue = Tools.getTotalOrderValue(orders, orderService, upgLogger);
 
@@ -116,7 +111,7 @@ public class UpgLightbox {
 		return result;
 	}
 
-	public static PaymentEntity verifyPayment(JSONObject json, ArrayList<OrdersEntity> orders, Logger upgLogger, UpgAccount account, OrderService orderService) throws BusinessException {
+	public static PaymentEntity verifyPayment(JSONObject json, long metaOrderId, ArrayList<OrdersEntity> orders, Logger upgLogger, UpgAccount account, OrderService orderService) throws BusinessException {
 //System.out.println("Received: " + json.toString(2));
 		JSONObject verifier = new JSONObject();
 		for (String param: new String[] {"Amount", "Currency", "MerchantReference", "PaidThrough", "TxnDate"}) {
@@ -151,6 +146,8 @@ public class UpgLightbox {
 		payment.setCurrency(TransactionCurrency.EGP);
 		payment.setObject(json.toString());
 		payment.setUserId(orders.get(0).getUserId());
+		payment.setMetaOrderId(metaOrderId);
+
 		return payment;
 	}
 

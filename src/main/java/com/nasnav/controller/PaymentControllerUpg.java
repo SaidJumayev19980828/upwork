@@ -61,10 +61,10 @@ public class PaymentControllerUpg {
 
     @ApiIgnore
     @GetMapping(value = "test/lightbox",produces=MediaType.TEXT_HTML_VALUE)
-    public ResponseEntity<?> testMezza(@RequestParam(name = "order_id") String ordersList) throws BusinessException {
-        ArrayList<OrdersEntity> orders = Tools.getOrdersFromString(ordersRepository, ordersList, ",");
+    public ResponseEntity<?> testMezza(@RequestParam(name = "order_id")  Long metaOrderId) throws BusinessException {
+        ArrayList<OrdersEntity> orders = Tools.getOrdersForMetaOrder(ordersRepository, metaOrderId);
 
-        String accountName = Tools.getAccount(Tools.getOrdersFromString(ordersRepository, ordersList, ","), "upg", orgPaymentGatewaysRep);
+        String accountName = Tools.getAccount(orders, "upg", orgPaymentGatewaysRep);
 
         Properties props = Tools.getPropertyForAccount(accountName, upgLogger, config.paymentPropertiesDir);
         if (props == null) {
@@ -73,7 +73,7 @@ public class PaymentControllerUpg {
         session.getUpgAccount().init(props);
 
         UpgLightbox lightbox = new UpgLightbox();
-        JSONObject data = lightbox.getJsonConfig(orders, session.getUpgAccount(), session.getOrderService(), upgLogger);
+        JSONObject data = lightbox.getJsonConfig(metaOrderId, session.getUpgAccount(), ordersRepository, session.getOrderService(), upgLogger);
         String testPage = lightbox.getConfiguredHtml(data,"static/upg-lightbox.html", "/payment/upg/callback");
 
 //        String initResult = initPayment(orderId).getBody().toString();
@@ -81,22 +81,22 @@ public class PaymentControllerUpg {
     }
 
     @RequestMapping(value = "initialize")
-    public ResponseEntity<?> upgGetData(@RequestParam(name = "order_id") String ordersList) throws BusinessException {
-        ArrayList<OrdersEntity> orders = Tools.getOrdersFromString(ordersRepository, ordersList, ",");
+    public ResponseEntity<?> upgGetData(@RequestParam(name = "order_id") Long metaOrderId) throws BusinessException {
+        ArrayList<OrdersEntity> orders = Tools.getOrdersForMetaOrder(ordersRepository, metaOrderId);
 
         validateOrdersForCheckOut(orders);
         
-        String accountName = Tools.getAccount(Tools.getOrdersFromString(ordersRepository, ordersList, ","), "upg", orgPaymentGatewaysRep);
+        String accountName = Tools.getAccount(orders, "upg", orgPaymentGatewaysRep);
 
         Properties props = Tools.getPropertyForAccount(accountName, upgLogger, config.paymentPropertiesDir);
         if (props == null) {
             throw new BusinessException("Unknown payment account","",HttpStatus.NOT_ACCEPTABLE);
         }
         session.getUpgAccount().init(props);
-        upgLogger.info("Setting up payment for order(s): {} via processor: {}", ordersList, session.getUpgAccount().getUpgMerchantId());
+        upgLogger.info("Setting up payment for meta order: {} via processor: {}", metaOrderId, session.getUpgAccount().getUpgMerchantId());
 
         UpgLightbox lightbox = new UpgLightbox();
-        JSONObject data = lightbox.getJsonConfig(orders, session.getUpgAccount(), session.getOrderService(), upgLogger);
+        JSONObject data = lightbox.getJsonConfig(metaOrderId, session.getUpgAccount(), ordersRepository, session.getOrderService(), upgLogger);
         return new ResponseEntity<>(data.toString(), HttpStatus.OK);
     }
     
