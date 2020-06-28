@@ -37,6 +37,7 @@ public enum ErrorCodes {
 	,S$0002( "No Shop exists with ID: [%d]!")
 	,S$0003("No shops found!")
 	,S$0004("Shop with id[%d] has invalid address id[%d]")
+	,S$0005( "No Shop exists with ID: [%d] for organization[%d]!")
 
 	,S$360$0001("No 360 shop found!")
 

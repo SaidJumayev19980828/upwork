@@ -3,13 +3,20 @@ package com.nasnav.test;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.springframework.http.HttpMethod.*;
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
-import com.nasnav.dao.*;
-import com.nasnav.dto.response.navbox.Order;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,13 +31,11 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
+import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dto.response.navbox.Cart;
+import com.nasnav.dto.response.navbox.Order;
 
 import net.jcip.annotations.NotThreadSafe;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -211,12 +216,15 @@ public class CartTest {
 		// remove items with 0 quantity
 		cartItemRepo.deleteByQuantityAndUser_Id(0, 88L);
 
-		JSONObject body = createCartCheckoutBody();
+		JSONObject requestBody = createCartCheckoutBody();
 
-		HttpEntity request = getHttpEntity(body.toString(), "123");
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
 		assertEquals(200, res.getStatusCodeValue());
-		assertTrue(res.getBody().getOrderId() != null);
+		
+		Order body =  res.getBody();
+		assertTrue(body.getOrderId() != null);
+		assertEquals(0 ,new BigDecimal("3151").compareTo(body.getTotal()));
 	}
 
 
@@ -243,7 +251,7 @@ public class CartTest {
 		JSONObject body = createCartCheckoutBody();
 		body.put("customer_address", -1);
 
-		HttpEntity request = getHttpEntity(body.toString(), "123");
+		HttpEntity<?> request = getHttpEntity(body.toString(), "123");
 		ResponseEntity<String> response = template.postForEntity("/cart/checkout", request, String.class);
 		assertEquals(406, response.getStatusCodeValue());
 	}
@@ -254,7 +262,7 @@ public class CartTest {
 		JSONObject body = new JSONObject();
 		body.put("shipping_service_id", "Bosta");
 
-		HttpEntity request = getHttpEntity(body.toString(), "123");
+		HttpEntity<?> request = getHttpEntity(body.toString(), "123");
 		ResponseEntity<String> response = template.postForEntity("/cart/checkout", request, String.class);
 		assertEquals(406, response.getStatusCodeValue());
 	}

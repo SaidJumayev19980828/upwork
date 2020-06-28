@@ -48,6 +48,7 @@ import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0004;
 import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
+import static com.nasnav.exceptions.ErrorCodes.S$0005;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
@@ -93,14 +94,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.OrganizationShippingServiceRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ShipmentRepository;
 import com.nasnav.dao.ShopsRepository;
@@ -150,11 +149,10 @@ import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShippingAddress;
-import com.nasnav.shipping.model.ShippingDetails;
 import com.nasnav.shipping.model.ShippingEta;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -181,9 +179,6 @@ public class OrderServiceImpl implements OrderService {
 	private EntityManager em;
 
 	@Autowired
-	private ObjectMapper mapper;
-
-	@Autowired
 	private SecurityService securityService;
 
 	@Autowired
@@ -191,9 +186,6 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	private AddressRepository addressRepo;
-
-	@Autowired
-	private OrganizationShippingServiceRepository orgShippingServiceRepo;
 
 	@Autowired
 	private IntegrationService integrationService;
@@ -1695,7 +1687,7 @@ public class OrderServiceImpl implements OrderService {
 
 		orderDto.setSubtotal(subtotal);
 		orderDto.setShipping(shipping);
-		orderDto.setTotal(subtotal.add(shipping));
+		orderDto.setTotal(subtotal);
 
 		return orderDto;
 	}
@@ -1719,51 +1711,9 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	
-	
-	
-
-	private List<ShippingDetails> getShippingDetailsList(Set<OrdersEntity> orders, CartCheckoutDTO dto) {
-		List<ShippingDetails> shippingDetailsList = new ArrayList<>();
-		for(OrdersEntity order : orders) {
-			ShippingAddress source = new ShippingAddress();
-			ShippingAddress destination = new ShippingAddress();
-			BeanUtils.copyProperties(order.getShopsEntity().getAddressesEntity(), source);
-			BeanUtils.copyProperties(addressRepo.getOne(dto.getAddressId()), destination);
-
-			Map<String, String> serviceParametersMap = getShippingServiceParams(dto);
-
-			ShippingDetails shippingDetails = new ShippingDetails();
-			shippingDetails.setSource(source);
-			shippingDetails.setDestination(destination);
-			shippingDetails.setAdditionalData(dto.getAdditionalData());
-			shippingDetails.setServiceParameters(serviceParametersMap);
-			shippingDetails.setSubOrderId(order.getId());
-			shippingDetails.setItems(order.getBasketsEntity()
-										  .stream()
-										  .map(b -> new ShipmentItems(b.getStocksEntity().getId()))
-										  .collect(toList()));
-
-			shippingDetailsList.add(shippingDetails);
-		}
-
-		return shippingDetailsList;
-	}
 
 
 
-
-
-	private Map<String, String> getShippingServiceParams(CartCheckoutDTO dto) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		Map<String, String> serviceParametersMap = 
-				orgShippingServiceRepo
-				.getByOrganization_IdAndServiceId(orgId, dto.getServiceId())
-				.map(shippingManagementService::parseServiceParameters)
-				.orElse(emptyList())
-				.stream()
-				.collect(toMap(ServiceParameter::getParameter, ServiceParameter::getValue));
-		return serviceParametersMap;
-	}
 
 	private SubOrder getSubOrder(OrdersEntity order, Map<Long, List<BasketItemDetails>> itemsMap, CartCheckoutDTO dto) {
 
@@ -1823,13 +1773,14 @@ public class OrderServiceImpl implements OrderService {
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
 		UserEntity user = (UserEntity)securityService.getCurrentUser();
 
-		MetaOrderEntity order = new MetaOrderEntity();
-
-		Set<OrdersEntity> subOrders = createSubOrders(shopCartsMap, address, dto, order);
 		
+		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(shopCartsMap);
+		Set<OrdersEntity> subOrders = createSubOrders(cartDividedByShop, address, dto);
+		
+		MetaOrderEntity order = new MetaOrderEntity();
 		order.setOrganization(org);
 		order.setUser(user);
-		order.setSubOrders(subOrders);
+		subOrders.forEach(order::addSubOrder);
 		return metaOrderRepo.save(order);
 	}
 
@@ -1837,23 +1788,57 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Set<OrdersEntity> createSubOrders(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address,
-			CartCheckoutDTO dto, MetaOrderEntity order) {
-		Set<OrdersEntity> subOrders = 
-				shopCartsMap
-				.values()
+	private List<CartItemsForShop> groupCartItemsByShop(Map<Long, List<CartCheckoutData>> shopCartsMap) {
+		OrganizationEntity org = securityService.getCurrentUserOrganization();
+		Map<Long,ShopsEntity> shopCache = createOrganizationShopsCache(org);
+		return shopCartsMap
+				.entrySet()
 				.stream()
-				.map(checkOutData -> createSubOrder(order, checkOutData, address, dto))
+				.map(entry -> getCartItemsForShop(entry, shopCache))
+				.collect(toList());
+	}
+
+
+	
+
+	private CartItemsForShop getCartItemsForShop(Map.Entry<Long, List<CartCheckoutData>> entry, Map<Long,ShopsEntity> shopCache) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ShopsEntity shop = 
+				ofNullable(entry.getKey())
+				.map(shopCache::get)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, S$0005 , entry.getKey(), orgId));
+		return new CartItemsForShop(shop, entry.getValue());
+	}
+
+
+	private Map<Long, ShopsEntity> createOrganizationShopsCache(OrganizationEntity org) {
+		return shopsRepo
+		.findByOrganizationEntity_Id(org.getId())
+		.stream()
+		.collect(toMap(ShopsEntity::getId, shop -> shop));
+	}
+
+
+
+
+
+	private Set<OrdersEntity> createSubOrders(List<CartItemsForShop> cartDividedByShop, AddressesEntity address,
+			CartCheckoutDTO dto) {
+		Set<OrdersEntity> subOrders = 
+				cartDividedByShop
+				.stream()
+				.map(cartItems -> createSubOrder(cartItems, address, dto))
 				.collect(toSet());
 		
 		List<ShippingOfferDTO> shippingOffers =
 				subOrders
 				.stream()
-				.map(shippingManagementService::createShippingDetailsFromOrder)
+				.map(subOrder -> shippingManagementService.createShippingDetailsFromOrder(subOrder, dto.getAdditionalData()))
 				.collect(collectingAndThen(toList(), shippingManagementService::getOffersFromOrganizationShippingServices));
 		
 		for(OrdersEntity subOrder : subOrders) {
 			subOrder.setShipment(createShipment(subOrder, dto, shippingOffers));
+			subOrder.setAmount(calculateSubOrderTotal(subOrder));
 		}
 		return subOrders;
 	}
@@ -1863,15 +1848,12 @@ public class OrderServiceImpl implements OrderService {
 	
 
 
-	private OrdersEntity createSubOrder(MetaOrderEntity order, List<CartCheckoutData> cartCheckoutData,
+	private OrdersEntity createSubOrder(CartItemsForShop cartItems,
 								 AddressesEntity shippingAddress, CartCheckoutDTO dto) {
-		Map<Long, StocksEntity> stocksCache = createStockCache(cartCheckoutData);
+		Map<Long, StocksEntity> stocksCache = createStockCache(cartItems);
 		
-		OrdersEntity subOrder =  createSubOrder(order, shippingAddress, cartCheckoutData);
-		
-		saveOrderItemsIntoSubOrder(cartCheckoutData, stocksCache, subOrder);
-		
-		subOrder.setAmount(calculateSubOrderTotal(subOrder));
+		OrdersEntity subOrder =  createSubOrder(shippingAddress, cartItems);
+		saveOrderItemsIntoSubOrder(cartItems, stocksCache, subOrder);
 		return ordersRepository.save(subOrder);
 	}
 
@@ -1879,10 +1861,11 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private void saveOrderItemsIntoSubOrder(List<CartCheckoutData> cartCheckoutData, Map<Long, StocksEntity> stocksCache,
+	private void saveOrderItemsIntoSubOrder(CartItemsForShop cartItems, Map<Long, StocksEntity> stocksCache,
 			OrdersEntity subOrder) {
 		List<BasketsEntity> items = 
-				cartCheckoutData
+				cartItems
+				.getCheckOutData()
 				.stream()
 				.map(data -> createBasketItem(data, subOrder, stocksCache))
 				.collect(toList());		
@@ -1900,7 +1883,11 @@ public class OrderServiceImpl implements OrderService {
 				.stream()
 				.map(this::calcBasketItemValue)
 				.reduce(ZERO, BigDecimal::add);
-		return itemsTotal.add(subOrder.getShipment().getShippingFee());
+		BigDecimal shippingFee = 
+				ofNullable(subOrder.getShipment())
+				.map(ShipmentEntity::getShippingFee)
+				.orElse(ZERO);
+		return itemsTotal.add(shippingFee);
 		
 	}
 	
@@ -1914,10 +1901,11 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Map<Long, StocksEntity> createStockCache(List<CartCheckoutData> cartCheckoutData) {
+	private Map<Long, StocksEntity> createStockCache(CartItemsForShop cartItems) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		List<Long> itemStocks = 
-				cartCheckoutData
+				cartItems
+				.getCheckOutData()
 				.stream()
 				.map(CartCheckoutData::getStockId)
 				.collect(toList());
@@ -1960,7 +1948,7 @@ public class OrderServiceImpl implements OrderService {
 		
 		BasketsEntity basket = new BasketsEntity();
 		basket.setStocksEntity(stock);
-		basket.setPrice(new BigDecimal(data.getQuantity()).multiply(data.getPrice()));
+		basket.setPrice(data.getPrice());
 		basket.setQuantity(new BigDecimal(data.getQuantity()));
 		basket.setCurrency(data.getCurrency());
 		basket.setOrdersEntity(subOrder);
@@ -1969,19 +1957,18 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private OrdersEntity createSubOrder(MetaOrderEntity order, AddressesEntity shippingAddress,
-										List<CartCheckoutData> cartCheckoutData) {
-		ShopsEntity shop = shopsRepo.findById(cartCheckoutData.get(0).getShopId()).get();
+	private OrdersEntity createSubOrder(AddressesEntity shippingAddress,
+										CartItemsForShop cartItems) {
+		Long userId = securityService.getCurrentUser().getId();
+		OrganizationEntity org = securityService.getCurrentUserOrganization();
+		
 		OrdersEntity subOrder = new OrdersEntity();
-		subOrder.setUserId(order.getUser().getId());
-		subOrder.setShopsEntity(shop);
-		subOrder.setOrganizationEntity(order.getOrganization());
-		subOrder.setMetaOrder(order);
+		subOrder.setUserId(userId);
+		subOrder.setShopsEntity(cartItems.getShop());
+		subOrder.setOrganizationEntity(org);
 		subOrder.setAddressEntity(shippingAddress);
 		subOrder.setStatus(CLIENT_CONFIRMED.getValue());
-
-		BigDecimal totalAmount = ZERO;
-		subOrder.setAmount(totalAmount);
+		subOrder.setAmount(calculateSubOrderTotal(subOrder));
 
 		return subOrder;
 	}
@@ -2033,4 +2020,12 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
+}
+
+
+@Data
+@AllArgsConstructor
+class CartItemsForShop{
+	private ShopsEntity shop;
+	private List<CartCheckoutData> checkOutData;
 }

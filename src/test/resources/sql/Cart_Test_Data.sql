@@ -20,7 +20,7 @@ INSERT INTO public.product_features(id, name, p_name, description, organization_
 INSERT INTO public.addresses(id, address_line_1) values(12300001, 'address line');
 
 --inserting shops
-INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (501, 'shop_1', 102, 99002, 12300001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (501, 'shop_1', 102, 99001, 12300001);
 INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (502, 'shop_2', 101, 99001, 12300001);
 
 --insering employees
@@ -110,7 +110,7 @@ INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 
 -- insert cart
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(602, '99001/img2.jpg', '{"Color":"Blue"}', 2, 88);
-INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(604, '99001/cover_img.jpg', '{"Color":"Yellow"}', 0, 88);
+INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(604, '99001/cover_img.jpg', '{"Color":"Yellow"}', 1, 88);
 
 INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name": "Shop","type": "long","value": "14" }', 99001);
 

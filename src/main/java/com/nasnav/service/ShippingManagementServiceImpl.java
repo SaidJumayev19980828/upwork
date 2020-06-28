@@ -527,18 +527,30 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	@Override
 	public ShippingDetails createShippingDetailsFromOrder(OrdersEntity subOrder) {
+		String params = 
+				ofNullable(subOrder.getShipment())
+				.map(ShipmentEntity::getParameters)
+				.orElse("{}");
+		Map<String,String> additionalData = parseJsonAsMap(params);
+		return createShippingDetailsFromOrder(subOrder, additionalData);
+	}
+	
+	
+	
+	@Override
+	public ShippingDetails createShippingDetailsFromOrder(OrdersEntity subOrder, Map<String,String> additionalParameters) {
 		ShippingDetails shippingData = new ShippingDetails();
 		ShippingAddress customerAddr = createShippingAddress(subOrder.getAddressEntity());
 		ShippingAddress shopAddr = createShippingAddress(subOrder.getShopsEntity().getAddressesEntity());
-		Map<String,String> additionalData = parseJsonAsMap(subOrder.getShipment().getParameters());
 		ShipmentReceiver receiver = createShipmentReceiver(subOrder.getUserId());
 		List<ShipmentItems> items = createShipmentItemsFromOrder(subOrder);
 		
-		shippingData.setAdditionalData(additionalData);
+		shippingData.setAdditionalData(additionalParameters);
 		shippingData.setDestination(customerAddr);
 		shippingData.setReceiver(receiver);
 		shippingData.setSource(shopAddr);
 		shippingData.setItems(items);
+		shippingData.setSubOrderId(subOrder.getId());
 		return shippingData;
 	}
 
