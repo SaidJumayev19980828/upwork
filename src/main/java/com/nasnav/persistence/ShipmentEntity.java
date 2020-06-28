@@ -52,9 +52,12 @@ public class ShipmentEntity {
 	@Column(name="shipping_service_id")
 	private String shippingServiceId;
 
+	@Column(name="shipping_fee")
 	private BigDecimal shippingFee;
 
+	@Column(name="delivery_from")
 	private LocalDate from;
+	@Column(name="delivery_until")
 	private LocalDate to;
 	
 }

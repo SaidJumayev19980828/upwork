@@ -71,12 +71,10 @@ import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.navbox.*;
+import com.nasnav.dto.response.navbox.Shipment;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.ShippingAddress;
-import com.nasnav.shipping.model.ShippingDetails;
-import com.nasnav.shipping.model.ShippingEta;
+import com.nasnav.shipping.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -1645,15 +1643,23 @@ public class OrderServiceImpl implements OrderService {
 			BeanUtils.copyProperties(addressRepo.getOne(dto.getAddressId()), destination);
 
 			Long orgId = securityService.getCurrentUserOrganizationId();
-			Map<String, String> serviceParameters = mapper.readValue(
-					orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, dto.getServiceId()).getServiceParameters()
-					, Map.class);
+
+			String serviceParameters = ofNullable(orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, dto.getServiceId()))
+					.map(OrganizationShippingServiceEntity::getServiceParameters)
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SHIP$0001));
+
+			Map<String, String> serviceParametersMap = mapper.readValue(serviceParameters, Map.class);
+
 			ShippingDetails shippingDetails = new ShippingDetails();
 			shippingDetails.setSource(source);
 			shippingDetails.setDestination(destination);
 			shippingDetails.setAdditionalData(dto.getAdditionalData());
-			shippingDetails.setServiceParameters(serviceParameters);
+			shippingDetails.setServiceParameters(serviceParametersMap);
 			shippingDetails.setSubOrderId(order.getId());
+			shippingDetails.setItems(order.getBasketsEntity()
+										  .stream()
+										  .map(b -> new ShipmentItems(b.getStocksEntity().getId()))
+										  .collect(toList()));
 
 			shippingDetailsList.add(shippingDetails);
 		}
@@ -1709,13 +1715,14 @@ public class OrderServiceImpl implements OrderService {
 		for(Map.Entry<Long, List<CartCheckoutData>> e : shopCartsMap.entrySet()){
 			subOrders.add(createSubOrders(order, e.getValue(), address, dto));
 		}
+		order.setSubOrders(subOrders);
+		order = metaOrderRepo.save(order);
 		List<ShippingDetails> shippingDetails = getShippingDetailsList(subOrders, dto);
 		List<ShippingOfferDTO> shippingOffers = shippingManagementService.getOffersFromOrganizationShippingServices(shippingDetails);
 		for(OrdersEntity subOrder : subOrders) {
-			createShipment(subOrder, dto, shippingOffers);
+			subOrder.setShipment(createShipment(subOrder, dto, shippingOffers));
 		}
-		order.setSubOrders(subOrders);
-		return metaOrderRepo.save(order);
+		return order;
 	}
 
 
@@ -1727,7 +1734,7 @@ public class OrderServiceImpl implements OrderService {
 		for(CartCheckoutData data : cartCheckoutData) {
 			BasketsEntity basket = createBasketItem(data, subOrder);
 			subOrder.addBasketItem(basket);
-			totalAmount = totalAmount.add(basket.getPrice());
+			totalAmount = totalAmount.add(basket);
 		}
 		subOrder.setAmount(totalAmount);
 		return ordersRepository.save(subOrder);
@@ -1776,21 +1783,20 @@ public class OrderServiceImpl implements OrderService {
 		} else {
 			JSONObject additionalData = new JSONObject(dto.getAdditionalData());
 			shipment.setParameters(additionalData.toString());
-
-			ShipmentDTO shipmentDTO = shippingOffers.stream()
-													.findFirst()
-													.map(ShippingOfferDTO::getShipments)
-													.get()
-													.stream()
-													.filter(s -> s.getSubOrderId().equals(subOrder.getId()))
-													.findFirst()
-													.get();
-
-			shipment.setShippingFee(shipmentDTO.getShippingFee());
-
-			shipment.setFrom(shipmentDTO.getEta().getFrom());
-			shipment.setTo(shipmentDTO.getEta().getTo());
 		}
+		ShipmentDTO shipmentDTO = shippingOffers.stream()
+				.findFirst()
+				.map(ShippingOfferDTO::getShipments)
+				.get()
+				.stream()
+				.filter(s -> s.getSubOrderId().equals(subOrder.getId()))
+				.findFirst()
+				.get();
+
+		shipment.setShippingFee(shipmentDTO.getShippingFee());
+
+		shipment.setFrom(shipmentDTO.getEta().getFrom());
+		shipment.setTo(shipmentDTO.getEta().getTo());
 
 		return shipmentRepo.save(shipment);
 	}

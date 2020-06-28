@@ -1,7 +1,7 @@
 package com.nasnav.dto.response.navbox;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.BasketItem;
 import lombok.Data;
@@ -10,6 +10,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@JsonPropertyOrder({"shop_id", "shop_name", "suborder_id", "subtotal", "total", "status",
+        "total_quantity", "shipment", "delivery_address", "items"})
 @Data
 public class SubOrder {
     @JsonProperty("shop_id")

@@ -1,12 +1,15 @@
 package com.nasnav.dto.response.navbox;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.nasnav.dto.DetailedOrderRepObject;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+@JsonPropertyOrder({"user_id", "user_name", "order_id", "subtotal", "shipping", "total",
+                    "currency", "creation_date", "sub_orders"})
 
 @Data
 public class Order {
