@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.nasnav.dto.DetailedOrderRepObject;
@@ -64,4 +65,7 @@ public interface OrderService {
 	public Cart deleteCartItem(Long itemId);
 
 	public OrderConfrimResponseDTO confrimOrder(Long orderId);
-}
+
+	public ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId);
+
+	}

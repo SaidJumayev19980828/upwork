@@ -1,7 +1,6 @@
 package com.nasnav.payments.mastercard;
 
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
-import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
@@ -11,7 +10,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -63,7 +61,6 @@ public class MastercardSession {
     private String sessionId;
     private String orderUid;
 
-//    private OrdersEntity order = null;
     private ArrayList<OrdersEntity> includedOrders = null;
     private OrderService.OrderValue orderValue = null;
 
@@ -199,29 +196,24 @@ public class MastercardSession {
             payment.setExecuted(new Date());
             payment.setStatus(PaymentStatus.PAID);
             paymentsRepository.saveAndFlush(payment);
-
 // #FINALIZE            orderService.finalizeOrder(payment.getMetaOrderId());
             return;
         }
         throw new BusinessException("Provided payment code does not match successIndicator", "INTVALID_CODE", CONFLICT);
     }
     
-    
-
-
-
 
     public boolean initialize(OrdersRepository ordersRepository, Long metaOrderId) throws BusinessException {
-        ArrayList<OrdersEntity> orders = Tools.getOrdersForMetaOrder(ordersRepository, metaOrderId);
+        ArrayList<OrdersEntity> orders = orderService.getOrdersForMetaOrder(metaOrderId);
 
     	if(Objects.isNull(orders)) {
     		throw new BusinessException("No orders provided for payment!", "INVALID PARAM: order_id", NOT_ACCEPTABLE);
     	}    	
         this.includedOrders = orders;
         
-        validateOrdersForCheckOut(this.includedOrders);
+        Tools.validateOrdersForCheckOut(orderService, this.includedOrders);
         
-        this.orderUid = Tools.getOrderUid(orders, classLogger);
+        this.orderUid = Tools.getOrderUid(metaOrderId, classLogger);
         this.orderValue = Tools.getTotalOrderValue(orders, orderService, classLogger);
         long userId = orders.get(0).getUserId();
 
@@ -288,18 +280,6 @@ public class MastercardSession {
     }
 
     
-    
-	private void validateOrdersForCheckOut(List<OrdersEntity> orders) {
-		List<Long> orderIds = 
-				orders
-				.stream()
-				.map(OrdersEntity::getId)
-				.collect(toList());        
-        orderService.validateOrderIdsForCheckOut(orderIds);
-	}
-	
-	
-
     public String getSessionId() {
         return this.sessionId;
     }

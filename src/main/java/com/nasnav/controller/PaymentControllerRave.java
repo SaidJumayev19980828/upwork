@@ -68,8 +68,8 @@ public class PaymentControllerRave {
 
     @ApiIgnore
     @GetMapping(value = "/test/payment",produces= MediaType.TEXT_HTML_VALUE)
-    public ResponseEntity<?> testPayment(@RequestParam(name = "order_id") String orderList) throws BusinessException {
-        String initResult = initPayment(orderList).getBody().toString();
+    public ResponseEntity<?> testPayment(@RequestParam(name = "order_id") Long metaOrderId) throws BusinessException {
+        String initResult = initPayment(metaOrderId).getBody().toString();
         return new ResponseEntity<>(HTMLConfigurer.getConfiguredHtml(initResult, "static/rave.html"), HttpStatus.OK);
     }
 
@@ -155,6 +155,7 @@ public class PaymentControllerRave {
         payment.setStatus(PaymentStatus.PAID);
         payment.setUid("CFM-" + payment.getUid());
         paymentsRepository.saveAndFlush(payment);
+// #FINALIZE            orderService.finalizeOrder(payment.getMetaOrderId());
 
         return  new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
     }
@@ -172,15 +173,18 @@ public class PaymentControllerRave {
     }
 
     @RequestMapping(value = "/initialize")
-    public ResponseEntity<?> initPayment(@RequestParam(name = "order_id") String orderList) throws BusinessException {
-        ArrayList<OrdersEntity> orders = Tools.getOrdersFromString(ordersRepository, orderList, ",");
+    public ResponseEntity<?> initPayment(@RequestParam(name = "order_id") Long metaOrderId) throws BusinessException {
+        if (metaOrderId == null || metaOrderId < 0) {
+            throw new BusinessException("Invalid order ID", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
+        }
+        ArrayList<OrdersEntity> orders = orderService.getOrdersForMetaOrder(metaOrderId);
 
         // Load the appropriate receiver account. TODO: based on the order data
         this.account = new RaveAccount(Tools.getPropertyForAccount("rave", reveLogger, config.paymentPropertiesDir));
         reveLogger.debug("Payment Account: {}, API: {}", this.account.getAccountId(), this.account.getApiUrl());
 
         if (orders.size() == 0) {
-            reveLogger.error("No valid orders provided ({})", orderList);
+            reveLogger.error("No sub-orders matching meta order ({})", metaOrderId);
             throw new BusinessException("No valid order IDs recognized", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
         }
         OrderService.OrderValue orderValue = Tools.getTotalOrderValue(orders, this.orderService, reveLogger);
@@ -189,11 +193,11 @@ public class PaymentControllerRave {
         orderValue.currency = TransactionCurrency.NGN;
 
         if (orderValue.currency != TransactionCurrency.NGN) {
-            reveLogger.error("Payment for orders ({}) failed due to incorrect currency: {}", orderList, orderValue.currency);
+            reveLogger.error("Payment for meta order ({}) failed due to incorrect currency: {}", metaOrderId, orderValue.currency);
             throw new BusinessException("Invalid currency, this gateway only supports NGN", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
         }
 
-        String transactionId = Tools.getOrderUid(orders, reveLogger);
+        String transactionId = Tools.getOrderUid(metaOrderId, reveLogger);
 
         JSONObject data = new JSONObject();
         data.put("order_amount", orderValue.amount);
@@ -212,6 +216,7 @@ public class PaymentControllerRave {
         payment.setOperator(account.getAccountId());
         payment.setExecuted(new Date());
         payment.setUserId(orders.get(0).getUserId());
+        payment.setMetaOrderId(metaOrderId);
         paymentsRepository.saveAndFlush(payment);
 
         for (OrdersEntity order: orders) {

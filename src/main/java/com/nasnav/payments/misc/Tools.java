@@ -1,6 +1,5 @@
 package com.nasnav.payments.misc;
 
-import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.exceptions.BusinessException;
@@ -16,10 +15,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
+
+import static java.util.stream.Collectors.toList;
 
 public class Tools {
 
@@ -43,11 +41,9 @@ public class Tools {
 		}
 	}
 
-	public static ArrayList<OrdersEntity> getOrdersForMetaOrder(OrdersRepository ordersRepository, Long metaOrderId) throws BusinessException {
-		if (metaOrderId == null) {
-			throw new BusinessException("(Meta) OrderId is NULL", "INVALID_ORDER", HttpStatus.NOT_ACCEPTABLE);
-		}
-		return new ArrayList<>(ordersRepository.findByMetaOrderId(metaOrderId));
+	public static String getAccount(long metaOrderId, String gateway, OrderService orderService, OrganizationPaymentGatewaysRepository gatewaysRepo) throws BusinessException {
+		ArrayList<OrdersEntity> subOrders = orderService.getOrdersForMetaOrder(metaOrderId);
+		return getAccount(subOrders, gateway, gatewaysRepo);
 	}
 
 	public static String getAccount(ArrayList<OrdersEntity> orders, String gateway, OrganizationPaymentGatewaysRepository gatewaysRepo) throws BusinessException {
@@ -97,25 +93,13 @@ public class Tools {
 		return oValue;
 	}
 
-	public static String getOrderUid(ArrayList<OrdersEntity> orders, Logger logger) throws BusinessException {
-		if (orders == null || orders.size() < 1) {
-			throw new BusinessException("Empty order list", "MISSING_ORDER", HttpStatus.NOT_ACCEPTABLE);
+	public static String getOrderUid(long metaOrderId, Logger logger) throws BusinessException {
+		if (metaOrderId < 1) {
+			throw new BusinessException("Invalid order ID", "MISSING_ORDER", HttpStatus.NOT_ACCEPTABLE);
 		}
-		long userId = orders.get(0).getUserId();
 
 		StringBuilder orderUid = new StringBuilder();
-		for (OrdersEntity oe : orders) {
-			if (oe.getUserId() != userId) {
-				logger.warn("Cannot process order {} which belong to multiple different users.", orderUid);
-				throw new BusinessException("Cannot process orders belonging to diffrent users", "ERROR_MULTIPLE_USERS", HttpStatus.NOT_ACCEPTABLE);
-			}
-			if (orderUid.length() > 0) {
-				orderUid.append(".");
-			}
-			orderUid.append(oe.getId());
-
-		}
-		// Calculate the total value of the orders, validate currencies
+		orderUid.append(metaOrderId);
 		orderUid.append("-");
 		orderUid.append(new Date().getTime());
 		return orderUid.toString();
@@ -155,4 +139,15 @@ public class Tools {
 		}
 		return props;
 	}
+
+
+	public static void validateOrdersForCheckOut(OrderService orderService, List<OrdersEntity> orders) {
+		List<Long> orderIds =
+				orders
+						.stream()
+						.map(OrdersEntity::getId)
+						.collect(toList());
+		orderService.validateOrderIdsForCheckOut(orderIds);
+	}
+
 }

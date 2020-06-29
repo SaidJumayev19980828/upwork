@@ -1666,10 +1666,6 @@ public class OrderServiceImpl implements OrderService {
 		return storeMgr;
 	}
 
-
-
-
-
 	private boolean isAllOtherOrdersConfirmed(Long orderId, MetaOrderEntity metaOrder) {
 		return metaOrder
 		.getSubOrders()
@@ -1677,4 +1673,12 @@ public class OrderServiceImpl implements OrderService {
 		.filter(ord -> !Objects.equals(ord.getId(), orderId))
 		.allMatch(ord -> Objects.equals(STORE_CONFIRMED.getValue() , ord.getStatus()));
 	}
+
+	public ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId) {
+		if (metaOrderId == null) {
+			return new ArrayList<>();
+		}
+		return new ArrayList<>(ordersRepository.findByMetaOrderId(metaOrderId));
+	}
+
 }

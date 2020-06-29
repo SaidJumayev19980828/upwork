@@ -83,10 +83,10 @@ public class UpgLightbox {
 		return response == null ? new ResponseEntity<>("{\"status\": \"SUCCESS\"}", OK) : response;
 	}
 
-	public JSONObject getJsonConfig(long metaOrderId, UpgAccount account, OrdersRepository ordersRepository, OrderService orderService, Logger upgLogger) throws BusinessException {
+	public JSONObject getJsonConfig(long metaOrderId, UpgAccount account, OrderService orderService, Logger upgLogger) throws BusinessException {
 		Date now = new Date();
-		ArrayList<OrdersEntity> orders = Tools.getOrdersForMetaOrder(ordersRepository, metaOrderId);
-		String orderUid = Tools.getOrderUid(orders, upgLogger);
+		ArrayList<OrdersEntity> orders = orderService.getOrdersForMetaOrder(metaOrderId);
+		String orderUid = Tools.getOrderUid(metaOrderId, upgLogger);
 		OrderService.OrderValue orderValue = Tools.getTotalOrderValue(orders, orderService, upgLogger);
 
 		JSONObject result = new JSONObject();
@@ -177,10 +177,10 @@ public class UpgLightbox {
 		return null;
 	}
 
-	public String getConfiguredHtml(JSONObject data, String template, String callback) {
+	public static String getConfiguredHtml(JSONObject data, String template, String callback) {
 		String htmlPage = null;
 
-		InputStream is = getClass().getClassLoader().getResourceAsStream(template);
+		InputStream is = UpgLightbox.class.getClassLoader().getResourceAsStream(template);
 		if (is == null) {
 			System.err.println("######## LIGHTBOX TEMPLATE NOT AVAILABLE #######");
 		}

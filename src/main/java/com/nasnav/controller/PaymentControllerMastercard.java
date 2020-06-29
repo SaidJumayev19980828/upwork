@@ -5,13 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
-import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dto.OrderSessionResponse;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.mastercard.MastercardSession;
 import com.nasnav.payments.misc.HTMLConfigurer;
 import com.nasnav.payments.misc.Tools;
-import com.nasnav.persistence.OrdersEntity;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
 import org.apache.logging.log4j.LogManager;
@@ -23,7 +21,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
-import java.util.ArrayList;
 import java.util.Properties;
 
 @RestController
@@ -46,19 +43,12 @@ public class PaymentControllerMastercard {
     @Autowired
     public PaymentControllerMastercard(
             OrdersRepository ordersRepository,
-            PaymentsRepository paymentsRepository,
+//            PaymentsRepository paymentsRepository,
             MastercardSession session) {
         this.ordersRepository = ordersRepository;
 //        this.paymentsRepository = paymentsRepository;
         this.session = session;
     }
-
-//	@ApiIgnore
-//    @GetMapping(value = "/test/payment",produces=MediaType.TEXT_HTML_VALUE)
-//    public ResponseEntity<?> testPayment(@RequestParam(name = "order_id") String orderList) throws BusinessException {
-//        String initResult = initPayment(orderList).getBody().toString();
-//        return new ResponseEntity<>(paymentService.getConfiguredHtml(initResult, "static/session.html", account), HttpStatus.OK);
-//    }
 
     @ApiIgnore
     @GetMapping(value = "test/lightbox",produces=MediaType.TEXT_HTML_VALUE)
@@ -119,8 +109,7 @@ public class PaymentControllerMastercard {
     public ResponseEntity<?> initPayment(@RequestParam(name = "order_id") Long metaOrderId) throws BusinessException {
         OrderSessionResponse response = new OrderSessionResponse();
         response.setSuccess(false);
-        ArrayList<OrdersEntity> subOrders = Tools.getOrdersForMetaOrder(ordersRepository, metaOrderId);
-        String accountName = Tools.getAccount(subOrders, "mcard", orgPaymentGatewaysRep);
+        String accountName = Tools.getAccount(metaOrderId, "mcard", this.session.getOrderService(), orgPaymentGatewaysRep);
         Properties props = Tools.getPropertyForAccount(accountName, mastercardLogger, config.paymentPropertiesDir);
         if (props == null) {
             throw new BusinessException("Unknown payment account","",HttpStatus.NOT_ACCEPTABLE);
