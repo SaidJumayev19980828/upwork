@@ -155,7 +155,7 @@ public class PaymentControllerRave {
         payment.setStatus(PaymentStatus.PAID);
         payment.setUid("CFM-" + payment.getUid());
         paymentsRepository.saveAndFlush(payment);
-// #FINALIZE            orderService.finalizeOrder(payment.getMetaOrderId());
+        orderService.finalizeOrder(Long.valueOf(orderUid));
 
         return  new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
     }

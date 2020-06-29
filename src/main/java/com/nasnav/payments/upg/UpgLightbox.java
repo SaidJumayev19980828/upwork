@@ -78,7 +78,7 @@ public class UpgLightbox {
 			orderService.setOrderAsPaid(payment, order);			
 		}
 		ordersRepository.flush();
-// #FINALIZE            orderService.finalizeOrder(payment.getMetaOrderId());
+		orderService.finalizeOrder(metaOrderId);
 
 		return response == null ? new ResponseEntity<>("{\"status\": \"SUCCESS\"}", OK) : response;
 	}
