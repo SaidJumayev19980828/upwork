@@ -6,6 +6,8 @@ import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
+import static com.nasnav.constatnts.EmailConstants.ORDER_BILL_TEMPLATE;
+import static com.nasnav.constatnts.EmailConstants.ORDER_NOTIFICATION_TEMPLATE;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_CALC_ORDER_FAILED;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ITEM_QUANTITY;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ORDER_STATUS;
@@ -51,17 +53,21 @@ import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0004;
+import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$SHP$0002;
 import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
 import static com.nasnav.exceptions.ErrorCodes.S$0005;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
@@ -85,6 +91,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -107,6 +114,7 @@ import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.RoleEmployeeUserRepository;
 import com.nasnav.dao.ShipmentRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
@@ -216,6 +224,11 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private ShippingManagementService shippingManagementService;
 	
+	@Autowired
+	private MailService mailService;
+	
+	@Autowired
+	private RoleEmployeeUserRepository empRoleRepo;
 	private Map<OrderStatus, Set<OrderStatus>> nextOrderStatusSet;
 	private Set<OrderStatus> orderStatusForCustomers;
 	private Set<OrderStatus> orderStatusForManagers;
@@ -733,22 +746,10 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
-	@Override
-	@Transactional(rollbackFor = Throwable.class)
-	public OrdersEntity checkoutOrder(OrdersEntity order) {
-//		validateBasketItems(order);		//TODO: this should be added when we add refund, because exceptions will refund the user
-		order.setStatus(CLIENT_CONFIRMED.getValue());	
-		OrdersEntity saved = ordersRepository.save(order);
-		reduceStocks(saved);
-		return saved;
-	}
-	
-	
-	
 	
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public OrdersEntity checkoutOrder(Long orderId) throws BusinessException {
+	public void finalizeOrder(Long orderId) throws BusinessException {
 		//TODO: this should be done if the payment API became authenticated
 //		Long userId = 
 //				ofNullable(securityService.getCurrentUser())
@@ -756,17 +757,234 @@ public class OrderServiceImpl implements OrderService {
 //				.orElseThrow(() -> new RuntimeBusinessException("No user provided for the checkout!", "INVALID OPERATION", NOT_ACCEPTABLE));
 //		OrdersEntity order = ordersRepository.findByIdAndUserId(orderId, userId);
 		//-------------------------------------------
-		OrdersEntity order = 
-				ordersRepository
-				.findById(orderId)
+		MetaOrderEntity order = 
+				metaOrderRepo
+				.findFullDataById(orderId)
 				.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS, orderId));	
-
-		return checkoutOrder(order);
+		
+		order.getSubOrders().forEach(this::finalizeSubOrder);
+		
+		order.getSubOrders().forEach(this::sendNotificationEmailToStoreManager);
+		sendBillEmail(order);
 	}
 	
 	
 	
 	
+	
+	private void sendNotificationEmailToStoreManager(OrdersEntity order) {
+		Long orderId = order.getId();
+		
+		List<String> to = getStoreManagersEmails(order);
+		String subject = format("New Order[%d] Created!", orderId);
+		List<String> cc = getOrganizationManagersEmails(order);
+		Map<String,String> parametersMap = createNotificationEmailParams(order);
+		String template = ORDER_NOTIFICATION_TEMPLATE;
+		try {
+			if(to.isEmpty()) {
+				to = cc;
+				cc = emptyList();
+			}
+			mailService.send(to, subject, cc, template, parametersMap);
+		} catch (IOException | MessagingException e) {
+			logger.error(e, e);
+		}
+	}
+	
+	
+	
+	
+	
+	private Map<String, String> createNotificationEmailParams(OrdersEntity order) {
+		Map<String,String> params = new HashMap<>();
+		String orderTime = 
+				DateTimeFormatter
+				.ofPattern("dd/MM/YYYY - hh:mm")
+				.format(order.getCreationDate());
+		params.put("#order_id#", order.getId().toString());
+		params.put("#order_create_time#", orderTime);
+		params.put("#dashboard_link#", "https://uat.nasnav.org/dashboard/mange-orders");
+		return params;
+	}
+
+
+
+
+
+	private List<String> getStoreManagersEmails(OrdersEntity order) {
+		Long shopId = 
+				ofNullable(order)
+				.map(OrdersEntity::getShopsEntity)
+				.map(ShopsEntity::getId)
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0002 , order.getId()));
+		return empRoleRepo.findEmailOfEmployeeWithRoleAndShop(STORE_MANAGER.getValue(), shopId);
+	}
+	
+	
+	
+	
+	private List<String> getOrganizationManagersEmails(OrdersEntity order) {
+		Long orgId = 
+				ofNullable(order)
+				.map(OrdersEntity::getOrganizationEntity)
+				.map(OrganizationEntity::getId)
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$ORG$0001 , order.getId()));
+		return empRoleRepo.findEmailOfEmployeeWithRoleAndOrganization(ORGANIZATION_MANAGER.getValue(), orgId);
+	}
+
+
+
+
+
+	private void sendBillEmail(MetaOrderEntity order) {
+		Long orderId = order.getId();
+		
+		Optional<String> email = 
+				ofNullable(order)
+				.map(MetaOrderEntity::getUser)
+				.map(UserEntity::getEmail);
+		
+		if(!email.isPresent()) {
+			return;
+		}
+		
+		String subject = format(BILL_EMAIL_SUBJECT, orderId);
+		Map<String,String> parametersMap = createBillEmailParams(order);
+		String template = ORDER_BILL_TEMPLATE;
+		try {
+			mailService.send(email.get(), subject,  template, parametersMap);
+		} catch (IOException | MessagingException e) {
+			logger.error(e, e);
+		}
+	}
+
+
+
+
+
+	private Map<String, String> createBillEmailParams(MetaOrderEntity order) {
+		Map<String,String> params = new HashMap<>();
+		params.put("#order_details#", createOrderDetailsStr(order));
+		return params;
+	}
+
+
+
+
+
+	private String createOrderDetailsStr(MetaOrderEntity order) {
+		String metaOrderInfo = createMetaOrderInfo(order);
+		String subOrderDetails = createSubOrderDetailsStr(order);
+		
+		return metaOrderInfo + "/n" + subOrderDetails;
+	}
+
+
+
+
+
+	private String createSubOrderDetailsStr(MetaOrderEntity order) {
+		return order
+				.getSubOrders()
+				.stream()
+				.map(this::createSubOrderDetails)
+				.collect(joining("\n\n"));
+	}
+
+
+	private String createSubOrderDetails(OrdersEntity order){
+		String template = 
+				"From shop\t\t:\t\t%s\n"
+				+ "Total\t\t:\t\t%s\n"
+				+ "\t\tItem\t\tprice";
+		String orderDetails = format(template, order.getShopsEntity().getName(), order.getAmount().setScale(2).toString());
+		String orderItemsLines = createSubOrderItemsStr(order);
+		return orderDetails + "\n" +orderItemsLines;
+	}
+
+
+
+	private String createSubOrderItemsStr(OrdersEntity order) {
+		return order
+				.getBasketsEntity()
+				.stream()
+				.map(this::createOrderItemLine)
+				.collect(joining("\n"));
+	}
+
+	
+	
+	private String createOrderItemLine(BasketsEntity item) {
+		String template = "\t\t%s\t\t%s";
+		String productName = item.getStocksEntity().getProductVariantsEntity().getProductEntity().getName();
+		String price = item.getPrice().setScale(2).toString();
+		return format(template, productName, price);
+	}
+
+
+
+
+	private String createMetaOrderInfo(MetaOrderEntity order) {
+		LocalDateTime orderTime = 
+				order
+				.getSubOrders()
+				.stream()
+				.map(OrdersEntity::getCreationDate)
+				.filter(Objects::nonNull)
+				.findFirst()
+				.orElse(now());
+		String orderTimeStr = 
+				DateTimeFormatter
+				.ofPattern("dd/MM/YYYY - hh:mm")
+				.format(orderTime);
+		String total = getMetaOrderTotal(order).toPlainString();
+		String template = 
+				"Id\t\t:\t\t%d"
+				+ "\nCreated at\t\t:\t\t%s"
+				+ "\nTotal\t\t:\t\t%s"; 
+		return format( template, order.getId(), orderTimeStr, total);
+	}
+
+
+
+
+
+	private BigDecimal getMetaOrderTotal(MetaOrderEntity order) {
+		return order
+		.getSubOrders()
+		.stream()
+		.map(OrdersEntity::getAmount)
+		.reduce(ZERO, BigDecimal::add)
+		.setScale(2, BigDecimal.ROUND_HALF_EVEN);
+	}
+
+
+
+
+
+	private void finalizeSubOrder(OrdersEntity order) {
+		reduceStocks(order);
+		clearOrderItemsFromCart(order);
+	}
+	
+	
+	
+
+	private void clearOrderItemsFromCart(OrdersEntity order) {
+		Long userId = order.getUserId();
+		List<Long> stockIds = 
+				order
+				.getBasketsEntity()
+				.stream()
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getId)
+				.collect(toList());
+		cartItemRepo.deleteByStockIdInAndUser_Id(stockIds, userId);
+	}
+
+
+
+
 
 	private void reduceStocks(OrdersEntity orderEntity) {
 	   orderEntity.getBasketsEntity().forEach(this::reduceItemStock);		
@@ -1382,27 +1600,8 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	//TODO: i don't like that validations is also doing a stock update from external system, but for now, i can't put this action
-	//somewhere else, as the validation-checkout are not done at the same point now. 
-	//validation is done before payment and checkout after it!
-	@Override
-	@Transactional(noRollbackFor = StockValidationException.class)	//the validation may update the stock from external system as well
-	public void validateOrdersForCheckOut(List<OrdersEntity> orders){
-		orders.forEach(this::validateOrderForCheckout);
-	}
 	
-	
-	
-	@Override
-	@Transactional(noRollbackFor = StockValidationException.class)	//the validation may update the stock from external system as well
-	public void validateOrderIdsForCheckOut(List<Long> orderIds){
-		List<OrdersEntity> orders = ordersRepository.findByIdIn(orderIds);
-		validateOrdersForCheckOut(orders);
-	}
-	
-	
-	
-	
+	//TODO the external stock check must be included in the checkout logic
 	private void validateOrderForCheckout(OrdersEntity order) {
 		validateOrderStatusForCheckOut(order);
 		Long orgId = order.getOrganizationEntity().getId();

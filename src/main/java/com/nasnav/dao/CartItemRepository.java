@@ -41,7 +41,6 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 	List<CartCheckoutData> getCheckoutCartByUser_Id(@Param("user_id") Long userId);
 
 	CartItemEntity findByIdAndUser_Id(Long id, Long userId);
-
 	CartItemEntity findByStock_IdAndUser_Id(Long stockId, Long userId);
 
 	@Transactional
@@ -78,4 +77,19 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " LEFT JOIN shop.addressesEntity addr"
 			+ " WHERE user.id = :user_id")
 	List<CartItemShippingData> findCartItemsShippingDataByUser_Id(@Param("user_id") Long userId);
+	
+	
+
+	@Transactional
+	@Modifying
+	@Query("DELETE FROM CartItemEntity cart "
+			+ " WHERE cart.id in ( "
+			+ " SELECT item.id "
+			+ " FROM CartItemEntity item "
+			+ " LEFT JOIN item.stock stock "
+			+ " LEFT JOIN item.user usr "
+			+ " WHERE stock.id in :stock_ids"
+			+ " AND usr.id = :user_id"
+			+ ")")
+	void deleteByStockIdInAndUser_Id(@Param("stock_ids")List<Long> stockIds, @Param("user_id")Long userId);
 }

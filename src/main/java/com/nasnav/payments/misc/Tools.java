@@ -1,5 +1,18 @@
 package com.nasnav.payments.misc;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Optional;
+import java.util.Properties;
+
+import org.apache.logging.log4j.Logger;
+import org.springframework.http.HttpStatus;
+
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.exceptions.BusinessException;
@@ -7,17 +20,6 @@ import com.nasnav.payments.mastercard.MastercardSession;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationPaymentGatewaysEntity;
 import com.nasnav.service.OrderService;
-import org.apache.logging.log4j.Logger;
-import org.springframework.http.HttpStatus;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigDecimal;
-import java.util.*;
-
-import static java.util.stream.Collectors.toList;
 
 public class Tools {
 
@@ -138,16 +140,6 @@ public class Tools {
 			logger.error("Unable to load account property file: {}", file);
 		}
 		return props;
-	}
-
-
-	public static void validateOrdersForCheckOut(OrderService orderService, List<OrdersEntity> orders) {
-		List<Long> orderIds =
-				orders
-						.stream()
-						.map(OrdersEntity::getId)
-						.collect(toList());
-		orderService.validateOrderIdsForCheckOut(orderIds);
 	}
 
 }

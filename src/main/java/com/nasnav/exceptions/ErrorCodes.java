@@ -65,8 +65,13 @@ public enum ErrorCodes {
 	,ORG$SHIP$0001("Organization is not registered with any shipping provider!")
 	
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
+	,O$SHP$0002("Sub-Order with id[%d] has no shop!")
 	
 	,G$USR$0001("User is not an employee!")
+	
+	,O$MAIL$0001("Failed to send notification email about order[%d] to email[%s]!")
+	
+	,O$ORG$0001("Sub-Order with id[%d] has no Organization!")
 	
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
 	

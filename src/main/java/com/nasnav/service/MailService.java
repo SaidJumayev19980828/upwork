@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 public interface MailService {
@@ -26,4 +27,14 @@ public interface MailService {
      * @throws IOException
      */
     void send(String to, String subject, String template, Map<String, String> parametersMap) throws MessagingException, IOException;
+
+    
+    
+    
+	void send(String to, String subject, List<String> cc, String template, Map<String, String> parametersMap)
+			throws IOException, MessagingException;
+	
+	
+	void send(List<String> to, String subject, List<String> cc, String template, Map<String, String> parametersMap)
+			throws IOException, MessagingException;
 }

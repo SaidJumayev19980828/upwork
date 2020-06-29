@@ -1,10 +1,15 @@
 package com.nasnav.service;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.joining;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -34,44 +39,71 @@ public class MailServiceImpl implements MailService {
 
     @Override
     public void send(String to, String subject, String body) throws MessagingException {
-        sendMessage(to, subject, body);
+        sendMessage(asList(to), subject, emptyList(), body);
     }
-
-    /**
-     * Used to send an Email.
-     *
-     * @param to Email-TO
-     * @param subject Email-Subject
-     * @param body Email-Body
-     * @throws MessagingException If message failed to be sent.
-     */
-    private void sendMessage(String to, String subject, String body) throws MessagingException {
+    
+    
+    
+    
+    
+    private void sendMessage(List<String> to, String subject, List<String> cc, String body) throws MessagingException {
         if (mailSender == null) {
             return;
         }
         final MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
         helper.setFrom(config.mailSenderAddress);
-        helper.setTo(to);
+        helper.setTo(to.toArray(new String[0]));
         helper.setSubject(subject);
         helper.setText(body, true);
+        if(nonNull(cc) && !cc.isEmpty()) {
+        	helper.setCc(cc.toArray(new String[0]));	
+        }
         if (config.mailDryRun) {
             System.out.println("Sending email to: " + to + "\n-------\n" + body);
         } else {
             mailSender.send(mimeMessage);
         }
     }
+    
+    
 
 
     @Override
     public void send(String to, String subject, String template, Map<String, String> parametersMap) throws IOException, MessagingException {
-        Resource resource = new ClassPathResource(template);
+        String body = createBodyFromTemplate(template, parametersMap);
+        sendMessage(asList(to), subject, emptyList(), body);
+    }
+    
+    
+    
+    @Override
+    public void send(String to, String subject, List<String> cc, String template, Map<String, String> parametersMap) throws IOException, MessagingException {
+        String body = createBodyFromTemplate(template, parametersMap);
+        sendMessage(asList(to), subject, cc, body);
+    }
+    
+    
+    
+    
+    @Override
+    public void send(List<String> to, String subject, List<String> cc, String template, Map<String, String> parametersMap) throws IOException, MessagingException {
+        String body = createBodyFromTemplate(template, parametersMap);
+        sendMessage(to, subject, cc, body);
+    }
+
+
+
+
+
+	private String createBodyFromTemplate(String template, Map<String, String> parametersMap) throws IOException {
+		Resource resource = new ClassPathResource(template);
         String body = new BufferedReader(new InputStreamReader(resource.getInputStream()))
-                .lines().collect(Collectors.joining("\n"));
+                			.lines()
+                			.collect(joining("\n"));
         for (Map.Entry<String, String> entry : parametersMap.entrySet()) {
             body = body.replaceAll(entry.getKey(), entry.getValue());
         }
-        sendMessage(to, subject, body);
-
-    }
+		return body;
+	}
 }

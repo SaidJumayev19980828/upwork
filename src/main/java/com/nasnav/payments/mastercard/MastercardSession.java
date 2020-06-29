@@ -187,8 +187,7 @@ public class MastercardSession {
         }
         if (json.getString("successIndicator").equals(paymentIndicator)) {
             for (OrdersEntity order: this.includedOrders) {
-            	OrdersEntity saved = orderService.checkoutOrder(order.getId());
-            	orderService.setOrderAsPaid(payment, saved);
+            	orderService.setOrderAsPaid(payment, order);
             }
             ordersRepository.flush();
             
@@ -196,7 +195,7 @@ public class MastercardSession {
             payment.setExecuted(new Date());
             payment.setStatus(PaymentStatus.PAID);
             paymentsRepository.saveAndFlush(payment);
-// #FINALIZE            orderService.finalizeOrder(payment.getMetaOrderId());
+			orderService.finalizeOrder(Long.valueOf(orderUid));
             return;
         }
         throw new BusinessException("Provided payment code does not match successIndicator", "INTVALID_CODE", CONFLICT);
@@ -210,8 +209,6 @@ public class MastercardSession {
     		throw new BusinessException("No orders provided for payment!", "INVALID PARAM: order_id", NOT_ACCEPTABLE);
     	}    	
         this.includedOrders = orders;
-        
-        Tools.validateOrdersForCheckOut(orderService, this.includedOrders);
         
         this.orderUid = Tools.getOrderUid(metaOrderId, classLogger);
         this.orderValue = Tools.getTotalOrderValue(orders, orderService, classLogger);

@@ -10,6 +10,7 @@ import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.request.OrderSearchParam;
@@ -35,6 +36,8 @@ public interface OrderService {
 
 	}
 
+	String BILL_EMAIL_SUBJECT = "Your Order has been Created!";
+
 	public OrderResponse createNewOrder(OrderJsonDto orderJson) throws BusinessException;
 
 	public OrderResponse updateExistingOrder(OrderJsonDto orderJson) throws BusinessException;
@@ -51,13 +54,7 @@ public interface OrderService {
 
 	public void deleteCurrentOrders();
 	
-	public void validateOrdersForCheckOut(List<OrdersEntity> orders); 
-	
-	public OrdersEntity checkoutOrder(OrdersEntity order);
-
-	OrdersEntity checkoutOrder(Long orderId) throws BusinessException;
-
-	void validateOrderIdsForCheckOut(List<Long> orderIds);
+	void finalizeOrder(Long orderId) throws BusinessException;
 
 	public void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);
 	

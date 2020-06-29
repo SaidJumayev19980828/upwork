@@ -542,7 +542,7 @@ public class MicrosoftDynamicsIntegrationTest {
 
 
 	private void confirmOrder(String token, Long orderId) throws BusinessException {
-		orderService.checkoutOrder(orderId);
+		orderService.finalizeOrder(orderId);
 	}
 
 
