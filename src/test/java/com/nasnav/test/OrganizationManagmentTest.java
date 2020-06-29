@@ -1,6 +1,9 @@
 package com.nasnav.test;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
 import java.net.URI;
@@ -10,6 +13,8 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
+import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.dao.ProductExtraAttributesEntityRepository;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
@@ -27,6 +32,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -38,11 +44,11 @@ import com.nasnav.response.OrganizationResponse;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert.sql","/sql/Extra_Features_Data_Insert.sql"})
+@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 @AutoConfigureWebTestClient
 @PropertySource("classpath:test.database.properties")
 public class OrganizationManagmentTest {
-    @Value("classpath:sql/Organization_Test_Data_Insert.sql")
-    private Resource organizationsDataInsert;
     @Value("classpath:sql/database_cleanup.sql")
     private Resource databaseCleanup;
     @Value("classpath:test_imgs_to_upload/nasnav--Test_Photo.png")
@@ -53,25 +59,10 @@ public class OrganizationManagmentTest {
     private TestRestTemplate template;
     @Autowired
     private OrganizationRepository organizationRepository;
-
-    @Before
-    public void setup(){
-        performSqlScript(databaseCleanup);
-        performSqlScript(organizationsDataInsert);
-    }
-
-    @After
-    public void cleanup(){
-        performSqlScript(databaseCleanup);
-    }
-
-    void performSqlScript(Resource resource) {
-        try (Connection con = datasource.getConnection()) {
-            ScriptUtils.executeSqlScript(con, resource);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+    @Autowired
+    private ExtraAttributesRepository extraAttrRepo;
+    @Autowired
+    private ProductExtraAttributesEntityRepository productExtraAttrRepo;
 
     @Test
     public void updateOrganizationDataSuccessTest() {
@@ -99,6 +90,7 @@ public class OrganizationManagmentTest {
         Assert.assertEquals(403, response.getStatusCode().value());
     }
 
+
     @Test
     public void updateOrganizationInvalidIdTest() {
         String body = "{\"org_id\":99005,\"description\":\"this company is old and unique\"}";
@@ -110,6 +102,7 @@ public class OrganizationManagmentTest {
         Assert.assertEquals(406, response.getStatusCode().value());
     }
 
+
     @Test
     public void updateOrganizationMissingIdTest() {
         String body = "{\"description\":\"this company is old and unique\"}";
@@ -120,6 +113,7 @@ public class OrganizationManagmentTest {
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
+
 
     @Test
     public void updateOrganizationInvalidSocialLinksTest() {
@@ -156,11 +150,12 @@ public class OrganizationManagmentTest {
         String body = "{\"org_id\":99001, \"description\":\"this company is old and unique\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
-        map.add("logo", organizationsDataInsert);
+        map.add("logo", databaseCleanup);
         HttpEntity<Object> json = getHttpEntity(map,"hijkllm", MediaType.MULTIPART_FORM_DATA);
         ResponseEntity<OrganizationResponse> response = template.postForEntity("/organization/info", json, OrganizationResponse.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
+
 
     @Test
     public void createOrganizationSuccessTest() {
@@ -171,6 +166,7 @@ public class OrganizationManagmentTest {
         organizationRepository.deleteById(response.getBody().getOrganizationId());
         Assert.assertEquals(200, response.getStatusCode().value());
     }
+
 
     @Test
     public void createOrganizationMissingValuesTest() {
@@ -185,6 +181,7 @@ public class OrganizationManagmentTest {
         response = template.postForEntity("/admin/organization", json, OrganizationResponse.class);
         Assert.assertEquals(406, response.getStatusCode().value());
     }
+
 
     @Test
     public void createOrganizationInvalidValuesTest() {
@@ -209,7 +206,6 @@ public class OrganizationManagmentTest {
                 OrganizationResponse.class);
         Assert.assertEquals(403, response.getStatusCode().value());
     }
-
 
 
     @Test
@@ -245,6 +241,7 @@ public class OrganizationManagmentTest {
         checkFailResponse(response);
     }
 
+
     @Test
     public void updateOrgNameTest () {
         JSONObject body = json().put("id", 99001)
@@ -257,6 +254,57 @@ public class OrganizationManagmentTest {
         OrganizationEntity org = organizationRepository.findOneById(99001L);
         Assert.assertEquals("new org name", org.getName());
         Assert.assertEquals("org-name", org.getPname());
+    }
+
+
+
+    @Test
+    public void deleteVariantExtraAttribute() {
+        //deleting extra attribute which not attached to any variant
+        HttpEntity req = getHttpEntity("123456");
+        ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11002",
+                DELETE, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+        assertTrue(!extraAttrRepo.existsByIdAndOrganizationId(11001, 99002L));
+    }
+
+
+    @Test
+    public void deleteVariantExtraAttributeNonExistInSameOrg() {
+        HttpEntity req = getHttpEntity("hijkllm");
+        ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11001",
+                DELETE, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void deleteVariantExtraAttributeNoAuthZ() {
+        HttpEntity req = getHttpEntity("8895ssff");
+        ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11001",
+                DELETE, req, String.class);
+        assertEquals(403, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void deleteVariantExtraAttributeNoAuthN() {
+        HttpEntity req = getHttpEntity("noneexist");
+        ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11002",
+                DELETE, req, String.class);
+        assertEquals(401, res.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void deleteVariantExtraAttributeAttachedVariant() {
+        //deleting extra attribute attached to variant #310002
+        HttpEntity req = getHttpEntity("123456");
+        ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11003",
+                DELETE, req, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+        assertTrue(!extraAttrRepo.existsByIdAndOrganizationId(11003, 99002L));
+        assertTrue(!productExtraAttrRepo.existsById(11001L));
     }
 
 

@@ -40,6 +40,7 @@ insert into public.roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 70, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 71, 4);
 
 
 
@@ -66,8 +67,6 @@ insert into public.product_variants(id, "name" , product_id ) values(310008, 'va
 --inserting additional variants
 INSERT INTO public.product_variants(id,product_id, feature_spec, name, p_name, description, barcode)
 VALUES(80001,1002, '{"234": 20, "235": "white"}', 'orginal variant', 'orginal_variant', 'we need to update this in tests', 'BCF559354');
-
-
 
 
 --inserting stocks

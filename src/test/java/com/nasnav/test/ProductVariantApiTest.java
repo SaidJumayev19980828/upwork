@@ -4,12 +4,15 @@ import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.util.Map;
 
+import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.dao.ProductExtraAttributesEntityRepository;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -67,7 +70,6 @@ public class ProductVariantApiTest {
 	
 	@Autowired
 	private TestHelper helper;
-	
 	
 	@Test
 	public void variantCreateNoAuthNTest() {
@@ -326,8 +328,6 @@ public class ProductVariantApiTest {
 		
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
-	
-	
 	
 
 	private JSONObject createProductVariantRequest() {

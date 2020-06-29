@@ -9,8 +9,8 @@ import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.validateName;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
+import static com.nasnav.exceptions.ErrorCodes.ORG$EXTRATTR$0001;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.*;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -21,10 +21,11 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.cache.annotation.CacheResult;
 
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
@@ -36,18 +37,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.constatnts.EntityConstants.Operation;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dao.OrganizationDomainsRepository;
-import com.nasnav.dao.OrganizationImagesRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.OrganizationThemeRepository;
-import com.nasnav.dao.OrganizationThemeSettingsRepository;
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.SocialRepository;
-import com.nasnav.dao.ThemesRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.ExtraAttributesRepresentationObject;
 import com.nasnav.dto.OrganizationDTO;
@@ -63,18 +53,6 @@ import com.nasnav.dto.SocialRepresentationObject;
 import com.nasnav.dto.ThemeDTO;
 import com.nasnav.dto.response.navbox.ThemeRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.ExtraAttributesEntity;
-import com.nasnav.persistence.OrganizationDomainsEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.OrganizationImagesEntity;
-import com.nasnav.persistence.OrganizationThemeEntity;
-import com.nasnav.persistence.OrganizationThemesSettingsEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.SocialEntity;
-import com.nasnav.persistence.ThemeEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
@@ -83,61 +61,41 @@ import com.nasnav.service.helpers.OrganizationServiceHelper;
 
 @Service
 public class OrganizationService {
-
-    private final OrganizationRepository organizationRepository;
-
-    private final SocialRepository socialRepository;
-
-    private final OrganizationThemeRepository organizationThemeRepository;
-
-    private final BrandsRepository brandsRepository;
-
-    private final ExtraAttributesRepository extraAttributesRepository;
-    
-    private final OrganizationServiceHelper helper;
-    private final FileService fileService;
-
-    private final OrganizationImagesRepository organizationImagesRepository;
-
+    @Autowired
+    private OrganizationRepository organizationRepository;
+    @Autowired
+    private SocialRepository socialRepository;
+    @Autowired
+    private OrganizationThemeRepository organizationThemeRepository;
+    @Autowired
+    private BrandsRepository brandsRepository;
+    @Autowired
+    private ExtraAttributesRepository extraAttributesRepository;
+    @Autowired
+    private OrganizationServiceHelper helper;
+    @Autowired
+    private FileService fileService;
+    @Autowired
+    private OrganizationImagesRepository organizationImagesRepository;
     @Autowired
     private ShopsRepository shopsRepository;
-
     @Autowired
 	private ProductFeaturesRepository featureRepo;
-    
-    
     @Autowired
     private EmployeeUserRepository empRepo;
-
     @Autowired
     private OrganizationDomainsRepository orgDomainsRep;
-
 	@Autowired
     private OrganizationRepository orgRepo;
-    
     @Autowired
     private SecurityService securityService;
-
     @Autowired
     private OrganizationThemeSettingsRepository orgThemesSettingsRepo;
-
     @Autowired
     private ThemesRepository themesRepo;
-
     @Autowired
-    public OrganizationService(OrganizationRepository organizationRepository, BrandsRepository brandsRepository, SocialRepository socialRepository,
-                               OrganizationThemeRepository organizationThemeRepository,ExtraAttributesRepository extraAttributesRepository,
-                               OrganizationServiceHelper helper, FileService fileService, EmployeeUserRepository employeeUserRepository,
-                               OrganizationImagesRepository organizationImagesRepository) {
-        this.organizationRepository = organizationRepository;
-        this.socialRepository = socialRepository;
-        this.organizationThemeRepository = organizationThemeRepository;
-        this.brandsRepository = brandsRepository;
-        this.extraAttributesRepository = extraAttributesRepository;
-        this.helper = helper;
-        this.fileService = fileService;
-        this.organizationImagesRepository = organizationImagesRepository;
-    }
+    private ProductExtraAttributesEntityRepository productExtraAttrRepo;
+
 
     public List<OrganizationRepresentationObject> listOrganizations() {
         return organizationRepository.findAll()
@@ -146,8 +104,7 @@ public class OrganizationService {
                             .collect(toList());
     }
 
-    
-    
+
     
     @CacheResult(cacheName = ORGANIZATIONS_BY_NAME)
     public OrganizationRepresentationObject getOrganizationByName(String organizationName) throws BusinessException {
@@ -160,7 +117,6 @@ public class OrganizationService {
 
         return getOrganizationAdditionalData(organizationEntity);
     }
-
     
     
     
@@ -233,17 +189,16 @@ public class OrganizationService {
     
     @CacheResult(cacheName = ORGANIZATIONS_EXTRA_ATTRIBUTES)
     public List<ExtraAttributesRepresentationObject> getOrganizationExtraAttributesById(Long organizationId){
-        List<ExtraAttributesEntity> extraAttributes = null;
+        List<ExtraAttributesEntity> extraAttributes;
         if (organizationId == null) {
             extraAttributes = extraAttributesRepository.findAll();
         } else {
             extraAttributes = extraAttributesRepository.findByOrganizationId(organizationId);
         }
-        List<ExtraAttributesRepresentationObject> response;
-        response = extraAttributes.stream()
+
+        return extraAttributes.stream()
                 .map(extraAttribute -> (ExtraAttributesRepresentationObject) extraAttribute.getRepresentation())
                 .collect(toList());
-        return response;
     }
     
     
@@ -833,6 +788,17 @@ public class OrganizationService {
 	    }    	
 
 		return (orgDom == null) ? new Pair(0L, 0L) : new Pair(orgDom.getOrganizationEntity().getId(), subDir == null ? 0L : 1L);
+    }
+
+
+    public void deleteExtraAttribute(Integer attrId) {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        if (!extraAttributesRepository.existsByIdAndOrganizationId(attrId, orgId))
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$EXTRATTR$0001, attrId);
+
+        productExtraAttrRepo.deleteByIdAndOrganizationId(attrId, orgId);
+
+        extraAttributesRepository.deleteByIdAndOrganizationId(attrId, orgId);
     }
 
 }

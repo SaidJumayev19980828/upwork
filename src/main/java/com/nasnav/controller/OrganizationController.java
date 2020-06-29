@@ -179,6 +179,19 @@ public class OrganizationController {
     }
 
 
+    @ApiOperation(value = "Delete organization extra attribute", nickname = "DeleteOrgExtraAttribute", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Provided token does not match any logged in user"),
+    })
+    @DeleteMapping(value = "extra_attribute")
+    public void deleteExtraAttribute(@RequestHeader(name = "User-Token", required = false) String token,
+                                     @RequestParam("attr_id") Integer attrId) {
+        orgService.deleteExtraAttribute(attrId);
+    }
+
+
     @ApiOperation(value = "add/update organization images", nickname = "PostOrgImg", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
