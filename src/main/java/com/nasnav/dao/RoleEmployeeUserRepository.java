@@ -14,7 +14,7 @@ public interface RoleEmployeeUserRepository extends JpaRepository<RoleEmployeeUs
     @Query("select roleEmp from RoleEmployeeUser roleEmp where roleEmp.employeeUserId = :employeeUserId")
     List<RoleEmployeeUser> findRoleEmployeeUsersById(@Param("employeeUserId") Integer employeeUserId);
 
-    boolean existsByEmployeeUserIdAndRoleId(Long employeeUserId, Integer roleId);
+    boolean existsByEmployeeUserIdAndRoleId(Long employeeUserId, Integer roleRolesId);
 
     @Transactional
     void deleteByEmployeeUserId(Long employeeUserId);
@@ -26,7 +26,7 @@ public interface RoleEmployeeUserRepository extends JpaRepository<RoleEmployeeUs
     @Query("SELECT emp.email "
     		+ " FROM RoleEmployeeUser roleEmp "
     		+ " LEFT JOIN EmployeeUserEntity emp on roleEmp.employeeUserId = emp.id "
-    		+ " WHERE roleEmp.roleId = (select id from Roles roles where roles.name = :roleName) "
+    		+ " WHERE roleEmp.roleId = (select id from Role roles where roles.name = :roleName) "
     		+ "   AND emp.shopId = :shopId")
     List<String> findEmailOfEmployeeWithRoleAndShop(@Param("roleName") String roleName, @Param("shopId")Long shopId);
     
@@ -34,7 +34,7 @@ public interface RoleEmployeeUserRepository extends JpaRepository<RoleEmployeeUs
     @Query("SELECT emp.email "
     		+ " FROM RoleEmployeeUser roleEmp "
     		+ " LEFT JOIN EmployeeUserEntity emp on roleEmp.employeeUserId = emp.id "
-    		+ " WHERE roleEmp.roleId = (select id from Roles roles where roles.name = :roleName) "
+    		+ " WHERE roleEmp.roleId = (select id from Role roles where roles.name = :roleName) "
     		+ "   AND emp.organizationId = :orgId")
     List<String> findEmailOfEmployeeWithRoleAndOrganization(@Param("roleName") String roleName, @Param("orgId")Long orgId);
 }
