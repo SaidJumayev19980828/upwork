@@ -70,13 +70,6 @@ public class ProductVariantApiTest {
 	
 	@Autowired
 	private TestHelper helper;
-
-	@Autowired
-	private ExtraAttributesRepository extraAttrRepo;
-
-	@Autowired
-	private ProductExtraAttributesEntityRepository productExtraAttrRepo;
-	
 	
 	@Test
 	public void variantCreateNoAuthNTest() {
@@ -335,59 +328,6 @@ public class ProductVariantApiTest {
 		
 		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
 	}
-
-
-
-	@Test
-	public void deleteVariantExtraAttribute() {
-		//deleting extra attribute which not attached to any variant
-		HttpEntity req = getHttpEntity("131415");
-		ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11002",
-														DELETE, req, String.class);
-		assertEquals(200, res.getStatusCodeValue());
-		assertTrue(!extraAttrRepo.existsByIdAndOrganizationId(11001, 99002L));
-	}
-
-
-	@Test
-	public void deleteVariantExtraAttributeNonExistInSameOrg() {
-		HttpEntity req = getHttpEntity("131415");
-		ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11001",
-				DELETE, req, String.class);
-		assertEquals(406, res.getStatusCodeValue());
-	}
-
-
-	@Test
-	public void deleteVariantExtraAttributeNoAuthZ() {
-		HttpEntity req = getHttpEntity("8895ssff");
-		ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11001",
-				DELETE, req, String.class);
-		assertEquals(403, res.getStatusCodeValue());
-	}
-
-
-	@Test
-	public void deleteVariantExtraAttributeNoAuthN() {
-		HttpEntity req = getHttpEntity("noneexist");
-		ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11002",
-				DELETE, req, String.class);
-		assertEquals(401, res.getStatusCodeValue());
-	}
-
-
-	@Test
-	public void deleteVariantExtraAttributeAttachedVariant() {
-		//deleting extra attribute attached to variant #310002
-		HttpEntity req = getHttpEntity("131415");
-		ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11003",
-				DELETE, req, String.class);
-		assertEquals(200, res.getStatusCodeValue());
-		assertTrue(!extraAttrRepo.existsByIdAndOrganizationId(11003, 99002L));
-		assertTrue(!productExtraAttrRepo.existsById(11001L));
-	}
-
-	
 	
 
 	private JSONObject createProductVariantRequest() {

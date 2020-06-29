@@ -23,13 +23,10 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 VALUES (69, 'testuser2@nasnav.com', 99002, '131415',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (70, 'testuser3@nasnav.com', 99001, '8895ssf',  502);
-INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-VALUES (71, 'testuser4@nasnav.com', 99001, '8895ssff',  502);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1, '101112', now(), 68, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (2, '131415', now(), 69, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (3, '8895ssf', now(), 70, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (4, '8895ssff', now(), 71, null);
 
 --inserting Roles
 insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
@@ -70,14 +67,6 @@ insert into public.product_variants(id, "name" , product_id ) values(310008, 'va
 --inserting additional variants
 INSERT INTO public.product_variants(id,product_id, feature_spec, name, p_name, description, barcode)
 VALUES(80001,1002, '{"234": 20, "235": "white"}', 'orginal variant', 'orginal_variant', 'we need to update this in tests', 'BCF559354');
-
-
-INSERT INTO public.extra_attributes(id, key_name, attribute_type, organization_id, icon) VALUES(11002, 'name_1', 'type', 99002, 'icon');
-INSERT INTO public.extra_attributes(id, key_name, attribute_type, organization_id, icon) VALUES(11001, 'name', 'type', 99001, 'icon');
-INSERT INTO public.extra_attributes(id, key_name, attribute_type, organization_id, icon) VALUES(11003, 'name_2', 'type', 99002, 'icon');
-
-INSERT INTO public.products_extra_attributes(id,extra_attribute_id, value, variant_id) VALUES(11003, 11003, 'value', 310002);
-
 
 
 --inserting stocks
