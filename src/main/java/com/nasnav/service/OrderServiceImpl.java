@@ -2092,6 +2092,7 @@ public class OrderServiceImpl implements OrderService {
 		MetaOrderEntity order = new MetaOrderEntity();
 		order.setOrganization(org);
 		order.setUser(user);
+		order.setStatus(CLIENT_CONFIRMED.getValue());
 		subOrders.forEach(order::addSubOrder);
 		return metaOrderRepo.save(order);
 	}

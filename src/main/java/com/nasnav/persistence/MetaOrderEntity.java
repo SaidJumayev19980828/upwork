@@ -1,5 +1,6 @@
 package com.nasnav.persistence;
 
+import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static javax.persistence.CascadeType.MERGE;
 import static javax.persistence.CascadeType.PERSIST;
 import static javax.persistence.CascadeType.REMOVE;
@@ -68,6 +69,7 @@ public class MetaOrderEntity implements BaseEntity {
 
     public MetaOrderEntity() {
         subOrders = new HashSet<>();
+        this.status = CLIENT_CONFIRMED.getValue();
     }
 
     public void addSubOrder(OrdersEntity subOrder) {
