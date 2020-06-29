@@ -1,17 +1,20 @@
 package com.nasnav.controller;
 
+import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.service.OrderService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import com.nasnav.dto.response.navbox.Cart;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.service.OrderService;
-
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponses;
+import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/cart")
@@ -57,4 +60,17 @@ public class CartController {
 		return orderService.deleteCartItem(itemId);
 	}
 
+
+
+	@ApiOperation(value = "checkout the cart", nickname = "cartCheckout")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 403, message = "employee user can't have cart"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "stock not found")
+	})
+	@PostMapping(value = "/checkout", consumes = MediaType.APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
+	public Order checkoutCart(@RequestHeader(name = "User-Token", required = false) String userToken,
+							  @RequestBody CartCheckoutDTO dto) throws BusinessException, IOException {
+		return orderService.checkoutCart(dto);
+	}
 }

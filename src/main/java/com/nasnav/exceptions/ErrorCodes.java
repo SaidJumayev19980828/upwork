@@ -37,6 +37,7 @@ public enum ErrorCodes {
 	,S$0002( "No Shop exists with ID: [%d]!")
 	,S$0003("No shops found!")
 	,S$0004("Shop with id[%d] has invalid address id[%d]")
+	,S$0005( "No Shop exists with ID: [%d] for organization[%d]!")
 
 	,S$360$0001("No 360 shop found!")
 
@@ -46,18 +47,29 @@ public enum ErrorCodes {
 	,ADDR$ADDR$0001("%s with name [%s] already exists!")
 	,ADDR$ADDR$0002("Address with id[%d] doesn't exists!")
 	,ADDR$ADDR$0003("Must provide id of parent $s")
+	,ADDR$ADDR$0004("Must provide customer address!")
 	
 	,O$CRT$0001("Cannot create a cart for an employee user!")
 	,O$CRT$0002("Quantity must be greater than equal zero!")
+	,O$CRT$0003("Quantity is greater than available stock!")
+	,O$CRT$0004("Currencies of items are different!")
+	
+
+	,O$CHK$0001("Must have at least one item in cart!")
+	,O$CHK$0002("Must provide shipping service provider")
+	,O$CHK$0003("Must provide shipping service additional data")
 	
 	,O$CFRM$0001("No order exists for shop[%d] with id[%d]!")
 	,O$CFRM$0002("Cannot Confirm order with id[%d]! Invalid order Status [%s]!")
+	
+	,ORG$SHIP$0001("Organization is not registered with any shipping provider!")
 	
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	
 	,G$USR$0001("User is not an employee!")
 	
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
+	
 	,SHP$SRV$0001("Invalid service parameter [%s]!")
 	,SHP$SRV$0002("Missing Service parameters for shipping service[%s]!")
 	,SHP$SRV$0003("Missing Service parameter with name[%s] for shipping service[%s]!")
@@ -66,7 +78,10 @@ public enum ErrorCodes {
 	,SHP$SRV$0006("No Shipping service exits with id[%s]!")
 	,SHP$SRV$0007("Invalid Shipping service parameters structure [%s]!")
 	,SHP$SRV$0008("The given value [%s] for Service parameter [%s] of shipping service [%s] has invlaid type!")
-	
+
+	,SHP$SVC$0001("Shipping service is not available!")
+
+
 	,SHP$USR$0001("Cannot request shipment! User with id[%d] doesn't exists!")
 	;
 	

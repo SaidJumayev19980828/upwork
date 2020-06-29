@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.ShipmentTracker;
+import com.nasnav.shipping.model.ShipmentValidation;
 import com.nasnav.shipping.model.ShippingDetails;
 import com.nasnav.shipping.model.ShippingOffer;
 import com.nasnav.shipping.model.ShippingServiceInfo;
@@ -35,4 +36,6 @@ public interface ShippingService {
 	 * @return shipment tracking information, including the airway bill.
 	 * */
 	Flux<ShipmentTracker> requestShipment(List<ShippingDetails> items);
+
+	Mono<ShipmentValidation> validateShipment(List<ShippingDetails> items);
 }

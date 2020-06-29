@@ -1,6 +1,10 @@
 package com.nasnav.service;
 
-import static com.nasnav.commons.utils.StringUtils.*;
+import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
+import static com.nasnav.commons.utils.StringUtils.validateEmail;
+import static com.nasnav.commons.utils.StringUtils.validateName;
 import static com.nasnav.commons.utils.StringUtils.validateNameAndEmail;
 import static com.nasnav.constatnts.EmailConstants.ACCOUNT_EMAIL_PARAMETER;
 import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
@@ -39,13 +43,16 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
-import com.nasnav.dao.AddressRepository;
-import com.nasnav.dao.AreaRepository;
-import com.nasnav.dto.AddressDTO;
-import com.nasnav.persistence.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,17 +69,25 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
-import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EmailConstants;
+import com.nasnav.dao.AddressRepository;
+import com.nasnav.dao.AreaRepository;
 import com.nasnav.dao.CommonUserRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.UserRepository;
+import com.nasnav.dto.AddressDTO;
+import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.AddressesEntity;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 
@@ -612,10 +627,12 @@ public class UserServiceImpl implements UserService {
 	}
 	
 	
-	private List getUserAddresses(Long userId){
+	private List<AddressRepObj> getUserAddresses(Long userId){
 		return addressRepo.findByUserId(userId)
 						  .stream()
+				          .filter(Objects::nonNull)
 						  .map(AddressesEntity::getRepresentation)
+						  .map(AddressRepObj.class::cast)
 						  .collect(toList());
 	}
 

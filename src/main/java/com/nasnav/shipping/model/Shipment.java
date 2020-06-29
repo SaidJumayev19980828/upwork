@@ -12,4 +12,5 @@ public class Shipment {
 	private BigDecimal shippingFee;
 	private ShippingEta eta;
 	private List<Long> stocks;
+	private Long subOrderId;
 }

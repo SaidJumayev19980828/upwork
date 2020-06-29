@@ -20,6 +20,7 @@ import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.Shipment;
 import com.nasnav.shipping.model.ShipmentItems;
 import com.nasnav.shipping.model.ShipmentTracker;
+import com.nasnav.shipping.model.ShipmentValidation;
 import com.nasnav.shipping.model.ShippingDetails;
 import com.nasnav.shipping.model.ShippingEta;
 import com.nasnav.shipping.model.ShippingOffer;
@@ -76,10 +77,13 @@ public class DummyShippingService implements ShippingService {
 		tracker.setAirwayBillFile("NOT EMPTY");
 		return Flux.fromIterable(asList(tracker));
 	}
-	
-	
-	
-	
+
+	@Override
+	public Mono<ShipmentValidation> validateShipment(List<ShippingDetails> items) {
+		return Mono.empty();
+	}
+
+
 	private ShippingEta getFlatEta() {
 		return new ShippingEta(now().plusDays(1), now().plusDays(2));
 	}
@@ -100,7 +104,7 @@ public class DummyShippingService implements ShippingService {
 				.collect(
 					collectingAndThen(
 						toList()
-						, stocks -> new Shipment(getFlatRate(), getFlatEta(), stocks)));
+						, stocks -> new Shipment(getFlatRate(), getFlatEta(), stocks, request.getSubOrderId())));
 	}
 
 

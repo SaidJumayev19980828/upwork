@@ -124,7 +124,7 @@ public class ShippingServiceManagementTest {
 	public void testRegisterToShippingService() {
 		Long orgId = 99002L;
 		
-		assertFalse(orgShippingSrvRepo.getByServiceIdAndOrganization_Id(ID, orgId).isPresent());
+		assertFalse(orgShippingSrvRepo.getByOrganization_IdAndServiceId(orgId, ID).isPresent());
 		
 		JSONObject params = createDummyServiceParams();
 		String requstBody = 
@@ -137,7 +137,7 @@ public class ShippingServiceManagementTest {
         		template.exchange("/organization/shipping/service", POST, request, String.class);
 
         OrganizationShippingServiceEntity shippingService = 
-        		orgShippingSrvRepo.getByServiceIdAndOrganization_Id(ID, orgId).get();
+        		orgShippingSrvRepo.getByOrganization_IdAndServiceId(orgId, ID).get();
         
         assertEquals(OK, response.getStatusCode());
         assertEquals(params.toString(), shippingService.getServiceParameters());

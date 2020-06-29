@@ -5,10 +5,8 @@ import com.nasnav.dto.BaseRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
 
 @Table(name = "product_positions")
 @Entity

@@ -3,11 +3,11 @@ package com.nasnav.dao;
 import java.util.List;
 import java.util.Optional;
 
-import com.nasnav.dto.Prices;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
+import com.nasnav.dto.Prices;
 import com.nasnav.persistence.StocksEntity;
 
 public interface StockRepository extends CrudRepository<StocksEntity, Long> {
@@ -100,5 +100,10 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 	@Query("SELECT stock FROM StocksEntity stock "
 			+ " LEFT JOIN FETCH stock.shopsEntity shop "
 			+ " WHERE stock.id = :id")
-	Optional<StocksEntity> findWithAdditionalData(@Param("id")Long id); 
+	Optional<StocksEntity> findWithAdditionalData(@Param("id")Long id);
+
+	StocksEntity findByIdAndOrganizationEntity_Id(Long id, Long orgId);
+
+
+	List<StocksEntity> findByIdInAndOrganizationEntity_Id(List<Long> itemStocks, Long orgId);
 }

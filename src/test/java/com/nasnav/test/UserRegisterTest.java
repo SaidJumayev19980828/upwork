@@ -1091,13 +1091,13 @@ public class UserRegisterTest {
 		JSONObject address = json().put("address_line_1", "address line");
 		JSONObject body = json().put("employee", false)
 				.put("address", address);
-		HttpEntity request = getHttpEntity(body.toString(), "123");
+		HttpEntity<?> request = getHttpEntity(body.toString(), "123");
 
 		//adding address to user
 		ResponseEntity<String> response = template.postForEntity("/user/update", request, String.class);
 		assertEquals(200, response.getStatusCodeValue());
 
-		Optional<AddressesEntity> entity = addressRepo.findOneByUserId(88001L);
+		Optional<AddressesEntity> entity = addressRepo.findByUserId(88001L).stream().findFirst();
 		assertTrue(entity.isPresent());
 		AddressesEntity addressesEntity = entity.get();
 		assertEquals("address line", addressesEntity.getAddressLine1());
@@ -1106,7 +1106,9 @@ public class UserRegisterTest {
 
 
 		//unlinking the address from user
-		address = json().put("id", addressesEntity.getId());
+		address = json()
+					.put("id", addressesEntity.getId())
+					.put("address_line_1", "Sesame street");
 		body = body.put("address", address);
 		request = getHttpEntity(body.toString(), "123");
 		response = template.postForEntity("/user/update", request, String.class);

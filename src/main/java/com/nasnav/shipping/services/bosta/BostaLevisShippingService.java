@@ -44,6 +44,7 @@ import com.nasnav.shipping.model.Shipment;
 import com.nasnav.shipping.model.ShipmentItems;
 import com.nasnav.shipping.model.ShipmentReceiver;
 import com.nasnav.shipping.model.ShipmentTracker;
+import com.nasnav.shipping.model.ShipmentValidation;
 import com.nasnav.shipping.model.ShippingAddress;
 import com.nasnav.shipping.model.ShippingDetails;
 import com.nasnav.shipping.model.ShippingEta;
@@ -294,7 +295,7 @@ public class BostaLevisShippingService implements ShippingService{
 		List<Long> stocks = getStocks(details);
 		return calculateFee(details)
 				.filter(fee -> !stocks.isEmpty())
-				.map(fee -> new Shipment(fee, eta, stocks));
+				.map(fee -> new Shipment(fee, eta, stocks, details.getData().getSubOrderId()));
 	}
 
 	
@@ -393,6 +394,15 @@ public class BostaLevisShippingService implements ShippingService{
 		.toEntity(String.class)
 		.subscribe(res -> logger.info(format(" >>> shipping service [%s] failed, request returned response body [%s]" , SERVICE_ID, res.getBody())));
 		return format("{status : %s}", response.statusCode());
+	}
+
+
+
+	@Override
+	public Mono<ShipmentValidation> validateShipment(List<ShippingDetails> items) {
+		return createShippingOffer(items)
+				.map(offer -> new ShipmentValidation(true))
+				.defaultIfEmpty(new ShipmentValidation(false));
 	}
 
 }

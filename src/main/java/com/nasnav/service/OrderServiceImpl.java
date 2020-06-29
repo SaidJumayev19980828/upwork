@@ -32,34 +32,49 @@ import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.STORE_PREPARED;
+import static com.nasnav.enumerations.OrderStatus.findEnum;
 import static com.nasnav.enumerations.Roles.CUSTOMER;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
+import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
+import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
+import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
+import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0004;
 import static com.nasnav.exceptions.ErrorCodes.G$USR$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$CHK$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$CHK$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0004;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
 import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
+import static com.nasnav.exceptions.ErrorCodes.S$0005;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -78,6 +93,7 @@ import javax.persistence.criteria.Root;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -102,9 +118,15 @@ import com.nasnav.dto.BasketItemDetails;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.OrderRepresentationObject;
+import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.dto.request.shipping.ShipmentDTO;
+import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.dto.response.navbox.Shipment;
+import com.nasnav.dto.response.navbox.SubOrder;
 import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
@@ -128,12 +150,17 @@ import com.nasnav.persistence.ShipmentEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import com.nasnav.shipping.model.ShipmentTracker;
+import com.nasnav.shipping.model.ShippingEta;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -186,6 +213,8 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private ShipmentRepository shipmentRepo;
 	
+	@Autowired
+	private ShippingManagementService shippingManagementService;
 	
 	private Map<OrderStatus, Set<OrderStatus>> nextOrderStatusSet;
 	private Set<OrderStatus> orderStatusForCustomers;
@@ -653,12 +682,9 @@ public class OrderServiceImpl implements OrderService {
 		AddressesEntity address = null;
 		Long userId = securityService.getCurrentUser().getId();
 		if (order.getAddressId() != null) {
-			Optional<AddressesEntity> optionalAddress = addressRepo.findByIdAndUserId(order.getAddressId(), userId);
-			if (optionalAddress.isPresent()) {
-				address = optionalAddress.get();
-			} else {
-				throw new BusinessException("address_id is invalid!", "INVALID_PARAM: address_id", NOT_ACCEPTABLE);
-			}
+			address = addressRepo
+						.findByIdAndUserId(order.getAddressId(), userId)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, order.getAddressId()));
 		}
 		return address;
 	}
@@ -684,8 +710,10 @@ public class OrderServiceImpl implements OrderService {
 										.map(OrderStatus::findEnum)
 										.orElse(NEW);
 
-		OrdersEntity orderEntity =  ordersRepository.findById( orderJsonDto.getId() )
-													.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS));
+		OrdersEntity orderEntity =  
+				ordersRepository
+				.findById( orderJsonDto.getId() )
+				.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS));
 		OrderStatus oldStatus = orderEntity.getOrderStatus();
 		OrderResponse orderResponse = updateCurrentOrderStatus(orderJsonDto, orderEntity, newStatus);
 		
@@ -781,7 +809,7 @@ public class OrderServiceImpl implements OrderService {
 	private OrderResponse updateCurrentOrderStatus(OrderJsonDto orderJsonDto, OrdersEntity orderEntity,
 												   OrderStatus newStatus) throws BusinessException {
 
-		OrderStatus currentOrderStatus = OrderStatus.findEnum(orderEntity.getStatus());		
+		OrderStatus currentOrderStatus = findEnum(orderEntity.getStatus());
 		validateNewOrderStatus(newStatus, currentOrderStatus);
 		
 		if (newStatus == OrderStatus.CLIENT_CONFIRMED) {
@@ -905,7 +933,7 @@ public class OrderServiceImpl implements OrderService {
 		basketsEntity.setQuantity(new BigDecimal(item.getQuantity()));
 
 		// TODO how currency determined for specific order
-		basketsEntity.setCurrency(TransactionCurrency.EGP.getValue());
+		basketsEntity.setCurrency(EGP.getValue());
 
 		return basketsEntity;
 	}
@@ -1042,7 +1070,7 @@ public class OrderServiceImpl implements OrderService {
 		obj.setUserId(entity.getUserId());
 		obj.setShopId(entity.getShopsEntity().getId());
 		obj.setCreatedAt(entity.getCreationDate());
-		obj.setStatus(OrderStatus.findEnum(entity.getStatus()).name());
+		obj.setStatus(findEnum(entity.getStatus()).name());
 		obj.setPaymentStatus(entity.getPaymentStatus().toString());
 		obj.setTotal(entity.getAmount());
 
@@ -1092,7 +1120,7 @@ public class OrderServiceImpl implements OrderService {
 		//TODO set item unit //
 		item.setTotalPrice(itemDetails.getPrice());
 		item.setThumb( itemDetails.getProductCoverImage() );
-		item.setCurrency(TransactionCurrency.getTransactionCurrency(itemDetails.getCurrency()).name());
+		item.setCurrency(ofNullable(TransactionCurrency.getTransactionCurrency(itemDetails.getCurrency())).orElse(EGP).name());
 		
 		return item;
 	}
@@ -1222,11 +1250,11 @@ public class OrderServiceImpl implements OrderService {
 
 	private Integer getOrderStatusId(String status) throws BusinessException {
 		if (status != null) {
-			OrderStatus statusEnum = OrderStatus.findEnum(status);
+			OrderStatus statusEnum = findEnum(status);
 			if (statusEnum == null) {
 				throw new BusinessException("Provided status (" + status + ") doesn't match any existing status!","INVALID PARAM: status",HttpStatus.BAD_REQUEST);
 			}				
-			return OrderStatus.findEnum(status).getValue();
+			return findEnum(status).getValue();
 		}
 		
 		return null;		
@@ -1293,7 +1321,7 @@ public class OrderServiceImpl implements OrderService {
 	public DetailedOrderRepObject getCurrentOrder(Integer detailsLevel) throws BusinessException {
 		BaseUserEntity user = securityService.getCurrentUser();
 		
-		OrdersEntity entity = ordersRepository.findFirstByUserIdAndStatusOrderByUpdateDateDesc( user.getId(), OrderStatus.NEW.getValue() )
+		OrdersEntity entity = ordersRepository.findFirstByUserIdAndStatusOrderByUpdateDateDesc( user.getId(), NEW.getValue() )
 											 .orElseThrow(() -> getNoCurrentOrderFoundException() );
 		
 		return getDetailedOrderInfo(entity, ORDER_FULL_DETAILS_LEVEL);
@@ -1478,7 +1506,9 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-
+	private Cart getUserCart(Long userId) {
+		return new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId)));
+	}
 
 
 	@Override
@@ -1487,9 +1517,8 @@ public class OrderServiceImpl implements OrderService {
 		if(user instanceof EmployeeUserEntity) {
 			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
 		}
-		
-		List<CartItemData> cartItems = cartItemRepo.findCurrentCartItemsByUser_Id(user.getId());		
-		return new Cart(toCartItemsDto(cartItems));	
+
+		return getUserCart(user.getId());
 	}
 
 
@@ -1500,20 +1529,21 @@ public class OrderServiceImpl implements OrderService {
 			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
 		}
 
-
-		CartItemEntity cartItem = new CartItemEntity();
-		cartItem.setUser((UserEntity) user);
-		Optional<StocksEntity> stock = stockRepository.findById(ofNullable(item.getStockId()).orElse(-1L));
-
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		StocksEntity stock = ofNullable(item.getStockId()).map(id -> stockRepository.findByIdAndOrganizationEntity_Id(id, orgId))
+							.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE ,P$STO$0001,item.getStockId()));
 		validateCartItem(stock, item);
 
-		cartItem.setStock(stock.get());
+		CartItemEntity cartItem = ofNullable(cartItemRepo.findByStock_IdAndUser_Id(stock.getId(), user.getId()))
+								  .orElse(new CartItemEntity());
+
+		cartItem.setUser((UserEntity) user);
+		cartItem.setStock(stock);
 		cartItem.setQuantity(item.getQuantity());
 		cartItem.setCoverImage(item.getCoverImg());
 		cartItemRepo.save(cartItem);
 
-		List<CartItemData> cartItems = cartItemRepo.findCurrentCartItemsByUser_Id(user.getId());
-		return new Cart(toCartItemsDto(cartItems));
+		return getUserCart(user.getId());
 	}
 
 
@@ -1526,19 +1556,19 @@ public class OrderServiceImpl implements OrderService {
 
 		cartItemRepo.deleteByIdAndUser_Id(itemId, user.getId());
 
-		List<CartItemData> cartItems = cartItemRepo.findCurrentCartItemsByUser_Id(user.getId());
-		return new Cart(toCartItemsDto(cartItems));
+		return getUserCart(user.getId());
 	}
 
 
-	private void validateCartItem(Optional<StocksEntity> stock, CartItem item) {
-		if (!stock.isPresent()) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE ,P$STO$0001,item.getStockId());
-		}
-
+	private void validateCartItem(StocksEntity stock, CartItem item) {
 		if (item.getQuantity() == null || item.getQuantity() <= 0) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0002);
 		}
+
+		if (item.getQuantity() > stock.getQuantity()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0003);
+		}
+
 	}
 
 	private List<CartItem> toCartItemsDto(List<CartItemData> cartItems) {
@@ -1680,5 +1710,439 @@ public class OrderServiceImpl implements OrderService {
 		}
 		return new ArrayList<>(ordersRepository.findByMetaOrderId(metaOrderId));
 	}
+	
+	
+	
+	
+	
+	@Override
+	@Transactional
+	public Order checkoutCart(CartCheckoutDTO dto) throws IOException {
+		BaseUserEntity user = securityService.getCurrentUser();
+		if(user instanceof EmployeeUserEntity) {
+			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
+		}
 
+		validateCartCheckoutDTO(dto);
+
+		MetaOrderEntity order = createMetaOrder(dto, user);
+
+		return getOrderResponse(order, dto);
+	}
+
+
+
+
+
+	private MetaOrderEntity createMetaOrder(CartCheckoutDTO dto, BaseUserEntity user) {
+		AddressesEntity userAddress = 
+				addressRepo
+				.findByIdAndUserId(dto.getAddressId(), user.getId())
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, dto.getAddressId()));
+
+		Map<Long, List<CartCheckoutData>> checkOutData = getAndValidateCheckoutData(user); 
+		MetaOrderEntity order = createOrder( checkOutData, userAddress, dto );
+		return order;
+	}
+
+
+
+
+
+	private Map<Long, List<CartCheckoutData>> getAndValidateCheckoutData(BaseUserEntity user) {
+		List<CartCheckoutData> userCartItems = cartItemRepo.getCheckoutCartByUser_Id(user.getId());
+
+		validateCartCheckoutItems(userCartItems);
+
+		Map<Long,List<CartCheckoutData>> checkOutData = 
+				userCartItems
+				.stream()
+				.collect(groupingBy(CartCheckoutData::getShopId));
+		return checkOutData;
+	}
+
+	
+
+
+	private Order getOrderResponse(MetaOrderEntity order, CartCheckoutDTO dto) throws IOException{
+		UserEntity user = (UserEntity)securityService.getCurrentUser();
+
+		Map<Long, List<BasketItemDetails>> itemsMap =
+				getBasketItemsDetailsMap(order.getSubOrders().stream().map(OrdersEntity::getId).collect(toSet()));
+
+		TransactionCurrency currency = getOrderCurrency(order);
+
+		Order orderDto = new Order();
+		orderDto.setUserId(user.getId());
+		orderDto.setUserName(user.getName());
+		orderDto.setOrderId(order.getId());
+		orderDto.setCurrency(currency.name());
+		orderDto.setCreationDate(order.getCreatedAt());
+		List<SubOrder> subOrders = 
+				order
+				.getSubOrders()
+				.stream()
+				.map(subOrder -> getSubOrder(subOrder, itemsMap, dto))
+				.collect(toList());
+				
+		orderDto.setSubOrders(subOrders);
+
+		BigDecimal subtotal = order.getSubOrders()
+								   .stream()
+								   .map(OrdersEntity::getAmount)
+								   .reduce(ZERO, BigDecimal::add);
+
+		BigDecimal shipping = orderDto.getSubOrders()
+								 .stream()
+								 .map(SubOrder::getShipment)
+								 .map(Shipment::getShippingFee)
+								 .reduce(ZERO, BigDecimal::add);
+
+		orderDto.setSubtotal(subtotal);
+		orderDto.setShipping(shipping);
+		orderDto.setTotal(subtotal);
+
+		return orderDto;
+	}
+
+
+
+
+
+	private TransactionCurrency getOrderCurrency(MetaOrderEntity order) {
+		return order
+		.getSubOrders()
+		.stream()
+		.findFirst()
+		.map(OrdersEntity::getBasketsEntity)
+		.orElse(new HashSet<BasketsEntity>())
+		.stream()
+		.findFirst()
+		.map(BasketsEntity::getCurrency)
+		.map(TransactionCurrency::getTransactionCurrency)
+		.orElse(EGP);
+	}
+
+	
+
+
+
+
+	private SubOrder getSubOrder(OrdersEntity order, Map<Long, List<BasketItemDetails>> itemsMap, CartCheckoutDTO dto) {
+
+		String status = 
+				ofNullable(findEnum(order.getStatus()))
+				.orElse(NEW)
+				.name();
+		
+		List<BasketItem> items = 
+				itemsMap
+				.get(order.getId())
+				.stream()
+				.map(this::toBasketItem)
+				.collect(toList());
+		
+		ShippingEta eta = new ShippingEta(order.getShipment().getFrom(), order.getShipment().getTo());
+		Shipment shipmentDto = new Shipment(dto.getServiceId(), dto.getServiceId(), order.getShipment().getShippingFee(), eta);
+		
+		Long totalQuantity = 
+				items
+				.stream()
+				.map(BasketItem::getQuantity)
+				.reduce(0, Integer::sum)
+				.longValue();
+		
+		SubOrder subOrder = new SubOrder();
+		subOrder.setShopId(order.getShopsEntity().getId());
+		subOrder.setShopName(order.getShopsEntity().getName());
+		subOrder.setSubOrderId(order.getId());
+		subOrder.setCreationDate(order.getCreationDate());
+		subOrder.setSubtotal(order.getAmount());
+		subOrder.setStatus(status);
+		subOrder.setDeliveryAddress((AddressRepObj)order.getAddressEntity().getRepresentation());
+		subOrder.setItems(items);
+		subOrder.setShipment(shipmentDto);
+		subOrder.setTotalQuantity(totalQuantity);
+		subOrder.setTotal(order.getAmount());
+		return subOrder;
+	}
+
+
+	private void validateCartCheckoutDTO(CartCheckoutDTO dto){
+		if (dto.getAddressId() == null) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0004);
+		}
+		if (dto.getServiceId() == null) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0002);
+		}
+		if (!(dto.getAdditionalData() == null || dto.getAdditionalData().isEmpty())) {
+			shippingManagementService.validateShippingAdditionalData(dto);
+		}
+
+	}
+
+
+	private MetaOrderEntity createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto) {
+		OrganizationEntity org = securityService.getCurrentUserOrganization();
+		UserEntity user = (UserEntity)securityService.getCurrentUser();
+
+		
+		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(shopCartsMap);
+		Set<OrdersEntity> subOrders = createSubOrders(cartDividedByShop, address, dto);
+		
+		MetaOrderEntity order = new MetaOrderEntity();
+		order.setOrganization(org);
+		order.setUser(user);
+		subOrders.forEach(order::addSubOrder);
+		return metaOrderRepo.save(order);
+	}
+
+
+
+
+
+	private List<CartItemsForShop> groupCartItemsByShop(Map<Long, List<CartCheckoutData>> shopCartsMap) {
+		OrganizationEntity org = securityService.getCurrentUserOrganization();
+		Map<Long,ShopsEntity> shopCache = createOrganizationShopsCache(org);
+		return shopCartsMap
+				.entrySet()
+				.stream()
+				.map(entry -> getCartItemsForShop(entry, shopCache))
+				.collect(toList());
+	}
+
+
+	
+
+	private CartItemsForShop getCartItemsForShop(Map.Entry<Long, List<CartCheckoutData>> entry, Map<Long,ShopsEntity> shopCache) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ShopsEntity shop = 
+				ofNullable(entry.getKey())
+				.map(shopCache::get)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, S$0005 , entry.getKey(), orgId));
+		return new CartItemsForShop(shop, entry.getValue());
+	}
+
+
+	private Map<Long, ShopsEntity> createOrganizationShopsCache(OrganizationEntity org) {
+		return shopsRepo
+		.findByOrganizationEntity_Id(org.getId())
+		.stream()
+		.collect(toMap(ShopsEntity::getId, shop -> shop));
+	}
+
+
+
+
+
+	private Set<OrdersEntity> createSubOrders(List<CartItemsForShop> cartDividedByShop, AddressesEntity address,
+			CartCheckoutDTO dto) {
+		Set<OrdersEntity> subOrders = 
+				cartDividedByShop
+				.stream()
+				.map(cartItems -> createSubOrder(cartItems, address, dto))
+				.collect(toSet());
+		
+		List<ShippingOfferDTO> shippingOffers =
+				subOrders
+				.stream()
+				.map(subOrder -> shippingManagementService.createShippingDetailsFromOrder(subOrder, dto.getAdditionalData()))
+				.collect(collectingAndThen(toList(), shippingManagementService::getOffersFromOrganizationShippingServices));
+		
+		for(OrdersEntity subOrder : subOrders) {
+			subOrder.setShipment(createShipment(subOrder, dto, shippingOffers));
+			subOrder.setAmount(calculateSubOrderTotal(subOrder));
+		}
+		return subOrders;
+	}
+	
+	
+	
+	
+
+
+	private OrdersEntity createSubOrder(CartItemsForShop cartItems,
+								 AddressesEntity shippingAddress, CartCheckoutDTO dto) {
+		Map<Long, StocksEntity> stocksCache = createStockCache(cartItems);
+		
+		OrdersEntity subOrder =  createSubOrder(shippingAddress, cartItems);
+		saveOrderItemsIntoSubOrder(cartItems, stocksCache, subOrder);
+		return ordersRepository.save(subOrder);
+	}
+
+
+
+
+
+	private void saveOrderItemsIntoSubOrder(CartItemsForShop cartItems, Map<Long, StocksEntity> stocksCache,
+			OrdersEntity subOrder) {
+		List<BasketsEntity> items = 
+				cartItems
+				.getCheckOutData()
+				.stream()
+				.map(data -> createBasketItem(data, subOrder, stocksCache))
+				.collect(toList());		
+		items.forEach(subOrder::addBasketItem);
+	}
+
+
+
+
+
+	private BigDecimal calculateSubOrderTotal(OrdersEntity subOrder) {
+		BigDecimal itemsTotal = 
+				subOrder
+				.getBasketsEntity()
+				.stream()
+				.map(this::calcBasketItemValue)
+				.reduce(ZERO, BigDecimal::add);
+		BigDecimal shippingFee = 
+				ofNullable(subOrder.getShipment())
+				.map(ShipmentEntity::getShippingFee)
+				.orElse(ZERO);
+		return itemsTotal.add(shippingFee);
+		
+	}
+	
+	
+	
+	private BigDecimal calcBasketItemValue(BasketsEntity item) {
+		return item.getPrice().multiply(item.getQuantity());
+	}
+
+
+
+
+
+	private Map<Long, StocksEntity> createStockCache(CartItemsForShop cartItems) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		List<Long> itemStocks = 
+				cartItems
+				.getCheckOutData()
+				.stream()
+				.map(CartCheckoutData::getStockId)
+				.collect(toList());
+		
+		Map<Long, StocksEntity> stocksCache = 
+				stockRepository
+				.findByIdInAndOrganizationEntity_Id(itemStocks, orgId)
+				.stream()
+				.collect(groupingBy(StocksEntity::getId))
+				.entrySet()
+				.stream()
+				.map(this::createStockEntityWithIdEntry)
+				.collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+		return stocksCache;
+	}
+	
+	
+	
+	
+	private Map.Entry<Long, StocksEntity> createStockEntityWithIdEntry(Map.Entry<Long, List<StocksEntity>> entry){
+		Long stockId = entry.getKey();
+		StocksEntity stock = 
+				entry
+				.getValue()
+				.stream()
+				.findFirst()
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$STO$0001, stockId));
+		return new SimpleEntry<Long, StocksEntity>(stockId, stock);
+	}
+
+	
+	
+
+	private BasketsEntity createBasketItem(CartCheckoutData data, OrdersEntity subOrder, Map<Long, StocksEntity> stocksCache) {
+		StocksEntity stock = 
+				ofNullable(data)
+				.map(CartCheckoutData::getStockId)
+				.map(stocksCache::get)
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$STO$0001, data.getStockId()));
+		
+		if(stock.getQuantity() < data.getQuantity()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0003);
+		}
+		
+		BasketsEntity basket = new BasketsEntity();
+		basket.setStocksEntity(stock);
+		basket.setPrice(data.getPrice());
+		basket.setQuantity(new BigDecimal(data.getQuantity()));
+		basket.setCurrency(data.getCurrency());
+		basket.setOrdersEntity(subOrder);
+
+		return basket;
+	}
+
+
+	private OrdersEntity createSubOrder(AddressesEntity shippingAddress,
+										CartItemsForShop cartItems) {
+		Long userId = securityService.getCurrentUser().getId();
+		OrganizationEntity org = securityService.getCurrentUserOrganization();
+		
+		OrdersEntity subOrder = new OrdersEntity();
+		subOrder.setUserId(userId);
+		subOrder.setShopsEntity(cartItems.getShop());
+		subOrder.setOrganizationEntity(org);
+		subOrder.setAddressEntity(shippingAddress);
+		subOrder.setStatus(CLIENT_CONFIRMED.getValue());
+		subOrder.setAmount(calculateSubOrderTotal(subOrder));
+
+		return subOrder;
+	}
+
+
+	private ShipmentEntity createShipment(OrdersEntity subOrder, CartCheckoutDTO dto, List<ShippingOfferDTO> shippingOffers) {
+		ShipmentEntity shipment = new ShipmentEntity();
+		shipment.setSubOrder(subOrder);
+		shipment.setStatus(DRAFT.getValue());
+		shipment.setShippingServiceId(dto.getServiceId());
+		if ( dto.getAdditionalData() == null || dto.getAdditionalData().isEmpty()) {
+			shipment.setParameters("{}");
+		} else {
+			JSONObject additionalData = new JSONObject(dto.getAdditionalData());
+			shipment.setParameters(additionalData.toString());
+		}
+		ShipmentDTO shipmentDTO = 
+				shippingOffers
+				.stream()
+				.findFirst()
+				.map(ShippingOfferDTO::getShipments)
+				.orElse(emptyList())
+				.stream()
+				.filter(shp -> Objects.equals(shp.getSubOrderId(), subOrder.getId()))
+				.findFirst()
+				.get();
+
+		shipment.setShippingFee(shipmentDTO.getShippingFee());
+		shipment.setFrom(shipmentDTO.getEta().getFrom());
+		shipment.setTo(shipmentDTO.getEta().getTo());
+
+		return shipmentRepo.save(shipment);
+	}
+
+
+	private void validateCartCheckoutItems(List<CartCheckoutData> userCartItems) {
+		if (userCartItems.isEmpty()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0001);
+		}
+		Integer currency = (userCartItems.stream().findFirst().orElse(new CartCheckoutData())).getCurrency();
+		for(CartCheckoutData item : userCartItems) {
+			if (item.getQuantity() == null || item.getQuantity() <= 0) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0002);
+			}
+
+			if (!Objects.equals(item.getCurrency(), currency)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0004);
+			}
+		}
+	}
+
+}
+
+
+@Data
+@AllArgsConstructor
+class CartItemsForShop{
+	private ShopsEntity shop;
+	private List<CartCheckoutData> checkOutData;
 }

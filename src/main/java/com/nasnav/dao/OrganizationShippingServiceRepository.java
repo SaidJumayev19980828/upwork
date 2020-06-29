@@ -10,5 +10,5 @@ import com.nasnav.persistence.OrganizationShippingServiceEntity;
 public interface OrganizationShippingServiceRepository extends JpaRepository<OrganizationShippingServiceEntity, Long> {
 	List<OrganizationShippingServiceEntity> getByOrganization_Id(Long orgId);
 
-	Optional<OrganizationShippingServiceEntity> getByServiceIdAndOrganization_Id(String serviceId, Long orgId);
+	Optional<OrganizationShippingServiceEntity> getByOrganization_IdAndServiceId(Long orgId, String serviceId);
 }

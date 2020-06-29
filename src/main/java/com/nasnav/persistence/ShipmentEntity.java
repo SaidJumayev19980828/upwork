@@ -1,5 +1,7 @@
 package com.nasnav.persistence;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import javax.persistence.Column;
@@ -46,8 +48,15 @@ public class ShipmentEntity {
 	
 	@Column(name="track_number")
 	private String trackNumber;
-	
+
 	@Column(name="shipping_service_id")
-	private String sericeId;
-	
+	private String shippingServiceId;
+
+	@Column(name="shipping_fee")
+	private BigDecimal shippingFee;
+
+	@Column(name="delivery_from")
+	private LocalDate from;
+	@Column(name="delivery_until")
+	private LocalDate to;
 }

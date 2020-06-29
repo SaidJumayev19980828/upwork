@@ -2,7 +2,6 @@ package com.nasnav.dao;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -20,12 +19,12 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
     Optional<AddressesEntity> findByIdAndUserId(@Param("addressId") Long addressId,
                                                 @Param("userId") Long userId);
 
-    @Query(value = "select * from addresses a join user_Addresses ua on ua.address_id = a.id" +
-            " where ua.user_id = :userId order by ua.principal desc", nativeQuery = true)
+    @Query(value = "select addr from UserEntity usr left join usr.addresses addr" +
+            " where usr.id = :userId ")
     List<AddressesEntity> findByUserId(@Param("userId") Long userId);
 
 
-    @Query(value = "select * from addresses a join user_Addresses ua on ua.address_id = a.id" +
+    @Query(value = "select addr from user_addresses ua left join addresses addr on ua.address_id = addr.id" +
             " where ua.user_id = :userId limit 1", nativeQuery = true)
     Optional<AddressesEntity> findOneByUserId(@Param("userId") Long userId);
 
