@@ -9,6 +9,9 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class ExtraAttributeDTO extends  ExtraAttributeDefinitionDTO{
-	private String value;
+public class ExtraAttributeDefinitionDTO {
+	private Integer id;
+	private String name;
+	private String type;
+	private String iconUrl;
 }
