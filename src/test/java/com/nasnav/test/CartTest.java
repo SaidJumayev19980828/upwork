@@ -3,6 +3,7 @@ package com.nasnav.test;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
@@ -34,9 +35,12 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.CartItemRepository;
+import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.service.OrderService;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -55,6 +59,10 @@ public class CartTest {
 	@Autowired
 	private CartItemRepository cartItemRepo;
 
+	
+	@Autowired
+	private OrderService orderService;
+	
 	
 	@Test
 	public void getCartNoAuthz() {
@@ -113,9 +121,17 @@ public class CartTest {
 
 	@Test
 	public void addCartItemSuccess() {
-		Long itemsCountBefore = cartItemRepo.countByUser_Id(88L);
+		addCartItems(88L, 606L, 1);
+	}
 
-		JSONObject item = createCartItem();
+
+
+
+
+	private void addCartItems(Long userId, Long stockId, Integer quantity) {
+		Long itemsCountBefore = cartItemRepo.countByUser_Id(userId);
+
+		JSONObject item = createCartItem(stockId, quantity);
 
 		HttpEntity<?> request =  getHttpEntity(item.toString(),"123");
 		ResponseEntity<Cart> response =
@@ -232,21 +248,31 @@ public class CartTest {
 	}
 
 
-	private JSONObject createCartItem() {
+	private JSONObject createCartItem(Long stockId, Integer qunatity) {
 		JSONObject item = new JSONObject();
-		item.put("stock_id", 606);
+		item.put("stock_id", stockId);
 		item.put("cover_img", "img");
-		item.put("quantity", 1);
+		item.put("quantity", qunatity);
 
 		return item;
+	}
+	
+	
+	private JSONObject createCartItem() {
+		return createCartItem(606L, 1);
 	}
 
 
 	@Test
 	public void checkoutCartSuccess() {
-		// remove items with 0 quantity
-		cartItemRepo.deleteByQuantityAndUser_Id(0, 88L);
+		checkoutCart();
+	}
 
+
+
+
+
+	private Order checkoutCart() {
 		JSONObject requestBody = createCartCheckoutBody();
 
 		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
@@ -256,6 +282,8 @@ public class CartTest {
 		Order body =  res.getBody();
 		assertTrue(body.getOrderId() != null);
 		assertEquals(0 ,new BigDecimal("3151").compareTo(body.getTotal()));
+		
+		return body;
 	}
 
 
@@ -340,4 +368,36 @@ public class CartTest {
 
 		return body;
 	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_3.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void orderCompleteCycle() throws BusinessException {
+
+		addCartItems(88L, 602L, 2);
+		addCartItems(88L, 604L, 1);
+		
+		//checkout
+		Order order = checkoutCart();
+		Long orderId = order.getOrderId();
+		
+		//finalize order
+		orderService.finalizeOrder(orderId);
+		
+		//confirm order
+		HttpEntity<?> request = getHttpEntity("161718");
+		ResponseEntity<OrderConfrimResponseDTO> res = 
+				template.postForEntity("/order/confirm?order_id="+orderId, request, OrderConfrimResponseDTO.class);
+		
+		String billFile = res.getBody().getShippingBill();
+		//check order status
+		//check created shipments
+		//check stocks reduced
+		assertFalse(billFile.isEmpty());
+	}
+	
+	
 }
