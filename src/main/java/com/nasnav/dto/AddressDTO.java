@@ -16,6 +16,12 @@ public class AddressDTO extends BaseRepresentationObject {
 
     private Long id;
 
+    @JsonProperty("first_name")
+    private String firstName;
+
+    @JsonProperty("last_name")
+    private String lastName;    
+
     @JsonProperty("flat_number")
     private String flatNumber;
 
