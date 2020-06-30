@@ -405,5 +405,20 @@ public class OrganizationController {
                                     @RequestBody ShippingServiceRegistration registration) throws BusinessException {
     	shippingMngService.registerToShippingService(registration);
     }
+    
+    
+    
+    
+    
+    @ApiOperation(value = "get organization extra attributes", nickname = "GetOrgExtraAttr", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "extra_attribute", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public List<ExtraAttributeDefinitionDTO> getOrgExtraAttibute(@RequestHeader (name = "User-Token", required = false) String userToken) throws Exception {
+        return orgService.getExtraAttributes();
+    }
 
 }

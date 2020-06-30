@@ -39,6 +39,8 @@ import org.springframework.web.multipart.MultipartFile;
 import com.nasnav.constatnts.EntityConstants.Operation;
 import com.nasnav.dao.*;
 import com.nasnav.dto.BrandDTO;
+import com.nasnav.dto.ExtraAttributeDTO;
+import com.nasnav.dto.ExtraAttributeDefinitionDTO;
 import com.nasnav.dto.ExtraAttributesRepresentationObject;
 import com.nasnav.dto.OrganizationDTO;
 import com.nasnav.dto.OrganizationImageUpdateDTO;
@@ -95,6 +97,8 @@ public class OrganizationService {
     private ThemesRepository themesRepo;
     @Autowired
     private ProductExtraAttributesEntityRepository productExtraAttrRepo;
+    @Autowired
+    private ExtraAttributesRepository extraAttrRepo;
 
 
     public List<OrganizationRepresentationObject> listOrganizations() {
@@ -800,5 +804,31 @@ public class OrganizationService {
 
         extraAttributesRepository.deleteByIdAndOrganizationId(attrId, orgId);
     }
+
+
+
+    
+    
+	public List<ExtraAttributeDefinitionDTO> getExtraAttributes() {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		return extraAttrRepo
+				.findByOrganizationId(orgId)
+				.stream()
+				.map(this::createExtraAttributeDTO)
+				.collect(toList());
+	}
+	
+	
+	
+	
+	
+	private ExtraAttributeDefinitionDTO createExtraAttributeDTO(ExtraAttributesEntity entity) {
+		ExtraAttributeDefinitionDTO dto = new ExtraAttributeDTO();
+		dto.setIconUrl(entity.getIconUrl());
+		dto.setId(entity.getId());
+		dto.setName(entity.getName());
+		dto.setType(entity.getType());
+		return dto;
+	}
 
 }
