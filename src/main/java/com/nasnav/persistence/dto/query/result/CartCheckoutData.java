@@ -21,4 +21,5 @@ public class CartCheckoutData {
     private String featureSpec;
     private Long shopId;
     private AddressesEntity shopAddress;
+    private Long organizationId;
 }
