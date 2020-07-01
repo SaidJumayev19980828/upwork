@@ -76,6 +76,8 @@ public enum ErrorCodes {
 	,O$ORG$0001("Sub-Order with id[%d] has no Organization!")
 	
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
+
+	,ENUM$0001("Invalid shipping status")
 	
 	,SHP$SRV$0001("Invalid service parameter [%s]!")
 	,SHP$SRV$0002("Missing Service parameters for shipping service[%s]!")
@@ -85,6 +87,9 @@ public enum ErrorCodes {
 	,SHP$SRV$0006("No Shipping service exits with id[%s]!")
 	,SHP$SRV$0007("Invalid Shipping service parameters structure [%s]!")
 	,SHP$SRV$0008("The given value [%s] for Service parameter [%s] of shipping service [%s] has invlaid type!")
+	,SHP$SRV$0009("Shipment not found!")
+
+	,SHP$PARS$0001("Error while parsing status update request!")
 
 	,SHP$SVC$0001("Shipping service is not available!")
 

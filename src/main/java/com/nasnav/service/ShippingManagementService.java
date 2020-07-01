@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,4 +28,6 @@ public interface ShippingManagementService {
 	Mono<ShipmentTracker> requestShipment(OrdersEntity subOrder);
 	ShippingDetails createShippingDetailsFromOrder(OrdersEntity subOrder);
 	ShippingDetails createShippingDetailsFromOrder(OrdersEntity subOrder, Map<String,String> additionalParameters);
+	void updateShipmentStatus(String serviceId, Long orgId, String params) throws IOException;
+
 }

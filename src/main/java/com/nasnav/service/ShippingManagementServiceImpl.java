@@ -1,16 +1,6 @@
 package com.nasnav.service;
 
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
-import static com.nasnav.exceptions.ErrorCodes.ORG$SHIP$0001;
-import static com.nasnav.exceptions.ErrorCodes.S$0004;
-import static com.nasnav.exceptions.ErrorCodes.SHP$OFFR$0001;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0003;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0006;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0007;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0008;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SVC$0001;
-import static com.nasnav.exceptions.ErrorCodes.SHP$USR$0001;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.shipping.ShippingServiceFactory.getServiceInfo;
 import static com.nasnav.shipping.model.ParameterType.STRING;
 import static java.math.BigDecimal.ZERO;
@@ -22,8 +12,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -35,6 +24,10 @@ import java.util.Optional;
 
 import javax.transaction.Transactional;
 
+import com.nasnav.dao.*;
+import com.nasnav.enumerations.ShippingStatus;
+import com.nasnav.shipping.model.*;
+import com.nasnav.shipping.services.bosta.webclient.dto.BostaCallbackDTO;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.json.JSONException;
@@ -46,11 +39,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.utils.EntityUtils;
-import com.nasnav.dao.AddressRepository;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.OrganizationShippingServiceRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingAdditionalDataDTO;
@@ -73,17 +61,6 @@ import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.dto.query.result.CartItemShippingData;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
-import com.nasnav.shipping.model.Parameter;
-import com.nasnav.shipping.model.ParameterType;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.Shipment;
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShipmentReceiver;
-import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingAddress;
-import com.nasnav.shipping.model.ShippingDetails;
-import com.nasnav.shipping.model.ShippingOffer;
-import com.nasnav.shipping.model.ShippingServiceInfo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -115,6 +92,9 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	@Autowired
 	private UserRepository userRepo;
+
+	@Autowired
+	private ShipmentRepository shipmentRepo;
 	
 	@Override
 	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
@@ -556,9 +536,35 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	}
 
 
+    @Override
+    public void updateShipmentStatus(String serviceId, Long orgId, String params) throws IOException {
+		ShipmentStatusData shippingStatusData = null;
+		switch (serviceId) {
+			case "BOSTA_LEVIS" : {
+				BostaCallbackDTO body = jsonMapper.readValue(params, BostaCallbackDTO.class);
+				shippingStatusData =
+						new ShipmentStatusData(serviceId, orgId, body.getId(), body.getState(), body.getExceptionReason());
+			} break;
+		}
+
+		if (shippingStatusData != null) {
+			updateShipmentStatus(shippingStatusData);
+		} else {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$PARS$0001);
+		}
+    }
 
 
-	private List<ShipmentItems> createShipmentItemsFromOrder(OrdersEntity subOrder) {
+    private void updateShipmentStatus(ShipmentStatusData data) {
+		ShipmentEntity shipment =
+			ofNullable(shipmentRepo.findByShippingServiceIdAndExternalIdAndOrganizationId(data.getServiceId(), data.getExternalShipmentId(), data.getOrgId()))
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, SHP$SRV$0009));
+		shipment.setStatus(data.getState());
+		shipmentRepo.save(shipment);
+	}
+
+
+    private List<ShipmentItems> createShipmentItemsFromOrder(OrdersEntity subOrder) {
 		return subOrder
 		.getBasketsEntity()
 		.stream()

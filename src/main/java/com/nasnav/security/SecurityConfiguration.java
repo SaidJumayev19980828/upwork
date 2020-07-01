@@ -130,7 +130,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
    
     private List<AuthPattern> PUBLIC_URLS =
             	asList(
-					    patternOf("/360view/**"							, HttpMethod.GET)
+						patternOf("/callbacks/**")
+					    , patternOf("/360view/**"							, HttpMethod.GET)
             			, patternOf("/navbox/**")
                         , patternOf("/user/recover")
                         , patternOf("/user/login/**")
