@@ -40,6 +40,7 @@ import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.dto.response.navbox.SubOrder;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.OrderService;
 
@@ -400,15 +401,30 @@ public class CartTest {
 		orderService.finalizeOrder(orderId);
 		
 		//confirm order
+		Long subOrderId = getSubOrderIdOfShop(order, 502L);
 		HttpEntity<?> request = getHttpEntity("161718");
 		ResponseEntity<OrderConfrimResponseDTO> res = 
-				template.postForEntity("/order/confirm?order_id="+orderId, request, OrderConfrimResponseDTO.class);
+				template.postForEntity("/order/confirm?order_id=" + subOrderId, request, OrderConfrimResponseDTO.class);
 		
 		String billFile = res.getBody().getShippingBill();
 		//check order status
 		//check created shipments
 		//check stocks reduced
 		assertFalse(billFile.isEmpty());
+	}
+
+
+
+
+
+	private Long getSubOrderIdOfShop(Order order, Long shopId) {
+		return order
+		.getSubOrders()
+		.stream()
+		.filter(ordr -> ordr.getShopId().equals(shopId))
+		.map(SubOrder::getSubOrderId)
+		.findFirst()
+		.get();
 	}
 	
 	

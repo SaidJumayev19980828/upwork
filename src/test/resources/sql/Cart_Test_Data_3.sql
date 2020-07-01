@@ -23,7 +23,8 @@ INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
 INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
 
 
-INSERT INTO public.addresses(id, address_line_1, area_id) values(12300001, 'address line', 1);
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300001, 'address line', 1, '01111234567');
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300002, 'address line', 1, '01111234567');
 
 --inserting shops
 INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (501, 'shop_1', 102, 99001, 12300001);
@@ -39,6 +40,7 @@ VALUES (70, 'ahmed.galal@nasnav.com', 99001, '161718',  502);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700001, '101112', now(), 68, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '131415', now(), 69, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '161718', now(), 70, null);
 
 --inserting users
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
@@ -47,8 +49,8 @@ INSERT INTO public.users(id, email,  user_name, authentication_token, organizati
     VALUES (89, 'test4@nasnav.com','user2','456', 99001);
 
 
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '123', now(), null, 88);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700004, '456', now(), null, 89);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700005, '123', now(), null, 88);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700006, '456', now(), null, 89);
 
 
 --inserting Roles

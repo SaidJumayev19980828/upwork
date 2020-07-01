@@ -63,6 +63,7 @@ public enum ErrorCodes {
 	
 	,O$CFRM$0001("No order exists for shop[%d] with id[%d]!")
 	,O$CFRM$0002("Cannot Confirm order with id[%d]! Invalid order Status [%s]!")
+	,O$CFRM$0003("Cannot Confirm order with id[%d]! User didn't provide a phone number!")
 	
 	,ORG$SHIP$0001("Organization is not registered with any shipping provider!")
 	
