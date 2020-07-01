@@ -108,8 +108,23 @@ public class CartTest {
         assertTrue(isProductNamesReturned);
 	}
 
-	
-	
+
+	@Test
+	public void addCartItemZeroQuantity() {
+		Long itemsCountBefore = cartItemRepo.countByUser_Id(88L);
+
+		JSONObject item = createCartItem();
+		item.put("stock_id", 602);
+		item.put("quantity", 0);
+
+		HttpEntity<?> request =  getHttpEntity(item.toString(),"123");
+		ResponseEntity<Cart> response =
+				template.exchange("/cart/item", POST, request, Cart.class);
+
+		assertEquals(200, response.getStatusCodeValue());
+		assertEquals(itemsCountBefore - 1 , response.getBody().getItems().size());
+	}
+
 
 	@Test
 	public void addCartItemSuccess() {
