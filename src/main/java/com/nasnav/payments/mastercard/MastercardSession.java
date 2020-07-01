@@ -195,7 +195,7 @@ public class MastercardSession {
             payment.setExecuted(new Date());
             payment.setStatus(PaymentStatus.PAID);
             paymentsRepository.saveAndFlush(payment);
-			orderService.finalizeOrder(Long.valueOf(orderUid));
+            orderService.finalizeOrder(payment.getMetaOrderId());
             return;
         }
         throw new BusinessException("Provided payment code does not match successIndicator", "INTVALID_CODE", CONFLICT);

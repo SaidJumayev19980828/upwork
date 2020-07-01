@@ -16,7 +16,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
@@ -27,7 +26,6 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import com.nasnav.dao.OrdersRepository;
@@ -74,11 +72,10 @@ public class UpgLightbox {
 		paymentsRepository.saveAndFlush(payment);
 
 		for (OrdersEntity order : orders) {
-			orderService.finalizeOrder(order.getId());
 			orderService.setOrderAsPaid(payment, order);			
 		}
 		ordersRepository.flush();
-		orderService.finalizeOrder(metaOrderId);
+		orderService.finalizeOrder(payment.getMetaOrderId());
 
 		return response == null ? new ResponseEntity<>("{\"status\": \"SUCCESS\"}", OK) : response;
 	}
