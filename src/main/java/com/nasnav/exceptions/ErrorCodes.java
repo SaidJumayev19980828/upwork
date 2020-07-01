@@ -55,6 +55,7 @@ public enum ErrorCodes {
 	,O$CRT$0002("Quantity must be greater than equal zero!")
 	,O$CRT$0003("Quantity is greater than available stock!")
 	,O$CRT$0004("Currencies of items are different!")
+	,O$CRT$0005("Cart items belong to different organizations!")
 	
 
 	,O$CHK$0001("Must have at least one item in cart!")

@@ -329,6 +329,20 @@ public class CartTest {
 	}
 
 
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_3.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartDifferentOrg() {
+		JSONObject body = createCartCheckoutBody();
+		cartItemRepo.deleteByQuantityAndUser_Id(0, 88L);
+
+		HttpEntity<?> request = getHttpEntity(body.toString(), "123");
+		ResponseEntity<String> res = template.postForEntity("/cart/checkout", request, String.class);
+		assertEquals(406, res.getStatusCodeValue());
+		assertTrue(res.getBody().contains("O$CRT$0005"));
+	}
+
+
 	private JSONObject createCartCheckoutBody() {
 		JSONObject body = new JSONObject();
 		Map<String, String> additionalData = new HashMap<>();
