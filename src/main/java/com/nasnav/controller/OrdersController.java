@@ -155,8 +155,7 @@ public class OrdersController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @PostMapping(value = "confirm",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public OrderConfrimResponseDTO confrimOrder(
             @RequestHeader(name = "User-Token", required = false) String userToken,
             @RequestParam("order_id") Long orderId)
