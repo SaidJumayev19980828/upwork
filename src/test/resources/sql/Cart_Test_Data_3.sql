@@ -17,7 +17,13 @@ INSERT INTO public.product_features(id, name, p_name, description, organization_
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(235,'Shoe color', 's-color', 'Color of the shoes', 99001);
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(236,'Shoe size', 's-size', 'Size of the shoes', 99002);
 
-INSERT INTO public.addresses(id, address_line_1) values(12300001, 'address line');
+
+INSERT INTO public.countries(id,"name")VALUES(1,'Egypt');
+INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
+INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
+
+
+INSERT INTO public.addresses(id, address_line_1, area_id) values(12300001, 'address line', 1);
 
 --inserting shops
 INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (501, 'shop_1', 102, 99001, 12300001);
@@ -36,9 +42,9 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 
 --inserting users
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (88, 'user1@nasnav.com','user1','123', 99001);
+    VALUES (88, 'test2@nasnav.com','user1','123', 99001);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (89, 'test2@nasnav.com','user2','456', 99001);
+    VALUES (89, 'test4@nasnav.com','user2','456', 99001);
 
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '123', now(), null, 88);
@@ -48,15 +54,18 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 --inserting Roles
 insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
+insert into roles(id, name,  organization_id) values(3, 'ORGANIZATION_MANAGER', 99001);
 insert into roles(id, name,  organization_id) values(4, 'ORGANIZATION_EMPLOYEE', 99001);
 insert into roles(id, name,  organization_id) values(5, 'STORE_EMPLOYEE', 99001);
-insert into roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
+insert into roles(id, name,  organization_id) values(6, 'CUSTOMER', 99001);
+insert into roles(id, name,  organization_id) values(7, 'STORE_MANAGER', 99001);
 
 
 --inserting Roles EmployeeUsers relations
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 68, 2);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 69, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 68, 3);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 69, 3);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 70, 7);
 
 
 --inserting products
@@ -110,6 +119,13 @@ INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(1002, null, 7, 0, '99001/cover_img3.jpg');
 
 
-INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name": "Shop","type": "long","value": "14" }', 99001);
+--INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name": "Shop","type": "long","value": "14" }', 99001);
+INSERT INTO public.organization_shipping_service(shipping_service_id, organization_id, service_parameters)
+values('BOSTA_LEVIS', 99001, 
+'{
+    "AUTH_TOKEN": "ae5d5b5601fb68f1b26bf1f059ecaa1a5f9963675707879f2d8a9b0ccfb00357",
+    "BUSINESS_ID": "yM1ngytZ0",
+    "SERVER_URL": "https://stg-app.bosta.co/api/v0"
+ }');
 
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);

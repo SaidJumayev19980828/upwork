@@ -1,5 +1,6 @@
 package com.nasnav.test;
 
+import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -15,9 +16,9 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
-import java.util.List;
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.json.JSONObject;
@@ -275,14 +276,23 @@ public class CartTest {
 	private Order checkoutCart() {
 		JSONObject requestBody = createCartCheckoutBody();
 
+		Order body = checkOutCart(requestBody, new BigDecimal("3151"));
+		
+		return body;
+	}
+
+
+
+
+
+	private Order checkOutCart(JSONObject requestBody, BigDecimal total) {
 		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
 		assertEquals(200, res.getStatusCodeValue());
 		
 		Order body =  res.getBody();
 		assertTrue(body.getOrderId() != null);
-		assertEquals(0 ,new BigDecimal("3151").compareTo(body.getTotal()));
-		
+		assertEquals(0 ,total.compareTo(body.getTotal()));
 		return body;
 	}
 
@@ -381,7 +391,9 @@ public class CartTest {
 		addCartItems(88L, 604L, 1);
 		
 		//checkout
-		Order order = checkoutCart();
+		JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest();
+
+		Order order = checkOutCart(requestBody, new BigDecimal("3125"));
 		Long orderId = order.getOrderId();
 		
 		//finalize order
@@ -397,6 +409,19 @@ public class CartTest {
 		//check created shipments
 		//check stocks reduced
 		assertFalse(billFile.isEmpty());
+	}
+	
+	
+	
+	
+	private JSONObject createCartCheckoutBodyForCompleteCycleTest() {
+		JSONObject body = new JSONObject();
+		Map<String, String> additionalData = new HashMap<>();
+		body.put("customer_address", 12300001);
+		body.put("shipping_service_id", SERVICE_ID);
+		body.put("additional_data", additionalData);
+
+		return body;
 	}
 	
 	
