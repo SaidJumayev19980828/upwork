@@ -1721,6 +1721,14 @@ public class OrderServiceImpl implements OrderService {
 		CartItemEntity cartItem = ofNullable(cartItemRepo.findByStock_IdAndUser_Id(stock.getId(), user.getId()))
 								  .orElse(new CartItemEntity());
 
+		if (item.getQuantity().equals(0)) {
+			if (cartItem.getId() != null) {
+				return deleteCartItem(cartItem.getId());
+			} else {
+				return getUserCart(user.getId());
+			}
+		}
+
 		cartItem.setUser((UserEntity) user);
 		cartItem.setStock(stock);
 		cartItem.setQuantity(item.getQuantity());
@@ -1745,7 +1753,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private void validateCartItem(StocksEntity stock, CartItem item) {
-		if (item.getQuantity() == null || item.getQuantity() <= 0) {
+		if (item.getQuantity() == null || item.getQuantity() < 0) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0002);
 		}
 
