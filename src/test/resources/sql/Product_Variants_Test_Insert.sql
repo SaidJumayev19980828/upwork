@@ -40,7 +40,6 @@ insert into public.roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 70, 2);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 71, 4);
 
 
 

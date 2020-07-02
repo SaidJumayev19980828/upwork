@@ -40,6 +40,7 @@ import java.util.Set;
 
 import javax.mail.MessagingException;
 
+import com.nasnav.dto.response.navbox.Order;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -1684,35 +1685,7 @@ public class OrderServiceTest {
 	
 	
 	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_3.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void testOrderCheckoutService() throws BusinessException {
-		Long orderId = 330033L; 
-		OrdersEntity order = orderRepository.findById(orderId).get();
-		LocalDateTime initialUpdateTime = order.getUpdateDate();
-		StocksEntity stockBefore = stockRepository.findById(601L).get();
-		assertEquals(15, stockBefore.getQuantity().intValue());
-		
-		//-------------------------------------------
-		orderService.finalizeOrder(orderId);
-		//-------------------------------------------
-		
-		OrdersEntity saved = orderRepository.findById(orderId).get();
-		assertEquals(CLIENT_CONFIRMED.getValue(), saved.getStatus());
-		assertTrue(saved.getUpdateDate().isAfter(initialUpdateTime));
-		
-		StocksEntity stockAfter = stockRepository.findById(601L).get();
-		assertEquals(1, stockAfter.getQuantity().intValue());
-	}
-	
-	
-	
-	
-	
-	
+
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_4.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
@@ -1737,32 +1710,8 @@ public class OrderServiceTest {
 		
 		validateStocksQuantities(before);
 	}
-	
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_4.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void testOrderCheckoutForBundle() throws BusinessException {
-		Long orderId = 330033L; 
-		
-		BundleOrderTestStocks before = getStocksCountBefore();		
-		validateStockQuantityBefore(before);
-		
-		//-------------------------------------------
-		orderService.finalizeOrder(orderId);
-		//-------------------------------------------
-				
-		OrdersEntity saved = orderRepository.findById(orderId).get();
-		assertEquals(CLIENT_CONFIRMED.getValue(), saved.getStatus());
-		
-		validateStocksQuantities(before);
-	}
 
-	
-	
+
 
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql","/sql/Orders_Test_Data_Insert_3.sql"})
@@ -1897,10 +1846,22 @@ public class OrderServiceTest {
 		assertNotNull(subOrderAfter.getShipment().getTrackNumber());
 		assertEquals(REQUSTED.getValue(), subOrderAfter.getShipment().getStatus());
 	}
-	
-	
-	
-	
+
+
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getMetaOrderTest() {
+		HttpEntity<?> request = getHttpEntity("123");
+		ResponseEntity<Order> res =
+				template.exchange("/order/meta_order/info?id=310001", GET, request, Order.class);
+
+		//-------------------------------------------------
+		assertEquals(OK, res.getStatusCode());
+		Order order = res.getBody();
+		assertEquals(2,order.getSubOrders().size());
+	}
 	
 
 

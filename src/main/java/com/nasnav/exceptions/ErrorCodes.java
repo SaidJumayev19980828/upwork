@@ -47,18 +47,24 @@ public enum ErrorCodes {
 
 	,ORG$EXTRATTR$0001("No extra attribute exists with ID:[%d]!")
 
+	,ORG$SHIP$0001("Organization is not registered with any shipping provider!")
+
 	,AREA$001("No Area exists with ID:[%d]!")
 	,ADDR$ADDR$0001("%s with name [%s] already exists!")
 	,ADDR$ADDR$0002("Address with id[%d] doesn't exists!")
 	,ADDR$ADDR$0003("Must provide id of parent $s")
 	,ADDR$ADDR$0004("Must provide customer address!")
-	
+
+	,G$USR$0001("User is not an employee!")
+
 	,O$CRT$0001("Cannot create a cart for an employee user!")
 	,O$CRT$0002("Quantity must be greater than equal zero!")
 	,O$CRT$0003("Quantity is greater than available stock!")
 	,O$CRT$0004("Currencies of items are different!")
 	,O$CRT$0005("Cart items belong to different organizations!")
-	
+
+	,O$SHP$0001("Failed to create shipment for order[%d]!")
+	,O$SHP$0002("Sub-Order with id[%d] has no shop!")
 
 	,O$CHK$0001("Must have at least one item in cart!")
 	,O$CHK$0002("Must provide shipping service provider")
@@ -66,17 +72,12 @@ public enum ErrorCodes {
 	
 	,O$CFRM$0001("No order exists for shop[%d] with id[%d]!")
 	,O$CFRM$0002("Cannot Confirm order with id[%d]! Invalid order Status [%s]!")
-	
-	,ORG$SHIP$0001("Organization is not registered with any shipping provider!")
-	
-	,O$SHP$0001("Failed to create shipment for order[%d]!")
-	,O$SHP$0002("Sub-Order with id[%d] has no shop!")
-	
-	,G$USR$0001("User is not an employee!")
-	
+
 	,O$MAIL$0001("Failed to send notification email about order[%d] to email[%s]!")
 	
 	,O$ORG$0001("Sub-Order with id[%d] has no Organization!")
+
+	,O$0001("No order exists with ID[%d]!")
 	
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
 	

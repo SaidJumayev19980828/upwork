@@ -21,5 +21,9 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 			+ " LEFT JOIN FETCH variant.productEntity product "
 			+ " WHERE meta.id =:id")
 	Optional<MetaOrderEntity> findFullDataById(@Param("id")Long id);
+
+	boolean existsByIdAndUserId(Long id, Long userId);
+
+	MetaOrderEntity findByIdAndUserId(Long id, Long userId);
 }
 

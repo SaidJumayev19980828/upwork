@@ -12,9 +12,7 @@ import com.nasnav.commons.model.dataimport.ProductImportDTO;
 import com.nasnav.dto.ProductImportMetadata;
 import com.nasnav.service.model.DataImportCachedData;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @NoArgsConstructor
@@ -28,6 +26,7 @@ public class ImportProductContext {
 	private DataImportCachedData cache;
 	private ProductImportMetadata importMetaData;
 	private Integer productsNum;
+	@ToString.Exclude
 	private List<Error> errors;
 	private Set<Tag> createdTags;
 	private Set<Brand> createdBrands;
