@@ -30,7 +30,10 @@ public class ProductFeaturesEntity {
 	
 	@Column(name="description")
 	private String description;
-	
+
+	@Column(name="level")
+	private Integer level = 0;
+
 	@ManyToOne
 	@ToString.Exclude
     @EqualsAndHashCode.Exclude

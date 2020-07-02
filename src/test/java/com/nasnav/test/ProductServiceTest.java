@@ -435,6 +435,7 @@ public class ProductServiceTest {
 		productFeaturesEntity_1.setName(PRODUCT_FEATURE_1_NAME);
 		productFeaturesEntity_1.setPname(PRODUCT_FEATURE_1_P_NAME);
 		productFeaturesEntity_1.setOrganization(org);
+		productFeaturesEntity_1.setLevel(0);
 		productFeaturesEntity_1 = productFeaturesRepository.save(productFeaturesEntity_1);
 		return productFeaturesEntity_1;
 	}
@@ -447,6 +448,7 @@ public class ProductServiceTest {
 		productFeaturesEntity_2.setName(PRODUCT_FEATURE_2_NAME);
 		productFeaturesEntity_2.setPname(PRODUCT_FEATURE_2_P_NAME);
 		productFeaturesEntity_2.setOrganization(org);
+		productFeaturesEntity_2.setLevel(0);
 		productFeaturesEntity_2 = productFeaturesRepository.save(productFeaturesEntity_2);
 		return productFeaturesEntity_2;
 	}

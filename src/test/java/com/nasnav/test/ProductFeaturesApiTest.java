@@ -72,7 +72,7 @@ public class ProductFeaturesApiTest {
 	public void getProductFeaturesTest() throws JsonParseException, JsonMappingException, IOException {
 		List<ProductFeatureDTO> expected = 
 				Arrays.asList( 
-						new ProductFeatureDTO(234, "Shoe size", "Size of the shoes", "s-size"),
+						new ProductFeatureDTO(234, "Shoe size", "Size of the shoes", "s-size", 0),
 						new ProductFeatureDTO(235, "Shoe color", "Color of the shoes", "s-color")
 					);
 		

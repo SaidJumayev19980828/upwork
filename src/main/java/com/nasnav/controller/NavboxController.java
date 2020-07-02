@@ -60,15 +60,9 @@ public class NavboxController {
 	@ApiOperation(value = "Get information about brand by its ID", nickname = "brandInfo")
 	@ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 404, message = "No brand data for the supplied ID found"), })
-	@GetMapping(value = "/brand")
-	public Organization_BrandRepresentationObject getBrandById(@RequestParam(name = "brand_id") Long brandId) throws BusinessException {
-
-		Organization_BrandRepresentationObject brandRepresentationObject = brandService.getBrandById(brandId);
-
-		if (brandRepresentationObject == null)
-			throw new BusinessException("Brand not found", "", NOT_FOUND);
-
-		return brandRepresentationObject;
+	@GetMapping(value = "/brand", produces = APPLICATION_JSON_UTF8_VALUE)
+	public Organization_BrandRepresentationObject getBrandById(@RequestParam(name = "brand_id") Long brandId) {
+		return brandService.getBrandById(brandId);
 	}
 
 	
