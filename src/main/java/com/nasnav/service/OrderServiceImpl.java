@@ -56,9 +56,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -1919,7 +1917,7 @@ public class OrderServiceImpl implements OrderService {
 
 		MetaOrderEntity order = createMetaOrder(dto, user);
 
-		return getOrderResponse(order, dto);
+		return getOrderResponse(order);
 	}
 
 
@@ -1956,39 +1954,24 @@ public class OrderServiceImpl implements OrderService {
 	
 
 
-	private Order getOrderResponse(MetaOrderEntity order, CartCheckoutDTO dto) throws IOException{
-		UserEntity user = (UserEntity)securityService.getCurrentUser();
-
+	private Order getOrderResponse(MetaOrderEntity order) {
 		Map<Long, List<BasketItemDetails>> itemsMap =
 				getBasketItemsDetailsMap(order.getSubOrders().stream().map(OrdersEntity::getId).collect(toSet()));
 
-		TransactionCurrency currency = getOrderCurrency(order);
+		Order orderDto = setMetaOrderBasicData(order);
 
-		Order orderDto = new Order();
-		orderDto.setUserId(user.getId());
-		orderDto.setUserName(user.getName());
-		orderDto.setOrderId(order.getId());
-		orderDto.setCurrency(currency.name());
-		orderDto.setCreationDate(order.getCreatedAt());
 		List<SubOrder> subOrders = 
 				order
 				.getSubOrders()
 				.stream()
-				.map(subOrder -> getSubOrder(subOrder, itemsMap, dto))
+				.map(subOrder -> getSubOrder(subOrder, itemsMap))
 				.collect(toList());
 				
 		orderDto.setSubOrders(subOrders);
 
-		BigDecimal subtotal = order.getSubOrders()
-								   .stream()
-								   .map(OrdersEntity::getAmount)
-								   .reduce(ZERO, BigDecimal::add);
+		BigDecimal subtotal = getMetaOrderSubtotal(order);
 
-		BigDecimal shipping = orderDto.getSubOrders()
-								 .stream()
-								 .map(SubOrder::getShipment)
-								 .map(Shipment::getShippingFee)
-								 .reduce(ZERO, BigDecimal::add);
+		BigDecimal shipping = getMetaOrderShipping(orderDto);
 
 		orderDto.setSubtotal(subtotal);
 		orderDto.setShipping(shipping);
@@ -1997,6 +1980,47 @@ public class OrderServiceImpl implements OrderService {
 		return orderDto;
 	}
 
+
+	private BigDecimal getMetaOrderSubtotal(MetaOrderEntity order) {
+		return order.getSubOrders()
+				.stream()
+				.map(OrdersEntity::getAmount)
+				.reduce(ZERO, BigDecimal::add);
+	}
+
+
+	private Order setMetaOrderBasicData(MetaOrderEntity metaOrder) {
+		Order order = new Order();
+		order.setUserId(metaOrder.getUser().getId());
+		order.setUserName(metaOrder.getUser().getName());
+		order.setOrderId(metaOrder.getId());
+		order.setCurrency(getOrderCurrency(metaOrder).name());
+		order.setCreationDate(metaOrder.getCreatedAt());
+		return order;
+	}
+
+
+	private BigDecimal getMetaOrderShipping(Order orderDto) {
+		return orderDto.getSubOrders()
+				.stream()
+				.map(SubOrder::getShipment)
+				.map(Shipment::getShippingFee)
+				.reduce(ZERO, BigDecimal::add);
+	}
+
+	@Override
+	public Order getMetaOrder(Long orderId){
+		BaseUserEntity user = securityService.getCurrentUser();
+		MetaOrderEntity order;
+		if (user instanceof UserEntity && metaOrderRepo.existsByIdAndUserId(orderId, user.getId())) {
+			order = metaOrderRepo.findByIdAndUserId(orderId, user.getId());
+			return getOrderResponse(order);
+		} else if (metaOrderRepo.existsById(orderId)) {
+			order = metaOrderRepo.findById(orderId).get();
+			return getOrderResponse(order);
+		}
+		throw new RuntimeBusinessException(NOT_FOUND, O$0001, orderId);
+	}
 
 
 
@@ -2020,7 +2044,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private SubOrder getSubOrder(OrdersEntity order, Map<Long, List<BasketItemDetails>> itemsMap, CartCheckoutDTO dto) {
+	private SubOrder getSubOrder(OrdersEntity order, Map<Long, List<BasketItemDetails>> itemsMap) {
 
 		String status = 
 				ofNullable(findEnum(order.getStatus()))
@@ -2034,8 +2058,8 @@ public class OrderServiceImpl implements OrderService {
 				.map(this::toBasketItem)
 				.collect(toList());
 		
-		ShippingEta eta = new ShippingEta(order.getShipment().getFrom(), order.getShipment().getTo());
-		Shipment shipmentDto = new Shipment(dto.getServiceId(), dto.getServiceId(), order.getShipment().getShippingFee(), eta);
+		Shipment shipmentDto = (Shipment) order.getShipment().getRepresentation();
+
 		
 		Long totalQuantity = 
 				items
