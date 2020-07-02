@@ -1,10 +1,12 @@
 package com.nasnav.test;
 
+import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
@@ -36,14 +38,19 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.CartItemRepository;
+import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.SubOrder;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.ShipmentEntity;
 import com.nasnav.service.OrderService;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
 
 @RunWith(SpringRunner.class)
@@ -64,6 +71,9 @@ public class CartTest {
 	
 	@Autowired
 	private OrderService orderService;
+	
+	@Autowired
+	private OrdersRepository orderRepo;
 	
 	
 	@Test
@@ -397,34 +407,39 @@ public class CartTest {
 		Order order = checkOutCart(requestBody, new BigDecimal("3125"));
 		Long orderId = order.getOrderId();
 		
-		//finalize order
 		orderService.finalizeOrder(orderId);
 		
-		//confirm order
-		Long subOrderId = getSubOrderIdOfShop(order, 502L);
-		HttpEntity<?> request = getHttpEntity("161718");
-		ResponseEntity<OrderConfrimResponseDTO> res = 
-				template.postForEntity("/order/confirm?order_id=" + subOrderId, request, OrderConfrimResponseDTO.class);
-		
-		String billFile = res.getBody().getShippingBill();
-		//check order status
-		//check created shipments
-		//check stocks reduced
-		assertFalse(billFile.isEmpty());
+		asList(new ShopManager(502L, "161718"), new ShopManager(501L,"131415"))
+		.forEach(mgr -> confrimOrder(order, mgr));
 	}
 
 
 
+	private void confrimOrder(Order order, ShopManager mgr) {
+		Long subOrderId = getSubOrderIdOfShop(order, mgr.getShopId());
+		HttpEntity<?> request = getHttpEntity(mgr.getManagerAuthToken());
+		ResponseEntity<OrderConfrimResponseDTO> res = 
+				template.postForEntity("/order/confirm?order_id=" + subOrderId, request, OrderConfrimResponseDTO.class);
+		
+		String billFile = res.getBody().getShippingBill();
+		OrdersEntity orderEntity = orderRepo.findByIdAndShopsEntity_Id(subOrderId, mgr.getShopId()).get();
+		ShipmentEntity shipment = orderEntity.getShipment();
+		
+		assertFalse(billFile.isEmpty());
+		assertNotNull(shipment.getTrackNumber());
+		assertNotNull(shipment.getExternalId());
+		assertEquals(STORE_CONFIRMED.getValue(), orderEntity.getStatus());
+	}
 
 
 	private Long getSubOrderIdOfShop(Order order, Long shopId) {
 		return order
-		.getSubOrders()
-		.stream()
-		.filter(ordr -> ordr.getShopId().equals(shopId))
-		.map(SubOrder::getSubOrderId)
-		.findFirst()
-		.get();
+				.getSubOrders()
+				.stream()
+				.filter(ordr -> ordr.getShopId().equals(shopId))
+				.map(SubOrder::getSubOrderId)
+				.findFirst()
+				.get();
 	}
 	
 	
@@ -441,4 +456,13 @@ public class CartTest {
 	}
 	
 	
+}
+
+
+
+@Data
+@AllArgsConstructor
+class ShopManager{
+	private Long shopId;
+	private String managerAuthToken;
 }

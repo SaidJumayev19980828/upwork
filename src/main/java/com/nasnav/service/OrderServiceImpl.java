@@ -1820,9 +1820,7 @@ public class OrderServiceImpl implements OrderService {
 	@Transactional
 	public OrderConfrimResponseDTO confrimOrder(Long orderId) {
 		EmployeeUserEntity storeMgr = getAndValidateUser();
-		Long mgrShop = storeMgr.getShopId();
-		
-		OrdersEntity subOrder = getAndValidateOrderForConfirmation(orderId, mgrShop);
+		OrdersEntity subOrder = getAndValidateOrderForConfirmation(orderId, storeMgr);
 		
 		confirmSubOrderAndMetaOrder(subOrder);
 		
@@ -1838,11 +1836,17 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private OrdersEntity getAndValidateOrderForConfirmation(Long orderId, Long mgrShop) {
-		OrdersEntity order = 
-				ordersRepository
-				.findByIdAndShopsEntity_Id(orderId, mgrShop)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0001, mgrShop, orderId));
+	private OrdersEntity getAndValidateOrderForConfirmation(Long orderId, EmployeeUserEntity user) {
+		OrdersEntity order;
+		if(securityService.currentUserHasRole(ORGANIZATION_MANAGER)) {
+			order = ordersRepository
+						.findByIdAndOrganizationEntity_Id(orderId, user.getOrganizationId())
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0001, user, orderId));
+		}else {
+			 order = ordersRepository
+						.findByIdAndShopsEntity_Id(orderId, user.getShopId())
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0001, user, orderId));
+		}	
 		
 		OrderStatus status = order.getOrderStatus(); 
 		if(CLIENT_CONFIRMED != status) {
@@ -1886,21 +1890,21 @@ public class OrderServiceImpl implements OrderService {
 
 	private EmployeeUserEntity getAndValidateUser() {
 		BaseUserEntity user = securityService.getCurrentUser();
-		
 		if(!(user instanceof EmployeeUserEntity)) {
 			throw new RuntimeBusinessException(FORBIDDEN, G$USR$0001);
 		}
-		
-		EmployeeUserEntity storeMgr = (EmployeeUserEntity)user;
-		return storeMgr;
+		return (EmployeeUserEntity)user;
 	}
 
+	
+	
+	
 	private boolean isAllOtherOrdersConfirmed(Long orderId, MetaOrderEntity metaOrder) {
 		return metaOrder
-		.getSubOrders()
-		.stream()
-		.filter(ord -> !Objects.equals(ord.getId(), orderId))
-		.allMatch(ord -> Objects.equals(STORE_CONFIRMED.getValue() , ord.getStatus()));
+				.getSubOrders()
+				.stream()
+				.filter(ord -> !Objects.equals(ord.getId(), orderId))
+				.allMatch(ord -> Objects.equals(STORE_CONFIRMED.getValue() , ord.getStatus()));
 	}
 
 	public ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId) {

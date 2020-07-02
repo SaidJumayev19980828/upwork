@@ -34,7 +34,7 @@ INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUE
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-VALUES (69, 'testuser2@nasnav.com', 99002, '131415',  501);
+VALUES (69, 'levis.nasnav@gmail.com', 99001, '131415',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (70, 'ahmed.galal@nasnav.com', 99001, '161718',  502);
 
