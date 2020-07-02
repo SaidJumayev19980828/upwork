@@ -451,6 +451,10 @@ public class OrganizationService {
 		if(featureDto.isUpdated("description")) {
 			entity.setDescription( featureDto.getDescription() );
 		}
+
+        if(featureDto.isUpdated("level")) {
+            entity.setLevel( featureDto.getLevel() );
+        }
 		
 		entity = featureRepo.save(entity);
 		

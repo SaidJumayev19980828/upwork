@@ -33,6 +33,8 @@ public enum ErrorCodes {
 	,P$BRA$0001("No Brand exists with ID:[%d]!")
 	,P$BRA$0002("Brand with id [%d] doesnot belong to organization with id [%d]")
 
+	,GEN$0001("NO %s exists with ID:[%d]!")
+
 	,S$0001("Shop is linked to %s !")
 	,S$0002( "No Shop exists with ID: [%d]!")
 	,S$0003("No shops found!")

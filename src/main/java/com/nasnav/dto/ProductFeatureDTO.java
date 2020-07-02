@@ -24,12 +24,22 @@ public class ProductFeatureDTO extends BaseRepresentationObject{
     
     @JsonProperty(value = "p_name")
     private String pname;
-    
+
+    private Integer level;
+
     
     public ProductFeatureDTO(ProductFeaturesEntity entity) {
     	this.id = entity.getId();
     	this.name = entity.getName();
     	this.pname = entity.getPname();
     	this.description = entity.getDescription();
+    	this.level = entity.getLevel();
+    }
+
+    public ProductFeatureDTO(Integer id, String name, String description, String pname) {
+        this.id = id;
+        this.name = name;
+        this.pname = pname;
+        this.description = description;
     }
 }
