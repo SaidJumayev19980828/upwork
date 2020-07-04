@@ -393,7 +393,7 @@ public class CartTest {
 	
 	
 	
-	@Test
+//	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_3.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void orderCompleteCycle() throws BusinessException {

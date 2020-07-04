@@ -27,5 +27,5 @@ public final class EmailConstants {
     
     public static final String ORDER_NOTIFICATION_TEMPLATE = "mail_templates/order_notification_template.html";
     
-    public static final String ORDER_BILL_TEMPLATE = "mail_templates/order_bill_template.html";
+    public static final String ORDER_BILL_TEMPLATE = "order_bill_template.html";
 }

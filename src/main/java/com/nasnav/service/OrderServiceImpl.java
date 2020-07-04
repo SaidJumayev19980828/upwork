@@ -67,7 +67,6 @@ import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
@@ -849,11 +848,11 @@ public class OrderServiceImpl implements OrderService {
 		}
 		
 		String subject = format(BILL_EMAIL_SUBJECT, orderId);
-		Map<String,String> parametersMap = createBillEmailParams(order);
+		Map<String,Object> parametersMap = createBillEmailParams(order);
 		String template = ORDER_BILL_TEMPLATE;
 		try {
-			mailService.send(email.get(), subject,  template, parametersMap);
-		} catch (IOException | MessagingException e) {
+			mailService.sendThymeleafTemplateMail(email.get(), subject,  template, parametersMap);
+		} catch (MessagingException e) {
 			logger.error(e, e);
 		}
 	}
@@ -862,69 +861,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Map<String, String> createBillEmailParams(MetaOrderEntity order) {
-		Map<String,String> params = new HashMap<>();
-		params.put("#order_details#", createOrderDetailsStr(order));
-		return params;
-	}
-
-
-
-
-
-	private String createOrderDetailsStr(MetaOrderEntity order) {
-		String metaOrderInfo = createMetaOrderInfo(order);
-		String subOrderDetails = createSubOrderDetailsStr(order);
-		
-		return metaOrderInfo + "/n" + subOrderDetails;
-	}
-
-
-
-
-
-	private String createSubOrderDetailsStr(MetaOrderEntity order) {
-		return order
-				.getSubOrders()
-				.stream()
-				.map(this::createSubOrderDetails)
-				.collect(joining("\n\n"));
-	}
-
-
-	private String createSubOrderDetails(OrdersEntity order){
-		String template = 
-				"From shop\t\t:\t\t%s\n"
-				+ "Total\t\t:\t\t%s\n"
-				+ "\t\tItem\t\tprice";
-		String orderDetails = format(template, order.getShopsEntity().getName(), order.getAmount().setScale(2).toString());
-		String orderItemsLines = createSubOrderItemsStr(order);
-		return orderDetails + "\n" +orderItemsLines;
-	}
-
-
-
-	private String createSubOrderItemsStr(OrdersEntity order) {
-		return order
-				.getBasketsEntity()
-				.stream()
-				.map(this::createOrderItemLine)
-				.collect(joining("\n"));
-	}
-
-	
-	
-	private String createOrderItemLine(BasketsEntity item) {
-		String template = "\t\t%s\t\t%s";
-		String productName = item.getStocksEntity().getProductVariantsEntity().getProductEntity().getName();
-		String price = item.getPrice().setScale(2).toString();
-		return format(template, productName, price);
-	}
-
-
-
-
-	private String createMetaOrderInfo(MetaOrderEntity order) {
+	private Map<String, Object> createBillEmailParams(MetaOrderEntity order) {
 		LocalDateTime orderTime = 
 				order
 				.getSubOrders()
@@ -938,11 +875,12 @@ public class OrderServiceImpl implements OrderService {
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(orderTime);
 		String total = getMetaOrderTotal(order).toPlainString();
-		String template = 
-				"Id\t\t:\t\t%d"
-				+ "\nCreated at\t\t:\t\t%s"
-				+ "\nTotal\t\t:\t\t%s"; 
-		return format( template, order.getId(), orderTimeStr, total);
+		
+		Map<String, Object> params = new HashMap<>();
+		params.put("metaOrder", order);
+		params.put("creationDate", orderTimeStr);
+		params.put("total", total);
+		return params;
 	}
 
 

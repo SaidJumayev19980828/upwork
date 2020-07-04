@@ -37,4 +37,9 @@ public interface MailService {
 	
 	void send(List<String> to, String subject, List<String> cc, String template, Map<String, String> parametersMap)
 			throws IOException, MessagingException;
+
+	void sendThymeleafTemplateMail(List<String> to, String subject, List<String> cc, String template,
+			Map<String, Object> parametersMap) throws IOException, MessagingException;
+
+	void sendThymeleafTemplateMail(String string, String subject, String template, Map<String, Object> parametersMap) throws MessagingException;
 }
