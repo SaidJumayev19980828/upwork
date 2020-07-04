@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
 import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0003;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
@@ -47,7 +48,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.utils.EntityUtils;
-import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.OrganizationShippingServiceRepository;
@@ -593,14 +593,11 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 
 	private String getPhone(OrdersEntity order, AddressesEntity addr, UserEntity customer) {
-		String phone = 
-				ofNullable(addr.getPhoneNumber())
-				.orElse(customer.getMobile());
-		
-		if(StringUtils.isBlankOrNull(phone)) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0003, order.getId());
-		}
-		return phone;
+		return 	firstExistingValueOf(
+					ofNullable(addr.getPhoneNumber()).orElse(null)
+					, customer.getMobile()
+					, customer.getPhoneNumber())
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0003, order.getId()));
 	}
 
 
