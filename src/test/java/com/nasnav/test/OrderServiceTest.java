@@ -1990,7 +1990,7 @@ public class OrderServiceTest {
 		//assert email methods called
 		Mockito
 		.verify(mailService)
-		.send(
+		.sendThymeleafTemplateMail(
 			  Mockito.eq("user1@nasnav.com")
 			, Mockito.eq(BILL_EMAIL_SUBJECT)
 			, Mockito.anyString()

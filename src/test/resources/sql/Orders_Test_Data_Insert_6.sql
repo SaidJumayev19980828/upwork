@@ -45,7 +45,12 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (102, '456', now(), null,89);
 
 -- insert user addresses
-INSERT INTO public.addresses(id, address_line_1) values(12300001, 'address line');
+INSERT INTO public.countries(id,"name")VALUES(1,'Egypt');
+INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
+INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
+
+
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300001, 'address line', 1, '01111234567');
 
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 

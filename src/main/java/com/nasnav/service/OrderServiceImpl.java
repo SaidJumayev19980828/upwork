@@ -42,7 +42,25 @@ import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
-import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
+import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0004;
+import static com.nasnav.exceptions.ErrorCodes.G$USR$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0004;
+import static com.nasnav.exceptions.ErrorCodes.O$CHK$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$CHK$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0004;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0005;
+import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$SHP$0002;
+import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
+import static com.nasnav.exceptions.ErrorCodes.S$0005;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDateTime.now;
@@ -52,11 +70,13 @@ import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -148,7 +168,6 @@ import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingEta;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -832,11 +851,11 @@ public class OrderServiceImpl implements OrderService {
 		}
 		
 		String subject = format(BILL_EMAIL_SUBJECT, orderId);
-		Map<String,String> parametersMap = createBillEmailParams(order);
+		Map<String,Object> parametersMap = createBillEmailParams(order);
 		String template = ORDER_BILL_TEMPLATE;
 		try {
-			mailService.send(email.get(), subject,  template, parametersMap);
-		} catch (IOException | MessagingException e) {
+			mailService.sendThymeleafTemplateMail(email.get(), subject,  template, parametersMap);
+		} catch (MessagingException e) {
 			logger.error(e, e);
 		}
 	}
@@ -845,69 +864,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Map<String, String> createBillEmailParams(MetaOrderEntity order) {
-		Map<String,String> params = new HashMap<>();
-		params.put("#order_details#", createOrderDetailsStr(order));
-		return params;
-	}
-
-
-
-
-
-	private String createOrderDetailsStr(MetaOrderEntity order) {
-		String metaOrderInfo = createMetaOrderInfo(order);
-		String subOrderDetails = createSubOrderDetailsStr(order);
-		
-		return metaOrderInfo + "/n" + subOrderDetails;
-	}
-
-
-
-
-
-	private String createSubOrderDetailsStr(MetaOrderEntity order) {
-		return order
-				.getSubOrders()
-				.stream()
-				.map(this::createSubOrderDetails)
-				.collect(joining("\n\n"));
-	}
-
-
-	private String createSubOrderDetails(OrdersEntity order){
-		String template = 
-				"From shop\t\t:\t\t%s\n"
-				+ "Total\t\t:\t\t%s\n"
-				+ "\t\tItem\t\tprice";
-		String orderDetails = format(template, order.getShopsEntity().getName(), order.getAmount().setScale(2).toString());
-		String orderItemsLines = createSubOrderItemsStr(order);
-		return orderDetails + "\n" +orderItemsLines;
-	}
-
-
-
-	private String createSubOrderItemsStr(OrdersEntity order) {
-		return order
-				.getBasketsEntity()
-				.stream()
-				.map(this::createOrderItemLine)
-				.collect(joining("\n"));
-	}
-
-	
-	
-	private String createOrderItemLine(BasketsEntity item) {
-		String template = "\t\t%s\t\t%s";
-		String productName = item.getStocksEntity().getProductVariantsEntity().getProductEntity().getName();
-		String price = item.getPrice().setScale(2).toString();
-		return format(template, productName, price);
-	}
-
-
-
-
-	private String createMetaOrderInfo(MetaOrderEntity order) {
+	private Map<String, Object> createBillEmailParams(MetaOrderEntity order) {
 		LocalDateTime orderTime = 
 				order
 				.getSubOrders()
@@ -921,11 +878,12 @@ public class OrderServiceImpl implements OrderService {
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(orderTime);
 		String total = getMetaOrderTotal(order).toPlainString();
-		String template = 
-				"Id\t\t:\t\t%d"
-				+ "\nCreated at\t\t:\t\t%s"
-				+ "\nTotal\t\t:\t\t%s"; 
-		return format( template, order.getId(), orderTimeStr, total);
+		
+		Map<String, Object> params = new HashMap<>();
+		params.put("metaOrder", order);
+		params.put("creationDate", orderTimeStr);
+		params.put("total", total);
+		return params;
 	}
 
 
@@ -1811,9 +1769,7 @@ public class OrderServiceImpl implements OrderService {
 	@Transactional
 	public OrderConfrimResponseDTO confrimOrder(Long orderId) {
 		EmployeeUserEntity storeMgr = getAndValidateUser();
-		Long mgrShop = storeMgr.getShopId();
-		
-		OrdersEntity subOrder = getAndValidateOrderForConfirmation(orderId, mgrShop);
+		OrdersEntity subOrder = getAndValidateOrderForConfirmation(orderId, storeMgr);
 		
 		confirmSubOrderAndMetaOrder(subOrder);
 		
@@ -1829,11 +1785,17 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private OrdersEntity getAndValidateOrderForConfirmation(Long orderId, Long mgrShop) {
-		OrdersEntity order = 
-				ordersRepository
-				.findByIdAndShopsEntity_Id(orderId, mgrShop)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0001, mgrShop, orderId));
+	private OrdersEntity getAndValidateOrderForConfirmation(Long orderId, EmployeeUserEntity user) {
+		OrdersEntity order;
+		if(securityService.currentUserHasRole(ORGANIZATION_MANAGER)) {
+			order = ordersRepository
+						.findByIdAndOrganizationEntity_Id(orderId, user.getOrganizationId())
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0004, user.getOrganizationId(), orderId));
+		}else {
+			 order = ordersRepository
+						.findByIdAndShopsEntity_Id(orderId, user.getShopId())
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0001, user.getShopId(), orderId));
+		}	
 		
 		OrderStatus status = order.getOrderStatus(); 
 		if(CLIENT_CONFIRMED != status) {
@@ -1877,21 +1839,21 @@ public class OrderServiceImpl implements OrderService {
 
 	private EmployeeUserEntity getAndValidateUser() {
 		BaseUserEntity user = securityService.getCurrentUser();
-		
 		if(!(user instanceof EmployeeUserEntity)) {
 			throw new RuntimeBusinessException(FORBIDDEN, G$USR$0001);
 		}
-		
-		EmployeeUserEntity storeMgr = (EmployeeUserEntity)user;
-		return storeMgr;
+		return (EmployeeUserEntity)user;
 	}
 
+	
+	
+	
 	private boolean isAllOtherOrdersConfirmed(Long orderId, MetaOrderEntity metaOrder) {
 		return metaOrder
-		.getSubOrders()
-		.stream()
-		.filter(ord -> !Objects.equals(ord.getId(), orderId))
-		.allMatch(ord -> Objects.equals(STORE_CONFIRMED.getValue() , ord.getStatus()));
+				.getSubOrders()
+				.stream()
+				.filter(ord -> !Objects.equals(ord.getId(), orderId))
+				.allMatch(ord -> Objects.equals(STORE_CONFIRMED.getValue() , ord.getStatus()));
 	}
 
 	public ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId) {

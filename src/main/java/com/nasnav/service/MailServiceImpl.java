@@ -4,6 +4,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
+import static org.springframework.context.i18n.LocaleContextHolder.getLocale;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
@@ -20,6 +22,11 @@ import org.springframework.core.io.Resource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring5.SpringTemplateEngine;
+import org.thymeleaf.templatemode.TemplateMode;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+import org.thymeleaf.templateresolver.ITemplateResolver;
 
 import com.nasnav.AppConfig;
 
@@ -35,7 +42,19 @@ public class MailServiceImpl implements MailService {
 
     @Autowired
     private AppConfig config;
-
+    
+    
+    private  SpringTemplateEngine templateEngine;
+    
+    
+    @PostConstruct
+    public void init() {
+        templateEngine = new SpringTemplateEngine();
+        templateEngine.addTemplateResolver(htmlTemplateResolver());
+    }
+    
+    
+    
 
     @Override
     public void send(String to, String subject, String body) throws MessagingException {
@@ -91,6 +110,26 @@ public class MailServiceImpl implements MailService {
         String body = createBodyFromTemplate(template, parametersMap);
         sendMessage(to, subject, cc, body);
     }
+    
+    
+    
+    
+    @Override
+    public void sendThymeleafTemplateMail(List<String> to, String subject, List<String> cc, String template, Map<String, Object> parametersMap) throws IOException, MessagingException {
+        String body = createBodyFromThymeleafTemplate(template, parametersMap);
+        sendMessage(to, subject, cc, body);
+    }
+    
+    
+    
+    
+    @Override
+	public void sendThymeleafTemplateMail(String to, String subject, String template,
+			Map<String, Object> parametersMap) throws MessagingException {
+    	String body = createBodyFromThymeleafTemplate(template, parametersMap);
+    	 sendMessage(asList(to), subject, emptyList(), body);
+	}
+	
 
 
 
@@ -106,4 +145,29 @@ public class MailServiceImpl implements MailService {
         }
 		return body;
 	}
+	
+	
+	
+	
+	private String createBodyFromThymeleafTemplate(String template, Map<String,Object> variables) {
+		Context ctx = new Context(getLocale());
+		ctx.setVariables(variables);
+		return this.templateEngine.process(template, ctx);
+	}
+	
+	
+	
+	
+	private ITemplateResolver htmlTemplateResolver() {
+        final ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+//        templateResolver.setApplicationContext(applicationContext);
+        templateResolver.setOrder(Integer.valueOf(1));
+//        templateResolver.setResolvablePatterns(singleton("html/*"));
+        templateResolver.setPrefix("/mail_templates/");
+        templateResolver.setSuffix(".html");
+        templateResolver.setTemplateMode(TemplateMode.HTML);
+        templateResolver.setCharacterEncoding("UTF-8");
+        templateResolver.setCacheable(true);
+        return templateResolver;
+    }
 }

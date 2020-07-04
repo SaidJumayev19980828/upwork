@@ -113,4 +113,17 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			+ " LEFT JOIN FETCH ord.basketsEntity basket"
 			+ " WHERE ord.id = :orderId and shop.id = :shopId" )
 	Optional<OrdersEntity> findByIdAndShopsEntity_Id(@Param("orderId")Long orderId, @Param("shopId")Long shopId);
+	
+	
+	
+	@Query("SELECT ord "
+			+ " FROM OrdersEntity ord "
+			+ " LEFT JOIN FETCH ord.metaOrder meta "
+			+ " LEFT JOIN FETCH ord.addressEntity userAddr "
+			+ " LEFT JOIN FETCH ord.shopsEntity shop "
+			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr"
+			+ " LEFT JOIN FETCH meta.subOrders subOrd"
+			+ " LEFT JOIN FETCH ord.basketsEntity basket"
+			+ " WHERE ord.id = :orderId and ord.organizationEntity.id = :orgId" )
+	Optional<OrdersEntity> findByIdAndOrganizationEntity_Id(@Param("orderId")Long orderId, @Param("orgId")Long orgId);
 }

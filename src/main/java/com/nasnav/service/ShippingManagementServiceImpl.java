@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0003;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
 import static com.nasnav.exceptions.ErrorCodes.ORG$SHIP$0001;
 import static com.nasnav.exceptions.ErrorCodes.S$0004;
@@ -46,6 +47,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.utils.EntityUtils;
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.OrganizationShippingServiceRepository;
@@ -543,7 +545,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		ShippingDetails shippingData = new ShippingDetails();
 		ShippingAddress customerAddr = createShippingAddress(subOrder.getAddressEntity());
 		ShippingAddress shopAddr = createShippingAddress(subOrder.getShopsEntity().getAddressesEntity());
-		ShipmentReceiver receiver = createShipmentReceiver(subOrder.getUserId());
+		ShipmentReceiver receiver = createShipmentReceiver(subOrder);
 		List<ShipmentItems> items = createShipmentItemsFromOrder(subOrder);
 		
 		shippingData.setAdditionalData(additionalParameters);
@@ -570,16 +572,35 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	
-	private ShipmentReceiver createShipmentReceiver(Long userId) {
+	private ShipmentReceiver createShipmentReceiver(OrdersEntity order) {
+		Long userId = order.getUserId();
+		AddressesEntity addr = order.getAddressEntity();
 		UserEntity customer = 
 				userRepo
 				.findById(userId)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$USR$0001, userId));
+		String name = customer.getName();
+		String phone = getPhone(order, addr, customer);
+		
 		ShipmentReceiver receiver = new ShipmentReceiver();
 		receiver.setEmail(customer.getEmail());
-		receiver.setFirstName(customer.getName());
-		receiver.setPhone(customer.getPhoneNumber());
+		receiver.setFirstName(name);
+		receiver.setLastName(" ");
+		receiver.setPhone(phone);
 		return receiver;
+	}
+
+
+
+	private String getPhone(OrdersEntity order, AddressesEntity addr, UserEntity customer) {
+		String phone = 
+				ofNullable(addr.getPhoneNumber())
+				.orElse(customer.getMobile());
+		
+		if(StringUtils.isBlankOrNull(phone)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0003, order.getId());
+		}
+		return phone;
 	}
 
 

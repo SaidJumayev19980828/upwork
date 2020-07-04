@@ -1,8 +1,12 @@
 package com.nasnav.test;
 
+import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
+import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
@@ -14,9 +18,9 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
-import java.util.List;
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.json.JSONObject;
@@ -34,10 +38,19 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.CartItemRepository;
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.dto.response.navbox.SubOrder;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.ShipmentEntity;
+import com.nasnav.service.OrderService;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
 
 @RunWith(SpringRunner.class)
@@ -55,6 +68,13 @@ public class CartTest {
 	@Autowired
 	private CartItemRepository cartItemRepo;
 
+	
+	@Autowired
+	private OrderService orderService;
+	
+	@Autowired
+	private OrdersRepository orderRepo;
+	
 	
 	@Test
 	public void getCartNoAuthz() {
@@ -128,9 +148,17 @@ public class CartTest {
 
 	@Test
 	public void addCartItemSuccess() {
-		Long itemsCountBefore = cartItemRepo.countByUser_Id(88L);
+		addCartItems(88L, 606L, 1);
+	}
 
-		JSONObject item = createCartItem();
+
+
+
+
+	private void addCartItems(Long userId, Long stockId, Integer quantity) {
+		Long itemsCountBefore = cartItemRepo.countByUser_Id(userId);
+
+		JSONObject item = createCartItem(stockId, quantity);
 
 		HttpEntity<?> request =  getHttpEntity(item.toString(),"123");
 		ResponseEntity<Cart> response =
@@ -247,30 +275,51 @@ public class CartTest {
 	}
 
 
-	private JSONObject createCartItem() {
+	private JSONObject createCartItem(Long stockId, Integer qunatity) {
 		JSONObject item = new JSONObject();
-		item.put("stock_id", 606);
+		item.put("stock_id", stockId);
 		item.put("cover_img", "img");
-		item.put("quantity", 1);
+		item.put("quantity", qunatity);
 
 		return item;
+	}
+	
+	
+	private JSONObject createCartItem() {
+		return createCartItem(606L, 1);
 	}
 
 
 	@Test
 	public void checkoutCartSuccess() {
-		// remove items with 0 quantity
-		cartItemRepo.deleteByQuantityAndUser_Id(0, 88L);
+		checkoutCart();
+	}
 
+
+
+
+
+	private Order checkoutCart() {
 		JSONObject requestBody = createCartCheckoutBody();
 
+		Order body = checkOutCart(requestBody, new BigDecimal("3151"));
+		
+		return body;
+	}
+
+
+
+
+
+	private Order checkOutCart(JSONObject requestBody, BigDecimal total) {
 		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
 		assertEquals(200, res.getStatusCodeValue());
 		
 		Order body =  res.getBody();
 		assertTrue(body.getOrderId() != null);
-		assertEquals(0 ,new BigDecimal("3151").compareTo(body.getTotal()));
+		assertEquals(0 ,total.compareTo(body.getTotal()));
+		return body;
 	}
 
 
@@ -369,4 +418,80 @@ public class CartTest {
 
 		return body;
 	}
+	
+	
+	
+	
+//	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_4.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void orderCompleteCycle() throws BusinessException {
+
+		addCartItems(88L, 602L, 2);
+		addCartItems(88L, 604L, 1);
+		
+		//checkout
+		JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest();
+
+		Order order = checkOutCart(requestBody, new BigDecimal("3125"));
+		Long orderId = order.getOrderId();
+		
+		orderService.finalizeOrder(orderId);
+		
+		asList(new ShopManager(502L, "161718"), new ShopManager(501L,"131415"))
+		.forEach(mgr -> confrimOrder(order, mgr));
+	}
+
+
+
+	private void confrimOrder(Order order, ShopManager mgr) {
+		Long subOrderId = getSubOrderIdOfShop(order, mgr.getShopId());
+		HttpEntity<?> request = getHttpEntity(mgr.getManagerAuthToken());
+		ResponseEntity<OrderConfrimResponseDTO> res = 
+				template.postForEntity("/order/confirm?order_id=" + subOrderId, request, OrderConfrimResponseDTO.class);
+		
+		String billFile = res.getBody().getShippingBill();
+		OrdersEntity orderEntity = orderRepo.findByIdAndShopsEntity_Id(subOrderId, mgr.getShopId()).get();
+		ShipmentEntity shipment = orderEntity.getShipment();
+		
+		assertFalse(billFile.isEmpty());
+		assertNotNull(shipment.getTrackNumber());
+		assertNotNull(shipment.getExternalId());
+		assertEquals(STORE_CONFIRMED.getValue(), orderEntity.getStatus());
+	}
+
+
+	private Long getSubOrderIdOfShop(Order order, Long shopId) {
+		return order
+				.getSubOrders()
+				.stream()
+				.filter(ordr -> ordr.getShopId().equals(shopId))
+				.map(SubOrder::getSubOrderId)
+				.findFirst()
+				.get();
+	}
+	
+	
+	
+	
+	private JSONObject createCartCheckoutBodyForCompleteCycleTest() {
+		JSONObject body = new JSONObject();
+		Map<String, String> additionalData = new HashMap<>();
+		body.put("customer_address", 12300001);
+		body.put("shipping_service_id", SERVICE_ID);
+		body.put("additional_data", additionalData);
+
+		return body;
+	}
+	
+	
+}
+
+
+
+@Data
+@AllArgsConstructor
+class ShopManager{
+	private Long shopId;
+	private String managerAuthToken;
 }
