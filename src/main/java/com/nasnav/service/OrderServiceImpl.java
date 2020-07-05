@@ -1922,33 +1922,27 @@ public class OrderServiceImpl implements OrderService {
 
 		Order orderDto = setMetaOrderBasicData(order);
 
-		List<SubOrder> subOrders = 
-				order
-				.getSubOrders()
-				.stream()
-				.map(subOrder -> getSubOrder(subOrder, itemsMap))
-				.collect(toList());
+		List<SubOrder> subOrders = 	createSubOrderDtoList(order, itemsMap);
 				
 		orderDto.setSubOrders(subOrders);
-
-		BigDecimal subtotal = getMetaOrderSubtotal(order);
-
-		BigDecimal shipping = getMetaOrderShipping(orderDto);
-
-		orderDto.setSubtotal(subtotal);
-		orderDto.setShipping(shipping);
-		orderDto.setTotal(subtotal);
-
+		orderDto.setSubtotal(order.getSubTotal());
+		orderDto.setShipping(order.getShippingTotal());
+		orderDto.setTotal(order.getGrandTotal());
 		return orderDto;
 	}
 
 
-	private BigDecimal getMetaOrderSubtotal(MetaOrderEntity order) {
-		return order.getSubOrders()
-				.stream()
-				.map(OrdersEntity::getAmount)
-				.reduce(ZERO, BigDecimal::add);
+
+
+
+	private List<SubOrder> createSubOrderDtoList(MetaOrderEntity order, Map<Long, List<BasketItemDetails>> itemsMap) {
+		return order
+		.getSubOrders()
+		.stream()
+		.map(subOrder -> getSubOrder(subOrder, itemsMap))
+		.collect(toList());
 	}
+
 
 
 	private Order setMetaOrderBasicData(MetaOrderEntity metaOrder) {
@@ -1962,13 +1956,6 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private BigDecimal getMetaOrderShipping(Order orderDto) {
-		return orderDto.getSubOrders()
-				.stream()
-				.map(SubOrder::getShipment)
-				.map(Shipment::getShippingFee)
-				.reduce(ZERO, BigDecimal::add);
-	}
 
 	@Override
 	public Order getMetaOrder(Long orderId){
@@ -1989,16 +1976,16 @@ public class OrderServiceImpl implements OrderService {
 
 	private TransactionCurrency getOrderCurrency(MetaOrderEntity order) {
 		return order
-		.getSubOrders()
-		.stream()
-		.findFirst()
-		.map(OrdersEntity::getBasketsEntity)
-		.orElse(new HashSet<BasketsEntity>())
-		.stream()
-		.findFirst()
-		.map(BasketsEntity::getCurrency)
-		.map(TransactionCurrency::getTransactionCurrency)
-		.orElse(EGP);
+				.getSubOrders()
+				.stream()
+				.findFirst()
+				.map(OrdersEntity::getBasketsEntity)
+				.orElse(new HashSet<BasketsEntity>())
+				.stream()
+				.findFirst()
+				.map(BasketsEntity::getCurrency)
+				.map(TransactionCurrency::getTransactionCurrency)
+				.orElse(EGP);
 	}
 
 	
@@ -2021,7 +2008,6 @@ public class OrderServiceImpl implements OrderService {
 				.collect(toList());
 		
 		Shipment shipmentDto = (Shipment) order.getShipment().getRepresentation();
-
 		
 		Long totalQuantity = 
 				items
@@ -2041,7 +2027,8 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setItems(items);
 		subOrder.setShipment(shipmentDto);
 		subOrder.setTotalQuantity(totalQuantity);
-		subOrder.setTotal(order.getAmount());
+		subOrder.setTotal(order.getTotal());
+		subOrder.setSubtotal(order.getAmount());
 		return subOrder;
 	}
 
@@ -2056,28 +2043,61 @@ public class OrderServiceImpl implements OrderService {
 		if (!(dto.getAdditionalData() == null || dto.getAdditionalData().isEmpty())) {
 			shippingManagementService.validateShippingAdditionalData(dto);
 		}
-
 	}
 
 
 	private MetaOrderEntity createOrder(Map<Long, List<CartCheckoutData>> shopCartsMap, AddressesEntity address, CartCheckoutDTO dto) {
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
 		UserEntity user = (UserEntity)securityService.getCurrentUser();
-
 		
 		List<CartItemsForShop> cartDividedByShop = groupCartItemsByShop(shopCartsMap);
 		Set<OrdersEntity> subOrders = createSubOrders(cartDividedByShop, address, dto);
+		BigDecimal subTotal = calculateSubTotal(subOrders);
+		BigDecimal shippingFeeTotal = calculateShippingTotal(subOrders);
+		BigDecimal total = calculateTotal(subOrders);
 		
 		MetaOrderEntity order = new MetaOrderEntity();
 		order.setOrganization(org);
 		order.setUser(user);
 		order.setStatus(CLIENT_CONFIRMED.getValue());
+		order.setGrandTotal(total);
+		order.setSubTotal(subTotal);
+		order.setShippingTotal(shippingFeeTotal);
 		subOrders.forEach(order::addSubOrder);
 		return metaOrderRepo.save(order);
 	}
 
 
 
+
+
+	private BigDecimal calculateShippingTotal(Set<OrdersEntity> subOrders) {
+		return subOrders
+				.stream()
+				.map(OrdersEntity::getShipment)
+				.map(ShipmentEntity::getShippingFee)
+				.reduce(ZERO, BigDecimal::add);
+	}
+
+
+
+
+
+	private BigDecimal calculateSubTotal(Set<OrdersEntity> subOrders) {
+		return subOrders
+				.stream()
+				.map(OrdersEntity::getAmount)
+				.reduce(ZERO, BigDecimal::add);
+	}
+
+
+
+	private BigDecimal calculateTotal(Set<OrdersEntity> subOrders) {
+		return subOrders
+				.stream()
+				.map(OrdersEntity::getTotal)
+				.reduce(ZERO, BigDecimal::add);
+	}
 
 
 	private List<CartItemsForShop> groupCartItemsByShop(Map<Long, List<CartCheckoutData>> shopCartsMap) {
@@ -2130,7 +2150,7 @@ public class OrderServiceImpl implements OrderService {
 		
 		for(OrdersEntity subOrder : subOrders) {
 			subOrder.setShipment(createShipment(subOrder, dto, shippingOffers));
-			subOrder.setAmount(calculateSubOrderTotal(subOrder));
+			subOrder.setTotal(calculateTotal(subOrder));
 		}
 		return subOrders;
 	}
@@ -2140,12 +2160,26 @@ public class OrderServiceImpl implements OrderService {
 	
 
 
+	private BigDecimal calculateTotal(OrdersEntity subOrder) {
+		BigDecimal shippingFee = 
+				ofNullable(subOrder.getShipment())
+				.map(ShipmentEntity::getShippingFee)
+				.orElse(ZERO);
+		BigDecimal subTotal = ofNullable(subOrder.getAmount()).orElse(ZERO);
+		return subTotal.add(shippingFee);
+	}
+
+
+
+
+
 	private OrdersEntity createSubOrder(CartItemsForShop cartItems,
 								 AddressesEntity shippingAddress, CartCheckoutDTO dto) {
 		Map<Long, StocksEntity> stocksCache = createStockCache(cartItems);
 		
 		OrdersEntity subOrder =  createSubOrder(shippingAddress, cartItems);
 		saveOrderItemsIntoSubOrder(cartItems, stocksCache, subOrder);
+		subOrder.setAmount(calculateSubTotal(subOrder));
 		return ordersRepository.save(subOrder);
 	}
 
@@ -2155,32 +2189,23 @@ public class OrderServiceImpl implements OrderService {
 
 	private void saveOrderItemsIntoSubOrder(CartItemsForShop cartItems, Map<Long, StocksEntity> stocksCache,
 			OrdersEntity subOrder) {
-		List<BasketsEntity> items = 
-				cartItems
-				.getCheckOutData()
-				.stream()
-				.map(data -> createBasketItem(data, subOrder, stocksCache))
-				.collect(toList());		
-		items.forEach(subOrder::addBasketItem);
+		cartItems
+		.getCheckOutData()
+		.stream()
+		.map(data -> createBasketItem(data, subOrder, stocksCache))
+		.forEach(subOrder::addBasketItem);
 	}
 
 
 
 
 
-	private BigDecimal calculateSubOrderTotal(OrdersEntity subOrder) {
-		BigDecimal itemsTotal = 
-				subOrder
+	private BigDecimal calculateSubTotal(OrdersEntity subOrder) {
+		return subOrder
 				.getBasketsEntity()
 				.stream()
 				.map(this::calcBasketItemValue)
 				.reduce(ZERO, BigDecimal::add);
-		BigDecimal shippingFee = 
-				ofNullable(subOrder.getShipment())
-				.map(ShipmentEntity::getShippingFee)
-				.orElse(ZERO);
-		return itemsTotal.add(shippingFee);
-		
 	}
 	
 	
@@ -2264,8 +2289,7 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setOrganizationEntity(org);
 		subOrder.setAddressEntity(shippingAddress);
 		subOrder.setStatus(CLIENT_CONFIRMED.getValue());
-		subOrder.setAmount(calculateSubOrderTotal(subOrder));
-
+		
 		return subOrder;
 	}
 

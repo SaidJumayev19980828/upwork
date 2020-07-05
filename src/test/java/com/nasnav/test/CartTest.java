@@ -3,6 +3,7 @@ package com.nasnav.test;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -43,6 +44,7 @@ import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.dto.response.navbox.Shipment;
 import com.nasnav.dto.response.navbox.SubOrder;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.OrdersEntity;
@@ -302,7 +304,7 @@ public class CartTest {
 	private Order checkoutCart() {
 		JSONObject requestBody = createCartCheckoutBody();
 
-		Order body = checkOutCart(requestBody, new BigDecimal("3151"));
+		Order body = checkOutCart(requestBody, new BigDecimal("3151"), new BigDecimal("3100") ,new BigDecimal("51"));
 		
 		return body;
 	}
@@ -311,15 +313,61 @@ public class CartTest {
 
 
 
-	private Order checkOutCart(JSONObject requestBody, BigDecimal total) {
+	private Order checkOutCart(JSONObject requestBody, BigDecimal total, BigDecimal subTotal, BigDecimal shippingFee) {
 		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
 		assertEquals(200, res.getStatusCodeValue());
 		
-		Order body =  res.getBody();
-		assertTrue(body.getOrderId() != null);
-		assertEquals(0 ,total.compareTo(body.getTotal()));
-		return body;
+		Order order =  res.getBody();
+		BigDecimal subOrderSubtTotalSum = getSubOrderSubTotalSum(order);
+		BigDecimal subOrderTotalSum = getSubOrderTotalSum(order);
+		BigDecimal subOrderShippingSum = getSubOrderShippingSum(order);
+		
+		assertTrue(order.getOrderId() != null);
+		assertEquals(0 ,shippingFee.compareTo(order.getShipping()));
+		assertEquals(0 ,subTotal.compareTo(order.getSubtotal()));
+		assertEquals(0 ,total.compareTo(order.getTotal()));
+		assertEquals(0 ,order.getShipping().compareTo(subOrderShippingSum));
+		assertEquals(0 ,order.getSubtotal().compareTo(subOrderSubtTotalSum));
+		assertEquals(0 ,order.getTotal().compareTo(subOrderTotalSum));
+		return order;
+	}
+
+
+
+
+
+	private BigDecimal getSubOrderShippingSum(Order order) {
+		return order
+				.getSubOrders()
+				.stream()
+				.map(SubOrder::getShipment)
+				.map(Shipment::getShippingFee)
+				.reduce(ZERO, BigDecimal::add);
+	}
+
+
+
+
+
+	private BigDecimal getSubOrderTotalSum(Order order) {
+		return order
+		.getSubOrders()
+		.stream()
+		.map(SubOrder::getTotal)
+		.reduce(ZERO, BigDecimal::add);
+	}
+
+
+
+
+
+	private BigDecimal getSubOrderSubTotalSum(Order order) {
+		return order
+		.getSubOrders()
+		.stream()
+		.map(SubOrder::getSubtotal)
+		.reduce(ZERO, BigDecimal::add);
 	}
 
 
@@ -433,7 +481,7 @@ public class CartTest {
 		//checkout
 		JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest();
 
-		Order order = checkOutCart(requestBody, new BigDecimal("3125"));
+		Order order = checkOutCart(requestBody, new BigDecimal("3125"), new BigDecimal("3100"), new BigDecimal("51"));
 		Long orderId = order.getOrderId();
 		
 		orderService.finalizeOrder(orderId);
