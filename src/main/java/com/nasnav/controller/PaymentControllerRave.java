@@ -1,7 +1,6 @@
 package com.nasnav.controller;
 
 import com.nasnav.AppConfig;
-import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.enumerations.PaymentStatus;
@@ -231,8 +230,6 @@ public class PaymentControllerRave {
         ordersRepository.flush();
 
         return new ResponseEntity<>(data.toString(), HttpStatus.OK);
-
-//        throw new BusinessException("Unable to initialize RAVE payment session",null,HttpStatus.BAD_GATEWAY);
     }
 
  }

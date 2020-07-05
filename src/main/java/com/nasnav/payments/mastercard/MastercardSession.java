@@ -306,9 +306,4 @@ public class MastercardSession {
         return orderValue;
     }
 
-
-
-
-
-
 }
