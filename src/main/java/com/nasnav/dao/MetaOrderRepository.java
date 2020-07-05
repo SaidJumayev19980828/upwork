@@ -22,8 +22,10 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 			+ " WHERE meta.id =:id")
 	Optional<MetaOrderEntity> findFullDataById(@Param("id")Long id);
 
-	boolean existsByIdAndUserId(Long id, Long userId);
+	boolean existsByIdAndOrganization_Id(Long id, Long orgId);
+	boolean existsByIdAndUserIdAndOrganization_Id(Long id, Long userId, Long orgId);
 
-	MetaOrderEntity findByIdAndUserId(Long id, Long userId);
+	Optional<MetaOrderEntity> findByIdAndOrganization_Id(Long id, Long orgId);
+	Optional<MetaOrderEntity> findByIdAndUserIdAndOrganization_Id(Long id, Long userId, Long orgId);
 }
 
