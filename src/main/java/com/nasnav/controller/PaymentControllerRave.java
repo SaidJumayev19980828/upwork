@@ -1,6 +1,7 @@
 package com.nasnav.controller;
 
 import com.nasnav.AppConfig;
+import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.enumerations.PaymentStatus;
@@ -187,7 +188,11 @@ public class PaymentControllerRave {
             reveLogger.error("No sub-orders matching meta order ({})", metaOrderId);
             throw new BusinessException("No valid order IDs recognized", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
         }
-        OrderService.OrderValue orderValue = Tools.getTotalOrderValue(metaOrderId, orderService);
+        OrderService.OrderValue orderValue = orderService.getMetaOrderTotalValue(metaOrderId);
+        if (orderValue == null) {
+            throw new BusinessException("Order ID is invalid", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
+        }
+
 
         // TODO: Hardcoded currency
         orderValue.currency = TransactionCurrency.NGN;

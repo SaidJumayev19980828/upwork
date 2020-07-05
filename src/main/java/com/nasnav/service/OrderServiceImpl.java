@@ -2344,6 +2344,17 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
+	public OrderValue getMetaOrderTotalValue(long metaOrderId) {
+		OrderService.OrderValue oValue = new OrderService.OrderValue();
+		Optional<MetaOrderEntity> metaOrder = metaOrderRepo.findById(metaOrderId);
+		if (!metaOrder.isPresent()) {
+			return null;
+		}
+		oValue.amount = metaOrder.get().getGrandTotal();
+		oValue.currency = getOrderCurrency(metaOrder.get());
+		return oValue;
+	}
+
 }
 
 

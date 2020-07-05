@@ -87,7 +87,7 @@ public class PaymentControllerUpg {
         upgLogger.info("Setting up payment for meta order: {} via processor: {}", metaOrderId, session.getUpgAccount().getUpgMerchantId());
 
         UpgLightbox lightbox = new UpgLightbox();
-        JSONObject data = lightbox.getJsonConfig(metaOrderId, session.getUpgAccount(), session.getOrderService(), upgLogger);
+        JSONObject data = lightbox.getJsonConfig(metaOrderId, session.getUpgAccount(), orderService, upgLogger);
         return new ResponseEntity<>(data.toString(), HttpStatus.OK);
     
     }
@@ -96,7 +96,7 @@ public class PaymentControllerUpg {
     public ResponseEntity<?> upgCallback(@RequestBody String content) throws BusinessException {
         upgLogger.info("Received payment confirmation: {}", content);
         UpgLightbox lightbox = new UpgLightbox();
-        return lightbox.callback(content, ordersRepository, paymentsRepository, session.getUpgAccount(), session.getOrderService(), upgLogger);
+        return lightbox.callback(content, ordersRepository, paymentsRepository, session.getUpgAccount(), orderService, upgLogger);
     }
 
  }

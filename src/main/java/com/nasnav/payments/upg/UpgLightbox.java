@@ -26,6 +26,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import com.nasnav.dao.OrdersRepository;
@@ -65,7 +66,7 @@ public class UpgLightbox {
 			upgLogger.error("Unable to retrieve orders from the reference: {}", ref);
 			return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to process Order ID\"}", BAD_GATEWAY);
 		}
-		PaymentEntity payment = UpgLightbox.verifyPayment(jsonObject, metaOrderId, orders, upgLogger, account, orderService);
+		PaymentEntity payment = UpgLightbox.verifyPayment(jsonObject, metaOrderId, upgLogger, account, orderService);
 		if (payment == null) {
 			return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to verify payment confirmation\"}", BAD_REQUEST);
 		}
@@ -82,9 +83,12 @@ public class UpgLightbox {
 
 	public JSONObject getJsonConfig(long metaOrderId, UpgAccount account, OrderService orderService, Logger upgLogger) throws BusinessException {
 		Date now = new Date();
-		ArrayList<OrdersEntity> orders = orderService.getOrdersForMetaOrder(metaOrderId);
 		String orderUid = Tools.getOrderUid(metaOrderId, upgLogger);
-		OrderService.OrderValue orderValue = Tools.getTotalOrderValue(metaOrderId, orderService);
+
+		OrderService.OrderValue orderValue = orderService.getMetaOrderTotalValue(metaOrderId);
+		if (orderValue == null) {
+			throw new BusinessException("Order ID is invalid", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
+		}
 
 		JSONObject result = new JSONObject();
 		result.put("PaymentMethodFromLightBox", "null");
@@ -108,7 +112,7 @@ public class UpgLightbox {
 		return result;
 	}
 
-	public static PaymentEntity verifyPayment(JSONObject json, long metaOrderId, ArrayList<OrdersEntity> orders, Logger upgLogger, UpgAccount account, OrderService orderService) throws BusinessException {
+	public static PaymentEntity verifyPayment(JSONObject json, long metaOrderId, Logger upgLogger, UpgAccount account, OrderService orderService) throws BusinessException {
 //System.out.println("Received: " + json.toString(2));
 		JSONObject verifier = new JSONObject();
 		for (String param: new String[] {"Amount", "Currency", "MerchantReference", "PaidThrough", "TxnDate"}) {
@@ -127,7 +131,12 @@ public class UpgLightbox {
 			paidAmount = Long.parseLong(json.getString("Amount"));
 		} catch (Exception ex) {;}
 		StringBuilder orderList = new StringBuilder();
-		OrderService.OrderValue orderValue = Tools.getTotalOrderValue(metaOrderId, orderService);
+
+		OrderService.OrderValue orderValue = orderService.getMetaOrderTotalValue(metaOrderId);
+		if (orderValue == null) {
+			upgLogger.error("Invalid order ID: {}", metaOrderId);
+			return null;
+		}
 
 		if (orderValue.amount.movePointRight(2).longValue() != paidAmount) {
 			upgLogger.error("Paid amount: {} does not equal order {} amount: {}", json.getString("Amount"), orderList.toString(), orderValue.amount.movePointRight(2));
@@ -142,7 +151,7 @@ public class UpgLightbox {
 		payment.setAmount(new BigDecimal(paidAmount).movePointLeft(2));
 		payment.setCurrency(TransactionCurrency.EGP);
 		payment.setObject(json.toString());
-		payment.setUserId(orders.get(0).getUserId());
+//		payment.setUserId(orders.get(0).getUserId());
 		payment.setMetaOrderId(metaOrderId);
 
 		return payment;

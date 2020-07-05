@@ -70,4 +70,6 @@ public interface OrderService {
 
 	Order getMetaOrder(Long id);
 
+	public OrderValue getMetaOrderTotalValue(long metaOrderId);
+
 	}

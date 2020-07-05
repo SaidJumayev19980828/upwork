@@ -10,6 +10,7 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.mastercard.MastercardSession;
 import com.nasnav.payments.misc.HTMLConfigurer;
 import com.nasnav.payments.misc.Tools;
+import com.nasnav.service.OrderService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
 import org.apache.logging.log4j.LogManager;
@@ -32,6 +33,8 @@ public class PaymentControllerMastercard {
 
     private final OrdersRepository ordersRepository;
 
+    private final OrderService orderService;
+
     private final MastercardSession session;
 
     @Autowired
@@ -43,10 +46,10 @@ public class PaymentControllerMastercard {
     @Autowired
     public PaymentControllerMastercard(
             OrdersRepository ordersRepository,
-//            PaymentsRepository paymentsRepository,
+            OrderService orderService,
             MastercardSession session) {
         this.ordersRepository = ordersRepository;
-//        this.paymentsRepository = paymentsRepository;
+        this.orderService = orderService;
         this.session = session;
     }
 
@@ -117,7 +120,7 @@ public class PaymentControllerMastercard {
         session.getMerchantAccount().init(props);
         mastercardLogger.info("Setting up payment for meta order: {} via processor: {}", metaOrderId, session.getMerchantAccount().getMerchantId());
 
-        if (session.initialize(ordersRepository, metaOrderId)) {
+        if (session.initialize(ordersRepository, metaOrderId, orderService)) {
             try {
                 response.setOrderRef(session.getOrderRef());
                 response.setOrderRef(session.getOrderRef());

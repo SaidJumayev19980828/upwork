@@ -11,6 +11,8 @@ import java.util.Optional;
 import java.util.Properties;
 
 import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.enumerations.TransactionCurrency;
+import com.nasnav.persistence.MetaOrderEntity;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 
@@ -67,14 +69,6 @@ public class Tools {
 		}
 
 		return account.map(OrganizationPaymentGatewaysEntity::getAccount).orElse(null);
-	}
-
-	public static OrderService.OrderValue getTotalOrderValue(long metaOrderId, OrderService orderService) throws BusinessException {
-		Order order = orderService.getMetaOrder(metaOrderId);
-		OrderService.OrderValue oValue = new OrderService.OrderValue();
-		oValue.amount = order.getTotal();
-		oValue.currency = order.getCurrency();
-		return oValue;
 	}
 
 	/* DEPRECATED */
