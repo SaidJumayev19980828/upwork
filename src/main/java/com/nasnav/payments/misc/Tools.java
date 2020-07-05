@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.Properties;
 
+import com.nasnav.dto.response.navbox.Order;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 
@@ -68,7 +69,16 @@ public class Tools {
 		return account.map(OrganizationPaymentGatewaysEntity::getAccount).orElse(null);
 	}
 
-	public static OrderService.OrderValue getTotalOrderValue(ArrayList<OrdersEntity> orders, OrderService orderService, Logger logger) throws BusinessException {
+	public static OrderService.OrderValue getTotalOrderValue(long metaOrderId, OrderService orderService) throws BusinessException {
+		Order order = orderService.getMetaOrder(metaOrderId);
+		OrderService.OrderValue oValue = new OrderService.OrderValue();
+		oValue.amount = order.getTotal();
+		oValue.currency = order.getCurrency();
+		return oValue;
+	}
+
+	/* DEPRECATED */
+	private static OrderService.OrderValue getTotalOrderValue(ArrayList<OrdersEntity> orders, OrderService orderService, Logger logger) throws BusinessException {
 		if (orders == null || orders.size() < 1) {
 			throw new BusinessException("Empty order list", "MISSING_ORDER", HttpStatus.NOT_ACCEPTABLE);
 		}
@@ -105,6 +115,17 @@ public class Tools {
 		orderUid.append("-");
 		orderUid.append(new Date().getTime());
 		return orderUid.toString();
+	}
+
+	public static long getOrderIdFromUid(String orderUid) throws BusinessException {
+		if (orderUid != null || orderUid.indexOf('-') > 0) {
+			try {
+				return Long.parseLong(orderUid.substring(0, orderUid.indexOf('-')));
+			} catch (Exception ex) {
+				;
+			}
+		}
+		throw new BusinessException("Invalid order UID", "INVALID_ORDER", HttpStatus.NOT_ACCEPTABLE);
 	}
 
 

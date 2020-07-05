@@ -1950,7 +1950,7 @@ public class OrderServiceImpl implements OrderService {
 		order.setUserId(metaOrder.getUser().getId());
 		order.setUserName(metaOrder.getUser().getName());
 		order.setOrderId(metaOrder.getId());
-		order.setCurrency(getOrderCurrency(metaOrder).name());
+		order.setCurrency(getOrderCurrency(metaOrder));
 		order.setCreationDate(metaOrder.getCreatedAt());
 		return order;
 	}

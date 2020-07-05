@@ -84,7 +84,7 @@ public class UpgLightbox {
 		Date now = new Date();
 		ArrayList<OrdersEntity> orders = orderService.getOrdersForMetaOrder(metaOrderId);
 		String orderUid = Tools.getOrderUid(metaOrderId, upgLogger);
-		OrderService.OrderValue orderValue = Tools.getTotalOrderValue(orders, orderService, upgLogger);
+		OrderService.OrderValue orderValue = Tools.getTotalOrderValue(metaOrderId, orderService);
 
 		JSONObject result = new JSONObject();
 		result.put("PaymentMethodFromLightBox", "null");
@@ -127,7 +127,7 @@ public class UpgLightbox {
 			paidAmount = Long.parseLong(json.getString("Amount"));
 		} catch (Exception ex) {;}
 		StringBuilder orderList = new StringBuilder();
-		OrderService.OrderValue orderValue = Tools.getTotalOrderValue(orders, orderService, upgLogger);
+		OrderService.OrderValue orderValue = Tools.getTotalOrderValue(metaOrderId, orderService);
 
 		if (orderValue.amount.movePointRight(2).longValue() != paidAmount) {
 			upgLogger.error("Paid amount: {} does not equal order {} amount: {}", json.getString("Amount"), orderList.toString(), orderValue.amount.movePointRight(2));

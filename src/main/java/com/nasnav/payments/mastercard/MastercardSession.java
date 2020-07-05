@@ -211,7 +211,7 @@ public class MastercardSession {
         this.includedOrders = orders;
         
         this.orderUid = Tools.getOrderUid(metaOrderId, classLogger);
-        this.orderValue = Tools.getTotalOrderValue(orders, orderService, classLogger);
+        this.orderValue = Tools.getTotalOrderValue(metaOrderId, orderService);
         long userId = orders.get(0).getUserId();
 
         JSONObject order = new JSONObject();

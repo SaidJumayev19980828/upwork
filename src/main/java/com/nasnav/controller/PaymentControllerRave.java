@@ -187,9 +187,9 @@ public class PaymentControllerRave {
             reveLogger.error("No sub-orders matching meta order ({})", metaOrderId);
             throw new BusinessException("No valid order IDs recognized", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
         }
-        OrderService.OrderValue orderValue = Tools.getTotalOrderValue(orders, this.orderService, reveLogger);
+        OrderService.OrderValue orderValue = Tools.getTotalOrderValue(metaOrderId, orderService);
 
-// TODO
+        // TODO: Hardcoded currency
         orderValue.currency = TransactionCurrency.NGN;
 
         if (orderValue.currency != TransactionCurrency.NGN) {
