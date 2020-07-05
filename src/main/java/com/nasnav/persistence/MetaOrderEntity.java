@@ -5,6 +5,7 @@ import static javax.persistence.CascadeType.MERGE;
 import static javax.persistence.CascadeType.PERSIST;
 import static javax.persistence.CascadeType.REMOVE;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -46,6 +47,15 @@ public class MetaOrderEntity implements BaseEntity {
     
     @Column(name = "status")
     private Integer status;
+    
+    @Column(name = "grand_total")
+    private BigDecimal grandTotal;
+    
+    @Column(name = "sub_total")
+    private BigDecimal subTotal;
+    
+    @Column(name = "shipping_total")
+    private BigDecimal shippingTotal;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
