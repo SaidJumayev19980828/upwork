@@ -35,9 +35,7 @@ import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.STORE_PREPARED;
 import static com.nasnav.enumerations.OrderStatus.findEnum;
-import static com.nasnav.enumerations.Roles.CUSTOMER;
-import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
-import static com.nasnav.enumerations.Roles.STORE_MANAGER;
+import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
@@ -100,6 +98,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import javax.swing.text.html.Option;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -1147,17 +1146,23 @@ public class OrderServiceImpl implements OrderService {
 	public DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel) throws BusinessException {
 		
 		BaseUserEntity user = securityService.getCurrentUser();
-		OrdersEntity order;
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
+		Optional<OrdersEntity> order = Optional.empty();;
 
 		Integer finalDetailsLevel = getFinalDetailsLevel(detailsLevel);
 
-		if (user instanceof UserEntity && ordersRepository.existsByIdAndUserId(orderId, user.getId())) {
-			order = ordersRepository.findByIdAndUserId(orderId, user.getId());
-			return getDetailedOrderInfo(order, finalDetailsLevel);
-		} else if (ordersRepository.existsById(orderId)) {
-			order = ordersRepository.findById(orderId).get();
-			return getDetailedOrderInfo(order, finalDetailsLevel);
-		}			
+		if (user instanceof UserEntity ) {
+			order = ordersRepository.findByIdAndUserIdAndOrganizationEntity_Id(orderId, user.getId(), orgId);
+		} else if ( isNasnavAdmin ) {
+			order = ordersRepository.findById(orderId);
+		} else {
+			order = ordersRepository.findByIdAndOrganizationEntity_Id(orderId, orgId);
+		}
+
+		if (order.isPresent()) {
+			return getDetailedOrderInfo(order.get(), finalDetailsLevel);
+		}
 
 		throwInvalidOrderException( OrderFailedStatus.INVALID_ORDER.toString() );
 		
@@ -1960,13 +1965,21 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public Order getMetaOrder(Long orderId){
 		BaseUserEntity user = securityService.getCurrentUser();
-		MetaOrderEntity order;
-		if (user instanceof UserEntity && metaOrderRepo.existsByIdAndUserId(orderId, user.getId())) {
-			order = metaOrderRepo.findByIdAndUserId(orderId, user.getId());
-			return getOrderResponse(order);
-		} else if (metaOrderRepo.existsById(orderId)) {
-			order = metaOrderRepo.findById(orderId).get();
-			return getOrderResponse(order);
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		boolean isNasnavAdmin = securityService.currentUserHasRole(NASNAV_ADMIN);
+
+		Optional<MetaOrderEntity> order = Optional.empty();;
+
+		if (user instanceof UserEntity) {
+			order = metaOrderRepo.findByIdAndUserIdAndOrganization_Id(orderId, user.getId(), orgId);
+		} else if (isNasnavAdmin) {
+			order = metaOrderRepo.findById(orderId);
+		} else {
+			order = metaOrderRepo.findByIdAndOrganization_Id(orderId, orgId);
+		}
+
+		if (order.isPresent()) {
+			return getOrderResponse(order.get());
 		}
 		throw new RuntimeBusinessException(NOT_FOUND, O$0001, orderId);
 	}
