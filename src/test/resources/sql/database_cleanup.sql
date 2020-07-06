@@ -22,8 +22,8 @@ DELETE FROM public.cart_items where id in (
 );
 DELETE FROM public.baskets WHERE stock_id IN (SELECT Id from public.stocks where organization_id between 99000 and 99999);
 DELETE FROM public.orders WHERE organization_id BETWEEN 99000 AND 99999;
-DELETE FROM public.meta_orders where organization_id between 99000 and 99999;
 DELETE FROM public.payments WHERE user_id IN (SELECT Id from public.users where organization_id between 99000 and 99999);
+DELETE FROM public.meta_orders where organization_id between 99000 and 99999;
 DELETE FROM public.stocks WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.product_tags WHERE product_id IN (SELECT id from public.products where organization_id between 99000 and 99999);
 DELETE FROM public.product_features where organization_id between 99000 and 99999;

@@ -1,5 +1,7 @@
 package com.nasnav.test;
 
+import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
+import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
@@ -23,6 +25,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.json.JSONObject;
 import org.junit.Test;
@@ -39,6 +42,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.CartItemRepository;
+import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
@@ -47,6 +51,7 @@ import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.Shipment;
 import com.nasnav.dto.response.navbox.SubOrder;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.ShipmentEntity;
 import com.nasnav.service.OrderService;
@@ -76,6 +81,9 @@ public class CartTest {
 	
 	@Autowired
 	private OrdersRepository orderRepo;
+	
+	@Autowired
+	private MetaOrderRepository metaOrderRepo;
 	
 	
 	@Test
@@ -469,7 +477,9 @@ public class CartTest {
 	
 	
 	
-	
+	// TODO: make this test work with a swtich flag, that either make it work on bosta
+	//staging server + mail.nasnav.org mail server
+	//or make it work on mock bosta server + mock mail service
 //	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_4.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -489,6 +499,80 @@ public class CartTest {
 		asList(new ShopManager(502L, "161718"), new ShopManager(501L,"131415"))
 		.forEach(mgr -> confrimOrder(order, mgr));
 	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_5.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartAndDeleteDanglingOrdersTest() {
+		Long unpaidOrderId = 310001L;
+		Long cancelPaymentOrderId = 310002L;
+		Long paidOrderId = 310003L;
+		Long errorPaymentOrderId = 310004L;
+		
+		assertOrdersStatusBeforeCheckout(unpaidOrderId, cancelPaymentOrderId, paidOrderId, errorPaymentOrderId);
+		
+		checkoutCart();
+		
+		assertOrdersStatusAfterCheckout(unpaidOrderId, cancelPaymentOrderId, paidOrderId, errorPaymentOrderId);
+	}
+
+
+
+
+
+	private void assertOrdersStatusAfterCheckout(Long unpaidOrderId, Long cancelPaymentOrderId, Long paidOrderId, Long errorPaymentOrderId) {
+		MetaOrderEntity unpaidOrderAfter = metaOrderRepo.findFullDataById(unpaidOrderId).get();
+		MetaOrderEntity cancelPaymentOrderAfter = metaOrderRepo.findFullDataById(cancelPaymentOrderId).get();
+		MetaOrderEntity paidOrderAfter = metaOrderRepo.findFullDataById(paidOrderId).get();
+		MetaOrderEntity errorPaymentOrder = metaOrderRepo.findFullDataById(errorPaymentOrderId).get();
+		
+		assertEquals(CLIENT_CANCELLED.getValue(), unpaidOrderAfter.getStatus());
+		assertEquals(CLIENT_CANCELLED.getValue(), cancelPaymentOrderAfter.getStatus());
+		assertEquals(CLIENT_CANCELLED.getValue(), errorPaymentOrder.getStatus());
+		assertEquals(STORE_CONFIRMED.getValue(), paidOrderAfter.getStatus());
+		
+		asList(unpaidOrderAfter, cancelPaymentOrderAfter, errorPaymentOrder)
+		.stream()
+		.map(MetaOrderEntity::getSubOrders)
+		.flatMap(Set::stream)
+		.forEach(subOrder -> assertEquals(CLIENT_CANCELLED.getValue(), subOrder.getStatus()));
+		
+		paidOrderAfter
+		.getSubOrders()
+		.stream()
+		.forEach(subOrder -> assertEquals(STORE_CONFIRMED.getValue(), subOrder.getStatus()));
+	}
+
+
+
+
+
+	private void assertOrdersStatusBeforeCheckout(Long unpaidOrderId, Long cancelPaymentOrderId, Long paidOrderId, Long errorPaymentOrderId) {
+		MetaOrderEntity unpaidOrder = metaOrderRepo.findFullDataById(unpaidOrderId).get();
+		MetaOrderEntity cancelPaymentOrder = metaOrderRepo.findFullDataById(cancelPaymentOrderId).get();
+		MetaOrderEntity paidOrder = metaOrderRepo.findFullDataById(paidOrderId).get();
+		MetaOrderEntity errorPaymentOrder = metaOrderRepo.findFullDataById(errorPaymentOrderId).get();
+		
+		assertEquals(CLIENT_CONFIRMED.getValue(), unpaidOrder.getStatus());
+		assertEquals(CLIENT_CONFIRMED.getValue(), cancelPaymentOrder.getStatus());
+		assertEquals(CLIENT_CONFIRMED.getValue(), errorPaymentOrder.getStatus());
+		assertEquals(STORE_CONFIRMED.getValue(), paidOrder.getStatus());
+		
+		asList(unpaidOrder, cancelPaymentOrder, errorPaymentOrder)
+		.stream()
+		.map(MetaOrderEntity::getSubOrders)
+		.flatMap(Set::stream)
+		.forEach(subOrder -> assertEquals(CLIENT_CONFIRMED.getValue(), subOrder.getStatus()));
+		
+		paidOrder
+		.getSubOrders()
+		.stream()
+		.forEach(subOrder -> assertEquals(STORE_CONFIRMED.getValue(), subOrder.getStatus()));
+	}
+	
 
 
 
