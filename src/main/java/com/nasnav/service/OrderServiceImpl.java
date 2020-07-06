@@ -113,12 +113,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nasnav.AppConfig;
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.OrganizationDomainsRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.RoleEmployeeUserRepository;
 import com.nasnav.dao.ShipmentRepository;
@@ -158,6 +160,7 @@ import com.nasnav.persistence.CartItemEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.OrganizationDomainsEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ShipmentEntity;
@@ -231,6 +234,12 @@ public class OrderServiceImpl implements OrderService {
 	
 	@Autowired
 	private MailService mailService;
+	
+	@Autowired
+	private OrganizationDomainsRepository domainRepo;
+	
+	@Autowired
+	private AppConfig appConfig;
 	
 	@Autowired
 	private RoleEmployeeUserRepository empRoleRepo;
@@ -783,14 +792,14 @@ public class OrderServiceImpl implements OrderService {
 		List<String> to = getStoreManagersEmails(order);
 		String subject = format("New Order[%d] Created!", orderId);
 		List<String> cc = getOrganizationManagersEmails(order);
-		Map<String,String> parametersMap = createNotificationEmailParams(order);
+		Map<String,Object> parametersMap = createNotificationEmailParams(order);
 		String template = ORDER_NOTIFICATION_TEMPLATE;
 		try {
 			if(to.isEmpty()) {
 				to = cc;
 				cc = emptyList();
 			}
-			mailService.send(to, subject, cc, template, parametersMap);
+			mailService.sendThymeleafTemplateMail(to, subject, cc, template, parametersMap);
 		} catch (IOException | MessagingException e) {
 			logger.error(e, e);
 		}
@@ -800,19 +809,39 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
-	private Map<String, String> createNotificationEmailParams(OrdersEntity order) {
-		Map<String,String> params = new HashMap<>();
+	private Map<String, Object> createNotificationEmailParams(OrdersEntity order) {
+		Map<String,Object> params = new HashMap<>();
 		String orderTime = 
 				DateTimeFormatter
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(order.getCreationDate());
-		params.put("#order_id#", order.getId().toString());
-		params.put("#order_create_time#", orderTime);
-		params.put("#dashboard_link#", "https://uat.nasnav.org/dashboard/mange-orders");
+		params.put("id", order.getId().toString());
+		params.put("creationTime", orderTime);
+		params.put("orderPageUrl", buildDashboardPageUrl(order));
+		params.put("sub", order);
 		return params;
 	}
 
 
+	
+	
+	private String buildDashboardPageUrl(OrdersEntity order) {
+		Long orgId = order.getOrganizationEntity().getId();
+		String domain = 
+				domainRepo
+				.findByOrganizationEntity_Id(orgId)
+				.map(OrganizationDomainsEntity::getDomain)
+				.map(this::addProtocolIfNeeded)
+				.orElse("");
+		String path = appConfig.dashBoardOrderPageUrl.replace("{order_id}", order.getId().toString());
+		return format("%s/%s", domain, path);
+	}
+	
+	
+	
+	private String addProtocolIfNeeded(String domain) {
+		return domain.startsWith("http:") ? domain : "https://"+domain;
+	}
 
 
 

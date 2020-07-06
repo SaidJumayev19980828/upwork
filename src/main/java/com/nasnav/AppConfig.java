@@ -23,6 +23,8 @@ public class AppConfig {
     @Value("${email.ssl}")         		public String mailUseSSL;
     @Value("${paymnet.properties_dir}") public String paymentPropertiesDir = "";
     @Value("${cookies.secureToken}")    public boolean secureTokens;
+    @Value("${dashbaord.order.page}")  	public String dashBoardOrderPageUrl;
+    
 
     
     

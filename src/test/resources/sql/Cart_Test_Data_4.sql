@@ -4,6 +4,12 @@
 INSERT INTO public.organizations(id, name) VALUES (99001, 'organization_1');
 INSERT INTO public.organizations(id, name) VALUES (99002, 'organization_2');
 
+--insert organization domain
+INSERT INTO public.organization_domains
+("domain", organization_id, subdir)
+VALUES('develop.nasnav.org', 99001, null);
+
+
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99002);
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 201, 'brand_2', 99001);
