@@ -35,6 +35,8 @@ import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.STORE_PREPARED;
 import static com.nasnav.enumerations.OrderStatus.findEnum;
+import static com.nasnav.enumerations.PaymentStatus.ERROR;
+import static com.nasnav.enumerations.PaymentStatus.FAILED;
 import static com.nasnav.enumerations.Roles.CUSTOMER;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
@@ -1874,6 +1876,8 @@ public class OrderServiceImpl implements OrderService {
 		if(user instanceof EmployeeUserEntity) {
 			throw new RuntimeBusinessException(FORBIDDEN, O$CRT$0001);
 		}
+		
+		cancelAbandonedOrders();
 
 		validateCartCheckoutDTO(dto);
 
@@ -1883,6 +1887,38 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+
+
+
+	private void cancelAbandonedOrders() {
+		BaseUserEntity user = securityService.getCurrentUser();
+		List<MetaOrderEntity> abandonedOrders = 
+				metaOrderRepo
+				.findByUser_IdAndStatusAndPaymentStatusIn(
+						user.getId()
+						, CLIENT_CONFIRMED.getValue()
+						, asList(ERROR.getValue(), FAILED.getValue()));
+		
+		List<MetaOrderEntity> noPaymentOrders = 
+				metaOrderRepo
+				.findByUser_IdAndStatusAndNoPayment(
+						user.getId()
+						, CLIENT_CONFIRMED.getValue());
+		
+		abandonedOrders.addAll(noPaymentOrders);
+		abandonedOrders.forEach(this::cancelAbandonedOrder);
+	}
+
+
+	
+	
+	
+	private void cancelAbandonedOrder(MetaOrderEntity metaOrder) {
+		metaOrder.setStatus(CLIENT_CANCELLED.getValue());
+		metaOrder
+		.getSubOrders()
+		.forEach(subOrder -> subOrder.setStatus(CLIENT_CANCELLED.getValue()));
+	}
 
 
 
