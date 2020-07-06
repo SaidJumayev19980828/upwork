@@ -17,6 +17,7 @@ import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang3.StringUtils.leftPad;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static reactor.core.publisher.Mono.error;
 import static reactor.core.publisher.Mono.just;
@@ -254,7 +255,7 @@ public class BostaLevisShippingService implements ShippingService{
 		receiver.setEmail(user.getEmail());
 		receiver.setFirstName(user.getFirstName());
 		receiver.setLastName(user.getLastName());
-		receiver.setPhone(user.getPhone());
+		receiver.setPhone(getPhone(user));
 		receiver.setCountry(user.getCountry());
 		return receiver;
 	};
@@ -262,6 +263,25 @@ public class BostaLevisShippingService implements ShippingService{
 	
 	
 	
+	private String getPhone(ShipmentReceiver user) {
+		return ofNullable(user.getPhone())
+				.map(this::rectifyPhoneNumber)
+				.orElse(null);
+	}
+
+
+	
+	
+	private String rectifyPhoneNumber(String phone) {
+		return ofNullable(phone)
+				.map(phn -> phn.replace("+", "0"))
+				.map(phn -> leftPad(phn, 10, "0"))
+				.orElse(phone);
+	}
+	
+	
+	
+
 	private Address createAddress(ShippingAddress data) {
 		Long apartmentNum = parseLongWithDefault(data.getFlatNumber(), null); 
 		Long cityId = data.getCity();

@@ -312,7 +312,7 @@ public class CartTest {
 	private Order checkoutCart() {
 		JSONObject requestBody = createCartCheckoutBody();
 
-		Order body = checkOutCart(requestBody, new BigDecimal("3151"), new BigDecimal("3100") ,new BigDecimal("51"));
+		Order body = checkOutCart(requestBody, new BigDecimal("3151"), new BigDecimal("3100") ,new BigDecimal("25"));
 		
 		return body;
 	}
@@ -480,7 +480,7 @@ public class CartTest {
 	// TODO: make this test work with a swtich flag, that either make it work on bosta
 	//staging server + mail.nasnav.org mail server
 	//or make it work on mock bosta server + mock mail service
-//	@Test
+	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_4.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void orderCompleteCycle() throws BusinessException {
@@ -491,7 +491,7 @@ public class CartTest {
 		//checkout
 		JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest();
 
-		Order order = checkOutCart(requestBody, new BigDecimal("3125"), new BigDecimal("3100"), new BigDecimal("51"));
+		Order order = checkOutCart(requestBody, new BigDecimal("3125"), new BigDecimal("3100"), new BigDecimal("25"));
 		Long orderId = order.getOrderId();
 		
 		orderService.finalizeOrder(orderId);
