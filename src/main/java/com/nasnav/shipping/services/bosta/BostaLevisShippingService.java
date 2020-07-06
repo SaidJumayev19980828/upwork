@@ -21,42 +21,26 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static reactor.core.publisher.Mono.error;
 import static reactor.core.publisher.Mono.just;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Period;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.IntStream;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.enumerations.ShippingStatus;
+import com.nasnav.shipping.model.*;
+import com.nasnav.shipping.services.bosta.webclient.dto.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.reactive.function.client.ClientResponse;
 
 import com.google.common.collect.ImmutableMap;
 import com.nasnav.commons.model.IndexedData;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.shipping.ShippingService;
-import com.nasnav.shipping.model.Parameter;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.Shipment;
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShipmentReceiver;
-import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShipmentValidation;
-import com.nasnav.shipping.model.ShippingAddress;
-import com.nasnav.shipping.model.ShippingDetails;
-import com.nasnav.shipping.model.ShippingEta;
-import com.nasnav.shipping.model.ShippingOffer;
-import com.nasnav.shipping.model.ShippingPeriod;
-import com.nasnav.shipping.model.ShippingServiceInfo;
 import com.nasnav.shipping.services.bosta.webclient.BostaWebClient;
-import com.nasnav.shipping.services.bosta.webclient.dto.Address;
-import com.nasnav.shipping.services.bosta.webclient.dto.CreateAwbResponse;
-import com.nasnav.shipping.services.bosta.webclient.dto.CreateDeliveryResponse;
-import com.nasnav.shipping.services.bosta.webclient.dto.Delivery;
-import com.nasnav.shipping.services.bosta.webclient.dto.Receiver;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -106,8 +90,17 @@ public class BostaLevisShippingService implements ShippingService{
 
 
 	private static final String WEB_HOOK_URL = null;
-	
-	
+
+	private static final List<Integer> enRouteStateMapping = Arrays.asList(new Integer[]{10, 15, 16, 35, 36});
+
+	private static final List<Integer> pickedUpStateMapping = Arrays.asList(new Integer[]{20, 21, 30});
+
+	private static final List<Integer> deliveredStateMapping = Arrays.asList(new Integer[]{22, 40, 25, 26, 23, 45});
+
+	private static final List<Integer> failedStateMapping = Arrays.asList(new Integer[]{55, 80});
+
+	@Autowired
+	private ObjectMapper jsonMapper;
 	
 	
 	
@@ -403,6 +396,23 @@ public class BostaLevisShippingService implements ShippingService{
 		return createShippingOffer(items)
 				.map(offer -> new ShipmentValidation(true))
 				.defaultIfEmpty(new ShipmentValidation(false));
+	}
+
+	@Override
+	public ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params) throws IOException {
+		BostaCallbackDTO body = jsonMapper.readValue(params, BostaCallbackDTO.class);
+
+		if (enRouteStateMapping.contains(body.getState())) {
+			body.setState(ShippingStatus.EN_ROUTE.getValue());
+		} else if (pickedUpStateMapping.contains(body.getState())) {
+		 	body.setState(ShippingStatus.PICKED_UP.getValue());
+		} else if (deliveredStateMapping.contains(body.getState())) {
+			body.setState(ShippingStatus.DELIVERED.getValue());
+		} else if (failedStateMapping.contains(body.getState())) {
+			body.setState(ShippingStatus.FAILED.getValue());
+		}
+		return new ShipmentStatusData(serviceId, orgId, body.getId(), body.getState(), body.getExceptionReason());
+
 	}
 
 }

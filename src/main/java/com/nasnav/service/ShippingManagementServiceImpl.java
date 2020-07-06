@@ -538,14 +538,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
     @Override
     public void updateShipmentStatus(String serviceId, Long orgId, String params) throws IOException {
-		ShipmentStatusData shippingStatusData = null;
-		switch (serviceId) {
-			case "BOSTA_LEVIS" : {
-				BostaCallbackDTO body = jsonMapper.readValue(params, BostaCallbackDTO.class);
-				shippingStatusData =
-						new ShipmentStatusData(serviceId, orgId, body.getId(), body.getState(), body.getExceptionReason());
-			} break;
-		}
+		ShippingService shippingService = getShippingService(serviceId);
+		ShipmentStatusData shippingStatusData = shippingService.createShipmentStatusData(serviceId, orgId, params);
 
 		if (shippingStatusData != null) {
 			updateShipmentStatus(shippingStatusData);

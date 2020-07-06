@@ -11,20 +11,12 @@ import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 
 import com.nasnav.shipping.ShippingService;
-import com.nasnav.shipping.model.Parameter;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.Shipment;
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShipmentValidation;
-import com.nasnav.shipping.model.ShippingDetails;
-import com.nasnav.shipping.model.ShippingEta;
-import com.nasnav.shipping.model.ShippingOffer;
-import com.nasnav.shipping.model.ShippingServiceInfo;
+import com.nasnav.shipping.model.*;
 
 import lombok.Getter;
 import reactor.core.publisher.Flux;
@@ -81,6 +73,11 @@ public class DummyShippingService implements ShippingService {
 	@Override
 	public Mono<ShipmentValidation> validateShipment(List<ShippingDetails> items) {
 		return Mono.empty();
+	}
+
+	@Override
+	public ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params) throws IOException {
+		return new ShipmentStatusData();
 	}
 
 
