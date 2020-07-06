@@ -24,5 +24,7 @@ public class Delivery {
     private Boolean isSameDay;
     private String subAccountId;
     private String webhookUrl;
+    
+    private PackageSpec specs;
 
 }

@@ -15,6 +15,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.leftPad;
@@ -57,6 +58,8 @@ import com.nasnav.shipping.services.bosta.webclient.dto.Address;
 import com.nasnav.shipping.services.bosta.webclient.dto.CreateAwbResponse;
 import com.nasnav.shipping.services.bosta.webclient.dto.CreateDeliveryResponse;
 import com.nasnav.shipping.services.bosta.webclient.dto.Delivery;
+import com.nasnav.shipping.services.bosta.webclient.dto.PackageDetails;
+import com.nasnav.shipping.services.bosta.webclient.dto.PackageSpec;
 import com.nasnav.shipping.services.bosta.webclient.dto.Receiver;
 
 import reactor.core.publisher.Flux;
@@ -234,6 +237,8 @@ public class BostaLevisShippingService implements ShippingService{
 		Address pickupAddress =  createAddress(shipment.getSource());
 		Address dropOffAddress = createAddress(shipment.getDestination());
 		Receiver receiver = createReceiver(shipment.getReceiver());
+		PackageSpec specs = createPackageSpecs(shipment);
+		String notes = createShippingNotes(shipment);
 		
 		Delivery request = new Delivery();
 		request.setBusinessReference(businessRef);
@@ -243,6 +248,8 @@ public class BostaLevisShippingService implements ShippingService{
 		request.setType(PACKAGE);
 		request.setWebhookUrl(WEB_HOOK_URL);
 		request.setPickupAddress(pickupAddress);
+		request.setSpecs(specs);
+		request.setNotes(notes);
 		return request;
 	}
 	
@@ -250,6 +257,42 @@ public class BostaLevisShippingService implements ShippingService{
 	
 	
 	
+	private String createShippingNotes(ShippingDetails shipment) {
+		return shipment
+				.getItems()
+				.stream()
+				.map(this::createItemDetailsString)
+				.collect(joining("\n\r"));
+	}
+	
+	
+	
+	
+	private String createItemDetailsString(ShipmentItems item) {
+		return format("* name[%s]/ barcode[%s] / specs[%s] / qty[%d] "
+				, ofNullable(item.getName()).orElse("")
+				, ofNullable(item.getBarcode()).orElse("")
+				, ofNullable(item.getSpecs()).orElse("")
+				, ofNullable(item.getQuantity()).orElse(0));
+	}
+	
+	
+
+
+	private PackageSpec createPackageSpecs(ShippingDetails shipment) {
+		String description = format("sub-Order Id: %d", shipment.getSubOrderId());
+		
+		PackageDetails details = new PackageDetails();
+		details.setDescription(description);
+		details.setItemsCount(shipment.getItems().size());
+		
+		PackageSpec spec = new PackageSpec();
+		spec.setPackageDetails(details);
+		return spec;
+	}
+
+
+
 	private Receiver createReceiver(ShipmentReceiver user) {
 		Receiver receiver = new Receiver();
 		receiver.setEmail(user.getEmail());
