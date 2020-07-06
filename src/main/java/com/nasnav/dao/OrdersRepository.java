@@ -96,6 +96,9 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr"
 			+ " LEFT JOIN FETCH meta.subOrders subOrd"
 			+ " LEFT JOIN FETCH ord.basketsEntity basket"
+			+ " LEFT JOIN FETCH basket.stocksEntity stock "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.productEntity product "
 			+ " WHERE ord.id = :orderId and shop.id = :shopId" )
 	Optional<OrdersEntity> findByIdAndShopsEntity_Id(@Param("orderId")Long orderId, @Param("shopId")Long shopId);
 	
@@ -109,6 +112,9 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr"
 			+ " LEFT JOIN FETCH meta.subOrders subOrd"
 			+ " LEFT JOIN FETCH ord.basketsEntity basket"
+			+ " LEFT JOIN FETCH basket.stocksEntity stock "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.productEntity product "
 			+ " WHERE ord.id = :orderId and ord.organizationEntity.id = :orgId" )
 	Optional<OrdersEntity> findByIdAndOrganizationEntity_Id(@Param("orderId")Long orderId, @Param("orgId")Long orgId);
 }
