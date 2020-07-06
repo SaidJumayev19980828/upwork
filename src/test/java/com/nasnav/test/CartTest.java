@@ -480,7 +480,7 @@ public class CartTest {
 	// TODO: make this test work with a swtich flag, that either make it work on bosta
 	//staging server + mail.nasnav.org mail server
 	//or make it work on mock bosta server + mock mail service
-	@Test
+//	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_4.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void orderCompleteCycle() throws BusinessException {
