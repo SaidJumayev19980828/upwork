@@ -1187,9 +1187,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
-	
-	
-	//TODO: doesn't support getting shipment fees
+
 	private DetailedOrderRepObject getDetailedOrderInfo(OrdersEntity order, Integer detailsLevel,
 														Map<Long, BigDecimal> orderItemsQuantity,
 														Map<Long, List<BasketItemDetails>> basketItemsDetailsMap) {
@@ -1206,7 +1204,7 @@ public class OrderServiceImpl implements OrderService {
 
 
         if (detailsLevel >= 1)
-        	BeanUtils.copyProperties( getOrderDetails(order), representation, new String[]{"orderId", "userId", "shopId", "createdAt", "status", "paymentStatus", "total"});
+        	BeanUtils.copyProperties( getOrderDetails(order), representation, new String[]{"orderId", "userId", "shopId", "createdAt", "status", "paymentStatus"});
 
         if (detailsLevel == 2 && orderItemsQuantity.get(order.getId()) != null)
         	representation.setTotalQuantity(orderItemsQuantity.get(order.getId()).intValue());
@@ -1252,10 +1250,9 @@ public class OrderServiceImpl implements OrderService {
 		obj.setShopName(entity.getShopsEntity().getName());
 		obj.setDeliveryDate(entity.getDeliveryDate());
 		obj.setSubtotal(entity.getAmount());
-		obj.setShipping(new BigDecimal(0));
+		if (entity.getShipment() != null)
+			obj.setShipping(entity.getShipment().getShippingFee());
 		obj.setTotal(obj.getShipping().add(obj.getSubtotal()));
-
-		//TODO set shipping price
 
 		if (entity.getAddressEntity() != null) {
 			AddressRepObj address = (AddressRepObj) entity.getAddressEntity().getRepresentation();
@@ -2331,11 +2328,12 @@ public class OrderServiceImpl implements OrderService {
 
 	private OrdersEntity createSubOrder(AddressesEntity shippingAddress,
 										CartItemsForShop cartItems) {
-		Long userId = securityService.getCurrentUser().getId();
+		UserEntity user = (UserEntity) securityService.getCurrentUser();
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
 		
 		OrdersEntity subOrder = new OrdersEntity();
-		subOrder.setUserId(userId);
+		subOrder.setName(user.getName());
+		subOrder.setUserId(user.getId());
 		subOrder.setShopsEntity(cartItems.getShop());
 		subOrder.setOrganizationEntity(org);
 		subOrder.setAddressEntity(shippingAddress);
