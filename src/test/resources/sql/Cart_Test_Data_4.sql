@@ -23,8 +23,8 @@ INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
 INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
 
 
-INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300001, 'address line', 1, '01111234567');
-INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300002, 'address line', 1, '01111234567');
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300001, 'address line', 1, '+1111234567');
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300002, 'address line', 1, '+1111234567');
 
 --inserting shops
 INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (501, 'shop_1', 102, 99001, 12300001);
