@@ -2,19 +2,17 @@ package com.nasnav.test;
 
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
-import static org.springframework.http.HttpMethod.*;
-
-
 import javax.sql.DataSource;
 
-import com.nasnav.dao.AddressRepository;
-import com.nasnav.dto.ShopRepresentationObject;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.service.ShopService;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,8 +29,13 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
+import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.service.ShopService;
 import com.nasnav.test.commons.TestCommons;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -52,13 +55,13 @@ public class ShopsUpdateTest {
     private ShopsRepository shopsRepository;
 
     @Autowired
-    private DataSource datasource;
-
-    @Autowired
     private AddressRepository addressRepo;
 
     @Autowired
     private ShopService shopService;
+    
+    @Autowired
+    private StockRepository stocksRepo;
 
     @Test
     public void testCreateShopDifferentRoles(){
@@ -243,6 +246,21 @@ public class ShopsUpdateTest {
 
         assertEquals(200, response.getStatusCodeValue());
         assertFalse(shopsRepository.findById(oldShop.getId()).isPresent());
+    }
+
+
+    @Test
+    public void deleteShopLinkedStocksTest() {
+    	Long countBefore = stocksRepo.countByShopsEntity_Id(503L);
+    	assertNotEquals(0L, countBefore.longValue());
+    	
+        HttpEntity<Object> request = getHttpEntity("161718");
+        ResponseEntity<String> response = template.exchange("/shop/delete?shop_id=503&delete_stocks=true",
+                DELETE, request, String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        
+        Long countAfter = stocksRepo.countByShopsEntity_Id(503L);
+    	assertEquals(0L, countAfter.longValue());
     }
 
 
