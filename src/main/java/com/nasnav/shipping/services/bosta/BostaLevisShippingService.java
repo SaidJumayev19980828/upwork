@@ -28,20 +28,22 @@ import static reactor.core.publisher.Mono.just;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Period;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.enumerations.ShippingStatus;
-import com.nasnav.shipping.model.*;
-import com.nasnav.shipping.services.bosta.webclient.dto.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.reactive.function.client.ClientResponse;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.nasnav.commons.model.IndexedData;
+import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.model.Parameter;
@@ -49,6 +51,7 @@ import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.Shipment;
 import com.nasnav.shipping.model.ShipmentItems;
 import com.nasnav.shipping.model.ShipmentReceiver;
+import com.nasnav.shipping.model.ShipmentStatusData;
 import com.nasnav.shipping.model.ShipmentTracker;
 import com.nasnav.shipping.model.ShipmentValidation;
 import com.nasnav.shipping.model.ShippingAddress;
@@ -59,6 +62,7 @@ import com.nasnav.shipping.model.ShippingPeriod;
 import com.nasnav.shipping.model.ShippingServiceInfo;
 import com.nasnav.shipping.services.bosta.webclient.BostaWebClient;
 import com.nasnav.shipping.services.bosta.webclient.dto.Address;
+import com.nasnav.shipping.services.bosta.webclient.dto.BostaCallbackDTO;
 import com.nasnav.shipping.services.bosta.webclient.dto.CreateAwbResponse;
 import com.nasnav.shipping.services.bosta.webclient.dto.CreateDeliveryResponse;
 import com.nasnav.shipping.services.bosta.webclient.dto.Delivery;
@@ -111,9 +115,6 @@ public class BostaLevisShippingService implements ShippingService{
 
 
 	private static final Long PACKAGE = 10L;
-
-
-	private static final String WEB_HOOK_URL = null;
 
 	private static final List<Integer> enRouteStateMapping = asList(10, 15, 16, 35, 36);
 
@@ -252,6 +253,7 @@ public class BostaLevisShippingService implements ShippingService{
 		Receiver receiver = createReceiver(shipment.getReceiver());
 		PackageSpec specs = createPackageSpecs(shipment);
 		String notes = createShippingNotes(shipment);
+		String webHook = shipment.getCallBackUrl();
 
 		Delivery request = new Delivery();
 		request.setBusinessReference(businessRef);
@@ -259,10 +261,10 @@ public class BostaLevisShippingService implements ShippingService{
 		request.setReceiver(receiver);
 		request.setReturnAddress(pickupAddress);
 		request.setType(PACKAGE);
-		request.setWebhookUrl(WEB_HOOK_URL);
 		request.setPickupAddress(pickupAddress);
 		request.setSpecs(specs);
 		request.setNotes(notes);
+		request.setWebhookUrl(webHook);
 		return request;
 	}
 	

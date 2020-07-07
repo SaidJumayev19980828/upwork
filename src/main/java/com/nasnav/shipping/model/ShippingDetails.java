@@ -14,4 +14,5 @@ public class ShippingDetails {
 	private Map<String,String> serviceParameters;
 	private List<ShipmentItems> items;
 	private Long subOrderId;
+	private String callBackUrl;
 }
