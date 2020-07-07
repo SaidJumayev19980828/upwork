@@ -56,7 +56,8 @@ public class ShopsController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @DeleteMapping(value = "/delete")
     public void deleteShop(@RequestHeader(name = "User-Token", required = false) String userToken,
-                           @RequestParam("shop_id") Long id) {
-        shopService.deleteShop(id);
+                           @RequestParam("shop_id") Long id,
+                           @RequestParam(value = "delete_stocks", defaultValue = "false") boolean deleteStocks) {
+        shopService.deleteShop(id, deleteStocks);
     }
 }

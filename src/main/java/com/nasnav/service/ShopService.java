@@ -28,6 +28,7 @@ import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import com.nasnav.service.helpers.ShopServiceHelper;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ShopService {
@@ -217,22 +218,32 @@ public class ShopService {
     }
 
 
-    public void deleteShop(Long shopId)  {
+    @Transactional
+    public void deleteShop(Long shopId, boolean deleteStocks)  {
         Long orgId = securityService.getCurrentUserOrganizationId();
         if (!shopsRepository.existsByIdAndOrganizationEntity_Id(shopId, orgId)) {
             throw new RuntimeBusinessException(NOT_FOUND, S$0002, shopId);
         }
-        validateShopLinksBeforeDelete(shopId);
+
+        validateShopLinksBeforeDelete(shopId, deleteStocks);
+
+        if (deleteStocks) {
+            stockRepo.deleteByShopsEntity_Id(shopId);
+        }
         shopsRepository.deleteById(shopId);
     }
 
-    private void validateShopLinksBeforeDelete(Long shopId) {
-        List<Long> linkedStocks = stockRepo.findByShopsEntity_Id(shopId)
-                                            .stream()
-                                            .map(StocksEntity::getId)
-                                            .collect(toList());
-        if (!linkedStocks.isEmpty()) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "stocks "+linkedStocks.toString());
+
+    private void validateShopLinksBeforeDelete(Long shopId, boolean deleteStocks) {
+
+        if (!deleteStocks) {
+            List<Long> linkedStocks = stockRepo.findByShopsEntity_Id(shopId)
+                    .stream()
+                    .map(StocksEntity::getId)
+                    .collect(toList());
+            if (!linkedStocks.isEmpty()) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "stocks " + linkedStocks.toString());
+            }
         }
 
 

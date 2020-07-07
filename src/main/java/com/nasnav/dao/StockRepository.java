@@ -3,12 +3,14 @@ package com.nasnav.dao;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import com.nasnav.dto.Prices;
 import com.nasnav.persistence.StocksEntity;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 
@@ -106,4 +108,13 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 
 
 	List<StocksEntity> findByIdInAndOrganizationEntity_Id(List<Long> itemStocks, Long orgId);
+
+	@Transactional
+	@Modifying
+	@Query("DELETE FROM StocksEntity stock "
+			+ " WHERE stock.shopsEntity.id = :shopId")
+	void deleteByShopsEntity_Id(@Param("shopId") Long shopId);
+
+
+	Long countByShopsEntity_Id(long shopId);
 }
