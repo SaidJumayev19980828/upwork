@@ -3,20 +3,13 @@ package com.nasnav.controller;
 import java.util.List;
 
 import com.nasnav.dto.*;
+import com.nasnav.response.CategoryResponse;
 import com.nasnav.service.AddressService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.OrganizationResponse;
@@ -29,6 +22,8 @@ import com.nasnav.service.ThemeService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
+
+import static org.springframework.http.HttpStatus.OK;
 
 @RestController
 @RequestMapping("/admin")
@@ -54,11 +49,14 @@ public class AdminController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @PostMapping(value = "organization", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "organization",
+				produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+				consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public OrganizationResponse createOrganization(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                             @RequestBody OrganizationDTO.OrganizationCreationDTO json)  throws BusinessException {
+												   @RequestBody OrganizationDTO.OrganizationCreationDTO json)  throws BusinessException {
 	    return organizationService.createOrganization(json);
     }
+
 
 	@ApiOperation(value = "Create or update a Category", nickname = "categoryModification", code = 200)
 	@ApiResponses(value = {
@@ -67,8 +65,8 @@ public class AdminController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
 	})
 	@PostMapping(value = "category", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public ResponseEntity<?> createCategory(@RequestHeader (name = "User-Token", required = false) String userToken,
-	                                     @RequestBody CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
+	public CategoryResponse createCategory(@RequestHeader (name = "User-Token", required = false) String userToken,
+										   @RequestBody CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
     	if (categoryJson.getOperation() != null)
 			if (categoryJson.getOperation().equals("update"))
 				return categoryService.updateCategory(categoryJson);
@@ -85,13 +83,11 @@ public class AdminController {
 			@io.swagger.annotations.ApiResponse(code = 409, message = "Category is used by other entities"),
 	})
 	@DeleteMapping(value = "category", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public ResponseEntity<?> deleteCategory(@RequestHeader (name = "User-Token", required = false) String userToken,
-	                                     @RequestParam (value = "category_id") Long categoryId ) throws BusinessException {
-		if (categoryId == null ){
-			throw new BusinessException("MISSING_PRARM: Category_id", "",HttpStatus.NOT_ACCEPTABLE);
-		}
+	public CategoryResponse deleteCategory(@RequestHeader (name = "User-Token", required = false) String userToken,
+	                                       @RequestParam (value = "category_id") Long categoryId ) throws BusinessException {
 		return categoryService.deleteCategory(categoryId);
 	}
+
 
 	@ApiOperation(value = "list all organizations", nickname = "orgList", code = 200)
 	@ApiResponses(value = {
@@ -191,7 +187,8 @@ public class AdminController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid Parameter"),
 			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to delete theme"),
 	})
-	@PostMapping(value = "country")
+	@ResponseStatus(OK)
+	@PostMapping(value = "country", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public void addCountry(@RequestHeader (name = "User-Token", required = false) String userToken,
 						   @RequestBody CountryInfoDTO dto) {
 		addressService.addCountry(dto);

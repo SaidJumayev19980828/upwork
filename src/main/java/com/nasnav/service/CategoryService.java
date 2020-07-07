@@ -143,7 +143,7 @@ public class CategoryService {
     
     
 
-    public ResponseEntity<CategoryResponse> createCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
+    public CategoryResponse createCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
         if (categoryJson.getName() == null) {
             throw new BusinessException("MISSING_PARAM: name", "No category name is provided", HttpStatus.NOT_ACCEPTABLE);
         } else if (!StringUtils.validateName(categoryJson.getName())) {
@@ -163,13 +163,13 @@ public class CategoryService {
         }
         categoriesEntity.setPname(StringUtils.encodeUrl(categoryJson.getName()));
         categoryRepository.save(categoriesEntity);
-        return new ResponseEntity<CategoryResponse>(new CategoryResponse(categoriesEntity.getId()), HttpStatus.OK);
+        return new CategoryResponse(categoriesEntity.getId());
     }
 
     
     
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID, ORGANIZATIONS_TAG_TREES})
-    public ResponseEntity<CategoryResponse> updateCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
+    public CategoryResponse updateCategory(CategoryDTO.CategoryModificationObject categoryJson) throws BusinessException {
         if (categoryJson.getId() == null) {
             throw new BusinessException("MISSING_PARAM: ID", "No category ID is provided", HttpStatus.NOT_ACCEPTABLE);
         }
@@ -198,10 +198,13 @@ public class CategoryService {
             }
         }
         categoryRepository.save(categoriesEntity);
-        return new ResponseEntity<CategoryResponse>(new CategoryResponse(categoriesEntity.getId()), HttpStatus.OK);
+        return new CategoryResponse(categoriesEntity.getId());
     }
 
-    public ResponseEntity<CategoryResponse> deleteCategory(Long categoryId) throws BusinessException {
+    public CategoryResponse deleteCategory(Long categoryId) throws BusinessException {
+		if (categoryId == null ){
+			throw new BusinessException("MISSING_PRARM: Category_id", "",HttpStatus.NOT_ACCEPTABLE);
+		}
         if (!categoryRepository.findById(categoryId).isPresent()){
             throw new BusinessException("EntityNotFound: category",
                     "No category entity found with provided ID", NOT_ACCEPTABLE);
@@ -224,7 +227,7 @@ public class CategoryService {
                     "There are still children " +childrenCategoriesIds+" assigned to this category", CONFLICT);
         }
         categoryRepository.delete(categoriesEntity);
-        return new ResponseEntity<CategoryResponse>(new CategoryResponse(categoriesEntity.getId()),OK);
+        return new CategoryResponse(categoriesEntity.getId());
     }
 
 

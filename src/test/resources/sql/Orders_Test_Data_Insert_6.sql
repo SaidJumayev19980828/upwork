@@ -17,7 +17,7 @@ INSERT INTO public.categories(id, name) VALUES (202, 'category_2');
 
 
 --register the organization to dummy shipping service
-INSERT INTO public.organization_shipping_service(shipping_service_id, organization_id, service_parameters) VALUES('TEST', 99001, '{"Hot Line": 911, "Shops":["501"]}');
+INSERT INTO public.organization_shipping_service(shipping_service_id, organization_id, service_parameters, id) VALUES('TEST', 99001, '{"Hot Line": 911, "Shops":["501"]}', 11001);
 
 
 
@@ -45,7 +45,12 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (102, '456', now(), null,89);
 
 -- insert user addresses
-INSERT INTO public.addresses(id, address_line_1) values(12300001, 'address line');
+INSERT INTO public.countries(id,"name")VALUES(1,'Egypt');
+INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
+INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
+
+
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300001, 'address line', 1, '01111234567');
 
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 
@@ -115,7 +120,7 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 
 
 --inserting orders
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id) VALUES(310001 , now(),88, 99001);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 1);
 
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
 values(330031, 88, now(), now(), 99001, 1, 501, 310001, 12300001);
@@ -123,11 +128,11 @@ insert into public.orders(id,user_id,created_at, updated_at, organization_id,sta
 values(330032, 88, now(), now(), 99002, 2, 502, 310001, 12300001);
 
 INSERT INTO public.shipment
-(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status)
-VALUES(330031, 'TEST', '{"Shop Id":501}' , now(), now(), 0);
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330031, 'TEST', '{"Shop Id":501}' , now(), now(), 0, 20.0);
 INSERT INTO public.shipment
-(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status)
-VALUES(330032, 'TEST', '{"Shop Id":502}' , now(), now(), 0);
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330032, 'TEST', '{"Shop Id":502}' , now(), now(), 0, 12.0);
 
 
 -- insert order items

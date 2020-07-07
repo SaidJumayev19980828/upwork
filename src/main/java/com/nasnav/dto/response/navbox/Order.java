@@ -2,7 +2,7 @@ package com.nasnav.dto.response.navbox;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.nasnav.dto.DetailedOrderRepObject;
+import com.nasnav.enumerations.TransactionCurrency;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -25,7 +25,7 @@ public class Order {
     private BigDecimal subtotal;
     private BigDecimal shipping;
     private BigDecimal total;
-    private String currency;
+    private TransactionCurrency currency;
     @JsonProperty("creation_date")
     private LocalDateTime creationDate;
 

@@ -15,8 +15,10 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang3.StringUtils.leftPad;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static reactor.core.publisher.Mono.error;
 import static reactor.core.publisher.Mono.just;
@@ -40,7 +42,27 @@ import com.google.common.collect.ImmutableMap;
 import com.nasnav.commons.model.IndexedData;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.shipping.ShippingService;
+import com.nasnav.shipping.model.Parameter;
+import com.nasnav.shipping.model.ServiceParameter;
+import com.nasnav.shipping.model.Shipment;
+import com.nasnav.shipping.model.ShipmentItems;
+import com.nasnav.shipping.model.ShipmentReceiver;
+import com.nasnav.shipping.model.ShipmentTracker;
+import com.nasnav.shipping.model.ShipmentValidation;
+import com.nasnav.shipping.model.ShippingAddress;
+import com.nasnav.shipping.model.ShippingDetails;
+import com.nasnav.shipping.model.ShippingEta;
+import com.nasnav.shipping.model.ShippingOffer;
+import com.nasnav.shipping.model.ShippingPeriod;
+import com.nasnav.shipping.model.ShippingServiceInfo;
 import com.nasnav.shipping.services.bosta.webclient.BostaWebClient;
+import com.nasnav.shipping.services.bosta.webclient.dto.Address;
+import com.nasnav.shipping.services.bosta.webclient.dto.CreateAwbResponse;
+import com.nasnav.shipping.services.bosta.webclient.dto.CreateDeliveryResponse;
+import com.nasnav.shipping.services.bosta.webclient.dto.Delivery;
+import com.nasnav.shipping.services.bosta.webclient.dto.PackageDetails;
+import com.nasnav.shipping.services.bosta.webclient.dto.PackageSpec;
+import com.nasnav.shipping.services.bosta.webclient.dto.Receiver;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -226,7 +248,9 @@ public class BostaLevisShippingService implements ShippingService{
 		Address pickupAddress =  createAddress(shipment.getSource());
 		Address dropOffAddress = createAddress(shipment.getDestination());
 		Receiver receiver = createReceiver(shipment.getReceiver());
-		
+		PackageSpec specs = createPackageSpecs(shipment);
+		String notes = createShippingNotes(shipment);
+
 		Delivery request = new Delivery();
 		request.setBusinessReference(businessRef);
 		request.setDropOffAddress(dropOffAddress);
@@ -235,6 +259,8 @@ public class BostaLevisShippingService implements ShippingService{
 		request.setType(PACKAGE);
 		request.setWebhookUrl(WEB_HOOK_URL);
 		request.setPickupAddress(pickupAddress);
+		request.setSpecs(specs);
+		request.setNotes(notes);
 		return request;
 	}
 	
@@ -242,12 +268,48 @@ public class BostaLevisShippingService implements ShippingService{
 	
 	
 	
+	private String createShippingNotes(ShippingDetails shipment) {
+		return shipment
+				.getItems()
+				.stream()
+				.map(this::createItemDetailsString)
+				.collect(joining("\n\r"));
+	}
+
+
+
+
+	private String createItemDetailsString(ShipmentItems item) {
+		return format("* name[%s]/ barcode[%s] / specs[%s] / qty[%d] "
+				, ofNullable(item.getName()).orElse("")
+				, ofNullable(item.getBarcode()).orElse("")
+				, ofNullable(item.getSpecs()).orElse("")
+				, ofNullable(item.getQuantity()).orElse(0));
+	}
+
+
+
+
+	private PackageSpec createPackageSpecs(ShippingDetails shipment) {
+		String description = format("sub-Order Id: %d", shipment.getSubOrderId());
+
+		PackageDetails details = new PackageDetails();
+		details.setDescription(description);
+		details.setItemsCount(shipment.getItems().size());
+
+		PackageSpec spec = new PackageSpec();
+		spec.setPackageDetails(details);
+		return spec;
+	}
+
+
+
 	private Receiver createReceiver(ShipmentReceiver user) {
 		Receiver receiver = new Receiver();
 		receiver.setEmail(user.getEmail());
 		receiver.setFirstName(user.getFirstName());
 		receiver.setLastName(user.getLastName());
-		receiver.setPhone(user.getPhone());
+		receiver.setPhone(getPhone(user));
 		receiver.setCountry(user.getCountry());
 		return receiver;
 	};
@@ -255,6 +317,25 @@ public class BostaLevisShippingService implements ShippingService{
 	
 	
 	
+	private String getPhone(ShipmentReceiver user) {
+		return ofNullable(user.getPhone())
+				.map(this::rectifyPhoneNumber)
+				.orElse(null);
+	}
+
+
+
+
+	private String rectifyPhoneNumber(String phone) {
+		return ofNullable(phone)
+				.map(phn -> phn.replace("+", "0"))
+				.map(phn -> leftPad(phn, 10, "0"))
+				.orElse(phone);
+	}
+
+
+
+
 	private Address createAddress(ShippingAddress data) {
 		Long apartmentNum = parseLongWithDefault(data.getFlatNumber(), null); 
 		Long cityId = data.getCity();

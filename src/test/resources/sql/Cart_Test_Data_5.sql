@@ -116,6 +116,110 @@ INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(1002, null, 7, 0, '99001/cover_img3.jpg');
 
 
+-- insert non-paid order - no payment record at all
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) 
+VALUES(310001 , now(),88, 99001, 1);
+
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
+values(330031, 88, now(), now(), 99001, 1, 501, 310001, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
+values(330032, 88, now(), now(), 99002, 1, 502, 310001, 12300001);
+
+INSERT INTO public.shipment
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330031, 'TEST', '{"Shop Id":501}' , now(), now(), 0, 20.0);
+INSERT INTO public.shipment
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330032, 'TEST', '{"Shop Id":502}' , now(), now(), 0, 12.0);
+
+-- insert order items
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330031, 601, 14, 60.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330032, 602, 2, 70.0, 1);
+
+
+
+
+-- insert non-paid order - payment cancelled
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) 
+VALUES(310002 , now(),88, 99001, 1);
+
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
+values(330033, 88, now(), now(), 99001, 1, 501, 310002, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
+values(330034, 88, now(), now(), 99002, 1, 502, 310002, 12300001);
+
+INSERT INTO public.shipment
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330033, 'TEST', '{"Shop Id":501}' , now(), now(), 0, 20.0);
+INSERT INTO public.shipment
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330034, 'TEST', '{"Shop Id":502}' , now(), now(), 0, 12.0);
+
+-- insert order items
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330033, 601, 14, 60.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330034, 602, 2, 70.0, 1);
+
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(330033, '', 'ssss', 2, now(), 3151, 2, 'dfdfdd', 88, 310002);
+
+
+
+-- insert paid order
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status, grand_total) 
+VALUES(310003 , now(),88, 99001, 2, 3151);
+
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
+values(330035, 88, now(), now(), 99001, 2, 501, 310003, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
+values(330036, 88, now(), now(), 99002, 2, 502, 310003, 12300001);
+
+INSERT INTO public.shipment
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330035, 'TEST', '{"Shop Id":501}' , now(), now(), 0, 20.0);
+INSERT INTO public.shipment
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330036, 'TEST', '{"Shop Id":502}' , now(), now(), 0, 12.0);
+
+
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(330035, '', 'ssss', 1, now(), 3151, 1, 'dfdfdd', 88, 310003);
+
+
+-- insert order items
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330035, 601, 14, 60.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330036, 602, 2, 70.0, 1);
+
+
+
+
+-- insert non-paid order - payment Error
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) 
+VALUES(310004 , now(),88, 99001, 1);
+
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
+values(330037, 88, now(), now(), 99001, 1, 501, 310004, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
+values(330038, 88, now(), now(), 99002, 1, 502, 310004, 12300001);
+
+INSERT INTO public.shipment
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330037, 'TEST', '{"Shop Id":501}' , now(), now(), 0, 20.0);
+INSERT INTO public.shipment
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330038, 'TEST', '{"Shop Id":502}' , now(), now(), 0, 12.0);
+
+-- insert order items
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330037, 601, 14, 60.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330038, 602, 2, 70.0, 1);
+
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(330037, '', 'ssss', 2, now(), 3151, 2, 'dfdfdd', 88, 310004);
+
+
+
 -- insert cart
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(602, '99001/img2.jpg', '{"Color":"Blue"}', 2, 88);
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(604, '99001/cover_img.jpg', '{"Color":"Yellow"}', 1, 88);

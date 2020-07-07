@@ -68,4 +68,8 @@ public interface OrderService {
 	public Order checkoutCart(CartCheckoutDTO dto) throws BusinessException, IOException;
 	public ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId);
 
+	Order getMetaOrder(Long id);
+
+	public OrderValue getMetaOrderTotalValue(long metaOrderId);
+
 	}

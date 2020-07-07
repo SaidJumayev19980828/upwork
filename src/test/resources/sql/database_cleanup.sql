@@ -22,8 +22,8 @@ DELETE FROM public.cart_items where id in (
 );
 DELETE FROM public.baskets WHERE stock_id IN (SELECT Id from public.stocks where organization_id between 99000 and 99999);
 DELETE FROM public.orders WHERE organization_id BETWEEN 99000 AND 99999;
-DELETE FROM public.meta_orders where organization_id between 99000 and 99999;
 DELETE FROM public.payments WHERE user_id IN (SELECT Id from public.users where organization_id between 99000 and 99999);
+DELETE FROM public.meta_orders where organization_id between 99000 and 99999;
 DELETE FROM public.stocks WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.product_tags WHERE product_id IN (SELECT id from public.products where organization_id between 99000 and 99999);
 DELETE FROM public.product_features where organization_id between 99000 and 99999;
@@ -51,6 +51,9 @@ DELETE FROM public.shop_floors WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop360s WHERE shop_id in (select id from public.shops WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.addresses where id between 12300001 and 12300100;
+DELETE FROM public.areas;
+DELETE FROM public.cities;
+DELETE FROM public.countries;
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.tag_graph_edges 
 WHERE child_id IN (

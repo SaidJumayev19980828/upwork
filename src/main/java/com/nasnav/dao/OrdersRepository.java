@@ -16,7 +16,7 @@ import com.nasnav.persistence.OrdersEntity;
 
 
 public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
-	
+
     Optional<OrdersEntity> findById(long id);
 
     @Transactional
@@ -29,30 +29,15 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
     @Modifying
 	@Query("delete from OrdersEntity o where o.status = :status and o.userId = :userId")
 	void deleteByStatusAndUserId(@Param("status") Integer status, @Param("userId") Long userId);
-    
-    
-    List<OrdersEntity> findByUserId(Long userId);
+
     List<OrdersEntity> findByUserIdAndStatus(Long userId, Integer status);
 
-    OrdersEntity findByIdAndUserId(Long orderId, Long userId);
+    Optional<OrdersEntity> findByIdAndUserIdAndOrganizationEntity_Id(Long orderId, Long userId, Long orgId);
 
     List<OrdersEntity> findByShopsEntityId(Long shopId);
-    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndUserId(Long shopId, Long userId);
-    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndStatus(Long shopId, Integer status);
-    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndOrganizationEntityId(Long shopId, Long orgId);
-    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndUserIdAndOrganizationEntityId(Long storeId, Long userId, Long orgId);
-    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndStatusAndUserId(Long shopId, Integer status, Long userId);
-    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndStatusAndOrganizationEntityId(Long shopId, Integer status, Long orgId);
-    List<OrdersEntity> getOrdersEntityByShopsEntityIdAndStatusAndUserIdAndOrganizationEntityId(Long shopId, Integer status, Long userId, Long orgId);
-
     List<OrdersEntity> findByOrganizationEntityId(Long orgId);
-    List<OrdersEntity> findByOrganizationEntityIdAndUserId(Long orgId, Long userId);
-    List<OrdersEntity> findByOrganizationEntityIdAndStatus(Long orgId, Integer status);
-    List<OrdersEntity> findByOrganizationEntityIdAndStatusAndUserId(Long orgId, Integer status, Long userId);
 
 	List<OrdersEntity> findByMetaOrderId(Long metaOrderId);
-
-    Boolean existsByIdAndUserId(Long orderId, Long userId);
 
     List<OrdersEntity> findByStatus(Integer status);    
 
@@ -111,6 +96,25 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr"
 			+ " LEFT JOIN FETCH meta.subOrders subOrd"
 			+ " LEFT JOIN FETCH ord.basketsEntity basket"
+			+ " LEFT JOIN FETCH basket.stocksEntity stock "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.productEntity product "
 			+ " WHERE ord.id = :orderId and shop.id = :shopId" )
 	Optional<OrdersEntity> findByIdAndShopsEntity_Id(@Param("orderId")Long orderId, @Param("shopId")Long shopId);
+	
+	
+	
+	@Query("SELECT ord "
+			+ " FROM OrdersEntity ord "
+			+ " LEFT JOIN FETCH ord.metaOrder meta "
+			+ " LEFT JOIN FETCH ord.addressEntity userAddr "
+			+ " LEFT JOIN FETCH ord.shopsEntity shop "
+			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr"
+			+ " LEFT JOIN FETCH meta.subOrders subOrd"
+			+ " LEFT JOIN FETCH ord.basketsEntity basket"
+			+ " LEFT JOIN FETCH basket.stocksEntity stock "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " WHERE ord.id = :orderId and ord.organizationEntity.id = :orgId" )
+	Optional<OrdersEntity> findByIdAndOrganizationEntity_Id(@Param("orderId")Long orderId, @Param("orgId")Long orgId);
 }

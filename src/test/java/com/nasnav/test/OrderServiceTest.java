@@ -40,6 +40,7 @@ import java.util.Set;
 
 import javax.mail.MessagingException;
 
+import com.nasnav.dto.response.navbox.Order;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -547,7 +548,7 @@ public class OrderServiceTest {
 		HttpEntity<?> httpEntity = getHttpEntity("101112");
 		// no filters
 		ResponseEntity<String> response = template.exchange("/order/list?details_level=3"
-															, HttpMethod.GET
+															, GET
 															, httpEntity
 															, String.class);
 
@@ -560,7 +561,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------------
 		// by org_id
 		response = template.exchange("/order/list?org_id=99001&details_level=3"
-										, HttpMethod.GET
+										, GET
 										, httpEntity
 										, String.class);		
 		body = new JSONArray(response.getBody());
@@ -572,7 +573,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------------
 		// by shop_id
 		response = template.exchange("/order/list?shop_id=501&details_level=3"
-											, HttpMethod.GET
+											, GET
 											, httpEntity
 											, String.class);
 		body = new JSONArray(response.getBody());
@@ -584,7 +585,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------------
 		// by user_id
 		response = template.exchange("/order/list?user_id=88&details_level=3"
-												, HttpMethod.GET
+												, GET
 												, httpEntity
 												, String.class);
 		body = new JSONArray(response.getBody());
@@ -596,7 +597,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------------
 		// by status
 		response = template.exchange("/order/list?status=NEW&details_level=3"
-											, HttpMethod.GET
+											, GET
 											, httpEntity
 											, String.class);
 		body = new JSONArray(response.getBody());
@@ -608,7 +609,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------------
 		// by org_id and status
 		response = template.exchange("/order/list?org_id=99001&status=NEW&details_level=3"
-											, HttpMethod.GET
+											, GET
 											, httpEntity
 											, String.class);
 		body = new JSONArray(response.getBody());
@@ -620,7 +621,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------------
 		// by org_id and shop_id
 		response = template.exchange("/order/list?org_id=99001&shop_id=503&details_level=3"
-										, HttpMethod.GET
+										, GET
 										, httpEntity
 										, String.class);
 		body = new JSONArray(response.getBody());
@@ -629,7 +630,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------------
 		// by org_id and user_id
 		response = template.exchange("/order/list?org_id=99002&user_id=90&details_level=3"
-										, HttpMethod.GET
+										, GET
 										, httpEntity
 										, String.class);
 		body = new JSONArray(response.getBody());
@@ -641,7 +642,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------------
 		// by shop_id and status
 		response = template.exchange("/order/list?shop_id=501&status=NEW&details_level=3"
-										, HttpMethod.GET
+										, GET
 										, httpEntity
 										, String.class);
 		body = new JSONArray(response.getBody());
@@ -654,7 +655,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------------
 		// by user_id and status
 		response = template.exchange("/order/list?user_id=88&status=NEW&details_level=3"
-										, HttpMethod.GET
+										, GET
 										, httpEntity
 										, String.class);
 		body = new JSONArray(response.getBody());
@@ -667,7 +668,7 @@ public class OrderServiceTest {
 		//---------------------------------------------------------------------
 		// by user_id, shop_id and status
 		response = template.exchange("/order/list?user_id=88&shop_id=501&status=NEW&details_level=3"
-										, HttpMethod.GET
+										, GET
 										, httpEntity
 										, String.class);
 		body = new JSONArray(response.getBody());
@@ -685,7 +686,7 @@ public class OrderServiceTest {
 	@Test // Organization roles diffterent filters test
 	public void ordersListOrganizationDifferentFiltersTest() {
 		ResponseEntity<String> response = template.exchange("/order/list?details_level=3"
-																, HttpMethod.GET
+																, GET
 																, getHttpEntity("161718")
 																, String.class);
 		JSONArray body = new JSONArray(response.getBody());
@@ -696,7 +697,7 @@ public class OrderServiceTest {
 		//-------------------------------------------------------------------------
 		
 		response = template.exchange("/order/list?details_level=3"
-										, HttpMethod.GET
+										, GET
 										, getHttpEntity("131415")
 										, String.class);
 		body = new JSONArray(response.getBody());
@@ -708,7 +709,7 @@ public class OrderServiceTest {
 
 		//-------------------------------------------------------------------------
 		response = template.exchange("/order/list?details_level=3"
-										, HttpMethod.GET
+										, GET
 										, getHttpEntity("192021")
 										, String.class);
 		body = new JSONArray(response.getBody());
@@ -732,7 +733,7 @@ public class OrderServiceTest {
 	@Test
 	public void ordersListUnAuthTest() {
 		// invalid user-id test
-		ResponseEntity<String> response = template.exchange("/order/list?shop_id=501", HttpMethod.GET,
+		ResponseEntity<String> response = template.exchange("/order/list?shop_id=501", GET,
 				new HttpEntity<>(getHeaders("NO_EXISATING_TOKEN")), String.class); //no user with id = 99
 
 		assertEquals(HttpStatus.UNAUTHORIZED,response.getStatusCode());
@@ -746,7 +747,7 @@ public class OrderServiceTest {
 	@Test
 	public void ordersListInvalidfiltersTest() {
 		// by shop_id only
-		ResponseEntity<String> response = template.exchange("/order/list?shop_id=550", HttpMethod.GET,
+		ResponseEntity<String> response = template.exchange("/order/list?shop_id=550", GET,
 				new HttpEntity<>(getHeaders("101112")), String.class);
 		JSONArray body = new JSONArray(response.getBody());
 		long count = body.length();
@@ -754,7 +755,7 @@ public class OrderServiceTest {
 		assertEquals("No orders with shop_id = 550 ", 0, count);
 
 		// by user_id
-		response = template.exchange("/order/list?user_id=99", HttpMethod.GET, new HttpEntity<>(getHeaders("101112")), String.class);
+		response = template.exchange("/order/list?user_id=99", GET, new HttpEntity<>(getHeaders("101112")), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
@@ -762,7 +763,7 @@ public class OrderServiceTest {
 		assertEquals("no orders with user_id = 99",0,count);
 
 		// by org_id
-		response = template.exchange("/order/list?org_id=999999", HttpMethod.GET, new HttpEntity<>(getHeaders("101112")), String.class);
+		response = template.exchange("/order/list?org_id=999999", GET, new HttpEntity<>(getHeaders("101112")), String.class);
 		body = new JSONArray(response.getBody());
 		count = body.length();
 
@@ -770,7 +771,7 @@ public class OrderServiceTest {
 		assertEquals("no orders with org_id = 999999",0,count);
 
 		// by status
-		response = template.exchange("/order/list?status=invalid_status", HttpMethod.GET,
+		response = template.exchange("/order/list?status=invalid_status", GET,
 				new HttpEntity<>(getHeaders("101112")), String.class);
 
 		assertTrue(400 == response.getStatusCode().value());
@@ -791,7 +792,7 @@ public class OrderServiceTest {
 				template.exchange(
 						"/order/list?updated_before=2017-12-23:12:12:12"
 								+ "&updated_after=2017-12-01:12:12:12"
-						, HttpMethod.GET
+						, GET
 						, getHttpEntity("101112")
 						, String.class);
 		
@@ -833,7 +834,7 @@ public class OrderServiceTest {
 	public void getOrderInfoTest() throws JsonParseException, JsonMappingException, IOException {
 			
 		ResponseEntity<String> response = template.exchange("/order/info?order_id=330002&details_level=3"
-														, HttpMethod.GET
+														, GET
 														,new HttpEntity<>(getHeaders("101112"))
 														, String.class);
 		
@@ -853,7 +854,7 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getOrderListLevelTwoTest() throws  IOException {
 
-		ResponseEntity<String> response = template.exchange("/order/list?details_level=2&count=1", HttpMethod.GET,
+		ResponseEntity<String> response = template.exchange("/order/list?details_level=2&count=1", GET,
 				new HttpEntity<>(getHeaders("101112")), String.class);
 
 		DetailedOrderRepObject body = getOrderListDetailedObject(response);
@@ -871,17 +872,17 @@ public class OrderServiceTest {
 	public void getOrderListCountTest() throws  IOException {
 
 		@SuppressWarnings("rawtypes")
-		ResponseEntity<List> response = template.exchange("/order/list?count=1", HttpMethod.GET,
+		ResponseEntity<List> response = template.exchange("/order/list?count=1", GET,
 											new HttpEntity<>(getHeaders("101112")), List.class);
 
 		assertEquals(1, response.getBody().size());
 
-		response = template.exchange("/order/list?count=2", HttpMethod.GET,
+		response = template.exchange("/order/list?count=2", GET,
 				new HttpEntity<>(getHeaders("101112")), List.class);
 
 		assertEquals(2, response.getBody().size());
 
-		response = template.exchange("/order/list?count=4", HttpMethod.GET,
+		response = template.exchange("/order/list?count=4", GET,
 				new HttpEntity<>(getHeaders("101112")), List.class);
 
 		assertEquals(4, response.getBody().size());
@@ -893,7 +894,7 @@ public class OrderServiceTest {
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void getOrderListStartTest() throws  IOException { //count=1&
 
-		ResponseEntity<String> response = template.exchange("/order/list?start=1&count=1&details_level=3", HttpMethod.GET,
+		ResponseEntity<String> response = template.exchange("/order/list?start=1&count=1&details_level=3", GET,
 				new HttpEntity<>(getHeaders("101112")), String.class);
 
 		DetailedOrderRepObject body = getOrderListDetailedObject(response);
@@ -902,7 +903,7 @@ public class OrderServiceTest {
 		assertEquals(expectedBody, body);
 
 
-		response = template.exchange("/order/list?start=2&count=1&details_level=3", HttpMethod.GET,
+		response = template.exchange("/order/list?start=2&count=1&details_level=3", GET,
 				new HttpEntity<>(getHeaders("101112")), String.class);
 
 		body = getOrderListDetailedObject(response);
@@ -912,7 +913,7 @@ public class OrderServiceTest {
 		assertEquals(expectedBody, body);
 
 
-		response = template.exchange("/order/list?start=3&count=1&details_level=3", HttpMethod.GET,
+		response = template.exchange("/order/list?start=3&count=1&details_level=3", GET,
 				new HttpEntity<>(getHeaders("101112")), String.class);
 
 		body = getOrderListDetailedObject(response);
@@ -1012,7 +1013,7 @@ public class OrderServiceTest {
 	public void getCurrentOrderTest() throws JsonParseException, JsonMappingException, IOException {
 			
 		ResponseEntity<String> response = template.exchange("/order/current?details_level=3"
-														, HttpMethod.GET
+														, GET
 														, new HttpEntity<>(getHeaders("123"))
 														, String.class);
 		
@@ -1051,7 +1052,7 @@ public class OrderServiceTest {
 	public void getCurrentOrderNotFoundTest() throws JsonParseException, JsonMappingException, IOException {
 			
 		ResponseEntity<String> response = template.exchange("/order/current?details_level=3"
-														, HttpMethod.GET
+														, GET
 														, new HttpEntity<>(getHeaders("789"))
 														, String.class);
 		
@@ -1072,7 +1073,7 @@ public class OrderServiceTest {
 	public void getCurrentOrderUserHasNoOrdersTest() throws JsonParseException, JsonMappingException, IOException {
 			
 		ResponseEntity<String> response = template.exchange("/order/current?details_level=3"
-														, HttpMethod.GET
+														, GET
 														, new HttpEntity<>(getHeaders("011"))
 														, String.class);
 		
@@ -1684,35 +1685,7 @@ public class OrderServiceTest {
 	
 	
 	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_3.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void testOrderCheckoutService() throws BusinessException {
-		Long orderId = 330033L; 
-		OrdersEntity order = orderRepository.findById(orderId).get();
-		LocalDateTime initialUpdateTime = order.getUpdateDate();
-		StocksEntity stockBefore = stockRepository.findById(601L).get();
-		assertEquals(15, stockBefore.getQuantity().intValue());
-		
-		//-------------------------------------------
-		orderService.finalizeOrder(orderId);
-		//-------------------------------------------
-		
-		OrdersEntity saved = orderRepository.findById(orderId).get();
-		assertEquals(CLIENT_CONFIRMED.getValue(), saved.getStatus());
-		assertTrue(saved.getUpdateDate().isAfter(initialUpdateTime));
-		
-		StocksEntity stockAfter = stockRepository.findById(601L).get();
-		assertEquals(1, stockAfter.getQuantity().intValue());
-	}
-	
-	
-	
-	
-	
-	
+
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_4.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
@@ -1737,32 +1710,8 @@ public class OrderServiceTest {
 		
 		validateStocksQuantities(before);
 	}
-	
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_4.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void testOrderCheckoutForBundle() throws BusinessException {
-		Long orderId = 330033L; 
-		
-		BundleOrderTestStocks before = getStocksCountBefore();		
-		validateStockQuantityBefore(before);
-		
-		//-------------------------------------------
-		orderService.finalizeOrder(orderId);
-		//-------------------------------------------
-				
-		OrdersEntity saved = orderRepository.findById(orderId).get();
-		assertEquals(CLIENT_CONFIRMED.getValue(), saved.getStatus());
-		
-		validateStocksQuantities(before);
-	}
 
-	
-	
+
 
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql","/sql/Orders_Test_Data_Insert_3.sql"})
@@ -1897,10 +1846,22 @@ public class OrderServiceTest {
 		assertNotNull(subOrderAfter.getShipment().getTrackNumber());
 		assertEquals(REQUSTED.getValue(), subOrderAfter.getShipment().getStatus());
 	}
-	
-	
-	
-	
+
+
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getMetaOrderTest() {
+		HttpEntity<?> request = getHttpEntity("123");
+		ResponseEntity<Order> res =
+				template.exchange("/order/meta_order/info?id=310001", GET, request, Order.class);
+
+		//-------------------------------------------------
+		assertEquals(OK, res.getStatusCode());
+		Order order = res.getBody();
+		assertEquals(2,order.getSubOrders().size());
+	}
 	
 
 
@@ -2029,7 +1990,7 @@ public class OrderServiceTest {
 		//assert email methods called
 		Mockito
 		.verify(mailService)
-		.send(
+		.sendThymeleafTemplateMail(
 			  Mockito.eq("user1@nasnav.com")
 			, Mockito.eq(BILL_EMAIL_SUBJECT)
 			, Mockito.anyString()
@@ -2056,7 +2017,33 @@ public class OrderServiceTest {
 
 
 
+	@Test
+	public void getAnyOrderNasnavAdminTest() {
+		ResponseEntity<DetailedOrderRepObject> response = template.exchange("/order/info?order_id=330048", GET,
+																getHttpEntity("101112"), DetailedOrderRepObject.class);
+		assertEquals(200, response.getStatusCodeValue());
+		assertTrue(response.getBody()!=null);
 
+		response = template.exchange("/order/info?order_id=330038", GET,
+				getHttpEntity("101112"), DetailedOrderRepObject.class);
+		assertEquals(200, response.getStatusCodeValue());
+		assertTrue(response.getBody()!=null);
+	}
+
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getAnyMetaOrderNasnavAdminTest() {
+		HttpEntity<?> request = getHttpEntity("101112");
+		ResponseEntity<Order> res =
+				template.exchange("/order/meta_order/info?id=310001", GET, request, Order.class);
+
+		//-------------------------------------------------
+		assertEquals(OK, res.getStatusCode());
+		Order order = res.getBody();
+		assertTrue(res.getBody()!=null);
+	}
 
 
 	private Item getStockItemQty(Long stockId) {

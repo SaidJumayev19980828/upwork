@@ -139,6 +139,10 @@ public class OrdersEntity implements BaseEntity{
     @ToString.Exclude
 	private ShipmentEntity shipment;
 
+	
+	private BigDecimal total;
+	
+	
 	@Override
 	public BaseRepresentationObject getRepresentation() {
 		OrderRepresentationObject orderRepresentationObject = new OrderRepresentationObject();

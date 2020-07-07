@@ -1,15 +1,19 @@
 package com.nasnav.service;
 
+import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.shipping.ShippingServiceFactory.getServiceInfo;
 import static com.nasnav.shipping.model.ParameterType.STRING;
+import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.*;
@@ -55,6 +59,8 @@ import com.nasnav.persistence.CountriesEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.OrganizationShippingServiceEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.ShipmentEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
@@ -95,7 +101,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	@Autowired
 	private ShipmentRepository shipmentRepo;
-	
+
 	@Override
 	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
 		List<ShippingDetails> shippingDetails = createShippingDetailsFromCart(customerAddrId);
@@ -523,7 +529,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		ShippingDetails shippingData = new ShippingDetails();
 		ShippingAddress customerAddr = createShippingAddress(subOrder.getAddressEntity());
 		ShippingAddress shopAddr = createShippingAddress(subOrder.getShopsEntity().getAddressesEntity());
-		ShipmentReceiver receiver = createShipmentReceiver(subOrder.getUserId());
+		ShipmentReceiver receiver = createShipmentReceiver(subOrder);
 		List<ShipmentItems> items = createShipmentItemsFromOrder(subOrder);
 		
 		shippingData.setAdditionalData(additionalParameters);
@@ -560,26 +566,133 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
     private List<ShipmentItems> createShipmentItemsFromOrder(OrdersEntity subOrder) {
 		return subOrder
-		.getBasketsEntity()
-		.stream()
-		.map(BasketsEntity::getStocksEntity)
-		.map(StocksEntity::getId)
-		.map(ShipmentItems::new)
-		.collect(toList());
+				.getBasketsEntity()
+				.stream()
+				.map(this::createShipmentItem)
+				.collect(toList());
 	}
-	
-	
-	
-	private ShipmentReceiver createShipmentReceiver(Long userId) {
+
+
+
+
+	private ShipmentItems createShipmentItem(BasketsEntity orderItem) {
+		ShipmentItems shpItem = new ShipmentItems();
+
+		Long stockId = getStockId(orderItem);
+		String barcode = getBarcode(orderItem);
+		String name = getProductName(orderItem);
+		Integer quantity = getQuantity(orderItem);
+		String specs = getVariantSpecs(orderItem);
+
+		shpItem.setStockId(stockId);
+		shpItem.setBarcode(barcode);
+		shpItem.setName(name);
+		shpItem.setQuantity(quantity);
+		shpItem.setSpecs(specs);
+
+		return shpItem;
+	}
+
+
+
+
+
+
+	private String getVariantSpecs(BasketsEntity orderItem) {
+		return ofNullable(orderItem)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getProductVariantsEntity)
+				.map(ProductVariantsEntity::getFeatureSpec)
+				.map(this::parseFeatureSpec)
+				.orElse(null);
+	}
+
+
+
+
+
+	private String parseFeatureSpec(String featureSpecJson) {
+		JSONObject json = new JSONObject(featureSpecJson);
+		return json
+				.toMap()
+				.values()
+				.stream()
+				.map(Object::toString)
+				.collect(
+						collectingAndThen(
+								joining("/")
+								, str -> format("{%s}", str)));
+	}
+
+
+
+
+
+	private Integer getQuantity(BasketsEntity orderItem) {
+		return ofNullable(orderItem)
+				.map(BasketsEntity::getQuantity)
+				.map(BigDecimal::intValue)
+				.orElse(null);
+	}
+
+
+
+	private String getProductName(BasketsEntity orderItem) {
+		return ofNullable(orderItem)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getProductVariantsEntity)
+				.map(ProductVariantsEntity::getProductEntity)
+				.map(ProductEntity::getName)
+				.orElse(null);
+	}
+
+
+
+	private String getBarcode(BasketsEntity orderItem) {
+		return ofNullable(orderItem)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getProductVariantsEntity)
+				.map(ProductVariantsEntity::getBarcode)
+				.orElse(null);
+	}
+
+
+
+	private Long getStockId(BasketsEntity orderItem) {
+		return ofNullable(orderItem)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getId)
+				.orElse(null);
+	}
+
+
+
+	private ShipmentReceiver createShipmentReceiver(OrdersEntity order) {
+		Long userId = order.getUserId();
+		AddressesEntity addr = order.getAddressEntity();
 		UserEntity customer = 
 				userRepo
 				.findById(userId)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$USR$0001, userId));
+		String name = customer.getName();
+		String phone = getPhone(order, addr, customer);
+
 		ShipmentReceiver receiver = new ShipmentReceiver();
 		receiver.setEmail(customer.getEmail());
-		receiver.setFirstName(customer.getName());
-		receiver.setPhone(customer.getPhoneNumber());
+		receiver.setFirstName(name);
+		receiver.setLastName(" ");
+		receiver.setPhone(phone);
 		return receiver;
+	}
+
+
+
+	private String getPhone(OrdersEntity order, AddressesEntity addr, UserEntity customer) {
+		return 	firstExistingValueOf(
+					ofNullable(addr.getPhoneNumber()).orElse(null)
+					, customer.getMobile()
+					, customer.getPhoneNumber())
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0003, order.getId()));
 	}
 
 

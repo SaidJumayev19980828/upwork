@@ -22,6 +22,8 @@ public class ProductFeatureUpdateDTO extends BaseJsonDTO{
 	
 	@JsonProperty("p_name")
 	private String pname;
+
+	private Integer level;
 	
 	
 	@Override
@@ -66,9 +68,12 @@ public class ProductFeatureUpdateDTO extends BaseJsonDTO{
 		setPropertyAsUpdated("pname");
 		this.pname = pname;
 	}
-	
-	
-	
+
+
+	public void setLevel(Integer level) {
+		setPropertyAsUpdated("level");
+		this.level = level;
+	}
 	
 
 }

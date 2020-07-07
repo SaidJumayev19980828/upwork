@@ -14,6 +14,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.nasnav.dao.MetaOrderRepository;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -69,6 +70,7 @@ public class MastercardSession {
         this.orderService = orderService;
         this.paymentsRepository = paymentsRepository;
         this.ordersRepository = ordersRepository;
+
         classLogger = LogManager.getLogger("Payment:" + merchantAccount.getAccountId());
     }
 
@@ -195,14 +197,14 @@ public class MastercardSession {
             payment.setExecuted(new Date());
             payment.setStatus(PaymentStatus.PAID);
             paymentsRepository.saveAndFlush(payment);
-			orderService.finalizeOrder(Long.valueOf(orderUid));
+            orderService.finalizeOrder(payment.getMetaOrderId());
             return;
         }
         throw new BusinessException("Provided payment code does not match successIndicator", "INTVALID_CODE", CONFLICT);
     }
     
 
-    public boolean initialize(OrdersRepository ordersRepository, Long metaOrderId) throws BusinessException {
+    public boolean initialize(OrdersRepository ordersRepository, Long metaOrderId, OrderService orderService) throws BusinessException {
         ArrayList<OrdersEntity> orders = orderService.getOrdersForMetaOrder(metaOrderId);
 
     	if(Objects.isNull(orders)) {
@@ -211,7 +213,11 @@ public class MastercardSession {
         this.includedOrders = orders;
         
         this.orderUid = Tools.getOrderUid(metaOrderId, classLogger);
-        this.orderValue = Tools.getTotalOrderValue(orders, orderService, classLogger);
+        this.orderValue = orderService.getMetaOrderTotalValue(metaOrderId);
+        if (this.orderValue == null) {
+            throw new BusinessException("Order ID is invalid", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
+        }
+
         long userId = orders.get(0).getUserId();
 
         JSONObject order = new JSONObject();
@@ -299,10 +305,5 @@ public class MastercardSession {
     public OrderService.OrderValue getOrderValue() {
         return orderValue;
     }
-
-
-
-
-
 
 }

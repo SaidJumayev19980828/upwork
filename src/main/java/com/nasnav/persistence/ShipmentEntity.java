@@ -13,6 +13,9 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.dto.response.navbox.Shipment;
+import com.nasnav.shipping.model.ShippingEta;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -21,7 +24,7 @@ import lombok.Data;
 @Entity
 @Table(name="shipment")
 @Data
-public class ShipmentEntity {
+public class ShipmentEntity implements BaseEntity {
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -59,4 +62,16 @@ public class ShipmentEntity {
 	private LocalDate from;
 	@Column(name="delivery_until")
 	private LocalDate to;
+
+	@Override
+	public BaseRepresentationObject getRepresentation() {
+		Shipment shipment = new Shipment();
+		shipment.setServiceId(getShippingServiceId());
+		shipment.setServiceName(getShippingServiceId());
+		shipment.setExternalId(getExternalId());
+		shipment.setShippingFee(getShippingFee());
+		shipment.setShippingEta(new ShippingEta(getFrom(), getTo()));
+		shipment.setTrackingNumber(getTrackNumber());
+		return shipment;
+	}
 }

@@ -9,6 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ShipmentItems {
 	private Long stockId;
+	private String barcode;
+	private Integer quantity;
+	private String name;
+	private String specs;
 	private String notes;
 	private BigDecimal weight;
 	

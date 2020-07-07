@@ -112,8 +112,8 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @GetMapping(value = "brands", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<List<?>> getOrganizationBrands(@RequestParam(value = "org_id") Long orgId) {
-        return new ResponseEntity<List<?>>(orgService.getOrganizationBrands(orgId), OK);
+    public List<Organization_BrandRepresentationObject> getOrganizationBrands(@RequestParam(value = "org_id") Long orgId) {
+        return orgService.getOrganizationBrands(orgId);
     }
 
 
@@ -155,7 +155,7 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @GetMapping(value = "products_features", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public List<ProductFeatureDTO> getOrganizationFeaturesData(@RequestParam("organization_id") Long orgId) throws Exception {
+    public List<ProductFeatureDTO> getOrganizationFeaturesData(@RequestParam("organization_id") Long orgId) {
         return orgService.getProductFeatures(orgId);
     }
 
@@ -173,8 +173,8 @@ public class OrganizationController {
     @PostMapping(value = "products_feature"
             , produces = MediaType.APPLICATION_JSON_UTF8_VALUE
             , consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ProductFeatureUpdateResponse updateProductFeature(@RequestHeader(name = "User-Token", required = false) String token
-    		, @RequestBody ProductFeatureUpdateDTO featureDto) throws Exception {
+    public ProductFeatureUpdateResponse updateProductFeature(@RequestHeader(name = "User-Token", required = false) String token,
+    		                                                 @RequestBody ProductFeatureUpdateDTO featureDto) throws Exception {
         return orgService.updateProductFeature(featureDto);
     }
 
@@ -247,10 +247,9 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @DeleteMapping(value = "tag", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<TagResponse> deleteOrganizationTag(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                                @RequestParam (value = "tag_id")Long tagId) throws BusinessException {
-        TagResponse tag = categoryService.deleteOrgTag(tagId);
-        return new ResponseEntity<TagResponse>(tag, HttpStatus.OK);
+    public TagResponse deleteOrganizationTag(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                             @RequestParam (value = "tag_id")Long tagId) throws BusinessException {
+        return categoryService.deleteOrgTag(tagId);
     }
 
     
@@ -266,7 +265,7 @@ public class OrganizationController {
     @PostMapping(value = "tag/tree", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(OK)
     public void createTagTree(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                            @RequestBody TagsTreeCreationDTO tree) throws BusinessException {
+                              @RequestBody TagsTreeCreationDTO tree) throws BusinessException {
         categoryService.createTagTree(tree);
     }
 

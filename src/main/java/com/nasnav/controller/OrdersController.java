@@ -2,6 +2,7 @@ package com.nasnav.controller;
 
 import java.util.List;
 
+import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.request.OrderSearchParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -84,10 +85,17 @@ public class OrdersController {
 		
     	return this.orderService.getOrderInfo(orderId, detailsLevel);
     }
-	
-	
-	
-	
+
+
+	@ApiOperation(value = "Get information about order", nickname = "orderInfo", code = 201)
+	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
+	@GetMapping(value = "/meta_order/info", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
+	public Order getMetaOrderInfo(@RequestHeader(name = "User-Token", required = false) String userToken,
+								  @RequestParam(name = "id") Long orderId)  {
+
+		return this.orderService.getMetaOrder(orderId);
+	}
 	
 
 	@ApiOperation(value = "Get list of orders", nickname = "orderList", code = 200)
@@ -155,8 +163,7 @@ public class OrdersController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @PostMapping(value = "confirm",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public OrderConfrimResponseDTO confrimOrder(
             @RequestHeader(name = "User-Token", required = false) String userToken,
             @RequestParam("order_id") Long orderId)

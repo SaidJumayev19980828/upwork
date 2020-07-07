@@ -155,7 +155,7 @@ public class PaymentControllerRave {
         payment.setStatus(PaymentStatus.PAID);
         payment.setUid("CFM-" + payment.getUid());
         paymentsRepository.saveAndFlush(payment);
-        orderService.finalizeOrder(Long.valueOf(orderUid));
+        orderService.finalizeOrder(payment.getMetaOrderId());
 
         return  new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
     }
@@ -187,9 +187,13 @@ public class PaymentControllerRave {
             reveLogger.error("No sub-orders matching meta order ({})", metaOrderId);
             throw new BusinessException("No valid order IDs recognized", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
         }
-        OrderService.OrderValue orderValue = Tools.getTotalOrderValue(orders, this.orderService, reveLogger);
+        OrderService.OrderValue orderValue = orderService.getMetaOrderTotalValue(metaOrderId);
+        if (orderValue == null) {
+            throw new BusinessException("Order ID is invalid", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
+        }
 
-// TODO
+
+        // TODO: Hardcoded currency
         orderValue.currency = TransactionCurrency.NGN;
 
         if (orderValue.currency != TransactionCurrency.NGN) {
@@ -226,8 +230,6 @@ public class PaymentControllerRave {
         ordersRepository.flush();
 
         return new ResponseEntity<>(data.toString(), HttpStatus.OK);
-
-//        throw new BusinessException("Unable to initialize RAVE payment session",null,HttpStatus.BAD_GATEWAY);
     }
 
  }

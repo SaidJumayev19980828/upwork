@@ -41,12 +41,17 @@ public class NasNavMailSender extends JavaMailSenderImpl {
         if (config.mailUsername != null && !config.mailUsername.equals("")) {
             Properties props = new Properties();
             props.put("mail.transport.protocol", "smtp");
-            props.put("mail.smtp.auth", true);
+            props.put("mail.smtp.auth", "true");
             props.put("mail.smtp.starttls.enable", config.mailUseSSL);
-            props.put("mail.smtp.ssl.trust", true);
+//            props.put("mail.smtp.ssl.trust", "true");
+//            props.put("mail.debug", "true");
+            setJavaMailProperties(props);
+            
             setUsername(config.mailUsername);
             setPassword(config.mailPassword);
         }
+        
+        
         this.senderAddress = config.mailSenderAddress;
     }
 }
