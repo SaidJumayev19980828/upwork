@@ -89,10 +89,12 @@ public class BostaLevisShippingService implements ShippingService{
 	public static final String AUTH_TOKEN_PARAM = "AUTH_TOKEN";
 	public static final String BUSINESS_ID_PARAM = "BUSINESS_ID";
 	public static final String SERVER_URL = "SERVER_URL";
+	public static final String WEBHOOK_URL = "WEBHOOK_URL";
 	private static List<Parameter> SERVICE_PARAM_DEFINITION = 
 			asList(new Parameter(AUTH_TOKEN_PARAM, STRING)
 					, new Parameter(BUSINESS_ID_PARAM, STRING)
-					, new Parameter(SERVER_URL, STRING));
+					, new Parameter(SERVER_URL, STRING)
+					, new Parameter(WEBHOOK_URL, STRING));
 	
 	//TODO add the rest of cities mapping
 	//TODO cities in nasnav database must have predefined ids
@@ -253,7 +255,7 @@ public class BostaLevisShippingService implements ShippingService{
 		Receiver receiver = createReceiver(shipment.getReceiver());
 		PackageSpec specs = createPackageSpecs(shipment);
 		String notes = createShippingNotes(shipment);
-		String webHook = shipment.getCallBackUrl();
+		String webHook = paramMap.get(WEBHOOK_URL);
 
 		Delivery request = new Delivery();
 		request.setBusinessReference(businessRef);
