@@ -153,7 +153,7 @@ public class ShippingServiceManagementTest {
 	
 	
 	@Test
-	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_2.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void changeShippingStatusTest() {
 		Long shipmentId = shipmentRepo.findBySubOrder_Id(330031L).getId();
