@@ -91,13 +91,13 @@ public class BostaLevisShippingService implements ShippingService{
 
 	private static final String WEB_HOOK_URL = null;
 
-	private static final List<Integer> enRouteStateMapping = Arrays.asList(new Integer[]{10, 15, 16, 35, 36});
+	private static final List<Integer> enRouteStateMapping = asList(10, 15, 16, 35, 36);
 
-	private static final List<Integer> pickedUpStateMapping = Arrays.asList(new Integer[]{20, 21, 30});
+	private static final List<Integer> pickedUpStateMapping = asList(20, 21, 30);
 
-	private static final List<Integer> deliveredStateMapping = Arrays.asList(new Integer[]{22, 40, 25, 26, 23, 45});
+	private static final List<Integer> deliveredStateMapping = asList(22, 40, 25, 26, 23, 45);
 
-	private static final List<Integer> failedStateMapping = Arrays.asList(new Integer[]{55, 80});
+	private static final List<Integer> failedStateMapping = asList(55, 80);
 
 	@Autowired
 	private ObjectMapper jsonMapper;
@@ -401,18 +401,23 @@ public class BostaLevisShippingService implements ShippingService{
 	@Override
 	public ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params) throws IOException {
 		BostaCallbackDTO body = jsonMapper.readValue(params, BostaCallbackDTO.class);
+		Integer shippingStatus = getShippingStatus(body.getState());
 
-		if (enRouteStateMapping.contains(body.getState())) {
-			body.setState(ShippingStatus.EN_ROUTE.getValue());
-		} else if (pickedUpStateMapping.contains(body.getState())) {
-		 	body.setState(ShippingStatus.PICKED_UP.getValue());
-		} else if (deliveredStateMapping.contains(body.getState())) {
-			body.setState(ShippingStatus.DELIVERED.getValue());
-		} else if (failedStateMapping.contains(body.getState())) {
-			body.setState(ShippingStatus.FAILED.getValue());
-		}
-		return new ShipmentStatusData(serviceId, orgId, body.getId(), body.getState(), body.getExceptionReason());
-
+		return new ShipmentStatusData(serviceId, orgId, body.getId(), shippingStatus, body.getExceptionReason());
 	}
 
+
+	private Integer getShippingStatus(Integer state) {
+		if (enRouteStateMapping.contains(state)) {
+			return ShippingStatus.EN_ROUTE.getValue();
+		} else if (pickedUpStateMapping.contains(state)) {
+			return ShippingStatus.PICKED_UP.getValue();
+		} else if (deliveredStateMapping.contains(state)) {
+			return ShippingStatus.DELIVERED.getValue();
+		} else if (failedStateMapping.contains(state)) {
+			return ShippingStatus.FAILED.getValue();
+		} else {
+			return state;
+		}
+	}
 }
