@@ -56,6 +56,7 @@ public enum ErrorCodes {
 	,ADDR$ADDR$0004("Must provide customer address!")
 
 	,G$USR$0001("User is not an employee!")
+	,G$JSON$0001("Failed to read json into an object!")
 
 	,O$CRT$0001("Cannot create a cart for an employee user!")
 	,O$CRT$0002("Quantity must be greater than equal zero!")

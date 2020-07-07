@@ -1,9 +1,14 @@
 package com.nasnav.shipping;
 
-import java.io.IOException;
 import java.util.List;
 
-import com.nasnav.shipping.model.*;
+import com.nasnav.shipping.model.ServiceParameter;
+import com.nasnav.shipping.model.ShipmentStatusData;
+import com.nasnav.shipping.model.ShipmentTracker;
+import com.nasnav.shipping.model.ShipmentValidation;
+import com.nasnav.shipping.model.ShippingDetails;
+import com.nasnav.shipping.model.ShippingOffer;
+import com.nasnav.shipping.model.ShippingServiceInfo;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -35,5 +40,5 @@ public interface ShippingService {
 
 	Mono<ShipmentValidation> validateShipment(List<ShippingDetails> items);
 
-	ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params) throws IOException;
+	ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params);
 }

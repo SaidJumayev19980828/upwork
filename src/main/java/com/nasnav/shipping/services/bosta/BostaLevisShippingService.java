@@ -2,6 +2,7 @@ package com.nasnav.shipping.services.bosta;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.StringUtils.parseLongWithDefault;
+import static com.nasnav.exceptions.ErrorCodes.G$JSON$0001;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0001;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0002;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0003;
@@ -20,6 +21,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.leftPad;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static reactor.core.publisher.Mono.error;
 import static reactor.core.publisher.Mono.just;
 
@@ -480,8 +482,14 @@ public class BostaLevisShippingService implements ShippingService{
 	}
 
 	@Override
-	public ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params) throws IOException {
-		BostaCallbackDTO body = jsonMapper.readValue(params, BostaCallbackDTO.class);
+	public ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params){
+		BostaCallbackDTO body;
+		try {
+			body = jsonMapper.readValue(params, BostaCallbackDTO.class);
+		} catch (IOException e) {
+			logger.error(e, e);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$JSON$0001);
+		}
 		Integer shippingStatus = getShippingStatus(body.getState());
 
 		return new ShipmentStatusData(serviceId, orgId, body.getId(), shippingStatus, body.getExceptionReason());

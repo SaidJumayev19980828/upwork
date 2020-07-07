@@ -1,5 +1,6 @@
 package com.nasnav.shipping.services;
 
+import static com.nasnav.exceptions.ErrorCodes.G$JSON$0001;
 import static com.nasnav.shipping.model.ParameterType.LONG;
 import static com.nasnav.shipping.model.ParameterType.STRING;
 import static com.nasnav.shipping.model.ParameterType.STRING_ARRAY;
@@ -10,24 +11,38 @@ import static java.util.Optional.ofNullable;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dto.DummyCallbackDTO;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.shipping.ShippingService;
-import com.nasnav.shipping.model.*;
+import com.nasnav.shipping.model.Parameter;
+import com.nasnav.shipping.model.ServiceParameter;
+import com.nasnav.shipping.model.Shipment;
+import com.nasnav.shipping.model.ShipmentItems;
+import com.nasnav.shipping.model.ShipmentStatusData;
+import com.nasnav.shipping.model.ShipmentTracker;
+import com.nasnav.shipping.model.ShipmentValidation;
+import com.nasnav.shipping.model.ShippingDetails;
+import com.nasnav.shipping.model.ShippingEta;
+import com.nasnav.shipping.model.ShippingOffer;
+import com.nasnav.shipping.model.ShippingServiceInfo;
 
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public class DummyShippingService implements ShippingService {
 	
-	
+	private final Logger  logger = LogManager.getLogger(getClass());
 	public static final String ID = "TEST";
 	private static final String NAME = "Dummy shipping service";
 	private static final String BILL_FILE= "NOT EMPTY";
@@ -80,9 +95,15 @@ public class DummyShippingService implements ShippingService {
 
 
 	@Override
-	public ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params) throws IOException {
+	public ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params){
 		ObjectMapper mapper = new ObjectMapper();
-		DummyCallbackDTO body = mapper.readValue(params, DummyCallbackDTO.class);
+		DummyCallbackDTO body;
+		try {
+			body = mapper.readValue(params, DummyCallbackDTO.class);
+		} catch (IOException e) {
+			logger.error(e, e);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$JSON$0001);
+		}
 		return new ShipmentStatusData(serviceId, orgId, body.getId(), body.getStatus(), body.getMessage());
 	}
 
