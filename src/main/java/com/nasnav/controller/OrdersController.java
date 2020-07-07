@@ -111,9 +111,17 @@ public class OrdersController {
 		
 		return  this.orderService.getOrdersList(params);
 	}
-	
-	
-	
+
+
+
+	@ApiOperation(value = "Get list of user's orders", nickname = "metaOrderList", code = 201)
+	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
+	@GetMapping(value = "/meta_order/list/user", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
+	public List<Order> getMetaOrderList(@RequestHeader(name = "User-Token", required = false) String userToken) {
+		return orderService.getMetaOrderList();
+	}
+
 	
 	
 	@ApiOperation(value = "Get the current new order", nickname = "currentOrder", code = 201)

@@ -45,25 +45,7 @@ import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0004;
-import static com.nasnav.exceptions.ErrorCodes.G$USR$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0004;
-import static com.nasnav.exceptions.ErrorCodes.O$CHK$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CHK$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0004;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0005;
-import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
-import static com.nasnav.exceptions.ErrorCodes.S$0005;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDateTime.now;
@@ -2052,6 +2034,18 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+	@Override
+	public List<Order> getMetaOrderList() {
+		BaseUserEntity user = securityService.getCurrentUser();
+		if (user instanceof UserEntity) {
+			return metaOrderRepo.findByUser_IdAndOrganization_Id(user.getId(), user.getOrganizationId())
+								.stream()
+								.map(this::getOrderResponse)
+								.collect(toList());
+		} else {
+			throw new RuntimeBusinessException(FORBIDDEN, E$USR$0001);
+		}
+	}
 
 
 	private TransactionCurrency getOrderCurrency(MetaOrderEntity order) {

@@ -57,6 +57,8 @@ public enum ErrorCodes {
 
 	,G$USR$0001("User is not an employee!")
 
+	,E$USR$0001("User is an employee!")
+
 	,O$CRT$0001("Cannot create a cart for an employee user!")
 	,O$CRT$0002("Quantity must be greater than equal zero!")
 	,O$CRT$0003("Quantity is greater than available stock!")

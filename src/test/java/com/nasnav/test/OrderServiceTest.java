@@ -144,7 +144,7 @@ public class OrderServiceTest {
 	
 	@Autowired
 	private BasketRepository basketRepository;
-	
+
 	
 	@Autowired
 	private JdbcTemplate jdbc;
@@ -162,7 +162,7 @@ public class OrderServiceTest {
 	
 	@MockBean
 	private MailService mailService;
-	
+
 	@Test
 	public void unregisteredUser() {
 		StocksEntity stock = createStock();
@@ -2053,6 +2053,34 @@ public class OrderServiceTest {
 				.get();
 	}
 
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getMetaOrderListTest() throws IOException {
+		HttpEntity<?> request = getHttpEntity("123");
+		ResponseEntity<String> res =
+				template.exchange("/order/meta_order/list/user", GET, request, String.class);
+
+		//-------------------------------------------------
+		assertEquals(OK, res.getStatusCode());
+		ObjectMapper mapper = new ObjectMapper();
+		List<Order> orders = mapper.readValue(res.getBody(), List.class);
+		assertEquals(1,orders.size());
+	}
+
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getMetaOrderListEmployeeTest() throws IOException {
+		HttpEntity<?> request = getHttpEntity("131415");
+		ResponseEntity<String> res =
+				template.exchange("/order/meta_order/list/user", GET, request, String.class);
+
+		//-------------------------------------------------
+		assertEquals(FORBIDDEN, res.getStatusCode());
+	}
 
 }
 
