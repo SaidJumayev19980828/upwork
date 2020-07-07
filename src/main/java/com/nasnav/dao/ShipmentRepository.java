@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import com.nasnav.persistence.ShipmentEntity;
+import com.nasnav.shipping.model.Shipment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,4 +16,6 @@ public interface ShipmentRepository extends JpaRepository<ShipmentEntity, Long> 
     ShipmentEntity findByShippingServiceIdAndExternalIdAndOrganizationId(@Param("serviceId") String serviceId,
                                                                          @Param("externalId") String externalId,
                                                                          @Param("orgId") Long orgId);
+
+    ShipmentEntity findBySubOrder_Id(Long subOrderId);
 }

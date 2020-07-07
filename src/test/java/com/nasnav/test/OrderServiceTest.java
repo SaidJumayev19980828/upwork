@@ -28,6 +28,8 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -40,6 +42,7 @@ import java.util.Set;
 
 import javax.mail.MessagingException;
 
+import com.nasnav.dao.*;
 import com.nasnav.dto.response.navbox.Order;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -69,12 +72,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nasnav.NavBox;
 import com.nasnav.controller.OrdersController;
 import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.PaymentsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.BasketItemDTO;
 import com.nasnav.dto.DetailedOrderRepObject;
@@ -119,46 +116,35 @@ public class OrderServiceTest {
 
 	@Autowired
 	private UserRepository userRepository;
-	
-	
 	@Autowired
 	private EmployeeUserRepository empRepository;
-
 	@Autowired
 	private OrdersRepository orderRepository;
-	
-	
 	@Autowired
 	private StockRepository stockRepository;
-
+	@Autowired
+	private ShipmentRepository shipmentRepo;
+	@Autowired
+	private PaymentsRepository paymentRepository;
+	@Autowired
+	private CartItemRepository cartRepo;
+	@Autowired
+	private BasketRepository basketRepository;
 	@Autowired
 	UserService userService;
 
 	@Mock
 	private OrdersController ordersController;
 
-
 	@Autowired
 	private TestHelper helper;
-	
-	
-	@Autowired
-	private BasketRepository basketRepository;
-	
-	
+
 	@Autowired
 	private JdbcTemplate jdbc;
 	
-	
 	@Autowired
 	private OrderService orderService;
-	
-	
-	@Autowired
-	private PaymentsRepository paymentRepository;
-	
-	@Autowired
-	private CartItemRepository cartRepo;
+
 	
 	@MockBean
 	private MailService mailService;
@@ -2043,6 +2029,21 @@ public class OrderServiceTest {
 		assertEquals(OK, res.getStatusCode());
 		Order order = res.getBody();
 		assertTrue(res.getBody()!=null);
+	}
+
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void changeShippingStatusTest() {
+		Long shipmentId = shipmentRepo.findBySubOrder_Id(330031L).getId();
+		JSONObject body = json().put("status", 10)
+								.put("id", "330031")
+								.put("message", "");
+		HttpEntity req = getHttpEntity(body.toString(), "none");
+		ResponseEntity<String> res =  template.postForEntity("/callbacks/shipping/service/TEST/99001", req, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+		assertEquals(10, shipmentRepo.findById(shipmentId).get().getStatus().intValue());
 	}
 
 

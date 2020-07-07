@@ -128,8 +128,8 @@ insert into public.orders(id,user_id,created_at, updated_at, organization_id,sta
 values(330032, 88, now(), now(), 99002, 2, 502, 310001, 12300001);
 
 INSERT INTO public.shipment
-(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
-VALUES(330031, 'TEST', '{"Shop Id":501}' , now(), now(), 0, 20.0);
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, external_id, shipping_fee)
+VALUES(330031, 'TEST', '{"Shop Id":501}' , now(), now(), 0, '330031', 20.0);
 INSERT INTO public.shipment
 (sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
 VALUES(330032, 'TEST', '{"Shop Id":502}' , now(), now(), 0, 12.0);

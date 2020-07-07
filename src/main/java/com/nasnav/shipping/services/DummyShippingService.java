@@ -15,10 +15,13 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.dto.DummyCallbackDTO;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.model.*;
 
 import lombok.Getter;
+import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -75,9 +78,12 @@ public class DummyShippingService implements ShippingService {
 		return Mono.empty();
 	}
 
+
 	@Override
 	public ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params) throws IOException {
-		return new ShipmentStatusData();
+		ObjectMapper mapper = new ObjectMapper();
+		DummyCallbackDTO body = mapper.readValue(params, DummyCallbackDTO.class);
+		return new ShipmentStatusData(serviceId, orgId, body.getId(), body.getStatus(), body.getMessage());
 	}
 
 

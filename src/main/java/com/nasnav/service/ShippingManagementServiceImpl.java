@@ -113,7 +113,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	@Override
 	public void validateShippingAdditionalData(CartCheckoutDTO dto) {
-		ShippingService shippingService = getShippingService(dto.getServiceId());
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ShippingService shippingService = getShippingService(dto.getServiceId(), orgId);
 
 		List<ShippingDetails> shippingDetails = createShippingDetailsFromCart(dto.getAddressId());
 		for(ShippingDetails shippingDetail : shippingDetails) {
@@ -127,9 +128,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	
-	private ShippingService getShippingService(String serviceId) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-
+	private ShippingService getShippingService(String serviceId, Long orgId) {
 		Optional<ShippingService> shippingService =
 					orgShippingServiceRepo
 					.getByOrganization_IdAndServiceId(orgId, serviceId)
@@ -544,10 +543,10 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
     @Override
     public void updateShipmentStatus(String serviceId, Long orgId, String params) throws IOException {
-		ShippingService shippingService = getShippingService(serviceId);
+		ShippingService shippingService = getShippingService(serviceId, orgId);
 		ShipmentStatusData shippingStatusData = shippingService.createShipmentStatusData(serviceId, orgId, params);
 
-		if (shippingStatusData != null) {
+		if (shippingStatusData != null && shippingStatusData.getState() != null) {
 			updateShipmentStatus(shippingStatusData);
 		} else {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$PARS$0001);
