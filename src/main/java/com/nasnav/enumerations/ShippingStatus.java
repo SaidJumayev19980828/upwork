@@ -1,16 +1,36 @@
 package com.nasnav.enumerations;
 
+import com.nasnav.exceptions.RuntimeBusinessException;
 import lombok.Getter;
+
+import java.util.Arrays;
+
+import static com.nasnav.exceptions.ErrorCodes.ENUM$0001;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 public enum ShippingStatus {
 
 
-    DRAFT(0), REQUSTED(1);
+    DRAFT(0), REQUSTED(1),
+
+    EN_ROUTE(10),
+    PICKED_UP(20),
+    DELIVERED(45),
+    CANCELED(50),
+    FAILED(55);
 
     @Getter
     private Integer value;
 
     ShippingStatus(Integer value) {
         this.value = value;
+    }
+
+    public static String getShippingStatusName(int value) {
+        return Arrays.stream(ShippingStatus.values())
+                     .filter(s -> s.value == value)
+                     .findFirst()
+                     .map(s -> s.name())
+                     .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ENUM$0001));
     }
 }

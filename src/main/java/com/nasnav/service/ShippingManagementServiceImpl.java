@@ -7,10 +7,12 @@ import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
 import static com.nasnav.exceptions.ErrorCodes.ORG$SHIP$0001;
 import static com.nasnav.exceptions.ErrorCodes.S$0004;
 import static com.nasnav.exceptions.ErrorCodes.SHP$OFFR$0001;
+import static com.nasnav.exceptions.ErrorCodes.SHP$PARS$0001;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0003;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0006;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0007;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0008;
+import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0009;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SVC$0001;
 import static com.nasnav.exceptions.ErrorCodes.SHP$USR$0001;
 import static com.nasnav.shipping.ShippingServiceFactory.getServiceInfo;
@@ -29,6 +31,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -54,6 +57,7 @@ import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.OrganizationShippingServiceRepository;
+import com.nasnav.dao.ShipmentRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
@@ -86,6 +90,7 @@ import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.Shipment;
 import com.nasnav.shipping.model.ShipmentItems;
 import com.nasnav.shipping.model.ShipmentReceiver;
+import com.nasnav.shipping.model.ShipmentStatusData;
 import com.nasnav.shipping.model.ShipmentTracker;
 import com.nasnav.shipping.model.ShippingAddress;
 import com.nasnav.shipping.model.ShippingDetails;
@@ -100,6 +105,8 @@ import reactor.core.publisher.Mono;
 @Service
 public class ShippingManagementServiceImpl implements ShippingManagementService {
 	
+	private static final String SHIPPING_SERVICE_CALLBACK_TEMPLATE = "callbacks/shipping/service/%s/%d";
+
 	private Logger logger = LogManager.getLogger(getClass());
 	
 	@Autowired
@@ -122,7 +129,13 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	@Autowired
 	private UserRepository userRepo;
+
+	@Autowired
+	private ShipmentRepository shipmentRepo;
 	
+	@Autowired
+	private DomainService domainService;
+
 	@Override
 	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
 		List<ShippingDetails> shippingDetails = createShippingDetailsFromCart(customerAddrId);
@@ -134,7 +147,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	@Override
 	public void validateShippingAdditionalData(CartCheckoutDTO dto) {
-		ShippingService shippingService = getShippingService(dto.getServiceId());
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ShippingService shippingService = getShippingService(dto.getServiceId(), orgId);
 
 		List<ShippingDetails> shippingDetails = createShippingDetailsFromCart(dto.getAddressId());
 		for(ShippingDetails shippingDetail : shippingDetails) {
@@ -148,9 +162,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	
-	private ShippingService getShippingService(String serviceId) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-
+	private ShippingService getShippingService(String serviceId, Long orgId) {
 		Optional<ShippingService> shippingService =
 					orgShippingServiceRepo
 					.getByOrganization_IdAndServiceId(orgId, serviceId)
@@ -552,6 +564,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		ShippingAddress shopAddr = createShippingAddress(subOrder.getShopsEntity().getAddressesEntity());
 		ShipmentReceiver receiver = createShipmentReceiver(subOrder);
 		List<ShipmentItems> items = createShipmentItemsFromOrder(subOrder);
+		String callBackUrl = createCallBackUrl(subOrder);
 		
 		shippingData.setAdditionalData(additionalParameters);
 		shippingData.setDestination(customerAddr);
@@ -559,46 +572,81 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		shippingData.setSource(shopAddr);
 		shippingData.setItems(items);
 		shippingData.setSubOrderId(subOrder.getId());
+		shippingData.setCallBackUrl(callBackUrl);
 		return shippingData;
 	}
 
 
+    private String createCallBackUrl(OrdersEntity subOrder) {
+    	String serviceId = 
+    			ofNullable(subOrder)
+    			.map(OrdersEntity::getShipment)
+    			.map(ShipmentEntity::getShippingServiceId)
+    			.orElse("INVALID");
+    	Long orgId = securityService.getCurrentUserOrganizationId();
+    	String callBackUrl = format(SHIPPING_SERVICE_CALLBACK_TEMPLATE, serviceId, orgId);
+    	String domain = domainService.getCurrentServerDomain();
+    	return format("%s/%s", domain, callBackUrl);
+	}
 
 
-	private List<ShipmentItems> createShipmentItemsFromOrder(OrdersEntity subOrder) {
+
+	@Override
+    public void updateShipmentStatus(String serviceId, Long orgId, String params) throws IOException {
+		ShippingService shippingService = getShippingService(serviceId, orgId);
+		ShipmentStatusData shippingStatusData = shippingService.createShipmentStatusData(serviceId, orgId, params);
+
+		if (shippingStatusData != null && shippingStatusData.getState() != null) {
+			updateShipmentStatus(shippingStatusData);
+		} else {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$PARS$0001);
+		}
+    }
+
+
+    private void updateShipmentStatus(ShipmentStatusData data) {
+		ShipmentEntity shipment =
+			ofNullable(shipmentRepo.findByShippingServiceIdAndExternalIdAndOrganizationId(data.getServiceId(), data.getExternalShipmentId(), data.getOrgId()))
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, SHP$SRV$0009));
+		shipment.setStatus(data.getState());
+		shipmentRepo.save(shipment);
+	}
+
+
+    private List<ShipmentItems> createShipmentItemsFromOrder(OrdersEntity subOrder) {
 		return subOrder
 				.getBasketsEntity()
 				.stream()
 				.map(this::createShipmentItem)
 				.collect(toList());
 	}
-	
-	
-	
-	
+
+
+
+
 	private ShipmentItems createShipmentItem(BasketsEntity orderItem) {
 		ShipmentItems shpItem = new ShipmentItems();
-		
+
 		Long stockId = getStockId(orderItem);
 		String barcode = getBarcode(orderItem);
 		String name = getProductName(orderItem);
 		Integer quantity = getQuantity(orderItem);
 		String specs = getVariantSpecs(orderItem);
-		
+
 		shpItem.setStockId(stockId);
 		shpItem.setBarcode(barcode);
 		shpItem.setName(name);
 		shpItem.setQuantity(quantity);
 		shpItem.setSpecs(specs);
-		
+
 		return shpItem;
 	}
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
 	private String getVariantSpecs(BasketsEntity orderItem) {
 		return ofNullable(orderItem)
 				.map(BasketsEntity::getStocksEntity)
@@ -608,10 +656,10 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.orElse(null);
 	}
 
-	
-	
-	
-	
+
+
+
+
 	private String parseFeatureSpec(String featureSpecJson) {
 		JSONObject json = new JSONObject(featureSpecJson);
 		return json
@@ -624,9 +672,9 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 								joining("/")
 								, str -> format("{%s}", str)));
 	}
-	
-	
-	
+
+
+
 
 
 	private Integer getQuantity(BasketsEntity orderItem) {
@@ -677,7 +725,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$USR$0001, userId));
 		String name = customer.getName();
 		String phone = getPhone(order, addr, customer);
-		
+
 		ShipmentReceiver receiver = new ShipmentReceiver();
 		receiver.setEmail(customer.getEmail());
 		receiver.setFirstName(name);

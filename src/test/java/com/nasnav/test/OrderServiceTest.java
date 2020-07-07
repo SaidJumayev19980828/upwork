@@ -40,7 +40,6 @@ import java.util.Set;
 
 import javax.mail.MessagingException;
 
-import com.nasnav.dto.response.navbox.Order;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -80,6 +79,7 @@ import com.nasnav.dto.BasketItemDTO;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
+import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BasketsEntity;
@@ -119,46 +119,34 @@ public class OrderServiceTest {
 
 	@Autowired
 	private UserRepository userRepository;
-	
-	
 	@Autowired
 	private EmployeeUserRepository empRepository;
-
 	@Autowired
 	private OrdersRepository orderRepository;
-	
-	
 	@Autowired
 	private StockRepository stockRepository;
-
+	
+	@Autowired
+	private PaymentsRepository paymentRepository;
+	@Autowired
+	private CartItemRepository cartRepo;
+	@Autowired
+	private BasketRepository basketRepository;
 	@Autowired
 	UserService userService;
 
 	@Mock
 	private OrdersController ordersController;
 
-
 	@Autowired
 	private TestHelper helper;
-	
-	
-	@Autowired
-	private BasketRepository basketRepository;
-	
-	
+
 	@Autowired
 	private JdbcTemplate jdbc;
 	
-	
 	@Autowired
 	private OrderService orderService;
-	
-	
-	@Autowired
-	private PaymentsRepository paymentRepository;
-	
-	@Autowired
-	private CartItemRepository cartRepo;
+
 	
 	@MockBean
 	private MailService mailService;
@@ -1998,7 +1986,7 @@ public class OrderServiceTest {
 		
 		Mockito
 		.verify(mailService)
-		.send(
+		.sendThymeleafTemplateMail(
 			  Mockito.eq(asList("testuser6@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
@@ -2007,7 +1995,7 @@ public class OrderServiceTest {
 		
 		Mockito
 		.verify(mailService)
-		.send(
+		.sendThymeleafTemplateMail(
 			  Mockito.eq(asList("testuser7@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
@@ -2042,8 +2030,11 @@ public class OrderServiceTest {
 		//-------------------------------------------------
 		assertEquals(OK, res.getStatusCode());
 		Order order = res.getBody();
-		assertTrue(res.getBody()!=null);
+		assertNotNull(order);
 	}
+
+
+	
 
 
 	private Item getStockItemQty(Long stockId) {

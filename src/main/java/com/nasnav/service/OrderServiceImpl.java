@@ -236,7 +236,7 @@ public class OrderServiceImpl implements OrderService {
 	private MailService mailService;
 	
 	@Autowired
-	private OrganizationDomainsRepository domainRepo;
+	private DomainService domainService;
 	
 	@Autowired
 	private AppConfig appConfig;
@@ -827,21 +827,12 @@ public class OrderServiceImpl implements OrderService {
 	
 	private String buildDashboardPageUrl(OrdersEntity order) {
 		Long orgId = order.getOrganizationEntity().getId();
-		String domain = 
-				domainRepo
-				.findByOrganizationEntity_Id(orgId)
-				.map(OrganizationDomainsEntity::getDomain)
-				.map(this::addProtocolIfNeeded)
-				.orElse("");
+		String domain = domainService.getOrganizationDomain(orgId);
 		String path = appConfig.dashBoardOrderPageUrl.replace("{order_id}", order.getId().toString());
 		return format("%s/%s", domain, path);
 	}
 	
 	
-	
-	private String addProtocolIfNeeded(String domain) {
-		return domain.startsWith("http:") ? domain : "https://"+domain;
-	}
 
 
 

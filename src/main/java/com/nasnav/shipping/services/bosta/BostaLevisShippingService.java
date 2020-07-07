@@ -2,6 +2,7 @@ package com.nasnav.shipping.services.bosta;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.StringUtils.parseLongWithDefault;
+import static com.nasnav.exceptions.ErrorCodes.G$JSON$0001;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0001;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0002;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0003;
@@ -20,9 +21,11 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.leftPad;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static reactor.core.publisher.Mono.error;
 import static reactor.core.publisher.Mono.just;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Period;
 import java.util.HashMap;
@@ -34,10 +37,13 @@ import java.util.stream.IntStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.reactive.function.client.ClientResponse;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.nasnav.commons.model.IndexedData;
+import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.model.Parameter;
@@ -45,6 +51,7 @@ import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.Shipment;
 import com.nasnav.shipping.model.ShipmentItems;
 import com.nasnav.shipping.model.ShipmentReceiver;
+import com.nasnav.shipping.model.ShipmentStatusData;
 import com.nasnav.shipping.model.ShipmentTracker;
 import com.nasnav.shipping.model.ShipmentValidation;
 import com.nasnav.shipping.model.ShippingAddress;
@@ -55,6 +62,7 @@ import com.nasnav.shipping.model.ShippingPeriod;
 import com.nasnav.shipping.model.ShippingServiceInfo;
 import com.nasnav.shipping.services.bosta.webclient.BostaWebClient;
 import com.nasnav.shipping.services.bosta.webclient.dto.Address;
+import com.nasnav.shipping.services.bosta.webclient.dto.BostaCallbackDTO;
 import com.nasnav.shipping.services.bosta.webclient.dto.CreateAwbResponse;
 import com.nasnav.shipping.services.bosta.webclient.dto.CreateDeliveryResponse;
 import com.nasnav.shipping.services.bosta.webclient.dto.Delivery;
@@ -81,10 +89,12 @@ public class BostaLevisShippingService implements ShippingService{
 	public static final String AUTH_TOKEN_PARAM = "AUTH_TOKEN";
 	public static final String BUSINESS_ID_PARAM = "BUSINESS_ID";
 	public static final String SERVER_URL = "SERVER_URL";
+	public static final String WEBHOOK_URL = "WEBHOOK_URL";
 	private static List<Parameter> SERVICE_PARAM_DEFINITION = 
 			asList(new Parameter(AUTH_TOKEN_PARAM, STRING)
 					, new Parameter(BUSINESS_ID_PARAM, STRING)
-					, new Parameter(SERVER_URL, STRING));
+					, new Parameter(SERVER_URL, STRING)
+					, new Parameter(WEBHOOK_URL, STRING));
 	
 	//TODO add the rest of cities mapping
 	//TODO cities in nasnav database must have predefined ids
@@ -108,10 +118,16 @@ public class BostaLevisShippingService implements ShippingService{
 
 	private static final Long PACKAGE = 10L;
 
+	private static final List<Integer> enRouteStateMapping = asList(10, 15, 16, 35, 36);
 
-	private static final String WEB_HOOK_URL = null;
-	
-	
+	private static final List<Integer> pickedUpStateMapping = asList(20, 21, 30);
+
+	private static final List<Integer> deliveredStateMapping = asList(22, 40, 25, 26, 23, 45);
+
+	private static final List<Integer> failedStateMapping = asList(55, 80);
+
+	@Autowired
+	private ObjectMapper jsonMapper;
 	
 	
 	
@@ -239,17 +255,18 @@ public class BostaLevisShippingService implements ShippingService{
 		Receiver receiver = createReceiver(shipment.getReceiver());
 		PackageSpec specs = createPackageSpecs(shipment);
 		String notes = createShippingNotes(shipment);
-		
+		String webHook = paramMap.get(WEBHOOK_URL);
+
 		Delivery request = new Delivery();
 		request.setBusinessReference(businessRef);
 		request.setDropOffAddress(dropOffAddress);
 		request.setReceiver(receiver);
 		request.setReturnAddress(pickupAddress);
 		request.setType(PACKAGE);
-		request.setWebhookUrl(WEB_HOOK_URL);
 		request.setPickupAddress(pickupAddress);
 		request.setSpecs(specs);
 		request.setNotes(notes);
+		request.setWebhookUrl(webHook);
 		return request;
 	}
 	
@@ -264,10 +281,10 @@ public class BostaLevisShippingService implements ShippingService{
 				.map(this::createItemDetailsString)
 				.collect(joining("\n\r"));
 	}
-	
-	
-	
-	
+
+
+
+
 	private String createItemDetailsString(ShipmentItems item) {
 		return format("* name[%s]/ barcode[%s] / specs[%s] / qty[%d] "
 				, ofNullable(item.getName()).orElse("")
@@ -275,17 +292,17 @@ public class BostaLevisShippingService implements ShippingService{
 				, ofNullable(item.getSpecs()).orElse("")
 				, ofNullable(item.getQuantity()).orElse(0));
 	}
-	
-	
+
+
 
 
 	private PackageSpec createPackageSpecs(ShippingDetails shipment) {
 		String description = format("sub-Order Id: %d", shipment.getSubOrderId());
-		
+
 		PackageDetails details = new PackageDetails();
 		details.setDescription(description);
 		details.setItemsCount(shipment.getItems().size());
-		
+
 		PackageSpec spec = new PackageSpec();
 		spec.setPackageDetails(details);
 		return spec;
@@ -313,17 +330,17 @@ public class BostaLevisShippingService implements ShippingService{
 	}
 
 
-	
-	
+
+
 	private String rectifyPhoneNumber(String phone) {
 		return ofNullable(phone)
 				.map(phn -> phn.replace("+", "0"))
 				.map(phn -> leftPad(phn, 10, "0"))
 				.orElse(phone);
 	}
-	
-	
-	
+
+
+
 
 	private Address createAddress(ShippingAddress data) {
 		Long apartmentNum = parseLongWithDefault(data.getFlatNumber(), null); 
@@ -468,4 +485,32 @@ public class BostaLevisShippingService implements ShippingService{
 				.defaultIfEmpty(new ShipmentValidation(false));
 	}
 
+	@Override
+	public ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params){
+		BostaCallbackDTO body;
+		try {
+			body = jsonMapper.readValue(params, BostaCallbackDTO.class);
+		} catch (IOException e) {
+			logger.error(e, e);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$JSON$0001);
+		}
+		Integer shippingStatus = getShippingStatus(body.getState());
+
+		return new ShipmentStatusData(serviceId, orgId, body.getId(), shippingStatus, body.getExceptionReason());
+	}
+
+
+	private Integer getShippingStatus(Integer state) {
+		if (enRouteStateMapping.contains(state)) {
+			return ShippingStatus.EN_ROUTE.getValue();
+		} else if (pickedUpStateMapping.contains(state)) {
+			return ShippingStatus.PICKED_UP.getValue();
+		} else if (deliveredStateMapping.contains(state)) {
+			return ShippingStatus.DELIVERED.getValue();
+		} else if (failedStateMapping.contains(state)) {
+			return ShippingStatus.FAILED.getValue();
+		} else {
+			return state;
+		}
+	}
 }

@@ -56,6 +56,7 @@ public enum ErrorCodes {
 	,ADDR$ADDR$0004("Must provide customer address!")
 
 	,G$USR$0001("User is not an employee!")
+	,G$JSON$0001("Failed to read json into an object!")
 
 	,O$CRT$0001("Cannot create a cart for an employee user!")
 	,O$CRT$0002("Quantity must be greater than equal zero!")
@@ -82,6 +83,8 @@ public enum ErrorCodes {
 	,O$0001("No order exists with ID[%d]!")
 	
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
+
+	,ENUM$0001("Invalid shipping status")
 	
 	,SHP$SRV$0001("Invalid service parameter [%s]!")
 	,SHP$SRV$0002("Missing Service parameters for shipping service[%s]!")
@@ -91,6 +94,9 @@ public enum ErrorCodes {
 	,SHP$SRV$0006("No Shipping service exits with id[%s]!")
 	,SHP$SRV$0007("Invalid Shipping service parameters structure [%s]!")
 	,SHP$SRV$0008("The given value [%s] for Service parameter [%s] of shipping service [%s] has invlaid type!")
+	,SHP$SRV$0009("Shipment not found!")
+
+	,SHP$PARS$0001("Error while parsing status update request!")
 
 	,SHP$SVC$0001("Shipping service is not available!")
 

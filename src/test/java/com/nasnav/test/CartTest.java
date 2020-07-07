@@ -312,7 +312,7 @@ public class CartTest {
 	private Order checkoutCart() {
 		JSONObject requestBody = createCartCheckoutBody();
 
-		Order body = checkOutCart(requestBody, new BigDecimal("3151"), new BigDecimal("3100") ,new BigDecimal("25"));
+		Order body = checkOutCart(requestBody, new BigDecimal("3151"), new BigDecimal("3100") ,new BigDecimal("51"));
 		
 		return body;
 	}
@@ -514,7 +514,8 @@ public class CartTest {
 		
 		assertOrdersStatusBeforeCheckout(unpaidOrderId, cancelPaymentOrderId, paidOrderId, errorPaymentOrderId);
 		
-		checkoutCart();
+		JSONObject requestBody = createCartCheckoutBody();
+		checkOutCart(requestBody, new BigDecimal("3151"), new BigDecimal("3100") ,new BigDecimal("51"));
 		
 		assertOrdersStatusAfterCheckout(unpaidOrderId, cancelPaymentOrderId, paidOrderId, errorPaymentOrderId);
 	}

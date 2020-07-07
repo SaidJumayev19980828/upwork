@@ -29,6 +29,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
 import com.nasnav.dao.OrganizationShippingServiceRepository;
+import com.nasnav.dao.ShipmentRepository;
 import com.nasnav.persistence.OrganizationShippingServiceEntity;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -49,6 +50,8 @@ public class ShippingServiceManagementTest {
 	@Autowired
 	private OrganizationShippingServiceRepository orgShippingSrvRepo;
 	
+	@Autowired
+	private ShipmentRepository shipmentRepo;
 	
 	@Test
 	public void testRegisterToShippingServiceNoAuthz() {
@@ -142,5 +145,24 @@ public class ShippingServiceManagementTest {
         assertEquals(OK, response.getStatusCode());
         assertEquals(params.toString(), shippingService.getServiceParameters());
         assertEquals(ID, shippingService.getServiceId());
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_2.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void changeShippingStatusTest() {
+		Long shipmentId = shipmentRepo.findBySubOrder_Id(330031L).getId();
+		JSONObject body = json().put("status", 10)
+								.put("id", "330031")
+								.put("message", "");
+		HttpEntity<?> req = getHttpEntity(body.toString(), "none");
+		ResponseEntity<String> res =  template.postForEntity("/callbacks/shipping/service/TEST/99001", req, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+		assertEquals(10, shipmentRepo.findById(shipmentId).get().getStatus().intValue());
 	}
 }

@@ -3,6 +3,7 @@ package com.nasnav.shipping;
 import java.util.List;
 
 import com.nasnav.shipping.model.ServiceParameter;
+import com.nasnav.shipping.model.ShipmentStatusData;
 import com.nasnav.shipping.model.ShipmentTracker;
 import com.nasnav.shipping.model.ShipmentValidation;
 import com.nasnav.shipping.model.ShippingDetails;
@@ -38,4 +39,6 @@ public interface ShippingService {
 	Flux<ShipmentTracker> requestShipment(List<ShippingDetails> items);
 
 	Mono<ShipmentValidation> validateShipment(List<ShippingDetails> items);
+
+	ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params);
 }
