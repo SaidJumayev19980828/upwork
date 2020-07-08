@@ -57,6 +57,8 @@ public enum ErrorCodes {
 
 	,G$USR$0001("User is not an employee!")
 	,G$JSON$0001("Failed to read json into an object!")
+	,G$PRAM$0001("Missing required parameters in object[%s]!")
+	,G$ORG$0001("No organization exists with id[%d]!")
 
 	,O$CRT$0001("Cannot create a cart for an employee user!")
 	,O$CRT$0002("Quantity must be greater than equal zero!")
