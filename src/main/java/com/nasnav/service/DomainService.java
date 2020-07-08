@@ -1,5 +1,7 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.request.DomainUpdateDTO;
+
 public interface DomainService {
 
 	String getOrganizationDomainAndSubDir();
@@ -9,4 +11,6 @@ public interface DomainService {
 	String getCurrentServerDomain();
 
 	String getOrganizationDomainOnly(Long orgId);
+
+	void updateDomain(DomainUpdateDTO dto);
 }
