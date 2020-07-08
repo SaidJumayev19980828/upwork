@@ -2037,14 +2037,11 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public List<Order> getMetaOrderList() {
 		BaseUserEntity user = securityService.getCurrentUser();
-		if (user instanceof UserEntity) {
-			return metaOrderRepo.findByUser_IdAndOrganization_Id(user.getId(), user.getOrganizationId())
-								.stream()
-								.map(this::getOrderResponse)
-								.collect(toList());
-		} else {
-			throw new RuntimeBusinessException(FORBIDDEN, E$USR$0001);
-		}
+		return metaOrderRepo.findByUser_IdAndOrganization_Id(user.getId(), user.getOrganizationId())
+							.stream()
+							.map(this::getOrderResponse)
+							.collect(toList());
+
 	}
 
 
