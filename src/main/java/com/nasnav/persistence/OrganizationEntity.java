@@ -35,7 +35,7 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "theme_id")
     private Integer themeId;
 
-    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

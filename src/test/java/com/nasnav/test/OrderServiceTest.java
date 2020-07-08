@@ -40,6 +40,7 @@ import java.util.Set;
 
 import javax.mail.MessagingException;
 
+import com.nasnav.dto.*;
 import com.nasnav.dto.response.navbox.Order;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -75,10 +76,6 @@ import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
-import com.nasnav.dto.BasketItem;
-import com.nasnav.dto.BasketItemDTO;
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
@@ -2065,7 +2062,7 @@ public class OrderServiceTest {
 		//-------------------------------------------------
 		assertEquals(OK, res.getStatusCode());
 		ObjectMapper mapper = new ObjectMapper();
-		List<Order> orders = mapper.readValue(res.getBody(), List.class);
+		List<MetaOrderBasicInfo> orders = mapper.readValue(res.getBody(), List.class);
 		assertEquals(1,orders.size());
 	}
 
