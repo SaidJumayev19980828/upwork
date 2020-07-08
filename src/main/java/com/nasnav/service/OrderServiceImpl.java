@@ -120,7 +120,6 @@ import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.OrganizationDomainsRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.RoleEmployeeUserRepository;
 import com.nasnav.dao.ShipmentRepository;
@@ -160,7 +159,6 @@ import com.nasnav.persistence.CartItemEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.OrganizationDomainsEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ShipmentEntity;
@@ -827,7 +825,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	private String buildDashboardPageUrl(OrdersEntity order) {
 		Long orgId = order.getOrganizationEntity().getId();
-		String domain = domainService.getOrganizationDomain(orgId);
+		String domain = domainService.getOrganizationDomainOnly(orgId);
 		String path = appConfig.dashBoardOrderPageUrl.replace("{order_id}", order.getId().toString());
 		return format("%s/%s", domain, path);
 	}

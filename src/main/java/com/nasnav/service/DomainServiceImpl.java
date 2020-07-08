@@ -24,18 +24,29 @@ public class DomainServiceImpl implements DomainService{
 	
 	
 	@Override
-	public String getOrganizationDomain() {
+	public String getOrganizationDomainAndSubDir() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		return getOrganizationDomain(orgId);
+		return getOrganizationDomainAndSubDir(orgId);
 	}
 	
 	
 	
 	@Override
-	public String getOrganizationDomain(Long orgId) {
+	public String getOrganizationDomainAndSubDir(Long orgId) {
 		return domainRepo
 				.findByOrganizationEntity_Id(orgId)
 				.flatMap(this::getDomainAndSubDir)
+				.map(this::addProtocolIfNeeded)
+				.orElse("");
+	}
+	
+	
+	
+	@Override
+	public String getOrganizationDomainOnly(Long orgId) {
+		return domainRepo
+				.findByOrganizationEntity_Id(orgId)
+				.map(OrganizationDomainsEntity::getDomain)
 				.map(this::addProtocolIfNeeded)
 				.orElse("");
 	}
@@ -56,8 +67,12 @@ public class DomainServiceImpl implements DomainService{
 	
 	
 	private Optional<String> getDomainAndSubDir(OrganizationDomainsEntity orgDomain) {		
-		Optional<String> domain  = ofNullable(orgDomain).map(OrganizationDomainsEntity::getDomain);
-		Optional<String> subDir = ofNullable(orgDomain).map(OrganizationDomainsEntity::getSubdir);
+		Optional<String> domain  = 
+				ofNullable(orgDomain)
+				.map(OrganizationDomainsEntity::getDomain);
+		Optional<String> subDir = 
+				ofNullable(orgDomain)
+				.map(OrganizationDomainsEntity::getSubdir);
 		return domain
 				.map(d -> 
 					subDir

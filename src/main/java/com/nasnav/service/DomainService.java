@@ -2,9 +2,11 @@ package com.nasnav.service;
 
 public interface DomainService {
 
-	String getOrganizationDomain();
+	String getOrganizationDomainAndSubDir();
 
-	String getOrganizationDomain(Long orgId);
+	String getOrganizationDomainAndSubDir(Long orgId);
 
 	String getCurrentServerDomain();
+
+	String getOrganizationDomainOnly(Long orgId);
 }
