@@ -1995,7 +1995,7 @@ public class OrderServiceTest {
 		
 		Mockito
 		.verify(mailService)
-		.send(
+		.sendThymeleafTemplateMail(
 			  Mockito.eq(asList("testuser6@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
@@ -2004,7 +2004,7 @@ public class OrderServiceTest {
 		
 		Mockito
 		.verify(mailService)
-		.send(
+		.sendThymeleafTemplateMail(
 			  Mockito.eq(asList("testuser7@nasnav.com"))
 			, Mockito.anyString()
 			, Mockito.eq(asList("testuser2@nasnav.com"))
