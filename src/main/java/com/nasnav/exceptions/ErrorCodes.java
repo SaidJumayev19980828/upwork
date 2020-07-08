@@ -47,7 +47,7 @@ public enum ErrorCodes {
 
 	,ORG$EXTRATTR$0001("No extra attribute exists with ID:[%d]!")
 
-	,ORG$SHIP$0001("Organization is not registered with any shipping provider!")
+	,ORG$SHIP$0001("Organization is not registered with shipping service[%s]!")
 
 	,AREA$001("No Area exists with ID:[%d]!")
 	,ADDR$ADDR$0001("%s with name [%s] already exists!")

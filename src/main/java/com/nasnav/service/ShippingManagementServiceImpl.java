@@ -167,7 +167,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 					orgShippingServiceRepo
 					.getByOrganization_IdAndServiceId(orgId, serviceId)
 					.map(this::getShippingService)
-					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SHIP$0001));
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SHIP$0001, serviceId));
 
 		if (!shippingService.isPresent()) {
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SVC$0001);
