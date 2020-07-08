@@ -15,6 +15,7 @@ import javax.persistence.Table;
 
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.response.navbox.Shipment;
+import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.shipping.model.ShippingEta;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -65,6 +66,9 @@ public class ShipmentEntity implements BaseEntity {
 
 	@Override
 	public BaseRepresentationObject getRepresentation() {
+		String status = 
+				ShippingStatus.getShippingStatusName(this.status);
+		
 		Shipment shipment = new Shipment();
 		shipment.setServiceId(getShippingServiceId());
 		shipment.setServiceName(getShippingServiceId());
@@ -72,6 +76,7 @@ public class ShipmentEntity implements BaseEntity {
 		shipment.setShippingFee(getShippingFee());
 		shipment.setShippingEta(new ShippingEta(getFrom(), getTo()));
 		shipment.setTrackingNumber(getTrackNumber());
+		shipment.setStatus(status);
 		return shipment;
 	}
 }

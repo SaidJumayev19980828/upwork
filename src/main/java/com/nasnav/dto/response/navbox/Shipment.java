@@ -7,6 +7,7 @@ import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.shipping.model.ShippingEta;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
@@ -16,6 +17,7 @@ import java.math.BigDecimal;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode(callSuper = false)
 public class Shipment extends BaseRepresentationObject {
     private String serviceId;
     private String serviceName;
@@ -23,4 +25,5 @@ public class Shipment extends BaseRepresentationObject {
     private ShippingEta shippingEta;
     private String trackingNumber;
     private String externalId;
+    private String status;
 }
