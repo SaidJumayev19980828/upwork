@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Data
 public class CountryInfoDTO {
+    private Long id;
     private String name;
     private String type;
     @JsonProperty("parent_id")
