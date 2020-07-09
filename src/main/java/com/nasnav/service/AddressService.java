@@ -91,6 +91,7 @@ public class AddressService {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0001,"country", dto.getName());
         }
         CountriesEntity country = new CountriesEntity();
+        country.setId(dto.getId());
         country.setName(dto.getName());
         countryRepo.save(country);
     }

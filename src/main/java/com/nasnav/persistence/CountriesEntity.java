@@ -20,7 +20,6 @@ import static java.util.stream.Collectors.toList;
 public class CountriesEntity implements BaseEntity{
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
     private String name;
