@@ -40,6 +40,7 @@ import java.util.Set;
 
 import javax.mail.MessagingException;
 
+import com.nasnav.dto.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -74,10 +75,6 @@ import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
-import com.nasnav.dto.BasketItem;
-import com.nasnav.dto.BasketItemDTO;
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.enumerations.OrderStatus;
@@ -142,6 +139,7 @@ public class OrderServiceTest {
 	private TestHelper helper;
 
 	@Autowired
+	
 	private JdbcTemplate jdbc;
 	
 	@Autowired
@@ -150,7 +148,7 @@ public class OrderServiceTest {
 	
 	@MockBean
 	private MailService mailService;
-	
+
 	@Test
 	public void unregisteredUser() {
 		StocksEntity stock = createStock();
@@ -2044,6 +2042,34 @@ public class OrderServiceTest {
 				.get();
 	}
 
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getMetaOrderListTest() throws IOException {
+		HttpEntity<?> request = getHttpEntity("123");
+		ResponseEntity<String> res =
+				template.exchange("/order/meta_order/list/user", GET, request, String.class);
+
+		//-------------------------------------------------
+		assertEquals(OK, res.getStatusCode());
+		ObjectMapper mapper = new ObjectMapper();
+		List<MetaOrderBasicInfo> orders = mapper.readValue(res.getBody(), List.class);
+		assertEquals(1,orders.size());
+	}
+
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getMetaOrderListEmployeeTest() throws IOException {
+		HttpEntity<?> request = getHttpEntity("131415");
+		ResponseEntity<String> res =
+				template.exchange("/order/meta_order/list/user", GET, request, String.class);
+
+		//-------------------------------------------------
+		assertEquals(FORBIDDEN, res.getStatusCode());
+	}
 
 }
 

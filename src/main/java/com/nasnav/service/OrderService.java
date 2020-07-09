@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.nasnav.dto.DetailedOrderRepObject;
+import com.nasnav.dto.MetaOrderBasicInfo;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
@@ -68,6 +69,7 @@ public interface OrderService {
 	public ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId);
 
 	Order getMetaOrder(Long id);
+	List<MetaOrderBasicInfo> getMetaOrderList();
 
 	public OrderValue getMetaOrderTotalValue(long metaOrderId);
 

@@ -45,25 +45,7 @@ import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0004;
-import static com.nasnav.exceptions.ErrorCodes.G$USR$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0004;
-import static com.nasnav.exceptions.ErrorCodes.O$CHK$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CHK$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0004;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0005;
-import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
-import static com.nasnav.exceptions.ErrorCodes.S$0005;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDateTime.now;
@@ -104,6 +86,8 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.dto.*;
+import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -126,13 +110,6 @@ import com.nasnav.dao.ShipmentRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
-import com.nasnav.dto.AddressRepObj;
-import com.nasnav.dto.BasketItem;
-import com.nasnav.dto.BasketItemDTO;
-import com.nasnav.dto.BasketItemDetails;
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.OrderJsonDto;
-import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
@@ -152,19 +129,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
-import com.nasnav.persistence.AddressesEntity;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BasketsEntity;
-import com.nasnav.persistence.CartItemEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.PaymentEntity;
-import com.nasnav.persistence.ShipmentEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.persistence.dto.query.result.StockBasicData;
@@ -1310,9 +1275,25 @@ public class OrderServiceImpl implements OrderService {
 		
 		return item;
 	}
-		
 
-	
+
+	private BasketItem toBasketItem(BasketsEntity entity) {
+		ProductEntity product = entity.getStocksEntity().getProductVariantsEntity().getProductEntity();
+
+		BasketItem item = new BasketItem();
+		item.setProductId(product.getId());
+		item.setName(product.getName());
+		item.setPname(product.getPname());
+		item.setStockId(entity.getStocksEntity().getId());
+		item.setQuantity(entity.getQuantity().intValueExact());
+		//TODO set item unit //
+		item.setTotalPrice(entity.getPrice());
+
+		//TODO set variant image
+		item.setCurrency(ofNullable(TransactionCurrency.getTransactionCurrency(entity.getCurrency())).orElse(EGP).name());
+
+		return item;
+	}
 	
 	
 	
@@ -2041,6 +2022,21 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+	@Override
+	public List<MetaOrderBasicInfo> getMetaOrderList() {
+		BaseUserEntity user = securityService.getCurrentUser();
+		return metaOrderRepo.getMetaOrderList(user.getId(), user.getOrganizationId())
+							.stream()
+							.map(this::setOrderStatus)
+							.collect(toList());
+	}
+
+
+	private MetaOrderBasicInfo setOrderStatus(MetaOrderBasicInfo order) {
+		order.setStatus(OrderStatus.findEnum(order.getStatusInt()).name());
+		order.setStatusInt(null);
+		return order;
+	}
 
 
 	private TransactionCurrency getOrderCurrency(MetaOrderEntity order) {

@@ -60,6 +60,8 @@ public enum ErrorCodes {
 	,G$PRAM$0001("Missing required parameters in object[%s]!")
 	,G$ORG$0001("No organization exists with id[%d]!")
 
+	,E$USR$0001("User is an employee!")
+
 	,O$CRT$0001("Cannot create a cart for an employee user!")
 	,O$CRT$0002("Quantity must be greater than equal zero!")
 	,O$CRT$0003("Quantity is greater than available stock!")

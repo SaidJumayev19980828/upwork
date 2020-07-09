@@ -3,6 +3,7 @@ package com.nasnav.dao;
 import java.util.List;
 import java.util.Optional;
 
+import com.nasnav.dto.MetaOrderBasicInfo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,12 +24,39 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 			+ " WHERE meta.id =:id")
 	Optional<MetaOrderEntity> findFullDataById(@Param("id")Long id);
 
-	boolean existsByIdAndOrganization_Id(Long id, Long orgId);
-	boolean existsByIdAndUserIdAndOrganization_Id(Long id, Long userId, Long orgId);
-
 	Optional<MetaOrderEntity> findByIdAndOrganization_Id(Long id, Long orgId);
 	Optional<MetaOrderEntity> findByIdAndUserIdAndOrganization_Id(Long id, Long userId, Long orgId);
-	
+
+	@Query("SELECT DISTINCT meta FROM MetaOrderEntity meta "
+			+ " LEFT JOIN FETCH meta.organization org "
+			+ " LEFT JOIN FETCH meta.user usr "
+			+ " LEFT JOIN FETCH meta.subOrders subOrder "
+			+ " LEFT JOIN FETCH subOrder.shopsEntity shop "
+			+ " LEFT JOIN FETCH subOrder.basketsEntity item "
+			+ " LEFT JOIN FETCH subOrder.shipment shipment "
+			+ " LEFT JOIN FETCH item.stocksEntity stock "
+			+ " LEFT JOIN FETCH subOrder.addressEntity subOrderAddr "
+			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " WHERE usr.id =:userId AND org.id = :orgId")
+	List<MetaOrderEntity> findByUser_IdAndOrganization_Id(@Param("userId") Long userId,
+														  @Param("orgId") Long orgId);
+
+
+
+	@Query("SELECT distinct new com.nasnav.dto.MetaOrderBasicInfo(meta.id, meta.createdAt, meta.status, meta.grandTotal, pay.operator, shipment.shippingServiceId) "
+			+ "FROM MetaOrderEntity meta "
+			+ "LEFT JOIN meta.subOrders subOrder "
+			+ "LEFT JOIN subOrder.shipment shipment "
+			+ "LEFT JOIN PaymentEntity pay on meta.id = pay.metaOrderId "
+			+ "LEFT JOIN meta.user user "
+			+ "LEFT JOIN meta.organization org "
+			+ "WHERE user.id = :userId and org.id = :orgId ")
+	List<MetaOrderBasicInfo> getMetaOrderList(@Param("userId") Long userId,
+											  @Param("orgId") Long orgId);
+
+
 	
 	@Query("SELECT meta FROM MetaOrderEntity meta "
 			+ " LEFT JOIN FETCH meta.organization org "
