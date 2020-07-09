@@ -1235,7 +1235,7 @@ public class OrderServiceImpl implements OrderService {
 		obj.setSubtotal(entity.getAmount());
 		if (entity.getShipment() != null)
 			obj.setShipping(entity.getShipment().getShippingFee());
-		obj.setTotal(obj.getShipping().add(obj.getSubtotal()));
+		obj.setTotal(entity.getTotal());
 
 		if (entity.getAddressEntity() != null) {
 			AddressRepObj address = (AddressRepObj) entity.getAddressEntity().getRepresentation();
