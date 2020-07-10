@@ -54,5 +54,14 @@ public class OrganizationDTO {
 
         @JsonProperty("extra_info")
         public Map<?,?> info;
+
+        @ApiModelProperty(value = "E-commerce functionality of the website", example = "1")
+        @JsonProperty("ecommerce")
+        public String ecommerce;
+
+        @ApiModelProperty(value = "Tag/token used to identify websites at Google", example = "zaSyBMV3KncHiZJKbFHgp6rJ34a2w5W5nOWdf")
+        @JsonProperty("google_token")
+        public String googleToken;
+
     }
 }

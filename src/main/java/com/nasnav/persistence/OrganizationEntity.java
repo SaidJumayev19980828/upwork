@@ -47,6 +47,12 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "extra_info")
     private String extraInfo;
 
+    @Column(name = "ecommerce")
+    private Integer ecommerce;
+
+    @Column(name = "google_token")
+    private String googleToken;
+
     public OrganizationEntity() {
         id = null;
     }
@@ -86,6 +92,8 @@ public class OrganizationEntity implements BaseEntity {
         organizationRepresentationObject.setPname(getPname());
         organizationRepresentationObject.setType(getType()!=null?getType().name():null);
         organizationRepresentationObject.setThemeId(getThemeId().toString());
+        organizationRepresentationObject.setEcommerce((getEcommerce()));
+        organizationRepresentationObject.setGoogleToken(getGoogleToken());
 
         if (getExtraInfo() != null) {
             try {

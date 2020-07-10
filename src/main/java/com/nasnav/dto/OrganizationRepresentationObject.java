@@ -20,6 +20,8 @@ import java.util.Map;
         "type",
         "brands",
         "social",
+        "ecommerce",
+        "google_token",
         "themes"
 })
 
@@ -75,5 +77,15 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
 
     @JsonProperty("extra_info")
     private Map info;
+
+    @ApiModelProperty(value = "E-commerce functionality of the website")
+    @JsonProperty("ecommerce")
+    private Integer ecommerce;
+
+    @ApiModelProperty(value = "Token used to identify websites at Google")
+    @JsonProperty("google_token")
+    private String googleToken;
+
+
 }
 
