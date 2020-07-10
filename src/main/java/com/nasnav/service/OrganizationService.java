@@ -258,10 +258,15 @@ public class OrganizationService {
         if (json.info != null) {
             organization.setExtraInfo(new JSONObject(json.info).toString());
         }
-
         if (json.themeId != null) {
             organization.setThemeId(json.themeId);
         }
+	    if (json.googleToken != null) {
+		    organization.setGoogleToken(json.googleToken);
+	    }
+	    if (json.ecommerce != null) {
+		    organization.setEcommerce(json.ecommerce);
+	    }
 
         //logo
         OrganizationThemeEntity orgTheme = null;
