@@ -2371,6 +2371,7 @@ public class OrderServiceImpl implements OrderService {
 		ShipmentDTO shipmentDTO = 
 				shippingOffers
 				.stream()
+				.filter(offer -> Objects.equals(offer.getServiceId(), dto.getServiceId()))
 				.findFirst()
 				.map(ShippingOfferDTO::getShipments)
 				.orElse(emptyList())

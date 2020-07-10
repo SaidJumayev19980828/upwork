@@ -42,7 +42,7 @@ public final class ShippingServiceFactory {
 					,BostaLevisShippingService.class);
 	
 	
-	private static Map<String, Class<? extends ShippingService>> services ;
+	private Map<String, Class<? extends ShippingService>> services ;
 	private static ShippingServiceFactory instance;
 	
 	
@@ -87,7 +87,6 @@ public final class ShippingServiceFactory {
 	
 	
 	
-	@SuppressWarnings("static-access")
 	public static Optional<ShippingService> getShippingService(String id, List<ServiceParameter> serviceParameters) {
 		return ofNullable(getInstance().services.get(id))
 				.flatMap(ShippingServiceFactory::createShippingServiceInstance)
@@ -140,6 +139,7 @@ public final class ShippingServiceFactory {
 				.map(Optional::get)
 				.map(ShippingService::getServiceInfo);
 	}
+	
 }
 
 
