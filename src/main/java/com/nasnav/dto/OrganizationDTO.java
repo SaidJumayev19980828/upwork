@@ -24,6 +24,15 @@ public class OrganizationDTO {
         @ApiModelProperty(value = "Url-compatible name, used as part of the URL path for organization shop", example = "super-pharm", required = true)
         @JsonProperty("p_name")
         public String pname;
+
+        @ApiModelProperty(value = "E-commerce functionality of the website", example = "1")
+        @JsonProperty("ecommerce")
+        public Integer ecommerce;
+
+        @ApiModelProperty(value = "Tag/token used to identify websites at Google", example = "zaSyBMV3KncHiZJKbFHgp6rJ34a2w5W5nOWdf")
+        @JsonProperty("google_token")
+        public String googleToken;
+
     }
 
     @ApiModel(value = "Organization Modification Data")
@@ -54,14 +63,6 @@ public class OrganizationDTO {
 
         @JsonProperty("extra_info")
         public Map<?,?> info;
-
-        @ApiModelProperty(value = "E-commerce functionality of the website", example = "1")
-        @JsonProperty("ecommerce")
-        public Integer ecommerce;
-
-        @ApiModelProperty(value = "Tag/token used to identify websites at Google", example = "zaSyBMV3KncHiZJKbFHgp6rJ34a2w5W5nOWdf")
-        @JsonProperty("google_token")
-        public String googleToken;
 
     }
 }

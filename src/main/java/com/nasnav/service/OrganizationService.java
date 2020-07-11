@@ -212,24 +212,37 @@ public class OrganizationService {
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public OrganizationResponse createOrganization(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
         validateOrganizationName(json);
-        OrganizationEntity organizationEntity = organizationRepository.findByPname(json.pname);
-        if (organizationEntity != null) {
-            throw new BusinessException("INVALID_PARAM: p_name",
-                    "Provided p_name is already used by another organization (id: " + organizationEntity.getId() +
-                                ", name: " + organizationEntity.getName() + ")", NOT_ACCEPTABLE);
-        }
-        OrganizationEntity newOrg = new OrganizationEntity();
+
+        OrganizationEntity organization = new OrganizationEntity();
         if (json.id != null) {
-            newOrg = orgRepo.findOneById(json.id);
-            if (newOrg == null)
+            organization = orgRepo.findOneById(json.id);
+            if (organization == null)
                 throw new BusinessException(String.format("Provided id (%d) doesn't match any existing org!", json.id),
                         "INVALID_PARAM: id", NOT_ACCEPTABLE);
         }
-        newOrg.setName(json.name);
-        newOrg.setPname(json.pname);
-        newOrg.setThemeId(0);
-        organizationRepository.save(newOrg);
-        return new OrganizationResponse(newOrg.getId(), 0);
+
+	    OrganizationEntity organizationEntity = organizationRepository.findByPname(json.pname);
+	    if (organizationEntity != null) {
+		    if (!organization.getId().equals(organizationEntity.getId())) {
+			    throw new BusinessException("INVALID_PARAM: p_name",
+					    "Provided p_name is already used by another organization (id: " + organizationEntity.getId() +
+							    ", name: " + organizationEntity.getName() + ")", NOT_ACCEPTABLE);
+		    }
+	    }
+
+	    organization.setName(json.name);
+        organization.setPname(json.pname);
+        // shouldnt be overwritten on update
+//        newOrg.setThemeId(0);
+	    if (json.ecommerce != null) {
+		    organization.setEcommerce(json.ecommerce);
+	    }
+	    if (json.googleToken != null) {
+		    organization.setGoogleToken(json.googleToken);
+	    }
+
+	    organizationRepository.save(organization);
+        return new OrganizationResponse(organization.getId(), 0);
     }
 
 
@@ -261,12 +274,6 @@ public class OrganizationService {
         if (json.themeId != null) {
             organization.setThemeId(json.themeId);
         }
-	    if (json.googleToken != null) {
-		    organization.setGoogleToken(json.googleToken);
-	    }
-	    if (json.ecommerce != null) {
-		    organization.setEcommerce(json.ecommerce);
-	    }
 
         //logo
         OrganizationThemeEntity orgTheme = null;
