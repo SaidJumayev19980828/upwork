@@ -8,4 +8,7 @@ import lombok.Data;
 public class SameCityCartOptimizerParameters {
 	@JsonProperty("CUSTOMER_ADDRESS_ID")
 	private Long customerAddressId;
+	
+	@JsonProperty("SHOP_ID")
+	private Long shopId;
 }

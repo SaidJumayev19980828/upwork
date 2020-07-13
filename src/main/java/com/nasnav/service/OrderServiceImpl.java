@@ -161,7 +161,6 @@ import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
@@ -2493,7 +2492,7 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal initialCartTotal = calculateCartTotal();
 		Optional<Cart> savedCart = 
 				createOptimizedCart(dto)
-				.map(this::saveCart);				
+				.map(this::replaceCart);				
 		boolean totalChanged = 
 				savedCart
 				.map(this::calculateCartTotal)
@@ -2519,7 +2518,8 @@ public class OrderServiceImpl implements OrderService {
 		
 		Optional<T> parametersOptional = Optional.empty();
 		try {
-			T parameters = objectMapper.readValue(dto.getParametersJson(), optimizer.getParameterClass());
+			String json = new JSONObject(dto.getParametersJson()).toString();
+			T parameters = objectMapper.readValue(json, optimizer.getParameterClass());
 			parametersOptional = ofNullable(parameters);
 		} catch (IOException e) {
 			logger.error(e,e);
@@ -2527,6 +2527,16 @@ public class OrderServiceImpl implements OrderService {
 		}
 		
 		return optimizer.createOptimizedCart(parametersOptional);
+	}
+	
+	
+	
+	
+	
+	private Cart replaceCart(Cart newCart) {
+		BaseUserEntity user = securityService.getCurrentUser();
+		cartItemRepo.deleteByUser_Id(user.getId());
+		return saveCart(newCart);
 	}
 	
 	
@@ -2551,24 +2561,15 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	@Override
-	public List<ShopFulfillingCart> getShopsThatCanProvideWholeCart(){
+	public List<ShopFulfillingCart> getShopsThatCanProvideCartItems(){
 		Long userId = securityService.getCurrentUser().getId();
-		List<CartItemStock> cartItemsStocks = cartItemRepo.getAllCartStocks(userId);
-		//it uses an additional query but gives more insurance than calculating variants from
-		//cartItemsStocks
-		Set<Long> cartItemVariants =
-				getCart()
-				.getItems()
-				.stream()
-				.map(CartItem::getVariantId)
-				.collect(toSet());
-		return cartItemsStocks
+		return cartItemRepo
+				.getAllCartStocks(userId)
 				.stream()
 				.collect(groupingBy(CartItemStock::getShopId))
 				.entrySet()
 				.stream()
 				.map(this::createShopFulfillingCart)
-				.filter(shop -> hasAllCartVariants(shop, cartItemVariants))
 				.collect(toList());
 	}
 

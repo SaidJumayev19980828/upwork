@@ -52,9 +52,17 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 	@Modifying
 	void deleteByQuantityAndUser_Id(Integer quantity, Long userId);
 
+	
 	@Transactional
 	@Modifying
-	void deleteByUser_Id(Long userId);
+	@Query("DELETE FROM CartItemEntity cart "
+			+ " WHERE cart.id in ( "
+			+ " SELECT item.id "
+			+ " FROM CartItemEntity item "
+			+ " LEFT JOIN item.user usr "
+			+ " WHERE usr.id = :user_id"
+			+ ")")
+	void deleteByUser_Id(@Param("user_id")Long userId);
 	
 	
 	@Transactional
@@ -97,15 +105,17 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 	
 	
 	@Query("SELECT new com.nasnav.persistence.dto.query.result.CartItemStock("
-			+ " variant.id, stock.id, shop.id, city.id, stock.quantity )"
+			+ " variant.id, allStocks.id, shop.id, city.id, allStocks.quantity )"
 			+ " FROM CartItemEntity item"
 			+ " LEFT JOIN item.stock stock "
 			+ " LEFT JOIN item.user user "
 			+ " LEFT JOIN stock.productVariantsEntity variant "
-			+ " LEFT JOIN stock.shopsEntity shop "
+			+ " LEFT JOIN variant.stocks  allStocks "
+			+ " LEFT JOIN allStocks.shopsEntity shop "
 			+ " LEFT JOIN shop.addressesEntity address "
 			+ " LEFT JOIN address.areasEntity area "
 			+ " LEFT JOIN area.citiesEntity city "
-			+ " WHERE user.id = :userId")
+			+ " WHERE user.id = :userId "
+			+ " AND allStocks.quantity >= stock.quantity")
 	List<CartItemStock> getAllCartStocks(@Param("userId") Long userId);
 }

@@ -544,7 +544,7 @@ public class CartTest {
 						json()
 						.put("CUSTOMER_ADDRESS_ID",12300001L ))
 				.toString();
-		HttpEntity<?> request = getHttpEntity(requestBody);
+		HttpEntity<?> request = getHttpEntity(requestBody, "123");
 		ResponseEntity<CartOptimizeResponseDTO> res = 
 				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
 		

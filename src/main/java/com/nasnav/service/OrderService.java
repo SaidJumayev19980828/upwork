@@ -78,6 +78,6 @@ public interface OrderService {
 
 	public <T> CartOptimizeResponseDTO optimizeCart(CartOptimizeDTO dto);
 
-	List<ShopFulfillingCart> getShopsThatCanProvideWholeCart();
+	List<ShopFulfillingCart> getShopsThatCanProvideCartItems();
 
 	}

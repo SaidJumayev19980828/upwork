@@ -87,15 +87,15 @@ public class CartController {
 	
 	
 	
-	@ApiOperation(value = "checkout the cart", nickname = "cartCheckout")
+	@ApiOperation(value = "optimize the cart", nickname = "cartOptimize")
 	@ApiResponses(value = {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
-			@io.swagger.annotations.ApiResponse(code = 403, message = "employee user can't have cart"),
-			@io.swagger.annotations.ApiResponse(code = 406, message = "stock not found")
+			@io.swagger.annotations.ApiResponse(code = 403, message = "Not a customer"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid parameters")
 	})
 	@PostMapping(value = "/optimize", consumes = MediaType.APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
 	public CartOptimizeResponseDTO optimizeCart(@RequestHeader(name = "User-Token", required = false) String userToken,
-							  @RequestBody CartOptimizeDTO dto) throws BusinessException, IOException {
+							  @RequestBody CartOptimizeDTO dto) {
 		return orderService.optimizeCart(dto);
 	}
 }
