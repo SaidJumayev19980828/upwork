@@ -9,9 +9,11 @@ import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.MetaOrderBasicInfo;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.dto.request.cart.CartOptimizeDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
@@ -19,6 +21,7 @@ import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
+import com.nasnav.service.model.cart.ShopFulfillingCart;
 
 
 public interface OrderService {
@@ -72,5 +75,9 @@ public interface OrderService {
 	List<MetaOrderBasicInfo> getMetaOrderList();
 
 	public OrderValue getMetaOrderTotalValue(long metaOrderId);
+
+	public <T> CartOptimizeResponseDTO optimizeCart(CartOptimizeDTO dto);
+
+	List<ShopFulfillingCart> getShopsThatCanProvideWholeCart();
 
 	}

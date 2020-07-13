@@ -5,8 +5,10 @@ import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -22,10 +24,12 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.json.JSONObject;
 import org.junit.Test;
@@ -47,6 +51,7 @@ import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.Shipment;
 import com.nasnav.dto.response.navbox.SubOrder;
@@ -55,10 +60,12 @@ import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.ShipmentEntity;
 import com.nasnav.service.OrderService;
+import com.nasnav.test.commons.TestCommons;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
+import springfox.documentation.spring.web.json.Json;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -519,6 +526,71 @@ public class CartTest {
 		
 		assertOrdersStatusAfterCheckout(unpaidOrderId, cancelPaymentOrderId, paidOrderId, errorPaymentOrderId);
 	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_6.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void optimizeCartSameCityTest() {
+		
+		//---------------------------------------------------------------		
+		String requestBody = 
+				json()
+				.put("strategy", "SAME_CITY")
+				.put("parameters", 
+						json()
+						.put("CUSTOMER_ADDRESS_ID",12300001L ))
+				.toString();
+		HttpEntity<?> request = getHttpEntity(requestBody);
+		ResponseEntity<CartOptimizeResponseDTO> res = 
+				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
+		
+		//---------------------------------------------------------------
+		Cart cart = res.getBody().getCart();
+		List<Long> stockIdsAfter = 
+				cart.getItems().stream().map(CartItem::getStockId).collect(toList());
+		
+		assertEquals(OK, res.getStatusCode());
+		assertTrue(res.getBody().getTotalChanged());		
+		assertEquals(2, cart.getItems().size());
+		assertTrue(asList(607L, 609L).stream().allMatch(stockIdsAfter::contains));
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void optimizeCartNoAuthz() {
+        HttpEntity<?> request =  getHttpEntity("NOT FOUND");
+        ResponseEntity<Cart> response =
+        		template.exchange("/cart/optimize", POST, request, Cart.class);
+
+        assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void optimizeCartNoAuthN() {
+        HttpEntity<?> request =  getHttpEntity("101112");
+        ResponseEntity<Cart> response = 
+        		template.exchange("/cart/optimize", POST, request, Cart.class);
+
+        assertEquals(FORBIDDEN, response.getStatusCode());
+	}
+	
+	
+	
+	//TODO: invalid startegy test
+	//TODO: invalid parameter json test
+	
 
 
 

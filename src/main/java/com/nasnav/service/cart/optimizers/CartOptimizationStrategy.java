@@ -1,0 +1,30 @@
+package com.nasnav.service.cart.optimizers;
+
+import static java.util.Arrays.asList;
+
+import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+import lombok.Getter;
+
+public enum CartOptimizationStrategy {
+	SAME_CITY(OptimizationStratigiesNames.SAME_CITY), GIVEN_SHOP(OptimizationStratigiesNames.GIVEN_SHOP);
+	
+	@Getter
+	@JsonValue
+    private final String value;
+	
+	@JsonCreator
+	CartOptimizationStrategy(String value) {
+        this.value = value;
+    }
+	
+	public static boolean isValidStrategy(String strategy) {
+		return asList(values())
+				.stream()
+				.map(CartOptimizationStrategy::getValue)
+				.anyMatch(val -> Objects.equals(val, strategy));
+	}
+}

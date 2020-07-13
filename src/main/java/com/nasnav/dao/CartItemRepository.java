@@ -2,16 +2,17 @@ package com.nasnav.dao;
 
 import java.util.List;
 
-import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.persistence.CartItemEntity;
+import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.CartItemData;
-import org.springframework.transaction.annotation.Transactional;
 import com.nasnav.persistence.dto.query.result.CartItemShippingData;
+import com.nasnav.persistence.dto.query.result.CartItemStock;
 
 public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long> {
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartItemData("
@@ -92,4 +93,19 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " AND usr.id = :user_id"
 			+ ")")
 	void deleteByStockIdInAndUser_Id(@Param("stock_ids")List<Long> stockIds, @Param("user_id")Long userId);
+
+	
+	
+	@Query("SELECT new com.nasnav.persistence.dto.query.result.CartItemStock("
+			+ " variant.id, stock.id, shop.id, city.id, stock.quantity )"
+			+ " FROM CartItemEntity item"
+			+ " LEFT JOIN item.stock stock "
+			+ " LEFT JOIN item.user user "
+			+ " LEFT JOIN stock.productVariantsEntity variant "
+			+ " LEFT JOIN stock.shopsEntity shop "
+			+ " LEFT JOIN shop.addressesEntity address "
+			+ " LEFT JOIN address.areasEntity area "
+			+ " LEFT JOIN area.citiesEntity city "
+			+ " WHERE user.id = :userId")
+	List<CartItemStock> getAllCartStocks(@Param("userId") Long userId);
 }
