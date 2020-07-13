@@ -70,6 +70,7 @@ public enum ErrorCodes {
 
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")
+	,O$SHP$0003("Failed to create a shipment for the order with the given parameters!")
 
 	,O$CHK$0001("Must have at least one item in cart!")
 	,O$CHK$0002("Must provide shipping service provider")
