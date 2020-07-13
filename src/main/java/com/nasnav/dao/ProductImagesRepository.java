@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import com.nasnav.dto.ProductImageDTO;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -48,4 +49,13 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 	Long countByProductEntity_OrganizationId(long l);
 
 	Set<ProductImagesEntity> findByProductEntity_IdAndTypeOrderByPriority(Long productId, int productImage);
+
+
+
+	@Query(value = "SELECT new com.nasnav.dto.ProductImageDTO(i.uri, i.productEntity.id, i.productVariantsEntity.id)" +
+			" from ProductImagesEntity i where i.productEntity.id in (:productsIds) or i.productVariantsEntity.id in (:variantsIds)" +
+			" order by i.priority, case when i.productVariantsEntity is null then 0 else 1 end ")
+	List<ProductImageDTO> getProductsAndVariantsCoverImage(@Param("productsIds") List<Long> productsIds,
+														   @Param("variantsIds") List<Long> variantsIds);
+
 }

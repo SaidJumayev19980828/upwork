@@ -13,6 +13,7 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUC
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_VARIANT_FOUND;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_READ_ZIP;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_MODIFY_PRODUCT;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0001;
 import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_BARCODE;
 import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_EXTERNAL_ID;
 import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_IMAGE_FILE;
@@ -53,6 +54,7 @@ import java.util.zip.ZipInputStream;
 import javax.sql.DataSource;
 import javax.validation.Valid;
 
+import com.nasnav.dto.*;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.tika.Tika;
@@ -81,10 +83,6 @@ import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dto.ProductImageBulkUpdateDTO;
-import com.nasnav.dto.ProductImageUpdateDTO;
-import com.nasnav.dto.ProductImgDTO;
-import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportImageBulkRuntimeException;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -1566,7 +1564,15 @@ public class ProductImageServiceImpl implements ProductImageService {
 		
 		deleteOrgProductmages();
 	}
-	
+
+
+	public List<ProductImageDTO> getVariantsCoverImage(List<Long> productsIdList, List<Long> variantsIdList) {
+		if ((productsIdList == null || productsIdList.isEmpty()) && (variantsIdList == null || variantsIdList.isEmpty())) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0001);
+        } else {
+			return productImagesRepository.getProductsAndVariantsCoverImage(productsIdList, variantsIdList);
+		}
+	}
 }
 
 
