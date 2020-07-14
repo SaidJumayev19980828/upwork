@@ -4,14 +4,14 @@ INSERT INTO public.organizations(id, name) VALUES (99002, 'organization_2');
 INSERT INTO public.theme_classes(id, name)VALUES (990011, 'theme_class_1');
 INSERT INTO public.theme_classes(id, name)VALUES (990012, 'theme_class_2');
 
-INSERT INTO public.themes(id, name, theme_class_id, uid)VALUES (5001, 'theme_1', 990011, '5001');
-INSERT INTO public.themes(id, name, theme_class_id, uid)VALUES (5002, 'theme_2', 990011, '5002');
-INSERT INTO public.themes(id, name, theme_class_id, uid)VALUES (5003, 'theme_3', 990012, '5003');
+INSERT INTO public.themes(id, name, theme_class_id, default_settings, uid)VALUES (5001, 'theme_1', 990011,'{"setting" : "value"}', '5001');
+INSERT INTO public.themes(id, name, theme_class_id, default_settings, uid)VALUES (5002, 'theme_2', 990011, '{"setting" : "value"}', '5002');
+INSERT INTO public.themes(id, name, theme_class_id, default_settings, uid)VALUES (5003, 'theme_3', 990012, '{"setting" : "value"}', '5003');
 
 INSERT INTO public.organization_theme_classes(id, organization_id, theme_class_id)VALUES (5003, 99001 , 990011);
 
 INSERT INTO public.organization_themes_settings(id, organization_id, theme_id, settings)
-    VALUES (5001, 99001, 5002, 'settings');
+    VALUES (5001, 99001, 5002, '{"setting" : "new value"}');
 
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 201, 'brand_1', 99001);
 INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (501, 'shop_1', 101, 99001);
