@@ -24,12 +24,10 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.json.JSONObject;
 import org.junit.Test;
@@ -60,12 +58,10 @@ import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.ShipmentEntity;
 import com.nasnav.service.OrderService;
-import com.nasnav.test.commons.TestCommons;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.jcip.annotations.NotThreadSafe;
-import springfox.documentation.spring.web.json.Json;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -556,7 +552,113 @@ public class CartTest {
 		assertEquals(OK, res.getStatusCode());
 		assertTrue(res.getBody().getTotalChanged());		
 		assertEquals(2, cart.getItems().size());
-		assertTrue(asList(607L, 609L).stream().allMatch(stockIdsAfter::contains));
+		assertTrue("The optimization should pick stocks from a shop in cairo that can provide most items"
+					, asList(607L, 609L).stream().allMatch(stockIdsAfter::contains));
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void optimizeCartSelectShopWithHighestStockTest() {
+		
+		//---------------------------------------------------------------		
+		String requestBody = 
+				json()
+				.put("strategy", "SAME_CITY")
+				.put("parameters", 
+						json()
+						.put("CUSTOMER_ADDRESS_ID",12300001L ))
+				.toString();
+		HttpEntity<?> request = getHttpEntity(requestBody, "123");
+		ResponseEntity<CartOptimizeResponseDTO> res = 
+				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
+		
+		//---------------------------------------------------------------
+		Cart cart = res.getBody().getCart();
+		List<Long> stockIdsAfter = 
+				cart.getItems().stream().map(CartItem::getStockId).collect(toList());
+		
+		assertEquals(OK, res.getStatusCode());
+		assertFalse("prices doesn't change", res.getBody().getTotalChanged());		
+		assertEquals(3, cart.getItems().size());
+		assertTrue("The optimization should pick 2 stocks from a shop in cairo that has the largest average stock quantity, "
+				+ "and the third remaining stock from another shop in cairo with less stock quantity"
+					, asList(607L, 608L, 612L).stream().allMatch(stockIdsAfter::contains));
+	}
+	
+	
+	
+	
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void optimizeCartSelectShop() {
+		
+		//---------------------------------------------------------------		
+		String requestBody = 
+				json()
+				.put("strategy", "SAME_CITY")
+				.put("parameters", 
+						json()
+						.put("CUSTOMER_ADDRESS_ID",12300001L )
+						.put("SHOP_ID",503L ))
+				.toString();
+		HttpEntity<?> request = getHttpEntity(requestBody, "123");
+		ResponseEntity<CartOptimizeResponseDTO> res = 
+				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
+		
+		//---------------------------------------------------------------
+		Cart cart = res.getBody().getCart();
+		List<Long> stockIdsAfter = 
+				cart.getItems().stream().map(CartItem::getStockId).collect(toList());
+		
+		assertEquals(OK, res.getStatusCode());
+		assertFalse("prices doesn't change", res.getBody().getTotalChanged());		
+		assertEquals(3, cart.getItems().size());
+		assertTrue("The optimization should pick the stocks from a the given shop even if it is in another city."
+					, asList(601L, 602L, 603L).stream().allMatch(stockIdsAfter::contains));
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void optimizeCartSelectShopThatHaveNoEnoughQuantity() {
+		
+		//---------------------------------------------------------------		
+		String requestBody = 
+				json()
+				.put("strategy", "SAME_CITY")
+				.put("parameters", 
+						json()
+						.put("CUSTOMER_ADDRESS_ID",12300001L )
+						.put("SHOP_ID",504L ))
+				.toString();
+		HttpEntity<?> request = getHttpEntity(requestBody, "123");
+		ResponseEntity<CartOptimizeResponseDTO> res = 
+				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
+		
+		//---------------------------------------------------------------
+		Cart cart = res.getBody().getCart();
+		List<Long> stockIdsAfter = 
+				cart.getItems().stream().map(CartItem::getStockId).collect(toList());
+		
+		assertEquals(OK, res.getStatusCode());
+		assertFalse("prices doesn't change", res.getBody().getTotalChanged());		
+		assertEquals(3, cart.getItems().size());
+		assertTrue("The optimization should pick the stocks from a the given shop , but the shop doesn't "
+				+ "have enougj quantity for first item, so , it will pickit from the shop next in priority "
+				+ " which should be in the same city and with highest average stock."
+					, asList(607L, 611L, 612L).stream().allMatch(stockIdsAfter::contains));
 	}
 	
 	

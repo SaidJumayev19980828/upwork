@@ -63,6 +63,7 @@ import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -148,6 +149,9 @@ public class OrderServiceTest {
 	
 	@MockBean
 	private MailService mailService;
+	
+	@Autowired
+	private ObjectMapper mapper;
 
 	@Test
 	public void unregisteredUser() {
@@ -814,25 +818,6 @@ public class OrderServiceTest {
 	
 	
 	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void getOrderInfoTest() throws JsonParseException, JsonMappingException, IOException {
-			
-		ResponseEntity<String> response = template.exchange("/order/info?order_id=330002&details_level=3"
-														, GET
-														,new HttpEntity<>(getHeaders("101112"))
-														, String.class);
-		
-		System.out.println("Order >>>> " + response.getBody());
-		
-		DetailedOrderRepObject body = readDetailedOrderRepObjectResponse(response);
-		
-		DetailedOrderRepObject expected = createExpectedOrderInfo(330002L, new BigDecimal("600.00"), 14, "CLIENT_CONFIRMED", 88L);
-		
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertEquals(expected, body);
-	}
 
 
 	@Test
@@ -983,50 +968,7 @@ public class OrderServiceTest {
 	}
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void getCurrentOrderTest() throws JsonParseException, JsonMappingException, IOException {
-			
-		ResponseEntity<String> response = template.exchange("/order/current?details_level=3"
-														, GET
-														, new HttpEntity<>(getHeaders("123"))
-														, String.class);
-		
-		System.out.println("Order >>>> " + response.getBody());
-		
-		DetailedOrderRepObject body = readDetailedOrderRepObjectResponse(response);
-		
-		DetailedOrderRepObject expected = createExpectedOrderInfo(330003L, new BigDecimal("300.00"), 7, "NEW", 88L);
-		
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertEquals(expected, body);
-	}
 
-
-
-
-
-
-	private DetailedOrderRepObject readDetailedOrderRepObjectResponse(ResponseEntity<String> response)
-			throws IOException, JsonParseException, JsonMappingException {
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new JavaTimeModule());
-		DetailedOrderRepObject body = mapper.readValue(response.getBody(), DetailedOrderRepObject.class);
-		return body;
-	}
-	
-	
 	
 	
 	
@@ -1070,28 +1012,6 @@ public class OrderServiceTest {
 	
 	
 	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void getCurrentOrderUserHasMultipleNewOrdersTest() throws JsonParseException, JsonMappingException, IOException {
-			
-		ResponseEntity<String> response = template.exchange("/order/current?details_level=3"
-														, GET
-														, new HttpEntity<>(getHeaders("456"))
-														, String.class);		
-		
-		System.out.println("Order >>>> " + response.getBody());
-		
-		DetailedOrderRepObject body = readDetailedOrderRepObjectResponse(response);
-		
-		DetailedOrderRepObject expected = createExpectedOrderInfo(330005L, new BigDecimal("50.00"), 1, "NEW", 89L);
-		
-		assertEquals(OK, response.getStatusCode());
-		assertEquals(expected, body);
-	}
 	
 	
 
@@ -1224,7 +1144,7 @@ public class OrderServiceTest {
 		order.setCreatedAt( entity.getCreationDate() );
 		order.setDeliveryDate( entity.getDeliveryDate() );
 		order.setOrderId( orderId );
-		order.setShipping( BigDecimal.ZERO );
+//		order.setShipping( BigDecimal.ZERO );
 		order.setShippingAddress( null );
 		order.setShopId( entity.getShopsEntity().getId() );
 		order.setStatus( status );
@@ -2053,8 +1973,7 @@ public class OrderServiceTest {
 
 		//-------------------------------------------------
 		assertEquals(OK, res.getStatusCode());
-		ObjectMapper mapper = new ObjectMapper();
-		List<MetaOrderBasicInfo> orders = mapper.readValue(res.getBody(), List.class);
+		List<MetaOrderBasicInfo> orders = mapper.readValue(res.getBody(), new TypeReference<List<MetaOrderBasicInfo>>(){});
 		assertEquals(1,orders.size());
 	}
 
