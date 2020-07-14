@@ -194,6 +194,9 @@ public class OrderServiceImpl implements OrderService {
 	
 	@Autowired
 	private ShippingManagementService shippingManagementService;
+
+	@Autowired
+	private ProductImageService imgService;
 	
 	@Autowired
 	private MailService mailService;
@@ -1693,12 +1696,26 @@ public class OrderServiceImpl implements OrderService {
 		cartItem.setUser((UserEntity) user);
 		cartItem.setStock(stock);
 		cartItem.setQuantity(item.getQuantity());
-		cartItem.setCoverImage(item.getCoverImg());
+		cartItem.setCoverImage(getItemCoverImage(item.getCoverImg(), stock));
 		cartItemRepo.save(cartItem);
 
 		return getUserCart(user.getId());
 	}
 
+
+	private String getItemCoverImage(String coverImage, StocksEntity stock) {
+		if (coverImage != null) {
+			return coverImage;
+		}
+		Long productId = stock.getProductVariantsEntity().getProductEntity().getId();
+		Long variantId = stock.getProductVariantsEntity().getId();
+		return ofNullable(imgService.getProductsAndVariantsImages(asList(productId), asList(variantId))
+									.stream()
+									.findFirst())
+				.get()
+				.orElse(new ProductImageDTO())
+				.getImagePath();
+	}
 
 	@Override
 	public Cart deleteCartItem(Long itemId){

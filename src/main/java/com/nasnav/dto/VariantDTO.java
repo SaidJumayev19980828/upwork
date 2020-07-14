@@ -17,7 +17,7 @@ public class VariantDTO extends BaseRepresentationObject {
 	private Long id;
 	private String barcode;
 	private List<StockDTO> stocks;
-	private List<ProductImgDTO> images;
+	private List<ProductImageDTO> images;
 
 	//this will be inserted unwrapped in JSON by @JsonAnyGetter , we don't
 	//want it to be inserted twice

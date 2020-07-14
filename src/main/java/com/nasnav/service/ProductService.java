@@ -83,6 +83,7 @@ import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.dto.*;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -121,27 +122,6 @@ import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ProductsCustomRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.TagsRepository;
-import com.nasnav.dto.BundleDTO;
-import com.nasnav.dto.BundleElementUpdateDTO;
-import com.nasnav.dto.ExtraAttributeDTO;
-import com.nasnav.dto.Organization_BrandRepresentationObject;
-import com.nasnav.dto.Pair;
-import com.nasnav.dto.Prices;
-import com.nasnav.dto.ProductBaseInfo;
-import com.nasnav.dto.ProductDetailsDTO;
-import com.nasnav.dto.ProductImageUpdateDTO;
-import com.nasnav.dto.ProductImgDTO;
-import com.nasnav.dto.ProductRepresentationObject;
-import com.nasnav.dto.ProductSortOptions;
-import com.nasnav.dto.ProductTagDTO;
-import com.nasnav.dto.ProductUpdateDTO;
-import com.nasnav.dto.ProductsFiltersResponse;
-import com.nasnav.dto.ProductsResponse;
-import com.nasnav.dto.StockDTO;
-import com.nasnav.dto.TagsRepresentationObject;
-import com.nasnav.dto.VariantDTO;
-import com.nasnav.dto.VariantFeatureDTO;
-import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -219,10 +199,8 @@ public class ProductService {
 	@Autowired
 	private  FileService fileService;
 
-
 	@Autowired
 	private EmployeeUserRepository empRepo;
-
 
 	@Autowired
 	private BrandsRepository brandRepo;
@@ -304,9 +282,13 @@ public class ProductService {
 
 	private ProductDetailsDTO createProductDetailsDTO(ProductEntity product, Long shopId, List<ProductVariantsEntity> productVariants) throws BusinessException {
 
-		List<VariantDTO> variantsDTOList = getVariantsList(productVariants, product.getId(), shopId);
-		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(product.getId());
+		List<ProductImageDTO> productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(product.getId()),
+				productVariants.stream()
+						.map(ProductVariantsEntity::getId)
+						.collect(toList()));
 
+		List<VariantDTO> variantsDTOList = getVariantsList(productVariants, product.getId(), shopId, productsAndVariantsImages);
+		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(product.getId());
 		ProductDetailsDTO productDTO = null;
 		try {
 			productDTO = toProductDetailsDTO(product);
@@ -315,7 +297,7 @@ public class ProductService {
 				productDTO.setMultipleVariants(true);
 				productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
 				productDTO.setBundleItems( getBundleItems(product));
-				productDTO.setImages( getProductImages(product.getId() ) );
+				productDTO.setImages( getProductImages(productsAndVariantsImages) );
 				productDTO.setTags(tagsDTOList);
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			logger.error(e,e);
@@ -408,17 +390,21 @@ public class ProductService {
 	private List<ProductRepresentationObject> getBundleItems(ProductEntity product) {
 
 		List<Long> bundleProductsIdList = bundleRepository.getBundleItemsProductIds(product.getId());
+		if (bundleProductsIdList.isEmpty()) {
+			return new ArrayList<>();
+		}
 		List<ProductEntity> bundleProducts = this.getProductsByIds(bundleProductsIdList , "asc", "name");
 		ProductsResponse response = this.getProductsResponse(bundleProducts,"asc" , "name" ,  (long)bundleProducts.size() );
-		List<ProductRepresentationObject> productRepList = response == null? new ArrayList<>() : response.getProducts();
+		List<ProductRepresentationObject> productRepList = response.getProducts();
 		return productRepList;
 	}
 
 
-	private List<VariantDTO> getVariantsList(List<ProductVariantsEntity> productVariants, Long productId, Long shopId) throws BusinessException{
+	private List<VariantDTO> getVariantsList(List<ProductVariantsEntity> productVariants, Long productId, Long shopId,
+											 List<ProductImageDTO> variantsImages) throws BusinessException{
 
 		return productVariants.stream()
-				.map(variant -> createVariantDto(shopId, variant))
+				.map(variant -> createVariantDto(shopId, variant, variantsImages))
 				.filter( variant -> !variant.getStocks().isEmpty())
 				.collect(toList());
 	}
@@ -426,13 +412,13 @@ public class ProductService {
 
 
 
-	private VariantDTO createVariantDto(Long shopId, ProductVariantsEntity variant)  {
+	private VariantDTO createVariantDto(Long shopId, ProductVariantsEntity variant, List<ProductImageDTO> variantsImages)  {
 		VariantDTO variantObj = new VariantDTO();
 		variantObj.setId(variant.getId());
 		variantObj.setBarcode( variant.getBarcode() );
 		variantObj.setStocks( getStockList(variant, shopId) );
 		variantObj.setVariantFeatures( getVariantFeaturesValuesWithNullDefault(variant) );
-		variantObj.setImages( getProductVariantImages(variant.getId()) );
+		variantObj.setImages( getProductVariantImages(variant.getId(), variantsImages) );
 		variantObj.setExtraAttributes( getExtraAttributesList(variant));
 		return variantObj;
 	}
@@ -571,31 +557,21 @@ public class ProductService {
 		return variant.getFeatureSpec() != null && !variant.getFeatureSpec().isEmpty();
 	}
 
-	private Set<ProductImgDTO> getProductImages(Long productId) {
-
-		return productImagesRepository
-				.findByProductEntity_IdAndTypeOrderByPriority(productId, PRODUCT_IMAGE)
-				.stream()
-				.map(ProductImgDTO::new)
-				.collect(toSet());
+	private List<ProductImageDTO> getProductImages(List<ProductImageDTO> productImages) {
+		return productImages.stream()
+							.filter(i -> i.getVariantId() == null)
+							.map(i -> new ProductImageDTO(i.getId(), i.getImagePath(), i.getPriority()))
+							.collect(toList());
 	}
 
 
 
-	private List<ProductImgDTO> getProductVariantImages(Long variantId) {
-		List<ProductImagesEntity> variantImages = productImagesRepository.findByProductVariantsEntity_Id(variantId);
-
-		List<ProductImgDTO> variantImagesArray = new ArrayList<>();
-		if (variantImages != null && !variantImages.isEmpty()) {
-			variantImagesArray =
-					variantImages
-					.stream()
-					.filter(Objects::nonNull)
-					.map(ProductImgDTO::new)
-					.collect(toList());
-		}
-
-		return variantImagesArray;
+	private List<ProductImageDTO> getProductVariantImages(Long variantId, List<ProductImageDTO> variantsImages) {
+		return variantsImages.stream()
+							.filter(i -> i.getVariantId() != null)
+							.filter(i -> i.getVariantId().equals(variantId))
+							.map(i -> new ProductImageDTO(i.getId(), i.getImagePath(), i.getPriority()))
+							.collect(toList());
 	}
 
 
@@ -907,7 +883,13 @@ public class ProductService {
 				.map(ProductEntity::getId)
 				.collect(toList());
 
-		Map<Long, String> productCoverImages = imgService.getProductsCoverImages(productIdList);
+		List<Long> variantsIdList = products.stream()
+				.map(ProductEntity::getProductVariants)
+				.flatMap(p -> p.stream())
+				.map(ProductVariantsEntity::getId)
+				.collect(toList());
+
+		Map<Long, String> productCoverImages = imgService.getProductsImagesMap(productIdList, variantsIdList);
 
 		List<ProductRepresentationObject> productsRep =
 				products.stream()
@@ -929,13 +911,16 @@ public class ProductService {
 			List<Long> productIdList = stocks.stream()
 					.map(ProductRepresentationObject::getId)
 					.collect(toList());
+			List<Long> variantsIds = productVariantsRepository.getVariantsIdsByStocksIds(stocks.stream()
+																							   .map(ProductRepresentationObject::getStockId)
+																							   .collect(toList()));
 
 			Map<Long, Prices> productsPricesMap =
 					mapInBatches(productIdList, 500, stockRepository::getProductsPrices)
 					.stream()
 					.collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
 
-			Map<Long, String> productCoverImages = imgService.getProductsCoverImages(productIdList);
+			Map<Long, String> productCoverImages = imgService.getProductsImagesMap(productIdList, variantsIds);
 
 			Map<Long, List<TagsRepresentationObject>> productsTags = getProductsTagsDTOList(productIdList);
 
@@ -992,10 +977,11 @@ public class ProductService {
 
 	private ProductRepresentationObject setAdditionalInfo(ProductRepresentationObject product,
 														  Map<Long, String> productCoverImgs) {
-		String imgUrl = productCoverImgs.get(product.getId());
-		product.setImageUrl(imgUrl);
-		if (imgUrl.equals(NO_IMG_FOUND_URL))
+		if (productCoverImgs.get(product.getId()) != null) {
+			product.setImageUrl(productCoverImgs.get(product.getId()));
+		} else {
 			product.setHidden(true);
+		}
 		return product;
 	}
 
@@ -1819,7 +1805,7 @@ public class ProductService {
 
 		List<Long> productIdList = bundleRepository.getBundleItemsProductIds(entity.getId());
 
-		Map<Long, String> 	productCoverImages = imgService.getProductsCoverImages(productIdList);
+		Map<Long, String> 	productCoverImages = imgService.getProductsImagesMap(productIdList, null);
 		List<ProductBaseInfo> productlist = productRepository.findByIdInOrderByNameAsc(productIdList)
 															.stream()
 															.map(prod -> getProductRepresentation(prod, productCoverImages))

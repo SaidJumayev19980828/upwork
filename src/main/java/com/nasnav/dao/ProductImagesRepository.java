@@ -52,10 +52,10 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 
 
 
-	@Query(value = "SELECT new com.nasnav.dto.ProductImageDTO(i.uri, i.productEntity.id, i.productVariantsEntity.id)" +
+	@Query(value = "SELECT new com.nasnav.dto.ProductImageDTO(i.id, i.uri, i.productEntity.id, i.productVariantsEntity.id, i.priority)" +
 			" from ProductImagesEntity i where i.productEntity.id in (:productsIds) or i.productVariantsEntity.id in (:variantsIds)" +
-			" order by i.priority, case when i.productVariantsEntity is null then 0 else 1 end ")
-	List<ProductImageDTO> getProductsAndVariantsCoverImage(@Param("productsIds") List<Long> productsIds,
-														   @Param("variantsIds") List<Long> variantsIds);
+			" order by case when i.productVariantsEntity is null then 0 else 1 end, i.priority")
+	List<ProductImageDTO> getProductsAndVariantsImages(@Param("productsIds") List<Long> productsIds,
+													   @Param("variantsIds") List<Long> variantsIds);
 
 }
