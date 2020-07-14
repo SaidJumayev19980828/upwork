@@ -2,16 +2,17 @@ package com.nasnav.dao;
 
 import java.util.List;
 
-import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.persistence.CartItemEntity;
+import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.CartItemData;
-import org.springframework.transaction.annotation.Transactional;
 import com.nasnav.persistence.dto.query.result.CartItemShippingData;
+import com.nasnav.persistence.dto.query.result.CartItemStock;
 
 public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long> {
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartItemData("
@@ -51,9 +52,17 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 	@Modifying
 	void deleteByQuantityAndUser_Id(Integer quantity, Long userId);
 
+	
 	@Transactional
 	@Modifying
-	void deleteByUser_Id(Long userId);
+	@Query("DELETE FROM CartItemEntity cart "
+			+ " WHERE cart.id in ( "
+			+ " SELECT item.id "
+			+ " FROM CartItemEntity item "
+			+ " LEFT JOIN item.user usr "
+			+ " WHERE usr.id = :user_id"
+			+ ")")
+	void deleteByUser_Id(@Param("user_id")Long userId);
 	
 	
 	@Transactional
@@ -92,4 +101,21 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " AND usr.id = :user_id"
 			+ ")")
 	void deleteByStockIdInAndUser_Id(@Param("stock_ids")List<Long> stockIds, @Param("user_id")Long userId);
+
+	
+	
+	@Query("SELECT new com.nasnav.persistence.dto.query.result.CartItemStock("
+			+ " variant.id, allStocks.id, shop.id, city.id, allStocks.quantity )"
+			+ " FROM CartItemEntity item"
+			+ " LEFT JOIN item.stock stock "
+			+ " LEFT JOIN item.user user "
+			+ " LEFT JOIN stock.productVariantsEntity variant "
+			+ " LEFT JOIN variant.stocks  allStocks "
+			+ " LEFT JOIN allStocks.shopsEntity shop "
+			+ " LEFT JOIN shop.addressesEntity address "
+			+ " LEFT JOIN address.areasEntity area "
+			+ " LEFT JOIN area.citiesEntity city "
+			+ " WHERE user.id = :userId "
+			+ " AND allStocks.quantity >= item.quantity")
+	List<CartItemStock> getAllCartStocks(@Param("userId") Long userId);
 }

@@ -1,20 +1,30 @@
 package com.nasnav.controller;
 
+import java.io.IOException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.dto.request.cart.CartOptimizeDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.service.OrderService;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
-
-import java.io.IOException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/cart")
@@ -72,5 +82,20 @@ public class CartController {
 	public Order checkoutCart(@RequestHeader(name = "User-Token", required = false) String userToken,
 							  @RequestBody CartCheckoutDTO dto) throws BusinessException, IOException {
 		return orderService.checkoutCart(dto);
+	}
+	
+	
+	
+	
+	@ApiOperation(value = "optimize the cart", nickname = "cartOptimize")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 403, message = "Not a customer"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid parameters")
+	})
+	@PostMapping(value = "/optimize", consumes = MediaType.APPLICATION_JSON_VALUE, produces=MediaType.APPLICATION_JSON_VALUE)
+	public CartOptimizeResponseDTO optimizeCart(@RequestHeader(name = "User-Token", required = false) String userToken,
+							  @RequestBody CartOptimizeDTO dto) {
+		return orderService.optimizeCart(dto);
 	}
 }

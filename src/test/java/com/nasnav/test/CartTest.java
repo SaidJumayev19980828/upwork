@@ -5,8 +5,10 @@ import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -47,6 +49,7 @@ import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.Shipment;
 import com.nasnav.dto.response.navbox.SubOrder;
@@ -519,6 +522,177 @@ public class CartTest {
 		
 		assertOrdersStatusAfterCheckout(unpaidOrderId, cancelPaymentOrderId, paidOrderId, errorPaymentOrderId);
 	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_6.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void optimizeCartSameCityTest() {
+		
+		//---------------------------------------------------------------		
+		String requestBody = 
+				json()
+				.put("strategy", "SAME_CITY")
+				.put("parameters", 
+						json()
+						.put("CUSTOMER_ADDRESS_ID",12300001L ))
+				.toString();
+		HttpEntity<?> request = getHttpEntity(requestBody, "123");
+		ResponseEntity<CartOptimizeResponseDTO> res = 
+				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
+		
+		//---------------------------------------------------------------
+		Cart cart = res.getBody().getCart();
+		List<Long> stockIdsAfter = 
+				cart.getItems().stream().map(CartItem::getStockId).collect(toList());
+		
+		assertEquals(OK, res.getStatusCode());
+		assertTrue(res.getBody().getTotalChanged());		
+		assertEquals(2, cart.getItems().size());
+		assertTrue("The optimization should pick stocks from a shop in cairo that can provide most items"
+					, asList(607L, 609L).stream().allMatch(stockIdsAfter::contains));
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void optimizeCartSelectShopWithHighestStockTest() {
+		
+		//---------------------------------------------------------------		
+		String requestBody = 
+				json()
+				.put("strategy", "SAME_CITY")
+				.put("parameters", 
+						json()
+						.put("CUSTOMER_ADDRESS_ID",12300001L ))
+				.toString();
+		HttpEntity<?> request = getHttpEntity(requestBody, "123");
+		ResponseEntity<CartOptimizeResponseDTO> res = 
+				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
+		
+		//---------------------------------------------------------------
+		Cart cart = res.getBody().getCart();
+		List<Long> stockIdsAfter = 
+				cart.getItems().stream().map(CartItem::getStockId).collect(toList());
+		
+		assertEquals(OK, res.getStatusCode());
+		assertFalse("prices doesn't change", res.getBody().getTotalChanged());		
+		assertEquals(3, cart.getItems().size());
+		assertTrue("The optimization should pick 2 stocks from a shop in cairo that has the largest average stock quantity, "
+				+ "and the third remaining stock from another shop in cairo with less stock quantity"
+					, asList(607L, 608L, 612L).stream().allMatch(stockIdsAfter::contains));
+	}
+	
+	
+	
+	
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void optimizeCartSelectShop() {
+		
+		//---------------------------------------------------------------		
+		String requestBody = 
+				json()
+				.put("strategy", "SAME_CITY")
+				.put("parameters", 
+						json()
+						.put("CUSTOMER_ADDRESS_ID",12300001L )
+						.put("SHOP_ID",503L ))
+				.toString();
+		HttpEntity<?> request = getHttpEntity(requestBody, "123");
+		ResponseEntity<CartOptimizeResponseDTO> res = 
+				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
+		
+		//---------------------------------------------------------------
+		Cart cart = res.getBody().getCart();
+		List<Long> stockIdsAfter = 
+				cart.getItems().stream().map(CartItem::getStockId).collect(toList());
+		
+		assertEquals(OK, res.getStatusCode());
+		assertFalse("prices doesn't change", res.getBody().getTotalChanged());		
+		assertEquals(3, cart.getItems().size());
+		assertTrue("The optimization should pick the stocks from a the given shop even if it is in another city."
+					, asList(601L, 602L, 603L).stream().allMatch(stockIdsAfter::contains));
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void optimizeCartSelectShopThatHaveNoEnoughQuantity() {
+		
+		//---------------------------------------------------------------		
+		String requestBody = 
+				json()
+				.put("strategy", "SAME_CITY")
+				.put("parameters", 
+						json()
+						.put("CUSTOMER_ADDRESS_ID",12300001L )
+						.put("SHOP_ID",504L ))
+				.toString();
+		HttpEntity<?> request = getHttpEntity(requestBody, "123");
+		ResponseEntity<CartOptimizeResponseDTO> res = 
+				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
+		
+		//---------------------------------------------------------------
+		Cart cart = res.getBody().getCart();
+		List<Long> stockIdsAfter = 
+				cart.getItems().stream().map(CartItem::getStockId).collect(toList());
+		
+		assertEquals(OK, res.getStatusCode());
+		assertFalse("prices doesn't change", res.getBody().getTotalChanged());		
+		assertEquals(3, cart.getItems().size());
+		assertTrue("The optimization should pick the stocks from a the given shop , but the shop doesn't "
+				+ "have enougj quantity for first item, so , it will pickit from the shop next in priority "
+				+ " which should be in the same city and with highest average stock."
+					, asList(607L, 611L, 612L).stream().allMatch(stockIdsAfter::contains));
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void optimizeCartNoAuthz() {
+        HttpEntity<?> request =  getHttpEntity("NOT FOUND");
+        ResponseEntity<Cart> response =
+        		template.exchange("/cart/optimize", POST, request, Cart.class);
+
+        assertEquals(UNAUTHORIZED, response.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void optimizeCartNoAuthN() {
+        HttpEntity<?> request =  getHttpEntity("101112");
+        ResponseEntity<Cart> response = 
+        		template.exchange("/cart/optimize", POST, request, Cart.class);
+
+        assertEquals(FORBIDDEN, response.getStatusCode());
+	}
+	
+	
+	
+	//TODO: invalid startegy test
+	//TODO: invalid parameter json test
+	
 
 
 

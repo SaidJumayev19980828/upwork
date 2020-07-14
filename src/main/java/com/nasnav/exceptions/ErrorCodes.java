@@ -54,11 +54,13 @@ public enum ErrorCodes {
 	,ADDR$ADDR$0002("Address with id[%d] doesn't exists!")
 	,ADDR$ADDR$0003("Must provide id of parent $s")
 	,ADDR$ADDR$0004("Must provide customer address!")
+	,ADDR$ADDR$0005("Address has no city!")
 
 	,G$USR$0001("User is not an employee!")
 	,G$JSON$0001("Failed to read json into an object!")
 	,G$PRAM$0001("Missing required parameters in object[%s]!")
 	,G$ORG$0001("No organization exists with id[%d]!")
+	
 
 	,E$USR$0001("User is an employee!")
 
@@ -67,6 +69,11 @@ public enum ErrorCodes {
 	,O$CRT$0003("Quantity is greater than available stock!")
 	,O$CRT$0004("Currencies of items are different!")
 	,O$CRT$0005("Cart items belong to different organizations!")
+	,O$CRT$0006("Missing Cart optimization strategy!")
+	,O$CRT$0007("Invalid Cart optimization strategy [%s] !")
+	,O$CRT$0008("Failed to parse Cart optimization parameters [%s] !")
+	,O$CRT$0009("Failed to get a cart optimizer with name [%s] !")
+	,O$CRT$0010("Invalid or missing cart optimization parameters!")
 
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")

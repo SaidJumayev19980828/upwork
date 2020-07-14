@@ -6,6 +6,7 @@ import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.ORDER_BILL_TEMPLATE;
 import static com.nasnav.constatnts.EmailConstants.ORDER_NOTIFICATION_TEMPLATE;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_CALC_ORDER_FAILED;
@@ -47,6 +48,7 @@ import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
 import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
 import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0004;
+import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0005;
 import static com.nasnav.exceptions.ErrorCodes.G$USR$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0001;
@@ -59,12 +61,17 @@ import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0004;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0005;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0006;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0007;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0008;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0009;
 import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0003;
 import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
 import static com.nasnav.exceptions.ErrorCodes.S$0005;
+import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.isValidStrategy;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDateTime.now;
@@ -110,10 +117,12 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.BasketRepository;
@@ -136,11 +145,13 @@ import com.nasnav.dto.MetaOrderBasicInfo;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.dto.request.cart.CartOptimizeDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
+import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.Shipment;
 import com.nasnav.dto.response.navbox.SubOrder;
@@ -150,7 +161,6 @@ import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
@@ -171,10 +181,13 @@ import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.CartItemData;
+import com.nasnav.persistence.dto.query.result.CartItemStock;
 import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
+import com.nasnav.service.cart.optimizers.CartOptimizer;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
+import com.nasnav.service.model.cart.ShopFulfillingCart;
 import com.nasnav.shipping.model.ShipmentTracker;
 
 import lombok.AllArgsConstructor;
@@ -245,6 +258,13 @@ public class OrderServiceImpl implements OrderService {
 	
 	@Autowired
 	private RoleEmployeeUserRepository empRoleRepo;
+	
+	@Autowired
+	private ApplicationContext context;
+	
+	@Autowired
+	private ObjectMapper objectMapper;
+	
 	private Map<OrderStatus, Set<OrderStatus>> nextOrderStatusSet;
 	private Set<OrderStatus> orderStatusForCustomers;
 	private Set<OrderStatus> orderStatusForManagers;
@@ -1714,12 +1734,15 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		StocksEntity stock = ofNullable(item.getStockId()).map(id -> stockRepository.findByIdAndOrganizationEntity_Id(id, orgId))
-							.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE ,P$STO$0001,item.getStockId()));
+		StocksEntity stock = 
+				ofNullable(item.getStockId())
+				.map(id -> stockRepository.findByIdAndOrganizationEntity_Id(id, orgId))
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE ,P$STO$0001,item.getStockId()));
 		validateCartItem(stock, item);
 
-		CartItemEntity cartItem = ofNullable(cartItemRepo.findByStock_IdAndUser_Id(stock.getId(), user.getId()))
-								  .orElse(new CartItemEntity());
+		CartItemEntity cartItem = 
+				ofNullable(cartItemRepo.findByStock_IdAndUser_Id(stock.getId(), user.getId()))
+				.orElse(new CartItemEntity());
 
 		if (item.getQuantity().equals(0)) {
 			if (cartItem.getId() != null) {
@@ -2456,6 +2479,170 @@ public class OrderServiceImpl implements OrderService {
 		oValue.amount = metaOrder.get().getGrandTotal();
 		oValue.currency = getOrderCurrency(metaOrder.get());
 		return oValue;
+	}
+
+
+
+
+
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public <T> CartOptimizeResponseDTO optimizeCart(CartOptimizeDTO dto) {
+		validteCartOptimizeRequest(dto);
+		BigDecimal initialCartTotal = calculateCartTotal();
+		Optional<Cart> savedCart = 
+				createOptimizedCart(dto)
+				.map(this::replaceCart);				
+		boolean totalChanged = 
+				savedCart
+				.map(this::calculateCartTotal)
+				.map(total -> total.compareTo(initialCartTotal) != 0)
+				.orElse(false);
+		Cart returnedCart = savedCart.orElseGet(() -> getCart());
+		return new CartOptimizeResponseDTO(totalChanged, returnedCart);
+	}
+
+
+
+
+	@SuppressWarnings("unchecked")
+	private <T> Optional<Cart> createOptimizedCart(CartOptimizeDTO dto) {
+		
+		CartOptimizer<T> optimizer = null;
+		try {
+			optimizer = context.getBean(dto.getStrategy(), CartOptimizer.class);
+		}catch(Throwable t) {
+			logger.error(t,t);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0009, dto.getStrategy());
+		}
+		
+		Optional<T> parametersOptional = Optional.empty();
+		try {
+			String json = new JSONObject(dto.getParametersJson()).toString();
+			T parameters = objectMapper.readValue(json, optimizer.getParameterClass());
+			parametersOptional = ofNullable(parameters);
+		} catch (IOException e) {
+			logger.error(e,e);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0008);
+		}
+		
+		return optimizer.createOptimizedCart(parametersOptional);
+	}
+	
+	
+	
+	
+	
+	private Cart replaceCart(Cart newCart) {
+		BaseUserEntity user = securityService.getCurrentUser();
+		cartItemRepo.deleteByUser_Id(user.getId());
+		return saveCart(newCart);
+	}
+	
+	
+	
+	
+	
+	
+	//TODO: this implementation should be more efficient in accessing the database and 
+	//addCartItem should be the one depending on it instead.
+	//also it can be the foundation for POST /cart api that saves the whole cart at once.
+	private Cart saveCart(Cart cart) {
+		BaseUserEntity user = securityService.getCurrentUser();
+		return cart
+				.getItems()
+				.stream()
+				.map(this::addCartItem)
+				.reduce((first, second) -> second)
+				.orElseGet(() -> getUserCart(user.getId()));
+	}
+
+
+	
+	
+	@Override
+	public List<ShopFulfillingCart> getShopsThatCanProvideCartItems(){
+		Long userId = securityService.getCurrentUser().getId();
+		return cartItemRepo
+				.getAllCartStocks(userId)
+				.stream()
+				.collect(groupingBy(CartItemStock::getShopId))
+				.entrySet()
+				.stream()
+				.map(this::createShopFulfillingCart)
+				.collect(toList());
+	}
+
+
+
+	private boolean hasAllCartVariants(ShopFulfillingCart shop, Set<Long> cartItemVariants) {
+		List<Long> shopCartVariants =
+				ofNullable(shop)
+				.map(ShopFulfillingCart::getCartItems)
+				.orElse(emptyList())
+				.stream()
+				.map(CartItemStock::getVariantId)
+				.collect(toList());
+		return cartItemVariants
+				.stream()
+				.allMatch(shopCartVariants::contains);
+	}
+
+
+
+
+
+	private BigDecimal calculateCartTotal() {
+		return  calculateCartTotal(getCart().getItems());
+	}
+	
+	
+	
+	
+	
+	private ShopFulfillingCart createShopFulfillingCart(
+				Map.Entry<Long, List<CartItemStock>> shopWithStocks) {
+		Long shopId = shopWithStocks.getKey();
+		List<CartItemStock> itemStocks = shopWithStocks.getValue();
+		Long cityId = 
+				itemStocks
+				.stream()
+				.map(CartItemStock::getShopCityId)
+				.findFirst()
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, ADDR$ADDR$0005));
+		return new ShopFulfillingCart(shopId, cityId, itemStocks); 
+	}
+	
+	
+	
+	
+	
+	private BigDecimal calculateCartTotal(Cart cart) {
+		return ofNullable(cart)
+				.map(Cart::getItems)
+				.map(this::calculateCartTotal)
+				.orElse(ZERO);
+	}
+	
+	
+	private BigDecimal calculateCartTotal(List<CartItem> cartItems) {
+		return  cartItems
+				.stream()
+				.map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
+				.reduce(ZERO, BigDecimal::add);
+	}
+
+
+
+
+
+	private void validteCartOptimizeRequest(CartOptimizeDTO dto) {
+		String strategy  = dto.getStrategy();
+		if(isBlankOrNull(strategy)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0006);
+		}else if(!isValidStrategy(strategy)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0007, strategy);
+		}
 	}
 
 }
