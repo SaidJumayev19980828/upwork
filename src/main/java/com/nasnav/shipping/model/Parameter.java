@@ -1,11 +1,17 @@
 package com.nasnav.shipping.model;
 
-import lombok.AllArgsConstructor;
+import java.util.List;
+
 import lombok.Data;
 
 @Data
-@AllArgsConstructor
 public class Parameter {
 	private String name;
 	private ParameterType type;
+	private List<String> options;
+	
+	public Parameter(String name, ParameterType type) {
+		this.name = name;
+		this.type = type;
+	}
 }

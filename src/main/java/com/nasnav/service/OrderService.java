@@ -80,4 +80,5 @@ public interface OrderService {
 
 	List<ShopFulfillingCart> getShopsThatCanProvideCartItems();
 
+	List<ShopFulfillingCart> getShopsThatCanProvideWholeCart();
 	}

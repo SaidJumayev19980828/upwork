@@ -4,18 +4,22 @@ import static java.util.Arrays.asList;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
+import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.stereotype.Service;
+import org.springframework.web.context.support.GenericWebApplicationContext;
 
-import com.google.common.collect.ImmutableMap;
 import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.ShippingServiceInfo;
 import com.nasnav.shipping.services.DummyShippingService;
@@ -26,11 +30,10 @@ import lombok.Data;
 
 
 /**
- * A Factory class for providing shipping services by their ID.
+ * A Factory service for providing shipping services by their ID.
  * */
-//this is just used to fetch services, it doesn't have a dynamic state, so, i guess 
-//it shouldn't cause problems with multi-threading
-public final class ShippingServiceFactory {
+@Service
+public class ShippingServiceFactory {
 	
 	private static Logger logger = LogManager.getLogger(ShippingServiceFactory.class);
 	
@@ -42,30 +45,42 @@ public final class ShippingServiceFactory {
 					,BostaLevisShippingService.class);
 	
 	
-	private Map<String, Class<? extends ShippingService>> services ;
-	private static ShippingServiceFactory instance;
+	@Autowired
+	private GenericWebApplicationContext context;
 	
 	
 	
-	
-	
-	
-	
-	private ShippingServiceFactory() {
-		
-		services = ImmutableMap.copyOf(
-						activeShippingServices
-						.stream()
-						.map(this::getServiceId)
-						.filter(Optional::isPresent)
-						.map(Optional::get)
-						.collect( 
-							toMap(ServiceClassWithId::getId
-								, ServiceClassWithId::getServiceClass)));
-		instance = this;
+	@PostConstruct
+	public void init() {
+		activeShippingServices
+		.stream()
+		.map(this::getServiceId)
+		.filter(Optional::isPresent)
+		.map(Optional::get)
+		.forEach(this::registerShippingServiceAsBean);
 	}
 	
 	
+	
+	
+	/**
+	 * register the shipping services classes as spring beans with prototype scope.
+	 * The main reason for this is to allow using other spring beans inside the shipping 
+	 * services, allowing them to access other services and the database.
+	 * 
+	 * We do this here. to make the only step needed for adding a new shipping service is
+	 * to add its class to ShippingServiceFactory.activeShippingServices.
+	 * As shipping services needs to be created as prototypes with bean id = service id.
+	 * Shipping services needs to be prototypes because they are stateful, they use the 
+	 * provided ShippingServiceParameters provided to them after creation, 
+	 * which are changed from organization to another.
+	 * */
+	private void registerShippingServiceAsBean(ServiceClassWithId serviceClass) {
+		RootBeanDefinition beanDefinition = new RootBeanDefinition(serviceClass.getClass());
+		beanDefinition.setInstanceSupplier(() -> createShippingServiceInstance(serviceClass));
+		beanDefinition.setScope(SCOPE_PROTOTYPE);
+		context.registerBeanDefinition(serviceClass.getId(), beanDefinition);
+	}
 	
 	
 	
@@ -80,16 +95,8 @@ public final class ShippingServiceFactory {
 	
 
 	
-	private static ShippingServiceFactory getInstance() {
-		return ofNullable(instance)
-				.orElse(new ShippingServiceFactory());
-	}
-	
-	
-	
-	public static Optional<ShippingService> getShippingService(String id, List<ServiceParameter> serviceParameters) {
-		return ofNullable(getInstance().services.get(id))
-				.flatMap(ShippingServiceFactory::createShippingServiceInstance)
+	public Optional<ShippingService> getShippingService(String id, List<ServiceParameter> serviceParameters) {
+		return getShippingServiceBean(id)
 				.map(Stream::of)
 				.orElseGet(Stream::empty)
 				.peek(instance -> instance.setServiceParameters(serviceParameters))
@@ -104,6 +111,29 @@ public final class ShippingServiceFactory {
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
 			logger.error(e,e);
 			return empty();
+		}
+	}
+	
+	
+	
+	private Optional<ShippingService> getShippingServiceBean(String id){
+		try {
+			return ofNullable(context.getBean(id, ShippingService.class));
+		}catch(Throwable t) {
+			logger.error(t,t);
+			return empty();
+		}
+	}
+	
+	
+	
+	private ShippingService createShippingServiceInstance(ServiceClassWithId serviceClassWithId) {
+		Class<? extends ShippingService> srv = serviceClassWithId.getServiceClass();
+		try {
+			return srv.getDeclaredConstructor().newInstance();
+		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+			logger.error(e,e);
+			throw new RuntimeException(e);
 		}
 	}
 	
@@ -131,10 +161,9 @@ public final class ShippingServiceFactory {
 	
 	
 	
-	public static Optional<ShippingServiceInfo> getServiceInfo(String serviceId) {
+	public Optional<ShippingServiceInfo> getServiceInfo(String serviceId) {
 		return ofNullable(serviceId)
-				.map(getInstance().services::get)
-				.map(ShippingServiceFactory::createShippingServiceInstance)
+				.map(this::getShippingServiceBean)
 				.filter(Optional::isPresent)
 				.map(Optional::get)
 				.map(ShippingService::getServiceInfo);

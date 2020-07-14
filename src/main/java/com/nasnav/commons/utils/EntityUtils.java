@@ -164,6 +164,17 @@ public class EntityUtils {
 				.filter(Objects::nonNull)
 				.findFirst();
 	}
+	
+	
+	
+	
+	public static Optional<Long> parseLongSafely(String str){
+		try {
+			return Optional.of(Long.parseLong(str));
+		}catch(Throwable e) {
+			return Optional.empty();
+		}
+	}
 }
 
 

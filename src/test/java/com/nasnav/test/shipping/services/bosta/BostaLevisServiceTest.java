@@ -39,7 +39,6 @@ import com.nasnav.shipping.model.ShipmentTracker;
 import com.nasnav.shipping.model.ShippingAddress;
 import com.nasnav.shipping.model.ShippingDetails;
 import com.nasnav.shipping.model.ShippingOffer;
-import com.nasnav.shipping.services.bosta.BostaLevisShippingService;
 
 import reactor.core.publisher.Mono;
 
@@ -64,6 +63,9 @@ public class BostaLevisServiceTest {
     private BostaLevisTestCommon mockService;
     
     
+    @Autowired
+    private ShippingServiceFactory shippingServiceFactory;
+    
     
     @Before
     public void init() throws Exception {
@@ -74,7 +76,7 @@ public class BostaLevisServiceTest {
 	
 	@Test
 	public void testGetOffer() {
-		ShippingService service = ShippingServiceFactory
+		ShippingService service = shippingServiceFactory
 									.getShippingService(SERVICE_ID, createServiceParams())
 									.get();
 		
@@ -94,7 +96,7 @@ public class BostaLevisServiceTest {
 	
 	@Test
 	public void testGetOfferCityOutOfService() {
-		ShippingService service = ShippingServiceFactory
+		ShippingService service = shippingServiceFactory
 									.getShippingService(SERVICE_ID, createServiceParams())
 									.get();
 		
@@ -110,7 +112,7 @@ public class BostaLevisServiceTest {
 	
 	@Test
 	public void createDeliveryTest() {
-		ShippingService service = ShippingServiceFactory
+		ShippingService service = shippingServiceFactory
 									.getShippingService(SERVICE_ID, createServiceParams())
 									.get();
 		
@@ -131,7 +133,7 @@ public class BostaLevisServiceTest {
 	
 	@Test(expected = RuntimeBusinessException.class)
 	public void createDeliveryUnsupportedCityTest() {
-		ShippingService service = ShippingServiceFactory
+		ShippingService service = shippingServiceFactory
 									.getShippingService(SERVICE_ID, createServiceParams())
 									.get();
 		
@@ -217,12 +219,14 @@ public class BostaLevisServiceTest {
 		shippingDetails1.setSource(shopAddr1);
 		shippingDetails1.setItems(itemsOfShop1);
 		shippingDetails1.setReceiver(receiver);
+		shippingDetails1.setShopId(502L);
 		
 		ShippingDetails shippingDetails2 = new ShippingDetails();
 		shippingDetails2.setDestination(customerAddr);
 		shippingDetails2.setSource(shopAddr2);
 		shippingDetails2.setItems(itemsOfShop2);
 		shippingDetails2.setReceiver(receiver);
+		shippingDetails2.setShopId(501L);
 		
 		
 		List<ShippingDetails> details = asList(shippingDetails1, shippingDetails2);
