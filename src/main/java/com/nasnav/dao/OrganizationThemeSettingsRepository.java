@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.persistence.OrganizationThemesSettingsEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,7 +17,10 @@ public interface OrganizationThemeSettingsRepository extends JpaRepository<Organ
     @Query("select orgThemeSetting.organizationEntity.id from OrganizationThemesSettingsEntity orgThemeSetting where orgThemeSetting.themeId in :themeId")
     Set<Long> findOrganizationIdByThemeIdIn(@Param("themeId") Integer themeId);
 
-    OrganizationThemesSettingsEntity findByOrganizationEntity_Id(Long orgId);
+    @Query(value = "select new com.nasnav.dto.response.OrgThemeRepObj( t.uid, t.name, t.previewImage, t.defaultSettings, ots.settings, t.themeClassEntity.id) " +
+            " from ThemeEntity t left join fetch OrganizationThemesSettingsEntity ots on ots.themeId = t.id" +
+            " where ots.organizationEntity.id = :orgId")
+    List<OrgThemeRepObj> findByOrganizationEntity_Id(@Param("orgId") Long orgId);
 
     Optional<OrganizationThemesSettingsEntity> findByOrganizationEntity_IdAndThemeId(Long orgId, Integer themeId);
 

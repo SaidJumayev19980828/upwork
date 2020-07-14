@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import javax.cache.annotation.CacheResult;
 
+import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import org.apache.http.client.utils.URIBuilder;
@@ -53,7 +54,6 @@ import com.nasnav.dto.ProductFeatureDTO;
 import com.nasnav.dto.ProductFeatureUpdateDTO;
 import com.nasnav.dto.SocialRepresentationObject;
 import com.nasnav.dto.ThemeDTO;
-import com.nasnav.dto.response.navbox.ThemeRepresentationObject;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
@@ -166,11 +166,11 @@ public class OrganizationService {
         return orgRepObj;
     }
 
-    private ThemeRepresentationObject getOrganizationThemeDTO(OrganizationRepresentationObject orgRepObj) {
+    private OrgThemeRepObj getOrganizationThemeDTO(OrganizationRepresentationObject orgRepObj) {
         if (orgRepObj.getThemeId() == null)
             return null;
 
-        ThemeRepresentationObject themeRepObj = new ThemeRepresentationObject();
+        OrgThemeRepObj themeRepObj = new OrgThemeRepObj();
 
         Optional<ThemeEntity> optionalThemeEntity = themesRepo.findByUid(orgRepObj.getThemeId());
 
@@ -178,6 +178,7 @@ public class OrganizationService {
             ThemeEntity themeEntity = optionalThemeEntity.get();
             ThemeDTO themeDTO = (ThemeDTO)themeEntity.getRepresentation();
             BeanUtils.copyProperties(themeDTO, themeRepObj);
+            themeRepObj.setDefaultSettings(new JSONObject(themeDTO.getDefaultSettings()).toMap());
         }
 
         Optional<OrganizationThemesSettingsEntity> optionalThemeSettings =
@@ -185,7 +186,7 @@ public class OrganizationService {
 
         if (optionalThemeSettings.isPresent()) {
             OrganizationThemesSettingsEntity themesSettings = optionalThemeSettings.get();
-            themeRepObj.setCurrentSettings(themesSettings.getSettings());
+            themeRepObj.setSettings(new JSONObject(themesSettings.getSettings()).toMap());
         }
 
         return themeRepObj;
@@ -232,8 +233,9 @@ public class OrganizationService {
 
 	    organization.setName(json.name);
         organization.setPname(json.pname);
-        // shouldnt be overwritten on update
-//        newOrg.setThemeId(0);
+        if (json.id == null) {
+            organization.setThemeId(0);
+        }
 	    if (json.ecommerce != null) {
 		    organization.setEcommerce(json.ecommerce);
 	    }

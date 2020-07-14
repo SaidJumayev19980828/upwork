@@ -11,6 +11,7 @@ import com.nasnav.AppConfig;
 import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
+import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
 import com.nasnav.payments.upg.UpgAccount;
@@ -282,6 +283,18 @@ public class OrganizationController {
                                   @RequestParam("category_id") Long categoryId,
                                   @RequestParam(value = "tags", required = false) List<Long> tagsIds) throws BusinessException {
         categoryService.assignTagsCategory(categoryId, tagsIds);
+    }
+
+
+    @ApiOperation(value = "get themes assigned a certain organization", nickname = "GetOrgThemes", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "themes", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public List<OrgThemeRepObj> getOrgThemes(@RequestHeader (name = "User-Token", required = false) String userToken) {
+        return themeService.getOrgThemes();
     }
 
 

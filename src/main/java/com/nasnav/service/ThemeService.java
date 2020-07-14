@@ -4,6 +4,7 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.OrganizationThemesSettingsDTO;
 import com.nasnav.dto.ThemeClassDTO;
 import com.nasnav.dto.ThemeDTO;
+import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.OrganizationThemesSettingsEntity;
@@ -293,4 +294,11 @@ public class ThemeService {
 
         orgThemeSettingsRepo.save(orgThemeSetting);
     }
+
+
+    public List<OrgThemeRepObj> getOrgThemes() {
+        Long orgId = securityService.getCurrentUserOrganizationId();
+        return orgThemeSettingsRepo.findByOrganizationEntity_Id(orgId);
+    }
+
 }
