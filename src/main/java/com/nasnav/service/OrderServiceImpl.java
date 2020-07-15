@@ -1277,8 +1277,9 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private BasketItem toBasketItem(BasketsEntity entity) {
-		ProductEntity product = entity.getStocksEntity().getProductVariantsEntity().getProductEntity();
+	private BasketItem toBasketItem(BasketsEntity entity, List<ProductImageDTO> variantsImages) {
+		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
+		ProductEntity product = variant.getProductEntity();
 
 		BasketItem item = new BasketItem();
 		item.setProductId(product.getId());
@@ -1286,10 +1287,18 @@ public class OrderServiceImpl implements OrderService {
 		item.setPname(product.getPname());
 		item.setStockId(entity.getStocksEntity().getId());
 		item.setQuantity(entity.getQuantity().intValueExact());
-		//TODO set item unit //
 		item.setTotalPrice(entity.getPrice());
+		//TODO set item unit //
 
-		//TODO set variant image
+		String thumb = variantsImages
+								 .stream()
+								 .filter(i -> i.getVariantId() != null)
+								 .filter(i -> i.getVariantId().equals(variant.getId()) && i.getProductId().equals(product.getId()))
+								 .findFirst()
+								 .orElse(new ProductImageDTO())
+								 .getImagePath();
+
+		item.setThumb(thumb);
 		item.setCurrency(ofNullable(TransactionCurrency.getTransactionCurrency(entity.getCurrency())).orElse(EGP).name());
 
 		return item;
@@ -1973,13 +1982,12 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private Order getOrderResponse(MetaOrderEntity order) {
-		Map<Long, List<BasketItemDetails>> itemsMap =
-				getBasketItemsDetailsMap(order.getSubOrders().stream().map(OrdersEntity::getId).collect(toSet()));
+		List<ProductImageDTO> variantsImages = getVariantsImagesList(order);
 
 		Order orderDto = setMetaOrderBasicData(order);
 
-		List<SubOrder> subOrders = 	createSubOrderDtoList(order, itemsMap);
-				
+		List<SubOrder> subOrders = 	createSubOrderDtoList(order, variantsImages);
+
 		orderDto.setSubOrders(subOrders);
 		orderDto.setSubtotal(order.getSubTotal());
 		orderDto.setShipping(order.getShippingTotal());
@@ -1988,14 +1996,33 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+	private List<ProductImageDTO> getVariantsImagesList(MetaOrderEntity order) {
+		List<ProductVariantsEntity> allVariants = order.getSubOrders()
+				.stream()
+				.map(o -> o.getBasketsEntity())
+				.flatMap(b -> b.stream())
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getProductVariantsEntity)
+				.collect(toList());
+		List<Long> variantsIds = allVariants.stream()
+				.map(ProductVariantsEntity::getId)
+				.collect(toList());
+
+		List<Long> productsIds = allVariants.stream()
+				.map(ProductVariantsEntity::getProductEntity)
+				.map(ProductEntity::getId)
+				.collect(toList());
+		return imgService.getProductsAndVariantsImages(productsIds, variantsIds);
+	}
 
 
 
-	private List<SubOrder> createSubOrderDtoList(MetaOrderEntity order, Map<Long, List<BasketItemDetails>> itemsMap) {
+
+	private List<SubOrder> createSubOrderDtoList(MetaOrderEntity order, List<ProductImageDTO> variantsImages) {
 		return order
 		.getSubOrders()
 		.stream()
-		.map(subOrder -> getSubOrder(subOrder, itemsMap))
+		.map(subOrder -> getSubOrder(subOrder, variantsImages))
 		.collect(toList());
 	}
 
@@ -2072,18 +2099,18 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private SubOrder getSubOrder(OrdersEntity order, Map<Long, List<BasketItemDetails>> itemsMap) {
+	private SubOrder getSubOrder(OrdersEntity order, List<ProductImageDTO> variantsImages) {
 
 		String status = 
 				ofNullable(findEnum(order.getStatus()))
 				.orElse(NEW)
 				.name();
 		
-		List<BasketItem> items = 
-				itemsMap
-				.get(order.getId())
+		List<BasketItem> items =
+				order
+				.getBasketsEntity()
 				.stream()
-				.map(this::toBasketItem)
+				.map(b -> toBasketItem(b, variantsImages))
 				.collect(toList());
 		
 		Shipment shipmentDto = (Shipment) order.getShipment().getRepresentation();
