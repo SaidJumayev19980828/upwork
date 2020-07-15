@@ -43,7 +43,7 @@ public class UniVocityCvsParserTest {
 		
 		CsvParser parser = new CsvParser(settings);
 		parser.parse(new File(filePath));
-		String[] headers = parser.getContext().parsedHeaders();
+		parser.getContext().parsedHeaders();
 		
 		List<CSVRowBean> rows = rowProcessor.getBeans();
         
@@ -70,7 +70,7 @@ public class UniVocityCvsParserTest {
 		
 		CsvParser parser = new CsvParser(settings);
 		parser.parse(new File(filePath));
-		String[] headers = parser.getContext().parsedHeaders();
+		parser.getContext().parsedHeaders();
 		
 		List<CSVRowBeanChild> rows = rowProcessor.getBeans();
         
@@ -198,7 +198,7 @@ public class UniVocityCvsParserTest {
 		
 		CsvParser parser = new CsvParser(settings);
 		parser.parse(new File(CSV_WITH_INVALID_VAL));
-		String[] headers = parser.getContext().parsedHeaders();
+		parser.getContext().parsedHeaders();
 		
 		List<CSVRowBean> rows = rowProcessor.getBeans();
         

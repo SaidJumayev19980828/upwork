@@ -8,6 +8,7 @@ import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0002;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0003;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0004;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0005;
+import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0010;
 import static com.nasnav.shipping.model.ParameterType.STRING;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -27,6 +28,7 @@ import static reactor.core.publisher.Mono.just;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Period;
 import java.util.HashMap;
 import java.util.List;
@@ -475,10 +477,11 @@ public class BostaLevisShippingService implements ShippingService{
 
 
 	@Override
-	public Mono<ShipmentValidation> validateShipment(List<ShippingDetails> items) {
-		return createShippingOffer(items)
-				.map(offer -> new ShipmentValidation(true))
-				.defaultIfEmpty(new ShipmentValidation(false));
+	public void validateShipment(List<ShippingDetails> items) {
+		createShippingOffer(items)
+			.map(offer -> new ShipmentValidation(true))
+			.blockOptional(Duration.ofSeconds(30))
+			.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0010));
 	}
 
 	@Override

@@ -15,7 +15,6 @@ import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0008;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0009;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SVC$0001;
 import static com.nasnav.exceptions.ErrorCodes.SHP$USR$0001;
-import static com.nasnav.shipping.ShippingServiceFactory.getServiceInfo;
 import static com.nasnav.shipping.model.ParameterType.STRING;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -99,6 +98,7 @@ import com.nasnav.shipping.model.ShippingServiceInfo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Setter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -116,6 +116,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	private CartItemRepository cartRepo;
 	
 	@Autowired
+	@Setter
 	private SecurityService securityService;
 	
 	@Autowired
@@ -135,6 +136,9 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	@Autowired
 	private DomainService domainService;
+	
+	@Autowired
+    private ShippingServiceFactory shippingServiceFactory;
 
 	@Override
 	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
@@ -279,7 +283,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		String type = ofNullable(param.getType())
 						.map(ParameterType::getValue)
 						.orElse(STRING.getValue());
-		return new ShippingAdditionalDataDTO(param.getName(), type);
+		return new ShippingAdditionalDataDTO(param.getName(), type, param.getOptions());
 	}
 	
 	
@@ -290,7 +294,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		String id = orgShippingService.getServiceId();
 		List<ServiceParameter> serviceParameters = parseServiceParameters(orgShippingService);
 		
-		return ShippingServiceFactory.getShippingService(id, serviceParameters);
+		return shippingServiceFactory.getShippingService(id, serviceParameters);
 	}
 
 	
@@ -326,7 +330,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		
 		return cartData
 				.stream()
-				.collect(groupingBy(CartItemShippingData::getShopAddressId))
+				.collect(groupingBy(this::getShopAndItsAddress))
 				.entrySet()
 				.stream()
 				.map(itemsPerAddr -> createShippingDetails(itemsPerAddr, addresses, customerAddrId))
@@ -355,9 +359,9 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	
 	
-	private ShippingDetails createShippingDetails(Map.Entry<Long, List<CartItemShippingData>> entry
+	private ShippingDetails createShippingDetails(Map.Entry<ShopAndItsAddress, List<CartItemShippingData>> entry
 			, Map<Long, AddressesEntity> addresses, Long customerAddrId) {
-		Long shopAddressId = entry.getKey();
+		Long shopAddressId = entry.getKey().getAddressId();
 		List<ShipmentItems> items = 
 				entry
 				.getValue()
@@ -380,6 +384,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		shippingDetails.setDestination(customerAddr);
 		shippingDetails.setSource(pickupAddr);
 		shippingDetails.setItems(items);
+		shippingDetails.setShopId(entry.getKey().getShopId());
 		return shippingDetails;
 	}
 	
@@ -445,7 +450,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	public void registerToShippingService(ShippingServiceRegistration registration) {
 		String serviceId = registration.getServiceId(); 
 		ShippingServiceInfo info = 
-				getServiceInfo(serviceId)
+				shippingServiceFactory
+					.getServiceInfo(serviceId)
 					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE , SHP$SRV$0006, serviceId));
 		
 		String serviceParamsString = 
@@ -573,6 +579,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		shippingData.setItems(items);
 		shippingData.setSubOrderId(subOrder.getId());
 		shippingData.setCallBackUrl(callBackUrl);
+		shippingData.setShopId(subOrder.getShopsEntity().getId());
 		return shippingData;
 	}
 

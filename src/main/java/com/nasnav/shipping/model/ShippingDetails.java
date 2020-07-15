@@ -15,4 +15,5 @@ public class ShippingDetails {
 	private List<ShipmentItems> items;
 	private Long subOrderId;
 	private String callBackUrl;
+	private Long shopId;
 }

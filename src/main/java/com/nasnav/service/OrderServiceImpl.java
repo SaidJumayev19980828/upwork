@@ -1333,23 +1333,6 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private BasketItem toBasketItem(BasketsEntity entity) {
-		ProductEntity product = entity.getStocksEntity().getProductVariantsEntity().getProductEntity();
-
-		BasketItem item = new BasketItem();
-		item.setProductId(product.getId());
-		item.setName(product.getName());
-		item.setPname(product.getPname());
-		item.setStockId(entity.getStocksEntity().getId());
-		item.setQuantity(entity.getQuantity().intValueExact());
-		//TODO set item unit //
-		item.setTotalPrice(entity.getPrice());
-
-		//TODO set variant image
-		item.setCurrency(ofNullable(TransactionCurrency.getTransactionCurrency(entity.getCurrency())).orElse(EGP).name());
-
-		return item;
-	}
 	
 	
 	
@@ -2570,6 +2553,26 @@ public class OrderServiceImpl implements OrderService {
 				.entrySet()
 				.stream()
 				.map(this::createShopFulfillingCart)
+				.collect(toList());
+	}
+	
+	
+	
+	
+	
+	@Override
+	public List<ShopFulfillingCart> getShopsThatCanProvideWholeCart(){
+		//it uses an additional query but gives more insurance than calculating variants from
+		//cartItemsStocks
+		Set<Long> cartItemVariants =
+				getCart()
+				.getItems()
+				.stream()
+				.map(CartItem::getVariantId)
+				.collect(toSet());
+		return getShopsThatCanProvideCartItems()
+				.stream()
+				.filter(shop -> hasAllCartVariants(shop, cartItemVariants))
 				.collect(toList());
 	}
 
