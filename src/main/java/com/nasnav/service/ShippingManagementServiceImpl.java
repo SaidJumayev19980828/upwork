@@ -42,8 +42,8 @@ import java.util.Optional;
 
 import javax.transaction.Transactional;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -304,17 +304,17 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	public List<ServiceParameter> parseServiceParameters(OrganizationShippingServiceEntity orgShippingService) {
 		String serviceParamsString = ofNullable(orgShippingService.getServiceParameters()).orElse("{}");
 		
-		TypeReference<HashMap<String, String>> typeRef = new TypeReference<HashMap<String, String>>() {};
-		Map<String, String> paramMap = new HashMap<>();
+		TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {};
+		Map<String, Object> paramMap = new HashMap<>();
 		try {
 			paramMap = jsonMapper.readValue(serviceParamsString, typeRef) ;
-		} catch (IOException e) {
+		} catch (Exception e) {
 			logger.error(e,e);
 		}
 		return paramMap
 				.entrySet()
 				.stream()
-				.map(e -> new ServiceParameter(e.getKey(), e.getValue()))
+				.map(e -> new ServiceParameter(e.getKey(), e.getValue().toString()))
 				.collect(toList());
 	}
 
