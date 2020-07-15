@@ -174,6 +174,7 @@ public class UserRegisterTest {
 		org.setName("Test Organization");
 		org.setDescription("Test Organization Description");	
 		org.setThemeId(0);
+		org.setEcommerce(1);
 
 		OrganizationEntity organization = organizationRepository.saveAndFlush(org);
 		return organization;

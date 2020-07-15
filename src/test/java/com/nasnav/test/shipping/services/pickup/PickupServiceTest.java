@@ -99,38 +99,6 @@ public class PickupServiceTest {
 				.map(option -> Long.valueOf(option))
 				.collect(toList());
 	}
-	
-	
-	//validate shipment, normal case, all items in an allowed shop
-	@Test
-	@DirtiesContext
-	public void validateCartSuccessTest() {
-		SecurityService mocked = Mockito.mock(SecurityServiceImpl.class);
-		Mockito.when(mocked.getCurrentUserOrganizationId()).thenReturn(99001L);
-		
-		RootBeanDefinition beanDefinition = new RootBeanDefinition(SecurityService.class);
-		beanDefinition.setInstanceSupplier(() -> mocked);
-		context.removeBeanDefinition("securityServiceImpl");
-		context.registerBeanDefinition("securityServiceImpl", beanDefinition);
-		
-		Long customerAddress = 12300001L;
-		Map<String,String> params = 
-				MapBuilder
-				.<String,String>map()
-				.put("SHOP_ID", "501")
-				.getMap();
-		CartCheckoutDTO dto = new CartCheckoutDTO();
-		dto.setAddressId(customerAddress);
-		dto.setServiceId("PICKUP");
-		dto.setAdditionalData(params);
-		shippingMgr.validateShippingAdditionalData(dto);
-	}
-
-
-
-	
-	//validate shipment, items at different shops
-	//validate shipment, shop not allowed
 }
 
 
