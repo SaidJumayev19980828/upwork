@@ -219,47 +219,24 @@ public class ShopService {
 
 
     @Transactional
-    public void deleteShop(Long shopId, boolean deleteStocks)  {
+    public void deleteShop(Long shopId)  {
         Long orgId = securityService.getCurrentUserOrganizationId();
         if (!shopsRepository.existsByIdAndOrganizationEntity_Id(shopId, orgId)) {
             throw new RuntimeBusinessException(NOT_FOUND, S$0002, shopId);
         }
 
-        validateShopLinksBeforeDelete(shopId, deleteStocks);
+        validateShopLinksBeforeDelete(shopId);
 
-        if (deleteStocks) {
-            stockRepo.deleteByShopsEntity_Id(shopId);
-        }
         shopsRepository.deleteById(shopId);
     }
 
 
-    private void validateShopLinksBeforeDelete(Long shopId, boolean deleteStocks) {
-
-        if (!deleteStocks) {
-            List<Long> linkedStocks = stockRepo.findByShopsEntity_Id(shopId)
-                    .stream()
-                    .map(StocksEntity::getId)
-                    .collect(toList());
-            if (!linkedStocks.isEmpty()) {
-                throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "stocks " + linkedStocks.toString());
-            }
-        }
-
-
-        List<Long> linkedOrders = orderRepo.findByShopsEntityId(shopId)
-                                            .stream()
-                                            .map(OrdersEntity::getId)
-                                            .collect(toList());
-        if (!linkedOrders.isEmpty()) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "orders "+linkedOrders.toString());
-        }
+    private void validateShopLinksBeforeDelete(Long shopId) {
 
         ShopThreeSixtyEntity linkedShop360 = shopThreeSixtyRepo.findByShopsEntity_Id(shopId);
         if (linkedShop360 != null) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "360 shop ("+linkedShop360.getId()+")");
         }
-
 
         List<Long> linkedEmployees = empUserRepo.findByShopId(shopId)
                                                 .stream()

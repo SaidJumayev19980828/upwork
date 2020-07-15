@@ -18,11 +18,15 @@ import com.nasnav.dto.ShopRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.EqualsAndHashCode.Exclude;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 @Table(name = "shops")
 @Entity
 @Data
 @EqualsAndHashCode(callSuper=false)
+@SQLDelete(sql = "UPDATE Shops SET removed = 1 WHERE id = ?")
+@Where(clause = "removed = 0")
 public class ShopsEntity implements BaseEntity{
 
     @Id
