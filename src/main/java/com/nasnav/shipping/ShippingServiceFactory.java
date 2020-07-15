@@ -23,6 +23,7 @@ import org.springframework.web.context.support.GenericWebApplicationContext;
 import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.ShippingServiceInfo;
 import com.nasnav.shipping.services.DummyShippingService;
+import com.nasnav.shipping.services.PickupFromShop;
 import com.nasnav.shipping.services.bosta.BostaLevisShippingService;
 
 import lombok.AllArgsConstructor;
@@ -42,7 +43,8 @@ public class ShippingServiceFactory {
 	 * */
 	private static final List<Class<? extends ShippingService>> activeShippingServices = 
 			asList( DummyShippingService.class
-					,BostaLevisShippingService.class);
+					,BostaLevisShippingService.class
+					,PickupFromShop.class);
 	
 	
 	@Autowired

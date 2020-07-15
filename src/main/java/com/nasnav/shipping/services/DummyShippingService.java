@@ -30,7 +30,6 @@ import com.nasnav.shipping.model.Shipment;
 import com.nasnav.shipping.model.ShipmentItems;
 import com.nasnav.shipping.model.ShipmentStatusData;
 import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShipmentValidation;
 import com.nasnav.shipping.model.ShippingDetails;
 import com.nasnav.shipping.model.ShippingEta;
 import com.nasnav.shipping.model.ShippingOffer;
@@ -89,8 +88,7 @@ public class DummyShippingService implements ShippingService {
 	}
 
 	@Override
-	public Mono<ShipmentValidation> validateShipment(List<ShippingDetails> items) {
-		return Mono.empty();
+	public void validateShipment(List<ShippingDetails> items) {
 	}
 
 

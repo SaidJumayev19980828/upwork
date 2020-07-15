@@ -1,16 +1,20 @@
 package com.nasnav.shipping.services;
 
+import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0011;
 import static com.nasnav.shipping.model.ParameterType.LONG;
 import static com.nasnav.shipping.model.ParameterType.LONG_ARRAY;
 import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.StreamSupport;
 
 import org.json.JSONArray;
@@ -18,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.enumerations.ShippingStatus;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.service.OrderService;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 import com.nasnav.shipping.ShippingService;
@@ -27,7 +32,6 @@ import com.nasnav.shipping.model.Shipment;
 import com.nasnav.shipping.model.ShipmentItems;
 import com.nasnav.shipping.model.ShipmentStatusData;
 import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShipmentValidation;
 import com.nasnav.shipping.model.ShippingDetails;
 import com.nasnav.shipping.model.ShippingEta;
 import com.nasnav.shipping.model.ShippingOffer;
@@ -49,7 +53,7 @@ public class PickupFromShop implements ShippingService{
 	private static List<Parameter> ADDITIONAL_PARAM_DEFINITION = 
 			asList(new Parameter(SHOP_ID, LONG));
 	
-	private List<Long> allowedShops;
+	private Set<Long> allowedShops;
 
 	
 	
@@ -60,7 +64,7 @@ public class PickupFromShop implements ShippingService{
 	
 	
 	public PickupFromShop() {
-		allowedShops = emptyList();
+		allowedShops = emptySet();
 	}
 	
 	
@@ -88,7 +92,7 @@ public class PickupFromShop implements ShippingService{
 				.map(EntityUtils::parseLongSafely)
 				.filter(Optional::isPresent)
 				.map(Optional::get)
-				.collect(toList());
+				.collect(toSet());
 	}
 	
 	
@@ -97,8 +101,6 @@ public class PickupFromShop implements ShippingService{
 
 	@Override
 	public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> items) {
-		Mono<ShipmentValidation> validation = validateShipment(items);
-		
 		ShippingServiceInfo serviceInfo = createServiceInfoWithShopsOptions();
 		
 		List<Shipment> shipments =
@@ -108,10 +110,8 @@ public class PickupFromShop implements ShippingService{
 				.collect(toList());
 		
 		ShippingOffer offer = new ShippingOffer(serviceInfo, shipments);
-		return validation
-				.flatMap(valid -> 
-					valid.getIsValid()? 
-							Mono.just(offer) : Mono.empty() );
+		return shipments.isEmpty()? 
+				Mono.empty() : Mono.just(offer) ;
 	}
 
 
@@ -140,6 +140,7 @@ public class PickupFromShop implements ShippingService{
 				.getShopsThatCanProvideWholeCart()
 				.stream()
 				.map(ShopFulfillingCart::getShopId)
+				.filter(allowedShops::contains)
 				.map(id -> id.toString())
 				.collect(toList());
 		
@@ -167,7 +168,7 @@ public class PickupFromShop implements ShippingService{
 	
 	
 	@Override
-	public Mono<ShipmentValidation> validateShipment(List<ShippingDetails> items) {
+	public void validateShipment(List<ShippingDetails> items) {
 		boolean isCartFromSingleShop = items.size() == 1;
 		boolean isShopAllowedForPickup = 
 				items
@@ -175,16 +176,16 @@ public class PickupFromShop implements ShippingService{
 				.map(ShippingDetails::getShopId)
 				.allMatch(allowedShops::contains);
 		
-		boolean isValid = isCartFromSingleShop && isShopAllowedForPickup;
 		String message = "";
 		if(!isCartFromSingleShop) {
 			message = "Cart has items from multiple shops, while pickup service is allowed "
 					+ "for a single shop!";
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0011, message);
 		}else if(!isShopAllowedForPickup) {
 			message = "Selected shop is not valid for pickup service!";
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0011, message);
 		}
 		
-		return Mono.just(new ShipmentValidation(isValid, message));
 	}
 
 	

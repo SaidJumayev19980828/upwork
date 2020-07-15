@@ -7,17 +7,8 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.reactive.function.client.ClientResponse;
 
-import com.nasnav.NavBox;
 import com.nasnav.shipping.services.bosta.webclient.BostaWebClient;
 import com.nasnav.shipping.services.bosta.webclient.dto.Address;
 import com.nasnav.shipping.services.bosta.webclient.dto.CreateDeliveryResponse;

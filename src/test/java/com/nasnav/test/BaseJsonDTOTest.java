@@ -5,11 +5,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Set;
 
-import org.apache.commons.beanutils.PropertyUtils;
 import org.json.JSONObject;
 import org.junit.Test;
 

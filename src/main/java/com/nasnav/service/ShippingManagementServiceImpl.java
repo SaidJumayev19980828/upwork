@@ -98,6 +98,7 @@ import com.nasnav.shipping.model.ShippingServiceInfo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Setter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -115,6 +116,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	private CartItemRepository cartRepo;
 	
 	@Autowired
+	@Setter
 	private SecurityService securityService;
 	
 	@Autowired
@@ -281,7 +283,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		String type = ofNullable(param.getType())
 						.map(ParameterType::getValue)
 						.orElse(STRING.getValue());
-		return new ShippingAdditionalDataDTO(param.getName(), type);
+		return new ShippingAdditionalDataDTO(param.getName(), type, param.getOptions());
 	}
 	
 	

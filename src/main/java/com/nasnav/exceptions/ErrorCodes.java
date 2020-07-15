@@ -107,6 +107,8 @@ public enum ErrorCodes {
 	,SHP$SRV$0007("Invalid Shipping service parameters structure [%s]!")
 	,SHP$SRV$0008("The given value [%s] for Service parameter [%s] of shipping service [%s] has invlaid type!")
 	,SHP$SRV$0009("Shipment not found!")
+	,SHP$SRV$0010("Cannot create shipment with the given parameters!")
+	,SHP$SRV$0011("Cannot create shipment with the given parameters due to : %s!")
 
 	,SHP$PARS$0001("Error while parsing status update request!")
 
