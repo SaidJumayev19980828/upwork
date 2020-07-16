@@ -176,10 +176,13 @@ public class ShopThreeSixtyService {
         return floors;
     }
 
+
     public ShopThreeSixtyDTO getThreeSixtyShops(Long shopId) {
-        ShopThreeSixtyEntity entity = shop360Repo.getFirstByShopsEntity_Id(shopId);
-        return entity != null ? (ShopThreeSixtyDTO) entity.getRepresentation() : null;
+        return (ShopThreeSixtyDTO) ofNullable(shop360Repo.getFirstByShopsEntity_Id(shopId))
+                                             .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,S$360$0001))
+                                             .getRepresentation();
     }
+
 
     public ShopResponse updateThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
         if (shopThreeSixtyDTO.getId() == null)
@@ -187,6 +190,7 @@ public class ShopThreeSixtyService {
         else
             return modifyThreeSixtyShop(shopThreeSixtyDTO);
     }
+
 
     private ShopResponse createThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
         if (shop360Repo.getFirstByShopsEntity_Id(shopThreeSixtyDTO.getShopId()) != null)
@@ -196,6 +200,7 @@ public class ShopThreeSixtyService {
         return saveShopThreeSixtyEntity(entity, shopThreeSixtyDTO.getName(), shopThreeSixtyDTO.getShopId());
     }
 
+
     private ShopResponse modifyThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
         Optional<ShopThreeSixtyEntity> optionalEntity = shop360Repo.findById(shopThreeSixtyDTO.getId());
         if (!optionalEntity.isPresent())
@@ -204,6 +209,7 @@ public class ShopThreeSixtyService {
         ShopThreeSixtyEntity entity = optionalEntity.get();
         return saveShopThreeSixtyEntity(entity, shopThreeSixtyDTO.getName(), shopThreeSixtyDTO.getShopId());
     }
+
 
     private ShopResponse saveShopThreeSixtyEntity(ShopThreeSixtyEntity entity, String shopName, Long shopId) throws BusinessException {
         Long orgId = securitySvc.getCurrentUserOrganizationId();
