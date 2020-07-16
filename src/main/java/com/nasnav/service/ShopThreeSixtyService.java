@@ -213,7 +213,7 @@ public class ShopThreeSixtyService {
 
     private ShopResponse saveShopThreeSixtyEntity(ShopThreeSixtyEntity entity, String shopName, Long shopId) throws BusinessException {
         Long orgId = securitySvc.getCurrentUserOrganizationId();
-        ShopsEntity shop = shopRepo.findByIdAndOrganizationEntity_Id(shopId, orgId);
+        ShopsEntity shop = shopRepo.findByIdAndOrganizationEntity_IdAndRemoved(shopId, orgId, 0);
         if (shop == null) {
             if (entity.getShopsEntity() == null)
                 throw new BusinessException("Must provide shop_id to attach shop360s to it",

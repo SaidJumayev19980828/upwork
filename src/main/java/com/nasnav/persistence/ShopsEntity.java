@@ -18,10 +18,6 @@ import org.hibernate.annotations.Where;
 @Entity
 @Data
 @EqualsAndHashCode(callSuper=false)
-@SQLDelete(sql = "UPDATE Shops SET removed = 1 WHERE id = ?")
-@Where(clause = "removed = 0")
-@Loader(namedQuery = "findShopById")
-@NamedQuery(name = "findShopById", query = "SELECT s FROM ShopsEntity s WHERE s.id=?1 AND s.removed = 0")
 public class ShopsEntity implements BaseEntity{
 
     @Id

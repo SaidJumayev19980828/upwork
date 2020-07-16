@@ -16,12 +16,12 @@ INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
 INSERT INTO public.categories(id, name) VALUES (202, 'category_2');
 
 --inserting shops
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (501, 'shop_1', 102, 99001);
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (502, 'shop_2', 101, 99001);
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (503, 'shop_3', 102, 99001);
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (504, 'shop_4', 103, 99001);
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (505, 'shop_5', 101, 99001);
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (506, 'shop_6', 102, 99002);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (501, 'shop_1', 102, 99001, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (502, 'shop_2', 101, 99001, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (503, 'shop_3', 102, 99001, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (504, 'shop_4', 103, 99001, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (505, 'shop_5', 101, 99001, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (506, 'shop_6', 102, 99002, 0);
 
 --inserting users
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)

@@ -528,6 +528,7 @@ public class ProductServiceTest {
 		ShopsEntity shopsEntity = new ShopsEntity();
 		shopsEntity.setName("Fortune - #"+ getRandomInt());
 		shopsEntity.setOrganizationEntity(organizationEntity);
+		shopsEntity.setRemoved(0);
 		shopsEntity = shopsRepository.save(shopsEntity);
 		return shopsEntity;
 	}

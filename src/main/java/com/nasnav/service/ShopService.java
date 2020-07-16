@@ -69,7 +69,7 @@ public class ShopService {
     @CacheResult(cacheName = ORGANIZATIONS_SHOPS)
     public List<ShopRepresentationObject> getOrganizationShops(Long organizationId) {
 
-        List<ShopsEntity> shopsEntities = shopsRepository.findByOrganizationEntity_Id(organizationId);
+        List<ShopsEntity> shopsEntities = shopsRepository.findByOrganizationEntity_IdAndRemoved(organizationId, 0);
 
         if(shopsEntities==null || shopsEntities.isEmpty())
             throw new RuntimeBusinessException(NOT_FOUND, S$0003);
@@ -89,7 +89,7 @@ public class ShopService {
 //    @CacheResult(cacheName = "shops_by_id")
     public ShopRepresentationObject getShopById(Long shopId) {
 
-        Optional<ShopsEntity> shopsEntityOptional = shopsRepository.findById(shopId);
+        Optional<ShopsEntity> shopsEntityOptional = shopsRepository.findByIdAndRemoved(shopId, 0);
 
         if(shopsEntityOptional==null || !shopsEntityOptional.isPresent())
             throw new RuntimeBusinessException(NOT_FOUND, S$0003);
@@ -136,7 +136,7 @@ public class ShopService {
         ShopsEntity shopsEntity = new ShopsEntity();
 
         shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson);
-
+        shopsEntity.setRemoved(0);
         shopsRepository.save(shopsEntity);
         return new ShopResponse(shopsEntity.getId(), OK);
     }
@@ -221,13 +221,13 @@ public class ShopService {
     @Transactional
     public void deleteShop(Long shopId)  {
         Long orgId = securityService.getCurrentUserOrganizationId();
-        if (!shopsRepository.existsByIdAndOrganizationEntity_Id(shopId, orgId)) {
+        if (!shopsRepository.existsByIdAndOrganizationEntity_IdAndRemoved(shopId, orgId, 0)) {
             throw new RuntimeBusinessException(NOT_FOUND, S$0002, shopId);
         }
 
         validateShopLinksBeforeDelete(shopId);
 
-        shopsRepository.deleteById(shopId);
+        shopsRepository.setShopHidden(shopId);
     }
 
 
