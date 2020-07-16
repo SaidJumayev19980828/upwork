@@ -2196,9 +2196,7 @@ public class OrderServiceImpl implements OrderService {
 		if (dto.getServiceId() == null) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0002);
 		}
-		if (!(dto.getAdditionalData() == null || dto.getAdditionalData().isEmpty())) {
-			shippingManagementService.validateShippingAdditionalData(dto);
-		}
+		shippingManagementService.validateShippingAdditionalData(dto);
 	}
 
 
