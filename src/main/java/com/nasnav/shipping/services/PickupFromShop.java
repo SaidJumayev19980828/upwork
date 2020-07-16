@@ -3,6 +3,7 @@ package com.nasnav.shipping.services;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0011;
 import static com.nasnav.shipping.model.ParameterType.LONG;
 import static com.nasnav.shipping.model.ParameterType.LONG_ARRAY;
+import static java.lang.Long.MIN_VALUE;
 import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
@@ -192,8 +193,7 @@ public class PickupFromShop implements ShippingService{
 				.map(ShippingDetails::getAdditionalData)
 				.map(data -> data.get(SHOP_ID))
 				.map(EntityUtils::parseLongSafely)
-				.filter(Optional::isPresent)
-				.map(Optional::get)
+				.map(id -> id.orElse(MIN_VALUE))
 				.allMatch(allowedShops::contains);
 	}
 
