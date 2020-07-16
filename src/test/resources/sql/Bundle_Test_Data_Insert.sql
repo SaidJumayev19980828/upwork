@@ -132,7 +132,7 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22
 
 
 --inserting shops
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (501, 'shop_1', null, 99001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (501, 'shop_1', null, 99001, 0);
 
 
 --inserting orders

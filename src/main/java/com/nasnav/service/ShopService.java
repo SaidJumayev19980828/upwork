@@ -69,7 +69,7 @@ public class ShopService {
     @CacheResult(cacheName = ORGANIZATIONS_SHOPS)
     public List<ShopRepresentationObject> getOrganizationShops(Long organizationId) {
 
-        List<ShopsEntity> shopsEntities = shopsRepository.findByOrganizationEntity_Id(organizationId);
+        List<ShopsEntity> shopsEntities = shopsRepository.findByOrganizationEntity_IdAndRemoved(organizationId, 0);
 
         if(shopsEntities==null || shopsEntities.isEmpty())
             throw new RuntimeBusinessException(NOT_FOUND, S$0003);
@@ -89,7 +89,7 @@ public class ShopService {
 //    @CacheResult(cacheName = "shops_by_id")
     public ShopRepresentationObject getShopById(Long shopId) {
 
-        Optional<ShopsEntity> shopsEntityOptional = shopsRepository.findById(shopId);
+        Optional<ShopsEntity> shopsEntityOptional = shopsRepository.findByIdAndRemoved(shopId, 0);
 
         if(shopsEntityOptional==null || !shopsEntityOptional.isPresent())
             throw new RuntimeBusinessException(NOT_FOUND, S$0003);
@@ -136,7 +136,7 @@ public class ShopService {
         ShopsEntity shopsEntity = new ShopsEntity();
 
         shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson);
-
+        shopsEntity.setRemoved(0);
         shopsRepository.save(shopsEntity);
         return new ShopResponse(shopsEntity.getId(), OK);
     }
@@ -219,47 +219,24 @@ public class ShopService {
 
 
     @Transactional
-    public void deleteShop(Long shopId, boolean deleteStocks)  {
+    public void deleteShop(Long shopId)  {
         Long orgId = securityService.getCurrentUserOrganizationId();
-        if (!shopsRepository.existsByIdAndOrganizationEntity_Id(shopId, orgId)) {
+        if (!shopsRepository.existsByIdAndOrganizationEntity_IdAndRemoved(shopId, orgId, 0)) {
             throw new RuntimeBusinessException(NOT_FOUND, S$0002, shopId);
         }
 
-        validateShopLinksBeforeDelete(shopId, deleteStocks);
+        validateShopLinksBeforeDelete(shopId);
 
-        if (deleteStocks) {
-            stockRepo.deleteByShopsEntity_Id(shopId);
-        }
-        shopsRepository.deleteById(shopId);
+        shopsRepository.setShopHidden(shopId);
     }
 
 
-    private void validateShopLinksBeforeDelete(Long shopId, boolean deleteStocks) {
-
-        if (!deleteStocks) {
-            List<Long> linkedStocks = stockRepo.findByShopsEntity_Id(shopId)
-                    .stream()
-                    .map(StocksEntity::getId)
-                    .collect(toList());
-            if (!linkedStocks.isEmpty()) {
-                throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "stocks " + linkedStocks.toString());
-            }
-        }
-
-
-        List<Long> linkedOrders = orderRepo.findByShopsEntityId(shopId)
-                                            .stream()
-                                            .map(OrdersEntity::getId)
-                                            .collect(toList());
-        if (!linkedOrders.isEmpty()) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "orders "+linkedOrders.toString());
-        }
+    private void validateShopLinksBeforeDelete(Long shopId) {
 
         ShopThreeSixtyEntity linkedShop360 = shopThreeSixtyRepo.findByShopsEntity_Id(shopId);
         if (linkedShop360 != null) {
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "360 shop ("+linkedShop360.getId()+")");
         }
-
 
         List<Long> linkedEmployees = empUserRepo.findByShopId(shopId)
                                                 .stream()

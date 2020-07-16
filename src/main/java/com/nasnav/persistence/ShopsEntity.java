@@ -1,14 +1,6 @@
 package com.nasnav.persistence;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.AddressRepObj;
@@ -18,6 +10,9 @@ import com.nasnav.dto.ShopRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.EqualsAndHashCode.Exclude;
+import org.hibernate.annotations.Loader;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 @Table(name = "shops")
 @Entity
@@ -42,6 +37,8 @@ public class ShopsEntity implements BaseEntity{
     private String logo;
 
     private String banner;
+
+    private Integer removed;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "organization_id", nullable = false)

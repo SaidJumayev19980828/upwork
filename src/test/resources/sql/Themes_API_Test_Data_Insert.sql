@@ -14,7 +14,7 @@ INSERT INTO public.organization_themes_settings(id, organization_id, theme_id, s
     VALUES (5001, 99001, 5002, '{"setting" : "new value"}');
 
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 201, 'brand_1', 99001);
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (501, 'shop_1', 101, 99001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (501, 'shop_1', 101, 99001, 0);
 
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  501);

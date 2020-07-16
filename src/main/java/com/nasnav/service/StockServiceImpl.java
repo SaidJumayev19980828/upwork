@@ -333,7 +333,7 @@ public class StockServiceImpl implements StockService {
 				.collect(toSet());		 
 		Map<Long, ShopsEntity> shopCache = 
 				shopRepo
-				.findByIdIn(shopIdList)
+				.findByIdInAndRemoved(shopIdList, 0)
 				.stream()
 				.collect(toMap(ShopsEntity::getId, shop -> shop));
 		return shopCache;

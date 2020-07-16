@@ -60,8 +60,8 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 2
 
 
 --inserting shops
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (50001, 'shop_1', 102, 99001);
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (50002, 'shop_2', 101, 99001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (50001, 'shop_1', 102, 99001, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (50002, 'shop_2', 101, 99001, 0);
 
 
 

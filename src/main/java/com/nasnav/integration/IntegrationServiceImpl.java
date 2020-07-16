@@ -632,7 +632,7 @@ public class IntegrationServiceImpl implements IntegrationService {
 		Long shopId = null;
 		try {
 			shopId = shopRepo
-						.findByNameAndOrganizationEntity_Id(shopName, orgId)
+						.findByNameAndOrganizationEntity_IdAndRemoved(shopName, orgId, 0)
 						.map(ShopsEntity::getId)
 						.orElseGet(() -> createNewShop(externalShop, orgId));
 

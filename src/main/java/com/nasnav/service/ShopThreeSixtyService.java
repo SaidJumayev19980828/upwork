@@ -176,10 +176,13 @@ public class ShopThreeSixtyService {
         return floors;
     }
 
+
     public ShopThreeSixtyDTO getThreeSixtyShops(Long shopId) {
-        ShopThreeSixtyEntity entity = shop360Repo.getFirstByShopsEntity_Id(shopId);
-        return entity != null ? (ShopThreeSixtyDTO) entity.getRepresentation() : null;
+        return (ShopThreeSixtyDTO) ofNullable(shop360Repo.getFirstByShopsEntity_Id(shopId))
+                                             .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND,S$360$0001))
+                                             .getRepresentation();
     }
+
 
     public ShopResponse updateThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
         if (shopThreeSixtyDTO.getId() == null)
@@ -188,6 +191,7 @@ public class ShopThreeSixtyService {
             return modifyThreeSixtyShop(shopThreeSixtyDTO);
     }
 
+
     private ShopResponse createThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
         if (shop360Repo.getFirstByShopsEntity_Id(shopThreeSixtyDTO.getShopId()) != null)
             throw new BusinessException("There exists shop360 attached to this shop already!",
@@ -195,6 +199,7 @@ public class ShopThreeSixtyService {
         ShopThreeSixtyEntity entity = new ShopThreeSixtyEntity();
         return saveShopThreeSixtyEntity(entity, shopThreeSixtyDTO.getName(), shopThreeSixtyDTO.getShopId());
     }
+
 
     private ShopResponse modifyThreeSixtyShop(ShopThreeSixtyDTO shopThreeSixtyDTO) throws BusinessException {
         Optional<ShopThreeSixtyEntity> optionalEntity = shop360Repo.findById(shopThreeSixtyDTO.getId());
@@ -205,9 +210,10 @@ public class ShopThreeSixtyService {
         return saveShopThreeSixtyEntity(entity, shopThreeSixtyDTO.getName(), shopThreeSixtyDTO.getShopId());
     }
 
+
     private ShopResponse saveShopThreeSixtyEntity(ShopThreeSixtyEntity entity, String shopName, Long shopId) throws BusinessException {
         Long orgId = securitySvc.getCurrentUserOrganizationId();
-        ShopsEntity shop = shopRepo.findByIdAndOrganizationEntity_Id(shopId, orgId);
+        ShopsEntity shop = shopRepo.findByIdAndOrganizationEntity_IdAndRemoved(shopId, orgId, 0);
         if (shop == null) {
             if (entity.getShopsEntity() == null)
                 throw new BusinessException("Must provide shop_id to attach shop360s to it",

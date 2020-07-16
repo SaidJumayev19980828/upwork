@@ -9,11 +9,11 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 2
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 201, 'brand_2', 99001);
 
 --inserting shops
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (501, 'shop_1', 102, 99002);
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (502, 'shop_2', 101, 99001);
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (503, 'shop_3', 102, 99001);
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (504, 'shop_4', 102, 99001);
-INSERT INTO public.shops(id, name, brand_id,  organization_id) VALUES (505, 'shop_5', 102, 99001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (501, 'shop_1', 102, 99002, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (502, 'shop_2', 101, 99001, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (503, 'shop_3', 102, 99001, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (504, 'shop_4', 102, 99001, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (505, 'shop_5', 102, 99001, 0);
 
 --inserting users
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)

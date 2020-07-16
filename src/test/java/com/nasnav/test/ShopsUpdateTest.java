@@ -238,14 +238,14 @@ public class ShopsUpdateTest {
         HttpEntity<Object> request = getHttpEntity(body.toString(),"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", request, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
-        ShopsEntity oldShop = shopsRepository.findById(jsonResponse.getLong("store_id")).get();
+        ShopsEntity oldShop = shopsRepository.findByIdAndRemoved(jsonResponse.getLong("store_id"), 0).get();
 
         // delete the created shop
         response = template.exchange("/shop/delete?shop_id="+oldShop.getId(),
                                         DELETE, request, String.class);
 
         assertEquals(200, response.getStatusCodeValue());
-        assertFalse(shopsRepository.findById(oldShop.getId()).isPresent());
+        assertFalse(shopsRepository.findByIdAndRemoved(oldShop.getId(), 0).isPresent());
     }
 
 
@@ -255,12 +255,12 @@ public class ShopsUpdateTest {
     	assertNotEquals(0L, countBefore.longValue());
     	
         HttpEntity<Object> request = getHttpEntity("161718");
-        ResponseEntity<String> response = template.exchange("/shop/delete?shop_id=503&delete_stocks=true",
+        ResponseEntity<String> response = template.exchange("/shop/delete?shop_id=503",
                 DELETE, request, String.class);
         assertEquals(200, response.getStatusCodeValue());
         
         Long countAfter = stocksRepo.countByShopsEntity_Id(503L);
-    	assertEquals(0L, countAfter.longValue());
+    	assertEquals(1L, countAfter.longValue());
     }
 
 
@@ -270,13 +270,13 @@ public class ShopsUpdateTest {
         HttpEntity<Object> request = getHttpEntity("161718");
         ResponseEntity<String> response = template.exchange("/shop/delete?shop_id=503",
                                                 DELETE, request, String.class);
-        assertEquals(406, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCodeValue());
 
 
         // delete shop 504 linked to order
         response = template.exchange("/shop/delete?shop_id=504",
                                     DELETE, request, String.class);
-        assertEquals(406, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCodeValue());
 
 
         // delete shop 505 linked to shop360
