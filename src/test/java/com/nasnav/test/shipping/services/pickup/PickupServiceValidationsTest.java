@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Before;
@@ -105,7 +106,7 @@ public class PickupServiceValidationsTest {
 		Map<String,String> params = 
 				MapBuilder
 				.<String,String>map()
-				.put("SHOP_ID", "501")
+				.put("SHOP_ID", "504")
 				.getMap();
 		CartCheckoutDTO dto = new CartCheckoutDTO();
 		dto.setAddressId(customerAddress);
@@ -113,6 +114,24 @@ public class PickupServiceValidationsTest {
 		dto.setAdditionalData(params);
 		shippingMgr.validateShippingAdditionalData(dto);
 		assertFalse("validate shipment, shop not allowed", true);
+	}
+	
+	
+	
+	@Test(expected = RuntimeBusinessException.class)
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_5.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void validateNoShopProvidedTest() {
+		Long customerAddress = 12300001L;
+		Map<String,String> params = new HashMap<>();
+		
+		CartCheckoutDTO dto = new CartCheckoutDTO();
+		dto.setAddressId(customerAddress);
+		dto.setServiceId("PICKUP");
+		dto.setAdditionalData(params);
+		
+		shippingMgr.validateShippingAdditionalData(dto);
+		assertFalse("validate shipment, no shop provided", true);
 	}
 }
 

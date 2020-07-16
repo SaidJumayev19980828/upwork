@@ -170,11 +170,7 @@ public class PickupFromShop implements ShippingService{
 	@Override
 	public void validateShipment(List<ShippingDetails> items) {
 		boolean isCartFromSingleShop = items.size() == 1;
-		boolean isShopAllowedForPickup = 
-				items
-				.stream()
-				.map(ShippingDetails::getShopId)
-				.allMatch(allowedShops::contains);
+		boolean isShopAllowedForPickup = isShopAllowedForPickup(items);
 		
 		String message = "";
 		if(!isCartFromSingleShop) {
@@ -186,6 +182,19 @@ public class PickupFromShop implements ShippingService{
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0011, message);
 		}
 		
+	}
+
+
+
+	private boolean isShopAllowedForPickup(List<ShippingDetails> items) {
+		return items
+				.stream()
+				.map(ShippingDetails::getAdditionalData)
+				.map(data -> data.get(SHOP_ID))
+				.map(EntityUtils::parseLongSafely)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.allMatch(allowedShops::contains);
 	}
 
 	

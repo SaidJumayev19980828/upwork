@@ -2,6 +2,7 @@ package com.nasnav.test;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.DELIVERED;
+import static com.nasnav.enumerations.OrderStatus.FINALIZED;
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
@@ -40,7 +41,6 @@ import java.util.Set;
 
 import javax.mail.MessagingException;
 
-import com.nasnav.dto.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -72,16 +72,23 @@ import com.nasnav.controller.OrdersController;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
+import com.nasnav.dto.BasketItem;
+import com.nasnav.dto.BasketItemDTO;
+import com.nasnav.dto.DetailedOrderRepObject;
+import com.nasnav.dto.MetaOrderBasicInfo;
+import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PaymentEntity;
@@ -152,6 +159,9 @@ public class OrderServiceTest {
 	
 	@Autowired
 	private ObjectMapper mapper;
+	
+	@Autowired
+	private MetaOrderRepository metaOrderRepo;
 
 	@Test
 	public void unregisteredUser() {
@@ -188,50 +198,6 @@ public class OrderServiceTest {
 	
 	
 	
-	@Test
-	public void updateOrderSuccessTest() {
-		// create a new order, then take it's order id and try to make an update using it
-		Integer orderQuantity = 5;
-		BigDecimal itemPrice = new BigDecimal(100).setScale(2);	
-		StocksEntity stock = createStock(itemPrice, orderQuantity);		
-				
-		JSONObject request = createOrderRequestWithBasketItems(NEW, item(stock.getId(), stock.getQuantity()));
-		ResponseEntity<OrderResponse> response = 
-				template.postForEntity("/order/create"
-										, getHttpEntity(request.toString(), "123")
-										, OrderResponse.class);
-
-		// get the returned orderId
-		long orderId = response.getBody().getOrders().get(0).getId();
-		
-		//---------------------------------------------------------------
-		
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-
-		//---------------------------------------------------------------
-		// make an update request using the created order
-		JSONObject updateRequest = createOrderRequestWithBasketItems(CLIENT_CONFIRMED);
-		updateRequest.put("order_id", orderId);
-		
-		ResponseEntity<OrderResponse> updateResponse = 
-				template.postForEntity("/order/update"
-										, getHttpEntity(updateRequest.toString(), "123")
-										, OrderResponse.class);
-		System.out.println("----------response-----------------" + updateResponse);
-		
-		//---------------------------------------------------------------
-		OrderResponse body = updateResponse.getBody();
-		assertEquals(OK, updateResponse.getStatusCode());
-		
-		assertEquals(itemPrice.multiply(new BigDecimal(orderQuantity)), body.getPrice());
-		assertNotNull(body.getOrderId());
-		
-		OrdersEntity order = orderRepository.findById(body.getOrderId()).get();
-		assertEquals("user1", order.getName());
-		assertNotNull(order.getAddressEntity());
-	}
-	
-	
 	
 	
 
@@ -249,24 +215,6 @@ public class OrderServiceTest {
 		assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
 	}
 	
-	
-	
-	
-
-	@Test
-	public void createOrderWithoutProvidingValidStockIdTest() {
-		// try updating with a non-existing stock id
-		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(9845757332L, 4));
-		ResponseEntity<String> response = 
-				template.postForEntity("/order/create"
-										, getHttpEntity(request.toString(), "123")
-										, String.class);
-		
-		//---------------------------------------------------------------
-		JSONObject body = new JSONObject(response.getBody());
-		assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		assertEquals(INVALID_ORDER.toString(), body.get("error"));
-	}
 	
 	
 	
@@ -395,44 +343,6 @@ public class OrderServiceTest {
 	
 	
 
-	@Test
-	public void updateNewOrder() {
-		UserEntity persistentUser = userRepository.getByEmailAndOrganizationId("user1@nasnav.com", 99001L);
-		
-		Long stockId = 601L;
-		StocksEntity stocksEntity = stockRepository.findById(stockId).get();
-		
-		Integer quantity = 5;
-		BigDecimal itemPrice = new BigDecimal(500).setScale(2);			
-		modifyStockData(stocksEntity, quantity, itemPrice);
-
-		//---------------------------------------------------------------
-		
-		OrdersEntity ordersEntity = createOrderInDB(stocksEntity, persistentUser.getId());
-		Long orderId = ordersEntity.getId(); 
-		
-		//---------------------------------------------------------------
-		// try updating with a existing order number
-		JSONObject request = createOrderRequestWithBasketItems(OrderStatus.NEW, item(stocksEntity.getId(), quantity));
-		request.put("order_id", orderId);
-		
-		ResponseEntity<OrderResponse> response = 
-					template.postForEntity("/order/update"
-								, getHttpEntity(request.toString(), persistentUser.getAuthenticationToken())
-								, OrderResponse.class);
-
-		//---------------------------------------------------------------
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertEquals(orderId, response.getBody().getOrderId());
-		
-		OrdersEntity updatedOrder = helper.getOrderEntityFullData(orderId);
-		Set<BasketsEntity> basket = updatedOrder.getBasketsEntity();
-		assertEquals(1, basket.size());
-		
-		BasketsEntity item = basket.stream().findFirst().get();
-		assertEquals(stocksEntity.getId(), item.getStocksEntity().getId());
-		assertEquals(stocksEntity.getQuantity().intValue(), item.getQuantity().intValue());
-	}
 
 
 
@@ -1201,35 +1111,6 @@ public class OrderServiceTest {
 	
 	
 	
-	@Test
-	public void userUpdateBasketAfterConfrim() {
-		Long orderId = 330033L;
-		String userToken = "123"; 
-		
-		List<Long> basketItemsBefore = getBasketItemsIdList(orderId);
-		//---------------------------------------------------------------
-		
-		JSONObject updateRequest = createOrderRequestWithBasketItems(CLIENT_CONFIRMED, item(602L, 14));
-		updateRequest.put("order_id", orderId);
-		
-		ResponseEntity<OrderResponse> updateResponse = 
-				template.postForEntity("/order/update"
-										, getHttpEntity(updateRequest.toString(), userToken)
-										, OrderResponse.class);
-		System.out.println("----------response-----------------" + updateResponse);
-		
-		//---------------------------------------------------------------
-		List<Long> basketItemsAfter = getBasketItemsIdList(orderId);
-		
-		assertEquals(HttpStatus.OK, updateResponse.getStatusCode());
-		assertEquals("any changes to the basket items are ignored if the order new status is not NEW"
-						, basketItemsBefore
-						, basketItemsAfter);
-	}
-
-
-
-
 
 
 	private List<Long> getBasketItemsIdList(Long orderId) {
@@ -1456,34 +1337,6 @@ public class OrderServiceTest {
 	
 	
 	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_2.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void managerConfirmsPaidOrder() {
-		String userToken = "sdrf8s"; 
-		Long orderId = 330033L;
-		//---------------------------------------------------------------
-
-		JSONObject updateRequest = createOrderRequestWithBasketItems(STORE_CONFIRMED);
-		updateRequest.put("order_id", orderId);
-		
-		ResponseEntity<String> updateResponse = 
-				template.postForEntity("/order/update"
-										, getHttpEntity(updateRequest.toString(), userToken)
-										, String.class);
-		System.out.println("----------response-----------------\n" + updateResponse);
-		
-		//---------------------------------------------------------------
-		assertEquals(HttpStatus.OK, updateResponse.getStatusCode());
-		
-		OrdersEntity updatedOrder = orderRepository.findById(orderId).get();
-		assertEquals("payment status shouldn't change", PAID, updatedOrder.getPaymentStatus());
-		assertEquals("payment status shouldn't change", STORE_CONFIRMED.getValue(), updatedOrder.getStatus());
-	}
-	
-	
-	
-	
 	
 	
 	@Test
@@ -1562,80 +1415,9 @@ public class OrderServiceTest {
 	
 	
 	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_3.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void testOrderConfirm() {
-		//create order
-		String token = "123";
-		
-		Long orderId = 330033L; 
-		OrdersEntity order = orderRepository.findById(orderId).get();
-		LocalDateTime initialUpdateTime = order.getUpdateDate();
-		StocksEntity stockBefore = stockRepository.findById(601L).get();
-		assertEquals(15, stockBefore.getQuantity().intValue());
-		
-		createDummyPayment(order);
-		ResponseEntity<String> response = confirmOrder(token, orderId);
-		
-		assertEquals(OK, response.getStatusCode());
-		
-		
-		OrdersEntity saved = orderRepository.findById(orderId).get();
-		assertEquals(CLIENT_CONFIRMED.getValue(), saved.getStatus());
-		assertTrue(saved.getUpdateDate().isAfter(initialUpdateTime));
-		
-		StocksEntity stockAfter = stockRepository.findById(601L).get();
-		assertEquals(1, stockAfter.getQuantity().intValue());
-	}
-	
-	
 	
 
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_4.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void testOrderConfirmForBundle() {
-		//create order
-		String token = "123";
-		
-		Long orderId = 330033L; 
-		OrdersEntity order = orderRepository.findById(orderId).get();
-		
-		BundleOrderTestStocks before = getStocksCountBefore();		
-		validateStockQuantityBefore(before);
-		
-		//-----------------------------------------------------
-		createDummyPayment(order);
-		ResponseEntity<String> response = confirmOrder(token, orderId);
 
-		//-----------------------------------------------------
-		assertEquals(OK, response.getStatusCode());		
-		OrdersEntity saved = orderRepository.findById(orderId).get();
-		assertEquals(CLIENT_CONFIRMED.getValue(), saved.getStatus());
-		
-		validateStocksQuantities(before);
-	}
-
-
-
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql","/sql/Orders_Test_Data_Insert_3.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void updateOrderDeliveryAddressStatusNew() {
-		JSONArray basket = createBasket( new Item(601L, 1));
-
-		String body = json().put("order_id",330033)
-							.put("address_id", 12300002)
-							.put("basket", basket)
-							.put("status", "NEW").toString();
-
-		HttpEntity<?> request = getHttpEntity(body, "123");
-		ResponseEntity<OrderResponse> res = template.postForEntity("/order/update", request, OrderResponse.class);
-		assertEquals(200, res.getStatusCodeValue());
-		OrdersEntity order = orderRepository.findById(330033).get();
-		assertEquals("new address",order.getAddressEntity().getAddressLine1());
-	}
 
 
 	@Test
@@ -1661,97 +1443,6 @@ public class OrderServiceTest {
 	
 	
 	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql","/sql/Orders_Test_Data_Insert_6.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void confirmOrderAuthZTest() {
-		HttpEntity<?> request = getHttpEntity("NOT EXISTENT");
-		ResponseEntity<String> res = template.postForEntity("/order/confirm?order_id=330031", request, String.class);
-		assertEquals(UNAUTHORIZED, res.getStatusCode());
-	}
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void confirmOrderAuthNTest() {
-		HttpEntity<?> request = getHttpEntity("131415");
-		ResponseEntity<String> res = template.postForEntity("/order/confirm?order_id=330031", request, String.class);
-		assertEquals(FORBIDDEN, res.getStatusCode());
-	}
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void confirmOrderManagerFromAnotherStoreTest() {
-		HttpEntity<?> request = getHttpEntity("sdfe47");
-		ResponseEntity<String> res = template.postForEntity("/order/confirm?order_id=330031", request, String.class);
-		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
-	}
-	
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void confirmOrderNonExistingOrderTest() {
-		HttpEntity<?> request = getHttpEntity("sdrf8s");
-		ResponseEntity<String> res = template.postForEntity("/order/confirm?order_id=999999", request, String.class);
-		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
-	}
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void confirmOrderAlreadyConfrimedTest() {
-		HttpEntity<?> request = getHttpEntity("sdfe47");
-		ResponseEntity<String> res = template.postForEntity("/order/confirm?order_id=330032", request, String.class);
-		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
-	}
-	
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void confirmOrderTest() {
-		Long orderId = 330031L;
-		OrdersEntity subOrder = orderRepository.findByIdAndShopsEntity_Id(orderId, 501L).get();
-		
-		assertEquals(CLIENT_CONFIRMED.getValue(), subOrder.getStatus());
-		assertEquals(CLIENT_CONFIRMED.getValue(), subOrder.getMetaOrder().getStatus());
-		assertNull(subOrder.getShipment().getExternalId());
-		assertNull(subOrder.getShipment().getTrackNumber());
-		assertEquals(DRAFT.getValue(), subOrder.getShipment().getStatus());
-		//-------------------------------------------------
-		HttpEntity<?> request = getHttpEntity("sdrf8s");
-		ResponseEntity<OrderConfrimResponseDTO> res = 
-				template.postForEntity("/order/confirm?order_id=330031", request, OrderConfrimResponseDTO.class);
-		
-		//-------------------------------------------------		
-		assertEquals(OK, res.getStatusCode());
-		assertFalse(res.getBody().getShippingBill().isEmpty());
-		
-		OrdersEntity subOrderAfter = orderRepository.findByIdAndShopsEntity_Id(orderId, 501L).get();
-		assertEquals(STORE_CONFIRMED.getValue(), subOrderAfter.getStatus());
-		assertEquals(STORE_CONFIRMED.getValue(), subOrderAfter.getMetaOrder().getStatus());
-		assertNotNull(subOrderAfter.getShipment().getExternalId());
-		assertNotNull(subOrderAfter.getShipment().getTrackNumber());
-		assertEquals(REQUSTED.getValue(), subOrderAfter.getShipment().getStatus());
-	}
 
 
 
@@ -1840,20 +1531,6 @@ public class OrderServiceTest {
 	
 	
 	
-	private ResponseEntity<String> confirmOrder(String token, Long orderId) {
-		JSONObject updateRequest = createOrderRequestWithBasketItems(CLIENT_CONFIRMED);
-		updateRequest.put("order_id", orderId);
-		
-		ResponseEntity<String> updateResponse = 
-				template.postForEntity("/order/update"
-										, getHttpEntity( updateRequest.toString(), token)
-										, String.class);
-		return updateResponse;			
-	}
-	
-	
-	
-	
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_5.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
@@ -1892,7 +1569,17 @@ public class OrderServiceTest {
 				.anyMatch(stkId -> stkId.equals(602L));
 		assertFalse(cartHasStkAfer);
 		assertFalse("if the cart had items not in the order, they should remain", cartAfter.isEmpty());
+		//---------------------------------------------------------------------	
+		//assert sub_orders status changed 
+		OrdersEntity subOrder1 = orderRepository.findById(330031L).get();
+		assertEquals(FINALIZED.getValue(), subOrder1.getStatus());
 		
+		OrdersEntity subOrder2 = orderRepository.findById(330032L).get();
+		assertEquals(FINALIZED.getValue(), subOrder2.getStatus());
+		
+		MetaOrderEntity metaOrder = metaOrderRepo.findById(orderId).get();
+		assertEquals(FINALIZED.getValue(), metaOrder.getStatus());
+		//---------------------------------------------------------------------	
 		//assert email methods called
 		Mockito
 		.verify(mailService)
