@@ -11,13 +11,14 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 public enum ShippingStatus {
 
 
-    DRAFT(0), REQUSTED(1),
-
+    DRAFT(0),
+    REQUSTED(1),
     EN_ROUTE(10),
     PICKED_UP(20),
     DELIVERED(45),
     CANCELED(50),
-    FAILED(55);
+    FAILED(55),
+    RETURNED(60);
 
     @Getter
     private Integer value;

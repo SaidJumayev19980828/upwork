@@ -94,6 +94,8 @@ public enum ErrorCodes {
 
 	,O$0001("No order exists with ID[%d]!")
 	
+	,O$GNRL$0001("Cannot update order staus from [%s] to [%s]!")
+	
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
 
 	,ENUM$0001("Invalid shipping status")

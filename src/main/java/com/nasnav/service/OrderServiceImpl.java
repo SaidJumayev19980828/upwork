@@ -31,6 +31,7 @@ import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.DELIVERED;
 import static com.nasnav.enumerations.OrderStatus.DISPATCHED;
+import static com.nasnav.enumerations.OrderStatus.FINALIZED;
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
@@ -65,6 +66,7 @@ import static com.nasnav.exceptions.ErrorCodes.O$CRT$0006;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0007;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0008;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0009;
+import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0002;
@@ -159,8 +161,10 @@ import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.Roles;
+import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
@@ -174,7 +178,6 @@ import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PaymentEntity;
-import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ShipmentEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
@@ -265,7 +268,7 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private ObjectMapper objectMapper;
 	
-	private Map<OrderStatus, Set<OrderStatus>> nextOrderStatusSet;
+	private Map<OrderStatus, Set<OrderStatus>> orderStateMachine;
 	private Set<OrderStatus> orderStatusForCustomers;
 	private Set<OrderStatus> orderStatusForManagers;
 	
@@ -309,10 +312,10 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private void buildOrderStatusTransitionMap() {
-		nextOrderStatusSet = new HashMap<>();
-		buildMap(nextOrderStatusSet)
-			.put(NEW				, setOf(NEW, CLIENT_CONFIRMED, CLIENT_CANCELLED))
-			.put(CLIENT_CONFIRMED	, setOf(CLIENT_CANCELLED, STORE_CONFIRMED, STORE_CANCELLED))
+		orderStateMachine = new HashMap<>();
+		buildMap(orderStateMachine)
+			.put(CLIENT_CONFIRMED	, setOf(CLIENT_CANCELLED, FINALIZED))
+			.put(FINALIZED	 		, setOf(STORE_CONFIRMED, STORE_CANCELLED))
 			.put(STORE_CONFIRMED	, setOf(STORE_PREPARED, STORE_CANCELLED))
 			.put(STORE_PREPARED		, setOf(DISPATCHED, STORE_CANCELLED))
 			.put(DISPATCHED			, setOf(DELIVERED, STORE_CANCELLED));
@@ -758,7 +761,6 @@ public class OrderServiceImpl implements OrderService {
 		OrderStatus newStatus = ofNullable(orderJsonDto.getStatus())
 										.map(OrderStatus::findEnum)
 										.orElse(NEW);
-
 		OrdersEntity orderEntity =  
 				ordersRepository
 				.findById( orderJsonDto.getId() )
@@ -1043,15 +1045,51 @@ public class OrderServiceImpl implements OrderService {
 			validateCustomerCanSetStatus(newStatus);
 		}
 	}
+	
+	
+	
+	
+	
+	private OrdersEntity updateOrderStatus(OrdersEntity orderEntity, OrderStatus newStatus) {
+		OrderStatus currentStatus = findEnum(orderEntity.getStatus());
 
+		if(!canOrderStatusChangeTo(currentStatus, newStatus)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0001, currentStatus.name(), newStatus.name());
+		}
+		orderEntity.setStatus(newStatus.getValue());
+		return ordersRepository.save(orderEntity);
+	}
+	
+	
 
+	
+	private void returnOrderToStocks(OrdersEntity order) {
+		order
+		.getBasketsEntity()
+		.stream()
+		.forEach(this::incrementItemStock);
+	}
 
-
-
+	
+	private void incrementItemStock(BasketsEntity item) {
+		int quantity = 
+				ofNullable(item)
+				.map(BasketsEntity::getQuantity)
+				.map(BigDecimal::intValue)
+				.orElse(0);
+		stockService.incrementStockBy(item.getStocksEntity(), quantity);
+	}
+	
+	
+	
+	
+	
+	
 	private boolean canOrderStatusChangeTo(OrderStatus currentStatus, OrderStatus newStatus) {
-		return ofNullable(nextOrderStatusSet.get(currentStatus))
-										.orElse(emptySet())
-										.contains(newStatus);
+		return ofNullable(currentStatus)
+				.map(orderStateMachine::get)
+				.orElse(emptySet())
+				.contains(newStatus);
 	}
 	
 	

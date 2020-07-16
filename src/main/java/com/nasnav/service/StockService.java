@@ -38,6 +38,8 @@ public interface StockService {
 	List<Long> updateStockBatch(List<StockUpdateDTO> stocks, VariantCache variantCache);
 	
 	void reduceStockBy(StocksEntity stocksEntity, Integer quantity);
+	
+	void incrementStockBy(StocksEntity stocksEntity, Integer quantity);
 
 	void updateStockQuantity(StockUpdateDTO updateDto);
 }
