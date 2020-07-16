@@ -30,12 +30,10 @@ import java.util.stream.StreamSupport;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
-import javax.sql.DataSource;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import com.nasnav.commons.model.IndexedData;
@@ -77,12 +75,6 @@ public class StockServiceImpl implements StockService {
     
     @Autowired
     private ShopsRepository shopRepo;
-
-	@Autowired
-	private DataSource dataSource;
-
-	@Autowired
-	private JdbcTemplate jdbc;
 
     @Autowired
     private SecurityService security;
@@ -594,10 +586,29 @@ public class StockServiceImpl implements StockService {
 			reduceNormalStockBy(stocksEntity, quantity);
 		}
 	}
+	
+	
+	
+	@Override
+	public void incrementStockBy(StocksEntity stocksEntity, Integer quantity) {
+		if(isBundleStock(stocksEntity)) {
+			incrementBundleStock(stocksEntity, quantity);
+		}else {
+			incrementNormalStockBy(stocksEntity, quantity);
+		}
+	}
 
 
 
 	private void reduceBundleStock(StocksEntity stocksEntity, Integer quantity) {
+		stockRepo
+			.findByBundleStockId(stocksEntity.getId())
+			.forEach(itemStock -> incrementNormalStockBy(itemStock, quantity));  
+	}
+	
+	
+	
+	private void incrementBundleStock(StocksEntity stocksEntity, Integer quantity) {
 		stockRepo
 			.findByBundleStockId(stocksEntity.getId())
 			.forEach(itemStock -> reduceNormalStockBy(itemStock, quantity));  
@@ -619,6 +630,15 @@ public class StockServiceImpl implements StockService {
 		stocksEntity.setQuantity(newQuantity);
 		return stockRepo.save(stocksEntity);
 	}
+	
+	
+	
+	
+	private StocksEntity incrementNormalStockBy(StocksEntity stocksEntity, Integer quantity) {
+		int newQuantity = stocksEntity.getQuantity() + ofNullable(quantity).orElse(0).intValue();
+		stocksEntity.setQuantity(newQuantity);
+		return stockRepo.save(stocksEntity);
+	}
 
 
 
@@ -634,6 +654,10 @@ public class StockServiceImpl implements StockService {
 		.setParameter("variantId", updateDto.getVariantId())
 		.executeUpdate();
 	}
+
+
+
+	
 
 }
 
