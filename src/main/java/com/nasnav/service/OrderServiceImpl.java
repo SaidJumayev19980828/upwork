@@ -161,10 +161,8 @@ import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.Roles;
-import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
@@ -801,6 +799,7 @@ public class OrderServiceImpl implements OrderService {
 				.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS, orderId));	
 		
 		order.getSubOrders().forEach(this::finalizeSubOrder);
+		updateOrderStatus(order, FINALIZED);
 		
 		order.getSubOrders().forEach(this::sendNotificationEmailToStoreManager);
 		sendBillEmail(order);
@@ -953,6 +952,7 @@ public class OrderServiceImpl implements OrderService {
 	private void finalizeSubOrder(OrdersEntity order) {
 		reduceStocks(order);
 		clearOrderItemsFromCart(order);
+		updateOrderStatus(order, FINALIZED);
 	}
 	
 	
@@ -1058,6 +1058,19 @@ public class OrderServiceImpl implements OrderService {
 		}
 		orderEntity.setStatus(newStatus.getValue());
 		return ordersRepository.save(orderEntity);
+	}
+	
+	
+	
+	
+	private MetaOrderEntity updateOrderStatus(MetaOrderEntity metaOrderEntity, OrderStatus newStatus) {
+		OrderStatus currentStatus = findEnum(metaOrderEntity.getStatus());
+
+		if(!canOrderStatusChangeTo(currentStatus, newStatus)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0001, currentStatus.name(), newStatus.name());
+		}
+		metaOrderEntity.setStatus(newStatus.getValue());
+		return metaOrderRepo.save(metaOrderEntity);
 	}
 	
 	
@@ -1886,7 +1899,7 @@ public class OrderServiceImpl implements OrderService {
 		}	
 		
 		OrderStatus status = order.getOrderStatus(); 
-		if(CLIENT_CONFIRMED != status) {
+		if(FINALIZED != status) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0002, orderId, status.name());
 		}
 		return order;
@@ -1897,13 +1910,11 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private void confirmSubOrderAndMetaOrder(OrdersEntity order) {
-		order.setStatus(STORE_CONFIRMED.getValue());
-		ordersRepository.save(order);
+		updateOrderStatus(order, STORE_CONFIRMED);
 		
 		MetaOrderEntity metaOrder = order.getMetaOrder();		
 		if(isAllOtherOrdersConfirmed(order.getId(), metaOrder)) {
-			metaOrder.setStatus(STORE_CONFIRMED.getValue());
-			metaOrderRepo.save(metaOrder);
+			updateOrderStatus(metaOrder, STORE_CONFIRMED);
 		}
 	}
 
