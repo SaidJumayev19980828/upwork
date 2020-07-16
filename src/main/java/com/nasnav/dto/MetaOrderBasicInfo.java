@@ -24,14 +24,16 @@ public class MetaOrderBasicInfo {
     private String operator;
     private String shippingServiceId;
     private String status;
+    private BigDecimal itemsCount;
 
     public MetaOrderBasicInfo(Long id, LocalDateTime createdAt, Integer status, BigDecimal grandTotal,
-                              String operator, String shippingServiceId) {
+                              String operator, String shippingServiceId, BigDecimal itemsCount) {
         this.id = id;
         this.createdAt = createdAt;
         this.statusInt = status;
         this.grandTotal = grandTotal;
         this.operator = operator;
         this.shippingServiceId = shippingServiceId;
+        this.itemsCount = itemsCount;
     }
 }
