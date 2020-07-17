@@ -124,36 +124,39 @@ public class Tools {
 
 
 	public static Properties getPropertyForAccount(String accountName, Logger logger, String propertiesDir) {
-		String file;
-		if ("misr".equalsIgnoreCase(accountName)) {
-			file = "/provider.banquemisr.properties";
-		} else if ("qnb".equalsIgnoreCase(accountName)) {
-			file = "/provider.qnb.properties";
-		} else if ("rasports".equalsIgnoreCase(accountName)) {
-			file = "/provider.rasports.properties";
-		} else if ("rave".equalsIgnoreCase(accountName)) {
-			file = "/provider.rave.properties";
-		} else {
-			logger.warn("Unknown account: {}", accountName);
-			return null;
-		}
-		logger.debug("Attempting to load account properties file: {}", file);
+
 		Properties props = null;
+		String file = null;
 		try  {
-			InputStream stream =
-					Tools.class.getClass().getResourceAsStream(file);
-			if (stream == null) {
-				stream = new FileInputStream(new File(
-					propertiesDir + file
-				));
+			if (propertiesDir == null || propertiesDir.equals("#")) {
+				// load file from bundled resources
+				file = "/" + accountName;
+				logger.debug("Attempting to load account properties from resource: {}", file);
+					InputStream stream = Tools.class.getClass().getResourceAsStream(file);
+					if (stream == null) {
+						stream = new FileInputStream(new File(
+								propertiesDir + file
+						));
+					}
+					logger.info("Loading account properties from resource: {}", file);
+					props = new Properties();
+					props.load(stream);
+					stream.close();
+			} else {
+				file = propertiesDir + accountName;
+				logger.debug("Attempting to load account properties from file: {}", file);
+				InputStream stream = new FileInputStream(new File(
+							propertiesDir + file
+					));
+				logger.info("Loading account properties from file: {}", file);
+				props = new Properties();
+				props.load(stream);
+				stream.close();
 			}
-			logger.info("Loaded account properties file: {}", file);
-			props = new Properties();
-			props.load(stream);
-			stream.close();
 		} catch (IOException e) {
-			logger.error("Unable to load account property file: {}", file);
+			logger.error("Unable to load account property: {}, {}", file, e.getMessage());
 		}
+
 		return props;
 	}
 

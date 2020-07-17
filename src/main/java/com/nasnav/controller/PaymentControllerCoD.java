@@ -1,0 +1,97 @@
+package com.nasnav.controller;
+
+import com.nasnav.AppConfig;
+import com.nasnav.dao.MetaOrderRepository;
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
+import com.nasnav.dao.PaymentsRepository;
+import com.nasnav.enumerations.PaymentStatus;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.payments.misc.Tools;
+import com.nasnav.persistence.MetaOrderEntity;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.PaymentEntity;
+import com.nasnav.service.OrderService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Optional;
+
+@RestController
+@CrossOrigin(origins = "*", maxAge = 3600)
+@RequestMapping("/payment/cod")
+public class PaymentControllerCoD {
+
+	private static final Logger codLogger = LogManager.getLogger("Payment:COD");
+
+	@Autowired
+	private OrdersRepository ordersRepository;
+
+	@Autowired
+	private MetaOrderRepository metaOrdersRepository;
+
+	@Autowired
+	private PaymentsRepository paymentsRepository;
+
+	@Autowired
+	private AppConfig config;
+
+	@Autowired
+	private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
+
+	@Autowired
+	private OrderService orderService;
+
+	@Autowired
+	public PaymentControllerCoD() {
+
+	}
+
+	@RequestMapping(value = "execute")
+	public ResponseEntity<?> payCoD(@RequestParam(name = "order_id") Long metaOrderId) throws BusinessException {
+		ArrayList<OrdersEntity> orders = orderService.getOrdersForMetaOrder(metaOrderId);
+
+		Optional<MetaOrderEntity> metaOrderOpt = metaOrdersRepository.findById(metaOrderId);
+		if (!metaOrderOpt.isPresent()) {
+			throw new BusinessException("Order ID is invalid", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
+		}
+
+		OrderService.OrderValue orderValue = orderService.getMetaOrderTotalValue(metaOrderId);
+		if (orderValue == null) {
+			throw new BusinessException("Order ID is invalid", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
+		}
+		// check if CoD is avaialble
+		String accountName = Tools.getAccount(orders, "cod", orgPaymentGatewaysRep);
+		if (accountName == null) {
+			throw new BusinessException("CoD payment not available for order", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
+		}
+		PaymentEntity payment = new PaymentEntity();
+		payment.setOperator("COD");
+		payment.setUid(Tools.getOrderUid(metaOrderId,codLogger));
+		payment.setExecuted(new Date());
+		payment.setStatus(PaymentStatus.COD_REQUESTED);
+		payment.setAmount(orderValue.amount);
+		payment.setCurrency(orderValue.currency);
+		payment.setMetaOrderId(metaOrderId);
+		// TODO: this shall probably be changed to logged-in user rather than the meta-order owner later on
+		payment.setUserId(metaOrderOpt.get().getUser().getId());
+
+		paymentsRepository.saveAndFlush(payment);
+
+		for (OrdersEntity order : orders) {
+			orderService.setOrderAsPaid(payment, order);
+		}
+		ordersRepository.flush();
+		orderService.finalizeOrder(metaOrderId);
+
+
+		return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
+
+	}
+}
