@@ -385,13 +385,15 @@ public class OrganizationController {
                 MastercardAccount account = new MastercardAccount();
                 account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir));
                 list.append(account.getScriptUrl());
+                list.append('"');
             } else if ("upg".equalsIgnoreCase(gateway.getGateway())) {
                 list.append("\"script\": \"");
                 UpgAccount account = new UpgAccount();
                 account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir));
                 list.append(account.getUpgScriptUrl());
+                list.append('"');
             }
-            list.append("\"}");
+            list.append("}");
         }
         list.append(" }");
 
