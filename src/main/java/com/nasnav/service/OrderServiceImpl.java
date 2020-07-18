@@ -9,6 +9,7 @@ import static com.nasnav.commons.utils.MapBuilder.buildMap;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.ORDER_BILL_TEMPLATE;
 import static com.nasnav.constatnts.EmailConstants.ORDER_NOTIFICATION_TEMPLATE;
+import static com.nasnav.constatnts.EmailConstants.ORDER_REJECT_TEMPLATE;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_CALC_ORDER_FAILED;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ITEM_QUANTITY;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ORDER_STATUS;
@@ -68,6 +69,8 @@ import static com.nasnav.exceptions.ErrorCodes.O$CRT$0008;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0009;
 import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0003;
@@ -126,6 +129,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
+import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.CartItemRepository;
@@ -146,6 +150,7 @@ import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.MetaOrderBasicInfo;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.OrderRepresentationObject;
+import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.cart.CartOptimizeDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
@@ -196,6 +201,11 @@ import lombok.Data;
 
 @Service
 public class OrderServiceImpl implements OrderService {
+
+	private static final String DEFAULT_REJECTION_MESSAGE = 
+			"We are very sorry to inform you that we were unable to fulfill your order due to some issues."
+			+ " Your order will be refunded shortly, but the refund operation may take several business days "
+			+ "depending on the payment method.";
 
 	private static final int ORDER_DEFAULT_COUNT = 1000;
 
@@ -841,6 +851,20 @@ public class OrderServiceImpl implements OrderService {
 		params.put("id", order.getId().toString());
 		params.put("creationTime", orderTime);
 		params.put("orderPageUrl", buildDashboardPageUrl(order));
+		params.put("sub", order);
+		return params;
+	}
+	
+	
+	
+	
+	private Map<String, Object> createRejectionEmailParams(OrdersEntity order, String rejectionReason) {
+		Map<String,Object> params = new HashMap<>();
+		String message =
+				ofNullable(rejectionReason)
+				.orElse(DEFAULT_REJECTION_MESSAGE);
+		params.put("id", order.getId().toString());
+		params.put("rejectionReason", message);
 		params.put("sub", order);
 		return params;
 	}
@@ -1904,6 +1928,29 @@ public class OrderServiceImpl implements OrderService {
 		}
 		return order;
 	}
+	
+	
+	
+	
+	
+	private OrdersEntity getAndValidateOrderForRejection(Long orderId, EmployeeUserEntity user) {
+		OrdersEntity order;
+		if(securityService.currentUserHasRole(ORGANIZATION_MANAGER)) {
+			order = ordersRepository
+						.findByIdAndOrganizationEntity_Id(orderId, user.getOrganizationId())
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0004, user.getOrganizationId(), orderId));
+		}else {
+			 order = ordersRepository
+						.findByIdAndShopsEntity_Id(orderId, user.getShopId())
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0001, user.getShopId(), orderId));
+		}	
+		
+		OrderStatus status = order.getOrderStatus(); 
+		if(FINALIZED != status) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RJCT$0002, orderId, status.name());
+		}
+		return order;
+	}
 
 
 
@@ -1915,6 +1962,18 @@ public class OrderServiceImpl implements OrderService {
 		MetaOrderEntity metaOrder = order.getMetaOrder();		
 		if(isAllOtherOrdersConfirmed(order.getId(), metaOrder)) {
 			updateOrderStatus(metaOrder, STORE_CONFIRMED);
+		}
+	}
+	
+	
+	
+	
+	private void rejectSubOrderAndMetaOrder(OrdersEntity order) {
+		updateOrderStatus(order, STORE_CANCELLED);
+		
+		MetaOrderEntity metaOrder = order.getMetaOrder();		
+		if(isAllOtherOrdersRejected(order.getId(), metaOrder)) {
+			updateOrderStatus(metaOrder, STORE_CANCELLED);
 		}
 	}
 
@@ -1954,6 +2013,20 @@ public class OrderServiceImpl implements OrderService {
 				.filter(ord -> !Objects.equals(ord.getId(), orderId))
 				.allMatch(ord -> Objects.equals(STORE_CONFIRMED.getValue() , ord.getStatus()));
 	}
+	
+	
+	
+	
+	private boolean isAllOtherOrdersRejected(Long orderId, MetaOrderEntity metaOrder) {
+		return metaOrder
+				.getSubOrders()
+				.stream()
+				.filter(ord -> !Objects.equals(ord.getId(), orderId))
+				.allMatch(ord -> Objects.equals(STORE_CANCELLED.getValue() , ord.getStatus()));
+	}
+	
+	
+	
 
 	public ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId) {
 		if (metaOrderId == null) {
@@ -2692,6 +2765,49 @@ public class OrderServiceImpl implements OrderService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0006);
 		}else if(!isValidStrategy(strategy)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0007, strategy);
+		}
+	}
+
+
+
+
+
+	@Override
+	public void rejectOrder(OrderRejectDTO dto) {
+		validateOrderRejectRequest(dto);
+		EmployeeUserEntity storeMgr = getAndValidateUser();
+		OrdersEntity subOrder = getAndValidateOrderForRejection(dto.getSubOrderId(), storeMgr);
+		
+		rejectSubOrderAndMetaOrder(subOrder);
+		
+		sendRejectionEmailToCustomer(subOrder, dto.getRejectionReason());
+	}
+
+
+
+
+
+	private void sendRejectionEmailToCustomer(OrdersEntity subOrder, String rejectionReason) {
+		
+		String to = subOrder.getMetaOrder().getUser().getEmail();
+		String subject = ORDER_REJECT_SUBJECT;
+		List<String> bcc = getOrganizationManagersEmails(subOrder);
+		Map<String,Object> parametersMap = createRejectionEmailParams(subOrder, rejectionReason);
+		String template = ORDER_REJECT_TEMPLATE;
+		try {
+			mailService.sendThymeleafTemplateMail(asList(to), subject, emptyList(), bcc, template, parametersMap);
+		} catch (IOException | MessagingException e) {
+			logger.error(e, e);
+		}
+	}
+
+
+
+
+
+	private void validateOrderRejectRequest(OrderRejectDTO dto) {
+		if(anyIsNull(dto, dto.getSubOrderId())) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RJCT$0001);	
 		}
 	}
 

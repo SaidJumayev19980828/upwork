@@ -2,9 +2,6 @@ package com.nasnav.controller;
 
 import java.util.List;
 
-import com.nasnav.dto.MetaOrderBasicInfo;
-import com.nasnav.dto.response.navbox.Order;
-import com.nasnav.request.OrderSearchParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,9 +14,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nasnav.dto.DetailedOrderRepObject;
+import com.nasnav.dto.MetaOrderBasicInfo;
 import com.nasnav.dto.OrderJsonDto;
+import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
+import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.OrderService;
 
@@ -179,5 +180,23 @@ public class OrdersController {
             		throws BusinessException {
     	
     	return orderService.confrimOrder(orderId);
+    }
+	
+	
+	
+	
+	@ApiOperation(value = "Confirm an order", nickname = "orderConfirm")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Order Confirmed"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "reject",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public void rejectOrder(
+            @RequestHeader(name = "User-Token", required = false) String userToken
+            ,@RequestBody OrderRejectDTO dto)
+            		throws BusinessException {
+    	orderService.rejectOrder(dto);
     }
 }

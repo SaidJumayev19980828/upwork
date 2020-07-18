@@ -91,6 +91,7 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	@Query("SELECT ord "
 			+ " FROM OrdersEntity ord "
 			+ " LEFT JOIN FETCH ord.metaOrder meta "
+			+ " LEFT JOIN FETCH meta.user user" 
 			+ " LEFT JOIN FETCH ord.addressEntity userAddr "
 			+ " LEFT JOIN FETCH ord.shopsEntity shop "
 			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr"

@@ -2,6 +2,7 @@ package com.nasnav.test;
 
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
+import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
@@ -12,6 +13,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
@@ -506,6 +508,33 @@ public class CartTest {
 	
 	
 	
+	
+// TODO: make this test work with a swtich flag, that either make it work on bosta
+	//staging server + mail.nasnav.org mail server
+	//or make it work on mock bosta server + mock mail service
+//	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_4.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void orderRejectCompleteCycle() throws BusinessException {
+
+		addCartItems(88L, 602L, 2);
+		addCartItems(88L, 604L, 1);
+		
+		//checkout
+		JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest();
+
+		Order order = checkOutCart(requestBody, new BigDecimal("3125"), new BigDecimal("3100"), new BigDecimal("25"));
+		Long orderId = order.getOrderId();
+		
+		orderService.finalizeOrder(orderId);
+		
+		asList(new ShopManager(502L, "161718"), new ShopManager(501L,"131415"))
+		.forEach(mgr -> rejectOrder(order, mgr));
+	}
+	
+	
+	
+	
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_5.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -766,6 +795,36 @@ public class CartTest {
 		assertNotNull(shipment.getExternalId());
 		assertEquals(STORE_CONFIRMED.getValue(), orderEntity.getStatus());
 	}
+	
+	
+	
+	
+	private void rejectOrder(Order order, ShopManager mgr) {
+		Long subOrderId = getSubOrderIdOfShop(order, mgr.getShopId());
+		HttpEntity<?> request = createOrderRejectRequest(subOrderId, "oops!", mgr.getManagerAuthToken()); 
+		template.postForEntity("/order/reject" , request, String.class);
+		
+		OrdersEntity orderEntity = orderRepo.findByIdAndShopsEntity_Id(subOrderId, mgr.getShopId()).get();
+		ShipmentEntity shipment = orderEntity.getShipment();
+		
+		assertNull(shipment.getTrackNumber());
+		assertNull(shipment.getExternalId());
+		assertEquals(STORE_CANCELLED.getValue(), orderEntity.getStatus());
+	}
+	
+	
+	
+	
+	private HttpEntity<?> createOrderRejectRequest(Long orderId, String rejectionReason, String authToken) {
+		String requestBody = 
+				json()
+				.put("sub_order_id", orderId)
+				.put("rejection_reason", rejectionReason)
+				.toString();
+		return getHttpEntity(requestBody, authToken);
+	}
+	
+	
 
 
 	private Long getSubOrderIdOfShop(Order order, Long shopId) {
