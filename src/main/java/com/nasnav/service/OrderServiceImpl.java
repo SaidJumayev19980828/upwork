@@ -129,7 +129,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
-import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.CartItemRepository;
@@ -1970,6 +1969,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	private void rejectSubOrderAndMetaOrder(OrdersEntity order) {
 		updateOrderStatus(order, STORE_CANCELLED);
+		returnOrderToStocks(order);
 		
 		MetaOrderEntity metaOrder = order.getMetaOrder();		
 		if(isAllOtherOrdersRejected(order.getId(), metaOrder)) {

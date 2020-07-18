@@ -1667,6 +1667,11 @@ public class OrderServiceTest {
 		Long orderId = 330031L;
 		OrdersEntity subOrder = orderRepository.findByIdAndShopsEntity_Id(orderId, 501L).get();
 		
+		
+		//get stocks before
+		Item stock1 = getStockItemQty(601L);
+		Item stock2 = getStockItemQty(602L);
+		
 		assertEquals(FINALIZED.getValue(), subOrder.getStatus());
 		assertEquals(FINALIZED.getValue(), subOrder.getMetaOrder().getStatus());
 		assertNull(subOrder.getShipment().getExternalId());
@@ -1687,6 +1692,14 @@ public class OrderServiceTest {
 		assertNull(subOrderAfter.getShipment().getTrackNumber());
 		assertEquals(DRAFT.getValue(), subOrderAfter.getShipment().getStatus());
 		
+		//-------------------------------------------------	
+		//assert stock incremented
+		Item stock1After = getStockItemQty(601L);
+		Item stock2After = getStockItemQty(602L);
+		
+		assertEquals(14, stock1After.getQuantity() - stock1.getQuantity() );
+		assertEquals("the other sub-order should remain the same", 0, stock2After.getQuantity() - stock2.getQuantity());
+		//-------------------------------------------------	
 		//assert email methods called
 		Mockito
 		.verify(mailService)
