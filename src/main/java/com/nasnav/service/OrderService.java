@@ -8,6 +8,7 @@ import java.util.List;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.MetaOrderBasicInfo;
 import com.nasnav.dto.OrderJsonDto;
+import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.cart.CartOptimizeDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
@@ -40,6 +41,7 @@ public interface OrderService {
 	}
 
 	String BILL_EMAIL_SUBJECT = "Your Order has been Created!";
+	String ORDER_REJECT_SUBJECT = "Sorry! Your Order has been rejected!";
 
 	public OrderResponse createNewOrder(OrderJsonDto orderJson) throws BusinessException;
 
@@ -81,4 +83,6 @@ public interface OrderService {
 	List<ShopFulfillingCart> getShopsThatCanProvideCartItems();
 
 	List<ShopFulfillingCart> getShopsThatCanProvideWholeCart();
-	}
+
+	public void rejectOrder(OrderRejectDTO dto);
+}

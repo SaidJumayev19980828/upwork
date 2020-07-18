@@ -66,6 +66,14 @@ public class MailServiceImpl implements MailService {
     
     
     private void sendMessage(List<String> to, String subject, List<String> cc, String body) throws MessagingException {
+    	sendMessage(to, subject, cc, emptyList(), body);
+    }
+    
+    
+    
+    
+    
+    private void sendMessage(List<String> to, String subject, List<String> cc, List<String> bcc,String body) throws MessagingException {
         if (mailSender == null) {
             return;
         }
@@ -78,13 +86,15 @@ public class MailServiceImpl implements MailService {
         if(nonNull(cc) && !cc.isEmpty()) {
         	helper.setCc(cc.toArray(new String[0]));	
         }
+        if(nonNull(bcc) && !bcc.isEmpty()) {
+        	helper.setBcc(bcc.toArray(new String[0]));	
+        }
         if (config.mailDryRun) {
             System.out.println("Sending email to: " + to + "\n-------\n" + body);
         } else {
             mailSender.send(mimeMessage);
         }
     }
-    
     
 
 
@@ -170,4 +180,14 @@ public class MailServiceImpl implements MailService {
         templateResolver.setCacheable(true);
         return templateResolver;
     }
+
+
+
+
+	@Override
+	public void sendThymeleafTemplateMail(List<String> to, String subject, List<String> cc, List<String> bcc,
+			String template, Map<String, Object> parametersMap) throws IOException, MessagingException {
+		 String body = createBodyFromThymeleafTemplate(template, parametersMap);
+	     sendMessage(to, subject, cc, bcc, body);
+	}
 }

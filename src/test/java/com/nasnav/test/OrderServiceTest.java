@@ -1,16 +1,15 @@
 package com.nasnav.test;
+import static com.nasnav.constatnts.EmailConstants.ORDER_REJECT_TEMPLATE;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.DELIVERED;
 import static com.nasnav.enumerations.OrderStatus.FINALIZED;
-import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
-import static com.nasnav.enumerations.PaymentStatus.PAID;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
-import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.service.OrderService.BILL_EMAIL_SUBJECT;
+import static com.nasnav.service.OrderService.ORDER_REJECT_SUBJECT;
 import static com.nasnav.test.commons.TestCommons.getHeaders;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
@@ -35,9 +34,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 import javax.mail.MessagingException;
 
@@ -69,12 +66,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nasnav.NavBox;
 import com.nasnav.controller.OrdersController;
-import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.BasketItem;
@@ -86,13 +81,9 @@ import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.PaymentEntity;
-import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.dto.query.result.CartItemData;
@@ -130,13 +121,8 @@ public class OrderServiceTest {
 	private OrdersRepository orderRepository;
 	@Autowired
 	private StockRepository stockRepository;
-	
-	@Autowired
-	private PaymentsRepository paymentRepository;
 	@Autowired
 	private CartItemRepository cartRepo;
-	@Autowired
-	private BasketRepository basketRepository;
 	@Autowired
 	UserService userService;
 
@@ -339,42 +325,6 @@ public class OrderServiceTest {
 		assertEquals(INVALID_ORDER.toString(), body.get("error"));		
 	}
 
-	
-	
-	
-
-
-
-
-
-	private OrdersEntity createOrderInDB(StocksEntity stocksEntity, Long userId) {
-		BigDecimal amount = new BigDecimal(500.25);		
-		ShopsEntity shopsEntity = stocksEntity.getShopsEntity();
-		OrganizationEntity organizationEntity = stocksEntity.getOrganizationEntity();
-		
-		OrdersEntity ordersEntity = new OrdersEntity();		
-		ordersEntity.setAmount(amount);
-		ordersEntity.setShopsEntity(shopsEntity);
-		ordersEntity.setStatus(OrderStatus.NEW.getValue());
-		ordersEntity.setCreationDate( LocalDateTime.now()  );
-		ordersEntity.setUpdateDate( LocalDateTime.now()  );
-		ordersEntity.setOrganizationEntity(organizationEntity);
-		ordersEntity.setUserId(userId);
-		ordersEntity = orderRepository.save(ordersEntity);
-		return ordersEntity;
-	}
-
-
-
-
-	private void modifyStockData(StocksEntity stocksEntity, Integer quantity, BigDecimal itemPrice) {
-		stocksEntity.setPrice(itemPrice);
-		stocksEntity.setQuantity(quantity);
-		stocksEntity = stockRepository.save(stocksEntity);
-	}
-	
-	
-	
 	
 	
 
@@ -1111,17 +1061,6 @@ public class OrderServiceTest {
 	
 	
 	
-
-
-	private List<Long> getBasketItemsIdList(Long orderId) {
-		List<Long> basketItemsBefore = basketRepository.findByOrdersEntity_Id(orderId)
-														.stream()
-														.map(BasketsEntity::getId)
-														.collect(toList());
-		return basketItemsBefore;
-	}
-	
-	
 	
 	
 	
@@ -1315,56 +1254,6 @@ public class OrderServiceTest {
 	
 	
 	
-	@Test
-	public void managerCreatesNewOrder() {
-		String userToken = "101112"; 
-		
-		//---------------------------------------------------------------
-
-		JSONObject updateRequest = createOrderRequestWithBasketItems(NEW);
-		
-		ResponseEntity<String> updateResponse = 
-				template.postForEntity("/order/create"
-										, getHttpEntity(updateRequest.toString(), userToken)
-										, String.class);
-		System.out.println("----------response-----------------\n" + updateResponse);
-		
-		//---------------------------------------------------------------
-		assertEquals(HttpStatus.FORBIDDEN, updateResponse.getStatusCode());
-	}
-	
-	
-	
-	
-	
-	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_2.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void userDeleteOrderWithSoftDeletedProducts() {
-		long countAllBefore = orderRepository.count();
-		long countBefore = orderRepository.countByStatusAndUserId(NEW.getValue() , 89L);
-		
-		//-------------------------------------------
-		
-		ResponseEntity<String> response = template.exchange("/order/current"
-															, DELETE
-															, new HttpEntity<>(getHeaders("456"))
-															, String.class);
-		
-		//-------------------------------------------
-		long countAfter = orderRepository.countByStatusAndUserId(OrderStatus.NEW.getValue() , 89L);
-		long countAllAfter = orderRepository.count();
-				
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertNotEquals( 0L, countBefore);
-		assertNotEquals(countAllBefore, countBefore);
-		assertEquals( 0L, countAfter);
-		assertEquals("check that other users orders were not affected"
-					, countBefore - countAfter
-					, countAllBefore - countAllAfter);
-	}
 
 	@Test
 	public void testOrderListDeletion() {
@@ -1443,6 +1332,97 @@ public class OrderServiceTest {
 	
 	
 	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql","/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void confirmOrderAuthZTest() {
+		HttpEntity<?> request = getHttpEntity("NOT EXISTENT");
+		ResponseEntity<String> res = template.postForEntity("/order/confirm?order_id=330031", request, String.class);
+		assertEquals(UNAUTHORIZED, res.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void confirmOrderAuthNTest() {
+		HttpEntity<?> request = getHttpEntity("131415");
+		ResponseEntity<String> res = template.postForEntity("/order/confirm?order_id=330031", request, String.class);
+		assertEquals(FORBIDDEN, res.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void confirmOrderManagerFromAnotherStoreTest() {
+		HttpEntity<?> request = getHttpEntity("sdfe47");
+		ResponseEntity<String> res = template.postForEntity("/order/confirm?order_id=330031", request, String.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void confirmOrderNonExistingOrderTest() {
+		HttpEntity<?> request = getHttpEntity("sdrf8s");
+		ResponseEntity<String> res = template.postForEntity("/order/confirm?order_id=999999", request, String.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void confirmOrderAlreadyConfrimedTest() {
+		HttpEntity<?> request = getHttpEntity("sdfe47");
+		ResponseEntity<String> res = template.postForEntity("/order/confirm?order_id=330032", request, String.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void confirmOrderTest() {
+		Long orderId = 330031L;
+		OrdersEntity subOrder = orderRepository.findByIdAndShopsEntity_Id(orderId, 501L).get();
+		
+		assertEquals(FINALIZED.getValue(), subOrder.getStatus());
+		assertNotEquals(STORE_CONFIRMED.getValue(), subOrder.getMetaOrder().getStatus());
+		assertNull(subOrder.getShipment().getExternalId());
+		assertNull(subOrder.getShipment().getTrackNumber());
+		assertEquals(DRAFT.getValue(), subOrder.getShipment().getStatus());
+		//-------------------------------------------------
+		HttpEntity<?> request = getHttpEntity("sdrf8s");
+		ResponseEntity<OrderConfrimResponseDTO> res = 
+				template.postForEntity("/order/confirm?order_id=330031", request, OrderConfrimResponseDTO.class);
+		
+		//-------------------------------------------------		
+		assertEquals(OK, res.getStatusCode());
+		assertFalse(res.getBody().getShippingBill().isEmpty());
+		
+		OrdersEntity subOrderAfter = orderRepository.findByIdAndShopsEntity_Id(orderId, 501L).get();
+		assertEquals(STORE_CONFIRMED.getValue(), subOrderAfter.getStatus());
+		assertEquals(STORE_CONFIRMED.getValue(), subOrderAfter.getMetaOrder().getStatus());
+		assertNotNull(subOrderAfter.getShipment().getExternalId());
+		assertNotNull(subOrderAfter.getShipment().getTrackNumber());
+		assertEquals(REQUSTED.getValue(), subOrderAfter.getShipment().getStatus());
+	}
 
 
 
@@ -1462,73 +1442,6 @@ public class OrderServiceTest {
 	
 
 
-
-	private void validateStockQuantityBefore(BundleOrderTestStocks before) {
-		assertNotEquals(0, before.bundleStocks.intValue());
-		assertNotEquals(0, before.bundleItem1Stocks.intValue());
-		assertNotEquals(0, before.bundleItem2Stocks.intValue());
-		assertNotEquals(0, before.otherProductStocks.intValue());
-	}
-
-
-
-
-
-
-	private BundleOrderTestStocks getStocksCountBefore() {
-		BundleOrderTestStocks before = new BundleOrderTestStocks();
-		before.bundleStocks = stockRepository.findById(601L).get().getQuantity();
-		before.bundleItem1Stocks = stockRepository.findById(602L).get().getQuantity();
-		before.bundleItem2Stocks = stockRepository.findById(603L).get().getQuantity();
-		before.otherProductStocks = stockRepository.findById(604L).get().getQuantity();
-		return before;
-	}
-
-
-
-
-
-
-	private void validateStocksQuantities(BundleOrderTestStocks before) {
-		BundleOrderTestStocks after = new BundleOrderTestStocks();
-		after.bundleStocks = stockRepository.findById(601L).get().getQuantity();
-		after.bundleItem1Stocks = stockRepository.findById(602L).get().getQuantity();
-		after.bundleItem2Stocks = stockRepository.findById(603L).get().getQuantity();
-		after.otherProductStocks = stockRepository.findById(604L).get().getQuantity();
-		
-		assertEquals(before.bundleStocks, after.bundleStocks);
-		assertEquals(before.bundleItem1Stocks - 2, after.bundleItem1Stocks.intValue());
-		assertEquals(before.bundleItem2Stocks - 2, after.bundleItem2Stocks.intValue());
-		assertEquals(before.otherProductStocks - 3, after.otherProductStocks.intValue());
-	}
-	
-	
-	
-	
-	
-	private PaymentEntity createDummyPayment(OrdersEntity order) {
-		
-		PaymentEntity payment = new PaymentEntity();
-		JSONObject paymentObj = 
-				json()
-				.put("what_is_this?", "dummy_payment_obj");
-		
-		payment.setOperator("UPG");
-		payment.setUid("MLB-<MerchantReference>");
-		payment.setExecuted(new Date());
-		payment.setObject(paymentObj.toString());
-		payment.setAmount(order.getAmount());
-		payment.setCurrency(EGP);
-		payment.setStatus(PAID);
-		payment.setUserId(order.getUserId());
-		
-		payment= paymentRepository.saveAndFlush(payment);
-		order.setPaymentEntity(payment);
-		orderRepository.saveAndFlush(order);
-		return payment;
-	}
-
-	
 	
 	
 	@Test
@@ -1675,6 +1588,135 @@ public class OrderServiceTest {
 
 		//-------------------------------------------------
 		assertEquals(FORBIDDEN, res.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql","/sql/Orders_Test_Data_Insert_7.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void rejectOrderAuthZTest() {
+		HttpEntity<?> request = getHttpEntity("NOT EXISTENT");
+		ResponseEntity<String> res = template.postForEntity("/order/reject", request, String.class);
+		assertEquals(UNAUTHORIZED, res.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_7.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void rejectOrderAuthNTest() {
+		HttpEntity<?> request = getHttpEntity("131415");
+		ResponseEntity<String> res = template.postForEntity("/order/reject", request, String.class);
+		assertEquals(FORBIDDEN, res.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_7.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void rejectOrderManagerFromAnotherStoreTest() {
+		Long orderId = 330031L;
+		HttpEntity<?> request = createOrderRejectRequest(orderId, "sdfe47");
+		ResponseEntity<String> res = template.postForEntity("/order/reject", request, String.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_7.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void rejectOrderNonExistingOrderTest() {
+		HttpEntity<?> request = createOrderRejectRequest(-111L, "sdrf8s");
+		ResponseEntity<String> res = template.postForEntity("/order/reject", request, String.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_7.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void rejectOrderAlreadyConfrimedTest() {
+		Long orderId = 330032L;
+		HttpEntity<?> request = createOrderRejectRequest(orderId, "sdfe47");
+		ResponseEntity<String> res = template.postForEntity("/order/reject", request, String.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_7.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void rejectOrderTest() throws Exception {
+		Long orderId = 330031L;
+		OrdersEntity subOrder = orderRepository.findByIdAndShopsEntity_Id(orderId, 501L).get();
+		
+		assertEquals(FINALIZED.getValue(), subOrder.getStatus());
+		assertEquals(FINALIZED.getValue(), subOrder.getMetaOrder().getStatus());
+		assertNull(subOrder.getShipment().getExternalId());
+		assertNull(subOrder.getShipment().getTrackNumber());
+		assertEquals(DRAFT.getValue(), subOrder.getShipment().getStatus());
+		//-------------------------------------------------
+		HttpEntity<?> request = createOrderRejectRequest(orderId, "Oops!", "sdrf8s");
+		ResponseEntity<?> res = 
+				template.postForEntity("/order/reject", request, String.class);
+		
+		//-------------------------------------------------		
+		assertEquals(OK, res.getStatusCode());
+		
+		OrdersEntity subOrderAfter = orderRepository.findByIdAndShopsEntity_Id(orderId, 501L).get();
+		assertEquals(STORE_CANCELLED.getValue(), subOrderAfter.getStatus());
+		assertEquals(STORE_CANCELLED.getValue(), subOrderAfter.getMetaOrder().getStatus());
+		assertNull(subOrderAfter.getShipment().getExternalId());
+		assertNull(subOrderAfter.getShipment().getTrackNumber());
+		assertEquals(DRAFT.getValue(), subOrderAfter.getShipment().getStatus());
+		
+		//assert email methods called
+		Mockito
+		.verify(mailService)
+		.sendThymeleafTemplateMail(
+			  Mockito.eq(asList("user1@nasnav.com"))
+			, Mockito.eq(ORDER_REJECT_SUBJECT)
+			, Mockito.anyList()
+			, Mockito.eq(asList("testuser3@nasnav.com"))
+			, Mockito.eq(ORDER_REJECT_TEMPLATE)
+			, Mockito.anyMap());
+	}
+
+
+
+
+
+
+	private HttpEntity<?> createOrderRejectRequest(Long orderId, String authToken) {
+		return createOrderRejectRequest(orderId, null, authToken);
+	}
+	
+	
+	
+	private HttpEntity<?> createOrderRejectRequest(Long orderId, String rejectionReason, String authToken) {
+		String requestBody = 
+				json()
+				.put("sub_order_id", orderId)
+				.put("rejection_reason", rejectionReason)
+				.toString();
+		return getHttpEntity(requestBody, authToken);
 	}
 
 }

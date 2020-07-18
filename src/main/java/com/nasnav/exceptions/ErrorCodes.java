@@ -87,6 +87,9 @@ public enum ErrorCodes {
 	,O$CFRM$0002("Cannot Confirm order with id[%d]! Invalid order Status [%s]!")
 	,O$CFRM$0003("Cannot Confirm order with id[%d]! User didn't provide a phone number!")
 	,O$CFRM$0004("No order exists for Organizations[%d] with id[%d]!")
+	
+	,O$RJCT$0001("No sub order Id was provided!")
+	,O$RJCT$0002("Cannot reject order with id[%d]! Invalid order Status [%s]!")
 
 	,O$MAIL$0001("Failed to send notification email about order[%d] to email[%s]!")
 	

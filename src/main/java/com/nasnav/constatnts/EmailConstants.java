@@ -28,4 +28,6 @@ public final class EmailConstants {
     public static final String ORDER_NOTIFICATION_TEMPLATE = "order_notification_template.html";
     
     public static final String ORDER_BILL_TEMPLATE = "order_bill_template.html";
+    
+    public static final String ORDER_REJECT_TEMPLATE = "order_reject_template.html";
 }
