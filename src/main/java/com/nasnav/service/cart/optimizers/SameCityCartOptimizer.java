@@ -1,6 +1,7 @@
 package com.nasnav.service.cart.optimizers;
 
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0010;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0011;
 import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.SAME_CITY;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
@@ -84,8 +85,13 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 	
 	
 	private Optional<OptimizedCartItem> createOptimizedCartItem(CartItem item, List<ShopFulfillingCart> shopsOrderdByPriority) {
-		return getCartItemStockFromHighestPriorityShop(item, shopsOrderdByPriority)
+		Optional<OptimizedCartItem> optimizedItem = 
+				getCartItemStockFromHighestPriorityShop(item, shopsOrderdByPriority)
 				.map(itemStk -> createOptimizedCartItem(itemStk, item));
+		if(!optimizedItem.isPresent()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0011, item.getId(), item.getStockId());
+		}
+		return optimizedItem;
 	}
 
 
@@ -195,10 +201,10 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 		return addressRepo
 				.findByIdIn(asList(addressId))
 				.stream()
+				.findFirst()
 				.map(AddressesEntity::getAreasEntity)
 				.map(AreasEntity::getCitiesEntity)
-				.map(CitiesEntity::getId)
-				.findFirst();
+				.map(CitiesEntity::getId);
 	}
 }
 

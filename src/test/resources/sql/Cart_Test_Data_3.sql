@@ -12,12 +12,22 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 2
 INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
 INSERT INTO public.categories(id, name) VALUES (202, 'category_2');
 
+
+
 --inserting product features
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(234,'Shoe size', 's-size', 'Size of the shoes', 99001);
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(235,'Shoe color', 's-color', 'Color of the shoes', 99001);
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(236,'Shoe size', 's-size', 'Size of the shoes', 99002);
 
-INSERT INTO public.addresses(id, address_line_1) values(12300001, 'address line');
+
+INSERT INTO public.countries(id,"name")VALUES(1,'Egypt');
+INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
+INSERT INTO public.cities(id,country_id, "name") VALUES(2,1, 'Alexandria');
+INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
+INSERT INTO public.areas(id, "name", city_id)VALUES(2, 'Mokatem', 1);
+INSERT INTO public.areas(id, "name", city_id)VALUES(3, 'Miami', 2);
+
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300001, 'address line', 1, '01111234567');
 
 --inserting shops
 INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (501, 'shop_1', 102, 99001, 12300001);
@@ -87,7 +97,7 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(602, 501, 8, 99001, 1200.0, 310002);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(603, 501, 4, 99002, 200.00, 310003);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(604, 502, 6, 99001, 700.00, 310004);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(605, 502, 0, 99001, 700.00, 310009, 0);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(605, 502, 2, 99001, 700.00, 310009, 0);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(606, 502, 1, 99001, 700.00, 310010, 1);
 
 
@@ -109,7 +119,7 @@ INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 
 
 -- insert cart
-INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(602, '99001/img2.jpg', '{"Color":"Blue"}', 10000, 88);
+INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(602, '99001/img2.jpg', '{"Color":"Blue"}', 1, 88);
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(604, '99001/cover_img.jpg', '{"Color":"Yellow"}', 1, 88);
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(605, '99001/cover_img.jpg', '{"Color":"Yellow"}', 1, 88);
 

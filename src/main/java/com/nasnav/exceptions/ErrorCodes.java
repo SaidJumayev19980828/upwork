@@ -74,6 +74,7 @@ public enum ErrorCodes {
 	,O$CRT$0008("Failed to parse Cart optimization parameters [%s] !")
 	,O$CRT$0009("Failed to get a cart optimizer with name [%s] !")
 	,O$CRT$0010("Invalid or missing cart optimization parameters!")
+	,O$CRT$0011("Failed to optimize cart item for shipping! No stock can fulfill the cart for cart item with id[%d] and stock Id[%d]!")
 
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")
