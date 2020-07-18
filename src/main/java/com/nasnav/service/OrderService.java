@@ -85,4 +85,6 @@ public interface OrderService {
 	List<ShopFulfillingCart> getShopsThatCanProvideWholeCart();
 
 	public void rejectOrder(OrderRejectDTO dto);
+
+	Cart getUserCart(Long userId);
 }

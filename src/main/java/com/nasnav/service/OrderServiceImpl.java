@@ -51,6 +51,7 @@ import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
 import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
 import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0004;
 import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0005;
+import static com.nasnav.exceptions.ErrorCodes.G$STK$0001;
 import static com.nasnav.exceptions.ErrorCodes.G$USR$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0001;
@@ -58,6 +59,7 @@ import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0004;
 import static com.nasnav.exceptions.ErrorCodes.O$CHK$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CHK$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$CHK$0004;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
@@ -77,6 +79,8 @@ import static com.nasnav.exceptions.ErrorCodes.O$SHP$0003;
 import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
 import static com.nasnav.exceptions.ErrorCodes.S$0005;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.isValidStrategy;
+import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.SAME_CITY;
+import static com.nasnav.shipping.services.PickupFromShop.SHOP_ID;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDateTime.now;
@@ -129,6 +133,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.BasketRepository;
 import com.nasnav.dao.CartItemRepository;
@@ -187,10 +192,13 @@ import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.persistence.dto.query.result.CartItemStock;
+import com.nasnav.persistence.dto.query.result.StockAdditionalData;
 import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.cart.optimizers.CartOptimizer;
+import com.nasnav.service.cart.optimizers.OptimizedCart;
+import com.nasnav.service.cart.optimizers.OptimizedCartItem;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 import com.nasnav.shipping.model.ShipmentTracker;
@@ -1767,7 +1775,9 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private Cart getUserCart(Long userId) {
+	
+	@Override
+	public Cart getUserCart(Long userId) {
 		return new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId)));
 	}
 
@@ -2098,7 +2108,7 @@ public class OrderServiceImpl implements OrderService {
 				.findByIdAndUserId(dto.getAddressId(), user.getId())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, dto.getAddressId()));
 
-		Map<Long, List<CartCheckoutData>> checkOutData = getAndValidateCheckoutData(user); 
+		Map<Long, List<CartCheckoutData>> checkOutData = getAndValidateCheckoutData(user, dto); 
 		MetaOrderEntity order = createOrder( checkOutData, userAddress, dto );
 		return order;
 	}
@@ -2107,8 +2117,16 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Map<Long, List<CartCheckoutData>> getAndValidateCheckoutData(BaseUserEntity user) {
-		List<CartCheckoutData> userCartItems = cartItemRepo.getCheckoutCartByUser_Id(user.getId());
+	private Map<Long, List<CartCheckoutData>> getAndValidateCheckoutData(BaseUserEntity user, CartCheckoutDTO checkoutDto) {
+		Cart optimizedCart = optimizeCartForCheckout(checkoutDto); 
+		List<Long> cartStocks = 
+				optimizedCart
+				.getItems()
+				.stream()
+				.map(CartItem::getStockId)
+				.collect(toList()); 
+		List<StockAdditionalData> stocksData = stockRepository.findAdditionalDataByStockIdIn(cartStocks);
+		List<CartCheckoutData> userCartItems = createCheckoutData(optimizedCart, stocksData);
 
 		validateCartCheckoutItems(userCartItems);
 
@@ -2120,6 +2138,96 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	
+
+
+	private Cart optimizeCartForCheckout(CartCheckoutDTO checkoutDto) {
+		CartOptimizeDTO dto = createCartOptimizeDTOFromCheckoutData(checkoutDto); 
+		CartOptimizeResponseDTO optimizationResult = optimizeCart(dto);
+		if(optimizationResult.getTotalChanged()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0004);
+		}
+		return optimizationResult.getCart();
+	}
+
+
+
+
+
+	private CartOptimizeDTO createCartOptimizeDTOFromCheckoutData(CartCheckoutDTO checkoutDto) {
+		Map<Object, Object> parameters = new HashMap<>();
+		parameters.put("CUSTOMER_ADDRESS_ID", checkoutDto.getAddressId());
+		
+		ofNullable(checkoutDto)
+		.map(CartCheckoutDTO::getAdditionalData)
+		.map(data -> data.get(SHOP_ID))
+		.flatMap(EntityUtils::parseLongSafely)
+		.ifPresent(shopId -> parameters.put("SHOP_ID", shopId));
+		
+		CartOptimizeDTO dto = new CartOptimizeDTO();
+		dto.setStrategy(SAME_CITY);
+		dto.setParametersJson(parameters);
+		return dto;
+	}
+
+
+
+
+
+	private List<CartCheckoutData> createCheckoutData(Cart optimizedCart, List<StockAdditionalData> stockAdditionalData) {
+		Map<Long, StockAdditionalData> stockDataMap = 
+				stockAdditionalData
+				.stream()
+				.collect(groupingBy(StockAdditionalData::getStockId))
+				.entrySet()
+				.stream()
+				.map(this::createStockAdditionalDataEntry)
+				.collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+		
+		return optimizedCart
+				.getItems()
+				.stream()
+				.map(item -> createCartCheckoutData(item, stockDataMap))
+				.collect(toList());
+	}
+
+
+	
+	
+	private Map.Entry<Long, StockAdditionalData> createStockAdditionalDataEntry(Map.Entry<Long, List<StockAdditionalData>> entry){
+		StockAdditionalData data = 
+				entry
+				.getValue()
+				.stream()
+				.findFirst()
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, G$STK$0001, entry.getKey()));
+		return new SimpleEntry<Long, StockAdditionalData>(entry.getKey(), data);
+	}
+	
+	
+	
+	
+	
+	private CartCheckoutData createCartCheckoutData(CartItem item, Map<Long, StockAdditionalData> stockDataMap) {
+		StockAdditionalData stockData = 
+				ofNullable(item)
+				.map(CartItem::getStockId)
+				.map(stockDataMap::get)
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, G$STK$0001, item.getStockId()));
+		CartCheckoutData checkoutData = new CartCheckoutData();
+		checkoutData.setCurrency(stockData.getCurrency());
+		checkoutData.setFeatureSpec(stockData.getVariantSpecs());
+		checkoutData.setId(item.getId());
+		checkoutData.setOrganizationId(stockData.getOrganizationId());
+		checkoutData.setPrice(item.getPrice());
+		checkoutData.setProductName(stockData.getProductName());
+		checkoutData.setQuantity(item.getQuantity());
+		checkoutData.setShopAddress(stockData.getShopAddress());
+		checkoutData.setShopId(stockData.getShopId());
+		checkoutData.setStockId(item.getStockId());
+		checkoutData.setVariantBarcode(stockData.getVariantBarcode());
+		return checkoutData;
+	}
+
 
 
 	private Order getOrderResponse(MetaOrderEntity order) {
@@ -2592,24 +2700,43 @@ public class OrderServiceImpl implements OrderService {
 	@Transactional(rollbackFor = Throwable.class)
 	public <T> CartOptimizeResponseDTO optimizeCart(CartOptimizeDTO dto) {
 		validteCartOptimizeRequest(dto);
-		BigDecimal initialCartTotal = calculateCartTotal();
-		Optional<Cart> savedCart = 
-				createOptimizedCart(dto)
-				.map(this::replaceCart);				
-		boolean totalChanged = 
-				savedCart
-				.map(this::calculateCartTotal)
-				.map(total -> total.compareTo(initialCartTotal) != 0)
-				.orElse(false);
-		Cart returnedCart = savedCart.orElseGet(() -> getCart());
-		return new CartOptimizeResponseDTO(totalChanged, returnedCart);
+		Optional<OptimizedCart> optimizedCart = createOptimizedCart(dto);
+		boolean anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart);
+		Cart returnedCart = getCartObject(optimizedCart);
+		return new CartOptimizeResponseDTO(anyPriceChanged, returnedCart);
+	}
+
+
+
+
+
+	private Cart getCartObject(Optional<OptimizedCart> optimizedCart) {
+		return optimizedCart
+		.map(OptimizedCart::getCartItems)
+		.orElse(emptyList())
+		.stream()
+		.map(OptimizedCartItem::getCartItem)
+		.collect(collectingAndThen(toList(), Cart::new));
+	}
+
+
+
+
+
+	private boolean isAnyItemPriceChangedAfterOptimization(Optional<OptimizedCart> optimizedCart) {
+		return optimizedCart
+		.map(OptimizedCart::getCartItems)
+		.orElse(emptyList())
+		.stream()
+		.map(OptimizedCartItem::getPriceChanged)
+		.anyMatch(isPriceChanged -> isPriceChanged);
 	}
 
 
 
 
 	@SuppressWarnings("unchecked")
-	private <T> Optional<Cart> createOptimizedCart(CartOptimizeDTO dto) {
+	private <T> Optional<OptimizedCart> createOptimizedCart(CartOptimizeDTO dto) {
 		
 		CartOptimizer<T> optimizer = null;
 		try {

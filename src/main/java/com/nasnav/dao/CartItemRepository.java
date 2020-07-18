@@ -105,7 +105,7 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 	
 	
 	@Query("SELECT new com.nasnav.persistence.dto.query.result.CartItemStock("
-			+ " variant.id, allStocks.id, shop.id, city.id, allStocks.quantity )"
+			+ " variant.id, allStocks.id, shop.id, city.id, allStocks.quantity, allStocks.price )"
 			+ " FROM CartItemEntity item"
 			+ " LEFT JOIN item.stock stock "
 			+ " LEFT JOIN item.user user "

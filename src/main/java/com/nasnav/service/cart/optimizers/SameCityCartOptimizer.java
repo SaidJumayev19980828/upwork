@@ -1,9 +1,12 @@
 package com.nasnav.service.cart.optimizers;
 
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0010;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0011;
 import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.SAME_CITY;
+import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.reverseOrder;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.averagingDouble;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
@@ -22,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.nasnav.dao.AddressRepository;
-import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.AddressesEntity;
@@ -49,7 +51,7 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 	
 	
 	@Override
-	public Optional<Cart> createOptimizedCart(Optional<SameCityCartOptimizerParameters> parameters) {
+	public Optional<OptimizedCart> createOptimizedCart(Optional<SameCityCartOptimizerParameters> parameters) {
 		
 		Long customerCityId = 
 				parameters
@@ -75,37 +77,50 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 				.map(Optional::get)
 				.collect(collectingAndThen(
 							toList()
-							, items -> Optional.of(new Cart(items))));
+							, items -> Optional.of(new OptimizedCart(items))));
 	}
 
 	
 	
 	
 	
-	private Optional<CartItem> createOptimizedCartItem(CartItem item, List<ShopFulfillingCart> shopsOrderdByPriority) {
+	private Optional<OptimizedCartItem> createOptimizedCartItem(CartItem item, List<ShopFulfillingCart> shopsOrderdByPriority) {
+		Optional<OptimizedCartItem> optimizedItem = 
+				getCartItemStockFromHighestPriorityShop(item, shopsOrderdByPriority)
+				.map(itemStk -> createOptimizedCartItem(itemStk, item));
+		if(!optimizedItem.isPresent()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0011, item.getId(), item.getStockId());
+		}
+		return optimizedItem;
+	}
+
+
+	
+	
+	private OptimizedCartItem createOptimizedCartItem(CartItemStock itemStk, CartItem item) {
 		CartItem optimized = new CartItem();
 		try {
 			BeanUtils.copyProperties(optimized, item);			
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			logger.error(e,e);
-			return Optional.of(item);
+			return new OptimizedCartItem(item, false);
 		}
-		
-		getItemFromHighestPriorityShop(item, shopsOrderdByPriority)
-		.ifPresent(optimized::setStockId);
-		
-		return Optional.of(optimized);
+		boolean priceChanged = 
+				ofNullable(item.getPrice())
+				.orElse(ZERO)
+				.compareTo(itemStk.getStockPrice()) != 0;
+		optimized.setPrice(itemStk.getStockPrice());
+		optimized.setStockId(itemStk.getStockId());
+		return new OptimizedCartItem(optimized, priceChanged);
 	}
 
 
 
-
-
-	private Optional<Long> getItemFromHighestPriorityShop(CartItem item,
+	private Optional<CartItemStock> getCartItemStockFromHighestPriorityShop(CartItem item,
 			List<ShopFulfillingCart> shopsOrderdByPriority) {
 		return shopsOrderdByPriority
 				.stream()
-				.map(shop -> getItemStockInShop(shop, item))
+				.map(shop -> getCartItemStockInShop(shop, item))
 				.filter(Optional::isPresent)
 				.map(Optional::get)
 				.findFirst();
@@ -115,12 +130,11 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 	
 	
 	
-	private Optional<Long> getItemStockInShop(ShopFulfillingCart shop, CartItem item) {
+	private Optional<CartItemStock> getCartItemStockInShop(ShopFulfillingCart shop, CartItem item) {
 		return shop
 				.getCartItems()
 				.stream()
 				.filter(itemInShop -> Objects.equals(itemInShop.getVariantId(), item.getVariantId()))
-				.map(CartItemStock::getStockId)
 				.findFirst();
 	}
 	
@@ -187,10 +201,10 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 		return addressRepo
 				.findByIdIn(asList(addressId))
 				.stream()
+				.findFirst()
 				.map(AddressesEntity::getAreasEntity)
 				.map(AreasEntity::getCitiesEntity)
-				.map(CitiesEntity::getId)
-				.findFirst();
+				.map(CitiesEntity::getId);
 	}
 }
 
