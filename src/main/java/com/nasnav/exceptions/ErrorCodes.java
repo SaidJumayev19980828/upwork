@@ -60,7 +60,7 @@ public enum ErrorCodes {
 	,G$JSON$0001("Failed to read json into an object!")
 	,G$PRAM$0001("Missing required parameters in object[%s]!")
 	,G$ORG$0001("No organization exists with id[%d]!")
-	
+	,G$STK$0001("Failed to get stock data for stock [%d]!")
 
 	,E$USR$0001("User is an employee!")
 
@@ -82,6 +82,7 @@ public enum ErrorCodes {
 	,O$CHK$0001("Must have at least one item in cart!")
 	,O$CHK$0002("Must provide shipping service provider")
 	,O$CHK$0003("Must provide shipping service additional data")
+	,O$CHK$0004("Failed to finish checkout! Cart optimization for shipping resulted in changes in item prices!")
 	
 	,O$CFRM$0001("No order exists for shop[%d] with id[%d]!")
 	,O$CFRM$0002("Cannot Confirm order with id[%d]! Invalid order Status [%s]!")

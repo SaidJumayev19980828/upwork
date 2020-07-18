@@ -48,6 +48,7 @@ import com.nasnav.NavBox;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
@@ -309,6 +310,48 @@ public class CartTest {
 	public void checkoutCartSuccess() {
 		checkoutCart();
 	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithAutoOptimizationSuccess() {
+		JSONObject requestBody = createCartCheckoutBody();
+		Order order = checkOutCart(requestBody, new BigDecimal("8151"), new BigDecimal("8100") ,new BigDecimal("51"));
+		
+		List<BasketItem> items = 
+				order
+				.getSubOrders()
+				.stream()
+				.map(SubOrder::getItems)
+				.flatMap(List::stream)
+				.collect(toList());
+		List<Long> orderStocks = items.stream().map(BasketItem::getStockId).collect(toList());
+		assertEquals(3, items.size());
+		assertTrue("The optimization should pick 2 stocks from a shop in cairo that has the largest average stock quantity, "
+				+ "and the third remaining stock from another shop in cairo with less stock quantity."
+				+ " as the prices didn't change, the optimization will be done silently."
+					, asList(607L, 608L, 612L).stream().allMatch(orderStocks::contains));
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_8.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithFailedOptimization() {
+		JSONObject requestBody = createCartCheckoutBody();
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
+		
+		assertEquals("failure in optimization due to different prices will return an error.", 406, res.getStatusCodeValue());
+	}
 
 
 
@@ -560,7 +603,8 @@ public class CartTest {
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_6.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void optimizeCartSameCityTest() {
-		
+		Long userId = 88L;
+		Cart initialCart = orderService.getUserCart(userId);
 		//---------------------------------------------------------------		
 		String requestBody = 
 				json()
@@ -579,10 +623,15 @@ public class CartTest {
 				cart.getItems().stream().map(CartItem::getStockId).collect(toList());
 		
 		assertEquals(OK, res.getStatusCode());
-		assertTrue(res.getBody().getTotalChanged());		
 		assertEquals(2, cart.getItems().size());
 		assertTrue("The optimization should pick stocks from a shop in cairo that can provide most items"
 					, asList(607L, 609L).stream().allMatch(stockIdsAfter::contains));
+		assertTrue(res.getBody().getTotalChanged());		
+		
+		//---------------------------------------------------------------
+		Cart cartAfter = orderService.getUserCart(userId);
+		
+		assertEquals(initialCart, cartAfter);
 	}
 	
 	
@@ -685,7 +734,7 @@ public class CartTest {
 		assertFalse("prices doesn't change", res.getBody().getTotalChanged());		
 		assertEquals(3, cart.getItems().size());
 		assertTrue("The optimization should pick the stocks from a the given shop , but the shop doesn't "
-				+ "have enougj quantity for first item, so , it will pickit from the shop next in priority "
+				+ "have enough quantity for first item, so , it will pick it from the shop next in priority "
 				+ " which should be in the same city and with highest average stock."
 					, asList(607L, 611L, 612L).stream().allMatch(stockIdsAfter::contains));
 	}
