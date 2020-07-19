@@ -83,6 +83,7 @@ import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.model.querydsl.sql.*;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -145,11 +146,6 @@ import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.model.querydsl.sql.QBrands;
-import com.nasnav.model.querydsl.sql.QProductFeatures;
-import com.nasnav.model.querydsl.sql.QProductVariants;
-import com.nasnav.model.querydsl.sql.QProducts;
-import com.nasnav.model.querydsl.sql.QStocks;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BundleEntity;
 import com.nasnav.persistence.ExtraAttributesEntity;
@@ -606,6 +602,7 @@ public class ProductService {
 		return	stocks
 				.stream()
 				.filter(stock -> stock != null)
+				.filter(stock -> Objects.equals(stock.getShopsEntity().getRemoved(), 0))
 				.map(StockDTO::new)
 				.collect(toList());
 	}
@@ -641,8 +638,9 @@ public class ProductService {
 		QStocks stock = QStocks.stocks;
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
+		QShops shop = QShops.shops;
 
-		BooleanBuilder predicate = getQueryPredicate(params, product, stock);
+		BooleanBuilder predicate = getQueryPredicate(params, product, stock, shop);
 
 		OrderSpecifier<?> order = getProductQueryOrder(params, product, stock);
 
@@ -691,8 +689,9 @@ public class ProductService {
 
 		QStocks stock = QStocks.stocks;
 		QProducts product = QProducts.products;
+		QShops shop = QShops.shops;
 
-		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock);
+		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock, shop);
 
 		SQLQuery<?> baseQuery = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
 
@@ -789,7 +788,7 @@ public class ProductService {
 	
 	
 	
-	private BooleanBuilder getQueryPredicate(ProductSearchParam params, QProducts product, QStocks stock) {
+	private BooleanBuilder getQueryPredicate(ProductSearchParam params, QProducts product, QStocks stock, QShops shop) {
 		BooleanBuilder predicate = new BooleanBuilder();
 
 		predicate.and(product.removed.eq(0));
@@ -819,6 +818,8 @@ public class ProductService {
 
 		if(params.has_360_view != null)
 			predicate.and( product.search_360.eq(params.has_360_view));
+
+		predicate.and( shop.removed.eq(0) );
 
 		return predicate;
 	}
