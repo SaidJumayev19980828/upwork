@@ -129,6 +129,12 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 			+ " WHERE stock.shopsEntity.id = :shopId")
 	void deleteByShopsEntity_Id(@Param("shopId") Long shopId);
 
+	@Transactional
+	@Modifying
+	@Query(value = "update StocksEntity s set s.quantity = 0 where s.shopsEntity.id = :shopId")
+	void setStocksQuantityZero(@Param("shopId") Long shopId);
 
 	Long countByShopsEntity_Id(long shopId);
+
+
 }

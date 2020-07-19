@@ -227,6 +227,8 @@ public class ShopService {
 
         validateShopLinksBeforeDelete(shopId);
 
+        stockRepo.setStocksQuantityZero(shopId);
+
         shopsRepository.setShopHidden(shopId);
     }
 
