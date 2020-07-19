@@ -87,4 +87,6 @@ public interface OrderService {
 	public void rejectOrder(OrderRejectDTO dto);
 
 	Cart getUserCart(Long userId);
+
+	public void cancelOrder(Long metaOrderId);
 }

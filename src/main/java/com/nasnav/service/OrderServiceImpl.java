@@ -8,6 +8,7 @@ import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.ORDER_BILL_TEMPLATE;
+import static com.nasnav.constatnts.EmailConstants.ORDER_CANCEL_NOTIFICATION_TEMPLATE;
 import static com.nasnav.constatnts.EmailConstants.ORDER_NOTIFICATION_TEMPLATE;
 import static com.nasnav.constatnts.EmailConstants.ORDER_REJECT_TEMPLATE;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_CALC_ORDER_FAILED;
@@ -60,6 +61,7 @@ import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0004;
 import static com.nasnav.exceptions.ErrorCodes.O$CHK$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CHK$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CHK$0004;
+import static com.nasnav.exceptions.ErrorCodes.O$CNCL$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
@@ -70,6 +72,8 @@ import static com.nasnav.exceptions.ErrorCodes.O$CRT$0007;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0008;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0009;
 import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0003;
 import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0002;
@@ -330,7 +334,7 @@ public class OrderServiceImpl implements OrderService {
 		orderStateMachine = new HashMap<>();
 		buildMap(orderStateMachine)
 			.put(CLIENT_CONFIRMED	, setOf(CLIENT_CANCELLED, FINALIZED))
-			.put(FINALIZED	 		, setOf(STORE_CONFIRMED, STORE_CANCELLED))
+			.put(FINALIZED	 		, setOf(STORE_CONFIRMED, STORE_CANCELLED, CLIENT_CANCELLED))
 			.put(STORE_CONFIRMED	, setOf(STORE_PREPARED, STORE_CANCELLED))
 			.put(STORE_PREPARED		, setOf(DISPATCHED, STORE_CANCELLED))
 			.put(DISPATCHED			, setOf(DELIVERED, STORE_CANCELLED));
@@ -1942,7 +1946,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
-	@Transactional
+	@Transactional(rollbackFor = Throwable.class)
 	public OrderConfrimResponseDTO confrimOrder(Long orderId) {
 		EmployeeUserEntity storeMgr = getAndValidateUser();
 		OrdersEntity subOrder = getAndValidateOrderForConfirmation(orderId, storeMgr);
@@ -2092,7 +2096,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	@Override
-	@Transactional
+	@Transactional(rollbackFor = Throwable.class)
 	public Order checkoutCart(CartCheckoutDTO dto) throws IOException {
 		BaseUserEntity user = securityService.getCurrentUser();
 		if(user instanceof EmployeeUserEntity) {
@@ -2964,6 +2968,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
+	@Transactional(rollbackFor = Throwable.class)
 	public void rejectOrder(OrderRejectDTO dto) {
 		validateOrderRejectRequest(dto);
 		EmployeeUserEntity storeMgr = getAndValidateUser();
@@ -2999,6 +3004,105 @@ public class OrderServiceImpl implements OrderService {
 	private void validateOrderRejectRequest(OrderRejectDTO dto) {
 		if(anyIsNull(dto, dto.getSubOrderId())) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RJCT$0001);	
+		}
+	}
+
+
+
+
+
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public void cancelOrder(Long metaOrderId) {
+		MetaOrderEntity order = 
+				metaOrderRepo
+				.findFullDataById(metaOrderId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, metaOrderId));
+		validateOrderForCancellation(order);
+		
+		cancelMetaOrderAndSubOrders(order);
+		
+		order.getSubOrders().forEach(this::sendOrderCancellationNotificationEmailToStoreManager);
+	}
+	
+	
+	
+	
+	
+	private void sendOrderCancellationNotificationEmailToStoreManager(OrdersEntity order) {
+		Long orderId = order.getId();
+		
+		List<String> to = getStoreManagersEmails(order);
+		String subject = format("Order[%d] was Cancelled!", orderId);
+		List<String> cc = getOrganizationManagersEmails(order);
+		Map<String,Object> parametersMap = createCancellationNotificationEmailParams(order);
+		String template = ORDER_CANCEL_NOTIFICATION_TEMPLATE;
+		try {
+			if(to.isEmpty()) {
+				to = cc;
+				cc = emptyList();
+			}
+			mailService.sendThymeleafTemplateMail(to, subject, cc, template, parametersMap);
+		} catch (IOException | MessagingException e) {
+			logger.error(e, e);
+		}
+	}
+	
+	
+	
+	private Map<String, Object> createCancellationNotificationEmailParams(OrdersEntity order) {
+		Map<String,Object> params = new HashMap<>();
+		String orderTime = 
+				DateTimeFormatter
+				.ofPattern("dd/MM/YYYY - hh:mm")
+				.format(order.getCreationDate());
+		String updateTime = 
+				DateTimeFormatter
+				.ofPattern("dd/MM/YYYY - hh:mm")
+				.format(order.getUpdateDate());
+		params.put("id", order.getId().toString());
+		params.put("creationTime", orderTime);
+		params.put("updateTime", updateTime);
+		params.put("orderPageUrl", buildDashboardPageUrl(order));
+		params.put("sub", order);
+		return params;
+	}
+
+
+
+
+
+	private void cancelMetaOrderAndSubOrders(MetaOrderEntity order) {
+		if( Objects.equals(order.getStatus(), FINALIZED.getValue())){
+			order.getSubOrders().forEach(this::returnOrderToStocks);
+		}
+		updateOrderStatus(order, CLIENT_CANCELLED);
+		order.getSubOrders().forEach(sub -> updateOrderStatus(sub, CLIENT_CANCELLED));
+	}
+
+
+
+
+
+	private void validateOrderForCancellation(MetaOrderEntity order) {
+		List<OrderStatus> acceptedStatuses = asList(CLIENT_CONFIRMED, FINALIZED);
+		Long currentUser = securityService.getCurrentUser().getId();
+		if(!Objects.equals(order.getUser().getId(), currentUser)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0003, order.getId());
+		}
+		OrderStatus status =
+				ofNullable(order.getStatus())
+				.map(OrderStatus::findEnum)
+				.orElse(CLIENT_CONFIRMED);
+		boolean areAllSubOrdersFinalized = 
+				order
+				.getSubOrders()
+				.stream()
+				.map(OrdersEntity::getStatus)
+				.map(OrderStatus::findEnum)
+				.allMatch(acceptedStatuses::contains);
+		if(!(acceptedStatuses.contains(status) && areAllSubOrdersFinalized)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CNCL$0002, order.getId(), status.toString());
 		}
 	}
 
