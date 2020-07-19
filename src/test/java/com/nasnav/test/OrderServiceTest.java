@@ -1,6 +1,7 @@
 package com.nasnav.test;
 import static com.nasnav.constatnts.EmailConstants.ORDER_REJECT_TEMPLATE;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
+import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.DELIVERED;
 import static com.nasnav.enumerations.OrderStatus.FINALIZED;
@@ -1715,13 +1716,7 @@ public class OrderServiceTest {
 	
 	
 	
-	//TODO: /order/cancel authn and authz
-	//TODO: cancel order another customer
-	//TODO: meta order doesn't exists
-	//TODO: meta order state is not finalized nor client confirmed
-	//TODO: cancel finalized order
 	//TODO: cancel client confirmed order.
-	//checks : stock before and after, status before and after, email method called for managers.
 	
 	
 	@Test
@@ -1772,12 +1767,133 @@ public class OrderServiceTest {
 	
 	
 	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_8.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void orderCancelNotFinalizedTest() {
 		HttpEntity<?> request = getHttpEntity("123");
-		ResponseEntity<String> res = template.postForEntity("/order/cancel?meta_order_id=310001", request, String.class);
+		ResponseEntity<String> res = template.postForEntity("/order/cancel?meta_order_id=310003", request, String.class);
 		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_8.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void orderCancelSuccessTest() throws Exception {
+		Long metaOrderId = 310001L;
+		MetaOrderEntity metaOrderBefore = metaOrderRepo.findFullDataById(metaOrderId).get();
+		boolean allSubOrdersAreFinalized = areAllSubOrdersHaveStatus(metaOrderBefore, FINALIZED);
+		
+		Integer stock1Before = stockRepository.findById(601L).get().getQuantity();
+		Integer stock2Before = stockRepository.findById(602L).get().getQuantity();
+		
+		assertEquals(FINALIZED.getValue(), metaOrderBefore.getStatus());
+		assertTrue(allSubOrdersAreFinalized);
+		//------------------------------------------------------------
+		HttpEntity<?> request = getHttpEntity("123");
+		ResponseEntity<String> res = template.postForEntity("/order/cancel?meta_order_id="+metaOrderId, request, String.class);
+		assertEquals(OK, res.getStatusCode());
+		//------------------------------------------------------------
+		
+		MetaOrderEntity metaOrderAfter = metaOrderRepo.findFullDataById(metaOrderId).get();
+		boolean allSubOrdersAreCancelled = areAllSubOrdersHaveStatus(metaOrderAfter, CLIENT_CANCELLED);
+		
+		Integer stock1After = stockRepository.findById(601L).get().getQuantity();
+		Integer stock2After = stockRepository.findById(602L).get().getQuantity();
+		
+		assertEquals(CLIENT_CANCELLED.getValue(), metaOrderAfter.getStatus());
+		assertTrue(allSubOrdersAreCancelled);
+		assertEquals("stocks should be incremented", 14, stock1After - stock1Before);
+		assertEquals("stocks should be incremented", 2, stock2After - stock2Before);
+		//------------------------------------------------------------
+
+		Mockito
+		.verify(mailService)
+		.sendThymeleafTemplateMail(
+			  Mockito.eq(asList("testuser6@nasnav.com"))
+			, Mockito.anyString()
+			, Mockito.eq(asList("testuser2@nasnav.com"))
+			, Mockito.anyString()
+			, Mockito.anyMap());
+		
+		Mockito
+		.verify(mailService)
+		.sendThymeleafTemplateMail(
+			  Mockito.eq(asList("testuser7@nasnav.com"))
+			, Mockito.anyString()
+			, Mockito.eq(asList("testuser2@nasnav.com"))
+			, Mockito.anyString()
+			, Mockito.anyMap());
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_8.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void orderCancelWithClientConfirmedStatusSuccessTest() throws Exception {
+		Long metaOrderId = 310002L;
+		MetaOrderEntity metaOrderBefore = metaOrderRepo.findFullDataById(metaOrderId).get();
+		boolean allSubOrdersAreConfirmed = areAllSubOrdersHaveStatus(metaOrderBefore, CLIENT_CONFIRMED);
+		
+		Integer stock1Before = stockRepository.findById(601L).get().getQuantity();
+		Integer stock2Before = stockRepository.findById(602L).get().getQuantity();
+		
+		assertEquals(CLIENT_CONFIRMED.getValue(), metaOrderBefore.getStatus());
+		assertTrue(allSubOrdersAreConfirmed);
+		//------------------------------------------------------------
+		HttpEntity<?> request = getHttpEntity("123");
+		ResponseEntity<String> res = template.postForEntity("/order/cancel?meta_order_id="+metaOrderId, request, String.class);
+		assertEquals(OK, res.getStatusCode());
+		//------------------------------------------------------------
+		
+		MetaOrderEntity metaOrderAfter = metaOrderRepo.findFullDataById(metaOrderId).get();
+		boolean allSubOrdersAreCancelled = areAllSubOrdersHaveStatus(metaOrderAfter, CLIENT_CANCELLED);
+		
+		Integer stock1After = stockRepository.findById(601L).get().getQuantity();
+		Integer stock2After = stockRepository.findById(602L).get().getQuantity();
+		
+		assertEquals(CLIENT_CANCELLED.getValue(), metaOrderAfter.getStatus());
+		assertTrue(allSubOrdersAreCancelled);
+		assertEquals("stocks should be the same if order was still CLIENT_CONFIRMED", 0, stock1After - stock1Before);
+		assertEquals("stocks should be the same if order was still CLIENT_CONFIRMED", 0, stock2After - stock2Before);
+		//------------------------------------------------------------
+
+		Mockito
+		.verify(mailService)
+		.sendThymeleafTemplateMail(
+			  Mockito.eq(asList("testuser6@nasnav.com"))
+			, Mockito.anyString()
+			, Mockito.eq(asList("testuser2@nasnav.com"))
+			, Mockito.anyString()
+			, Mockito.anyMap());
+		
+		Mockito
+		.verify(mailService)
+		.sendThymeleafTemplateMail(
+			  Mockito.eq(asList("testuser7@nasnav.com"))
+			, Mockito.anyString()
+			, Mockito.eq(asList("testuser2@nasnav.com"))
+			, Mockito.anyString()
+			, Mockito.anyMap());
+	}
+
+
+
+
+
+
+	private boolean areAllSubOrdersHaveStatus(MetaOrderEntity metaOrder, OrderStatus initialStatus) {
+		return metaOrder
+		.getSubOrders()
+		.stream()
+		.map(OrdersEntity::getStatus)
+		.allMatch(status -> status.equals(initialStatus.getValue()));
 	}
 
 

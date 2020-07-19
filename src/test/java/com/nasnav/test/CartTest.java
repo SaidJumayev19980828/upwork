@@ -578,6 +578,34 @@ public class CartTest {
 	
 	
 	
+	
+	// TODO: make this test work with a swtich flag, that either make it work on bosta
+	//staging server + mail.nasnav.org mail server
+	//or make it work on mock bosta server + mock mail service
+//		@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_4.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void orderCancelCompleteCycle() throws BusinessException {
+
+		addCartItems(88L, 602L, 2);
+		addCartItems(88L, 604L, 1);
+		
+		//checkout
+		JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest();
+
+		Order order = checkOutCart(requestBody, new BigDecimal("3125"), new BigDecimal("3100"), new BigDecimal("25"));
+		Long orderId = order.getOrderId();
+		
+		orderService.finalizeOrder(orderId);
+		
+		HttpEntity<?> request = getHttpEntity("123");
+		ResponseEntity<String> res = template.postForEntity("/order/cancel?meta_order_id="+orderId, request, String.class);
+		assertEquals(OK, res.getStatusCode());
+	}
+	
+	
+	
+	
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_5.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
