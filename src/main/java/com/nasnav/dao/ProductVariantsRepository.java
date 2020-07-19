@@ -76,6 +76,10 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 			+ " left join fetch variant.stocks stocks "
 			+ " left join fetch variant.extraAttributes attr"
 			+ " WHERE variant.id = :id")
-	Optional<ProductVariantsEntity> getVariantFullData(@Param("id") Long id); 
+	Optional<ProductVariantsEntity> getVariantFullData(@Param("id") Long id);
+
+	@Query(value = "select v.id from StocksEntity s inner join ProductVariantsEntity v on v.id = s.productVariantsEntity.id " +
+				   " where s.id in :stocksIds")
+	List<Long> getVariantsIdsByStocksIds(@Param("stocksIds") List<Long> stocksIds);
 
 }

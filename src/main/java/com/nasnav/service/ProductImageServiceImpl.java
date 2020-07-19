@@ -13,6 +13,7 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_PRODUC
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_VARIANT_FOUND;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_READ_ZIP;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_MODIFY_PRODUCT;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0001;
 import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_BARCODE;
 import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_EXTERNAL_ID;
 import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_IMAGE_FILE;
@@ -47,12 +48,14 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import javax.sql.DataSource;
 import javax.validation.Valid;
 
+import com.nasnav.dto.*;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.tika.Tika;
@@ -81,10 +84,6 @@ import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dto.ProductImageBulkUpdateDTO;
-import com.nasnav.dto.ProductImageUpdateDTO;
-import com.nasnav.dto.ProductImgDTO;
-import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportImageBulkRuntimeException;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -1369,72 +1368,12 @@ public class ProductImageServiceImpl implements ProductImageService {
 	
 	
 	
-	
-	@Override
-	public Map<Long,String> getProductsCoverImages(List<Long> productIds) {
-		if(productIds == null || productIds.isEmpty()) {
-			return new HashMap<>();
-		}
-		
-		SQLQueryFactory queryFactory = new SQLQueryFactory(createQueryDslConfig(), dataSource);
-		QProductImages image = QProductImages.productImages;
-		QProductVariants variant = QProductVariants.productVariants;
-		SQLQuery<?> query = 
-				queryFactory
-				 .select(image.id, image.uri.as("url"), image.type, image.productId, image.variantId, image.priority)
-				 .from(image)
-				 .leftJoin(variant).on(image.variantId.eq(variant.id))
-				 .where(image.productId.in(productIds).or(variant.productId.in(productIds)))
-				 .orderBy(image.priority.asc());
-
-		String  sqlString = query.getSQL().getSQL();
-		List<ProductImgDTO> productImages = jdbc.query(sqlString, new BeanPropertyRowMapper<>(ProductImgDTO.class));
-		
-		Map<Long,String> productCoverImgsMap = 
-				productImages
-				.stream()
-				.filter(Objects::nonNull)
-				.collect(groupingBy(ProductImgDTO::getProductId))
-				.entrySet()
-				.stream()
-				.map(this::getProductCoverImageUrlMapEntry)
-				.collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
-		
-		productIds
-		.stream()
-		.filter(id -> !productCoverImgsMap.keySet().contains(id))
-		.forEach(id -> productCoverImgsMap.put(id, ProductImageService.NO_IMG_FOUND_URL));
-		
-		return productCoverImgsMap;
-	}
-	
-	
-	
-	
 
 	private Configuration createQueryDslConfig() {
 		Configuration config = new Configuration(new PostgreSQLTemplates());
 		config.setUseLiterals(true);
 		return config;
 	}
-	
-	
-	
-	
-	
-	
-	private Map.Entry<Long, String> getProductCoverImageUrlMapEntry(Map.Entry<Long, List<ProductImgDTO>> mapEntry){
-		String uri = Optional.ofNullable(mapEntry.getValue())
-							.map(List::stream)
-							.map(s -> s.sorted( comparing(ProductImgDTO::getPriority)
-												.thenComparing(ProductImgDTO::getId)))
-							.flatMap(s -> s.findFirst())
-							.map(ProductImgDTO::getUrl)
-							.orElse(ProductImageService.NO_IMG_FOUND_URL);
-				
-		return new AbstractMap.SimpleEntry<>(mapEntry.getKey(), uri);
-	}
-	
 	
 	
 	
@@ -1566,7 +1505,39 @@ public class ProductImageServiceImpl implements ProductImageService {
 		
 		deleteOrgProductmages();
 	}
-	
+
+
+	@Override
+	public List<ProductImageDTO> getProductsAndVariantsImages(List<Long> productsIdList, List<Long> variantsIdList) {
+		if ((productsIdList == null || productsIdList.isEmpty()) && (variantsIdList == null || variantsIdList.isEmpty())) {
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0001);
+        }
+		return productImagesRepository.getProductsAndVariantsImages(productsIdList, variantsIdList);
+	}
+
+
+	@Override
+	public Map<Long, String> getProductsImagesMap(List<Long> productsIdList, List<Long> variantsIdList) {
+		return 	getProductsAndVariantsImages(productsIdList, variantsIdList)
+					.stream()
+					.filter(Objects::nonNull)
+					.collect(groupingBy(ProductImageDTO::getProductId))
+					.entrySet()
+					.stream()
+					.map(this::getProductCoverImageUrlMapEntry)
+					.collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+	}
+
+
+	private Map.Entry<Long, String> getProductCoverImageUrlMapEntry(Map.Entry<Long, List<ProductImageDTO>> mapEntry){
+		String uri = ofNullable(mapEntry.getValue())
+				.map(List::stream)
+				.flatMap(s -> s.findFirst())
+				.map(ProductImageDTO::getImagePath)
+				.orElse(null);
+
+		return new AbstractMap.SimpleEntry<>(mapEntry.getKey(), uri);
+	}
 }
 
 

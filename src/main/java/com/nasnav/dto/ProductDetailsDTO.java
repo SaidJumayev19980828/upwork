@@ -19,7 +19,7 @@ public class ProductDetailsDTO extends ProductRepresentationObject {
 	
 	private String description;
 	private Integer productType;
-	private Set<ProductImgDTO> images;
+	private List<ProductImageDTO> images;
 	private List<VariantDTO> variants;
 	private List<VariantFeatureDTO> variantFeatures;
 	private List<ProductRepresentationObject> bundleItems;

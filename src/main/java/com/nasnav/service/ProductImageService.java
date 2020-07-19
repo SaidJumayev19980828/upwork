@@ -6,6 +6,7 @@ import java.util.Set;
 
 import javax.validation.Valid;
 
+import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.persistence.ProductImagesEntity;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -41,8 +42,6 @@ public interface ProductImageService {
 
 	Map<Long,List<ProductImagesEntity>> getProductsImageList(List<Long> productIds);
 
-	Map<Long,String> getProductsCoverImages(List<Long> productIds);
-
 	List<ProductImageUpdateResponse> updateProductImageBulkViaUrl(MultipartFile csv,
 			@Valid ProductImageBulkUpdateDTO metaData)  throws BusinessException;
 	
@@ -54,4 +53,8 @@ public interface ProductImageService {
 			ProductImageBulkUpdateDTO metaData, WebClient client);
 	
 	void deleteAllImages(boolean isConfirmed) throws BusinessException;
+
+	List<ProductImageDTO> getProductsAndVariantsImages(List<Long> productsIdList, List<Long> variantsIdList);
+
+	Map<Long,String> getProductsImagesMap(List<Long> productsIdList, List<Long> variantsIdList);
 }

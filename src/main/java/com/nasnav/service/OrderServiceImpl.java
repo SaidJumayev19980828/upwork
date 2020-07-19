@@ -121,6 +121,7 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.dao.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -134,18 +135,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.EntityUtils;
-import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.MetaOrderRepository;
-import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.RoleEmployeeUserRepository;
-import com.nasnav.dao.ShipmentRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.BasketItemDTO;
@@ -154,6 +145,7 @@ import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.MetaOrderBasicInfo;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.OrderRepresentationObject;
+import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.cart.CartOptimizeDTO;
@@ -185,6 +177,8 @@ import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PaymentEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.ShipmentEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
@@ -261,9 +255,15 @@ public class OrderServiceImpl implements OrderService {
 	
 	@Autowired
 	private ShipmentRepository shipmentRepo;
+
+	@Autowired
+	private PaymentsRepository paymentsRepo;
 	
 	@Autowired
 	private ShippingManagementService shippingManagementService;
+
+	@Autowired
+	private ProductImageService imgService;
 	
 	@Autowired
 	private MailService mailService;
@@ -1415,6 +1415,34 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+	private BasketItem toBasketItem(BasketsEntity entity, List<ProductImageDTO> variantsImages) {
+		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
+		ProductEntity product = variant.getProductEntity();
+
+		BasketItem item = new BasketItem();
+		item.setProductId(product.getId());
+		item.setName(product.getName());
+		item.setPname(product.getPname());
+		item.setStockId(entity.getStocksEntity().getId());
+		item.setQuantity(entity.getQuantity().intValueExact());
+		item.setTotalPrice(entity.getPrice());
+		item.setBrandId(product.getBrandId());
+		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec()));
+		//TODO set item unit //
+
+		String thumb = variantsImages
+								 .stream()
+								 .filter(i -> i.getVariantId() != null)
+								 .filter(i -> i.getVariantId().equals(variant.getId()) && i.getProductId().equals(product.getId()))
+								 .findFirst()
+								 .orElse(new ProductImageDTO())
+								 .getImagePath();
+
+		item.setThumb(thumb);
+		item.setCurrency(ofNullable(TransactionCurrency.getTransactionCurrency(entity.getCurrency())).orElse(EGP).name());
+
+		return item;
+	}
 	
 	
 	
@@ -1822,12 +1850,26 @@ public class OrderServiceImpl implements OrderService {
 		cartItem.setUser((UserEntity) user);
 		cartItem.setStock(stock);
 		cartItem.setQuantity(item.getQuantity());
-		cartItem.setCoverImage(item.getCoverImg());
+		cartItem.setCoverImage(getItemCoverImage(item.getCoverImg(), stock));
 		cartItemRepo.save(cartItem);
 
 		return getUserCart(user.getId());
 	}
 
+
+	private String getItemCoverImage(String coverImage, StocksEntity stock) {
+		if (coverImage != null) {
+			return coverImage;
+		}
+		Long productId = stock.getProductVariantsEntity().getProductEntity().getId();
+		Long variantId = stock.getProductVariantsEntity().getId();
+		return ofNullable(imgService.getProductsAndVariantsImages(asList(productId), asList(variantId))
+									.stream()
+									.findFirst())
+				.get()
+				.orElse(new ProductImageDTO())
+				.getImagePath();
+	}
 
 	@Override
 	public Cart deleteCartItem(Long itemId){
@@ -2231,13 +2273,12 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private Order getOrderResponse(MetaOrderEntity order) {
-		Map<Long, List<BasketItemDetails>> itemsMap =
-				getBasketItemsDetailsMap(order.getSubOrders().stream().map(OrdersEntity::getId).collect(toSet()));
+		List<ProductImageDTO> variantsImages = getVariantsImagesList(order);
 
 		Order orderDto = setMetaOrderBasicData(order);
 
-		List<SubOrder> subOrders = 	createSubOrderDtoList(order, itemsMap);
-				
+		List<SubOrder> subOrders = 	createSubOrderDtoList(order, variantsImages);
+
 		orderDto.setSubOrders(subOrders);
 		orderDto.setSubtotal(order.getSubTotal());
 		orderDto.setShipping(order.getShippingTotal());
@@ -2246,14 +2287,33 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+	private List<ProductImageDTO> getVariantsImagesList(MetaOrderEntity order) {
+		List<ProductVariantsEntity> allVariants = order.getSubOrders()
+				.stream()
+				.map(OrdersEntity::getBasketsEntity)
+				.flatMap(Set::stream)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getProductVariantsEntity)
+				.collect(toList());
+		List<Long> variantsIds = allVariants.stream()
+				.map(ProductVariantsEntity::getId)
+				.collect(toList());
+
+		List<Long> productsIds = allVariants.stream()
+				.map(ProductVariantsEntity::getProductEntity)
+				.map(ProductEntity::getId)
+				.collect(toList());
+		return imgService.getProductsAndVariantsImages(productsIds, variantsIds);
+	}
 
 
 
-	private List<SubOrder> createSubOrderDtoList(MetaOrderEntity order, Map<Long, List<BasketItemDetails>> itemsMap) {
+
+	private List<SubOrder> createSubOrderDtoList(MetaOrderEntity order, List<ProductImageDTO> variantsImages) {
 		return order
 		.getSubOrders()
 		.stream()
-		.map(subOrder -> getSubOrder(subOrder, itemsMap))
+		.map(subOrder -> getSubOrder(subOrder, variantsImages))
 		.collect(toList());
 	}
 
@@ -2266,6 +2326,10 @@ public class OrderServiceImpl implements OrderService {
 		order.setOrderId(metaOrder.getId());
 		order.setCurrency(getOrderCurrency(metaOrder));
 		order.setCreationDate(metaOrder.getCreatedAt());
+		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(metaOrder.getId());
+		if (payment.isPresent()) {
+			order.setOperator(payment.get().getOperator());
+		}
 		return order;
 	}
 
@@ -2282,7 +2346,7 @@ public class OrderServiceImpl implements OrderService {
 		if (user instanceof UserEntity) {
 			order = metaOrderRepo.findByIdAndUserIdAndOrganization_Id(orderId, user.getId(), orgId);
 		} else if (isNasnavAdmin) {
-			order = metaOrderRepo.findById(orderId);
+			order = metaOrderRepo.findByMetaOrderId(orderId);
 		} else {
 			order = metaOrderRepo.findByIdAndOrganization_Id(orderId, orgId);
 		}
@@ -2330,18 +2394,18 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private SubOrder getSubOrder(OrdersEntity order, Map<Long, List<BasketItemDetails>> itemsMap) {
+	private SubOrder getSubOrder(OrdersEntity order, List<ProductImageDTO> variantsImages) {
 
 		String status = 
 				ofNullable(findEnum(order.getStatus()))
 				.orElse(NEW)
 				.name();
 		
-		List<BasketItem> items = 
-				itemsMap
-				.get(order.getId())
+		List<BasketItem> items =
+				order
+				.getBasketsEntity()
 				.stream()
-				.map(this::toBasketItem)
+				.map(b -> toBasketItem(b, variantsImages))
 				.collect(toList());
 		
 		Shipment shipmentDto = (Shipment) order.getShipment().getRepresentation();
