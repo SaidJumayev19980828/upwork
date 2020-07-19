@@ -232,12 +232,6 @@ public class ShopService {
 
 
     private void validateShopLinksBeforeDelete(Long shopId) {
-
-        ShopThreeSixtyEntity linkedShop360 = shopThreeSixtyRepo.findByShopsEntity_Id(shopId);
-        if (linkedShop360 != null) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0001, "360 shop ("+linkedShop360.getId()+")");
-        }
-
         List<Long> linkedEmployees = empUserRepo.findByShopId(shopId)
                                                 .stream()
                                                 .map(EmployeeUserEntity::getId)
