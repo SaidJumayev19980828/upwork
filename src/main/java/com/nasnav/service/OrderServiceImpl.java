@@ -995,14 +995,15 @@ public class OrderServiceImpl implements OrderService {
 
 	private void clearOrderItemsFromCart(OrdersEntity order) {
 		Long userId = order.getUserId();
-		List<Long> stockIds = 
+		List<Long> variantIds = 
 				order
 				.getBasketsEntity()
 				.stream()
 				.map(BasketsEntity::getStocksEntity)
-				.map(StocksEntity::getId)
+				.map(StocksEntity::getProductVariantsEntity)
+				.map(ProductVariantsEntity::getId)
 				.collect(toList());
-		cartItemRepo.deleteByStockIdInAndUser_Id(stockIds, userId);
+		cartItemRepo.deleteByVariantIdInAndUser_Id(variantIds, userId);
 	}
 
 

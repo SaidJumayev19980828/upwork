@@ -118,4 +118,19 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " WHERE user.id = :userId "
 			+ " AND allStocks.quantity >= item.quantity")
 	List<CartItemStock> getAllCartStocks(@Param("userId") Long userId);
+
+	
+	@Transactional
+	@Modifying
+	@Query("DELETE FROM CartItemEntity cart "
+			+ " WHERE cart.id in ( "
+			+ " SELECT item.id "
+			+ " FROM CartItemEntity item "
+			+ " LEFT JOIN item.stock stock "
+			+ " LEFT JOIN stock.productVariantsEntity variant "
+			+ " LEFT JOIN item.user usr "
+			+ " WHERE variant.id in :variant_ids"
+			+ " AND usr.id = :user_id"
+			+ ")")
+	void deleteByVariantIdInAndUser_Id(@Param("variant_ids")List<Long> variantIds, @Param("user_id")Long userId);
 }
