@@ -1716,8 +1716,6 @@ public class OrderServiceTest {
 	
 	
 	
-	//TODO: cancel client confirmed order.
-	
 	
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
