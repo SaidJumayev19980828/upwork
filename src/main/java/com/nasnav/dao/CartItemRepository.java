@@ -116,7 +116,8 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " LEFT JOIN address.areasEntity area "
 			+ " LEFT JOIN area.citiesEntity city "
 			+ " WHERE user.id = :userId "
-			+ " AND allStocks.quantity >= item.quantity")
+			+ " AND allStocks.quantity >= item.quantity "
+			+ " AND shop.removed = 0")
 	List<CartItemStock> getAllCartStocks(@Param("userId") Long userId);
 
 	
