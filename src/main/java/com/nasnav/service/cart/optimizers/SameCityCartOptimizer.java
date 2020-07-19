@@ -3,6 +3,7 @@ package com.nasnav.service.cart.optimizers;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0010;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0011;
 import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.SAME_CITY;
+import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.reverseOrder;
@@ -67,6 +68,10 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 				.stream()
 				.sorted(createShopPriorityComparator(givenShopId, customerCityId))
 				.collect(toList());
+		
+		logger.info(
+				format("Optimizing cart using parameters [%s], selecing shops by the priority list : [%s]"
+						, parameters.toString(),  shopsOrderdByPriority.toString()));
 		
 		return orderService
 				.getCart()
