@@ -2,9 +2,7 @@ package com.nasnav.dao;
 
 import java.util.Set;
 
-import com.nasnav.model.querydsl.sql.QProductVariants;
-import com.nasnav.model.querydsl.sql.QProducts;
-import com.nasnav.model.querydsl.sql.QStocks;
+import com.nasnav.model.querydsl.sql.*;
 import com.nasnav.request.ProductSearchParam;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.Expressions;
@@ -13,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nasnav.model.querydsl.sql.QProductTags;
 import com.nasnav.service.model.ProductTagPair;
 import com.querydsl.sql.SQLQueryFactory;
 import com.querydsl.sql.dml.SQLInsertClause;
@@ -43,11 +40,13 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 	@Override
 	public SQLQuery<?> getProductsBaseQuery(BooleanBuilder predicate, ProductSearchParam params) {
 		QStocks stock = QStocks.stocks;
+		QShops shop = QShops.shops;
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
 		QProductTags productTags = QProductTags.productTags;;
 
 		SQLQuery<?> baseQuery = queryFactory.from(stock)
+				.innerJoin(shop).on(stock.shopId.eq(shop.id))
 				.innerJoin(variant).on(stock.variantId.eq(variant.id))
 				.innerJoin(product).on(variant.productId.eq(product.id))
 				.where(predicate);
