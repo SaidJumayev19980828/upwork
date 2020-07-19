@@ -569,7 +569,7 @@ public class ProductService {
 	private List<ProductImageDTO> getProductVariantImages(Long variantId, List<ProductImageDTO> variantsImages) {
 		return variantsImages.stream()
 							.filter(i -> i.getVariantId() != null)
-							.filter(i -> i.getVariantId().equals(variantId))
+							.filter(i -> Objects.equals(i.getVariantId(),variantId))
 							.map(i -> new ProductImageDTO(i.getId(), i.getImagePath(), i.getPriority()))
 							.collect(toList());
 	}
@@ -885,7 +885,7 @@ public class ProductService {
 
 		List<Long> variantsIdList = products.stream()
 				.map(ProductEntity::getProductVariants)
-				.flatMap(p -> p.stream())
+				.flatMap(Set::stream)
 				.map(ProductVariantsEntity::getId)
 				.collect(toList());
 
@@ -907,13 +907,15 @@ public class ProductService {
 														  Long productsCount,
 														  List<TagsRepresentationObject> collections) {
 		if(stocks != null && !stocks.isEmpty()) {
+			List<Long> stocksIds = stocks.stream()
+					.map(ProductRepresentationObject::getStockId)
+					.collect(toList());
 
 			List<Long> productIdList = stocks.stream()
 					.map(ProductRepresentationObject::getId)
 					.collect(toList());
-			List<Long> variantsIds = productVariantsRepository.getVariantsIdsByStocksIds(stocks.stream()
-																							   .map(ProductRepresentationObject::getStockId)
-																							   .collect(toList()));
+
+			List<Long> variantsIds = productVariantsRepository.getVariantsIdsByStocksIds(stocksIds);
 
 			Map<Long, Prices> productsPricesMap =
 					mapInBatches(productIdList, 500, stockRepository::getProductsPrices)
@@ -977,9 +979,10 @@ public class ProductService {
 
 	private ProductRepresentationObject setAdditionalInfo(ProductRepresentationObject product,
 														  Map<Long, String> productCoverImgs) {
-		if (productCoverImgs.get(product.getId()) != null) {
-			product.setImageUrl(productCoverImgs.get(product.getId()));
-		} else {
+		Optional<String> imgUrl = ofNullable(product.getId()).map(productCoverImgs::get);
+		if(imgUrl.isPresent()){
+			product.setImageUrl(imgUrl.get());
+		}else{
 			product.setHidden(true);
 		}
 		return product;

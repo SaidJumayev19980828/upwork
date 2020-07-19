@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 @Data
 public class BasketItem {
@@ -18,6 +19,10 @@ public class BasketItem {
     private String pname;
     @JsonProperty("stock_id")
     private Long stockId;
+    @JsonProperty("brand_id")
+    private Long brandId;
+    @JsonProperty("variant_features")
+    private Map<String, String> variantFeatures;
     @JsonProperty("quantity")
     private Integer quantity;
     @JsonProperty("total_price")

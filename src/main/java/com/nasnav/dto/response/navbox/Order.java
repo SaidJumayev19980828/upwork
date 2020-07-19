@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 @JsonPropertyOrder({"user_id", "user_name", "order_id", "subtotal", "shipping", "total",
-                    "currency", "creation_date", "sub_orders"})
+                    "currency", "operator", "creation_date", "sub_orders"})
 
 @Data
 public class Order {
@@ -28,5 +28,5 @@ public class Order {
     private TransactionCurrency currency;
     @JsonProperty("creation_date")
     private LocalDateTime creationDate;
-
+    private String operator;
 }

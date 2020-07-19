@@ -24,8 +24,54 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 			+ " WHERE meta.id =:id")
 	Optional<MetaOrderEntity> findFullDataById(@Param("id")Long id);
 
-	Optional<MetaOrderEntity> findByIdAndOrganization_Id(Long id, Long orgId);
-	Optional<MetaOrderEntity> findByIdAndUserIdAndOrganization_Id(Long id, Long userId, Long orgId);
+
+	@Query("SELECT meta FROM MetaOrderEntity meta "
+			+ " LEFT JOIN FETCH meta.organization org "
+			+ " LEFT JOIN FETCH meta.user usr "
+			+ " LEFT JOIN FETCH meta.subOrders subOrder "
+			+ " LEFT JOIN FETCH subOrder.shopsEntity shop "
+			+ " LEFT JOIN FETCH subOrder.basketsEntity item "
+			+ " LEFT JOIN FETCH subOrder.shipment shipment "
+			+ " LEFT JOIN FETCH item.stocksEntity stock "
+			+ " LEFT JOIN FETCH subOrder.addressEntity subOrderAddr "
+			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " WHERE meta.id =:id AND org.id = :orgId")
+	Optional<MetaOrderEntity> findByIdAndOrganization_Id(@Param("id") Long id,
+																  @Param("orgId") Long orgId);
+
+	@Query("SELECT meta FROM MetaOrderEntity meta "
+			+ " LEFT JOIN FETCH meta.organization org "
+			+ " LEFT JOIN FETCH meta.user usr "
+			+ " LEFT JOIN FETCH meta.subOrders subOrder "
+			+ " LEFT JOIN FETCH subOrder.shopsEntity shop "
+			+ " LEFT JOIN FETCH subOrder.basketsEntity item "
+			+ " LEFT JOIN FETCH subOrder.shipment shipment "
+			+ " LEFT JOIN FETCH item.stocksEntity stock "
+			+ " LEFT JOIN FETCH subOrder.addressEntity subOrderAddr "
+			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " WHERE meta.id =:id ")
+	Optional<MetaOrderEntity> findByMetaOrderId(@Param("id") Long id);
+
+	@Query("SELECT meta FROM MetaOrderEntity meta "
+			+ " LEFT JOIN FETCH meta.organization org "
+			+ " LEFT JOIN FETCH meta.user usr "
+			+ " LEFT JOIN FETCH meta.subOrders subOrder "
+			+ " LEFT JOIN FETCH subOrder.shopsEntity shop "
+			+ " LEFT JOIN FETCH subOrder.basketsEntity item "
+			+ " LEFT JOIN FETCH subOrder.shipment shipment "
+			+ " LEFT JOIN FETCH item.stocksEntity stock "
+			+ " LEFT JOIN FETCH subOrder.addressEntity subOrderAddr "
+			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " WHERE meta.id =:id AND usr.id = :userId AND org.id = :orgId")
+	Optional<MetaOrderEntity> findByIdAndUserIdAndOrganization_Id(@Param("id") Long id,
+																  @Param("userId") Long userId,
+														 @Param("orgId") Long orgId);
 
 	@Query("SELECT DISTINCT meta FROM MetaOrderEntity meta "
 			+ " LEFT JOIN FETCH meta.organization org "

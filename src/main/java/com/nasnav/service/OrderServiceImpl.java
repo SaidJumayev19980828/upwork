@@ -86,6 +86,7 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
@@ -98,18 +99,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.AppConfig;
-import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.MetaOrderRepository;
-import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.RoleEmployeeUserRepository;
-import com.nasnav.dao.ShipmentRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
@@ -191,6 +182,9 @@ public class OrderServiceImpl implements OrderService {
 	
 	@Autowired
 	private ShipmentRepository shipmentRepo;
+
+	@Autowired
+	private PaymentsRepository paymentsRepo;
 	
 	@Autowired
 	private ShippingManagementService shippingManagementService;
@@ -1288,6 +1282,8 @@ public class OrderServiceImpl implements OrderService {
 		item.setStockId(entity.getStocksEntity().getId());
 		item.setQuantity(entity.getQuantity().intValueExact());
 		item.setTotalPrice(entity.getPrice());
+		item.setBrandId(product.getBrandId());
+		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec()));
 		//TODO set item unit //
 
 		String thumb = variantsImages
@@ -1999,8 +1995,8 @@ public class OrderServiceImpl implements OrderService {
 	private List<ProductImageDTO> getVariantsImagesList(MetaOrderEntity order) {
 		List<ProductVariantsEntity> allVariants = order.getSubOrders()
 				.stream()
-				.map(o -> o.getBasketsEntity())
-				.flatMap(b -> b.stream())
+				.map(OrdersEntity::getBasketsEntity)
+				.flatMap(Set::stream)
 				.map(BasketsEntity::getStocksEntity)
 				.map(StocksEntity::getProductVariantsEntity)
 				.collect(toList());
@@ -2035,6 +2031,10 @@ public class OrderServiceImpl implements OrderService {
 		order.setOrderId(metaOrder.getId());
 		order.setCurrency(getOrderCurrency(metaOrder));
 		order.setCreationDate(metaOrder.getCreatedAt());
+		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(metaOrder.getId());
+		if (payment.isPresent()) {
+			order.setOperator(payment.get().getOperator());
+		}
 		return order;
 	}
 
@@ -2051,7 +2051,7 @@ public class OrderServiceImpl implements OrderService {
 		if (user instanceof UserEntity) {
 			order = metaOrderRepo.findByIdAndUserIdAndOrganization_Id(orderId, user.getId(), orgId);
 		} else if (isNasnavAdmin) {
-			order = metaOrderRepo.findById(orderId);
+			order = metaOrderRepo.findByMetaOrderId(orderId);
 		} else {
 			order = metaOrderRepo.findByIdAndOrganization_Id(orderId, orgId);
 		}

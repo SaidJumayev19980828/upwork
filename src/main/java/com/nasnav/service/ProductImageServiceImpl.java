@@ -1530,7 +1530,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	private Map.Entry<Long, String> getProductCoverImageUrlMapEntry(Map.Entry<Long, List<ProductImageDTO>> mapEntry){
-		String uri = Optional.ofNullable(mapEntry.getValue())
+		String uri = ofNullable(mapEntry.getValue())
 				.map(List::stream)
 				.flatMap(s -> s.findFirst())
 				.map(ProductImageDTO::getImagePath)
