@@ -1334,7 +1334,7 @@ public class OrderServiceTest {
 	
 	
 	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/database_cleanup.sql","/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void confirmOrderAuthZTest() {
 		HttpEntity<?> request = getHttpEntity("NOT EXISTENT");
@@ -1711,9 +1711,74 @@ public class OrderServiceTest {
 			, Mockito.eq(ORDER_REJECT_TEMPLATE)
 			, Mockito.anyMap());
 	}
+	
+	
+	
+	
+	//TODO: /order/cancel authn and authz
+	//TODO: cancel order another customer
+	//TODO: meta order doesn't exists
+	//TODO: meta order state is not finalized nor client confirmed
+	//TODO: cancel finalized order
+	//TODO: cancel client confirmed order.
+	//checks : stock before and after, status before and after, email method called for managers.
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void orderCancelNoAuthZTest() {
+		HttpEntity<?> request = getHttpEntity("NOT EXISTENT");
+		ResponseEntity<String> res = template.postForEntity("/order/cancel?meta_order_id=310001", request, String.class);
+		assertEquals(UNAUTHORIZED, res.getStatusCode());
+	}
 
 
-
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void orderCancelNoAuthNTest() {
+		HttpEntity<?> request = getHttpEntity("131415");
+		ResponseEntity<String> res = template.postForEntity("/order/cancel?meta_order_id=310001", request, String.class);
+		assertEquals(FORBIDDEN, res.getStatusCode());
+	}
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void orderCancelAnotherCustomerTest() {
+		HttpEntity<?> request = getHttpEntity("456");
+		ResponseEntity<String> res = template.postForEntity("/order/cancel?meta_order_id=310001", request, String.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void orderCancelNoExistingOrderTest() {
+		HttpEntity<?> request = getHttpEntity("123");
+		ResponseEntity<String> res = template.postForEntity("/order/cancel?meta_order_id=313331", request, String.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void orderCancelNotFinalizedTest() {
+		HttpEntity<?> request = getHttpEntity("123");
+		ResponseEntity<String> res = template.postForEntity("/order/cancel?meta_order_id=310001", request, String.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
 
 
 

@@ -199,4 +199,24 @@ public class OrdersController {
             		throws BusinessException {
     	orderService.rejectOrder(dto);
     }
+	
+	
+	
+	
+	
+	
+	@ApiOperation(value = "Cancel an order", nickname = "orderConfirm")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Order Cancelled"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "cancel",
+            produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public void cancelOrder(
+            @RequestHeader(name = "User-Token", required = false) String userToken
+            ,@RequestParam("meta_order_id") Long metaOrderId)
+            		throws BusinessException {
+    	orderService.cancelOrder(metaOrderId);
+    }
 }

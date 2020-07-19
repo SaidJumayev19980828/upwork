@@ -60,6 +60,7 @@ import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0004;
 import static com.nasnav.exceptions.ErrorCodes.O$CHK$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CHK$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CHK$0004;
+import static com.nasnav.exceptions.ErrorCodes.O$CNCL$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
@@ -70,6 +71,8 @@ import static com.nasnav.exceptions.ErrorCodes.O$CRT$0007;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0008;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0009;
 import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0003;
 import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0002;
@@ -172,6 +175,7 @@ import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
@@ -2935,6 +2939,37 @@ public class OrderServiceImpl implements OrderService {
 	private void validateOrderRejectRequest(OrderRejectDTO dto) {
 		if(anyIsNull(dto, dto.getSubOrderId())) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RJCT$0001);	
+		}
+	}
+
+
+
+
+
+	@Override
+	public void cancelOrder(Long metaOrderId) {
+		MetaOrderEntity order = 
+				metaOrderRepo
+				.findFullDataById(metaOrderId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, metaOrderId));
+		validateOrderForCancellation(order);
+	}
+
+
+
+
+
+	private void validateOrderForCancellation(MetaOrderEntity order) {
+		Long currentUser = securityService.getCurrentUser().getId();
+		if(!Objects.equals(order.getUser().getId(), currentUser)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0003, order.getId());
+		}
+		OrderStatus status =
+				ofNullable(order.getStatus())
+				.map(OrderStatus::findEnum)
+				.orElse(CLIENT_CONFIRMED);
+		if(!asList(CLIENT_CONFIRMED, FINALIZED).contains(status)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CNCL$0002, order.getId(), status.toString());
 		}
 	}
 

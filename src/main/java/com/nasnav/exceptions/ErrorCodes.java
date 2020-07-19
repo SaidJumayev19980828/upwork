@@ -92,6 +92,8 @@ public enum ErrorCodes {
 	
 	,O$RJCT$0001("No sub order Id was provided!")
 	,O$RJCT$0002("Cannot reject order with id[%d]! Invalid order Status [%s]!")
+	
+	,O$CNCL$0002("Cannot cancel Meta order with id[%d]! Invalid order Status [%s]!")
 
 	,O$MAIL$0001("Failed to send notification email about order[%d] to email[%s]!")
 	
@@ -100,6 +102,8 @@ public enum ErrorCodes {
 	,O$0001("No order exists with ID[%d]!")
 	
 	,O$GNRL$0001("Cannot update order staus from [%s] to [%s]!")
+	,O$GNRL$0002("No Meta order exists with id[%d]!")
+	,O$GNRL$0003("Cannot access Meta order with id[%d] by the current user!")
 	
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
 
