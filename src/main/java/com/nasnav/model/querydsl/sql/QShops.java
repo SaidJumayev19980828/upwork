@@ -86,6 +86,8 @@ public class QShops extends com.querydsl.sql.RelationalPathBase<QShops> {
 
     public final StringPath zip = createString("zip");
 
+    public final NumberPath<Integer> removed = createNumber("removed", Integer.class);
+
     public final com.querydsl.sql.PrimaryKey<QShops> shopsPkey = createPrimaryKey(id);
 
     public final com.querydsl.sql.ForeignKey<QBrands> shopsBrandIdFkey = createForeignKey(brandId, "id");
@@ -167,6 +169,7 @@ public class QShops extends com.querydsl.sql.RelationalPathBase<QShops> {
         addMetadata(workDays, ColumnMetadata.named("work_days").withIndex(23).ofType(Types.ARRAY).withSize(2147483647));
         addMetadata(workTimes, ColumnMetadata.named("work_times").withIndex(18).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(zip, ColumnMetadata.named("zip").withIndex(5).ofType(Types.VARCHAR).withSize(2147483647));
+        addMetadata(removed, ColumnMetadata.named("removed").withIndex(32).ofType(Types.INTEGER).withSize(10));
     }
 
 }
