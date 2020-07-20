@@ -140,6 +140,9 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	@Autowired
     private ShippingServiceFactory shippingServiceFactory;
+	
+	@Autowired
+	private OrderService orderService;
 
 	@Override
 	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
@@ -636,13 +639,21 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 		if (shippingStatusData != null && shippingStatusData.getState() != null) {
 			updateShipmentStatus(shippingStatusData);
+			updateOrderStatus(shippingStatusData);
 		} else {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$PARS$0001);
 		}
     }
 
 
-    private void updateShipmentStatus(ShipmentStatusData data) {
+    private void updateOrderStatus(ShipmentStatusData shippingStatusData) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+
+	private void updateShipmentStatus(ShipmentStatusData data) {
 		ShipmentEntity shipment =
 			ofNullable(shipmentRepo.findByShippingServiceIdAndExternalIdAndOrganizationId(data.getServiceId(), data.getExternalShipmentId(), data.getOrgId()))
 					.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, SHP$SRV$0009));
