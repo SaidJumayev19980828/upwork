@@ -32,8 +32,6 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 
     List<OrdersEntity> findByUserIdAndStatus(Long userId, Integer status);
 
-    Optional<OrdersEntity> findByIdAndUserIdAndOrganizationEntity_Id(Long orderId, Long userId, Long orgId);
-
     List<OrdersEntity> findByShopsEntityId(Long shopId);
     List<OrdersEntity> findByOrganizationEntityId(Long orgId);
 
@@ -108,14 +106,52 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	@Query("SELECT ord "
 			+ " FROM OrdersEntity ord "
 			+ " LEFT JOIN FETCH ord.metaOrder meta "
+			+ " LEFT JOIN FETCH meta.user user" 
 			+ " LEFT JOIN FETCH ord.addressEntity userAddr "
 			+ " LEFT JOIN FETCH ord.shopsEntity shop "
 			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr"
 			+ " LEFT JOIN FETCH meta.subOrders subOrd"
+			+ " LEFT JOIN FETCH subOrd.shipment shipment"
 			+ " LEFT JOIN FETCH ord.basketsEntity basket"
 			+ " LEFT JOIN FETCH basket.stocksEntity stock "
 			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
 			+ " LEFT JOIN FETCH variant.productEntity product "
 			+ " WHERE ord.id = :orderId and ord.organizationEntity.id = :orgId" )
 	Optional<OrdersEntity> findByIdAndOrganizationEntity_Id(@Param("orderId")Long orderId, @Param("orgId")Long orgId);
+	
+	
+	
+	@Query("SELECT ord "
+			+ " FROM OrdersEntity ord "
+			+ " LEFT JOIN FETCH ord.metaOrder meta "
+			+ " LEFT JOIN FETCH meta.user user" 
+			+ " LEFT JOIN FETCH ord.addressEntity userAddr "
+			+ " LEFT JOIN FETCH ord.shopsEntity shop "
+			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr"
+			+ " LEFT JOIN FETCH meta.subOrders subOrd"
+			+ " LEFT JOIN FETCH subOrd.shipment shipment"
+			+ " LEFT JOIN FETCH ord.basketsEntity basket"
+			+ " LEFT JOIN FETCH basket.stocksEntity stock "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " WHERE ord.id = :orderId and ord.organizationEntity.id = :orgId "
+			+ " and user.id = :userId" )
+    Optional<OrdersEntity> findByIdAndUserIdAndOrganizationEntity_Id(@Param("orderId")Long orderId, @Param("userId")Long userId, @Param("orgId")Long orgId);
+
+	
+	@Query("SELECT ord "
+			+ " FROM OrdersEntity ord "
+			+ " LEFT JOIN FETCH ord.metaOrder meta "
+			+ " LEFT JOIN FETCH meta.user user " 
+			+ " LEFT JOIN FETCH ord.addressEntity userAddr "
+			+ " LEFT JOIN FETCH ord.shopsEntity shop "
+			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr "
+			+ " LEFT JOIN FETCH meta.subOrders subOrd "
+			+ " LEFT JOIN FETCH subOrd.shipment shipment "
+			+ " LEFT JOIN FETCH ord.basketsEntity basket "
+			+ " LEFT JOIN FETCH basket.stocksEntity stock "
+			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
+			+ " LEFT JOIN FETCH variant.productEntity product "
+			+ " WHERE ord.id = :orderId " )
+	Optional<OrdersEntity> findFullDataById(@Param("orderId")Long orderId);
 }

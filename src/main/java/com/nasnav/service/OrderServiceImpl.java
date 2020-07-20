@@ -166,6 +166,7 @@ import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.Roles;
+import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -1276,6 +1277,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
+	@Transactional
 	public DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel) throws BusinessException {
 		
 		BaseUserEntity user = securityService.getCurrentUser();
@@ -1288,7 +1290,7 @@ public class OrderServiceImpl implements OrderService {
 		if (user instanceof UserEntity ) {
 			order = ordersRepository.findByIdAndUserIdAndOrganizationEntity_Id(orderId, user.getId(), orgId);
 		} else if ( isNasnavAdmin ) {
-			order = ordersRepository.findById(orderId);
+			order = ordersRepository.findFullDataById(orderId);
 		} else {
 			order = ordersRepository.findByIdAndOrganizationEntity_Id(orderId, orgId);
 		}
@@ -1297,7 +1299,7 @@ public class OrderServiceImpl implements OrderService {
 			return getDetailedOrderInfo(order.get(), finalDetailsLevel);
 		}
 
-		throwInvalidOrderException( OrderFailedStatus.INVALID_ORDER.toString() );
+		throwInvalidOrderException( INVALID_ORDER.toString() );
 		
 		return null;
 	}
@@ -1333,7 +1335,10 @@ public class OrderServiceImpl implements OrderService {
 
 
         if (detailsLevel >= 1)
-        	BeanUtils.copyProperties( getOrderDetails(order), representation, new String[]{"orderId", "userId", "shopId", "createdAt", "status", "paymentStatus"});
+        	BeanUtils.copyProperties( 
+        			getOrderDetails(order)
+        			, representation
+        			, new String[]{"orderId", "userId", "shopId", "createdAt", "status", "paymentStatus", "metaOrderId"});
 
         if (detailsLevel == 2 && orderItemsQuantity.get(order.getId()) != null)
         	representation.setTotalQuantity(orderItemsQuantity.get(order.getId()).intValue());
@@ -1368,7 +1373,7 @@ public class OrderServiceImpl implements OrderService {
 		obj.setStatus(findEnum(entity.getStatus()).name());
 		obj.setPaymentStatus(entity.getPaymentStatus().toString());
 		obj.setTotal(entity.getAmount());
-
+		obj.setMetaOrderId(entity.getMetaOrder().getId());
 		return obj;
 	}
 	
@@ -1379,8 +1384,12 @@ public class OrderServiceImpl implements OrderService {
 		obj.setShopName(entity.getShopsEntity().getName());
 		obj.setDeliveryDate(entity.getDeliveryDate());
 		obj.setSubtotal(entity.getAmount());
-		if (entity.getShipment() != null)
+		if (entity.getShipment() != null) {
+			String shippingStatus = ShippingStatus.getShippingStatusName(entity.getShipment().getStatus());
 			obj.setShipping(entity.getShipment().getShippingFee());
+			obj.setShippingStatus(shippingStatus);
+		}
+			
 		obj.setTotal(entity.getTotal());
 
 		if (entity.getAddressEntity() != null) {
