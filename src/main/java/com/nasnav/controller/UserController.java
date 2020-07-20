@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
@@ -285,4 +286,17 @@ public class UserController {
     public void resendActivationEmail(@RequestBody ActivationEmailResendDTO accountInfo) throws BusinessException {
         userService.resendActivationEmail(accountInfo);
     }
+
+
+    @ApiOperation(value = "add/update user address", nickname = "userAddress")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Address added/updated"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PutMapping(value = "/address")
+    public AddressDTO updateUserAddress(@RequestHeader (name = "User-Token", required = false) String token,
+                                        @RequestBody AddressDTO address)  {
+        return userService.updateUserAddress(address);
+    }
+
 }

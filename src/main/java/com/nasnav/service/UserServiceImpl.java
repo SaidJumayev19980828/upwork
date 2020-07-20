@@ -17,10 +17,7 @@ import static com.nasnav.constatnts.EntityConstants.TOKEN_VALIDITY;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.UserStatus.ACTIVATED;
 import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
-import static com.nasnav.exceptions.ErrorCodes.UXACTVX0001;
-import static com.nasnav.exceptions.ErrorCodes.UXACTVX0002;
-import static com.nasnav.exceptions.ErrorCodes.UXACTVX0003;
-import static com.nasnav.exceptions.ErrorCodes.UXACTVX0004;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
 import static com.nasnav.response.ResponseStatus.EMAIL_EXISTS;
 import static com.nasnav.response.ResponseStatus.EXPIRED_TOKEN;
@@ -325,16 +322,6 @@ public class UserServiceImpl implements UserService {
 				  Arrays.asList(ObjectArrays.concat(getNullProperties(userJson), defaultIgnoredProperties, String.class))).toArray(new String[0]);
 		if (failResponseStatusList.isEmpty()) {
 			BeanUtils.copyProperties(userJson, userEntity, allIgnoredProperties);
-			if (userJson.getAddress() != null) {
-				Long addressId = setUserAddresses(userJson, userEntity).getId();
-				addressRepo.linkAddressToUser(userEntity.getId(), addressId);
-				if (userJson.getAddress().getPrincipal() != null) {
-					if (userJson.getAddress().getPrincipal().booleanValue()) {
-						addressRepo.makeAddressNotPrincipal(userEntity.getId());
-						addressRepo.makeAddressPrincipal(userEntity.getId(), addressId);
-					}
-				}
-			}
 			userRepository.saveAndFlush(userEntity);
 			if (successResponseStatusList.isEmpty()) {
 				successResponseStatusList.add(ResponseStatus.ACTIVATED);
@@ -345,26 +332,41 @@ public class UserServiceImpl implements UserService {
 	}
 
 
-	private AddressesEntity setUserAddresses(UserDTOs.EmployeeUserUpdatingObject userJson, UserEntity userEntity) throws BusinessException {
-		AddressesEntity address = new AddressesEntity();
-		AddressDTO addressDTO = userJson.getAddress();
-		if (addressDTO.getId() != null) {
-			Optional<AddressesEntity> oldAddress = addressRepo.findByIdAndUserId(addressDTO.getId(), userEntity.getId());
-			if (!oldAddress.isPresent()) {
-				throw new BusinessException("Provided address_id doesn't match any existing address!",
-						"INVALID_PARAM: address_id", HttpStatus.NOT_ACCEPTABLE);
+	@Override
+	public AddressDTO updateUserAddress(AddressDTO addressDTO) {
+		UserEntity user = (UserEntity) securityService.getCurrentUser();
+		AddressDTO newAddress = setUserAddresses(addressDTO, user);
+		addressRepo.linkAddressToUser(user.getId(), newAddress.getId());
+		if (addressDTO.getPrincipal() != null) {
+			if (addressDTO.getPrincipal().booleanValue()) {
+				addressRepo.makeAddressNotPrincipal(user.getId());
+				addressRepo.makeAddressPrincipal(user.getId(), newAddress.getId());
 			}
+		}
+		return newAddress;
+	}
+
+
+
+	private AddressDTO setUserAddresses(AddressDTO addressDTO, UserEntity userEntity) {
+		AddressesEntity address = new AddressesEntity();
+		if (addressDTO.getId() != null) {
+			if (addressRepo.countByUserIdAndAddressId(addressDTO.getId(), userEntity.getId()) == 0)
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, addressDTO.getId());
 			addressRepo.unlinkAddressFromUser(addressDTO.getId(), userEntity.getId());
 		}
 		BeanUtils.copyProperties(addressDTO, address, new String[] {"id"});
 		if (addressDTO.getAreaId() != null) {
 			if (areaRepo.existsById(addressDTO.getAreaId())) {
-				address.setAreasEntity(areaRepo.findById(userJson.getAddress().getAreaId()).get());
+				address.setAreasEntity(areaRepo.findById(addressDTO.getAreaId()).get());
 			}
 		}
-		address = addressRepo.save(address);
 
-		return address;
+		addressRepo.save(address);
+
+		BeanUtils.copyProperties(address, addressDTO);
+
+		return addressDTO;
 	}
 
 	/**

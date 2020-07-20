@@ -151,8 +151,6 @@ public class UserDTOs {
         @JsonProperty("birth_date")
         private String birthDate;
 
-        private AddressDTO address;
-
         @ApiModelProperty(value = "Phone Number", example = "01012345678", required = false)
         @JsonProperty("phone_number")
         private String phoneNumber;
