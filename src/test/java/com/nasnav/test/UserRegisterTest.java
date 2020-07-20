@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.PUT;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -36,6 +37,7 @@ import javax.annotation.PreDestroy;
 import javax.mail.MessagingException;
 
 import com.nasnav.dao.AddressRepository;
+import com.nasnav.dto.AddressDTO;
 import com.nasnav.persistence.AddressesEntity;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
@@ -1088,14 +1090,12 @@ public class UserRegisterTest {
 
 
 	@Test
-	public void updateEmployeeAddressTest() {
+	public void updateUserAddressTest() {
 		JSONObject address = json().put("address_line_1", "address line");
-		JSONObject body = json().put("employee", false)
-				.put("address", address);
-		HttpEntity<?> request = getHttpEntity(body.toString(), "123");
+		HttpEntity<?> request = getHttpEntity(address.toString(), "123");
 
 		//adding address to user
-		ResponseEntity<String> response = template.postForEntity("/user/update", request, String.class);
+		ResponseEntity<AddressDTO> response = template.exchange("/user/address", PUT, request, AddressDTO.class);
 		assertEquals(200, response.getStatusCodeValue());
 
 		Optional<AddressesEntity> entity = addressRepo.findByUserId(88001L).stream().findFirst();
@@ -1110,9 +1110,8 @@ public class UserRegisterTest {
 		address = json()
 					.put("id", addressesEntity.getId())
 					.put("address_line_1", "Sesame street");
-		body = body.put("address", address);
-		request = getHttpEntity(body.toString(), "123");
-		response = template.postForEntity("/user/update", request, String.class);
+		request = getHttpEntity(address.toString(), "123");
+		response = template.exchange("/user/address", PUT, request, AddressDTO.class);
 
 		assertEquals(200, response.getStatusCodeValue());
 		assertFalse(addressRepo.findByIdAndUserId(addressesEntity.getId(), 88001L).isPresent());

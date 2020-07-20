@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import com.nasnav.dto.AddressDTO;
 import org.springframework.web.servlet.view.RedirectView;
 
 import com.nasnav.dto.UserDTOs;
@@ -31,5 +32,7 @@ public interface UserService extends CommonUserServiceInterface{
 	public void resendActivationEmail(ActivationEmailResendDTO accountInfo) throws BusinessException;
 
 	UserApiResponse activateUserAccount(String token) throws BusinessException;
+
+    AddressDTO updateUserAddress(AddressDTO addressDTO);
 
 }
