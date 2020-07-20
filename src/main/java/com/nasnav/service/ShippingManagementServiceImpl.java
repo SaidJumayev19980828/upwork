@@ -80,6 +80,7 @@ import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.ShipmentEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.CartItemShippingData;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
@@ -142,7 +143,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	@Override
 	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
-		List<ShippingDetails> shippingDetails = createShippingDetailsFromCart(customerAddrId);
+		List<ShippingDetails> shippingDetails = createShippingDetailsFromCurrentCart(customerAddrId);
 		
 		return getOffersFromOrganizationShippingServices(shippingDetails);
 	}
@@ -150,11 +151,11 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 
 	@Override
-	public void validateShippingAdditionalData(CartCheckoutDTO dto) {
+	public void validateCartForShipping(List<CartCheckoutData> cartItemData, CartCheckoutDTO dto) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		ShippingService shippingService = getShippingService(dto.getServiceId(), orgId);
 
-		List<ShippingDetails> shippingDetails = createShippingDetailsFromCart(dto.getAddressId());
+		List<ShippingDetails> shippingDetails = createShippingDetailsFromCartCheckoutData(cartItemData, dto.getAddressId());
 		for(ShippingDetails shippingDetail : shippingDetails) {
 			shippingDetail.setAdditionalData(dto.getAdditionalData());
 		}
@@ -166,6 +167,28 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	
+	private List<ShippingDetails> createShippingDetailsFromCartCheckoutData(List<CartCheckoutData> cartItemData, Long addressId) {
+		List<CartItemShippingData> cartShippingData = 
+				cartItemData
+				.stream()
+				.map(this::createCartShippingData)
+				.collect(toList());
+		return createShippingDetailsFromCartItemShippingData(cartShippingData, addressId);
+	}
+
+	
+	
+	
+	private CartItemShippingData createCartShippingData(CartCheckoutData itemCheckoutData) {
+		Long stockId = itemCheckoutData.getStockId();
+		Long shopId = itemCheckoutData.getShopId();
+		Long shopAddressId = itemCheckoutData.getShopAddress().getId();
+		return new CartItemShippingData(stockId, shopId, shopAddressId);
+	}
+	
+	
+
+
 	private ShippingService getShippingService(String serviceId, Long orgId) {
 		Optional<ShippingService> shippingService =
 					orgShippingServiceRepo
@@ -321,9 +344,17 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	
 	
-	private List<ShippingDetails> createShippingDetailsFromCart(Long customerAddrId) {
+	private List<ShippingDetails> createShippingDetailsFromCurrentCart(Long customerAddrId) {
 		Long userId = securityService.getCurrentUser().getId();
 		List<CartItemShippingData> cartData = cartRepo.findCartItemsShippingDataByUser_Id(userId);
+		return createShippingDetailsFromCartItemShippingData(cartData, customerAddrId);
+	}
+
+
+
+	
+	
+	private List<ShippingDetails> createShippingDetailsFromCartItemShippingData(List<CartItemShippingData> cartData, Long customerAddrId) {
 		Map<Long, AddressesEntity> addresses = getAddresses(customerAddrId, cartData);
 		
 		validateCartItemShops(cartData);

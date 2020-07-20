@@ -20,6 +20,7 @@ import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
+import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
@@ -89,4 +90,6 @@ public interface OrderService {
 	Cart getUserCart(Long userId);
 
 	public void cancelOrder(Long metaOrderId);
+
+	List<CartCheckoutData> createCheckoutData(Cart cart);
 }

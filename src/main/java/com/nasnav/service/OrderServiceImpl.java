@@ -2108,8 +2108,8 @@ public class OrderServiceImpl implements OrderService {
 
 		validateCartCheckoutDTO(dto);
 
-		MetaOrderEntity order = createMetaOrder(dto, user);
-
+		MetaOrderEntity order = createMetaOrder(dto);
+		
 		return getOrderResponse(order);
 	}
 
@@ -2149,13 +2149,14 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private MetaOrderEntity createMetaOrder(CartCheckoutDTO dto, BaseUserEntity user) {
+	private MetaOrderEntity createMetaOrder(CartCheckoutDTO dto) {
+		BaseUserEntity user = securityService.getCurrentUser();
 		AddressesEntity userAddress = 
 				addressRepo
 				.findByIdAndUserId(dto.getAddressId(), user.getId())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, dto.getAddressId()));
 
-		Map<Long, List<CartCheckoutData>> checkOutData = getAndValidateCheckoutData(user, dto); 
+		Map<Long, List<CartCheckoutData>> checkOutData = getAndValidateCheckoutData(dto); 
 		MetaOrderEntity order = createOrder( checkOutData, userAddress, dto );
 		return order;
 	}
@@ -2164,18 +2165,13 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Map<Long, List<CartCheckoutData>> getAndValidateCheckoutData(BaseUserEntity user, CartCheckoutDTO checkoutDto) {
+	private Map<Long, List<CartCheckoutData>> getAndValidateCheckoutData(CartCheckoutDTO checkoutDto) {
 		Cart optimizedCart = optimizeCartForCheckout(checkoutDto); 
-		List<Long> cartStocks = 
-				optimizedCart
-				.getItems()
-				.stream()
-				.map(CartItem::getStockId)
-				.collect(toList()); 
-		List<StockAdditionalData> stocksData = stockRepository.findAdditionalDataByStockIdIn(cartStocks);
-		List<CartCheckoutData> userCartItems = createCheckoutData(optimizedCart, stocksData);
+		List<CartCheckoutData> userCartItems = createCheckoutData(optimizedCart);
 
 		validateCartCheckoutItems(userCartItems);
+		
+		shippingManagementService.validateCartForShipping(userCartItems, checkoutDto);
 
 		Map<Long,List<CartCheckoutData>> checkOutData = 
 				userCartItems
@@ -2188,7 +2184,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private Cart optimizeCartForCheckout(CartCheckoutDTO checkoutDto) {
-		CartOptimizeDTO dto = createCartOptimizeDTOFromCheckoutData(checkoutDto); 
+		CartOptimizeDTO dto = createCartOptimizeDtoFromCheckoutDto(checkoutDto); 
 		CartOptimizeResponseDTO optimizationResult = optimizeCart(dto);
 		if(optimizationResult.getTotalChanged()) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0004);
@@ -2200,7 +2196,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private CartOptimizeDTO createCartOptimizeDTOFromCheckoutData(CartCheckoutDTO checkoutDto) {
+	private CartOptimizeDTO createCartOptimizeDtoFromCheckoutDto(CartCheckoutDTO checkoutDto) {
 		Map<Object, Object> parameters = new HashMap<>();
 		parameters.put("CUSTOMER_ADDRESS_ID", checkoutDto.getAddressId());
 		
@@ -2219,10 +2215,17 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-
-	private List<CartCheckoutData> createCheckoutData(Cart optimizedCart, List<StockAdditionalData> stockAdditionalData) {
-		Map<Long, StockAdditionalData> stockDataMap = 
-				stockAdditionalData
+	@Override
+	public List<CartCheckoutData> createCheckoutData(Cart optimizedCart) {
+		List<Long> cartStocks = 
+				optimizedCart
+				.getItems()
+				.stream()
+				.map(CartItem::getStockId)
+				.collect(toList()); 
+		Map<Long, StockAdditionalData> stockAdditionalDataCache = 
+				stockRepository
+				.findAdditionalDataByStockIdIn(cartStocks)
 				.stream()
 				.collect(groupingBy(StockAdditionalData::getStockId))
 				.entrySet()
@@ -2233,7 +2236,7 @@ public class OrderServiceImpl implements OrderService {
 		return optimizedCart
 				.getItems()
 				.stream()
-				.map(item -> createCartCheckoutData(item, stockDataMap))
+				.map(item -> createCartCheckoutData(item, stockAdditionalDataCache))
 				.collect(toList());
 	}
 
@@ -2446,7 +2449,6 @@ public class OrderServiceImpl implements OrderService {
 		if (dto.getServiceId() == null) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0002);
 		}
-		shippingManagementService.validateShippingAdditionalData(dto);
 	}
 
 
