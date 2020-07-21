@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Optional;
 
+import com.nasnav.shipping.services.PickupFromShop;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,6 +74,13 @@ public class PaymentControllerCoD {
 		if (accountName == null) {
 			throw new BusinessException("CoD payment not available for order", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
 		}
+		for (OrdersEntity subOrder: ordersRepository.findByMetaOrderId(metaOrderId)) {
+			if (PickupFromShop.SERVICE_ID.equalsIgnoreCase(subOrder.getShipment().getShippingServiceId())) {
+				codLogger.warn("Sub-order ({}) marked for pickup, COD not allowed.", subOrder.getId());
+				throw new BusinessException("At least one of the sub-orders marked for pickup", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
+			}
+		}
+
 		PaymentEntity payment = new PaymentEntity();
 		payment.setOperator(COD_OPERATOR);
 		payment.setUid(Tools.getOrderUid(metaOrderId,codLogger));
