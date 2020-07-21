@@ -265,6 +265,7 @@ public class BostaLevisShippingService implements ShippingService{
 		request.setSpecs(specs);
 		request.setNotes(notes);
 		request.setWebhookUrl(webHook);
+		request.setCod(shipment.getCodValue());
 		return request;
 	}
 	

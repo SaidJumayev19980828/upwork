@@ -1,6 +1,10 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
+import static com.nasnav.controller.PaymentControllerCoD.COD_OPERATOR;
+import static com.nasnav.enumerations.OrderStatus.DISPATCHED;
+import static com.nasnav.enumerations.ShippingStatus.EN_ROUTE;
+import static com.nasnav.enumerations.ShippingStatus.PICKED_UP;
 import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0003;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
@@ -53,9 +57,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.utils.EntityUtils;
+import com.nasnav.commons.utils.MapBuilder;
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.OrganizationShippingServiceRepository;
+import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.ShipmentRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
@@ -65,6 +71,8 @@ import com.nasnav.dto.request.shipping.ShippingAdditionalDataDTO;
 import com.nasnav.dto.request.shipping.ShippingEtaDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
+import com.nasnav.enumerations.OrderStatus;
+import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.AddressesEntity;
 import com.nasnav.persistence.AreasEntity;
@@ -72,9 +80,11 @@ import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.CitiesEntity;
 import com.nasnav.persistence.CountriesEntity;
+import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.OrganizationShippingServiceEntity;
+import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.ShipmentEntity;
@@ -110,6 +120,14 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	private Logger logger = LogManager.getLogger(getClass());
 	
+	private static final Map<Integer,OrderStatus> shippingStatusToOrderStatusMapping = 
+			MapBuilder
+			.<Integer, OrderStatus>map()
+			.put(PICKED_UP.getValue(), DISPATCHED)
+			.put(EN_ROUTE.getValue(), DISPATCHED)
+			.put(ShippingStatus.DELIVERED.getValue(), OrderStatus.DELIVERED)
+			.getMap();
+	
 	@Autowired
 	private OrganizationShippingServiceRepository orgShippingServiceRepo;
 	
@@ -140,6 +158,12 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	@Autowired
     private ShippingServiceFactory shippingServiceFactory;
+	
+	@Autowired
+	private OrderService orderService;
+	
+	@Autowired
+	private PaymentsRepository paymentRepo;
 
 	@Override
 	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
@@ -611,11 +635,26 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		shippingData.setSubOrderId(subOrder.getId());
 		shippingData.setCallBackUrl(callBackUrl);
 		shippingData.setShopId(subOrder.getShopsEntity().getId());
+		if(isPaidByCashOnDelivery(subOrder)) {
+			shippingData.setCodValue(subOrder.getTotal());
+		}
 		return shippingData;
 	}
 
 
-    private String createCallBackUrl(OrdersEntity subOrder) {
+    private boolean isPaidByCashOnDelivery(OrdersEntity subOrder) {
+		return ofNullable(subOrder)
+				.map(OrdersEntity::getMetaOrder)
+				.map(MetaOrderEntity::getId)
+				.flatMap(paymentRepo::findByMetaOrderId)
+				.map(PaymentEntity::getOperator)
+				.filter(operator -> Objects.equals(operator, COD_OPERATOR))
+				.isPresent();
+	}
+
+
+
+	private String createCallBackUrl(OrdersEntity subOrder) {
     	String serviceId = 
     			ofNullable(subOrder)
     			.map(OrdersEntity::getShipment)
@@ -635,17 +674,31 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		ShipmentStatusData shippingStatusData = shippingService.createShipmentStatusData(serviceId, orgId, params);
 
 		if (shippingStatusData != null && shippingStatusData.getState() != null) {
-			updateShipmentStatus(shippingStatusData);
+			ShipmentEntity shipment =
+					shipmentRepo
+					.findByShippingServiceIdAndExternalIdAndOrganizationId(
+							shippingStatusData.getServiceId()
+							, shippingStatusData.getExternalShipmentId()
+							, shippingStatusData.getOrgId())
+							.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, SHP$SRV$0009));
+			updateShipmentStatus(shippingStatusData, shipment);
+			updateOrderStatus(shippingStatusData, shipment.getSubOrder());
 		} else {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$PARS$0001);
 		}
     }
 
 
-    private void updateShipmentStatus(ShipmentStatusData data) {
-		ShipmentEntity shipment =
-			ofNullable(shipmentRepo.findByShippingServiceIdAndExternalIdAndOrganizationId(data.getServiceId(), data.getExternalShipmentId(), data.getOrgId()))
-					.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, SHP$SRV$0009));
+    private void updateOrderStatus(ShipmentStatusData shippingStatusData, OrdersEntity subOrder) {
+		ofNullable(shippingStatusData)
+			.map(ShipmentStatusData::getState)
+			.map(shippingStatusToOrderStatusMapping::get)
+			.ifPresent(status -> orderService.updateOrderStatus(subOrder, status));
+	}
+
+
+
+	private void updateShipmentStatus(ShipmentStatusData data, ShipmentEntity shipment) {
 		shipment.setStatus(data.getState());
 		shipmentRepo.save(shipment);
 	}

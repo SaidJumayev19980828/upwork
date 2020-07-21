@@ -13,6 +13,6 @@ public class BostaCallbackDTO {
     private String starName;
     private BigDecimal cod;
     private String exceptionReason;
-    private BigDecimal price;
+    private BostPriceDTO price;
     private BigDecimal weight;
 }

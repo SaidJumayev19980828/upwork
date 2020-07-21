@@ -16,6 +16,7 @@ import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.OrdersEntity;
@@ -92,4 +93,6 @@ public interface OrderService {
 	public void cancelOrder(Long metaOrderId);
 
 	List<CartCheckoutData> createCheckoutData(Cart cart);
+
+	OrdersEntity updateOrderStatus(OrdersEntity orderEntity, OrderStatus newStatus);
 }

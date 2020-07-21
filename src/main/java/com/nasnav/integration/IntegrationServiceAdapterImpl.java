@@ -16,7 +16,7 @@ import static java.time.LocalDateTime.now;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -25,9 +25,7 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-import com.nasnav.dto.AddressRepObj;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.UserRepository;
+import com.nasnav.dto.AddressRepObj;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.enums.MappingType;
 import com.nasnav.integration.events.CustomerCreateEvent;
