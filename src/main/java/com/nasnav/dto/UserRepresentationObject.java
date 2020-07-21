@@ -19,7 +19,10 @@ public class UserRepresentationObject {
     public String phoneNumber;
     public String mobile;
     public List<AddressRepObj> addresses;
-
+    @JsonProperty("first_name")
+    public String firstName;
+    @JsonProperty("last_name")
+    public String lastName;
     @JsonProperty("organization_id")
     public Long organizationId;
     @JsonProperty("store_id")

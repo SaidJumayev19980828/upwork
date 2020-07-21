@@ -13,6 +13,7 @@ import com.nasnav.persistence.listeners.UserEntityListener;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.springframework.beans.BeanUtils;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -26,6 +27,12 @@ public class UserEntity extends BaseUserEntity{
 
     @Column(name="user_name")
     private String name;
+
+    @Column(name="first_name")
+    private String firstName;
+
+    @Column(name="last_name")
+    private String lastName;
 
     @Column(name="image")
     private String image;
@@ -72,6 +79,7 @@ public class UserEntity extends BaseUserEntity{
     @Override
     public UserRepresentationObject getRepresentation() {
         UserRepresentationObject obj = new UserRepresentationObject();
+        BeanUtils.copyProperties(this, obj);
         obj.id = this.getId();
         obj.name = this.getName();
         obj.email = this.getEmail();

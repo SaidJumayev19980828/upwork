@@ -159,5 +159,13 @@ public class UserDTOs {
 
         @ApiModelProperty(value = "User Image", example = "/images/image_568.jpg", required = false)
         private String image;
+
+        @JsonProperty("first_name")
+        private String firstName;
+
+        @JsonProperty("last_name")
+        private String lastName;
+
+
     }
 }
