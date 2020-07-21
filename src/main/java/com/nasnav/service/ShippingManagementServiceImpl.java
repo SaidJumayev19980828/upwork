@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
+import static com.nasnav.controller.PaymentControllerCoD.COD_OPERATOR;
 import static com.nasnav.enumerations.OrderStatus.DISPATCHED;
 import static com.nasnav.enumerations.ShippingStatus.EN_ROUTE;
 import static com.nasnav.enumerations.ShippingStatus.PICKED_UP;
@@ -60,6 +61,7 @@ import com.nasnav.commons.utils.MapBuilder;
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.OrganizationShippingServiceRepository;
+import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.ShipmentRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
@@ -78,9 +80,11 @@ import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.CitiesEntity;
 import com.nasnav.persistence.CountriesEntity;
+import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.OrganizationShippingServiceEntity;
+import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.ShipmentEntity;
@@ -157,6 +161,9 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	@Autowired
 	private OrderService orderService;
+	
+	@Autowired
+	private PaymentsRepository paymentRepo;
 
 	@Override
 	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
@@ -628,11 +635,26 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		shippingData.setSubOrderId(subOrder.getId());
 		shippingData.setCallBackUrl(callBackUrl);
 		shippingData.setShopId(subOrder.getShopsEntity().getId());
+		if(isPaidByCashOnDelivery(subOrder)) {
+			shippingData.setCodValue(subOrder.getTotal());
+		}
 		return shippingData;
 	}
 
 
-    private String createCallBackUrl(OrdersEntity subOrder) {
+    private boolean isPaidByCashOnDelivery(OrdersEntity subOrder) {
+		return ofNullable(subOrder)
+				.map(OrdersEntity::getMetaOrder)
+				.map(MetaOrderEntity::getId)
+				.flatMap(paymentRepo::findByMetaOrderId)
+				.map(PaymentEntity::getOperator)
+				.filter(operator -> Objects.equals(operator, COD_OPERATOR))
+				.isPresent();
+	}
+
+
+
+	private String createCallBackUrl(OrdersEntity subOrder) {
     	String serviceId = 
     			ofNullable(subOrder)
     			.map(OrdersEntity::getShipment)
