@@ -28,6 +28,7 @@ public final class EntityConstants {
     
     
     public static final String NASNAV_DOMAIN = "nasnav.com";
+    public static final String NASORG_DOMAIN = "nasnav.org";
 
     public static final String PROTOCOL = "https://";
     

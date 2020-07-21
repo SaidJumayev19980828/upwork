@@ -9,6 +9,7 @@ import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.validateName;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
+import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
 import static com.nasnav.exceptions.ErrorCodes.ORG$EXTRATTR$0001;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -803,7 +804,7 @@ public class OrganizationService {
 	    }
 	    
 	    OrganizationDomainsEntity orgDom = null;
-	    if(domain.endsWith(NASNAV_DOMAIN)) {
+	    if(domain.endsWith(NASNAV_DOMAIN) || domain.endsWith(NASORG_DOMAIN)) {
 	    	orgDom = orgDomainsRep.findByDomainAndSubdir(domain,subDir);
 	    }else {
 	    	orgDom = orgDomainsRep.findByDomain(domain);
