@@ -1,6 +1,19 @@
 package com.nasnav.controller;
 
-import com.nasnav.AppConfig;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Optional;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
@@ -12,21 +25,13 @@ import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.service.OrderService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Optional;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/payment/cod")
 public class PaymentControllerCoD {
+
+	public static final String COD_OPERATOR = "COD";
 
 	private static final Logger codLogger = LogManager.getLogger("Payment:COD");
 
@@ -38,9 +43,6 @@ public class PaymentControllerCoD {
 
 	@Autowired
 	private PaymentsRepository paymentsRepository;
-
-	@Autowired
-	private AppConfig config;
 
 	@Autowired
 	private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
@@ -72,7 +74,7 @@ public class PaymentControllerCoD {
 			throw new BusinessException("CoD payment not available for order", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
 		}
 		PaymentEntity payment = new PaymentEntity();
-		payment.setOperator("COD");
+		payment.setOperator(COD_OPERATOR);
 		payment.setUid(Tools.getOrderUid(metaOrderId,codLogger));
 		payment.setExecuted(new Date());
 		payment.setStatus(PaymentStatus.COD_REQUESTED);

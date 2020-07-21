@@ -95,7 +95,7 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (24
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (25, 71, 5);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (26, 72, 6);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (27, 73, 6);
-
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (28, 69, 7);
 
 
 
@@ -120,24 +120,59 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 
 
 --inserting orders
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 1);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310002 , now(),88, 99001, 1);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310003 , now(),88, 99001, 8);
 
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
-values(330031, 88, now(), now(), 99001, 2, 501, 310001, 12300001);
+values(330031, 88, now(), now(), 99001, 8, 501, 310001, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
-values(330032, 88, now(), now(), 99002, 2, 502, 310001, 12300001);
+values(330032, 88, now(), now(), 99001, 8, 502, 310001, 12300001);
+
+
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
+values(330033, 88, now(), now(), 99001, 1, 501, 310002, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
+values(330034, 88, now(), now(), 99001, 1, 502, 310002, 12300001);
+
+
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
+values(330035, 88, now(), now(), 99001, 8, 501, 310003, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
+values(330036, 88, now(), now(), 99001, 2, 502, 310003, 12300001);
+
+
 
 INSERT INTO public.shipment
-(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, external_id, shipping_fee)
-VALUES(330031, 'TEST', '{"Shop Id":501}' , now(), now(), 0, '330031', 20.0);
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330031, 'TEST', '{"Shop Id":501}' , now(), now(), 0, 20.0);
 INSERT INTO public.shipment
 (sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
 VALUES(330032, 'TEST', '{"Shop Id":502}' , now(), now(), 0, 12.0);
+
+INSERT INTO public.shipment
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330033, 'TEST', '{"Shop Id":501}' , now(), now(), 0, 20.0);
+INSERT INTO public.shipment
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330034, 'TEST', '{"Shop Id":502}' , now(), now(), 0, 12.0);
+
+
+
+INSERT INTO public.shipment
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330035, 'TEST', '{"Shop Id":501}' , now(), now(), 0, 20.0);
+INSERT INTO public.shipment
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330036, 'TEST', '{"Shop Id":502}' , now(), now(), 0, 12.0);
 
 
 -- insert order items
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330031, 601, 14, 60.0, 1);
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330032, 602, 2, 70.0, 1);
+
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330033, 601, 14, 60.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330034, 602, 2, 70.0, 1);
 
 
 

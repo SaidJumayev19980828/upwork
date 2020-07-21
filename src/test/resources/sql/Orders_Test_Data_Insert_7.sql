@@ -95,6 +95,7 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (24
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (25, 71, 5);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (26, 72, 6);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (27, 73, 6);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (28, 158, 7);
 
 
 
@@ -120,16 +121,16 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 
 
 --inserting orders
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 1);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 8);
 
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
-values(330031, 88, now(), now(), 99001, 2, 501, 310001, 12300001);
+values(330031, 88, now(), now(), 99001, 8, 501, 310001, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
-values(330032, 88, now(), now(), 99002, 2, 502, 310001, 12300001);
+values(330032, 88, now(), now(), 99002, 6, 502, 310001, 12300001);
 
 INSERT INTO public.shipment
-(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, external_id, shipping_fee)
-VALUES(330031, 'TEST', '{"Shop Id":501}' , now(), now(), 0, '330031', 20.0);
+(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
+VALUES(330031, 'TEST', '{"Shop Id":501}' , now(), now(), 0, 20.0);
 INSERT INTO public.shipment
 (sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, shipping_fee)
 VALUES(330032, 'TEST', '{"Shop Id":502}' , now(), now(), 0, 12.0);

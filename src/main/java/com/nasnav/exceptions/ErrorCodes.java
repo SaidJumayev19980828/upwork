@@ -60,7 +60,7 @@ public enum ErrorCodes {
 	,G$JSON$0001("Failed to read json into an object!")
 	,G$PRAM$0001("Missing required parameters in object[%s]!")
 	,G$ORG$0001("No organization exists with id[%d]!")
-	
+	,G$STK$0001("Failed to get stock data for stock [%d]!")
 
 	,E$USR$0001("User is an employee!")
 
@@ -74,6 +74,7 @@ public enum ErrorCodes {
 	,O$CRT$0008("Failed to parse Cart optimization parameters [%s] !")
 	,O$CRT$0009("Failed to get a cart optimizer with name [%s] !")
 	,O$CRT$0010("Invalid or missing cart optimization parameters!")
+	,O$CRT$0011("Failed to optimize cart item for shipping! No stock can fulfill the cart for cart item with id[%d] and stock Id[%d]!")
 
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")
@@ -82,11 +83,17 @@ public enum ErrorCodes {
 	,O$CHK$0001("Must have at least one item in cart!")
 	,O$CHK$0002("Must provide shipping service provider")
 	,O$CHK$0003("Must provide shipping service additional data")
+	,O$CHK$0004("Failed to finish checkout! Cart optimization for shipping resulted in changes in item prices!")
 	
 	,O$CFRM$0001("No order exists for shop[%d] with id[%d]!")
 	,O$CFRM$0002("Cannot Confirm order with id[%d]! Invalid order Status [%s]!")
 	,O$CFRM$0003("Cannot Confirm order with id[%d]! User didn't provide a phone number!")
 	,O$CFRM$0004("No order exists for Organizations[%d] with id[%d]!")
+	
+	,O$RJCT$0001("No sub order Id was provided!")
+	,O$RJCT$0002("Cannot reject order with id[%d]! Invalid order Status [%s]!")
+	
+	,O$CNCL$0002("Cannot cancel Meta order with id[%d]! Invalid order Status [%s]!")
 
 	,O$MAIL$0001("Failed to send notification email about order[%d] to email[%s]!")
 	
@@ -95,6 +102,8 @@ public enum ErrorCodes {
 	,O$0001("No order exists with ID[%d]!")
 	
 	,O$GNRL$0001("Cannot update order staus from [%s] to [%s]!")
+	,O$GNRL$0002("No Meta order exists with id[%d]!")
+	,O$GNRL$0003("Cannot access Meta order with id[%d] by the current user!")
 	
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
 

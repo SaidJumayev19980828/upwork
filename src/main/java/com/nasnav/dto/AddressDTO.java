@@ -34,6 +34,9 @@ public class AddressDTO extends BaseRepresentationObject {
     @JsonProperty("postal_code")
     private String postalCode;
 
+    @JsonProperty("phone_number")
+    private String phoneNumber;
+
     @JsonProperty("area_id")
     private Long areaId;
 

@@ -1,11 +1,14 @@
 package com.nasnav.test.shipping;
 
+import static com.nasnav.enumerations.OrderStatus.DISPATCHED;
+import static com.nasnav.enumerations.ShippingStatus.EN_ROUTE;
 import static com.nasnav.shipping.services.DummyShippingService.ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static com.nasnav.test.commons.TestCommons.jsonArray;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -28,8 +31,10 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
+import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.OrganizationShippingServiceRepository;
 import com.nasnav.dao.ShipmentRepository;
+import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationShippingServiceEntity;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -52,6 +57,9 @@ public class ShippingServiceManagementTest {
 	
 	@Autowired
 	private ShipmentRepository shipmentRepo;
+	
+	@Autowired
+	private OrdersRepository orderRepo;
 	
 	@Test
 	public void testRegisterToShippingServiceNoAuthz() {
@@ -156,13 +164,23 @@ public class ShippingServiceManagementTest {
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_2.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void changeShippingStatusTest() {
-		Long shipmentId = shipmentRepo.findBySubOrder_Id(330031L).getId();
-		JSONObject body = json().put("status", 10)
+		Long subOrderId = 330031L;
+		OrdersEntity subOrderBefore = orderRepo.findFullDataById(subOrderId).get();
+		Long shipmentId = subOrderBefore.getShipment().getId();
+		
+		assertNotEquals(DISPATCHED.getValue(), subOrderBefore.getStatus());
+		//--------------------------------------------------------------
+		JSONObject body = json().put("status", EN_ROUTE.getValue())
 								.put("id", "330031")
 								.put("message", "");
 		HttpEntity<?> req = getHttpEntity(body.toString(), "none");
 		ResponseEntity<String> res =  template.postForEntity("/callbacks/shipping/service/TEST/99001", req, String.class);
+		
+		//--------------------------------------------------------------
 		assertEquals(200, res.getStatusCodeValue());
 		assertEquals(10, shipmentRepo.findById(shipmentId).get().getStatus().intValue());
+		
+		OrdersEntity subOrderAfter = orderRepo.findFullDataById(subOrderId).get();
+		assertEquals(DISPATCHED.getValue(), subOrderAfter.getStatus());
 	}
 }

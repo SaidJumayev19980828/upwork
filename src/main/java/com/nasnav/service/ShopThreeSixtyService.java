@@ -4,8 +4,7 @@ import static com.nasnav.exceptions.ErrorCodes.S$360$0001;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.*;
 
 import java.awt.Graphics2D;
@@ -556,7 +555,7 @@ public class ShopThreeSixtyService {
                 if (productsImagesMap.get(dto.getId()) != null)
                     dto.setImages(productsImagesMap.get(dto.getId()).stream()
                                                                     .map(i -> of(i.getUri()).orElse(null))
-                                                                    .collect(toList()));
+                                                                    .collect(toSet()));
 
                 if (productsPricesMap.get(dto.getId()) != null)
                     dto.setPrices(productsPricesMap.get(dto.getId()));

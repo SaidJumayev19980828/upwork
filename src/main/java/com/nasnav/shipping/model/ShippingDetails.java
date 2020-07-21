@@ -1,5 +1,6 @@
 package com.nasnav.shipping.model;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -16,4 +17,5 @@ public class ShippingDetails {
 	private Long subOrderId;
 	private String callBackUrl;
 	private Long shopId;
+	private BigDecimal codValue;
 }

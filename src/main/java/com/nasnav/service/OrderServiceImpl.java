@@ -8,7 +8,9 @@ import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.ORDER_BILL_TEMPLATE;
+import static com.nasnav.constatnts.EmailConstants.ORDER_CANCEL_NOTIFICATION_TEMPLATE;
 import static com.nasnav.constatnts.EmailConstants.ORDER_NOTIFICATION_TEMPLATE;
+import static com.nasnav.constatnts.EmailConstants.ORDER_REJECT_TEMPLATE;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_CALC_ORDER_FAILED;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ITEM_QUANTITY;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ORDER_STATUS;
@@ -50,6 +52,7 @@ import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
 import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
 import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0004;
 import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0005;
+import static com.nasnav.exceptions.ErrorCodes.G$STK$0001;
 import static com.nasnav.exceptions.ErrorCodes.G$USR$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0001;
@@ -57,6 +60,8 @@ import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0004;
 import static com.nasnav.exceptions.ErrorCodes.O$CHK$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CHK$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$CHK$0004;
+import static com.nasnav.exceptions.ErrorCodes.O$CNCL$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
@@ -67,13 +72,19 @@ import static com.nasnav.exceptions.ErrorCodes.O$CRT$0007;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0008;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0009;
 import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0003;
 import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0003;
 import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
 import static com.nasnav.exceptions.ErrorCodes.S$0005;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.isValidStrategy;
+import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.SAME_CITY;
+import static com.nasnav.shipping.services.PickupFromShop.SHOP_ID;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDateTime.now;
@@ -114,6 +125,7 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.dao.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -126,18 +138,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
-import com.nasnav.dao.AddressRepository;
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.MetaOrderRepository;
-import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.RoleEmployeeUserRepository;
-import com.nasnav.dao.ShipmentRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.BasketItemDTO;
@@ -146,6 +149,8 @@ import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.MetaOrderBasicInfo;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.OrderRepresentationObject;
+import com.nasnav.dto.ProductImageDTO;
+import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.cart.CartOptimizeDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
@@ -161,6 +166,7 @@ import com.nasnav.enumerations.OrderFailedStatus;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.Roles;
+import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -176,6 +182,8 @@ import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PaymentEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.ShipmentEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
@@ -183,10 +191,13 @@ import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.persistence.dto.query.result.CartItemStock;
+import com.nasnav.persistence.dto.query.result.StockAdditionalData;
 import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.cart.optimizers.CartOptimizer;
+import com.nasnav.service.cart.optimizers.OptimizedCart;
+import com.nasnav.service.cart.optimizers.OptimizedCartItem;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 import com.nasnav.shipping.model.ShipmentTracker;
@@ -196,6 +207,11 @@ import lombok.Data;
 
 @Service
 public class OrderServiceImpl implements OrderService {
+
+	private static final String DEFAULT_REJECTION_MESSAGE = 
+			"We are very sorry to inform you that we were unable to fulfill your order due to some issues."
+			+ " Your order will be refunded shortly, but the refund operation may take several business days "
+			+ "depending on the payment method.";
 
 	private static final int ORDER_DEFAULT_COUNT = 1000;
 
@@ -244,9 +260,15 @@ public class OrderServiceImpl implements OrderService {
 	
 	@Autowired
 	private ShipmentRepository shipmentRepo;
+
+	@Autowired
+	private PaymentsRepository paymentsRepo;
 	
 	@Autowired
 	private ShippingManagementService shippingManagementService;
+
+	@Autowired
+	private ProductImageService imgService;
 	
 	@Autowired
 	private MailService mailService;
@@ -313,8 +335,8 @@ public class OrderServiceImpl implements OrderService {
 		orderStateMachine = new HashMap<>();
 		buildMap(orderStateMachine)
 			.put(CLIENT_CONFIRMED	, setOf(CLIENT_CANCELLED, FINALIZED))
-			.put(FINALIZED	 		, setOf(STORE_CONFIRMED, STORE_CANCELLED))
-			.put(STORE_CONFIRMED	, setOf(STORE_PREPARED, STORE_CANCELLED))
+			.put(FINALIZED	 		, setOf(STORE_CONFIRMED, STORE_CANCELLED, CLIENT_CANCELLED))
+			.put(STORE_CONFIRMED	, setOf(STORE_PREPARED, STORE_CANCELLED, DISPATCHED))
 			.put(STORE_PREPARED		, setOf(DISPATCHED, STORE_CANCELLED))
 			.put(DISPATCHED			, setOf(DELIVERED, STORE_CANCELLED));
 	}
@@ -844,6 +866,20 @@ public class OrderServiceImpl implements OrderService {
 		params.put("sub", order);
 		return params;
 	}
+	
+	
+	
+	
+	private Map<String, Object> createRejectionEmailParams(OrdersEntity order, String rejectionReason) {
+		Map<String,Object> params = new HashMap<>();
+		String message =
+				ofNullable(rejectionReason)
+				.orElse(DEFAULT_REJECTION_MESSAGE);
+		params.put("id", order.getId().toString());
+		params.put("rejectionReason", message);
+		params.put("sub", order);
+		return params;
+	}
 
 
 	
@@ -960,14 +996,15 @@ public class OrderServiceImpl implements OrderService {
 
 	private void clearOrderItemsFromCart(OrdersEntity order) {
 		Long userId = order.getUserId();
-		List<Long> stockIds = 
+		List<Long> variantIds = 
 				order
 				.getBasketsEntity()
 				.stream()
 				.map(BasketsEntity::getStocksEntity)
-				.map(StocksEntity::getId)
+				.map(StocksEntity::getProductVariantsEntity)
+				.map(ProductVariantsEntity::getId)
 				.collect(toList());
-		cartItemRepo.deleteByStockIdInAndUser_Id(stockIds, userId);
+		cartItemRepo.deleteByVariantIdInAndUser_Id(variantIds, userId);
 	}
 
 
@@ -1049,8 +1086,8 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
-	
-	private OrdersEntity updateOrderStatus(OrdersEntity orderEntity, OrderStatus newStatus) {
+	@Override
+	public OrdersEntity updateOrderStatus(OrdersEntity orderEntity, OrderStatus newStatus) {
 		OrderStatus currentStatus = findEnum(orderEntity.getStatus());
 
 		if(!canOrderStatusChangeTo(currentStatus, newStatus)) {
@@ -1240,6 +1277,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
+	@Transactional
 	public DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel) throws BusinessException {
 		
 		BaseUserEntity user = securityService.getCurrentUser();
@@ -1252,7 +1290,7 @@ public class OrderServiceImpl implements OrderService {
 		if (user instanceof UserEntity ) {
 			order = ordersRepository.findByIdAndUserIdAndOrganizationEntity_Id(orderId, user.getId(), orgId);
 		} else if ( isNasnavAdmin ) {
-			order = ordersRepository.findById(orderId);
+			order = ordersRepository.findFullDataById(orderId);
 		} else {
 			order = ordersRepository.findByIdAndOrganizationEntity_Id(orderId, orgId);
 		}
@@ -1261,7 +1299,7 @@ public class OrderServiceImpl implements OrderService {
 			return getDetailedOrderInfo(order.get(), finalDetailsLevel);
 		}
 
-		throwInvalidOrderException( OrderFailedStatus.INVALID_ORDER.toString() );
+		throwInvalidOrderException( INVALID_ORDER.toString() );
 		
 		return null;
 	}
@@ -1297,7 +1335,10 @@ public class OrderServiceImpl implements OrderService {
 
 
         if (detailsLevel >= 1)
-        	BeanUtils.copyProperties( getOrderDetails(order), representation, new String[]{"orderId", "userId", "shopId", "createdAt", "status", "paymentStatus"});
+        	BeanUtils.copyProperties( 
+        			getOrderDetails(order)
+        			, representation
+        			, new String[]{"orderId", "userId", "shopId", "createdAt", "status", "paymentStatus", "metaOrderId"});
 
         if (detailsLevel == 2 && orderItemsQuantity.get(order.getId()) != null)
         	representation.setTotalQuantity(orderItemsQuantity.get(order.getId()).intValue());
@@ -1332,7 +1373,7 @@ public class OrderServiceImpl implements OrderService {
 		obj.setStatus(findEnum(entity.getStatus()).name());
 		obj.setPaymentStatus(entity.getPaymentStatus().toString());
 		obj.setTotal(entity.getAmount());
-
+		obj.setMetaOrderId(entity.getMetaOrder().getId());
 		return obj;
 	}
 	
@@ -1343,8 +1384,12 @@ public class OrderServiceImpl implements OrderService {
 		obj.setShopName(entity.getShopsEntity().getName());
 		obj.setDeliveryDate(entity.getDeliveryDate());
 		obj.setSubtotal(entity.getAmount());
-		if (entity.getShipment() != null)
+		if (entity.getShipment() != null) {
+			String shippingStatus = ShippingStatus.getShippingStatusName(entity.getShipment().getStatus());
 			obj.setShipping(entity.getShipment().getShippingFee());
+			obj.setShippingStatus(shippingStatus);
+		}
+			
 		obj.setTotal(entity.getTotal());
 
 		if (entity.getAddressEntity() != null) {
@@ -1384,6 +1429,34 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+	private BasketItem toBasketItem(BasketsEntity entity, List<ProductImageDTO> variantsImages) {
+		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
+		ProductEntity product = variant.getProductEntity();
+
+		BasketItem item = new BasketItem();
+		item.setProductId(product.getId());
+		item.setName(product.getName());
+		item.setPname(product.getPname());
+		item.setStockId(entity.getStocksEntity().getId());
+		item.setQuantity(entity.getQuantity().intValueExact());
+		item.setTotalPrice(entity.getPrice());
+		item.setBrandId(product.getBrandId());
+		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec()));
+		//TODO set item unit //
+
+		String thumb = variantsImages
+								 .stream()
+								 .filter(i -> i.getVariantId() != null)
+								 .filter(i -> i.getVariantId().equals(variant.getId()) && i.getProductId().equals(product.getId()))
+								 .findFirst()
+								 .orElse(new ProductImageDTO())
+								 .getImagePath();
+
+		item.setThumb(thumb);
+		item.setCurrency(ofNullable(TransactionCurrency.getTransactionCurrency(entity.getCurrency())).orElse(EGP).name());
+
+		return item;
+	}
 	
 	
 	
@@ -1744,7 +1817,9 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private Cart getUserCart(Long userId) {
+	
+	@Override
+	public Cart getUserCart(Long userId) {
 		return new Cart(toCartItemsDto(cartItemRepo.findCurrentCartItemsByUser_Id(userId)));
 	}
 
@@ -1789,12 +1864,26 @@ public class OrderServiceImpl implements OrderService {
 		cartItem.setUser((UserEntity) user);
 		cartItem.setStock(stock);
 		cartItem.setQuantity(item.getQuantity());
-		cartItem.setCoverImage(item.getCoverImg());
+		cartItem.setCoverImage(getItemCoverImage(item.getCoverImg(), stock));
 		cartItemRepo.save(cartItem);
 
 		return getUserCart(user.getId());
 	}
 
+
+	private String getItemCoverImage(String coverImage, StocksEntity stock) {
+		if (coverImage != null) {
+			return coverImage;
+		}
+		Long productId = stock.getProductVariantsEntity().getProductEntity().getId();
+		Long variantId = stock.getProductVariantsEntity().getId();
+		return ofNullable(imgService.getProductsAndVariantsImages(asList(productId), asList(variantId))
+									.stream()
+									.findFirst())
+				.get()
+				.orElse(new ProductImageDTO())
+				.getImagePath();
+	}
 
 	@Override
 	public Cart deleteCartItem(Long itemId){
@@ -1867,7 +1956,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
-	@Transactional
+	@Transactional(rollbackFor = Throwable.class)
 	public OrderConfrimResponseDTO confrimOrder(Long orderId) {
 		EmployeeUserEntity storeMgr = getAndValidateUser();
 		OrdersEntity subOrder = getAndValidateOrderForConfirmation(orderId, storeMgr);
@@ -1904,6 +1993,29 @@ public class OrderServiceImpl implements OrderService {
 		}
 		return order;
 	}
+	
+	
+	
+	
+	
+	private OrdersEntity getAndValidateOrderForRejection(Long orderId, EmployeeUserEntity user) {
+		OrdersEntity order;
+		if(securityService.currentUserHasRole(ORGANIZATION_MANAGER)) {
+			order = ordersRepository
+						.findByIdAndOrganizationEntity_Id(orderId, user.getOrganizationId())
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0004, user.getOrganizationId(), orderId));
+		}else {
+			 order = ordersRepository
+						.findByIdAndShopsEntity_Id(orderId, user.getShopId())
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0001, user.getShopId(), orderId));
+		}	
+		
+		OrderStatus status = order.getOrderStatus(); 
+		if(FINALIZED != status) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RJCT$0002, orderId, status.name());
+		}
+		return order;
+	}
 
 
 
@@ -1915,6 +2027,19 @@ public class OrderServiceImpl implements OrderService {
 		MetaOrderEntity metaOrder = order.getMetaOrder();		
 		if(isAllOtherOrdersConfirmed(order.getId(), metaOrder)) {
 			updateOrderStatus(metaOrder, STORE_CONFIRMED);
+		}
+	}
+	
+	
+	
+	
+	private void rejectSubOrderAndMetaOrder(OrdersEntity order) {
+		updateOrderStatus(order, STORE_CANCELLED);
+		returnOrderToStocks(order);
+		
+		MetaOrderEntity metaOrder = order.getMetaOrder();		
+		if(isAllOtherOrdersRejected(order.getId(), metaOrder)) {
+			updateOrderStatus(metaOrder, STORE_CANCELLED);
 		}
 	}
 
@@ -1954,6 +2079,20 @@ public class OrderServiceImpl implements OrderService {
 				.filter(ord -> !Objects.equals(ord.getId(), orderId))
 				.allMatch(ord -> Objects.equals(STORE_CONFIRMED.getValue() , ord.getStatus()));
 	}
+	
+	
+	
+	
+	private boolean isAllOtherOrdersRejected(Long orderId, MetaOrderEntity metaOrder) {
+		return metaOrder
+				.getSubOrders()
+				.stream()
+				.filter(ord -> !Objects.equals(ord.getId(), orderId))
+				.allMatch(ord -> Objects.equals(STORE_CANCELLED.getValue() , ord.getStatus()));
+	}
+	
+	
+	
 
 	public ArrayList<OrdersEntity> getOrdersForMetaOrder(Long metaOrderId) {
 		if (metaOrderId == null) {
@@ -1967,7 +2106,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	@Override
-	@Transactional
+	@Transactional(rollbackFor = Throwable.class)
 	public Order checkoutCart(CartCheckoutDTO dto) throws IOException {
 		BaseUserEntity user = securityService.getCurrentUser();
 		if(user instanceof EmployeeUserEntity) {
@@ -1978,8 +2117,8 @@ public class OrderServiceImpl implements OrderService {
 
 		validateCartCheckoutDTO(dto);
 
-		MetaOrderEntity order = createMetaOrder(dto, user);
-
+		MetaOrderEntity order = createMetaOrder(dto);
+		
 		return getOrderResponse(order);
 	}
 
@@ -2019,13 +2158,14 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private MetaOrderEntity createMetaOrder(CartCheckoutDTO dto, BaseUserEntity user) {
+	private MetaOrderEntity createMetaOrder(CartCheckoutDTO dto) {
+		BaseUserEntity user = securityService.getCurrentUser();
 		AddressesEntity userAddress = 
 				addressRepo
 				.findByIdAndUserId(dto.getAddressId(), user.getId())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, dto.getAddressId()));
 
-		Map<Long, List<CartCheckoutData>> checkOutData = getAndValidateCheckoutData(user); 
+		Map<Long, List<CartCheckoutData>> checkOutData = getAndValidateCheckoutData(dto); 
 		MetaOrderEntity order = createOrder( checkOutData, userAddress, dto );
 		return order;
 	}
@@ -2034,10 +2174,13 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Map<Long, List<CartCheckoutData>> getAndValidateCheckoutData(BaseUserEntity user) {
-		List<CartCheckoutData> userCartItems = cartItemRepo.getCheckoutCartByUser_Id(user.getId());
+	private Map<Long, List<CartCheckoutData>> getAndValidateCheckoutData(CartCheckoutDTO checkoutDto) {
+		Cart optimizedCart = optimizeCartForCheckout(checkoutDto); 
+		List<CartCheckoutData> userCartItems = createCheckoutData(optimizedCart);
 
 		validateCartCheckoutItems(userCartItems);
+		
+		shippingManagementService.validateCartForShipping(userCartItems, checkoutDto);
 
 		Map<Long,List<CartCheckoutData>> checkOutData = 
 				userCartItems
@@ -2049,14 +2192,110 @@ public class OrderServiceImpl implements OrderService {
 	
 
 
+	private Cart optimizeCartForCheckout(CartCheckoutDTO checkoutDto) {
+		CartOptimizeDTO dto = createCartOptimizeDtoFromCheckoutDto(checkoutDto); 
+		CartOptimizeResponseDTO optimizationResult = optimizeCart(dto);
+		if(optimizationResult.getTotalChanged()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0004);
+		}
+		return optimizationResult.getCart();
+	}
+
+
+
+
+
+	private CartOptimizeDTO createCartOptimizeDtoFromCheckoutDto(CartCheckoutDTO checkoutDto) {
+		Map<Object, Object> parameters = new HashMap<>();
+		parameters.put("CUSTOMER_ADDRESS_ID", checkoutDto.getAddressId());
+		
+		ofNullable(checkoutDto)
+		.map(CartCheckoutDTO::getAdditionalData)
+		.map(data -> data.get(SHOP_ID))
+		.flatMap(EntityUtils::parseLongSafely)
+		.ifPresent(shopId -> parameters.put("SHOP_ID", shopId));
+		
+		CartOptimizeDTO dto = new CartOptimizeDTO();
+		dto.setStrategy(SAME_CITY);
+		dto.setParametersJson(parameters);
+		return dto;
+	}
+
+
+
+
+	@Override
+	public List<CartCheckoutData> createCheckoutData(Cart optimizedCart) {
+		List<Long> cartStocks = 
+				optimizedCart
+				.getItems()
+				.stream()
+				.map(CartItem::getStockId)
+				.collect(toList()); 
+		Map<Long, StockAdditionalData> stockAdditionalDataCache = 
+				stockRepository
+				.findAdditionalDataByStockIdIn(cartStocks)
+				.stream()
+				.collect(groupingBy(StockAdditionalData::getStockId))
+				.entrySet()
+				.stream()
+				.map(this::createStockAdditionalDataEntry)
+				.collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+		
+		return optimizedCart
+				.getItems()
+				.stream()
+				.map(item -> createCartCheckoutData(item, stockAdditionalDataCache))
+				.collect(toList());
+	}
+
+
+	
+	
+	private Map.Entry<Long, StockAdditionalData> createStockAdditionalDataEntry(Map.Entry<Long, List<StockAdditionalData>> entry){
+		StockAdditionalData data = 
+				entry
+				.getValue()
+				.stream()
+				.findFirst()
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, G$STK$0001, entry.getKey()));
+		return new SimpleEntry<Long, StockAdditionalData>(entry.getKey(), data);
+	}
+	
+	
+	
+	
+	
+	private CartCheckoutData createCartCheckoutData(CartItem item, Map<Long, StockAdditionalData> stockDataMap) {
+		StockAdditionalData stockData = 
+				ofNullable(item)
+				.map(CartItem::getStockId)
+				.map(stockDataMap::get)
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, G$STK$0001, item.getStockId()));
+		CartCheckoutData checkoutData = new CartCheckoutData();
+		checkoutData.setCurrency(stockData.getCurrency());
+		checkoutData.setFeatureSpec(stockData.getVariantSpecs());
+		checkoutData.setId(item.getId());
+		checkoutData.setOrganizationId(stockData.getOrganizationId());
+		checkoutData.setPrice(item.getPrice());
+		checkoutData.setProductName(stockData.getProductName());
+		checkoutData.setQuantity(item.getQuantity());
+		checkoutData.setShopAddress(stockData.getShopAddress());
+		checkoutData.setShopId(stockData.getShopId());
+		checkoutData.setStockId(item.getStockId());
+		checkoutData.setVariantBarcode(stockData.getVariantBarcode());
+		return checkoutData;
+	}
+
+
+
 	private Order getOrderResponse(MetaOrderEntity order) {
-		Map<Long, List<BasketItemDetails>> itemsMap =
-				getBasketItemsDetailsMap(order.getSubOrders().stream().map(OrdersEntity::getId).collect(toSet()));
+		List<ProductImageDTO> variantsImages = getVariantsImagesList(order);
 
 		Order orderDto = setMetaOrderBasicData(order);
 
-		List<SubOrder> subOrders = 	createSubOrderDtoList(order, itemsMap);
-				
+		List<SubOrder> subOrders = 	createSubOrderDtoList(order, variantsImages);
+
 		orderDto.setSubOrders(subOrders);
 		orderDto.setSubtotal(order.getSubTotal());
 		orderDto.setShipping(order.getShippingTotal());
@@ -2065,14 +2304,33 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+	private List<ProductImageDTO> getVariantsImagesList(MetaOrderEntity order) {
+		List<ProductVariantsEntity> allVariants = order.getSubOrders()
+				.stream()
+				.map(OrdersEntity::getBasketsEntity)
+				.flatMap(Set::stream)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getProductVariantsEntity)
+				.collect(toList());
+		List<Long> variantsIds = allVariants.stream()
+				.map(ProductVariantsEntity::getId)
+				.collect(toList());
+
+		List<Long> productsIds = allVariants.stream()
+				.map(ProductVariantsEntity::getProductEntity)
+				.map(ProductEntity::getId)
+				.collect(toList());
+		return imgService.getProductsAndVariantsImages(productsIds, variantsIds);
+	}
 
 
 
-	private List<SubOrder> createSubOrderDtoList(MetaOrderEntity order, Map<Long, List<BasketItemDetails>> itemsMap) {
+
+	private List<SubOrder> createSubOrderDtoList(MetaOrderEntity order, List<ProductImageDTO> variantsImages) {
 		return order
 		.getSubOrders()
 		.stream()
-		.map(subOrder -> getSubOrder(subOrder, itemsMap))
+		.map(subOrder -> getSubOrder(subOrder, variantsImages))
 		.collect(toList());
 	}
 
@@ -2085,6 +2343,10 @@ public class OrderServiceImpl implements OrderService {
 		order.setOrderId(metaOrder.getId());
 		order.setCurrency(getOrderCurrency(metaOrder));
 		order.setCreationDate(metaOrder.getCreatedAt());
+		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(metaOrder.getId());
+		if (payment.isPresent()) {
+			order.setOperator(payment.get().getOperator());
+		}
 		return order;
 	}
 
@@ -2101,7 +2363,7 @@ public class OrderServiceImpl implements OrderService {
 		if (user instanceof UserEntity) {
 			order = metaOrderRepo.findByIdAndUserIdAndOrganization_Id(orderId, user.getId(), orgId);
 		} else if (isNasnavAdmin) {
-			order = metaOrderRepo.findById(orderId);
+			order = metaOrderRepo.findByMetaOrderId(orderId);
 		} else {
 			order = metaOrderRepo.findByIdAndOrganization_Id(orderId, orgId);
 		}
@@ -2149,18 +2411,18 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private SubOrder getSubOrder(OrdersEntity order, Map<Long, List<BasketItemDetails>> itemsMap) {
+	private SubOrder getSubOrder(OrdersEntity order, List<ProductImageDTO> variantsImages) {
 
 		String status = 
 				ofNullable(findEnum(order.getStatus()))
 				.orElse(NEW)
 				.name();
 		
-		List<BasketItem> items = 
-				itemsMap
-				.get(order.getId())
+		List<BasketItem> items =
+				order
+				.getBasketsEntity()
 				.stream()
-				.map(this::toBasketItem)
+				.map(b -> toBasketItem(b, variantsImages))
 				.collect(toList());
 		
 		Shipment shipmentDto = (Shipment) order.getShipment().getRepresentation();
@@ -2196,7 +2458,6 @@ public class OrderServiceImpl implements OrderService {
 		if (dto.getServiceId() == null) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0002);
 		}
-		shippingManagementService.validateShippingAdditionalData(dto);
 	}
 
 
@@ -2519,24 +2780,43 @@ public class OrderServiceImpl implements OrderService {
 	@Transactional(rollbackFor = Throwable.class)
 	public <T> CartOptimizeResponseDTO optimizeCart(CartOptimizeDTO dto) {
 		validteCartOptimizeRequest(dto);
-		BigDecimal initialCartTotal = calculateCartTotal();
-		Optional<Cart> savedCart = 
-				createOptimizedCart(dto)
-				.map(this::replaceCart);				
-		boolean totalChanged = 
-				savedCart
-				.map(this::calculateCartTotal)
-				.map(total -> total.compareTo(initialCartTotal) != 0)
-				.orElse(false);
-		Cart returnedCart = savedCart.orElseGet(() -> getCart());
-		return new CartOptimizeResponseDTO(totalChanged, returnedCart);
+		Optional<OptimizedCart> optimizedCart = createOptimizedCart(dto);
+		boolean anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart);
+		Cart returnedCart = getCartObject(optimizedCart);
+		return new CartOptimizeResponseDTO(anyPriceChanged, returnedCart);
+	}
+
+
+
+
+
+	private Cart getCartObject(Optional<OptimizedCart> optimizedCart) {
+		return optimizedCart
+		.map(OptimizedCart::getCartItems)
+		.orElse(emptyList())
+		.stream()
+		.map(OptimizedCartItem::getCartItem)
+		.collect(collectingAndThen(toList(), Cart::new));
+	}
+
+
+
+
+
+	private boolean isAnyItemPriceChangedAfterOptimization(Optional<OptimizedCart> optimizedCart) {
+		return optimizedCart
+		.map(OptimizedCart::getCartItems)
+		.orElse(emptyList())
+		.stream()
+		.map(OptimizedCartItem::getPriceChanged)
+		.anyMatch(isPriceChanged -> isPriceChanged);
 	}
 
 
 
 
 	@SuppressWarnings("unchecked")
-	private <T> Optional<Cart> createOptimizedCart(CartOptimizeDTO dto) {
+	private <T> Optional<OptimizedCart> createOptimizedCart(CartOptimizeDTO dto) {
 		
 		CartOptimizer<T> optimizer = null;
 		try {
@@ -2692,6 +2972,149 @@ public class OrderServiceImpl implements OrderService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0006);
 		}else if(!isValidStrategy(strategy)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0007, strategy);
+		}
+	}
+
+
+
+
+
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public void rejectOrder(OrderRejectDTO dto) {
+		validateOrderRejectRequest(dto);
+		EmployeeUserEntity storeMgr = getAndValidateUser();
+		OrdersEntity subOrder = getAndValidateOrderForRejection(dto.getSubOrderId(), storeMgr);
+		
+		rejectSubOrderAndMetaOrder(subOrder);
+		
+		sendRejectionEmailToCustomer(subOrder, dto.getRejectionReason());
+	}
+
+
+
+
+
+	private void sendRejectionEmailToCustomer(OrdersEntity subOrder, String rejectionReason) {
+		
+		String to = subOrder.getMetaOrder().getUser().getEmail();
+		String subject = ORDER_REJECT_SUBJECT;
+		List<String> bcc = getOrganizationManagersEmails(subOrder);
+		Map<String,Object> parametersMap = createRejectionEmailParams(subOrder, rejectionReason);
+		String template = ORDER_REJECT_TEMPLATE;
+		try {
+			mailService.sendThymeleafTemplateMail(asList(to), subject, emptyList(), bcc, template, parametersMap);
+		} catch (IOException | MessagingException e) {
+			logger.error(e, e);
+		}
+	}
+
+
+
+
+
+	private void validateOrderRejectRequest(OrderRejectDTO dto) {
+		if(anyIsNull(dto, dto.getSubOrderId())) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RJCT$0001);	
+		}
+	}
+
+
+
+
+
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public void cancelOrder(Long metaOrderId) {
+		MetaOrderEntity order = 
+				metaOrderRepo
+				.findFullDataById(metaOrderId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0002, metaOrderId));
+		validateOrderForCancellation(order);
+		
+		cancelMetaOrderAndSubOrders(order);
+		
+		order.getSubOrders().forEach(this::sendOrderCancellationNotificationEmailToStoreManager);
+	}
+	
+	
+	
+	
+	
+	private void sendOrderCancellationNotificationEmailToStoreManager(OrdersEntity order) {
+		Long orderId = order.getId();
+		
+		List<String> to = getStoreManagersEmails(order);
+		String subject = format("Order[%d] was Cancelled!", orderId);
+		List<String> cc = getOrganizationManagersEmails(order);
+		Map<String,Object> parametersMap = createCancellationNotificationEmailParams(order);
+		String template = ORDER_CANCEL_NOTIFICATION_TEMPLATE;
+		try {
+			if(to.isEmpty()) {
+				to = cc;
+				cc = emptyList();
+			}
+			mailService.sendThymeleafTemplateMail(to, subject, cc, template, parametersMap);
+		} catch (IOException | MessagingException e) {
+			logger.error(e, e);
+		}
+	}
+	
+	
+	
+	private Map<String, Object> createCancellationNotificationEmailParams(OrdersEntity order) {
+		Map<String,Object> params = new HashMap<>();
+		String orderTime = 
+				DateTimeFormatter
+				.ofPattern("dd/MM/YYYY - hh:mm")
+				.format(order.getCreationDate());
+		String updateTime = 
+				DateTimeFormatter
+				.ofPattern("dd/MM/YYYY - hh:mm")
+				.format(order.getUpdateDate());
+		params.put("id", order.getId().toString());
+		params.put("creationTime", orderTime);
+		params.put("updateTime", updateTime);
+		params.put("orderPageUrl", buildDashboardPageUrl(order));
+		params.put("sub", order);
+		return params;
+	}
+
+
+
+
+
+	private void cancelMetaOrderAndSubOrders(MetaOrderEntity order) {
+		if( Objects.equals(order.getStatus(), FINALIZED.getValue())){
+			order.getSubOrders().forEach(this::returnOrderToStocks);
+		}
+		updateOrderStatus(order, CLIENT_CANCELLED);
+		order.getSubOrders().forEach(sub -> updateOrderStatus(sub, CLIENT_CANCELLED));
+	}
+
+
+
+
+
+	private void validateOrderForCancellation(MetaOrderEntity order) {
+		List<OrderStatus> acceptedStatuses = asList(CLIENT_CONFIRMED, FINALIZED);
+		Long currentUser = securityService.getCurrentUser().getId();
+		if(!Objects.equals(order.getUser().getId(), currentUser)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0003, order.getId());
+		}
+		OrderStatus status =
+				ofNullable(order.getStatus())
+				.map(OrderStatus::findEnum)
+				.orElse(CLIENT_CONFIRMED);
+		boolean areAllSubOrdersFinalized = 
+				order
+				.getSubOrders()
+				.stream()
+				.map(OrdersEntity::getStatus)
+				.map(OrderStatus::findEnum)
+				.allMatch(acceptedStatuses::contains);
+		if(!(acceptedStatuses.contains(status) && areAllSubOrdersFinalized)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CNCL$0002, order.getId(), status.toString());
 		}
 	}
 

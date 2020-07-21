@@ -76,23 +76,48 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (25
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (26, 72, 6);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (27, 73, 6);
 
+
+
+--inserting meta orders
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310033 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310037 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310038 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310039 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310040 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310041 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310042 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310043 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310034 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310035 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310036 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310044 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310045 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310046 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310047 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310048 , now(),88, 99001, 8);
+
+
+
 --inserting orders
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330033, 88, now(), now(), 99001, 0, 502);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330037, 88, now(), now(), 99002, 0, 501);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330038, 90, now(), now(), 99002, 1, 501);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330039, 88, now(), now(), 99001, 3, 501);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330040, 88, now(), now(), 99001, 1, 503);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330041, 90, now(), now(), 99001, 1, 502);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330042, 88, now(), now(), 99001, 2, 502);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330043, 88, now(), now(), 99002, 3, 502);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330034, 89, now(), now(), 99003, 0, 504);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330035, 89, now(), now(), 99002, 0, 501);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330036, 90, now(), now(), 99003, 3, 504);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330044, 89, now(), now(), 99003, 1, 505);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330045, 89, now(), now(), 99001, 0, 502);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330046, 90, now(), now(), 99003, 1, 505);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330047, 89, now(), now(), 99001, 1, 502);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id) values(330048, 89, now(), now(), 99002, 0, 502);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330033, 88, now(), now(), 99001, 0, 502, 310033);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330037, 88, now(), now(), 99002, 0, 501, 310037);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330038, 90, now(), now(), 99002, 1, 501, 310038);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330039, 88, now(), now(), 99001, 3, 501, 310039);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330040, 88, now(), now(), 99001, 1, 503, 310040);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330041, 90, now(), now(), 99001, 1, 502, 310041);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330042, 88, now(), now(), 99001, 2, 502, 310042);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330043, 88, now(), now(), 99002, 3, 502, 310043);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330034, 89, now(), now(), 99003, 0, 504, 310034);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330035, 89, now(), now(), 99002, 0, 501, 310035);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330036, 90, now(), now(), 99003, 3, 504, 310036);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330044, 89, now(), now(), 99003, 1, 505, 310044);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330045, 89, now(), now(), 99001, 0, 502, 310045);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330046, 90, now(), now(), 99003, 1, 505, 310046);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330047, 89, now(), now(), 99001, 1, 502, 310047);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330048, 89, now(), now(), 99002, 0, 502, 310048);
+
+
+
 
 
 

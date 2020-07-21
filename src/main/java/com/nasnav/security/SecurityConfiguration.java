@@ -10,6 +10,7 @@ import static com.nasnav.enumerations.Roles.STORE_ADMIN;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpMethod.PUT;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -85,11 +86,14 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/360view/**"					,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/order"							,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/order/confirm"					,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
+						patternOf( "/order/reject"					,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
+						patternOf( "/order/cancel"					,HttpMethod.POST	, setOf(CUSTOMER)),
 						patternOf( "/order/meta_order/list/user"	,HttpMethod.GET		, setOf(CUSTOMER)),
 						patternOf( "/order/**"),
 						patternOf( "/stock/**"	 										, getNonCustomersRoles() ),
 						patternOf( "/shop/**"											, setOf(ORGANIZATION_MANAGER, STORE_MANAGER) ),
 						patternOf( "/user/list"),
+						patternOf( "/user/address"					,PUT                , setOf(CUSTOMER)),
 						patternOf( "/user/info"),
 						patternOf( "/user/create"										, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN, STORE_ADMIN) ),
 						patternOf( "/user/update"										, getAllRoles() ),
@@ -160,7 +164,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/js/**")
                         , patternOf("/css/**")
                         , patternOf("/files/**"							, HttpMethod.GET)
-                        , patternOf("/error/**"							, HttpMethod.GET)	
+                        , patternOf("/error/**"							, HttpMethod.GET)
                  );
 
     AuthenticationProvider provider;

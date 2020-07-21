@@ -2,6 +2,7 @@ package com.nasnav.test;
 
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
+import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
@@ -12,6 +13,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
@@ -46,6 +48,7 @@ import com.nasnav.NavBox;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
@@ -307,6 +310,48 @@ public class CartTest {
 	public void checkoutCartSuccess() {
 		checkoutCart();
 	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_7.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithAutoOptimizationSuccess() {
+		JSONObject requestBody = createCartCheckoutBody();
+		Order order = checkOutCart(requestBody, new BigDecimal("8151"), new BigDecimal("8100") ,new BigDecimal("51"));
+		
+		List<BasketItem> items = 
+				order
+				.getSubOrders()
+				.stream()
+				.map(SubOrder::getItems)
+				.flatMap(List::stream)
+				.collect(toList());
+		List<Long> orderStocks = items.stream().map(BasketItem::getStockId).collect(toList());
+		assertEquals(3, items.size());
+		assertTrue("The optimization should pick 2 stocks from a shop in cairo that has the largest average stock quantity, "
+				+ "and the third remaining stock from another shop in cairo with less stock quantity."
+				+ " as the prices didn't change, the optimization will be done silently."
+					, asList(607L, 608L, 612L).stream().allMatch(orderStocks::contains));
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_8.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithFailedOptimization() {
+		JSONObject requestBody = createCartCheckoutBody();
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
+		
+		assertEquals("failure in optimization due to different prices will return an error.", 406, res.getStatusCodeValue());
+	}
 
 
 
@@ -506,6 +551,61 @@ public class CartTest {
 	
 	
 	
+	
+// TODO: make this test work with a swtich flag, that either make it work on bosta
+	//staging server + mail.nasnav.org mail server
+	//or make it work on mock bosta server + mock mail service
+//	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_4.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void orderRejectCompleteCycle() throws BusinessException {
+
+		addCartItems(88L, 602L, 2);
+		addCartItems(88L, 604L, 1);
+		
+		//checkout
+		JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest();
+
+		Order order = checkOutCart(requestBody, new BigDecimal("3125"), new BigDecimal("3100"), new BigDecimal("25"));
+		Long orderId = order.getOrderId();
+		
+		orderService.finalizeOrder(orderId);
+		
+		asList(new ShopManager(502L, "161718"), new ShopManager(501L,"131415"))
+		.forEach(mgr -> rejectOrder(order, mgr));
+	}
+	
+	
+	
+	
+	
+	// TODO: make this test work with a swtich flag, that either make it work on bosta
+	//staging server + mail.nasnav.org mail server
+	//or make it work on mock bosta server + mock mail service
+//		@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_4.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void orderCancelCompleteCycle() throws BusinessException {
+
+		addCartItems(88L, 602L, 2);
+		addCartItems(88L, 604L, 1);
+		
+		//checkout
+		JSONObject requestBody = createCartCheckoutBodyForCompleteCycleTest();
+
+		Order order = checkOutCart(requestBody, new BigDecimal("3125"), new BigDecimal("3100"), new BigDecimal("25"));
+		Long orderId = order.getOrderId();
+		
+		orderService.finalizeOrder(orderId);
+		
+		HttpEntity<?> request = getHttpEntity("123");
+		ResponseEntity<String> res = template.postForEntity("/order/cancel?meta_order_id="+orderId, request, String.class);
+		assertEquals(OK, res.getStatusCode());
+	}
+	
+	
+	
+	
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_5.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -531,7 +631,8 @@ public class CartTest {
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_6.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void optimizeCartSameCityTest() {
-		
+		Long userId = 88L;
+		Cart initialCart = orderService.getUserCart(userId);
 		//---------------------------------------------------------------		
 		String requestBody = 
 				json()
@@ -550,10 +651,15 @@ public class CartTest {
 				cart.getItems().stream().map(CartItem::getStockId).collect(toList());
 		
 		assertEquals(OK, res.getStatusCode());
-		assertTrue(res.getBody().getTotalChanged());		
 		assertEquals(2, cart.getItems().size());
 		assertTrue("The optimization should pick stocks from a shop in cairo that can provide most items"
 					, asList(607L, 609L).stream().allMatch(stockIdsAfter::contains));
+		assertTrue(res.getBody().getTotalChanged());		
+		
+		//---------------------------------------------------------------
+		Cart cartAfter = orderService.getUserCart(userId);
+		
+		assertEquals(initialCart, cartAfter);
 	}
 	
 	
@@ -656,7 +762,7 @@ public class CartTest {
 		assertFalse("prices doesn't change", res.getBody().getTotalChanged());		
 		assertEquals(3, cart.getItems().size());
 		assertTrue("The optimization should pick the stocks from a the given shop , but the shop doesn't "
-				+ "have enougj quantity for first item, so , it will pickit from the shop next in priority "
+				+ "have enough quantity for first item, so , it will pick it from the shop next in priority "
 				+ " which should be in the same city and with highest average stock."
 					, asList(607L, 611L, 612L).stream().allMatch(stockIdsAfter::contains));
 	}
@@ -766,6 +872,36 @@ public class CartTest {
 		assertNotNull(shipment.getExternalId());
 		assertEquals(STORE_CONFIRMED.getValue(), orderEntity.getStatus());
 	}
+	
+	
+	
+	
+	private void rejectOrder(Order order, ShopManager mgr) {
+		Long subOrderId = getSubOrderIdOfShop(order, mgr.getShopId());
+		HttpEntity<?> request = createOrderRejectRequest(subOrderId, "oops!", mgr.getManagerAuthToken()); 
+		template.postForEntity("/order/reject" , request, String.class);
+		
+		OrdersEntity orderEntity = orderRepo.findByIdAndShopsEntity_Id(subOrderId, mgr.getShopId()).get();
+		ShipmentEntity shipment = orderEntity.getShipment();
+		
+		assertNull(shipment.getTrackNumber());
+		assertNull(shipment.getExternalId());
+		assertEquals(STORE_CANCELLED.getValue(), orderEntity.getStatus());
+	}
+	
+	
+	
+	
+	private HttpEntity<?> createOrderRejectRequest(Long orderId, String rejectionReason, String authToken) {
+		String requestBody = 
+				json()
+				.put("sub_order_id", orderId)
+				.put("rejection_reason", rejectionReason)
+				.toString();
+		return getHttpEntity(requestBody, authToken);
+	}
+	
+	
 
 
 	private Long getSubOrderIdOfShop(Order order, Long shopId) {

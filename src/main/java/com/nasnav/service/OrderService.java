@@ -8,6 +8,7 @@ import java.util.List;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.MetaOrderBasicInfo;
 import com.nasnav.dto.OrderJsonDto;
+import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.cart.CartOptimizeDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
@@ -15,10 +16,12 @@ import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
+import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
@@ -40,6 +43,7 @@ public interface OrderService {
 	}
 
 	String BILL_EMAIL_SUBJECT = "Your Order has been Created!";
+	String ORDER_REJECT_SUBJECT = "Sorry! Your Order has been rejected!";
 
 	public OrderResponse createNewOrder(OrderJsonDto orderJson) throws BusinessException;
 
@@ -81,4 +85,14 @@ public interface OrderService {
 	List<ShopFulfillingCart> getShopsThatCanProvideCartItems();
 
 	List<ShopFulfillingCart> getShopsThatCanProvideWholeCart();
-	}
+
+	public void rejectOrder(OrderRejectDTO dto);
+
+	Cart getUserCart(Long userId);
+
+	public void cancelOrder(Long metaOrderId);
+
+	List<CartCheckoutData> createCheckoutData(Cart cart);
+
+	OrdersEntity updateOrderStatus(OrdersEntity orderEntity, OrderStatus newStatus);
+}

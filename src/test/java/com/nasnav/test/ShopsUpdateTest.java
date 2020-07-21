@@ -282,7 +282,7 @@ public class ShopsUpdateTest {
         // delete shop 505 linked to shop360
         response = template.exchange("/shop/delete?shop_id=505",
                                     DELETE, request, String.class);
-        assertEquals(406, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCodeValue());
 
         // delete shop 502 linked to employee
         response = template.exchange("/shop/delete?shop_id=502",

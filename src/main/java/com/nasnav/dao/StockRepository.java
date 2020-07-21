@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 
 import com.nasnav.dto.Prices;
 import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.dto.query.result.StockAdditionalData;
+
 import org.springframework.transaction.annotation.Transactional;
 
 public interface StockRepository extends CrudRepository<StocksEntity, Long> {
@@ -108,6 +110,18 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 
 
 	List<StocksEntity> findByIdInAndOrganizationEntity_Id(List<Long> itemStocks, Long orgId);
+	
+	
+	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.StockAdditionalData("
+			+ " stock.id, stock.currency, "
+			+ " variant.barcode,  product.name, variant.featureSpec, shop.id, address, product.organizationId) "
+			+ " FROM StocksEntity stock "
+			+ " LEFT JOIN stock.productVariantsEntity variant "
+			+ " INNER JOIN variant.productEntity product "
+			+ " LEFT JOIN stock.shopsEntity shop "
+			+ " LEFT JOIN shop.addressesEntity address"
+			+ " WHERE stock.id in :stockIds and product.removed = 0 And variant.removed = 0")
+	List<StockAdditionalData> findAdditionalDataByStockIdIn(@Param("stockIds")List<Long> stockIds);
 
 	@Transactional
 	@Modifying
@@ -115,6 +129,12 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 			+ " WHERE stock.shopsEntity.id = :shopId")
 	void deleteByShopsEntity_Id(@Param("shopId") Long shopId);
 
+	@Transactional
+	@Modifying
+	@Query(value = "update StocksEntity s set s.quantity = 0 where s.shopsEntity.id = :shopId")
+	void setStocksQuantityZero(@Param("shopId") Long shopId);
 
 	Long countByShopsEntity_Id(long shopId);
+
+
 }

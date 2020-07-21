@@ -57,4 +57,10 @@ public class DetailedOrderRepObject extends BaseRepresentationObject{
 
     @JsonProperty("items")
     private List<BasketItem> items;
+    
+    @JsonProperty("meta_order_id")
+    private Long metaOrderId;
+    
+    @JsonProperty("shipping_status")
+    private String shippingStatus;
 }

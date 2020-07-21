@@ -113,31 +113,33 @@ INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(1001, null, 7, 0, '99001/cover_img2.jpg');
 
 
+--inserting meta orders
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 8);
 
 
 --inserting orders
 INSERT INTO public.orders
-(id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status, total)
-VALUES(330002,'', '', '', 0, 88, now(), now(), now(), 99001, 1, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 600.00, 0, 600.00);
+(id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status, total, meta_order_id)
+VALUES(330002,'', '', '', 0, 88, now(), now(), now(), 99001, 1, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 600.00, 0, 600.00, 310001);
 
 
 INSERT INTO public.orders
-(id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status, total)
-VALUES(330003,'', '', '', 0, 88, now(), now()+interval '2 day', now(), 99001, 0, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 300.00, 0, 300.00);
+(id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status, total, meta_order_id)
+VALUES(330003,'', '', '', 0, 88, now(), now()+interval '2 day', now(), 99001, 0, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 300.00, 0, 300.00, 310001);
 
 
 INSERT INTO public.orders
-(id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status, total)
-VALUES(330004,'', '', '', 0, 89, now(), now()+ interval '1 day', now(), 99002, 0, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 200.00, 0, 200.00);
+(id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status, total, meta_order_id)
+VALUES(330004,'', '', '', 0, 89, now(), now()+ interval '1 day', now(), 99002, 0, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 200.00, 0, 200.00, 310001);
 
 INSERT INTO public.orders
-(id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status, total)
-VALUES(330005,'', '', '', 0, 89, now(), now()+interval '3 day', now(), 99002, 0, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 50.00, 0, 50.00);
+(id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status, total, meta_order_id)
+VALUES(330005,'', '', '', 0, 89, now(), now()+interval '3 day', now(), 99002, 0, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 50.00, 0, 50.00, 310001);
 
 
 INSERT INTO public.orders
-(id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status, total)
-VALUES(330006,'', '', '', 0, 90, now(), now()+interval '4 day', now(), 99003, 1, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 100.00, 0, 100.00);
+(id,address, email, "name", payment_type, user_id, created_at, updated_at, date_delivery, organization_id, status, cancelation_reasons, shop_id, driver_name, equipped, basket, amount, payment_status, total, meta_order_id)
+VALUES(330006,'', '', '', 0, 90, now(), now()+interval '4 day', now(), 99003, 1, '{}'::character varying[], 502, 'zeko', false, '{}'::text, 100.00, 0, 100.00, 310001);
 
 
 

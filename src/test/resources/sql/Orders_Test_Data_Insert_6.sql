@@ -120,10 +120,10 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 
 
 --inserting orders
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 1);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 8);
 
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
-values(330031, 88, now(), now(), 99001, 1, 501, 310001, 12300001);
+values(330031, 88, now(), now(), 99001, 8, 501, 310001, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
 values(330032, 88, now(), now(), 99002, 2, 502, 310001, 12300001);
 

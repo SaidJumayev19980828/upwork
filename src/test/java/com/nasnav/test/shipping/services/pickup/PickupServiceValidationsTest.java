@@ -7,6 +7,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Before;
@@ -26,6 +27,8 @@ import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.UserEntity;
+import com.nasnav.persistence.dto.query.result.CartCheckoutData;
+import com.nasnav.service.OrderService;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.ShippingManagementService;
 
@@ -46,6 +49,8 @@ public class PickupServiceValidationsTest {
 	@Autowired
 	private ShippingManagementService shippingMgr;
 	
+	@Autowired
+	private OrderService orderService;
 	
 	@Before
 	public void initMocks() {
@@ -69,13 +74,20 @@ public class PickupServiceValidationsTest {
 		dto.setAddressId(customerAddress);
 		dto.setServiceId("PICKUP");
 		dto.setAdditionalData(params);
-		shippingMgr.validateShippingAdditionalData(dto);
+		List<CartCheckoutData> cartCheckoutData = getCheckoutDataFromCurrentCart();
+		shippingMgr.validateCartForShipping(cartCheckoutData, dto);
 		assertTrue("validate shipment, normal case, all items in an allowed shop", true);
 	}
 
 
 
 	
+	private List<CartCheckoutData> getCheckoutDataFromCurrentCart() {
+		return orderService.createCheckoutData(orderService.getCart());
+	}
+
+
+
 	@Test(expected = RuntimeBusinessException.class)
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_4.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
@@ -90,7 +102,8 @@ public class PickupServiceValidationsTest {
 		dto.setAddressId(customerAddress);
 		dto.setServiceId("PICKUP");
 		dto.setAdditionalData(params);
-		shippingMgr.validateShippingAdditionalData(dto);
+		List<CartCheckoutData> cartCheckoutData = getCheckoutDataFromCurrentCart();
+		shippingMgr.validateCartForShipping(cartCheckoutData, dto);
 		assertFalse("validate shipment, items at different shops", true);
 	}
 	
@@ -112,7 +125,8 @@ public class PickupServiceValidationsTest {
 		dto.setAddressId(customerAddress);
 		dto.setServiceId("PICKUP");
 		dto.setAdditionalData(params);
-		shippingMgr.validateShippingAdditionalData(dto);
+		List<CartCheckoutData> cartCheckoutData = getCheckoutDataFromCurrentCart();
+		shippingMgr.validateCartForShipping(cartCheckoutData, dto);
 		assertFalse("validate shipment, shop not allowed", true);
 	}
 	
@@ -130,7 +144,8 @@ public class PickupServiceValidationsTest {
 		dto.setServiceId("PICKUP");
 		dto.setAdditionalData(params);
 		
-		shippingMgr.validateShippingAdditionalData(dto);
+		List<CartCheckoutData> cartCheckoutData = getCheckoutDataFromCurrentCart();
+		shippingMgr.validateCartForShipping(cartCheckoutData, dto);
 		assertFalse("validate shipment, no shop provided", true);
 	}
 }

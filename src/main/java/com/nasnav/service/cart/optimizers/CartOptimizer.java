@@ -2,9 +2,8 @@ package com.nasnav.service.cart.optimizers;
 
 import java.util.Optional;
 
-import com.nasnav.dto.response.navbox.Cart;
-
 public interface CartOptimizer<T> {
-	Optional<Cart> createOptimizedCart(Optional<T> parameters);
+	//TODO: i think it is better to make the optimized take the cart from upper layers instead of fetching it.
+	Optional<OptimizedCart> createOptimizedCart(Optional<T> parameters);
 	Class<? extends T> getParameterClass();
 }
