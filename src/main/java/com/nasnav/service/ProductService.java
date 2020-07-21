@@ -598,10 +598,7 @@ public class ProductService {
 				template.query(stocks.getSQL().getSQL(),
 						new BeanPropertyRowMapper<>(ProductRepresentationObject.class));
 
-		String searchName = ofNullable(params.name).map(String::toLowerCase).orElse("");
-		List<TagsRepresentationObject> collections = categoryService.findCollections(searchName, params.org_id);
-
-		return getProductResponseFromStocks(result, productsCount, collections);
+		return getProductResponseFromStocks(result, productsCount);
 	}
 
 
@@ -898,13 +895,12 @@ public class ProductService {
 		if (ProductSortOptions.getProductSortOptions(sort) == ProductSortOptions.PRICE)
 			sortByPrice(productsRep, order);
 
-		return new ProductsResponse(productsCount, productsRep, new ArrayList<>());
+		return new ProductsResponse(productsCount, productsRep);
 
 	}
 
 	private ProductsResponse getProductResponseFromStocks(List<ProductRepresentationObject> stocks,
-														  Long productsCount,
-														  List<TagsRepresentationObject> collections) {
+														  Long productsCount) {
 		if(stocks != null && !stocks.isEmpty()) {
 			List<Long> stocksIds = stocks.stream()
 					.map(ProductRepresentationObject::getStockId)
@@ -935,7 +931,7 @@ public class ProductService {
 					.collect(toList());
 		}
 
-		return new ProductsResponse(productsCount, stocks, collections);
+		return new ProductsResponse(productsCount, stocks);
 
 	}
 
