@@ -336,7 +336,7 @@ public class OrderServiceImpl implements OrderService {
 		buildMap(orderStateMachine)
 			.put(CLIENT_CONFIRMED	, setOf(CLIENT_CANCELLED, FINALIZED))
 			.put(FINALIZED	 		, setOf(STORE_CONFIRMED, STORE_CANCELLED, CLIENT_CANCELLED))
-			.put(STORE_CONFIRMED	, setOf(STORE_PREPARED, STORE_CANCELLED))
+			.put(STORE_CONFIRMED	, setOf(STORE_PREPARED, STORE_CANCELLED, DISPATCHED))
 			.put(STORE_PREPARED		, setOf(DISPATCHED, STORE_CANCELLED))
 			.put(DISPATCHED			, setOf(DELIVERED, STORE_CANCELLED));
 	}
@@ -1086,8 +1086,8 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
-	
-	private OrdersEntity updateOrderStatus(OrdersEntity orderEntity, OrderStatus newStatus) {
+	@Override
+	public OrdersEntity updateOrderStatus(OrdersEntity orderEntity, OrderStatus newStatus) {
 		OrderStatus currentStatus = findEnum(orderEntity.getStatus());
 
 		if(!canOrderStatusChangeTo(currentStatus, newStatus)) {
