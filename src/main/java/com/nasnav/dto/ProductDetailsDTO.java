@@ -19,6 +19,8 @@ public class ProductDetailsDTO extends ProductRepresentationObject {
 	
 	private String description;
 	private Integer productType;
+	private String sku;
+	private String productCode;
 	private List<ProductImageDTO> images;
 	private List<VariantDTO> variants;
 	private List<VariantFeatureDTO> variantFeatures;

@@ -2480,6 +2480,8 @@ public class ProductService {
 		productRep.setCreationDate(Optional.ofNullable(product.getCreationDate().toString()).orElse(null));
 		productRep.setUpdateDate(Optional.ofNullable(product.getUpdateDate().toString()).orElse(null));
 		productRep.setHas_360_view(product.getSearch360());
+		productRep.setSku(product.getSku());
+		productRep.setProductCode(product.getProductCode());
 	}
 
 	
