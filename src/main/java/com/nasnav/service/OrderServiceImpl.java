@@ -97,6 +97,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
+import static javax.persistence.criteria.JoinType.LEFT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -122,6 +123,7 @@ import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
@@ -1598,10 +1600,13 @@ public class OrderServiceImpl implements OrderService {
 		CriteriaBuilder builder = em.getCriteriaBuilder();
 		CriteriaQuery<OrdersEntity> query = builder.createQuery(OrdersEntity.class);
 		Root<OrdersEntity> root = query.from(OrdersEntity.class);
-
+		root.fetch("metaOrder", LEFT);
+		
 		Predicate[] predicatesArr = getOrderQueryPredicates(params, builder, root);
 
-		query.where(predicatesArr).orderBy(builder.desc(root.get("updateDate")));
+		query
+		.where(predicatesArr)
+		.orderBy(builder.desc(root.get("updateDate")));
 		
 		return query;
 	}
@@ -2073,22 +2078,25 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	private boolean isAllOtherOrdersConfirmed(Long orderId, MetaOrderEntity metaOrder) {
-		return metaOrder
-				.getSubOrders()
-				.stream()
-				.filter(ord -> !Objects.equals(ord.getId(), orderId))
-				.allMatch(ord -> Objects.equals(STORE_CONFIRMED.getValue() , ord.getStatus()));
+		return isAllOtherOrdersHaveStatus(orderId, metaOrder, STORE_CONFIRMED);
 	}
 	
 	
 	
 	
 	private boolean isAllOtherOrdersRejected(Long orderId, MetaOrderEntity metaOrder) {
+		return isAllOtherOrdersHaveStatus(orderId, metaOrder, STORE_CANCELLED);
+	}
+	
+	
+	
+	
+	private boolean isAllOtherOrdersHaveStatus(Long orderId, MetaOrderEntity metaOrder, OrderStatus status) {
 		return metaOrder
 				.getSubOrders()
 				.stream()
 				.filter(ord -> !Objects.equals(ord.getId(), orderId))
-				.allMatch(ord -> Objects.equals(STORE_CANCELLED.getValue() , ord.getStatus()));
+				.allMatch(ord -> Objects.equals(status.getValue() , ord.getStatus()));
 	}
 	
 	
