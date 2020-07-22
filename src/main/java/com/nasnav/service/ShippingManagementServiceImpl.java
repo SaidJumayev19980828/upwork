@@ -669,6 +669,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 
 	@Override
+	@Transactional(rollbackOn = Throwable.class)
     public void updateShipmentStatus(String serviceId, Long orgId, String params) throws IOException {
 		ShippingService shippingService = getShippingService(serviceId, orgId);
 		ShipmentStatusData shippingStatusData = shippingService.createShipmentStatusData(serviceId, orgId, params);
@@ -681,8 +682,9 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 							, shippingStatusData.getExternalShipmentId()
 							, shippingStatusData.getOrgId())
 							.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, SHP$SRV$0009));
-			updateShipmentStatus(shippingStatusData, shipment);
+			shipment = updateShipmentStatus(shippingStatusData, shipment);
 			updateOrderStatus(shippingStatusData, shipment.getSubOrder());
+			logger.info("updated shipment status for service[{}] and org[{}] with params[{}]", serviceId, orgId, params);
 		} else {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$PARS$0001);
 		}
@@ -698,9 +700,9 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 
 
-	private void updateShipmentStatus(ShipmentStatusData data, ShipmentEntity shipment) {
+	private ShipmentEntity updateShipmentStatus(ShipmentStatusData data, ShipmentEntity shipment) {
 		shipment.setStatus(data.getState());
-		shipmentRepo.save(shipment);
+		return shipmentRepo.save(shipment);
 	}
 
 

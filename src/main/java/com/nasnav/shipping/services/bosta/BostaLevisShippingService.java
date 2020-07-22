@@ -39,6 +39,7 @@ import java.util.stream.IntStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.reactive.function.client.ClientResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -128,6 +129,9 @@ public class BostaLevisShippingService implements ShippingService{
 	private static final List<Integer> failedStateMapping = asList(55, 80);
 
 	
+	
+	@Autowired
+	private ObjectMapper objectMapper;
 	
 	public BostaLevisShippingService() {
 		paramMap = new HashMap<>();
@@ -488,9 +492,8 @@ public class BostaLevisShippingService implements ShippingService{
 	@Override
 	public ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params){
 		BostaCallbackDTO body;
-		ObjectMapper jsonMapper = new ObjectMapper();
 		try {
-			body = jsonMapper.readValue(params, BostaCallbackDTO.class);
+			body = objectMapper.readValue(params, BostaCallbackDTO.class);
 		} catch (IOException e) {
 			logger.error(e, e);
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$JSON$0001);
