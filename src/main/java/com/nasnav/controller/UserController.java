@@ -299,4 +299,16 @@ public class UserController {
         return userService.updateUserAddress(address);
     }
 
+
+    @ApiOperation(value = "delete user address", nickname = "deleteUserAddress")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Address removed"),
+            @io.swagger.annotations.ApiResponse(code = 404, message = "Address not found"),
+    })
+    @DeleteMapping(value = "/address")
+    public void updateUserAddress(@RequestHeader (name = "User-Token", required = false) String token,
+                                  @RequestParam Long id)  {
+        userService.removeUserAddress(id);
+    }
+
 }

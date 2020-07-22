@@ -347,6 +347,15 @@ public class UserServiceImpl implements UserService {
 	}
 
 
+	@Override
+	public void removeUserAddress(Long id) {
+		UserEntity user = (UserEntity) securityService.getCurrentUser();
+		if (addressRepo.countByUserIdAndAddressId(id, user.getId()) == 0)
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, id);
+
+		addressRepo.unlinkAddressFromUser(id, user.getId());
+	}
+
 
 	private AddressDTO setUserAddresses(AddressDTO addressDTO, UserEntity userEntity) {
 		AddressesEntity address = new AddressesEntity();
