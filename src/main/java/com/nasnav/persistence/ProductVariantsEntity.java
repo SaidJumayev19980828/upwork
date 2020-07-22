@@ -65,6 +65,10 @@ public class ProductVariantsEntity {
     @Column(name="removed")
     private Integer removed;
     
+    private String sku;
+
+    @Column(name = "product_code")
+    private String productCode;
 
     @ManyToOne(cascade = CascadeType.DETACH, fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", referencedColumnName = "id")

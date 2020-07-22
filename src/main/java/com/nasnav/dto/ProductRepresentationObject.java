@@ -3,7 +3,6 @@ package com.nasnav.dto;
 import java.math.BigDecimal;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
@@ -31,6 +30,4 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private String updateDate;
     private Long quantity;
     private Boolean has_360_view;
-    private String sku;
-    private String productCode;
 }
