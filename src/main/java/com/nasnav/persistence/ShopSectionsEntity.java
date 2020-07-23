@@ -58,8 +58,7 @@ public class ShopSectionsEntity implements BaseEntity {
         section.setId(getId());
         section.setName(getName());
 
-        List<ShopScenesEntity> scenesEntities = getShopScenes().stream().collect(toList());
-        section.setShopScenes(scenesEntities.stream()
+        section.setShopScenes(getShopScenes().stream()
                                              .map(scene -> (ShopScenesDTO) scene.getRepresentation())
                                              .sorted(comparing(ShopScenesDTO::getId))
                                              .collect(toList()));

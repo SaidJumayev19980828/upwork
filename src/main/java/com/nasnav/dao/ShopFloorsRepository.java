@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface ShopFloorsRepository extends CrudRepository<ShopFloorsEntity, Long> {
 
-    List<ShopFloorsEntity> findByShopThreeSixtyEntity_IdOrderById(Long shopId);
+    List<ShopFloorsEntity> findByShopThreeSixtyEntity_Id(Long shopId);
 
     @Transactional
     void deleteByShopThreeSixtyEntity_IdAndOrganizationEntity_id(Long shopId, Long orgId);
