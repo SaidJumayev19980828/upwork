@@ -1967,6 +1967,7 @@ public class OrderServiceImpl implements OrderService {
 		itemDto.setProductId(itemData.getProductId());
 		itemDto.setVariantId(itemData.getVariantId());
 		itemDto.setStockId(itemData.getStockId());
+		itemDto.setDiscount(itemData.getDiscount());
 		
 		return itemDto;
 	}
@@ -2315,6 +2316,7 @@ public class OrderServiceImpl implements OrderService {
 		checkoutData.setShopId(stockData.getShopId());
 		checkoutData.setStockId(item.getStockId());
 		checkoutData.setVariantBarcode(stockData.getVariantBarcode());
+		checkoutData.setDiscount(stockData.getDiscount());
 		return checkoutData;
 	}
 
@@ -2331,6 +2333,7 @@ public class OrderServiceImpl implements OrderService {
 		orderDto.setSubtotal(order.getSubTotal());
 		orderDto.setShipping(order.getShippingTotal());
 		orderDto.setTotal(order.getGrandTotal());
+		orderDto.setDiscount(order.getDiscounts());
 		return orderDto;
 	}
 
@@ -2478,6 +2481,7 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setTotalQuantity(totalQuantity);
 		subOrder.setTotal(order.getTotal());
 		subOrder.setSubtotal(order.getAmount());
+		subOrder.setDiscount(order.getDiscounts());
 		return subOrder;
 	}
 
@@ -2501,6 +2505,7 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal subTotal = calculateSubTotal(subOrders);
 		BigDecimal shippingFeeTotal = calculateShippingTotal(subOrders);
 		BigDecimal total = calculateTotal(subOrders);
+		BigDecimal discounts = calculateDiscounts(subOrders);
 		
 		MetaOrderEntity order = new MetaOrderEntity();
 		order.setOrganization(org);
@@ -2509,8 +2514,21 @@ public class OrderServiceImpl implements OrderService {
 		order.setGrandTotal(total);
 		order.setSubTotal(subTotal);
 		order.setShippingTotal(shippingFeeTotal);
+		order.setDiscounts(discounts);
 		subOrders.forEach(order::addSubOrder);
 		return metaOrderRepo.save(order);
+	}
+
+
+
+
+
+	private BigDecimal calculateDiscounts(Set<OrdersEntity> subOrders) {
+		return subOrders
+				.stream()
+				.map(OrdersEntity::getDiscounts)
+				.map(discount -> ofNullable(discount).orElse(ZERO))
+				.reduce(ZERO, BigDecimal::add);
 	}
 
 
@@ -2612,7 +2630,8 @@ public class OrderServiceImpl implements OrderService {
 				.map(ShipmentEntity::getShippingFee)
 				.orElse(ZERO);
 		BigDecimal subTotal = ofNullable(subOrder.getAmount()).orElse(ZERO);
-		return subTotal.add(shippingFee);
+		BigDecimal discount = ofNullable(subOrder.getDiscounts()).orElse(ZERO);
+		return subTotal.add(shippingFee).subtract(discount);
 	}
 
 
@@ -2728,6 +2747,7 @@ public class OrderServiceImpl implements OrderService {
 										CartItemsForShop cartItems) {
 		UserEntity user = (UserEntity) securityService.getCurrentUser();
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
+		BigDecimal discounts = calculateDiscounts(cartItems);
 		
 		OrdersEntity subOrder = new OrdersEntity();
 		subOrder.setName(user.getName());
@@ -2736,9 +2756,37 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setOrganizationEntity(org);
 		subOrder.setAddressEntity(shippingAddress);
 		subOrder.setStatus(CLIENT_CONFIRMED.getValue());
+		subOrder.setDiscounts(discounts);
 		
 		return subOrder;
 	}
+
+
+	private BigDecimal calculateDiscounts(CartItemsForShop cartItems) {
+		return cartItems
+				.getCheckOutData()
+				.stream()
+				.map(item -> calculateCartItemDiscount(item))
+				.reduce(ZERO, BigDecimal::add);
+	}
+
+
+
+
+
+	private BigDecimal calculateCartItemDiscount(CartCheckoutData item) {
+		BigDecimal quantity = 
+				ofNullable(item)
+				.map(CartCheckoutData::getQuantity)
+				.map(BigDecimal::new)
+				.orElse(ZERO);
+		return ofNullable(item.getDiscount())
+				.orElse(ZERO)
+				.multiply(quantity);
+	}
+
+
+
 
 
 	private ShipmentEntity createShipment(OrdersEntity subOrder, CartCheckoutDTO dto, List<ShippingOfferDTO> shippingOffers) {

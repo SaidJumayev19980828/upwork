@@ -16,4 +16,5 @@ public class CartItemStock {
 	private Long shopCityId;
 	private Integer stockQuantity;
 	private BigDecimal stockPrice;
+	private BigDecimal discount;
 }	

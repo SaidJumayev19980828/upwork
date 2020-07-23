@@ -313,6 +313,17 @@ public class CartTest {
 	
 	
 	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithDiscounts() {
+		JSONObject requestBody = createCartCheckoutBody();
+
+		checkOutCart(requestBody, new BigDecimal("5891"), new BigDecimal("5900") ,new BigDecimal("51"));
+	}
+	
+	
+	
 	
 	
 	@Test

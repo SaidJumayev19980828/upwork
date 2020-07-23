@@ -31,4 +31,5 @@ public class SubOrder {
     @JsonProperty("delivery_address")
     private AddressRepObj deliveryAddress;
     private List<BasketItem> items;
+    private BigDecimal discount;
 }

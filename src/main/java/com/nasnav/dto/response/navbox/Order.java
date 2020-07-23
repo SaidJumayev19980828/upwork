@@ -29,4 +29,5 @@ public class Order {
     @JsonProperty("creation_date")
     private LocalDateTime creationDate;
     private String operator;
+    private BigDecimal discount;
 }

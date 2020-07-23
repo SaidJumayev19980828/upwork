@@ -114,7 +114,8 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 	
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.StockAdditionalData("
 			+ " stock.id, stock.currency, "
-			+ " variant.barcode,  product.name, variant.featureSpec, shop.id, address, product.organizationId) "
+			+ " variant.barcode,  product.name, variant.featureSpec, shop.id, address"
+			+ ", product.organizationId, stock.discount) "
 			+ " FROM StocksEntity stock "
 			+ " LEFT JOIN stock.productVariantsEntity variant "
 			+ " INNER JOIN variant.productEntity product "

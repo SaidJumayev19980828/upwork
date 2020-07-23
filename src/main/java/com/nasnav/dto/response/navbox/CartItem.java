@@ -23,4 +23,5 @@ public class CartItem {
 	private Long brandId;
 	private String brandLogo;
 	private String name;
+	private BigDecimal discount;
 }
