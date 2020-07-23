@@ -168,9 +168,16 @@ public class ShopThreeSixtyService {
         List<ShopFloorDTO> floors = shopFloorsRepo.findByShopThreeSixtyEntity_Id(shop.getId())
                                                           .stream()
                                                           .map(f -> (ShopFloorDTO) f.getRepresentation())
-                                                          .sorted(Comparator.comparing(ShopFloorDTO::getNumber))
+                                                          .sorted(Comparator.comparing(f -> getFloorNumber(f.getNumber())))
                                                           .collect(toList());
         return floors;
+    }
+
+
+    private Integer getFloorNumber(Integer floorNumber) {
+        if (floorNumber == null)
+            return Integer.MAX_VALUE;
+        return floorNumber;
     }
 
 
