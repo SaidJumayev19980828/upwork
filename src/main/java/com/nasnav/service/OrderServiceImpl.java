@@ -1375,8 +1375,13 @@ public class OrderServiceImpl implements OrderService {
 	
 
 	private DetailedOrderRepObject getOrderSummary(OrdersEntity entity) {
+		Long metaOrderId = 
+				ofNullable(entity)
+				.map(OrdersEntity::getMetaOrder)
+				.map(MetaOrderEntity::getId)
+				.orElse(null);
+		
 		DetailedOrderRepObject obj = new DetailedOrderRepObject();
-
 		obj.setOrderId(entity.getId() );
 		obj.setUserId(entity.getUserId());
 		obj.setShopId(entity.getShopsEntity().getId());
@@ -1384,7 +1389,7 @@ public class OrderServiceImpl implements OrderService {
 		obj.setStatus(findEnum(entity.getStatus()).name());
 		obj.setPaymentStatus(entity.getPaymentStatus().toString());
 		obj.setTotal(entity.getAmount());
-		obj.setMetaOrderId(entity.getMetaOrder().getId());
+		obj.setMetaOrderId(metaOrderId);
 		return obj;
 	}
 	
