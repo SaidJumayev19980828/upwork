@@ -229,6 +229,10 @@ public class StockServiceImpl implements StockService {
 			TransactionCurrency currecny = TransactionCurrency.getTransactionCurrency( stockUpdateReq.getCurrency());
 			stock.setCurrency( currecny );
 		}
+		
+		if(stockUpdateReq.getDiscount() != null) {
+			stock.setDiscount( stockUpdateReq.getDiscount() );
+		}
 		return stock;
 	}
 	

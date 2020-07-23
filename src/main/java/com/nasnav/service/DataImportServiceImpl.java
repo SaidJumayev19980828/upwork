@@ -955,6 +955,7 @@ public class DataImportServiceImpl implements DataImportService {
         stock.setShopId(importMetaData.getShopId());
         stock.setPrice(row.getPrice());
         stock.setQuantity(row.getQuantity());
+        stock.setDiscount(row.getDiscount());
         return stock;
     }
 

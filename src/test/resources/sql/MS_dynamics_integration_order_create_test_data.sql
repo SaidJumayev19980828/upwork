@@ -28,6 +28,13 @@ INSERT INTO public.categories(id, name) VALUES(222, 'GIFT VOUCHER');
 
 
 
+INSERT INTO public.countries(id,"name")VALUES(1,'Egypt');
+INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
+INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
+
+
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300001, '12 Abbas el-Akkad, Nasr City, Cairo, Egypt ', 1, '01111234567');
+
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'Baldman', 99001);
@@ -35,9 +42,9 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 2
 
 
 --inserting shops
-INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (50001, 'shop_1', 102, 99001, 0);
-INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (50002, 'shop_2', 101, 99001, 0);
-INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (55555, 'shop_3', 101, 99001, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, address_id) VALUES (50001, 'shop_1', 102, 99001, 0, 12300001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, address_id) VALUES (50002, 'shop_2', 101, 99001, 0, 12300001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, address_id) VALUES (55555, 'shop_3', 101, 99001, 0, 12300001);
 
 
 
@@ -92,7 +99,7 @@ insert into public.product_variants(id, "name" , product_id, barcode, feature_sp
 
 
 --inserting stocks
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(60001, 50001, 6, 99001, 600.0, 310001);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(60001, 50001, 600, 99001, 600.0, 310001);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(60002, 50001, 55, 99001, 600.0, 310002);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(60003, 50002, 66, 99001, 600.0, 310001);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(60004, 55555, 88, 99001, 600.0, 310003);
@@ -131,6 +138,11 @@ insert into public.orders(id,user_id,created_at, updated_at, organization_id,sta
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330033, 60003, 5, 600.0, 1);
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330034, 60002, 5, 600.0, 1);
 
-INSERT INTO public.addresses(id, address_line_1) values(12300001, '12 Abbas el-Akkad, Nasr City, Cairo, Egypt ');
+
+
+-- insert cart
+INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(60001, '99001/img2.jpg', '{"Color":"Blue"}', 5, 88);
+
+INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name": "Shop","type": "long","value": "14" }', 99001);
 
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
