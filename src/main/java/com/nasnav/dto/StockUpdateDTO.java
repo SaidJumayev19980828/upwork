@@ -20,5 +20,6 @@ public class StockUpdateDTO {
 	private Integer quantity;
 	private BigDecimal price;
 	private Integer currency;
+	private BigDecimal discount;
 	
 }

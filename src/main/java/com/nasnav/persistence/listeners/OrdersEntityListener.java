@@ -1,6 +1,6 @@
 package com.nasnav.persistence.listeners;
 
-import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
+import static com.nasnav.enumerations.OrderStatus.FINALIZED;
 
 import java.util.Objects;
 
@@ -32,7 +32,7 @@ public class OrdersEntityListener {
 	
 	@PostUpdate
 	public void postUpdate(OrdersEntity order) {	
-		if( Objects.equals(order.getStatus(), CLIENT_CONFIRMED.getValue()) ) {
+		if( Objects.equals(order.getStatus(), FINALIZED.getValue()) ) {
 			integrationHelper.pushOrderConfirmEvent(order);
 		}		
 	}
