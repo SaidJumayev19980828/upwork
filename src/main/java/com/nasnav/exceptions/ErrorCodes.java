@@ -42,6 +42,7 @@ public enum ErrorCodes {
 	,S$0005( "No Shop exists with ID: [%d] for organization[%d]!")
 
 	,S$360$0001("No 360 shop found!")
+	,S$360$F$0001("floor [%d] number can't be null!")
 
 	,TYP$0001("Missing or invalid type, available types are [%s]!")
 

@@ -1,6 +1,7 @@
 package com.nasnav.service;
 
 import static com.nasnav.exceptions.ErrorCodes.S$360$0001;
+import static com.nasnav.exceptions.ErrorCodes.S$360$F$0001;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
@@ -17,11 +18,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import javax.imageio.ImageIO;
 
@@ -168,9 +165,10 @@ public class ShopThreeSixtyService {
         if (shop == null)
             throw new RuntimeBusinessException(NOT_FOUND, S$360$0001);
 
-        List<ShopFloorDTO> floors = shopFloorsRepo.findByShopThreeSixtyEntity_IdOrderById(shop.getId())
+        List<ShopFloorDTO> floors = shopFloorsRepo.findByShopThreeSixtyEntity_Id(shop.getId())
                                                           .stream()
                                                           .map(f -> (ShopFloorDTO) f.getRepresentation())
+                                                          .sorted(Comparator.comparing(ShopFloorDTO::getNumber))
                                                           .collect(toList());
         return floors;
     }
@@ -334,6 +332,7 @@ public class ShopThreeSixtyService {
         shopFloorsRepo.deleteByShopThreeSixtyEntity_IdAndOrganizationEntity_id(viewId, orgId);
     }
 
+
     private Long createShop360Floor(OrganizationEntity org, Long viewId, List<ShopFloorsRequestDTO> dto,
                                     Map<String, List<String>> resizedImagesMap) throws BusinessException {
         ShopThreeSixtyEntity shop = shop360Repo.findById(viewId).get();
@@ -355,8 +354,9 @@ public class ShopThreeSixtyService {
             }
             if (floorDTO.getName() != null)
                 floor.setName(floorDTO.getName());
-            if (floorDTO.getNumber() != null)
-                floor.setNumber(floorDTO.getNumber());
+            if (floorDTO.getNumber() == null)
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$360$F$0001, floorDTO.getId());
+            floor.setNumber(floorDTO.getNumber());
             floor.setShopThreeSixtyEntity(shop);
             floor.setOrganizationEntity(org);
 
