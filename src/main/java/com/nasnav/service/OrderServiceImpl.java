@@ -834,8 +834,17 @@ public class OrderServiceImpl implements OrderService {
 		order.getSubOrders().forEach(this::finalizeSubOrder);
 		updateOrderStatus(order, FINALIZED);
 		
-		order.getSubOrders().forEach(this::sendNotificationEmailToStoreManager);
-		sendBillEmail(order);
+		try {
+			order.getSubOrders().forEach(this::sendNotificationEmailToStoreManager);
+		}catch(Throwable t) {
+			logger.error(t,t);
+		}
+		
+		try {
+			sendBillEmail(order);
+		}catch(Throwable t) {
+			logger.error(t,t);
+		}
 	}
 	
 	
@@ -3055,8 +3064,11 @@ public class OrderServiceImpl implements OrderService {
 		validateOrderForCancellation(order);
 		
 		cancelMetaOrderAndSubOrders(order);
-		
-		order.getSubOrders().forEach(this::sendOrderCancellationNotificationEmailToStoreManager);
+		try {
+			order.getSubOrders().forEach(this::sendOrderCancellationNotificationEmailToStoreManager);
+		}catch(Throwable t) {
+			logger.error(t,t);
+		}
 	}
 	
 	
