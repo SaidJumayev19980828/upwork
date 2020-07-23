@@ -14,6 +14,7 @@ import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -110,12 +111,16 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 			logger.error(e,e);
 			return new OptimizedCartItem(item, false);
 		}
+		BigDecimal itemPrice = ofNullable(item.getPrice()).orElse(ZERO);
+		BigDecimal itemDiscount = ofNullable(item.getDiscount()).orElse(ZERO);
+		BigDecimal stkPrice = ofNullable(itemStk.getStockPrice()).orElse(ZERO);
+		BigDecimal stkDiscount = ofNullable(itemStk.getDiscount()).orElse(ZERO);
 		boolean priceChanged = 
-				ofNullable(item.getPrice())
-				.orElse(ZERO)
-				.compareTo(itemStk.getStockPrice()) != 0;
+				itemPrice.compareTo(stkPrice) != 0 
+					|| itemDiscount.compareTo(stkDiscount) != 0;
 		optimized.setPrice(itemStk.getStockPrice());
 		optimized.setStockId(itemStk.getStockId());
+		optimized.setDiscount(itemStk.getDiscount());
 		return new OptimizedCartItem(optimized, priceChanged);
 	}
 

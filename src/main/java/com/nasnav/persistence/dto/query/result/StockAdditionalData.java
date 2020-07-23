@@ -1,5 +1,7 @@
 package com.nasnav.persistence.dto.query.result;
 
+import java.math.BigDecimal;
+
 import com.nasnav.persistence.AddressesEntity;
 
 import lombok.AllArgsConstructor;
@@ -16,4 +18,5 @@ public class StockAdditionalData {
 	private Long shopId;
 	private AddressesEntity shopAddress;
 	private Long organizationId;
+	private BigDecimal discount;
 }

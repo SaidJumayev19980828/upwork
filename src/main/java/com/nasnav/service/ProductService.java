@@ -81,8 +81,6 @@ import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
-import com.nasnav.model.querydsl.sql.*;
-import com.nasnav.dto.*;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -121,9 +119,36 @@ import com.nasnav.dao.ProductVariantsRepository;
 import com.nasnav.dao.ProductsCustomRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.TagsRepository;
+import com.nasnav.dto.BundleDTO;
+import com.nasnav.dto.BundleElementUpdateDTO;
+import com.nasnav.dto.ExtraAttributeDTO;
+import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.Pair;
+import com.nasnav.dto.Prices;
+import com.nasnav.dto.ProductBaseInfo;
+import com.nasnav.dto.ProductDetailsDTO;
+import com.nasnav.dto.ProductImageDTO;
+import com.nasnav.dto.ProductImageUpdateDTO;
+import com.nasnav.dto.ProductRepresentationObject;
+import com.nasnav.dto.ProductSortOptions;
+import com.nasnav.dto.ProductTagDTO;
+import com.nasnav.dto.ProductUpdateDTO;
+import com.nasnav.dto.ProductsFiltersResponse;
+import com.nasnav.dto.ProductsResponse;
+import com.nasnav.dto.StockDTO;
+import com.nasnav.dto.TagsRepresentationObject;
+import com.nasnav.dto.VariantDTO;
+import com.nasnav.dto.VariantFeatureDTO;
+import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.model.querydsl.sql.QBrands;
+import com.nasnav.model.querydsl.sql.QProductFeatures;
+import com.nasnav.model.querydsl.sql.QProductVariants;
+import com.nasnav.model.querydsl.sql.QProducts;
+import com.nasnav.model.querydsl.sql.QShops;
+import com.nasnav.model.querydsl.sql.QStocks;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.BundleEntity;
 import com.nasnav.persistence.ExtraAttributesEntity;
@@ -234,9 +259,6 @@ public class ProductService {
 	
 	@Autowired
 	private ProductsCustomRepository productsCustomRepo;
-
-	@Autowired
-	private CategoryService categoryService;
 
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,

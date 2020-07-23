@@ -142,6 +142,7 @@ public class OrdersEntity implements BaseEntity{
 	
 	private BigDecimal total;
 	
+	private BigDecimal discounts;
 	
 	@Override
 	public BaseRepresentationObject getRepresentation() {

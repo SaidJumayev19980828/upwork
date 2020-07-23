@@ -71,6 +71,8 @@ public class MetaOrderEntity implements BaseEntity {
     @Exclude
     @ToString.Exclude
     private Set<OrdersEntity> subOrders;
+    
+    private BigDecimal discounts;
 
     @Override
     public BaseRepresentationObject getRepresentation() {

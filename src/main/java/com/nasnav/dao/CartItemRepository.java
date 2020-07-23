@@ -18,7 +18,7 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartItemData("
 			+ " item.id, user.id, product.id, variant.id, stock.id, variant.featureSpec "
 			+ " , item.coverImage, stock.price, item.quantity"
-			+ " , brand.id, brand.name, brand.logo, product.name ) "
+			+ " , brand.id, brand.name, brand.logo, product.name, stock.discount ) "
 			+ " FROM CartItemEntity item "
 			+ "	LEFT JOIN item.user user"			
 			+ " LEFT JOIN item.stock stock "
@@ -30,7 +30,8 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartCheckoutData("
 			+ " item.id, stock.id, stock.currency, stock.price, item.quantity,"
-			+ " variant.barcode,  product.name, variant.featureSpec, shop.id, address, product.organizationId) "
+			+ " variant.barcode,  product.name, variant.featureSpec, shop.id, address"
+			+ ", product.organizationId, stock.discount) "
 			+ " FROM CartItemEntity item "
 			+ "	LEFT JOIN item.user user"
 			+ " LEFT JOIN item.stock stock "
@@ -105,7 +106,8 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 	
 	
 	@Query("SELECT new com.nasnav.persistence.dto.query.result.CartItemStock("
-			+ " variant.id, allStocks.id, shop.id, city.id, allStocks.quantity, allStocks.price )"
+			+ " variant.id, allStocks.id, shop.id, city.id"
+			+ ", allStocks.quantity, allStocks.price , allStocks.discount)"
 			+ " FROM CartItemEntity item"
 			+ " LEFT JOIN item.stock stock "
 			+ " LEFT JOIN item.user user "
