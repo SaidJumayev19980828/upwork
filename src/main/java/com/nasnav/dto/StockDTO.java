@@ -1,9 +1,12 @@
 package com.nasnav.dto;
 
 import static java.math.BigDecimal.ZERO;
+import static java.math.RoundingMode.HALF_EVEN;
+import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -30,11 +33,25 @@ public class StockDTO extends BaseRepresentationObject {
         this.shopId = shopId;
         this.quantity = ofNullable(entity.getQuantity()).orElse(0);
         this.price = ofNullable(entity.getPrice()).orElse(ZERO);
-        this.discount = entity.getDiscount();
+        this.discount = 
+        		ofNullable(entity.getDiscount())
+        		.map(discount -> calcDiscountPercentage(discount, this.price))
+        		.orElse(null);
     }
 
 
 	public StockDTO(StocksEntity stock) {
 		this(stock, stock.getShopsEntity().getId());
+	}
+	
+	
+	
+	private BigDecimal calcDiscountPercentage(BigDecimal discount, BigDecimal price) {
+		if(isNull(price) || price.equals(ZERO)) {
+			return null;
+		}
+		return discount
+				.divide(price, 10, HALF_EVEN)
+				.multiply(new BigDecimal("100"));
 	}
 }
