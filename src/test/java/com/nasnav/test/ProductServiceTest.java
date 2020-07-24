@@ -3,12 +3,14 @@ import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.lang.Math.random;
 import static java.lang.String.format;
+import static java.math.RoundingMode.HALF_EVEN;
 import static java.util.stream.Collectors.*;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -70,6 +72,7 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 public class ProductServiceTest {
 
+	private static final BigDecimal DISCOUNT = new BigDecimal("14.5");
 	private static final String DUMMY_EXTRA_ATTR_VALUE = "Indeed";
 	private static final String DUMMY_EXTRA_ATTR_NAME = "Very Cool Special feature";
 	private static final String DUMMY_EXTRA_ATTR_ICON = "cool_icon.png";
@@ -556,6 +559,7 @@ public class ProductServiceTest {
 
 	private StocksEntity createDummyStock(ProductVariantsEntity productVariantsEntity,
 			OrganizationEntity organizationEntity, ShopsEntity shopsEntity) {
+		BigDecimal discountAmount = DISCOUNT.divide(new BigDecimal("100"), 10, HALF_EVEN).multiply(new BigDecimal(PRODUCT_PRICE.toString()));
 		StocksEntity stocksEntity = new StocksEntity();
 		stocksEntity.setDiscount(new BigDecimal(0));
 		stocksEntity.setPrice(new BigDecimal(PRODUCT_PRICE));
@@ -563,6 +567,7 @@ public class ProductServiceTest {
 		stocksEntity.setQuantity(QUANTITY);
 		stocksEntity.setOrganizationEntity(organizationEntity);
 		stocksEntity.setShopsEntity(shopsEntity);
+		stocksEntity.setDiscount(discountAmount);
 		stocksEntity = stockRepository.save(stocksEntity);
 		return stocksEntity;
 	}
@@ -636,12 +641,13 @@ public class ProductServiceTest {
 	private JSONObject createStockJSONObj(StocksEntity stock) {
 		//please note the Types of expected, so it matches the types of retrieved json fields
 		//ex: if discount is integer here and double in the response JSONObject, it won't match
+		Double discount = 14.47619048;
 		JSONObject stockJson = new JSONObject();
 		stockJson.put("id", stock.getId().intValue());
 		stockJson.put("shop_id", stock.getShopsEntity().getId().intValue());
 		stockJson.put("quantity", stock.getQuantity());
 		stockJson.put("price", stock.getPrice().doubleValue());
-		stockJson.put("discount", stock.getDiscount().doubleValue());
+		stockJson.put("discount", discount);
 		
 		return stockJson;
 	}

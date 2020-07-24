@@ -646,7 +646,8 @@ public class ProductService {
 						stock.id.as("stock_id"),
 						stock.quantity.as("quantity"),
 						stock.price.as("price"),
-		                stock.discount, stock.currency,
+		                stock.discount.divide(stock.price).multiply(Expressions.constant(100)), 
+		                stock.currency,
 						product.organizationId.as("organization_id"),
 						stock.shopId.as("shop_id"),
 						variant.barcode.as("variant_barcode"),
@@ -1826,13 +1827,16 @@ public class ProductService {
 				.ifPresent(dto::setPrice);
 
 		List<Long> productIdList = bundleRepository.getBundleItemsProductIds(entity.getId());
-
-		Map<Long, String> 	productCoverImages = imgService.getProductsImagesMap(productIdList, null);
-		List<ProductBaseInfo> productlist = productRepository.findByIdInOrderByNameAsc(productIdList)
-															.stream()
-															.map(prod -> getProductRepresentation(prod, productCoverImages))
-															.map(this::toProductBaseInfo)
-															.collect(toList());
+		List<ProductBaseInfo> productlist = emptyList();
+		if(!productIdList.isEmpty()) {
+			Map<Long, String> 	productCoverImages = imgService.getProductsImagesMap(productIdList, null);
+			productlist = productRepository.findByIdInOrderByNameAsc(productIdList)
+																.stream()
+																.map(prod -> getProductRepresentation(prod, productCoverImages))
+																.map(this::toProductBaseInfo)
+																.collect(toList());
+		}
+		
 		dto.setProducts( productlist );
 
 		return dto;

@@ -11,7 +11,7 @@
                 {
                     "id": 200001,
                     "name": "Bundle Product#1",
-                    "image_url": "no_img_found.jpg",
+                    "image_url": null,
                     "p_name": null
                 }
             ]
