@@ -346,8 +346,11 @@ public class ShopThreeSixtyService {
         ShopFloorsEntity floor;
 
         for(ShopFloorsRequestDTO floorDTO : dto) {
-            if (floorDTO.getId() == null)
+            if (floorDTO.getId() == null) {
                 floor = new ShopFloorsEntity();
+                if (floorDTO.getNumber() == null)
+                    throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$360$F$0001, floorDTO.getId());
+            }
             else {
 
                 if (!shopFloorsRepo.existsById(floorDTO.getId()))
@@ -361,9 +364,8 @@ public class ShopThreeSixtyService {
             }
             if (floorDTO.getName() != null)
                 floor.setName(floorDTO.getName());
-            if (floorDTO.getNumber() == null)
-                throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$360$F$0001, floorDTO.getId());
-            floor.setNumber(floorDTO.getNumber());
+            if (floorDTO.getNumber() != null)
+                floor.setNumber(floorDTO.getNumber());
             floor.setShopThreeSixtyEntity(shop);
             floor.setOrganizationEntity(org);
 
