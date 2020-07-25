@@ -646,7 +646,7 @@ public class ProductService {
 						stock.id.as("stock_id"),
 						stock.quantity.as("quantity"),
 						stock.price.as("price"),
-		                stock.discount.divide(stock.price).multiply(Expressions.constant(100)), 
+		                stock.discount.divide(stock.price).multiply(Expressions.constant(100)).as("discount"), 
 		                stock.currency,
 						product.organizationId.as("organization_id"),
 						stock.shopId.as("shop_id"),
