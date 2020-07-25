@@ -1,9 +1,10 @@
 package com.nasnav.test;
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -19,14 +20,11 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import com.nasnav.dto.ProductsFiltersResponse;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -62,6 +60,7 @@ import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductSortOptions;
+import com.nasnav.dto.ProductsFiltersResponse;
 import com.nasnav.dto.ProductsResponse;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
@@ -938,7 +937,7 @@ public class ProductApiTest {
 
 		// filter by tag
 		param.brand_id = null;
-		param.tags = Arrays.asList(new Long[]{5001L});
+		param.tags = setOf(5001L);
 		response = template.getForEntity("/navbox/products?"+param.toString(), ProductsResponse.class);
 		res = new JSONObject(response.getBody());
 		Assert.assertEquals(2, res.getInt("total"));
@@ -1074,7 +1073,7 @@ public class ProductApiTest {
 	@Test
 	public void testGetProductsFilters() {
 		ProductSearchParam param = new ProductSearchParam();
-		List<Long> tagsList = new ArrayList<>();
+		Set<Long> tagsList = new HashSet<>();
 		tagsList.add(5001L);
 		param.org_id = 99001L;
 		param.tags = tagsList;
@@ -1087,7 +1086,7 @@ public class ProductApiTest {
 
 
 		//trying to filter products by nonlinked tags
-		tagsList.add(0, 5002L);
+		tagsList.add(0L); tagsList.add(5002L);
 		param.tags = tagsList;
 		response = template.getForEntity("/navbox/filters?" + param.toString(), ProductsFiltersResponse.class);
 		Assert.assertEquals(200, response.getStatusCodeValue());
