@@ -140,7 +140,9 @@ INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330032, 602, 2, 70.0, 1);
 
 
-
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(330031, '', 'ssss', 2, now(), 980, 2, 'dfdfdd', 88, 310001);
 
 
 
