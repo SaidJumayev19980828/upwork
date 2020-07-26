@@ -3,20 +3,20 @@ import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.lang.Math.random;
 import static java.lang.String.format;
+import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.HALF_EVEN;
-import static java.util.stream.Collectors.*;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.json.JSONArray;
@@ -72,7 +72,7 @@ import net.jcip.annotations.NotThreadSafe;
 @NotThreadSafe
 public class ProductServiceTest {
 
-	private static final BigDecimal DISCOUNT = new BigDecimal("14.5");
+	private static final BigDecimal DISCOUNT = new BigDecimal("20");
 	private static final String DUMMY_EXTRA_ATTR_VALUE = "Indeed";
 	private static final String DUMMY_EXTRA_ATTR_NAME = "Very Cool Special feature";
 	private static final String DUMMY_EXTRA_ATTR_ICON = "cool_icon.png";
@@ -132,7 +132,7 @@ public class ProductServiceTest {
 	private String FEATURE_SEPC_TEMPLATE = "{\"FEATURE_ID_1\":\"" + PRODUCT_FEATURE_1_VALUE + "\",\"FEATURE_ID_2\":\""
 			+ PRODUCT_FEATURE_2_VALUE + "\"}";
 
-	private final Double PRODUCT_PRICE = 10.5;
+	private final BigDecimal PRODUCT_PRICE = new BigDecimal("10");
 	private final Integer QUANTITY = 100;
 
 	
@@ -204,6 +204,31 @@ public class ProductServiceTest {
 	
 	
 	
+	
+	@Test
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void getProductAndStocksHasZeroDiscounts() {
+
+		ProductTestData testData = createProductTestDataWithZeroDiscountStocks();
+
+		//-----------------------------------------
+		ResponseEntity<String> response = template.getForEntity(
+				String.format("/navbox/product?product_id=%d",testData.productEntity.getId()),
+				String.class);
+		//-----------------------------------------
+		System.out.println( "product with stocks for all shops >>> " +response.getBody());
+		
+		assertValidResponse(testData, response);
+		
+		//-----------------------------------------
+		cleanInsertedData(testData);
+	}
+	
+	
+	
+	
+	
 	@Test
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
 	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
@@ -235,7 +260,7 @@ public class ProductServiceTest {
 										.filter(stock -> Objects.equals(stock.getShopsEntity().getId(), shopId))
 										.collect(toList());
 		JSONArray expectedStocksJSON = createExpectedStocks(expectedStocks);
-		JSONArray stocks = variant.getJSONArray("stocks");
+		JSONArray stocks = getStocksJsonArray(variant);
 		
 
 		assertProductDetailsRetrieved(response, productDetails);	
@@ -252,7 +277,7 @@ public class ProductServiceTest {
 		JSONObject productDetails = new JSONObject(response.getBody());
 		JSONObject variant = productDetails.getJSONArray("variants").getJSONObject(0);
 		JSONArray expectedStocks = createExpectedStocks( testData.stocksEntities);
-		JSONArray stocks = variant.getJSONArray("stocks");
+		JSONArray stocks = getStocksJsonArray(variant);
 		
 
 		assertProductDetailsRetrieved(response, productDetails);	
@@ -263,11 +288,30 @@ public class ProductServiceTest {
 	
 	
 	
+	private JSONArray getStocksJsonArray(JSONObject variant) {
+		JSONArray stocks = variant.getJSONArray("stocks");
+		for(int i=0;i<stocks.length(); i++) {
+			JSONObject stock = stocks.getJSONObject(i);
+			String discountStr = 
+					ofNullable(stock.get("discount"))
+					.map(Object::toString)
+					.map(BigDecimal::new)
+					.map(discount -> discount.setScale(10))
+					.map(BigDecimal::toString)
+					.orElse("0");
+			stock.put("discount", discountStr);
+		}
+		return stocks;
+	}
+
+
+
+
 	private void assertValidResponseWithExtraAttr(ProductTestData testData, ResponseEntity<String> response) {
 		JSONObject productDetails = new JSONObject(response.getBody());
 		JSONObject variant = productDetails.getJSONArray("variants").getJSONObject(0);
 		JSONArray expectedStocks = createExpectedStocks( testData.stocksEntities);
-		JSONArray stocks = variant.getJSONArray("stocks");
+		JSONArray stocks = getStocksJsonArray(variant);
 		
 
 		assertProductDetailsRetrieved(response, productDetails);	
@@ -366,6 +410,26 @@ public class ProductServiceTest {
 		testData.productVariantsEntity = createDummyVariant(testData.productEntity, testData.spec);
 		testData.shopEntities = createDummyShops(org, 2);
 		testData.stocksEntities = createDummyStocks(testData.productVariantsEntity, org, testData.shopEntities);
+		return testData;
+	}
+	
+	
+	
+	
+	private ProductTestData createProductTestDataWithZeroDiscountStocks() {
+		ProductTestData testData = new ProductTestData();
+		
+		OrganizationEntity org = organizationRepository.findOneById(99001L);		
+		
+		testData.productEntity = createDummyProduct();	
+		testData.imgFile = createProductImageFile(org);
+		testData.img = createProductImage(testData.productEntity);
+		testData.productFeaturesEntity_1 = createDummyFeature1(org);
+		testData.productFeaturesEntity_2 = createDummyFeature2(org);
+		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);		
+		testData.productVariantsEntity = createDummyVariant(testData.productEntity, testData.spec);
+		testData.shopEntities = createDummyShops(org, 2);
+		testData.stocksEntities = createDummyStocks(testData.productVariantsEntity, org, testData.shopEntities, ZERO);
 		return testData;
 	}
 	
@@ -548,9 +612,22 @@ public class ProductServiceTest {
 	
 	private List<StocksEntity> createDummyStocks(ProductVariantsEntity variant,	OrganizationEntity org
 			, List<ShopsEntity> shopsEntities) {
-		
+		BigDecimal discountAmount = 
+				DISCOUNT
+				.divide(new BigDecimal("100"), 10, HALF_EVEN)
+				.multiply(new BigDecimal(PRODUCT_PRICE.toString()));
 		return shopsEntities.stream()
-							.map(shop -> createDummyStock(variant, org, shop))
+							.map(shop -> createDummyStock(variant, org, shop, discountAmount))
+							.collect(toList());
+	}
+	
+	
+	
+	
+	private List<StocksEntity> createDummyStocks(ProductVariantsEntity variant,	OrganizationEntity org
+			, List<ShopsEntity> shopsEntities, BigDecimal discountAmount) {
+		return shopsEntities.stream()
+							.map(shop -> createDummyStock(variant, org, shop, discountAmount))
 							.collect(toList());
 	}
 	
@@ -558,11 +635,11 @@ public class ProductServiceTest {
 	
 
 	private StocksEntity createDummyStock(ProductVariantsEntity productVariantsEntity,
-			OrganizationEntity organizationEntity, ShopsEntity shopsEntity) {
-		BigDecimal discountAmount = DISCOUNT.divide(new BigDecimal("100"), 10, HALF_EVEN).multiply(new BigDecimal(PRODUCT_PRICE.toString()));
+			OrganizationEntity organizationEntity, ShopsEntity shopsEntity, BigDecimal discountAmount) {
+		
 		StocksEntity stocksEntity = new StocksEntity();
 		stocksEntity.setDiscount(new BigDecimal(0));
-		stocksEntity.setPrice(new BigDecimal(PRODUCT_PRICE));
+		stocksEntity.setPrice(PRODUCT_PRICE);
 		stocksEntity.setProductVariantsEntity(productVariantsEntity);
 		stocksEntity.setQuantity(QUANTITY);
 		stocksEntity.setOrganizationEntity(organizationEntity);
@@ -641,13 +718,20 @@ public class ProductServiceTest {
 	private JSONObject createStockJSONObj(StocksEntity stock) {
 		//please note the Types of expected, so it matches the types of retrieved json fields
 		//ex: if discount is integer here and double in the response JSONObject, it won't match
-		Double discount = 14.47619048;
+		String discountStr = 
+				ofNullable(stock.getDiscount())
+				.map(discount -> discount.setScale(10))
+				.map(discount -> discount.divide(stock.getPrice(),10, HALF_EVEN))
+				.map(discount -> discount.multiply(new BigDecimal("100")))
+				.map(discount -> discount.setScale(10))
+				.map(BigDecimal::toString)
+				.orElse("0");
 		JSONObject stockJson = new JSONObject();
 		stockJson.put("id", stock.getId().intValue());
 		stockJson.put("shop_id", stock.getShopsEntity().getId().intValue());
 		stockJson.put("quantity", stock.getQuantity());
 		stockJson.put("price", stock.getPrice().doubleValue());
-		stockJson.put("discount", discount);
+		stockJson.put("discount", discountStr);
 		
 		return stockJson;
 	}
