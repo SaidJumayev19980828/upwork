@@ -12,4 +12,6 @@ public class BostPriceDTO {
 	private BigDecimal vat;
 	@JsonProperty("SEND")
 	private BigDecimal send;
+	private BigDecimal codAmount;
+	private BigDecimal codFees;
 }
