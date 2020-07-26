@@ -1,7 +1,8 @@
 package com.nasnav.dto.response.navbox;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.enumerations.TransactionCurrency;
 import lombok.Data;
 
@@ -12,22 +13,19 @@ import java.util.List;
                     "currency", "operator", "creation_date", "sub_orders"})
 
 @Data
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class Order {
-    @JsonProperty("sub_orders")
     List<SubOrder> subOrders;
 
-    @JsonProperty("user_id")
     private Long userId;
-    @JsonProperty("user_name")
     private String userName;
-    @JsonProperty("order_id")
     private Long orderId;
     private BigDecimal subtotal;
     private BigDecimal shipping;
     private BigDecimal total;
     private TransactionCurrency currency;
-    @JsonProperty("creation_date")
     private LocalDateTime creationDate;
     private String operator;
     private BigDecimal discount;
+    private String paymentStatus;
 }

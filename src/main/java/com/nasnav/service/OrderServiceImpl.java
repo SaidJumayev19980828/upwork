@@ -41,6 +41,7 @@ import static com.nasnav.enumerations.OrderStatus.STORE_PREPARED;
 import static com.nasnav.enumerations.OrderStatus.findEnum;
 import static com.nasnav.enumerations.PaymentStatus.ERROR;
 import static com.nasnav.enumerations.PaymentStatus.FAILED;
+import static com.nasnav.enumerations.PaymentStatus.UNPAID;
 import static com.nasnav.enumerations.Roles.CUSTOMER;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
@@ -2379,7 +2380,12 @@ public class OrderServiceImpl implements OrderService {
 		order.setCreationDate(metaOrder.getCreatedAt());
 		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(metaOrder.getId());
 		if (payment.isPresent()) {
+			PaymentStatus paymentStatus =
+					payment
+					.map(PaymentEntity::getStatus)
+					.orElse(UNPAID);
 			order.setOperator(payment.get().getOperator());
+			order.setPaymentStatus(paymentStatus.name());
 		}
 		return order;
 	}
@@ -2415,6 +2421,7 @@ public class OrderServiceImpl implements OrderService {
 		return metaOrderRepo.getMetaOrderList(user.getId(), user.getOrganizationId())
 							.stream()
 							.map(this::setOrderStatus)
+							.map(this::setPaymentStatus)
 							.collect(toList());
 	}
 
@@ -2422,6 +2429,19 @@ public class OrderServiceImpl implements OrderService {
 	private MetaOrderBasicInfo setOrderStatus(MetaOrderBasicInfo order) {
 		order.setStatus(OrderStatus.findEnum(order.getStatusInt()).name());
 		order.setStatusInt(null);
+		return order;
+	}
+	
+	
+	
+	private MetaOrderBasicInfo setPaymentStatus(MetaOrderBasicInfo order) {
+		String payStatus = 
+				ofNullable(order.getPaymentStatusInt())
+				.map(PaymentStatus::getPaymentStatus)
+				.map(PaymentStatus::name)
+				.orElse(UNPAID.name());
+		order.setPaymentStatus(payStatus);
+		order.setPaymentStatusInt(null);
 		return order;
 	}
 

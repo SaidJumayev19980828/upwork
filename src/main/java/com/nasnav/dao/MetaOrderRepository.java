@@ -92,7 +92,9 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 
 
 	@Query("SELECT distinct new com.nasnav.dto.MetaOrderBasicInfo(" +
-			"meta.id, meta.createdAt, meta.status, meta.grandTotal, pay.operator, shipment.shippingServiceId, sum(basket.quantity)) "
+			"meta.id, meta.createdAt, meta.status, meta.grandTotal"
+			+ ", pay.operator, shipment.shippingServiceId, sum(basket.quantity) "
+			+ ", pay.status) "
 			+ "FROM MetaOrderEntity meta "
 			+ "LEFT JOIN meta.subOrders subOrder "
 			+ "LEFT JOIN subOrder.basketsEntity basket "
@@ -101,7 +103,8 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 			+ "LEFT JOIN meta.user user "
 			+ "LEFT JOIN meta.organization org "
 			+ "WHERE user.id = :userId and org.id = :orgId "
-			+ "group by meta.id, meta.createdAt, meta.status, meta.grandTotal, pay.operator, shipment.shippingServiceId")
+			+ "group by meta.id, meta.createdAt, meta.status, meta.grandTotal"
+			+ " , pay.operator, shipment.shippingServiceId, pay.status")
 	List<MetaOrderBasicInfo> getMetaOrderList(@Param("userId") Long userId,
 											  @Param("orgId") Long orgId);
 
