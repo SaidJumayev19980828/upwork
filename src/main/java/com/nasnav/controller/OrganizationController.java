@@ -11,6 +11,7 @@ import com.nasnav.AppConfig;
 import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
+import com.nasnav.dto.request.theme.OrganizationThemeClass;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
@@ -320,9 +321,8 @@ public class OrganizationController {
     @PostMapping(value = "themes/class")
     @ResponseStatus(OK)
     public void assignOrgThemeClass(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                   @RequestParam("org_id") Long orgId,
-                                   @RequestParam(value = "class_id") List<Integer> classIds) throws BusinessException {
-        themeService.assignOrgThemeClass(orgId, classIds);
+                                    @RequestBody OrganizationThemeClass orgThemeClassDTO) throws BusinessException {
+        themeService.assignOrgThemeClass(orgThemeClassDTO);
     }
 
 

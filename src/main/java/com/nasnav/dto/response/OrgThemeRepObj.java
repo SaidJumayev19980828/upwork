@@ -29,8 +29,10 @@ public class OrgThemeRepObj {
         this.uid = uid;
         this.name = name;
         this.previewImage = previewImage;
-        this.defaultSettings = new JSONObject(defaultSettings).toMap();
-        this.settings = new JSONObject(settings).toMap();
+        try {
+            this.defaultSettings = new JSONObject(defaultSettings).toMap();
+            this.settings = new JSONObject(settings).toMap();
+        } catch (NullPointerException e){}
         this.id = id;
     }
 }
