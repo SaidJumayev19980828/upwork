@@ -1401,7 +1401,7 @@ public class DataImportApiTest {
 		Set<String> newTags= setOf("new squish", "new hill equipment");
 		Set<String> newBrands = setOf("new brand","shiny new brand");
 		assertEquals(2, tagsRepo.findByNameInAndOrganizationEntity_Id(newTags, 99001L).size());
-        assertEquals(2, brandsRepo.findByNameIn(newBrands).size());
+        assertEquals(2, brandsRepo.findByNameInAndRemoved(newBrands, 0).size());
 	}
 	
 	

@@ -49,6 +49,8 @@ public class BrandsEntity implements BaseEntity{
     private String name;    
     private String logo;
     private String description;
+
+    private Integer removed;
     
 
     @Override
