@@ -26,4 +26,9 @@ public interface OrganizationThemeSettingsRepository extends JpaRepository<Organ
 
     boolean existsByOrganizationEntity_IdAndThemeId(Long orgId, Integer themeId);
 
+    @Query(value = "select new com.nasnav.dto.response.OrgThemeRepObj( t.uid, t.name, t.previewImage, t.defaultSettings," +
+            " (select COALESCE(ots.settings, '{}') from  OrganizationThemesSettingsEntity ots where ots.themeId = t.id), t.themeClassEntity.id) " +
+            " from ThemeEntity t " +
+            " where t.themeClassEntity.id in :themeClasses")
+    List<OrgThemeRepObj> findByThemeClasses(@Param("themeClasses") List<Integer> themeClasses);
 }
