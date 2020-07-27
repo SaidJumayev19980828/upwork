@@ -12,6 +12,7 @@ public class ShopSectionsRequestDTO {
     private String name;
     @JsonProperty("image_url")
     private String imageUrl;
+    private Integer priority;
     @JsonProperty("scenes")
     private List<ShopScenesRequestDTO> shopScenes;
 }

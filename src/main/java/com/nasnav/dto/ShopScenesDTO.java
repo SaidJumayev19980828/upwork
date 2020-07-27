@@ -27,6 +27,8 @@ public class ShopScenesDTO extends BaseRepresentationObject{
 
     private String thumbnail;
 
+    private Integer priority;
+
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
 

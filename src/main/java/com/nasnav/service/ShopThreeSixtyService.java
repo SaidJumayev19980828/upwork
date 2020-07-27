@@ -397,6 +397,9 @@ public class ShopThreeSixtyService {
         if (dto.getName() != null)
             section.setName(dto.getName());
 
+        if (dto.getPriority() != null)
+            section.setPriority(dto.getPriority());
+
         if (dto.getImageUrl() != null)
             section.setImage(dto.getImageUrl());
 
@@ -427,6 +430,9 @@ public class ShopThreeSixtyService {
 
         if (dto.getName() != null)
             scene.setName(dto.getName());
+
+        if(dto.getPriority() != null)
+            scene.setPriority(dto.getPriority());
 
         if(dto.getImageUrl() != null) {
             scene.setImage(dto.getImageUrl());
