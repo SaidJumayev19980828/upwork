@@ -63,6 +63,8 @@ public class ShopScenesEntity implements BaseEntity {
     @Column(name = "thumbnail")
     private String thumbnail;
 
+    private Integer priority;
+
     @Override
     public BaseRepresentationObject getRepresentation() {
         ShopScenesDTO scene = new ShopScenesDTO();
@@ -71,6 +73,7 @@ public class ShopScenesEntity implements BaseEntity {
         scene.setName(getName());
         scene.setShopSectionId(getShopSectionsEntity().getId());
         scene.setImage(createImage(getImage(), getResized(), getThumbnail()));
+        scene.setPriority(getPriority());
 
         return scene;
     }
