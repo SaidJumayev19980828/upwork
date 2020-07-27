@@ -30,5 +30,6 @@ public interface ShippingManagementService {
 	ShippingDetails createShippingDetailsFromOrder(OrdersEntity subOrder);
 	ShippingDetails createShippingDetailsFromOrder(OrdersEntity subOrder, Map<String,String> additionalParameters);
 	void updateShipmentStatus(String serviceId, Long orgId, String params) throws IOException;
+	List<ShippingServiceRegistration> listShippingServices();
 
 }

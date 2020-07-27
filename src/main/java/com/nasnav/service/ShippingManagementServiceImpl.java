@@ -848,6 +848,36 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 			return emptyMap();
 		}
 	}
+
+
+
+	@Override
+	public List<ShippingServiceRegistration> listShippingServices() {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		List<OrganizationShippingServiceEntity> serviceEntities = 
+				orgShippingServiceRepo.getByOrganization_Id(orgId);
+		return serviceEntities
+				.stream()
+				.map(this::createShippingServiceRegistration)
+				.collect(toList());
+	}
+	
+	
+	
+	private ShippingServiceRegistration createShippingServiceRegistration(OrganizationShippingServiceEntity entity){
+		String serviceId = entity.getServiceId();
+		Map<String,Object> serviceParams = new HashMap<>();
+		try {
+			serviceParams = jsonMapper.readValue(entity.getServiceParameters(), new TypeReference<Map<String,Object>>(){});
+		} catch (Throwable e) {
+			logger.error(e, e);
+		}
+		ShippingServiceRegistration serviceReg = new ShippingServiceRegistration();
+		serviceReg.setServiceId(serviceId);
+		serviceReg.setServiceParameters(serviceParams);
+		return serviceReg;
+	}
+	
 }
 
 
