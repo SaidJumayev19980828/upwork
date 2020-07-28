@@ -49,7 +49,7 @@ public class ShopSectionsEntity implements BaseEntity {
     @Column(name = "image")
     private String image;
 
-    private Integer priority;
+    private Integer priority = 0;
 
     @Override
     public BaseRepresentationObject getRepresentation() {
