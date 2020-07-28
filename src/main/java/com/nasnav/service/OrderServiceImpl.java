@@ -293,6 +293,9 @@ public class OrderServiceImpl implements OrderService {
 	
 	@Autowired
 	private RoleEmployeeUserRepository empRoleRepo;
+
+	@Autowired
+	private UserRepository userRepo;
 	
 	@Autowired
 	private ApplicationContext context;
@@ -1402,9 +1405,11 @@ public class OrderServiceImpl implements OrderService {
 		obj.setMetaOrderId(metaOrderId);
 		return obj;
 	}
-	
+
+
 	private DetailedOrderRepObject getOrderDetails(OrdersEntity entity) {
 		DetailedOrderRepObject obj = new DetailedOrderRepObject();
+		UserEntity user = userRepo.findById(entity.getUserId()).get();
 
 		obj.setUserName(entity.getName());
 		obj.setShopName(entity.getShopsEntity().getName());
@@ -1420,6 +1425,9 @@ public class OrderServiceImpl implements OrderService {
 
 		if (entity.getAddressEntity() != null) {
 			AddressRepObj address = (AddressRepObj) entity.getAddressEntity().getRepresentation();
+			if (address.getPhoneNumber() == null && user != null) {
+				address.setPhoneNumber(user.getPhoneNumber());
+			}
 			obj.setShippingAddress(address);
 		}
 
