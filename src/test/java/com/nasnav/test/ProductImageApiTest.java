@@ -1,6 +1,8 @@
 package com.nasnav.test;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_HEADER;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -21,12 +23,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.json.JSONObject;
@@ -1054,5 +1058,27 @@ public class ProductImageApiTest {
 		assertEquals(FORBIDDEN, response.getStatusCode());
 		Long countAfter = imgRepo.countByProductEntity_OrganizationId(99001L);
 		assertEquals(countBefore,  countAfter);
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Products_Variants_Cover_Image_Test_Data_Insert.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getVariantsCoverImgsTest() {
+		List<Long> variantsIds = asList(310001L, 310002L);
+		Map<Long, Optional<String>> coverImgs = imgService.getVariantsCoverImages(variantsIds);
+		Set<String> expectedUris = new HashSet<>( asList("99001/cover_img.jpg", "99001/img1.jpg"));
+		
+		Set<String> urls = 
+				coverImgs
+				.values()
+				.stream()
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.collect(toSet());
+		assertEquals("Only variants 310001 and 310002 has images", 2, urls.size());
+		assertEquals("expected cover images uri's" , expectedUris, urls);
 	}
 }

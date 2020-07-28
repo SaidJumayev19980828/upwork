@@ -21,8 +21,10 @@ import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_VARIANT_ID;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.logging.Level.SEVERE;
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -37,6 +39,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,14 +51,11 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import javax.sql.DataSource;
 import javax.validation.Valid;
 
-import com.nasnav.dto.*;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.tika.Tika;
@@ -67,8 +67,6 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -84,11 +82,13 @@ import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.ProductImagesRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dto.ProductImageBulkUpdateDTO;
+import com.nasnav.dto.ProductImageDTO;
+import com.nasnav.dto.ProductImageUpdateDTO;
+import com.nasnav.dto.ProductImgDetailsDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ImportImageBulkRuntimeException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.model.querydsl.sql.QProductImages;
-import com.nasnav.model.querydsl.sql.QProductVariants;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductImagesEntity;
@@ -101,15 +101,13 @@ import com.nasnav.service.model.VariantBasicData;
 import com.nasnav.service.model.VariantCache;
 import com.nasnav.service.model.VariantIdentifier;
 import com.nasnav.service.model.VariantIdentifierAndUrlPair;
-import com.querydsl.sql.Configuration;
-import com.querydsl.sql.PostgreSQLTemplates;
-import com.querydsl.sql.SQLQuery;
-import com.querydsl.sql.SQLQueryFactory;
 import com.sun.istack.logging.Logger;
 import com.univocity.parsers.common.record.Record;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Signal;
@@ -146,14 +144,6 @@ public class ProductImageServiceImpl implements ProductImageService {
 	private SecurityService securityService;
 	
 
-	@Autowired
-	private DataSource dataSource;
-	
-	
-	@Autowired
-	private JdbcTemplate jdbc;
-	
-	
 	@Autowired
 	private CachingHelper cachingHelper;
 	
@@ -1356,26 +1346,19 @@ public class ProductImageServiceImpl implements ProductImageService {
 	@Override
 	public String getProductCoverImage(Long productId) {
 		return productImagesRepository
-							.findByProductEntity_IdOrderByPriority(productId)
-							.stream()
-							.filter(Objects::nonNull)
-							.filter(this::isProductCoverImage)
-							.sorted( comparing(ProductImagesEntity::getId))
-							.findFirst()
-							.map(img-> img.getUri())
-							.orElse(ProductImageService.NO_IMG_FOUND_URL);
+				.findByProductEntity_IdOrderByPriority(productId)
+				.stream()
+				.filter(Objects::nonNull)
+				.filter(this::isProductCoverImage)
+				.sorted( comparing(ProductImagesEntity::getId))
+				.findFirst()
+				.map(img-> img.getUri())
+				.orElse(ProductImageService.NO_IMG_FOUND_URL);
 	}
 	
 	
 	
 
-	private Configuration createQueryDslConfig() {
-		Configuration config = new Configuration(new PostgreSQLTemplates());
-		config.setUseLiterals(true);
-		return config;
-	}
-	
-	
 	
 	
 	private Boolean isProductCoverImage(ProductImagesEntity img) {
@@ -1538,7 +1521,104 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 		return new AbstractMap.SimpleEntry<>(mapEntry.getKey(), uri);
 	}
+
+
+
+
+
+
+	@Override
+	public Map<Long, Optional<String>> getVariantsCoverImages(List<Long> variantsIds) {
+		List<VariantBasicData> variantData = productVariantsRepository.findVariantBasicDataByIdIn(variantsIds);
+		List<Long> productsIds = 
+				variantData
+				.stream()
+				.map(VariantBasicData::getProductId)
+				.collect(toList());
+		List<ProductImageDTO> allImgs = productImagesRepository.getProductsAndVariantsImages(productsIds, variantsIds);
+		
+		return variantData
+				.stream()
+				.map(variant -> getVariantImgs(variant, allImgs))
+				.map(this::electVariantCoverImage)
+				.collect(toMap(VariantCoverImg::getVariantId, VariantCoverImg::getImgUrl));
+	}
+
+
+
+
+
+
+	private VariantBasicDataWithImgs getVariantImgs(VariantBasicData variant, List<ProductImageDTO> allImgs) {
+		return allImgs
+				.stream()
+				.filter(img -> imgBelongToVariantOrItsProduct(variant, img))
+				.collect(
+						collectingAndThen(
+								toList()
+								, imgs -> new VariantBasicDataWithImgs(variant, imgs)));
+	}
+
+
+
+
+
+
+	private boolean imgBelongToVariantOrItsProduct(VariantBasicData variant, ProductImageDTO img) {
+		return Objects.equals(variant.getProductId(), img.getProductId()) 
+						|| Objects.equals(variant.getVariantId(), img.getVariantId());
+	}
+	
+	
+	
+	
+	private VariantCoverImg electVariantCoverImage(VariantBasicDataWithImgs variant) {
+		Optional<String> coverImg = 
+				variant
+				.getImgs()
+				.stream()
+				.sorted(variantCoverImgSorter())
+				.findFirst()
+				.map(ProductImageDTO::getImagePath);
+		return new VariantCoverImg(variant.getVariant().getVariantId(), coverImg);
+	}
+	
+	
+	
+	private Comparator<ProductImageDTO> variantCoverImgSorter(){
+		return Comparator
+				.comparingInt(this::variantImgFirst)
+				.thenComparingInt(ProductImageDTO::getPriority);
+	}
+	
+	
+	
+	private Integer variantImgFirst(ProductImageDTO img) {
+		return nonNull(img.getVariantId()) ? 0 : 1; 
+	}
 }
 
+
+
+
+
+
+
+
+@Data
+@AllArgsConstructor
+class VariantBasicDataWithImgs{
+	private VariantBasicData variant;
+	private List<ProductImageDTO> imgs;
+}
+
+
+
+@Data
+@AllArgsConstructor
+class VariantCoverImg{
+	private Long variantId;
+	private Optional<String> imgUrl;
+}
 
 
