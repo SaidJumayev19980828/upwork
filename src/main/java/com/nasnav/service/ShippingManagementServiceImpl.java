@@ -626,6 +626,11 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		ShipmentReceiver receiver = createShipmentReceiver(subOrder);
 		List<ShipmentItems> items = createShipmentItemsFromOrder(subOrder);
 		String callBackUrl = createCallBackUrl(subOrder);
+		Long metaOrderId = 
+				ofNullable(subOrder)
+				.map(OrdersEntity::getMetaOrder)
+				.map(MetaOrderEntity::getId)
+				.orElse(null);
 		
 		shippingData.setAdditionalData(additionalParameters);
 		shippingData.setDestination(customerAddr);
@@ -633,6 +638,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		shippingData.setSource(shopAddr);
 		shippingData.setItems(items);
 		shippingData.setSubOrderId(subOrder.getId());
+		shippingData.setMetaOrderId(metaOrderId);
 		shippingData.setCallBackUrl(callBackUrl);
 		shippingData.setShopId(subOrder.getShopsEntity().getId());
 		if(isPaidByCashOnDelivery(subOrder)) {
