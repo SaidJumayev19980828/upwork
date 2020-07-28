@@ -63,7 +63,7 @@ public class ShopScenesEntity implements BaseEntity {
     @Column(name = "thumbnail")
     private String thumbnail;
 
-    private Integer priority;
+    private Integer priority = 0;
 
     @Override
     public BaseRepresentationObject getRepresentation() {
