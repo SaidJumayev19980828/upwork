@@ -1458,25 +1458,29 @@ public class OrderServiceImpl implements OrderService {
 	private BasketItem toBasketItem(BasketsEntity entity, List<ProductImageDTO> variantsImages) {
 		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
 		ProductEntity product = variant.getProductEntity();
-
+		BigDecimal discount = ofNullable(entity.getDiscount()).orElse(ZERO);
+		BigDecimal totalPrice = entity.getPrice().subtract(discount).multiply(entity.getQuantity());
+		
 		BasketItem item = new BasketItem();
 		item.setProductId(product.getId());
 		item.setName(product.getName());
 		item.setPname(product.getPname());
 		item.setStockId(entity.getStocksEntity().getId());
 		item.setQuantity(entity.getQuantity().intValueExact());
-		item.setTotalPrice(entity.getPrice());
+		item.setTotalPrice(totalPrice);
+		item.setPrice(entity.getPrice());
+		item.setDiscount(discount);
 		item.setBrandId(product.getBrandId());
 		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec()));
 		//TODO set item unit //
 
 		String thumb = variantsImages
-								 .stream()
-								 .filter(i -> i.getVariantId() != null)
-								 .filter(i -> i.getVariantId().equals(variant.getId()) && i.getProductId().equals(product.getId()))
-								 .findFirst()
-								 .orElse(new ProductImageDTO())
-								 .getImagePath();
+						 .stream()
+						 .filter(i -> i.getVariantId() != null)
+						 .filter(i -> i.getVariantId().equals(variant.getId()) && i.getProductId().equals(product.getId()))
+						 .findFirst()
+						 .orElse(new ProductImageDTO())
+						 .getImagePath();
 
 		item.setThumb(thumb);
 		item.setCurrency(ofNullable(TransactionCurrency.getTransactionCurrency(entity.getCurrency())).orElse(EGP).name());
@@ -2340,18 +2344,23 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private List<ProductImageDTO> getVariantsImagesList(MetaOrderEntity order) {
-		List<ProductVariantsEntity> allVariants = order.getSubOrders()
+		List<ProductVariantsEntity> allVariants = 
+				order.getSubOrders()
 				.stream()
 				.map(OrdersEntity::getBasketsEntity)
 				.flatMap(Set::stream)
 				.map(BasketsEntity::getStocksEntity)
 				.map(StocksEntity::getProductVariantsEntity)
 				.collect(toList());
-		List<Long> variantsIds = allVariants.stream()
+		List<Long> variantsIds = 
+				allVariants
+				.stream()
 				.map(ProductVariantsEntity::getId)
 				.collect(toList());
 
-		List<Long> productsIds = allVariants.stream()
+		List<Long> productsIds = 
+				allVariants
+				.stream()
 				.map(ProductVariantsEntity::getProductEntity)
 				.map(ProductEntity::getId)
 				.collect(toList());
@@ -2757,6 +2766,7 @@ public class OrderServiceImpl implements OrderService {
 		basket.setPrice(data.getPrice());
 		basket.setQuantity(new BigDecimal(data.getQuantity()));
 		basket.setCurrency(data.getCurrency());
+		basket.setDiscount(data.getDiscount());
 		basket.setOrdersEntity(subOrder);
 
 		return basket;

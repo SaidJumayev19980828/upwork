@@ -79,6 +79,8 @@ public class BasketsEntity implements BaseEntity{
     @JoinColumn(name = "stock_id", referencedColumnName = "id")
     @JsonIgnore
     private StocksEntity stocksEntity;
+    
+    private BigDecimal discount;
 
     @Override
     public BaseRepresentationObject getRepresentation() {

@@ -31,7 +31,9 @@ public class BasketItem {
     private String unit;
     @JsonProperty("thumb")
     private String thumb;
-
+    private BigDecimal price;
+    private BigDecimal discount;
+    
     @JsonIgnore
     private String currency;
 }

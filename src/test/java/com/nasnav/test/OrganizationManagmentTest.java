@@ -8,12 +8,9 @@ import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
-
-import javax.sql.DataSource;
 
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -34,9 +31,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.dao.ExtraAttributesRepository;
@@ -58,8 +53,6 @@ public class OrganizationManagmentTest {
     private Resource databaseCleanup;
     @Value("classpath:test_imgs_to_upload/nasnav--Test_Photo.png")
     private Resource file;
-    @Autowired
-    private DataSource datasource;
     @Autowired
     private TestRestTemplate template;
     @Autowired
