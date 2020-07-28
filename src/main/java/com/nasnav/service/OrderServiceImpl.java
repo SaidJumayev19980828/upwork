@@ -1455,10 +1455,12 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private BasketItem toBasketItem(BasketsEntity entity, List<ProductImageDTO> variantsImages) {
+	private BasketItem toBasketItem(BasketsEntity entity, Map<Long, Optional<String>> variantsCoverImages) {
 		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
 		ProductEntity product = variant.getProductEntity();
-
+		String thumb = variantsCoverImages.get(variant.getId()).orElse(null);
+		String currency = ofNullable(TransactionCurrency.getTransactionCurrency(entity.getCurrency())).orElse(EGP).name();
+		
 		BasketItem item = new BasketItem();
 		item.setProductId(product.getId());
 		item.setName(product.getName());
@@ -1468,18 +1470,9 @@ public class OrderServiceImpl implements OrderService {
 		item.setTotalPrice(entity.getPrice());
 		item.setBrandId(product.getBrandId());
 		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec()));
-		//TODO set item unit //
-
-		String thumb = variantsImages
-								 .stream()
-								 .filter(i -> i.getVariantId() != null)
-								 .filter(i -> i.getVariantId().equals(variant.getId()) && i.getProductId().equals(product.getId()))
-								 .findFirst()
-								 .orElse(new ProductImageDTO())
-								 .getImagePath();
-
 		item.setThumb(thumb);
-		item.setCurrency(ofNullable(TransactionCurrency.getTransactionCurrency(entity.getCurrency())).orElse(EGP).name());
+		item.setCurrency(currency);
+		//TODO set item unit //
 
 		return item;
 	}
@@ -2324,11 +2317,11 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private Order getOrderResponse(MetaOrderEntity order) {
-		List<ProductImageDTO> variantsImages = getVariantsImagesList(order);
+		Map<Long, Optional<String>> variantsCoverImages = getVariantsImagesList(order);
 
 		Order orderDto = setMetaOrderBasicData(order);
 
-		List<SubOrder> subOrders = 	createSubOrderDtoList(order, variantsImages);
+		List<SubOrder> subOrders = 	createSubOrderDtoList(order, variantsCoverImages);
 
 		orderDto.setSubOrders(subOrders);
 		orderDto.setSubtotal(order.getSubTotal());
@@ -2339,33 +2332,28 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private List<ProductImageDTO> getVariantsImagesList(MetaOrderEntity order) {
-		List<ProductVariantsEntity> allVariants = order.getSubOrders()
+	private Map<Long, Optional<String>> getVariantsImagesList(MetaOrderEntity order) {
+		List<Long> variantsIds = 
+				order
+				.getSubOrders()
 				.stream()
 				.map(OrdersEntity::getBasketsEntity)
 				.flatMap(Set::stream)
 				.map(BasketsEntity::getStocksEntity)
 				.map(StocksEntity::getProductVariantsEntity)
-				.collect(toList());
-		List<Long> variantsIds = allVariants.stream()
 				.map(ProductVariantsEntity::getId)
 				.collect(toList());
-
-		List<Long> productsIds = allVariants.stream()
-				.map(ProductVariantsEntity::getProductEntity)
-				.map(ProductEntity::getId)
-				.collect(toList());
-		return imgService.getProductsAndVariantsImages(productsIds, variantsIds);
+		return imgService.getVariantsCoverImages(variantsIds);
 	}
 
 
 
 
-	private List<SubOrder> createSubOrderDtoList(MetaOrderEntity order, List<ProductImageDTO> variantsImages) {
+	private List<SubOrder> createSubOrderDtoList(MetaOrderEntity order, Map<Long, Optional<String>> variantsCoverImages) {
 		return order
 		.getSubOrders()
 		.stream()
-		.map(subOrder -> getSubOrder(subOrder, variantsImages))
+		.map(subOrder -> getSubOrder(subOrder, variantsCoverImages))
 		.collect(toList());
 	}
 
@@ -2465,7 +2453,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private SubOrder getSubOrder(OrdersEntity order, List<ProductImageDTO> variantsImages) {
+	private SubOrder getSubOrder(OrdersEntity order, Map<Long, Optional<String>> variantsCoverImages) {
 
 		String status = 
 				ofNullable(findEnum(order.getStatus()))
@@ -2476,7 +2464,7 @@ public class OrderServiceImpl implements OrderService {
 				order
 				.getBasketsEntity()
 				.stream()
-				.map(b -> toBasketItem(b, variantsImages))
+				.map(b -> toBasketItem(b, variantsCoverImages))
 				.collect(toList());
 		
 		Shipment shipmentDto = (Shipment) order.getShipment().getRepresentation();
