@@ -12,34 +12,24 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import java.util.List;
-import java.util.Map;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.web.context.support.GenericWebApplicationContext;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
-import com.nasnav.commons.utils.MapBuilder;
-import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShippingAdditionalDataDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.SecurityServiceImpl;
-import com.nasnav.service.ShippingManagementService;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -79,6 +69,29 @@ public class PickupServiceTest {
         assertEquals(OK, response.getStatusCode());
         assertEquals(1, offers.size());
         assertTrue(asList(503L,501L).stream().allMatch(shops::contains));
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_6.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void createEmptyOfferTest() throws Exception{
+		Long customerAddress = 12300001L;
+		HttpEntity<?> request =  getHttpEntity("123");
+        ResponseEntity<String> response = 
+        		template.exchange("/shipping/offers?customer_address="+customerAddress, GET, request, String.class);
+
+        String body = ofNullable(response.getBody()).orElse("[]");
+        List<ShippingOfferDTO> offers = mapper.readValue(body, new TypeReference<List<ShippingOfferDTO>>(){});
+        List<Long> shops = getOfferedShops(offers);
+        
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(0, offers.size());
+        assertTrue(shops.isEmpty());
 	}
 	
 	
