@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import static com.nasnav.cache.Caches.ORGANIZATIONS_DOMAINS;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.exceptions.ErrorCodes.G$ORG$0001;
 import static com.nasnav.exceptions.ErrorCodes.G$PRAM$0001;
@@ -10,6 +11,7 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -102,6 +104,7 @@ public class DomainServiceImpl implements DomainService{
 
 
 	@Override
+	@CacheEvict(cacheNames = {ORGANIZATIONS_DOMAINS})
 	public void updateDomain(DomainUpdateDTO dto) {
 		validateDomain(dto);
 		
