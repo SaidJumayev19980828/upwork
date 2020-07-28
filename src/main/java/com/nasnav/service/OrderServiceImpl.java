@@ -6,6 +6,7 @@ import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
+import static com.nasnav.commons.utils.MathUtils.calculatePercentage;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.ORDER_BILL_TEMPLATE;
 import static com.nasnav.constatnts.EmailConstants.ORDER_CANCEL_NOTIFICATION_TEMPLATE;
@@ -1440,17 +1441,24 @@ public class OrderServiceImpl implements OrderService {
 
 	private BasketItem toBasketItem(BasketItemDetails itemDetails) {
 
+		BigDecimal price = itemDetails.getPrice();
+		BigDecimal discount = ofNullable(itemDetails.getDiscount()).orElse(ZERO);
+		BigDecimal totalPrice = price.subtract(discount).multiply(itemDetails.getQuantity());
+		BigDecimal discountPercentage = calculatePercentage(discount, price);
+		
 		BasketItem item = new BasketItem();
 		item.setProductId(itemDetails.getProductId());
 		item.setName(itemDetails.getProductName());
 		item.setPname(itemDetails.getProductPname());
 		item.setStockId(itemDetails.getStockId());
 		item.setQuantity(itemDetails.getQuantity().intValue());
-		//TODO set item unit //
-		item.setTotalPrice(itemDetails.getPrice());
+		item.setTotalPrice(totalPrice);
+		item.setPrice(price);
+		item.setDiscount(discountPercentage);
 		item.setThumb( itemDetails.getProductCoverImage() );
 		item.setCurrency(ofNullable(TransactionCurrency.getTransactionCurrency(itemDetails.getCurrency())).orElse(EGP).name());
-		
+		//TODO set item unit //
+
 		return item;
 	}
 
@@ -1458,8 +1466,10 @@ public class OrderServiceImpl implements OrderService {
 	private BasketItem toBasketItem(BasketsEntity entity, List<ProductImageDTO> variantsImages) {
 		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
 		ProductEntity product = variant.getProductEntity();
+		BigDecimal price = entity.getPrice();
 		BigDecimal discount = ofNullable(entity.getDiscount()).orElse(ZERO);
-		BigDecimal totalPrice = entity.getPrice().subtract(discount).multiply(entity.getQuantity());
+		BigDecimal totalPrice = price.subtract(discount).multiply(entity.getQuantity());
+		BigDecimal discountPercentage = calculatePercentage(discount, price);
 		
 		BasketItem item = new BasketItem();
 		item.setProductId(product.getId());
@@ -1468,8 +1478,8 @@ public class OrderServiceImpl implements OrderService {
 		item.setStockId(entity.getStocksEntity().getId());
 		item.setQuantity(entity.getQuantity().intValueExact());
 		item.setTotalPrice(totalPrice);
-		item.setPrice(entity.getPrice());
-		item.setDiscount(discount);
+		item.setPrice(price);
+		item.setDiscount(discountPercentage);
 		item.setBrandId(product.getBrandId());
 		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec()));
 		//TODO set item unit //
@@ -1511,9 +1521,10 @@ public class OrderServiceImpl implements OrderService {
 		Map<Long, BigDecimal> orderItemsQuantity = getOrderItemsQuantity(detailsLevel == 2 ? ordersIds : new HashSet<>());
 
 		
-		return ordersEntityList.stream()
-								.map(order -> getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap))
-								.collect(toList());
+		return ordersEntityList
+				.stream()
+				.map(order -> getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap))
+				.collect(toList());
 	}
 	
 	
@@ -1529,14 +1540,19 @@ public class OrderServiceImpl implements OrderService {
 		List<BasketItemDetails> basketData = em.createNamedQuery("Basket", BasketItemDetails.class)
 												.setParameter("orderId", nonEmptyOrdersIds)
 												.getResultList();
-		return  basketData.stream()
-						.filter(Objects::nonNull)
-						.collect( groupingBy(BasketItemDetails::getOrderId));
+		return  basketData
+				.stream()
+				.filter(Objects::nonNull)
+				.collect( groupingBy(BasketItemDetails::getOrderId));
 	}
 
 
+	
+	
 	private Map<Long, BigDecimal> getOrderItemsQuantity(Set<Long> orderIds) {
-		List<BasketsEntity> basketsEntities = basketRepository.findByOrdersEntity_IdIn(orderIds)
+		List<BasketsEntity> basketsEntities = 
+				basketRepository
+				.findByOrdersEntity_IdIn(orderIds)
 				.stream()
 				.collect( toList());
 

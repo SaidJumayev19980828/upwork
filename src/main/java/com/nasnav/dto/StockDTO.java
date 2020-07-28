@@ -1,12 +1,10 @@
 package com.nasnav.dto;
 
+import static com.nasnav.commons.utils.MathUtils.calculatePercentage;
 import static java.math.BigDecimal.ZERO;
-import static java.math.RoundingMode.HALF_EVEN;
-import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -47,11 +45,6 @@ public class StockDTO extends BaseRepresentationObject {
 	
 	
 	private BigDecimal calcDiscountPercentage(BigDecimal discount, BigDecimal price) {
-		if(isNull(price) || price.equals(ZERO)) {
-			return null;
-		}
-		return discount
-				.divide(price, 10, HALF_EVEN)
-				.multiply(new BigDecimal("100"));
+		return calculatePercentage(discount, price);
 	}
 }
