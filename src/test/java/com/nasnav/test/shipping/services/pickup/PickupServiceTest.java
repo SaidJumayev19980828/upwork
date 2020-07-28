@@ -53,16 +53,11 @@ import net.jcip.annotations.NotThreadSafe;
 public class PickupServiceTest {
 	
 	@Autowired
-	private ShippingManagementService shippingMgr;
-	
-	@Autowired
     private TestRestTemplate template;
 	
 	@Autowired
 	private ObjectMapper mapper;
 	
-	@Autowired
-	private GenericWebApplicationContext context;
 	
 	//create offers, get shops that can provide whole cart
 	//	- 2 shops that have enough stocks for the whole cart
