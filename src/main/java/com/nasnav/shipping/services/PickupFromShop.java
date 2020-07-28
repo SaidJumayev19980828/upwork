@@ -102,7 +102,9 @@ public class PickupFromShop implements ShippingService{
 
 	@Override
 	public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> items) {
-		ShippingServiceInfo serviceInfo = createServiceInfoWithShopsOptions();
+		List<String> possiblePickupShops = getShopsThatCanProvideWholeCart();
+		
+		ShippingServiceInfo serviceInfo = createServiceInfoWithShopsOptions(possiblePickupShops);
 		
 		List<Shipment> shipments =
 				items
@@ -111,7 +113,7 @@ public class PickupFromShop implements ShippingService{
 				.collect(toList());
 		
 		ShippingOffer offer = new ShippingOffer(serviceInfo, shipments);
-		return shipments.isEmpty()? 
+		return possiblePickupShops.isEmpty()? 
 				Mono.empty() : Mono.just(offer) ;
 	}
 
@@ -135,16 +137,7 @@ public class PickupFromShop implements ShippingService{
 	
 	
 	
-	private ShippingServiceInfo createServiceInfoWithShopsOptions() {
-		List<String> possiblePickupShops = 
-				orderService
-				.getShopsThatCanProvideWholeCart()
-				.stream()
-				.map(ShopFulfillingCart::getShopId)
-				.filter(allowedShops::contains)
-				.map(id -> id.toString())
-				.collect(toList());
-		
+	private ShippingServiceInfo createServiceInfoWithShopsOptions(List<String> possiblePickupShops) {
 		ShippingServiceInfo serviceInfo = getServiceInfo();
 		
 		serviceInfo
@@ -155,6 +148,18 @@ public class PickupFromShop implements ShippingService{
 		.ifPresent(param -> param.setOptions(possiblePickupShops));
 		
 		return serviceInfo;
+	}
+
+
+
+	private List<String> getShopsThatCanProvideWholeCart() {
+		return orderService
+		.getShopsThatCanProvideWholeCart()
+		.stream()
+		.map(ShopFulfillingCart::getShopId)
+		.filter(allowedShops::contains)
+		.map(id -> id.toString())
+		.collect(toList());
 	}
 
 	
