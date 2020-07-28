@@ -46,24 +46,12 @@ public class BrandService {
     public void deleteBrand(Long brandId) throws BusinessException {
         Long orgId = securityService.getCurrentUserOrganizationId();
 
-        if (!brandsRepository.existsByIdAndOrganizationEntity_Id(brandId, orgId)) {
+        if (!brandsRepository.existsByIdAndOrganizationEntity_IdAndRemoved(brandId, orgId, 0)) {
             throw new BusinessException(String.format("Provided brand_id %d doesn't match any existing brand!", brandId),
                     "INVALID_PARAM: brand_id", NOT_ACCEPTABLE);
         }
 
-        List<Long> productsList = brandsRepository.getProductsByBrandId(brandId);
-        if (productsList.size() > 0) {
-            throw new BusinessException("There are products "+productsList.toString()+" linked to this brand",
-                    "INVALID_OPERATION", NOT_ACCEPTABLE);
-        }
-
-        List<Long> shopsList = brandsRepository.getShopsByBrandId(brandId);
-        if (shopsList.size() > 0) {
-            throw new BusinessException("There are shops "+shopsList.toString()+" linked to this brand",
-                    "INVALID_OPERATION", NOT_ACCEPTABLE);
-        }
-
-        brandsRepository.deleteById(brandId);
+        brandsRepository.setBrandHidden(brandId);
     }
 
 }
