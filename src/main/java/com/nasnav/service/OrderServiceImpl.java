@@ -1360,7 +1360,7 @@ public class OrderServiceImpl implements OrderService {
         	BeanUtils.copyProperties( 
         			getOrderDetails(order)
         			, representation
-        			, new String[]{"orderId", "userId", "shopId", "createdAt", "status", "paymentStatus", "metaOrderId"});
+        			, new String[]{"orderId", "userId", "shopId", "createdAt", "status", "paymentStatus", "metaOrderId", "discount"});
 
         if (detailsLevel == 2 && orderItemsQuantity.get(order.getId()) != null)
         	representation.setTotalQuantity(orderItemsQuantity.get(order.getId()).intValue());
@@ -1401,6 +1401,7 @@ public class OrderServiceImpl implements OrderService {
 		obj.setPaymentStatus(entity.getPaymentStatus().toString());
 		obj.setTotal(entity.getAmount());
 		obj.setMetaOrderId(metaOrderId);
+		obj.setDiscount(entity.getDiscounts());
 		return obj;
 	}
 	
