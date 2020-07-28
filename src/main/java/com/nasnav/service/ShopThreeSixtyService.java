@@ -370,16 +370,18 @@ public class ShopThreeSixtyService {
             floor.setOrganizationEntity(org);
 
             ShopFloorsEntity savedFloor = shopFloorsRepo.save(floor);
-
-            for (ShopSectionsRequestDTO sectionsDTO : getSections(floorDTO))
-                createShop360Section(sectionsDTO, savedFloor, org, resizedImagesMap);
+            List<ShopSectionsRequestDTO> sectionsDTO = getSections(floorDTO);
+            for (int i=0;i<sectionsDTO.size();i++) {
+                createShop360Section(sectionsDTO.get(i), savedFloor, org, resizedImagesMap, i);
+            }
         }
 
         return shop.getId();
     }
 
+
     private void createShop360Section(ShopSectionsRequestDTO dto, ShopFloorsEntity floor, OrganizationEntity org,
-                                      Map<String, List<String>> resizedImagesMap) throws BusinessException {
+                                      Map<String, List<String>> resizedImagesMap, int index) throws BusinessException {
         ShopSectionsEntity section;
         if (dto.getId() == null)
             section = new ShopSectionsEntity();
@@ -397,8 +399,11 @@ public class ShopThreeSixtyService {
         if (dto.getName() != null)
             section.setName(dto.getName());
 
-        if (dto.getPriority() != null)
+        if (dto.getPriority() != null) {
             section.setPriority(dto.getPriority());
+        } else {
+            section.setPriority(index);
+        }
 
         if (dto.getImageUrl() != null)
             section.setImage(dto.getImageUrl());
@@ -406,13 +411,15 @@ public class ShopThreeSixtyService {
         section.setShopFloorsEntity(floor);
         section.setOrganizationEntity(org);
         ShopSectionsEntity savedSection = sectionsRepo.save(section);
-        for(ShopScenesRequestDTO scene: getScenes(dto)) {
-        	createShop360Scene(scene, savedSection, org, resizedImagesMap);
+        List<ShopScenesRequestDTO> scenesDTO = getScenes(dto);
+        for(int i=0;i<scenesDTO.size();i++) {
+        	createShop360Scene(scenesDTO.get(i), savedSection, org, resizedImagesMap, i);
         }
     }
 
+
     private void createShop360Scene(ShopScenesRequestDTO dto, ShopSectionsEntity section, OrganizationEntity org,
-                                    Map<String, List<String>> resizedImagesMap) throws BusinessException {
+                                    Map<String, List<String>> resizedImagesMap, int index) throws BusinessException {
         ShopScenesEntity scene;
         if (dto.getId() == null)
             scene = new ShopScenesEntity();
@@ -431,8 +438,11 @@ public class ShopThreeSixtyService {
         if (dto.getName() != null)
             scene.setName(dto.getName());
 
-        if(dto.getPriority() != null)
+        if(dto.getPriority() != null) {
             scene.setPriority(dto.getPriority());
+        } else {
+            scene.setPriority(index);
+        }
 
         if(dto.getImageUrl() != null) {
             scene.setImage(dto.getImageUrl());
