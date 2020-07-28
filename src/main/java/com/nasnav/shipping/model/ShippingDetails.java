@@ -15,6 +15,7 @@ public class ShippingDetails {
 	private Map<String,String> serviceParameters;
 	private List<ShipmentItems> items;
 	private Long subOrderId;
+	private Long metaOrderId;
 	private String callBackUrl;
 	private Long shopId;
 	private BigDecimal codValue;
