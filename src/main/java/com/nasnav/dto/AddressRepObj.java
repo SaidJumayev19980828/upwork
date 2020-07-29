@@ -20,7 +20,11 @@ public class AddressRepObj extends BaseRepresentationObject {
     private String lastName;
     private String flatNumber;
     private String buildingNumber;
+
+    @JsonProperty("address_line_1")
     private String addressLine1;
+
+    @JsonProperty("address_line_2")
     private String addressLine2;
     private BigDecimal latitude;
     private BigDecimal longitude;
