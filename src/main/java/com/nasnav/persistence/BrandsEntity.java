@@ -52,6 +52,11 @@ public class BrandsEntity implements BaseEntity{
 
     private Integer removed;
     
+    
+    
+    public BrandsEntity() {
+    	this.removed = 0;
+    }
 
     @Override
     public BaseRepresentationObject getRepresentation() {
