@@ -805,7 +805,11 @@ public class OrganizationService {
 	    
 	    OrganizationDomainsEntity orgDom = null;
 	    if(domain.endsWith(NASNAV_DOMAIN) || domain.endsWith(NASORG_DOMAIN)) {
-	    	orgDom = orgDomainsRep.findByDomainAndSubdir(domain,subDir);
+	    	// try to check if we have full domain matching first without subdomain
+		    orgDom = orgDomainsRep.findByDomainAndSubdir(domain,null);
+		    if (orgDom == null) {
+			    orgDom = orgDomainsRep.findByDomainAndSubdir(domain, subDir);
+		    }
 	    }else {
 	    	orgDom = orgDomainsRep.findByDomain(domain);
 	    }    	
