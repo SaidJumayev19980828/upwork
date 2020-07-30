@@ -49,7 +49,7 @@ public class ShopSectionsEntity implements BaseEntity {
     @Column(name = "image")
     private String image;
 
-
+    private Integer priority = 0;
 
     @Override
     public BaseRepresentationObject getRepresentation() {
@@ -57,10 +57,11 @@ public class ShopSectionsEntity implements BaseEntity {
 
         section.setId(getId());
         section.setName(getName());
+        section.setPriority(getPriority());
 
         section.setShopScenes(getShopScenes().stream()
                                              .map(scene -> (ShopScenesDTO) scene.getRepresentation())
-                                             .sorted(comparing(ShopScenesDTO::getId))
+                                             .sorted(comparing(ShopScenesDTO::getPriority))
                                              .collect(toList()));
 
         if (getImage() != null)

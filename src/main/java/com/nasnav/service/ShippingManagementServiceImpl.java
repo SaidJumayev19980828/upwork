@@ -626,6 +626,11 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		ShipmentReceiver receiver = createShipmentReceiver(subOrder);
 		List<ShipmentItems> items = createShipmentItemsFromOrder(subOrder);
 		String callBackUrl = createCallBackUrl(subOrder);
+		Long metaOrderId = 
+				ofNullable(subOrder)
+				.map(OrdersEntity::getMetaOrder)
+				.map(MetaOrderEntity::getId)
+				.orElse(null);
 		
 		shippingData.setAdditionalData(additionalParameters);
 		shippingData.setDestination(customerAddr);
@@ -633,6 +638,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		shippingData.setSource(shopAddr);
 		shippingData.setItems(items);
 		shippingData.setSubOrderId(subOrder.getId());
+		shippingData.setMetaOrderId(metaOrderId);
 		shippingData.setCallBackUrl(callBackUrl);
 		shippingData.setShopId(subOrder.getShopsEntity().getId());
 		if(isPaidByCashOnDelivery(subOrder)) {
@@ -848,6 +854,36 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 			return emptyMap();
 		}
 	}
+
+
+
+	@Override
+	public List<ShippingServiceRegistration> listShippingServices() {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		List<OrganizationShippingServiceEntity> serviceEntities = 
+				orgShippingServiceRepo.getByOrganization_Id(orgId);
+		return serviceEntities
+				.stream()
+				.map(this::createShippingServiceRegistration)
+				.collect(toList());
+	}
+	
+	
+	
+	private ShippingServiceRegistration createShippingServiceRegistration(OrganizationShippingServiceEntity entity){
+		String serviceId = entity.getServiceId();
+		Map<String,Object> serviceParams = new HashMap<>();
+		try {
+			serviceParams = jsonMapper.readValue(entity.getServiceParameters(), new TypeReference<Map<String,Object>>(){});
+		} catch (Throwable e) {
+			logger.error(e, e);
+		}
+		ShippingServiceRegistration serviceReg = new ShippingServiceRegistration();
+		serviceReg.setServiceId(serviceId);
+		serviceReg.setServiceParameters(serviceParams);
+		return serviceReg;
+	}
+	
 }
 
 

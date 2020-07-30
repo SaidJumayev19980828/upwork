@@ -32,6 +32,8 @@ public class ShopSectionsDTO extends BaseRepresentationObject{
     @JsonProperty("updated_at")
     private LocalDateTime updatedAt;
 
+    private Integer priority;
+
     @JsonProperty("scenes")
     private List<ShopScenesDTO> shopScenes;
 }

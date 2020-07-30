@@ -32,7 +32,10 @@ import static com.nasnav.exceptions.ErrorCodes.P$PRO$0006;
 import static com.nasnav.exceptions.ErrorCodes.P$VAR$0001;
 import static com.nasnav.exceptions.ErrorCodes.P$VAR$0002;
 import static com.nasnav.persistence.ProductTypes.BUNDLE;
+import static com.querydsl.core.types.dsl.Expressions.cases;
+import static com.querydsl.core.types.dsl.Expressions.constant;
 import static java.lang.String.format;
+import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -646,7 +649,11 @@ public class ProductService {
 						stock.id.as("stock_id"),
 						stock.quantity.as("quantity"),
 						stock.price.as("price"),
-		                stock.discount.divide(stock.price).multiply(Expressions.constant(100)), 
+		                cases()
+		                .when(stock.price.ne(ZERO))
+		                .then(stock.discount.divide(stock.price).multiply(constant(100)))
+		                .otherwise(ZERO)
+		                .as("discount"), 
 		                stock.currency,
 						product.organizationId.as("organization_id"),
 						stock.shopId.as("shop_id"),

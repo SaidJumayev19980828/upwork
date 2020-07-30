@@ -3,43 +3,34 @@ package com.nasnav.dao;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import com.nasnav.persistence.BrandsEntity;
 import com.nasnav.persistence.dto.query.result.products.BrandBasicData;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 
-    List<BrandsEntity> findByOrganizationEntity_Id(Long organizationEntity_Id);
+    List<BrandsEntity> findByOrganizationEntity_IdAndRemoved(Long organizationEntity_Id, Integer removed);
 
-    boolean existsByIdAndOrganizationEntity_Id(Long brandId, Long orgId);
+    boolean existsByIdAndOrganizationEntity_IdAndRemoved(Long brandId, Long orgId, Integer removed);
+	boolean existsByIdAndRemoved(Long brandId, Integer removed);
 
-    @Query("SELECT brand.id FROM BrandsEntity brand where brand.categoryId = :categoryId")
-    List<Long> getBrandsByCategoryId(@Param("categoryId") Integer categoryId);
+	boolean existsByNameIgnoreCaseAndOrganizationEntity_idAndRemoved(String brandName, Long orgId, Integer removed);
 
-    
-    @Query("select b.id FROM BrandsEntity b where b.name = :brandName")
-	Long findByName(@Param("brandName") String brandName);
+	List<BrandsEntity> findByNameInAndRemoved(Set<String> newBrands, Integer removed);
 
-	boolean existsByNameIgnoreCaseAndOrganizationEntity_id(String brandName, Long orgId);
+	@Transactional
+	@Modifying
+	@Query(value = "update BrandsEntity b set b.removed = 1 where b.id = :id")
+	void setBrandHidden(@Param("id") Long id);
 
-	@Query("select b.id FROM BrandsEntity b where UPPER(b.name) = UPPER(:brandName)")
-	Long findByNameIgnoreCase(@Param("brandName")String brandName);
-
-	List<BrandsEntity> findByNameIn(Set<String> newBrands);
-
-	@Query(value = "select p.id from products p where p.brand_id = :brandId", nativeQuery = true)
-	List<Long> getProductsByBrandId(@Param("brandId") Long brandId);
-
-	@Query(value = "select s.id from shops s where s.brand_id = :brandId", nativeQuery = true)
-	List<Long> getShopsByBrandId(@Param("brandId") Long brandId);
-	
-	
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.products.BrandBasicData(brand.id, brand.name, org.id) "
 			+ " FROM BrandsEntity brand "
 			+ " left join brand.organizationEntity org"
-			+ " WHERE brand.id in :ids")
+			+ " WHERE brand.id in :ids and brand.removed = 0")
 	List<BrandBasicData> findByIdIn(@Param("ids")List<Long> ids);
 }

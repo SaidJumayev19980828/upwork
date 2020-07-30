@@ -2,23 +2,18 @@ package com.nasnav.test;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.util.List;
 
-import javax.sql.DataSource;
-
-import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dao.ProductExtraAttributesEntityRepository;
 import org.json.JSONObject;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,16 +26,21 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
+import com.nasnav.dao.ExtraAttributesRepository;
 import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.ProductExtraAttributesEntityRepository;
+import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.response.OrganizationResponse;
+import com.nasnav.shipping.services.DummyShippingService;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -54,8 +54,6 @@ public class OrganizationManagmentTest {
     @Value("classpath:test_imgs_to_upload/nasnav--Test_Photo.png")
     private Resource file;
     @Autowired
-    private DataSource datasource;
-    @Autowired
     private TestRestTemplate template;
     @Autowired
     private OrganizationRepository organizationRepository;
@@ -63,6 +61,9 @@ public class OrganizationManagmentTest {
     private ExtraAttributesRepository extraAttrRepo;
     @Autowired
     private ProductExtraAttributesEntityRepository productExtraAttrRepo;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     public void updateOrganizationDataSuccessTest() {
@@ -81,7 +82,7 @@ public class OrganizationManagmentTest {
     //trying to update organization with nasnav_admin user
     @Test
     public void updateOrganizationUnauthorizedUserTest() {
-        String body = "{\"org_id\":99001, \"description\":\"this company is old and unique\"}";
+        String body = "{\"org_id\":99001, \"description\":\"this company is o8895ssffld and unique\"}";
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
         map.add("properties", body);
         map.add("logo", file);
@@ -261,7 +262,7 @@ public class OrganizationManagmentTest {
     @Test
     public void deleteVariantExtraAttribute() {
         //deleting extra attribute which not attached to any variant
-        HttpEntity req = getHttpEntity("123456");
+        HttpEntity<?> req = getHttpEntity("123456");
         ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11002",
                 DELETE, req, String.class);
         assertEquals(200, res.getStatusCodeValue());
@@ -271,7 +272,7 @@ public class OrganizationManagmentTest {
 
     @Test
     public void deleteVariantExtraAttributeNonExistInSameOrg() {
-        HttpEntity req = getHttpEntity("hijkllm");
+        HttpEntity<?> req = getHttpEntity("hijkllm");
         ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11001",
                 DELETE, req, String.class);
         assertEquals(406, res.getStatusCodeValue());
@@ -280,7 +281,7 @@ public class OrganizationManagmentTest {
 
     @Test
     public void deleteVariantExtraAttributeNoAuthZ() {
-        HttpEntity req = getHttpEntity("8895ssff");
+        HttpEntity<?> req = getHttpEntity("8895ssff");
         ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11001",
                 DELETE, req, String.class);
         assertEquals(403, res.getStatusCodeValue());
@@ -289,7 +290,7 @@ public class OrganizationManagmentTest {
 
     @Test
     public void deleteVariantExtraAttributeNoAuthN() {
-        HttpEntity req = getHttpEntity("noneexist");
+        HttpEntity<?> req = getHttpEntity("noneexist");
         ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11002",
                 DELETE, req, String.class);
         assertEquals(401, res.getStatusCodeValue());
@@ -299,7 +300,7 @@ public class OrganizationManagmentTest {
     @Test
     public void deleteVariantExtraAttributeAttachedVariant() {
         //deleting extra attribute attached to variant #310002
-        HttpEntity req = getHttpEntity("123456");
+        HttpEntity<?> req = getHttpEntity("123456");
         ResponseEntity<String> res = template.exchange("/organization/extra_attribute?attr_id=11003",
                 DELETE, req, String.class);
         assertEquals(200, res.getStatusCodeValue());
@@ -321,5 +322,45 @@ public class OrganizationManagmentTest {
         Assert.assertEquals(200, response.getStatusCode().value());
         Assert.assertEquals(0, json.getInt("id"));
     }
+    
+    
+    
+    
+    @Test
+    public void getOrganizationShippingServiceNoAuthZ() {
+        HttpEntity<?> req = getHttpEntity("8895ssff");
+        ResponseEntity<String> res = 
+        		template.exchange("/organization/shipping/service", GET, req, String.class);
+        assertEquals(403, res.getStatusCodeValue());
+    }
+
+
+    
+    @Test
+    public void getOrganizationShippingServiceNoAuthN() {
+        HttpEntity<?> req = getHttpEntity("NotExist");
+        ResponseEntity<String> res = 
+        		template.exchange("/organization/shipping/service", GET, req, String.class);
+        assertEquals(401, res.getStatusCodeValue());
+    }
+    
+    
+    
+    
+    @Test
+    public void getOrganizationShippingService() throws Exception {
+        HttpEntity<?> req = getHttpEntity("hijkllm");
+        ResponseEntity<String> res = 
+        		template.exchange("/organization/shipping/service", GET, req, String.class);
+        
+        assertEquals(200, res.getStatusCodeValue());
+        
+        List<ShippingServiceRegistration> services = objectMapper.readValue(res.getBody(), new TypeReference<List<ShippingServiceRegistration>>() {});
+        assertEquals(1, services.size());
+        assertEquals(DummyShippingService.ID, services.get(0).getServiceId());
+        assertFalse(services.get(0).getServiceParameters().isEmpty());
+    }
+    
+    
 
 }

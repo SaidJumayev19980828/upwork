@@ -2,6 +2,7 @@ package com.nasnav.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.validation.Valid;
@@ -57,4 +58,6 @@ public interface ProductImageService {
 	List<ProductImageDTO> getProductsAndVariantsImages(List<Long> productsIdList, List<Long> variantsIdList);
 
 	Map<Long,String> getProductsImagesMap(List<Long> productsIdList, List<Long> variantsIdList);
+	
+	Map<Long, Optional<String>> getVariantsCoverImages(List<Long> variantIds);
 }

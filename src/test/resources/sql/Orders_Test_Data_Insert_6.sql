@@ -140,7 +140,9 @@ INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330032, 602, 2, 70.0, 1);
 
 
-
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(330031, '', 'ssss', 2, now(), 980, 2, 'dfdfdd', 88, 310001);
 
 
 
@@ -148,3 +150,23 @@ INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(
 -- insert cart
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(602, '99001/img2.jpg', '{"Color":"Blue"}', 2, 88);
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(603, '99001/cover_img.jpg', '{"Color":"Yellow"}', 4, 88);
+
+
+
+
+--INSERT dummy images
+INSERT INTO public.files(organization_id, url, "location", mimetype, orig_filename)VALUES(99001, '99001/img1.jpg', '/dummy_loc1.jpg', 'image/jpeg', 'dummy_loc.jpg');
+INSERT INTO public.files(organization_id, url, "location", mimetype, orig_filename)VALUES(99001, '99001/img2.jpg', '/dummy_loc2.jpg', 'image/jpeg', 'dummy_loc.jpg');
+INSERT INTO public.files(organization_id, url, "location", mimetype, orig_filename)VALUES(99001, '99001/img3.jpg', '/dummy_loc3.jpg', 'image/jpeg', 'dummy_loc.jpg');
+INSERT INTO public.files(organization_id, url, "location", mimetype, orig_filename)VALUES(99001, '99001/cover_img.jpg', '/dummy_loc4.jpg', 'image/jpeg', 'dummy_loc.jpg');
+INSERT INTO public.files(organization_id, url, "location", mimetype, orig_filename)VALUES(99001, '99001/cover_img2.jpg', '/dummy_loc5.jpg', 'image/jpeg', 'dummy_loc.jpg');
+INSERT INTO public.files(organization_id, url, "location", mimetype, orig_filename)VALUES(99001, '99001/cover_img3.jpg', '/dummy_loc6.jpg', 'image/jpeg', 'dummy_loc.jpg');
+
+
+INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(1001, 310003, 7, 0, '99001/img1.jpg');
+INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(1001, 310003, 7, 1, '99001/img2.jpg');
+INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(1001, null, 7, 0, '99001/img3.jpg');
+INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(1002, 310002, 7, 1, '99001/cover_img.jpg');
+INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(1002, null, 7, 1, '99001/cover_img2.jpg');
+INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)VALUES(1002, null, 7, 0, '99001/cover_img3.jpg');
+

@@ -11,6 +11,7 @@ import com.nasnav.AppConfig;
 import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
+import com.nasnav.dto.request.theme.OrganizationThemeClass;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.misc.Tools;
@@ -320,9 +321,8 @@ public class OrganizationController {
     @PostMapping(value = "themes/class")
     @ResponseStatus(OK)
     public void assignOrgThemeClass(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                   @RequestParam("org_id") Long orgId,
-                                   @RequestParam(value = "class_id") List<Integer> classIds) throws BusinessException {
-        themeService.assignOrgThemeClass(orgId, classIds);
+                                    @RequestBody OrganizationThemeClass orgThemeClassDTO) throws BusinessException {
+        themeService.assignOrgThemeClass(orgThemeClassDTO);
     }
 
 
@@ -407,7 +407,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "register the organization to a shipping service", nickname = "changeOrgTheme", code = 200)
+    @ApiOperation(value = "register the organization to a shipping service", nickname = "registerShippingService", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -418,6 +418,23 @@ public class OrganizationController {
     public void registerToShippingService(@RequestHeader (name = "User-Token", required = false) String userToken,
                                     @RequestBody ShippingServiceRegistration registration) throws BusinessException {
     	shippingMngService.registerToShippingService(registration);
+    }
+    
+    
+    
+    
+    
+    @ApiOperation(value = "list shipping services that the organization is registered to", nickname = "getOrgShippingService", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "shipping/service")
+    @ResponseStatus(OK)
+    public List<ShippingServiceRegistration> listShippingServices(
+    		@RequestHeader (name = "User-Token", required = false) String userToken) throws BusinessException {
+    	return shippingMngService.listShippingServices();
     }
     
     

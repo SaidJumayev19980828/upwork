@@ -74,6 +74,7 @@ public class AddressesEntity implements BaseEntity {
         BeanUtils.copyProperties(this, address);
 
         if (areasEntity != null) {
+            address.setAreaId(areasEntity.getId());
             address.setArea(areasEntity.getName());
             if (areasEntity.getCitiesEntity() != null) {
                 address.setCity(areasEntity.getCitiesEntity().getName());

@@ -1,4 +1,5 @@
 package com.nasnav.test;
+import static com.google.common.primitives.Longs.asList;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static org.springframework.http.HttpMethod.DELETE;
@@ -372,9 +373,10 @@ public class ThemesApiTest {
 
     @Test
     public void assignOrganizationThemeClass() {
-        HttpEntity<?> request =  getHttpEntity("101112");
+        String body = json().put("org_id", 99001).put("class_ids", asList(990012)).toString();
+        HttpEntity<?> request =  getHttpEntity(body, "101112");
         ResponseEntity<String> response =
-                template.exchange("/organization/themes/class?org_id=99001&class_id=990012",
+                template.exchange("/organization/themes/class",
                 POST, request, String.class);
 
         Assert.assertEquals(200,response.getStatusCodeValue());
@@ -383,9 +385,10 @@ public class ThemesApiTest {
 
     @Test
     public void assignOrganizationThemeClassInvalidOrg() {
-        HttpEntity<?> request =  getHttpEntity("101112");
+        String body = json().put("org_id", 99003).put("class_id", 990012).toString();
+        HttpEntity<?> request =  getHttpEntity(body,"101112");
         ResponseEntity<String> response =
-                template.exchange("/organization/themes/class?org_id=99003&class_id=990012",
+                template.exchange("/organization/themes/class",
                         POST, request, String.class);
 
         Assert.assertEquals(404,response.getStatusCodeValue());
@@ -394,9 +397,10 @@ public class ThemesApiTest {
 
     @Test
     public void assignOrganizationThemeClassInvalidClass() {
-        HttpEntity<?> request =  getHttpEntity("101112");
+        String body = json().put("org_id", 99003).put("class_id", 990014).toString();
+        HttpEntity<?> request =  getHttpEntity(body, "101112");
         ResponseEntity<String> response =
-                template.exchange("/organization/themes/class?org_id=99003&class_id=990014",
+                template.exchange("/organization/themes/class",
                         POST, request, String.class);
 
         Assert.assertEquals(404,response.getStatusCodeValue());
@@ -427,9 +431,10 @@ public class ThemesApiTest {
 
     @Test
     public void assignOrganizationThemeClassExistingClass() {
-        HttpEntity<?> request =  getHttpEntity("101112");
+        String body = json().put("org_id", 99001).put("class_ids", asList(990011)).toString();
+        HttpEntity<?> request =  getHttpEntity(body, "101112");
         ResponseEntity<String> response =
-                template.exchange("/organization/themes/class?org_id=99001&class_id=990011",
+                template.exchange("/organization/themes/class",
                         POST, request, String.class);
 
         Assert.assertEquals(406,response.getStatusCodeValue());
@@ -604,5 +609,18 @@ public class ThemesApiTest {
                 template.exchange("/organization/themes", POST, request, String.class);
 
         Assert.assertEquals(406, response.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void getOrganizationThemes() {
+        HttpEntity<?> request =  getHttpEntity("131415");
+        ResponseEntity<List> response = template.exchange("/organization/themes",
+                GET, request, List.class);
+
+        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assert.assertTrue(!response.getBody().isEmpty());
+        System.out.println(response.getBody().toString());
+        Assert.assertEquals(2, response.getBody().size());
     }
 }

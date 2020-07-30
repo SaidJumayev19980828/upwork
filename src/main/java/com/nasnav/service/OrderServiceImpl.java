@@ -6,6 +6,7 @@ import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
+import static com.nasnav.commons.utils.MathUtils.calculatePercentage;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.ORDER_BILL_TEMPLATE;
 import static com.nasnav.constatnts.EmailConstants.ORDER_CANCEL_NOTIFICATION_TEMPLATE;
@@ -41,6 +42,7 @@ import static com.nasnav.enumerations.OrderStatus.STORE_PREPARED;
 import static com.nasnav.enumerations.OrderStatus.findEnum;
 import static com.nasnav.enumerations.PaymentStatus.ERROR;
 import static com.nasnav.enumerations.PaymentStatus.FAILED;
+import static com.nasnav.enumerations.PaymentStatus.UNPAID;
 import static com.nasnav.enumerations.Roles.CUSTOMER;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
@@ -347,8 +349,8 @@ public class OrderServiceImpl implements OrderService {
 		buildMap(orderStateMachine)
 			.put(CLIENT_CONFIRMED	, setOf(CLIENT_CANCELLED, FINALIZED))
 			.put(FINALIZED	 		, setOf(STORE_CONFIRMED, STORE_CANCELLED, CLIENT_CANCELLED))
-			.put(STORE_CONFIRMED	, setOf(STORE_PREPARED, STORE_CANCELLED, DISPATCHED))
-			.put(STORE_PREPARED		, setOf(DISPATCHED, STORE_CANCELLED))
+			.put(STORE_CONFIRMED	, setOf(STORE_PREPARED, STORE_CANCELLED, DISPATCHED, DELIVERED))
+			.put(STORE_PREPARED		, setOf(DISPATCHED, DELIVERED, STORE_CANCELLED))
 			.put(DISPATCHED			, setOf(DELIVERED, STORE_CANCELLED));
 	}
 	
@@ -1358,7 +1360,7 @@ public class OrderServiceImpl implements OrderService {
         	BeanUtils.copyProperties( 
         			getOrderDetails(order)
         			, representation
-        			, new String[]{"orderId", "userId", "shopId", "createdAt", "status", "paymentStatus", "metaOrderId"});
+        			, new String[]{"orderId", "userId", "shopId", "createdAt", "status", "paymentStatus", "metaOrderId", "discount"});
 
         if (detailsLevel == 2 && orderItemsQuantity.get(order.getId()) != null)
         	representation.setTotalQuantity(orderItemsQuantity.get(order.getId()).intValue());
@@ -1399,6 +1401,7 @@ public class OrderServiceImpl implements OrderService {
 		obj.setPaymentStatus(entity.getPaymentStatus().toString());
 		obj.setTotal(entity.getAmount());
 		obj.setMetaOrderId(metaOrderId);
+		obj.setDiscount(entity.getDiscounts());
 		return obj;
 	}
 	
@@ -1439,24 +1442,37 @@ public class OrderServiceImpl implements OrderService {
 
 	private BasketItem toBasketItem(BasketItemDetails itemDetails) {
 
+		BigDecimal price = itemDetails.getPrice();
+		BigDecimal discount = ofNullable(itemDetails.getDiscount()).orElse(ZERO);
+		BigDecimal totalPrice = price.subtract(discount).multiply(itemDetails.getQuantity());
+		BigDecimal discountPercentage = calculatePercentage(discount, price);
+		
 		BasketItem item = new BasketItem();
 		item.setProductId(itemDetails.getProductId());
 		item.setName(itemDetails.getProductName());
 		item.setPname(itemDetails.getProductPname());
 		item.setStockId(itemDetails.getStockId());
 		item.setQuantity(itemDetails.getQuantity().intValue());
-		//TODO set item unit //
-		item.setTotalPrice(itemDetails.getPrice());
+		item.setTotalPrice(totalPrice);
+		item.setPrice(price);
+		item.setDiscount(discountPercentage);
 		item.setThumb( itemDetails.getProductCoverImage() );
 		item.setCurrency(ofNullable(TransactionCurrency.getTransactionCurrency(itemDetails.getCurrency())).orElse(EGP).name());
-		
+		//TODO set item unit //
+
 		return item;
 	}
 
 
-	private BasketItem toBasketItem(BasketsEntity entity, List<ProductImageDTO> variantsImages) {
+	private BasketItem toBasketItem(BasketsEntity entity, Map<Long, Optional<String>> variantsCoverImages) {
 		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
 		ProductEntity product = variant.getProductEntity();
+		BigDecimal price = entity.getPrice();
+		BigDecimal discount = ofNullable(entity.getDiscount()).orElse(ZERO);
+		BigDecimal totalPrice = price.subtract(discount).multiply(entity.getQuantity());
+		BigDecimal discountPercentage = calculatePercentage(discount, price);
+		String thumb = variantsCoverImages.get(variant.getId()).orElse(null);
+		String currency = ofNullable(TransactionCurrency.getTransactionCurrency(entity.getCurrency())).orElse(EGP).name();
 
 		BasketItem item = new BasketItem();
 		item.setProductId(product.getId());
@@ -1464,21 +1480,14 @@ public class OrderServiceImpl implements OrderService {
 		item.setPname(product.getPname());
 		item.setStockId(entity.getStocksEntity().getId());
 		item.setQuantity(entity.getQuantity().intValueExact());
-		item.setTotalPrice(entity.getPrice());
+		item.setTotalPrice(totalPrice);
+		item.setPrice(price);
+		item.setDiscount(discountPercentage);
 		item.setBrandId(product.getBrandId());
 		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec()));
-		//TODO set item unit //
-
-		String thumb = variantsImages
-								 .stream()
-								 .filter(i -> i.getVariantId() != null)
-								 .filter(i -> i.getVariantId().equals(variant.getId()) && i.getProductId().equals(product.getId()))
-								 .findFirst()
-								 .orElse(new ProductImageDTO())
-								 .getImagePath();
-
 		item.setThumb(thumb);
-		item.setCurrency(ofNullable(TransactionCurrency.getTransactionCurrency(entity.getCurrency())).orElse(EGP).name());
+		item.setCurrency(currency);
+		//TODO set item unit //
 
 		return item;
 	}
@@ -1506,9 +1515,10 @@ public class OrderServiceImpl implements OrderService {
 		Map<Long, BigDecimal> orderItemsQuantity = getOrderItemsQuantity(detailsLevel == 2 ? ordersIds : new HashSet<>());
 
 		
-		return ordersEntityList.stream()
-								.map(order -> getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap))
-								.collect(toList());
+		return ordersEntityList
+				.stream()
+				.map(order -> getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap))
+				.collect(toList());
 	}
 	
 	
@@ -1524,14 +1534,19 @@ public class OrderServiceImpl implements OrderService {
 		List<BasketItemDetails> basketData = em.createNamedQuery("Basket", BasketItemDetails.class)
 												.setParameter("orderId", nonEmptyOrdersIds)
 												.getResultList();
-		return  basketData.stream()
-						.filter(Objects::nonNull)
-						.collect( groupingBy(BasketItemDetails::getOrderId));
+		return  basketData
+				.stream()
+				.filter(Objects::nonNull)
+				.collect( groupingBy(BasketItemDetails::getOrderId));
 	}
 
 
+	
+	
 	private Map<Long, BigDecimal> getOrderItemsQuantity(Set<Long> orderIds) {
-		List<BasketsEntity> basketsEntities = basketRepository.findByOrdersEntity_IdIn(orderIds)
+		List<BasketsEntity> basketsEntities = 
+				basketRepository
+				.findByOrdersEntity_IdIn(orderIds)
 				.stream()
 				.collect( toList());
 
@@ -2323,11 +2338,11 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private Order getOrderResponse(MetaOrderEntity order) {
-		List<ProductImageDTO> variantsImages = getVariantsImagesList(order);
+		Map<Long, Optional<String>> variantsCoverImages = getVariantsImagesList(order);
 
 		Order orderDto = setMetaOrderBasicData(order);
 
-		List<SubOrder> subOrders = 	createSubOrderDtoList(order, variantsImages);
+		List<SubOrder> subOrders = 	createSubOrderDtoList(order, variantsCoverImages);
 
 		orderDto.setSubOrders(subOrders);
 		orderDto.setSubtotal(order.getSubTotal());
@@ -2338,33 +2353,28 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private List<ProductImageDTO> getVariantsImagesList(MetaOrderEntity order) {
-		List<ProductVariantsEntity> allVariants = order.getSubOrders()
+	private Map<Long, Optional<String>> getVariantsImagesList(MetaOrderEntity order) {
+		List<Long> variantsIds = 
+				order
+				.getSubOrders()
 				.stream()
 				.map(OrdersEntity::getBasketsEntity)
 				.flatMap(Set::stream)
 				.map(BasketsEntity::getStocksEntity)
 				.map(StocksEntity::getProductVariantsEntity)
-				.collect(toList());
-		List<Long> variantsIds = allVariants.stream()
 				.map(ProductVariantsEntity::getId)
 				.collect(toList());
-
-		List<Long> productsIds = allVariants.stream()
-				.map(ProductVariantsEntity::getProductEntity)
-				.map(ProductEntity::getId)
-				.collect(toList());
-		return imgService.getProductsAndVariantsImages(productsIds, variantsIds);
+		return imgService.getVariantsCoverImages(variantsIds);
 	}
 
 
 
 
-	private List<SubOrder> createSubOrderDtoList(MetaOrderEntity order, List<ProductImageDTO> variantsImages) {
+	private List<SubOrder> createSubOrderDtoList(MetaOrderEntity order, Map<Long, Optional<String>> variantsCoverImages) {
 		return order
 		.getSubOrders()
 		.stream()
-		.map(subOrder -> getSubOrder(subOrder, variantsImages))
+		.map(subOrder -> getSubOrder(subOrder, variantsCoverImages))
 		.collect(toList());
 	}
 
@@ -2379,7 +2389,12 @@ public class OrderServiceImpl implements OrderService {
 		order.setCreationDate(metaOrder.getCreatedAt());
 		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(metaOrder.getId());
 		if (payment.isPresent()) {
+			PaymentStatus paymentStatus =
+					payment
+					.map(PaymentEntity::getStatus)
+					.orElse(UNPAID);
 			order.setOperator(payment.get().getOperator());
+			order.setPaymentStatus(paymentStatus.name());
 		}
 		return order;
 	}
@@ -2415,6 +2430,7 @@ public class OrderServiceImpl implements OrderService {
 		return metaOrderRepo.getMetaOrderList(user.getId(), user.getOrganizationId())
 							.stream()
 							.map(this::setOrderStatus)
+							.map(this::setPaymentStatus)
 							.collect(toList());
 	}
 
@@ -2422,6 +2438,19 @@ public class OrderServiceImpl implements OrderService {
 	private MetaOrderBasicInfo setOrderStatus(MetaOrderBasicInfo order) {
 		order.setStatus(OrderStatus.findEnum(order.getStatusInt()).name());
 		order.setStatusInt(null);
+		return order;
+	}
+	
+	
+	
+	private MetaOrderBasicInfo setPaymentStatus(MetaOrderBasicInfo order) {
+		String payStatus = 
+				ofNullable(order.getPaymentStatusInt())
+				.map(PaymentStatus::getPaymentStatus)
+				.map(PaymentStatus::name)
+				.orElse(UNPAID.name());
+		order.setPaymentStatus(payStatus);
+		order.setPaymentStatusInt(null);
 		return order;
 	}
 
@@ -2445,7 +2474,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private SubOrder getSubOrder(OrdersEntity order, List<ProductImageDTO> variantsImages) {
+	private SubOrder getSubOrder(OrdersEntity order, Map<Long, Optional<String>> variantsCoverImages) {
 
 		String status = 
 				ofNullable(findEnum(order.getStatus()))
@@ -2456,7 +2485,7 @@ public class OrderServiceImpl implements OrderService {
 				order
 				.getBasketsEntity()
 				.stream()
-				.map(b -> toBasketItem(b, variantsImages))
+				.map(b -> toBasketItem(b, variantsCoverImages))
 				.collect(toList());
 		
 		Shipment shipmentDto = (Shipment) order.getShipment().getRepresentation();
@@ -2737,6 +2766,7 @@ public class OrderServiceImpl implements OrderService {
 		basket.setPrice(data.getPrice());
 		basket.setQuantity(new BigDecimal(data.getQuantity()));
 		basket.setCurrency(data.getCurrency());
+		basket.setDiscount(data.getDiscount());
 		basket.setOrdersEntity(subOrder);
 
 		return basket;

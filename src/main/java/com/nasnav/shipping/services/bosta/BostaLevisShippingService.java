@@ -300,7 +300,11 @@ public class BostaLevisShippingService implements ShippingService{
 
 
 	private PackageSpec createPackageSpecs(ShippingDetails shipment) {
-		String description = format("sub-Order Id: %d", shipment.getSubOrderId());
+		String metaOrderId = 
+				ofNullable(shipment.getMetaOrderId())
+				.map(id -> id+"-")
+				.orElse("");
+		String description = format("Order Id: %s%d", metaOrderId, shipment.getSubOrderId());
 
 		PackageDetails details = new PackageDetails();
 		details.setDescription(description);

@@ -201,6 +201,7 @@ public class CategoryService {
         return new CategoryResponse(categoriesEntity.getId());
     }
 
+
     public CategoryResponse deleteCategory(Long categoryId) throws BusinessException {
 		if (categoryId == null ){
 			throw new BusinessException("MISSING_PRARM: Category_id", "",HttpStatus.NOT_ACCEPTABLE);
@@ -210,16 +211,13 @@ public class CategoryService {
                     "No category entity found with provided ID", NOT_ACCEPTABLE);
         }
         CategoriesEntity categoriesEntity = categoryRepository.findById(categoryId).get();
-        List<Long> productsIds = new ArrayList<>();
-        if (productsIds.size() > 0){
-            throw new BusinessException("NOT_EMPTY: products",
-                    "There are still products "+productsIds.toString()+" assigned to this category", CONFLICT);
+
+        List<Long> tagsIds = orgTagsRepo.findByCategoryId(categoryId);
+        if (tagsIds.size() > 0){
+            throw new BusinessException("NOT_EMPTY: tags",
+                    "There are still tags "+tagsIds.toString()+" assigned to this category", CONFLICT);
         }
-        List<Long> brandsIds = brandsRepository.getBrandsByCategoryId(categoryId.intValue());
-        if (brandsIds.size() > 0){
-            throw new BusinessException("NOT_EMPTY: brands",
-                    "There are still brands "+brandsIds.toString()+" assigned to this category", CONFLICT);
-        }
+
         List<CategoriesEntity> childrenCategories = categoryRepository.findByParentId(categoryId.intValue());
         if (childrenCategories.size() > 0){
             List<Long> childrenCategoriesIds = childrenCategories.stream().map(category -> category.getId()).collect(toList());

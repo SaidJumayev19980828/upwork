@@ -879,7 +879,7 @@ public class DataImportServiceImpl implements DataImportService {
 	private Map<String, BrandsEntity> getBrandsMapping() {
 		Long orgId = security.getCurrentUserOrganizationId();
 		return brandRepo
-				.findByOrganizationEntity_Id(orgId)
+				.findByOrganizationEntity_IdAndRemoved(orgId, 0)
 				.stream()
 				.collect(toMap(
 							brand -> brand.getName().toUpperCase() 
@@ -1169,7 +1169,7 @@ public class DataImportServiceImpl implements DataImportService {
 	
 	private boolean isBrandNotExists(String brandName) {
 		Long orgId = security.getCurrentUserOrganizationId();		
-		return !brandRepo.existsByNameIgnoreCaseAndOrganizationEntity_id(brandName, orgId);
+		return !brandRepo.existsByNameIgnoreCaseAndOrganizationEntity_idAndRemoved(brandName, orgId, 0);
 	}
 	
 	

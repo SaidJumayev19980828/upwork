@@ -4,6 +4,7 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.OrganizationThemesSettingsDTO;
 import com.nasnav.dto.ThemeClassDTO;
 import com.nasnav.dto.ThemeDTO;
+import com.nasnav.dto.request.theme.OrganizationThemeClass;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.OrganizationEntity;
@@ -182,13 +183,13 @@ public class ThemeService {
 
     
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
-    public void assignOrgThemeClass(Long orgId, List<Integer> classIds) throws BusinessException {
-        Optional<OrganizationEntity> optionalOrg = orgRepo.findById(orgId);
-        checkOrgExistence(optionalOrg, orgId);
+    public void assignOrgThemeClass(OrganizationThemeClass orgThemeClassDTO) throws BusinessException {
+        Optional<OrganizationEntity> optionalOrg = orgRepo.findById(orgThemeClassDTO.getOrgId());
+        checkOrgExistence(optionalOrg, orgThemeClassDTO.getOrgId());
         OrganizationEntity org = optionalOrg.get();
 
-        List<ThemeClassEntity> themeClass = themeClassRepo.findByIdIn(classIds);
-        checkThemeClassesExist(classIds, themeClass.stream().map(c -> c.getId()).collect(toList()));
+        List<ThemeClassEntity> themeClass = themeClassRepo.findByIdIn(orgThemeClassDTO.getClassIds());
+        checkThemeClassesExist(orgThemeClassDTO.getClassIds(), themeClass.stream().map(c -> c.getId()).collect(toList()));
 
         Set<ThemeClassEntity> orgClasses = org.getThemeClasses();
 
@@ -297,8 +298,11 @@ public class ThemeService {
 
 
     public List<OrgThemeRepObj> getOrgThemes() {
-        Long orgId = securityService.getCurrentUserOrganizationId();
-        return orgThemeSettingsRepo.findByOrganizationEntity_Id(orgId);
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
+        List<Integer> organizationThemeClasses = org.getThemeClasses().stream()
+                                                                   .map(ThemeClassEntity::getId)
+                                                                   .collect(toList());
+        return orgThemeSettingsRepo.findByThemeClasses(organizationThemeClasses);
     }
 
 }

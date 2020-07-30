@@ -39,3 +39,6 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 70, 2);
 
 INSERT INTO public.products(id, name, brand_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',104, 99001, now(), now());
+
+
+INSERT INTO public.organization_shipping_service(shipping_service_id, organization_id, service_parameters, id)VALUES('TEST', 99001, '{"hotline":"19888"}', 11001);

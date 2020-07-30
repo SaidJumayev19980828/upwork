@@ -219,6 +219,7 @@ public class ShopService {
 
 
     @Transactional
+    @CacheEvict(cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
     public void deleteShop(Long shopId)  {
         Long orgId = securityService.getCurrentUserOrganizationId();
         if (!shopsRepository.existsByIdAndOrganizationEntity_IdAndRemoved(shopId, orgId, 0)) {

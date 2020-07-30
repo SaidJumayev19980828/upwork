@@ -55,6 +55,7 @@ public class OrganizationEntity implements BaseEntity {
 
     public OrganizationEntity() {
         id = null;
+        this.ecommerce = 1;
     }
 
     public Type getType() {
@@ -74,6 +75,8 @@ public class OrganizationEntity implements BaseEntity {
                 return Type.Unknown;
         }
     }
+    
+    
 
     @Override
     public String toString() {

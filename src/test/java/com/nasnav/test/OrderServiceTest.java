@@ -15,6 +15,7 @@ import static com.nasnav.test.commons.TestCommons.getHeaders;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.lang.String.format;
+import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -730,7 +731,7 @@ public class OrderServiceTest {
 				new HttpEntity<>(getHeaders("101112")), String.class);
 
 		DetailedOrderRepObject body = getOrderListDetailedObject(response);
-		DetailedOrderRepObject expectedBody = createExpectedOrderInfo(330005L, new BigDecimal("50"), 1, "NEW", 89L);
+		DetailedOrderRepObject expectedBody = createExpectedOrderInfo(330005L, new BigDecimal("50"), 1, "NEW", 89L, ZERO);
 
 		assertEquals(expectedBody, body);
 
@@ -740,7 +741,7 @@ public class OrderServiceTest {
 
 		body = getOrderListDetailedObject(response);
 
-		expectedBody = createExpectedOrderInfo(330003L, new BigDecimal("300"), 7, "NEW", 88L);
+		expectedBody = createExpectedOrderInfo(330003L, new BigDecimal("300"), 7, "NEW", 88L, ZERO);
 
 		assertEquals(expectedBody, body);
 
@@ -750,12 +751,16 @@ public class OrderServiceTest {
 
 		body = getOrderListDetailedObject(response);
 
-		expectedBody = createExpectedOrderInfo(330004L, new BigDecimal("200"), 5, "NEW", 89L);
+		expectedBody = createExpectedOrderInfo(330004L, new BigDecimal("200"), 5, "NEW", 89L, new BigDecimal("50"));
 
 		assertEquals(expectedBody, body);
 
 	}
 
+	
+	
+	
+	
 	private DetailedOrderRepObject getOrderListDetailedObject(ResponseEntity<String> response) throws IOException {
 		JSONArray json = new JSONArray(response.getBody());
 
@@ -764,6 +769,9 @@ public class OrderServiceTest {
 
 		return mapper.readValue(json.getJSONObject(0).toString(), DetailedOrderRepObject.class);
 	}
+	
+	
+	
 	
 	
 	@Test
@@ -899,39 +907,6 @@ public class OrderServiceTest {
 	
 	
 	
-
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void deleteCurrentOrderTest() throws JsonParseException, JsonMappingException, IOException {
-		long countAllBefore = orderRepository.count();
-		long countBefore = orderRepository.countByStatusAndUserId(OrderStatus.NEW.getValue() , 89L);
-		
-		//-------------------------------------------
-		
-		ResponseEntity<String> response = template.exchange("/order/current"
-															, HttpMethod.DELETE
-															, new HttpEntity<>(getHeaders("456"))
-															, String.class);
-		
-		//-------------------------------------------
-		long countAfter = orderRepository.countByStatusAndUserId(OrderStatus.NEW.getValue() , 89L);
-		long countAllAfter = orderRepository.count();
-				
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertNotEquals( 0L, countBefore);
-		assertNotEquals(countAllBefore, countBefore);
-		assertEquals( 0L, countAfter);
-		assertEquals("check that other users orders were not affected"
-					, countBefore - countAfter
-					, countAllBefore - countAllAfter);
-	}
-	
-	
-	
-	
-	
-	
 	
 	private JSONObject createOrderUpdateRequestWithInvalidQuantity() {
 		Integer qunantity = Integer.MAX_VALUE/100;		
@@ -994,7 +969,8 @@ public class OrderServiceTest {
 	
 	
 
-	private DetailedOrderRepObject createExpectedOrderInfo(Long orderId, BigDecimal price, Integer quantity, String status, Long userId) {
+	private DetailedOrderRepObject createExpectedOrderInfo(Long orderId, BigDecimal price, Integer quantity
+			, String status, Long userId, BigDecimal discount) {
 		OrdersEntity entity = helper.getOrderEntityFullData(orderId);
 
 		DetailedOrderRepObject order = new DetailedOrderRepObject();
@@ -1005,13 +981,12 @@ public class OrderServiceTest {
 		order.setCreatedAt( entity.getCreationDate() );
 		order.setDeliveryDate( entity.getDeliveryDate() );
 		order.setOrderId( orderId );
-//		order.setShipping( BigDecimal.ZERO );
 		order.setShippingAddress( null );
 		order.setShopId( entity.getShopsEntity().getId() );
 		order.setStatus( status );
 		order.setSubtotal( price );
 		order.setTotal( price);		
-		order.setItems( createExpectedItems(price, quantity));
+		order.setItems( createExpectedItems(price, quantity, discount));
 		order.setTotalQuantity(quantity);
 		order.setPaymentStatus(entity.getPaymentStatus().toString());
 		order.setMetaOrderId(310001L);
@@ -1023,14 +998,17 @@ public class OrderServiceTest {
 	
 	
 
-	private List<BasketItem> createExpectedItems(BigDecimal price, Integer quantity) {
+	private List<BasketItem> createExpectedItems(BigDecimal price, Integer quantity, BigDecimal discount) {
+		BigDecimal discountAmount = discount.divide(new BigDecimal("100")).multiply(price).setScale(0);
 		BasketItem item = new BasketItem();
 		item.setProductId(1001L);
 		item.setName("product_1");
 		item.setStockId( 601L );
 		item.setQuantity(quantity);
-		item.setTotalPrice( price );
+		item.setTotalPrice( price.subtract(discountAmount).multiply(new BigDecimal(quantity)) );
 		item.setThumb(EXPECTED_COVER_IMG_URL);
+		item.setPrice(price);
+		item.setDiscount(discount);
 		return Arrays.asList(item);
 	}
 	

@@ -264,7 +264,7 @@ public class BrandManagmentTest {
         ResponseEntity<String> res = 
         		template.exchange("/organization/brand?brand_id="+ brandId, DELETE, request, String.class);
         Assert.assertEquals(200, res.getStatusCodeValue());
-        Assert.assertFalse(brandRepo.existsById(brandId));
+        Assert.assertFalse(brandRepo.existsByIdAndRemoved(brandId, 0));
     }
 
 
@@ -276,23 +276,6 @@ public class BrandManagmentTest {
         Assert.assertEquals(406, res.getStatusCodeValue());
     }
 
-
-    @Test
-    public void deleteBrandLinkedShop() {
-        HttpEntity<?> request = getHttpEntity("hijkllm");
-        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=102", DELETE,
-                request, String.class);
-        Assert.assertEquals(406, res.getStatusCodeValue());
-    }
-
-
-    @Test
-    public void deleteBrandLinkedProduct() {
-        HttpEntity<?> request = getHttpEntity("hijkllm");
-        ResponseEntity<String> res = template.exchange("/organization/brand?brand_id=104", DELETE,
-                request, String.class);
-        Assert.assertEquals(406, res.getStatusCodeValue());
-    }
 
 
     @Test

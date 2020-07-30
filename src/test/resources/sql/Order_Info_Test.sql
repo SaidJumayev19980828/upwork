@@ -145,7 +145,7 @@ VALUES(330006,'', '', '', 0, 90, now(), now()+interval '4 day', now(), 99003, 1,
 
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330002, 601, 14, 600.0, 1);
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330003, 601, 7, 300.0, 1);
-INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330004, 601, 5, 200.0, 1);
+INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency,discount)VALUES(330004, 601, 5, 200.0, 1, 100);
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330005, 601, 1, 50.0, 1);
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330006, 601, 3, 100.0, 1);
 

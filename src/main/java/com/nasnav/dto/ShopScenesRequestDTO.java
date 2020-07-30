@@ -9,4 +9,5 @@ public class ShopScenesRequestDTO {
     private String name;
     @JsonProperty("image_url")
     private String imageUrl;
+    private Integer priority;
 }

@@ -1,15 +1,14 @@
 package com.nasnav.request;
 
+import java.math.BigDecimal;
+import java.util.Set;
+
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.dto.ProductSortOptions;
 
 import lombok.Data;
-import lombok.ToString;
-
-import java.math.BigDecimal;
-import java.util.List;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
@@ -20,7 +19,7 @@ public class ProductSearchParam {
     public Long shop_id;
     public Long brand_id;
     public Long category_id;
-    public List<Long> tags;
+    public Set<Long> tags;
     public String name;
     public Integer start;
     public Integer count;
