@@ -813,7 +813,9 @@ public class OrganizationService {
 	    }else {
 	    	orgDom = orgDomainsRep.findByDomain(domain);
 	    }    	
-
+	    
+	    System.out.println("## domain: " + domain + ", subDir: " + subDir + ", orgDom: " + orgDom);
+	    
 		return (orgDom == null) ? new Pair(0L, 0L) : new Pair(orgDom.getOrganizationEntity().getId(), subDir == null ? 0L : 1L);
     }
 
