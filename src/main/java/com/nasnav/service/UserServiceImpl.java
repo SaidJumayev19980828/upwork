@@ -639,12 +639,7 @@ public class UserServiceImpl implements UserService {
 	
 	
 	private List<AddressRepObj> getUserAddresses(Long userId){
-		return addressRepo.findByUserId(userId)
-						  .stream()
-				          .filter(Objects::nonNull)
-						  .map(AddressesEntity::getRepresentation)
-						  .map(AddressRepObj.class::cast)
-						  .collect(toList());
+		return addressRepo.findByUserId(userId);
 	}
 
 	

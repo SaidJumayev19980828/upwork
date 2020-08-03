@@ -38,6 +38,7 @@ import javax.mail.MessagingException;
 
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.dto.AddressDTO;
+import com.nasnav.dto.AddressRepObj;
 import com.nasnav.persistence.AddressesEntity;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
@@ -1098,24 +1099,24 @@ public class UserRegisterTest {
 		ResponseEntity<AddressDTO> response = template.exchange("/user/address", PUT, request, AddressDTO.class);
 		assertEquals(200, response.getStatusCodeValue());
 
-		Optional<AddressesEntity> entity = addressRepo.findByUserId(88001L).stream().findFirst();
+		Optional<AddressRepObj> entity = addressRepo.findByUserId(88001L).stream().findFirst();
 		assertTrue(entity.isPresent());
-		AddressesEntity addressesEntity = entity.get();
-		assertEquals("address line", addressesEntity.getAddressLine1());
+		AddressRepObj addressResponse = entity.get();
+		assertEquals("address line", addressResponse.getAddressLine1());
 
 
 
 
 		//unlinking the address from user
 		address = json()
-					.put("id", addressesEntity.getId())
+					.put("id", addressResponse.getId())
 					.put("address_line_1", "Sesame street");
 		request = getHttpEntity(address.toString(), "123");
 		response = template.exchange("/user/address", PUT, request, AddressDTO.class);
 
 		assertEquals(200, response.getStatusCodeValue());
-		assertFalse(addressRepo.findByIdAndUserId(addressesEntity.getId(), 88001L).isPresent());
-		addressRepo.delete(addressesEntity);
+		assertFalse(addressRepo.findByIdAndUserId(addressResponse.getId(), 88001L).isPresent());
+		addressRepo.deleteById(addressResponse.getId());
 
 	}
 
