@@ -3,6 +3,7 @@ package com.nasnav.dao;
 import java.util.List;
 import java.util.Optional;
 
+import com.nasnav.dto.AddressRepObj;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -24,9 +25,17 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
     Integer countByUserIdAndAddressId(@Param("addressId") Long addressId,
                                       @Param("userId") Long userId);
 
-    @Query(value = "select addr from UserEntity usr left join usr.addresses addr" +
-            " where usr.id = :userId ")
-    List<AddressesEntity> findByUserId(@Param("userId") Long userId);
+    @Query(value = "select new com.nasnav.dto.AddressRepObj(a.id, a.firstName, a.lastName, a.flatNumber, a.buildingNumber, a.addressLine1," +
+                    " a.addressLine2, a.latitude, a.longitude, a.postalCode, a.phoneNumber, ua.principal, area.id," +
+                    " area.name , city.name , country.name) " +
+                    " from UserEntity usr " +
+                    " left join usr.userAddresses ua"+
+                    " left join ua.address a " +
+                    " left join a.areasEntity area " +
+                    " left join area.citiesEntity city " +
+                    " left join city.countriesEntity country "+
+                    " where usr.id = :userId order by ua.principal desc")
+    List<AddressRepObj> findByUserId(@Param("userId") Long userId);
 
 
     @Query(value = "select addr from user_addresses ua left join addresses addr on ua.address_id = addr.id" +

@@ -179,11 +179,13 @@ public class OrganizationService {
             ThemeEntity themeEntity = optionalThemeEntity.get();
             ThemeDTO themeDTO = (ThemeDTO)themeEntity.getRepresentation();
             BeanUtils.copyProperties(themeDTO, themeRepObj);
+            themeRepObj.setId(themeDTO.getThemeClassId());
             themeRepObj.setDefaultSettings(new JSONObject(themeDTO.getDefaultSettings()).toMap());
         }
 
+        ThemeEntity theme = themesRepo.findByUid(orgRepObj.getThemeId()).get();
         Optional<OrganizationThemesSettingsEntity> optionalThemeSettings =
-                orgThemesSettingsRepo.findByOrganizationEntity_IdAndThemeId(orgRepObj.getId(), Integer.parseInt(orgRepObj.getThemeId()));
+                orgThemesSettingsRepo.findByOrganizationEntity_IdAndThemeId(orgRepObj.getId(), theme.getId());
 
         if (optionalThemeSettings.isPresent()) {
             OrganizationThemesSettingsEntity themesSettings = optionalThemeSettings.get();

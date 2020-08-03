@@ -52,6 +52,11 @@ public class UserEntity extends BaseUserEntity{
             ,inverseJoinColumns = {@JoinColumn(name="address_id")})
     private Set<AddressesEntity> addresses;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.PERSIST)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<UserAddressEntity> userAddresses;
 
     public void insertUserAddress(AddressesEntity address) {this.addresses.add(address);}
 

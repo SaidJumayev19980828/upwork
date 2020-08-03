@@ -67,6 +67,12 @@ public class AddressesEntity implements BaseEntity {
     @lombok.ToString.Exclude
     private Set<UserEntity> users;
 
+    @OneToMany(mappedBy = "address", cascade = CascadeType.PERSIST)
+    @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<UserAddressEntity> userAddresses;
+
     @Override
     public BaseRepresentationObject getRepresentation() {
         AddressRepObj address = new AddressRepObj();

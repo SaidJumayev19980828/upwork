@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
@@ -13,6 +15,8 @@ import java.math.BigDecimal;
 @Data
 @EqualsAndHashCode(callSuper=false)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
+@AllArgsConstructor
+@NoArgsConstructor
 public class AddressRepObj extends BaseRepresentationObject {
 
     private Long id;
@@ -30,6 +34,7 @@ public class AddressRepObj extends BaseRepresentationObject {
     private BigDecimal longitude;
     private String postalCode;
     private String phoneNumber;
+    private Boolean principal;
     private Long areaId;
     private String area;
     private String city;
