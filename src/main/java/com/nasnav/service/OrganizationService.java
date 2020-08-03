@@ -177,19 +177,18 @@ public class OrganizationService {
 
         if (optionalThemeEntity.isPresent()) {
             ThemeEntity themeEntity = optionalThemeEntity.get();
-            ThemeDTO themeDTO = (ThemeDTO)themeEntity.getRepresentation();
+            ThemeDTO themeDTO = (ThemeDTO) themeEntity.getRepresentation();
             BeanUtils.copyProperties(themeDTO, themeRepObj);
             themeRepObj.setId(themeDTO.getThemeClassId());
             themeRepObj.setDefaultSettings(new JSONObject(themeDTO.getDefaultSettings()).toMap());
-        }
 
-        ThemeEntity theme = themesRepo.findByUid(orgRepObj.getThemeId()).get();
-        Optional<OrganizationThemesSettingsEntity> optionalThemeSettings =
-                orgThemesSettingsRepo.findByOrganizationEntity_IdAndThemeId(orgRepObj.getId(), theme.getId());
+            Optional<OrganizationThemesSettingsEntity> optionalThemeSettings =
+                    orgThemesSettingsRepo.findByOrganizationEntity_IdAndThemeId(orgRepObj.getId(), optionalThemeEntity.get().getId());
 
-        if (optionalThemeSettings.isPresent()) {
-            OrganizationThemesSettingsEntity themesSettings = optionalThemeSettings.get();
-            themeRepObj.setSettings(new JSONObject(themesSettings.getSettings()).toMap());
+            if (optionalThemeSettings.isPresent()) {
+                OrganizationThemesSettingsEntity themesSettings = optionalThemeSettings.get();
+                themeRepObj.setSettings(new JSONObject(themesSettings.getSettings()).toMap());
+            }
         }
 
         return themeRepObj;
