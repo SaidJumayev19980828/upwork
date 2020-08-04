@@ -526,7 +526,7 @@ public class ProductService {
 	private SimpleEntry<String,String> createFeatureKeyValuePair(Map.Entry<String, Object> entry,
 			ProductFeaturesEntity featureOptional) {
 		return new AbstractMap.SimpleEntry<>(
-				featureOptional.getPname()
+				featureOptional.getName()
 				, entry.getValue().toString());
 	}
 
