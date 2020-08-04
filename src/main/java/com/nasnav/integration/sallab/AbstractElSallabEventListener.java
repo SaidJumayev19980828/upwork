@@ -12,7 +12,6 @@ import static com.nasnav.integration.sallab.ElSallabIntegrationParams.CLIENT_SEC
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.PASSWORD;
 import static com.nasnav.integration.sallab.ElSallabIntegrationParams.USERNAME;
 import static java.lang.String.format;
-import static org.springframework.http.HttpStatus.OK;
 import static reactor.core.publisher.Mono.error;
 import static reactor.core.publisher.Mono.just;
 
@@ -65,7 +64,7 @@ public abstract class AbstractElSallabEventListener<E extends Event<T,R>, T, R> 
 	
 	
 	protected Mono<ClientResponse> checkResponse(ClientResponse response){
-		if(response.statusCode() == OK) {
+		if(response.rawStatusCode() < 400) {
 			return Mono.just(response);
 		}else {
 			return error( getFailedResponseRuntimeException(response));

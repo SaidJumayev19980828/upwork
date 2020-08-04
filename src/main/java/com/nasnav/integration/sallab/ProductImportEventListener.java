@@ -5,8 +5,8 @@ import static com.nasnav.constatnts.error.integration.IntegrationServiceErrors.E
 import static com.nasnav.integration.sallab.ShopsImportEventListener.HARD_CODED_STOCK;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
-import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
@@ -18,6 +18,7 @@ import static reactor.core.scheduler.Schedulers.elastic;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,7 @@ import com.nasnav.integration.sallab.webclient.SallabWebClient;
 import com.nasnav.integration.sallab.webclient.dto.AuthenticationData;
 import com.nasnav.integration.sallab.webclient.dto.AuthenticationResponse;
 import com.nasnav.integration.sallab.webclient.dto.ItemPrice;
+import com.nasnav.integration.sallab.webclient.dto.ItemSearchParam;
 import com.nasnav.integration.sallab.webclient.dto.ItemStockBalance;
 import com.nasnav.integration.sallab.webclient.dto.Product;
 import com.nasnav.integration.sallab.webclient.dto.ProductsResponse;
@@ -424,44 +426,27 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 
 
 	private Mono<ProductWithQtyAndPrice> getProductWithQtyAndStock(Product product, Long orgId){
-		Mono<ItemPrice> price = Mono.just(createRandomItemPrice(product.getItemNoC()));  
+		SallabWebClient client = getWebClient(orgId);
+		Mono<ItemPrice> price =  
+				client
+					.getItemPrice(new ItemSearchParam(product.getItemNoC()))
+					.flatMap(this::throwExceptionIfNotOk)
+					.flatMap(res -> res.bodyToMono(ItemPrice.class));
 		Mono<List<ItemStockBalance>> stocks =  
-				Mono.just(createRandomStocks(product.itemNoC, now().getYear()));
+				client
+					.getItemStockBalance(product.getItemNoC(), LocalDate.now().getYear())
+					.flatMap(this::throwExceptionIfNotOk)
+					.flatMapMany(stockRes -> stockRes.bodyToFlux(ItemStockBalance.class))
+					.buffer()
+					.defaultIfEmpty(emptyList())
+					.single();
+		
 		return Mono.zip(ProductWithQtyAndPrice::new, Mono.just(product), price, stocks, Mono.just(orgId));
 	}
 	
 	
 	
 	
-
-	private ItemPrice createRandomItemPrice(String itemNoC) {
-		Integer randVal = (int) (Math.random()*2000 + 100);
-		BigDecimal randPrice = new BigDecimal(randVal);
-		
-		ItemPrice price = new ItemPrice();
-		price.setItemNumber(itemNoC);
-		price.setNetPrice(randPrice);
-		price.setPrice(randPrice);
-		return price;
-	}
-	
-	
-	
-	private List<ItemStockBalance> createRandomStocks(String itemNoC, Integer year){
-		Integer randId = (int) (Math.random()*Integer.MAX_VALUE);
-		Integer randVal = (int) (Math.random()*200 );
-		BigDecimal randQty = new BigDecimal(randVal);
-		
-		ItemStockBalance balance = new ItemStockBalance();
-		balance.setStockStringId(itemNoC);
-		balance.setStockId(randId);
-		balance.setQuantity(randQty);
-		balance.setEnglishStockName("New Cairo");
-		return asList(balance);
-	}
-	
-
-
 
 
 

@@ -69,11 +69,11 @@ import com.nasnav.persistence.ProductVariantsEntity;
 @DirtiesContext
 public class ElSallabIntegrationTest {
 	
-	private static final String SALLAB_SERVER_URL = "https://azizsallab--DevSanbox.cs80.my.salesforce.com";    
+	private static final String SALLAB_SERVER_URL = "https://azizsallab.my.salesforce.com";    
     private static final String SALLAB_SEVER_URL_2 = "http://41.33.113.70";
     private static final String IMG_SERVER_URL = "https://azizsallab.my.salesforce.com";
     private static final String IMG_AUTH_SERVER_URL = "https://login.salesforce.com";
-    private static final String AUTH_SERVER_URL = "https://test.salesforce.com";
+    private static final String AUTH_SERVER_URL = "https://login.salesforce.com";
     private static final String MOCK_SERVER_URL = "http://127.0.0.1";
     private static final String MOCK_SERVER_AUTH_TOKEN = "00D250000009BEF!AQcAQHE4mvVZ6hmXm7_4y1s26_FIG0yMMVvq58ecs1GshIRcQE2l5d40r_NR8AJA5g.gko2fNdCctisUWg4cOIGhqnK9xMma";
     
@@ -475,9 +475,9 @@ public class ElSallabIntegrationTest {
 		params.put(IntegrationParam.IMG_AUTH_SERVER_URL.getValue(), imgAuthServerUrl);
 		params.put(AUTH_GRANT_TYPE.getValue(), "password");
 		params.put(CLIENT_ID.getValue(), "3MVG98_Psg5cppyZgL4kzqXARpsy8tyvcM1d8DwhODOxPiDTnqaf71BGU2cmzBpvf8l_myMTql31bhVa.ar8V");
-		params.put(CLIENT_SECRET.getValue(), "4085100268240543918");
-		params.put(USERNAME.getValue(), "mzaklama@elsallab.com.devsanbox");
-		params.put(PASSWORD.getValue(), "CloudzLab001tBHMDjhBGvDRsmWMrfog0oHG7");
+		params.put(CLIENT_SECRET.getValue(), "####");
+		params.put(USERNAME.getValue(), "mzaklama@elsallab.com");
+		params.put(PASSWORD.getValue(), "#####");
 		params.put(IMG_SERVER_USERNAME.getValue(), "mzaklama@elsallab.com");
 		params.put(IMG_SERVER_PASSWORD.getValue(), "CloudzLab001rMVQgFDbydbFQ4PLEUYycvn0");
 		

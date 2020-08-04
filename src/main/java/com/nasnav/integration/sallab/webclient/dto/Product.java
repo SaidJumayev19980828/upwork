@@ -20,8 +20,6 @@ public class Product {
     public String description;
     @JsonProperty("Stk_Unit__c")
     public String stockUnitC;
-    @JsonProperty("Stk_Unit__r")
-    public String stockUnitR;
     @JsonProperty("EItem_Name__c")
     public String englishItemName;
     @JsonProperty("Icon_Attachment_Id__c")
