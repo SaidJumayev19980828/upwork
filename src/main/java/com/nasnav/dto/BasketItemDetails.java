@@ -19,5 +19,4 @@ public class BasketItemDetails {
     private BigDecimal quantity;
     private BigDecimal price;
     private Integer currency;
-    private String productCoverImage;
 }

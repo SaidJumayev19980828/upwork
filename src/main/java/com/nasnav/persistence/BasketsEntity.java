@@ -26,9 +26,9 @@ import lombok.ToString;
 @NamedNativeQuery(
         name = "Basket",
         query ="select b.order_id, p.id as product_id, p.name as product_name, p.p_name as product_pname, v.id as variant_id, s.id as stock_id," +
-                " b.id as basket_id , b.quantity, b.price, b.currency, (select uri from product_Images where product_id = p.id and variant_id = v.id and priority = 0 limit 1) " +
-                "from products p join product_variants v on p.id = v.product_id join stocks s ON v.id = s.variant_id " +
-                "join baskets b ON s.id = b.stock_id WHERE b.order_id in :orderId ",
+                " b.id as basket_id , b.quantity, b.price, b.currency " +
+                " from products p join product_variants v on p.id = v.product_id join stocks s ON v.id = s.variant_id " +
+                " join baskets b ON s.id = b.stock_id WHERE b.order_id in :orderId ",
         resultClass = com.nasnav.dto.BasketItemDetails.class,
         resultSetMapping = "Basket"
 )
@@ -48,7 +48,6 @@ import lombok.ToString;
                                 @ColumnResult(name="quantity", type = BigDecimal.class),
                                 @ColumnResult(name="price", type = BigDecimal.class),
                                 @ColumnResult(name="currency", type = Integer.class),
-                                @ColumnResult(name="uri", type = String.class),
                         }
                 )
         }

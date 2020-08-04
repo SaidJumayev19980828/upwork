@@ -1351,7 +1351,7 @@ public class OrderServiceImpl implements OrderService {
 		List<BasketItemDetails> basketItemsDetails = ofNullable(basketItemsDetailsMap)
 															.map(map -> map.get(order.getId()) )
 															.orElse(new ArrayList<>());
-
+		Map<Long, Optional<String>> variantsImagesList = getVariantsImagesList(order);
 		
 		BeanUtils.copyProperties(getOrderSummary(order), representation);
 		if (detailsLevel == null)
@@ -1368,7 +1368,7 @@ public class OrderServiceImpl implements OrderService {
         	representation.setTotalQuantity(orderItemsQuantity.get(order.getId()).intValue());
 
 		if (detailsLevel == 3) {
-			List<BasketItem> itemsList = getBasketItems(basketItemsDetails);
+			List<BasketItem> itemsList = getBasketItems(basketItemsDetails, variantsImagesList);
 			representation.setItems(itemsList);
 			
 			if (itemsList.size() > 0) {
@@ -1436,9 +1436,9 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 
-	private List<BasketItem> getBasketItems(List<BasketItemDetails> itemsDetailsList) {
+	private List<BasketItem> getBasketItems(List<BasketItemDetails> itemsDetailsList, Map<Long, Optional<String>> variantsImagesList) {
 		return itemsDetailsList.stream()
-							.map(this::toBasketItem)
+							.map(basket -> toBasketItem(basket, variantsImagesList))
 							.collect(toList());
 	}
 	
@@ -1446,8 +1446,7 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 
-	private BasketItem toBasketItem(BasketItemDetails itemDetails) {
-
+	private BasketItem toBasketItem(BasketItemDetails itemDetails, Map<Long, Optional<String>> variantsCoverImages) {
 		BasketItem item = new BasketItem();
 		item.setProductId(itemDetails.getProductId());
 		item.setName(itemDetails.getProductName());
@@ -1456,7 +1455,7 @@ public class OrderServiceImpl implements OrderService {
 		item.setQuantity(itemDetails.getQuantity().intValue());
 		//TODO set item unit //
 		item.setTotalPrice(itemDetails.getPrice());
-		item.setThumb( itemDetails.getProductCoverImage() );
+		item.setThumb( variantsCoverImages.get(itemDetails.getVariantId()).get());
 		item.setCurrency(ofNullable(TransactionCurrency.getTransactionCurrency(itemDetails.getCurrency())).orElse(EGP).name());
 		
 		return item;
@@ -2356,6 +2355,19 @@ public class OrderServiceImpl implements OrderService {
 
 
 
+	private Map<Long, Optional<String>> getVariantsImagesList(OrdersEntity order) {
+		List<Long> variantsIds =
+				order
+						.getBasketsEntity()
+						.stream()
+						.map(BasketsEntity::getStocksEntity)
+						.map(StocksEntity::getProductVariantsEntity)
+						.map(ProductVariantsEntity::getId)
+						.collect(toList());
+		return imgService.getVariantsCoverImages(variantsIds);
+	}
+
+
 
 	private List<SubOrder> createSubOrderDtoList(MetaOrderEntity order, Map<Long, Optional<String>> variantsCoverImages) {
 		return order
@@ -2933,11 +2945,11 @@ public class OrderServiceImpl implements OrderService {
 		
 		return optimizer.createOptimizedCart(parametersOptional);
 	}
-	
-	
-	
-	
-	
+
+
+
+
+
 	private Cart replaceCart(Cart newCart) {
 		BaseUserEntity user = securityService.getCurrentUser();
 		cartItemRepo.deleteByUser_Id(user.getId());
