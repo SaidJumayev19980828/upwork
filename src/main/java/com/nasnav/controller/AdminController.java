@@ -4,6 +4,7 @@ import static org.springframework.http.HttpStatus.OK;
 
 import java.util.List;
 
+import com.nasnav.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,11 +31,6 @@ import com.nasnav.response.CategoryResponse;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ThemeClassResponse;
 import com.nasnav.response.ThemeResponse;
-import com.nasnav.service.AddressService;
-import com.nasnav.service.CategoryService;
-import com.nasnav.service.DomainService;
-import com.nasnav.service.OrganizationService;
-import com.nasnav.service.ThemeService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -60,6 +56,9 @@ public class AdminController {
 	
 	@Autowired
 	private DomainService domainService;
+
+	@Autowired
+	private AdminService adminService;
 
     @ApiOperation(value = "Create/update an Organization", nickname = "OrganizationCreation", code = 200)
     @ApiResponses(value = {
@@ -226,5 +225,18 @@ public class AdminController {
 	public void updateDomain(@RequestHeader (name = "User-Token", required = false) String userToken,
 						   @RequestBody DomainUpdateDTO dto) {
 		domainService.updateDomain(dto);
+	}
+
+
+	@ApiOperation(value = "invalidate all caches", nickname = "invalidateCache", code = 200)
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid Parameter"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to delete theme"),
+	})
+	@ResponseStatus(OK)
+	@PostMapping(value = "cache/invalidate", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public void updateDomain(@RequestHeader (name = "User-Token", required = false) String userToken) {
+		adminService.invalidateCaches();
 	}
 }
