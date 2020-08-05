@@ -15,6 +15,8 @@ import com.nasnav.persistence.CountriesEntity;
 
 public interface AddressRepository extends JpaRepository<AddressesEntity, Long> {
 
+    boolean existsByAreasEntity_IdIn(List<Long> areaId);
+
     @Query(value = "select addr from UserEntity usr left join usr.addresses addr" +
             " where usr.id =:userId and addr.id = :addressId")
     Optional<AddressesEntity> findByIdAndUserId(@Param("addressId") Long addressId,

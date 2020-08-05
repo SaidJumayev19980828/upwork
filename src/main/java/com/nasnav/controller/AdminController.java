@@ -4,6 +4,7 @@ import static org.springframework.http.HttpStatus.OK;
 
 import java.util.List;
 
+import com.nasnav.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -18,12 +19,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nasnav.dto.CategoryDTO;
-import com.nasnav.dto.CountryInfoDTO;
-import com.nasnav.dto.OrganizationDTO;
-import com.nasnav.dto.OrganizationRepresentationObject;
-import com.nasnav.dto.ThemeClassDTO;
-import com.nasnav.dto.ThemeDTO;
 import com.nasnav.dto.request.DomainUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.CategoryResponse;
@@ -211,7 +206,35 @@ public class AdminController {
 						   @RequestBody CountryInfoDTO dto) {
 		addressService.addCountry(dto);
 	}
-	
+
+
+	@ApiOperation(value = "Add all areas, cities, countries to be used for shipping", nickname = "addCountries", code = 200)
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid Parameter"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to delete theme"),
+	})
+	@ResponseStatus(OK)
+	@PostMapping(value = "country/bulk", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public void addCountries(@RequestHeader (name = "User-Token", required = false) String userToken,
+						     @RequestBody List<CountryDTO> dto) {
+		addressService.addCountries(dto);
+	}
+
+
+	@ApiOperation(value = "remove area, city, country", nickname = "removeCountry", code = 200)
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid Parameter"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to delete theme"),
+	})
+	@ResponseStatus(OK)
+	@DeleteMapping(value = "country")
+	public void removeCountry(@RequestHeader (name = "User-Token", required = false) String userToken,
+						      @RequestParam Long id,
+							  @RequestParam String type) {
+		addressService.removeCountry(id, type);
+	}
 	
 	
 	

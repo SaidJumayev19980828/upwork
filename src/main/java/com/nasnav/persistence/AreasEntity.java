@@ -17,12 +17,11 @@ import javax.persistence.*;
 public class AreasEntity implements BaseEntity {
 
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;
 
     private String name;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.DETACH)
     @JoinColumn(name = "city_id", referencedColumnName = "id")
     @JsonIgnore
     @EqualsAndHashCode.Exclude

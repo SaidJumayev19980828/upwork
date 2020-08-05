@@ -20,7 +20,6 @@ import static java.util.stream.Collectors.*;
 public class CitiesEntity implements BaseEntity{
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
     private String name;
@@ -31,7 +30,7 @@ public class CitiesEntity implements BaseEntity{
     @EqualsAndHashCode.Exclude
     private Set<AreasEntity> areas;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.DETACH)
     @JoinColumn(name = "country_id", referencedColumnName = "id")
     @JsonIgnore
     private CountriesEntity countriesEntity;
