@@ -9,5 +9,7 @@ public interface CityRepository extends JpaRepository<CitiesEntity, Long> {
 
     Optional<CitiesEntity> findByName(String name);
 
+    CitiesEntity findByNameIgnoreCase(String name);
+
     boolean existsByNameIgnoreCase(String name);
 }
