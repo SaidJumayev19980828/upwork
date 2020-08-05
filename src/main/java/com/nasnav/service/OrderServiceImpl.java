@@ -1484,7 +1484,7 @@ public class OrderServiceImpl implements OrderService {
 		item.setPrice(price);
 		item.setDiscount(discountPercentage);
 		item.setBrandId(product.getBrandId());
-		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec()));
+		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec(), 0));
 		item.setThumb(thumb);
 		item.setCurrency(currency);
 		//TODO set item unit //
@@ -1966,7 +1966,7 @@ public class OrderServiceImpl implements OrderService {
 	private CartItem createCartItemDto(CartItemData itemData) {
 		CartItem itemDto = new CartItem();
 		
-		Map<String,String> variantFeatures = parseVariantFeatures(itemData.getFeatureSpec());
+		Map<String,String> variantFeatures = parseVariantFeatures(itemData.getFeatureSpec(), 0);
 		
 		itemDto.setBrandId(itemData.getBrandId());
 		itemDto.setBrandLogo(itemData.getBrandLogo());
@@ -1991,8 +1991,8 @@ public class OrderServiceImpl implements OrderService {
 	
 
 
-	private Map<String, String> parseVariantFeatures(String featureSpec) {
-		return productService.parseVariantFeatures(featureSpec);
+	private Map<String, String> parseVariantFeatures(String featureSpec, Integer returnedName) {
+		return productService.parseVariantFeatures(featureSpec, returnedName);
 	}
 
 

@@ -489,18 +489,18 @@ public class ProductService {
 		if(variant == null || !hasFeatures(variant)) {
 			return emptyMap();
 		}
-		return parseVariantFeatures(variant.getFeatureSpec());
+		return parseVariantFeatures(variant.getFeatureSpec(), 1);
 	}
 
 
 
-	public Map<String, String> parseVariantFeatures(String variantFeatures) {
+	public Map<String, String> parseVariantFeatures(String variantFeatures, Integer returnedName) {
 		String normalizedStr = ofNullable(variantFeatures).orElse("{}");
 		JacksonJsonParser parser = new JacksonJsonParser();
 		Map<String, Object> keyValueMap =  parser.parseMap(normalizedStr);
 		return keyValueMap.entrySet()
 				.stream()
-				.map(this::getVariantFeatureMapEntry)
+				.map(e -> getVariantFeatureMapEntry(e, returnedName))
 				.filter(Optional::isPresent)
 				.map(Optional::get)
 				.collect(toMap(Map.Entry::getKey , Map.Entry::getValue));
@@ -510,7 +510,7 @@ public class ProductService {
 
 
 
-	private Optional<Map.Entry<String,String>> getVariantFeatureMapEntry(Map.Entry<String,Object> entry) {
+	private Optional<Map.Entry<String,String>> getVariantFeatureMapEntry(Map.Entry<String,Object> entry, Integer returnedName) {
 		if(anyIsNull(entry, entry.getKey())) {
 			return empty();
 		}
@@ -518,15 +518,20 @@ public class ProductService {
 		Integer id = Integer.parseInt(entry.getKey());
 		return	productFeaturesRepository
 					.findById(id)
-					.map(feature -> createFeatureKeyValuePair(entry, feature));
+					.map(feature -> createFeatureKeyValuePair(entry, feature, returnedName));
 	}
 
 
 
 	private SimpleEntry<String,String> createFeatureKeyValuePair(Map.Entry<String, Object> entry,
-			ProductFeaturesEntity featureOptional) {
+			ProductFeaturesEntity featureOptional, Integer returnedName) {
+		if (returnedName.equals(0))
+			return new AbstractMap.SimpleEntry<>(
+					featureOptional.getName()
+					, entry.getValue().toString());
+
 		return new AbstractMap.SimpleEntry<>(
-				featureOptional.getName()
+				featureOptional.getPname()
 				, entry.getValue().toString());
 	}
 
