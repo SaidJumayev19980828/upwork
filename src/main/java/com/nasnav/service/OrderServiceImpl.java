@@ -93,11 +93,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 import static javax.persistence.criteria.JoinType.LEFT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -109,16 +105,8 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 
 import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
@@ -127,6 +115,7 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.dto.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -153,15 +142,6 @@ import com.nasnav.dao.ShipmentRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
-import com.nasnav.dto.AddressRepObj;
-import com.nasnav.dto.BasketItem;
-import com.nasnav.dto.BasketItemDTO;
-import com.nasnav.dto.BasketItemDetails;
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.MetaOrderBasicInfo;
-import com.nasnav.dto.OrderJsonDto;
-import com.nasnav.dto.OrderRepresentationObject;
-import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.cart.CartOptimizeDTO;
@@ -1337,7 +1317,8 @@ public class OrderServiceImpl implements OrderService {
 	private DetailedOrderRepObject getDetailedOrderInfo(OrdersEntity order, Integer detailsLevel) {
 	    Map<Long, List<BasketItemDetails>> basketItemsDetailsMap = getBasketItemsDetailsMap( setOf(order.getId()) );
 		Map<Long, BigDecimal> orderItemsQuantity = getOrderItemsQuantity( setOf(order.getId()) );
-	    return getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap);
+		String phoneNumber = userRepo.findById(order.getUserId()).get().getPhoneNumber();
+	    return getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap, phoneNumber);
 	}
 	
 	
@@ -1345,7 +1326,8 @@ public class OrderServiceImpl implements OrderService {
 
 	private DetailedOrderRepObject getDetailedOrderInfo(OrdersEntity order, Integer detailsLevel,
 														Map<Long, BigDecimal> orderItemsQuantity,
-														Map<Long, List<BasketItemDetails>> basketItemsDetailsMap) {
+														Map<Long, List<BasketItemDetails>> basketItemsDetailsMap,
+														String phoneNumber) {
 		DetailedOrderRepObject representation = new DetailedOrderRepObject();
 
 		List<BasketItemDetails> basketItemsDetails = ofNullable(basketItemsDetailsMap)
@@ -1360,7 +1342,7 @@ public class OrderServiceImpl implements OrderService {
 
         if (detailsLevel >= 1)
         	BeanUtils.copyProperties( 
-        			getOrderDetails(order)
+        			getOrderDetails(order, phoneNumber)
         			, representation
         			, new String[]{"orderId", "userId", "shopId", "createdAt", "status", "paymentStatus", "metaOrderId"});
 
@@ -1407,9 +1389,8 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private DetailedOrderRepObject getOrderDetails(OrdersEntity entity) {
+	private DetailedOrderRepObject getOrderDetails(OrdersEntity entity, String phoneNumber) {
 		DetailedOrderRepObject obj = new DetailedOrderRepObject();
-		UserEntity user = userRepo.findById(entity.getUserId()).get();
 
 		obj.setUserName(entity.getName());
 		obj.setShopName(entity.getShopsEntity().getName());
@@ -1425,8 +1406,8 @@ public class OrderServiceImpl implements OrderService {
 
 		if (entity.getAddressEntity() != null) {
 			AddressRepObj address = (AddressRepObj) entity.getAddressEntity().getRepresentation();
-			if (address.getPhoneNumber() == null && user != null) {
-				address.setPhoneNumber(user.getPhoneNumber());
+			if (address.getPhoneNumber() == null && phoneNumber != null) {
+				address.setPhoneNumber(phoneNumber);
 			}
 			obj.setShippingAddress(address);
 		}
@@ -1455,7 +1436,7 @@ public class OrderServiceImpl implements OrderService {
 		item.setQuantity(itemDetails.getQuantity().intValue());
 		//TODO set item unit //
 		item.setTotalPrice(itemDetails.getPrice());
-		item.setThumb( variantsCoverImages.get(itemDetails.getVariantId()).get());
+		item.setThumb( variantsCoverImages.get(itemDetails.getVariantId()).orElse(null));
 		item.setCurrency(ofNullable(TransactionCurrency.getTransactionCurrency(itemDetails.getCurrency())).orElse(EGP).name());
 		
 		return item;
@@ -1506,15 +1487,19 @@ public class OrderServiceImpl implements OrderService {
 
 		Map<Long, BigDecimal> orderItemsQuantity = getOrderItemsQuantity(detailsLevel == 2 ? ordersIds : new HashSet<>());
 
+		Map<Long, String> orderPhones = !ordersIds.isEmpty() ? ordersRepository.findUsersPhoneNumber(ordersIds)
+																			  .stream()
+																			  .collect(toMap(OrderPhoneNumberPair::getOrderId, pair -> ofNullable(pair.getPhoneNumber()).orElse(""))):
+															  new LinkedHashMap<>();
 		
 		return ordersEntityList.stream()
-								.map(order -> getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap))
+								.map(order -> getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap, orderPhones.get(order.getId())))
 								.collect(toList());
 	}
+
 	
 	
-	
-	
+
 	
 
 	private Map<Long, List<BasketItemDetails>> getBasketItemsDetailsMap(Set<Long> ordersIds) {
