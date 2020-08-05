@@ -32,6 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.AddressRepObj;
@@ -49,11 +50,11 @@ import com.nasnav.integration.events.data.PaymentData;
 import com.nasnav.integration.exceptions.ExternalOrderIdNotFound;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.service.SecurityService;
 
 @Service
@@ -80,6 +81,9 @@ public class IntegrationServiceAdapterImpl implements IntegrationServiceAdapter 
 	
 	@Autowired
 	OrdersRepository orderRepo;
+	
+	@Autowired
+	MetaOrderRepository metaOrderRepo;
 
 	@Override
 	public void pushCustomerCreationEvent(CustomerData customer, Long orgId) {
@@ -247,24 +251,13 @@ public class IntegrationServiceAdapterImpl implements IntegrationServiceAdapter 
 		if(!data.isPresent()) {
 			return;
 		}
-		Long orgId = getOrgId(payment);
+		Long orgId = getOrganizationId(payment);
 		
 		PaymentCreateEvent event = new PaymentCreateEvent(orgId, data.get(), this::savePaymentExternalId);
 		pushPaymentEvent(event);
 	}
 
 
-
-
-
-	private Long getOrgId(PaymentEntity payment) {
-		return
-			ofNullable(payment)
-			.map(PaymentEntity::getUserId)
-			.flatMap(userRepository::findById)
-			.map(UserEntity::getOrganizationId)
-			.orElseGet(() -> securityService.getCurrentUserOrganizationId());
-	}
 
 
 
@@ -297,12 +290,12 @@ public class IntegrationServiceAdapterImpl implements IntegrationServiceAdapter 
 
 
 	private Long getOrganizationId(PaymentEntity payment) {
-		Long orgId = ofNullable(payment)
-						.map(PaymentEntity::getOrdersEntity)
-						.map(OrdersEntity::getOrganizationEntity)
-						.map(OrganizationEntity::getId)
-						.orElse(null);
-		return orgId;
+		return ofNullable(payment)
+				.map(PaymentEntity::getMetaOrderId)
+				.flatMap(metaOrderRepo::findMetaOrderWithOrganizationById)
+				.map(MetaOrderEntity::getOrganization)
+				.map(OrganizationEntity::getId)
+				.orElse(null);
 	}
 
 
