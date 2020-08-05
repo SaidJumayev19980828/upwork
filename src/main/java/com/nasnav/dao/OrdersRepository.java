@@ -1,11 +1,8 @@
 package com.nasnav.dao;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
+import com.nasnav.dto.OrderPhoneNumberPair;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -154,4 +151,8 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 			+ " LEFT JOIN FETCH variant.productEntity product "
 			+ " WHERE ord.id = :orderId " )
 	Optional<OrdersEntity> findFullDataById(@Param("orderId")Long orderId);
+
+
+	@Query("select new com.nasnav.dto.OrderPhoneNumberPair(o.id , u.phoneNumber) from OrdersEntity o join UserEntity u  on o.userId = u.id where o.id in :orderIdList")
+	List<OrderPhoneNumberPair> findUsersPhoneNumber(@Param("orderIdList") Set<Long> orderIdList);
 }
