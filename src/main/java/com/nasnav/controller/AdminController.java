@@ -236,7 +236,7 @@ public class AdminController {
 	})
 	@ResponseStatus(OK)
 	@PostMapping(value = "cache/invalidate", consumes = MediaType.APPLICATION_JSON_VALUE)
-	public void updateDomain(@RequestHeader (name = "User-Token", required = false) String userToken) {
+	public void invalidateAllCaches(@RequestHeader (name = "User-Token", required = false) String userToken) {
 		adminService.invalidateCaches();
 	}
 }
