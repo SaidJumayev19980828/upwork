@@ -7,18 +7,6 @@ import java.util.List;
 
 import javax.validation.Valid;
 
-import com.nasnav.AppConfig;
-import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
-import com.nasnav.dto.*;
-import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
-import com.nasnav.dto.request.theme.OrganizationThemeClass;
-import com.nasnav.dto.response.OrgThemeRepObj;
-import com.nasnav.payments.mastercard.MastercardAccount;
-import com.nasnav.payments.misc.Tools;
-import com.nasnav.payments.upg.UpgAccount;
-import com.nasnav.persistence.OrganizationPaymentGatewaysEntity;
-import com.nasnav.service.BrandService;
-import com.nasnav.service.ThemeService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,15 +27,40 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.AppConfig;
+import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
+import com.nasnav.dto.BrandDTO;
+import com.nasnav.dto.ExtraAttributeDefinitionDTO;
+import com.nasnav.dto.OrganizationDTO;
+import com.nasnav.dto.OrganizationImageUpdateDTO;
+import com.nasnav.dto.OrganizationThemesSettingsDTO;
+import com.nasnav.dto.Organization_BrandRepresentationObject;
+import com.nasnav.dto.ProductFeatureDTO;
+import com.nasnav.dto.ProductFeatureUpdateDTO;
+import com.nasnav.dto.PromotionSearchParamDTO;
+import com.nasnav.dto.TagsDTO;
+import com.nasnav.dto.TagsTreeCreationDTO;
+import com.nasnav.dto.ThemeClassDTO;
+import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
+import com.nasnav.dto.request.theme.OrganizationThemeClass;
+import com.nasnav.dto.response.OrgThemeRepObj;
+import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.payments.mastercard.MastercardAccount;
+import com.nasnav.payments.misc.Tools;
+import com.nasnav.payments.upg.UpgAccount;
+import com.nasnav.persistence.OrganizationPaymentGatewaysEntity;
 import com.nasnav.persistence.TagsEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.TagResponse;
+import com.nasnav.service.BrandService;
 import com.nasnav.service.CategoryService;
 import com.nasnav.service.OrganizationService;
+import com.nasnav.service.PromotionsService;
 import com.nasnav.service.ShippingManagementService;
+import com.nasnav.service.ThemeService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -79,6 +92,9 @@ public class OrganizationController {
     
     @Autowired
     private ShippingManagementService shippingMngService;
+    
+    @Autowired
+    private PromotionsService promotionsService;
 
     private Logger classLogger = LogManager.getLogger(OrganizationController.class);
 
@@ -450,6 +466,25 @@ public class OrganizationController {
     @GetMapping(value = "extra_attribute", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public List<ExtraAttributeDefinitionDTO> getOrgExtraAttibute(@RequestHeader (name = "User-Token", required = false) String userToken) throws Exception {
         return orgService.getExtraAttributes();
+    }
+    
+    
+    
+    
+    @ApiOperation(value = "get organization extra attributes", nickname = "GetOrgExtraAttr", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "extra_attribute", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public List<PromotionDTO> getPromotions(
+    		@RequestHeader (name = "User-Token", required = false) String userToken
+    		,@RequestParam("status")String status
+    		,@RequestParam("start")String startTime
+    		,@RequestParam("end")String endTime){
+    	PromotionSearchParamDTO searchParams = new PromotionSearchParamDTO(status, startTime, endTime);
+    	return promotionsService.getPromotions(searchParams);
     }
 
 }
