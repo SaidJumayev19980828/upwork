@@ -7,6 +7,8 @@ import javax.persistence.PostUpdate;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.integration.IntegrationServiceAdapter;
@@ -31,8 +33,18 @@ public class PaymentEntityListener {
 	
 	
 	@PostPersist	
-	public void postPresist(PaymentEntity payment) {	
-		postPresistLogic(payment);
+	public void postPresist(PaymentEntity payment) {
+		//make sure the event push logic is called after the
+		//transaction is complete
+		TransactionSynchronizationManager
+		.registerSynchronization( 
+	            new TransactionSynchronizationAdapter() {
+
+	                @Override
+	                public void afterCommit() {
+	                	postPresistLogic(payment);}
+	            });
+		
 	}
 
 	
@@ -41,7 +53,14 @@ public class PaymentEntityListener {
 	
 	@PostUpdate
 	public void postUpdate(PaymentEntity payment) {
-		postPresistLogic(payment);
+		TransactionSynchronizationManager
+		.registerSynchronization( 
+	            new TransactionSynchronizationAdapter() {
+
+	                @Override
+	                public void afterCommit() {
+	                	postPresistLogic(payment);}
+	            });
 	}
 	
 	

@@ -17,6 +17,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -245,7 +246,10 @@ public class IntegrationServiceAdapterImpl implements IntegrationServiceAdapter 
 
 
 	@Override
-	@Transactional
+	@Transactional(propagation = REQUIRES_NEW)
+	//without new transaction, this may cause a new flush in the transaction
+	//that presists the payment causing concurrency exception for hibernate
+	//anyway, this should be called after the payment transaction is completed
 	public void pushPaymentEvent(PaymentEntity payment){
 		Optional<PaymentData> data = createPaymentData(payment);	
 		if(!data.isPresent()) {
