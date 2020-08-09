@@ -88,8 +88,7 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @DeleteMapping(
-            produces = APPLICATION_JSON_UTF8_VALUE,
-            consumes = APPLICATION_JSON_UTF8_VALUE)
+            produces = APPLICATION_JSON_UTF8_VALUE)
     public ProductsDeleteResponse deleteProduct(
             @RequestParam("product_id") List<Long> productIds)
             		throws BusinessException {
