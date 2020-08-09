@@ -1,20 +1,22 @@
 package com.nasnav.persistence.listeners;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import javax.persistence.PostPersist;
 
-import com.nasnav.persistence.AddressesEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.nasnav.integration.IntegrationServiceAdapter;
 import com.nasnav.integration.events.data.AddressData;
 import com.nasnav.integration.events.data.CustomerData;
+import com.nasnav.persistence.AddressesEntity;
 import com.nasnav.persistence.UserEntity;
 import com.sun.istack.logging.Logger;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 
 @Component
@@ -34,13 +36,29 @@ public class UserEntityListener {
 	
 	
 	@PostPersist
-	public void postPresist(UserEntity user) {		
+	public void postPresist(UserEntity user) {	
+		//make sure the event push logic is called after the
+		//transaction is complete
+		TransactionSynchronizationManager
+		.registerSynchronization( 
+	            new TransactionSynchronizationAdapter() {
+	                @Override
+	                public void afterCommit() {
+	                	doPostPersistLogic(user);}
+	            });
+		
+	}
+
+	
+	
+	
+	
+	private void doPostPersistLogic(UserEntity user) {
 		CustomerData customer = createCustomerData(user);		
 		Long orgId = user.getOrganizationId();		
 		
 		integrationHelper.pushCustomerCreationEvent(customer, orgId);
 	}
-
 
 
 

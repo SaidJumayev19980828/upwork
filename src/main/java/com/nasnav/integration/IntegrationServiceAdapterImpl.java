@@ -87,6 +87,10 @@ public class IntegrationServiceAdapterImpl implements IntegrationServiceAdapter 
 	MetaOrderRepository metaOrderRepo;
 
 	@Override
+	@Transactional(propagation = REQUIRES_NEW)
+	//without new transaction, this may cause a new flush in the transaction
+	//that presists the payment causing concurrency exception for hibernate
+	//anyway, this should be called after the payment transaction is completed
 	public void pushCustomerCreationEvent(CustomerData customer, Long orgId) {
 		CustomerCreateEvent event = new CustomerCreateEvent(orgId, customer, this::saveUserExternalId);		
 		pushEvent(event);		
@@ -128,6 +132,10 @@ public class IntegrationServiceAdapterImpl implements IntegrationServiceAdapter 
 
 
 	@Override
+	@Transactional(propagation = REQUIRES_NEW)
+	//without new transaction, this may cause a new flush in the transaction
+	//that presists the payment causing concurrency exception for hibernate
+	//anyway, this should be called after the payment transaction is completed
 	public void pushOrderConfirmEvent(OrdersEntity order) {
 		//TODO some errors can happen during creating the order data, we need to handle this 
 		//and send an error to admins if something happened		
