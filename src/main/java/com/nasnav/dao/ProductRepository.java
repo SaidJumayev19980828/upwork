@@ -18,23 +18,6 @@ import com.nasnav.persistence.ProductEntity;
 public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
     List<ProductEntity> findByOrganizationId(Long organizationId);
-    List<ProductEntity> findByOrganizationIdOrderByIdAsc(Long organizationId);
-    List<ProductEntity> findByOrganizationIdOrderByIdDesc(Long organizationId);
-
-    List<ProductEntity> findByOrganizationIdOrderByNameAsc(Long organizationId);
-    List<ProductEntity> findByOrganizationIdOrderByNameDesc(Long organizationId);
-
-    List<ProductEntity> findByOrganizationIdOrderByPnameAsc(Long organizationId);
-    List<ProductEntity> findByOrganizationIdOrderByPnameDesc(Long organizationId);
-
-
-    List<ProductEntity> findByOrganizationIdAndBrandId(Long organizationId, Long brandId);
-    List<ProductEntity> findByOrganizationIdAndBrandIdOrderByIdAsc(Long organizationId,Long brandId);
-    List<ProductEntity> findByOrganizationIdAndBrandIdOrderByIdDesc(Long organizationId,Long brandId);
-    List<ProductEntity> findByOrganizationIdAndBrandIdOrderByNameAsc(Long organizationId,Long brandId);
-    List<ProductEntity> findByOrganizationIdAndBrandIdOrderByNameDesc(Long organizationId,Long brandId);
-    List<ProductEntity> findByOrganizationIdAndBrandIdOrderByPnameAsc(Long organizationId,Long brandId);
-    List<ProductEntity> findByOrganizationIdAndBrandIdOrderByPnameDesc(Long organizationId,Long brandId);
 
     List<ProductEntity> findByIdIn(List<Long> ids);
     List<ProductEntity> findByIdInOrderByIdAsc(List<Long> ids);
@@ -44,17 +27,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     List<ProductEntity> findByIdInOrderByPnameAsc(List<Long> ids);
     List<ProductEntity> findByIdInOrderByPnameDesc(List<Long> ids);
 
-//    List<ProductEntity> findByIdInOrderByPriceAsc(List<Long> ids);
-//    List<ProductEntity> findByIdInOrderByPriceDesc(List<Long> ids);
+	Optional<ProductEntity> findByIdAndOrganizationId(Long id, Long orgId);
 
-    List<ProductEntity> findByIdInAndBrandId(List<Long> ids, Long brandId);
-    List<ProductEntity> findByIdInAndBrandIdOrderByIdAsc(List<Long> ids, Long brandId);
-    List<ProductEntity> findByIdInAndBrandIdOrderByIdDesc(List<Long> ids, Long brandId);
-    List<ProductEntity> findByIdInAndBrandIdOrderByNameAsc(List<Long> ids, Long brandId);
-    List<ProductEntity> findByIdInAndBrandIdOrderByNameDesc(List<Long> ids, Long brandId);
-    List<ProductEntity> findByIdInAndBrandIdOrderByPnameAsc(List<Long> ids, Long brandId);
-    List<ProductEntity> findByIdInAndBrandIdOrderByPnameDesc(List<Long> ids, Long brandId);
-	
 	Optional<ProductEntity> findByBarcodeAndOrganizationId(String barcode, Long orgId);
 	Optional<ProductEntity> findByName(String name);
 

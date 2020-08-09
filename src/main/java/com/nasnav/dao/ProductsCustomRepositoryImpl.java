@@ -60,6 +60,31 @@ public class ProductsCustomRepositoryImpl implements ProductsCustomRepository {
 	}
 
 
+	@Override
+	public SQLQuery<?> getCollectionsBaseQuery(BooleanBuilder predicate, ProductSearchParam params) {
+		QStocks stock = QStocks.stocks;
+		QShops shop = QShops.shops;
+		QProducts product = QProducts.products;
+		QProductVariants variant = QProductVariants.productVariants;
+		QProductTags productTags = QProductTags.productTags;;
+		QProductCollections collection = QProductCollections.productCollections;
+
+		SQLQuery<?> baseQuery = queryFactory.from(stock)
+				.innerJoin(shop).on(stock.shopId.eq(shop.id))
+				.innerJoin(variant).on(stock.variantId.eq(variant.id))
+				.innerJoin(collection).on(variant.id.eq(collection.variantId))
+				.innerJoin(product).on(product.id.eq(collection.productId))
+				.where(predicate);
+
+		SQLQuery<?> productTagsQuery = getProductTagsQuery(queryFactory, productTags, params);
+
+		if (productTagsQuery != null)
+			baseQuery.where(product.id.in((com.querydsl.core.types.Expression<? extends Long>) productTagsQuery));
+
+		return baseQuery;
+	}
+
+
 	private SQLQuery<Long> getProductTagsQuery(SQLQueryFactory query, QProductTags productTags, ProductSearchParam params) {
 		if (params.getTags() == null)
 			return null;

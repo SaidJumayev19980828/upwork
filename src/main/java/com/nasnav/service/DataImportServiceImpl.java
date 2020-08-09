@@ -762,7 +762,7 @@ public class DataImportServiceImpl implements DataImportService {
     			.stream()
     			.map(this::getProductDtoJson)
     			.collect(toList());
-    	return productService.updateProductBatch(productJsonList, false);
+    	return productService.updateProductBatch(productJsonList, false, false);
     }
 
     

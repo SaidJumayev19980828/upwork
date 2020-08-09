@@ -168,7 +168,7 @@ public class NavboxController {
 
 		return filtersResponse;
 	}
-	
+
 	
 	
 	@ApiOperation(value = "Get information about a specific product", nickname = "productInfo")
@@ -183,7 +183,20 @@ public class NavboxController {
 		return productService.getProduct(productId, shopId);
 	}
 
-	
+
+
+	@ApiOperation(value = "get collection by id", nickname = "getCollection", code = 201)
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "collection returned"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+			@io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+	})
+	@GetMapping(value = "collection", produces = APPLICATION_JSON_UTF8_VALUE)
+	@ResponseStatus(HttpStatus.OK)
+	public ProductDetailsDTO updateBundleElement(@RequestParam Long id) {
+		return productService.getCollection(id);
+	}
+
 	
 	
 	@ApiOperation(value = "Get information about a specific Organization's extra attributes", nickname = "organizationInfo")

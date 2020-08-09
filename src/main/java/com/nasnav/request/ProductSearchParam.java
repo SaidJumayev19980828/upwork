@@ -28,6 +28,7 @@ public class ProductSearchParam {
     public BigDecimal minPrice;
     public BigDecimal maxPrice;
     public Boolean has_360_view;
+    public Integer[] product_type;
 
     public void setSort(String sort) {
         this.sort = ProductSortOptions.valueOf(sort.toUpperCase());
@@ -68,6 +69,10 @@ public class ProductSearchParam {
 
         if (this.order != null)
             result += "&order="+this.order;
+
+        if (this.product_type != null)
+            for(Integer type: product_type)
+                result += "&product_type="+type;
 
         if (this.tags != null)
             for(Long tagId: tags)
