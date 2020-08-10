@@ -193,7 +193,7 @@ public class NavboxController {
 	})
 	@GetMapping(value = "collection", produces = APPLICATION_JSON_UTF8_VALUE)
 	@ResponseStatus(HttpStatus.OK)
-	public ProductDetailsDTO updateBundleElement(@RequestParam Long id) {
+	public ProductDetailsDTO getCollectionById(@RequestParam Long id) {
 		return productService.getCollection(id);
 	}
 
