@@ -350,7 +350,7 @@ public class PromotionsTest {
 		PromotionsEntity entity = 
         		promoRepo
         		.findById(res.getBody())
-        		.orElseThrow();
+        		.orElseThrow(() -> new IllegalStateException());
         
         JSONObject savedConstrainJson = new JSONObject(entity.getConstrainsJson());
         JSONObject savedDiscountJson = new JSONObject(entity.getDiscountJson());
