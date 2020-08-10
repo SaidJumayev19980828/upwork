@@ -1,5 +1,7 @@
 package com.nasnav.persistence;
 
+import static javax.persistence.GenerationType.IDENTITY;
+
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -9,7 +11,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -44,7 +45,7 @@ public class ProductVariantsEntity {
 	
 	
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy=IDENTITY)
     private Long id;
 
     @Column(name="feature_spec")

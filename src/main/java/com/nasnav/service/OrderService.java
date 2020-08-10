@@ -95,4 +95,6 @@ public interface OrderService {
 	List<CartCheckoutData> createCheckoutData(Cart cart);
 
 	OrdersEntity updateOrderStatus(OrdersEntity orderEntity, OrderStatus newStatus);
+
+	BigDecimal calculateCartTotal();
 }
