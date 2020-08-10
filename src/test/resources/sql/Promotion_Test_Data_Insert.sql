@@ -14,7 +14,7 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (103, 2
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (104, 201, 'brand_4', 99001);
 
 --inserting shops
-INSERT INTO public.shops(id, name,d brand_id,  organization_id, removed) VALUES (501, 'shop_1', 102, 99002, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (501, 'shop_1', 102, 99002, 0);
 INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (502, 'shop_2', 102, 99001, 0);
 
 --inserting Employee Users
@@ -57,4 +57,4 @@ INSERT INTO public.promotions
 VALUES(630003, 'GIVE_US_MONEY', 99001, now() - INTERVAL '10 min' , now() + INTERVAL '200 min', 1, 0, 'MONEY2020', '{}', '{}', 69, now()); 
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630004, 'MORE_MONEY', 99001, now() - INTERVAL '100 DAY', now() + INTERVAL '50 DAY', 0, 0, 'MORE2020', '{}', '{}', 69, now()); 
+VALUES(630004, 'MORE_MONEY', 99001, now() - INTERVAL '100 DAY', now() - INTERVAL '50 DAY', 0, 0, 'MORE2020', '{"amount_min":0, "amount_max":2000}', '{"percentage":20}', 69, now()); 

@@ -477,12 +477,12 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
-    @GetMapping(value = "extra_attribute", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @GetMapping(value = "promotions", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public List<PromotionDTO> getPromotions(
     		@RequestHeader (name = "User-Token", required = false) String userToken
-    		,@RequestParam("status")String status
-    		,@RequestParam("start")String startTime
-    		,@RequestParam("end")String endTime){
+    		,@RequestParam(name="status", required = false)String status
+    		,@RequestParam(name="start", required = false)String startTime
+    		,@RequestParam(name="end", required = false)String endTime){
     	PromotionSearchParamDTO searchParams = new PromotionSearchParamDTO(status, startTime, endTime);
     	return promotionsService.getPromotions(searchParams);
     }

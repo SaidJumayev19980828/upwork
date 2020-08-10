@@ -1,6 +1,6 @@
 package com.nasnav.enumerations;
 
-import static com.nasnav.exceptions.ErrorCodes.ENUM$0001;
+import static com.nasnav.exceptions.ErrorCodes.PROMO$ENUM$0001;
 import static java.util.Arrays.stream;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
@@ -31,7 +31,7 @@ public enum PromotionStatus {
                  .filter(s -> Objects.equals(s.value, value))
                  .findFirst()
                  .map(PromotionStatus::name)
-                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ENUM$0001));
+                 .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$ENUM$0001));
     }
     
     

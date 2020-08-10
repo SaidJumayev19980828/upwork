@@ -130,6 +130,9 @@ public enum ErrorCodes {
 
 
 	,SHP$USR$0001("Cannot request shipment! User with id[%d] doesn't exists!")
+	
+	,PROMO$ENUM$0001("Saved Promo has invalid status!")
+	,PROMO$JSON$0001("Saved Promo has invalid json string value[%s]!")
 	;
 	
 	@Getter

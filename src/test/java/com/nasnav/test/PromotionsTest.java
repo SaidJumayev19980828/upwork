@@ -1,7 +1,9 @@
 package com.nasnav.test;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
+import static com.nasnav.commons.utils.EntityUtils.DEFAULT_TIMESTAMP_PATTERN;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static java.lang.String.format;
 import static java.time.LocalDateTime.now;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
@@ -43,7 +45,7 @@ public class PromotionsTest {
 	private ObjectMapper objectMapper;
 	
 	
-	private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyyThh:mm");
+	private DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DEFAULT_TIMESTAMP_PATTERN);
 	
 	
 	@Test
@@ -71,7 +73,7 @@ public class PromotionsTest {
 	public void getPromotionsWithFiltersTest() throws Exception{
 		HttpEntity<?> req = getHttpEntity("hijkllm");
 		String now = formatter.format(now());
-		String url = String.format("/organization/promotions?status=active&start=%s&end=%s",now, now);
+		String url = format("/organization/promotions?status=ACTIVE&start=%s&end=%s",now, now);
         ResponseEntity<String> res = 
         		template.exchange(url, GET, req, String.class);
         
@@ -79,6 +81,45 @@ public class PromotionsTest {
         List<PromotionDTO> promotions = objectMapper.readValue(res.getBody(), new TypeReference<List<PromotionDTO>>() {});
         assertEquals(2, promotions.size());
         Set<Long> expectedIds = setOf(630002L,630003L);
+        Set<Long> ids = promotions.stream().map(PromotionDTO::getId).collect(toSet());
+        assertEquals(expectedIds, ids);
+	} 
+	
+	
+	
+	
+	
+	@Test
+	public void getPromotionsWithStatusFilterTest() throws Exception{
+		HttpEntity<?> req = getHttpEntity("hijkllm");
+		String now = formatter.format(now());
+		String url = format("/organization/promotions?status=INACTIVE",now, now);
+        ResponseEntity<String> res = 
+        		template.exchange(url, GET, req, String.class);
+        
+        assertEquals(200, res.getStatusCodeValue());
+        List<PromotionDTO> promotions = objectMapper.readValue(res.getBody(), new TypeReference<List<PromotionDTO>>() {});
+        assertEquals(1, promotions.size());
+        Set<Long> expectedIds = setOf(630004L);
+        Set<Long> ids = promotions.stream().map(PromotionDTO::getId).collect(toSet());
+        assertEquals(expectedIds, ids);
+	} 
+	
+	
+	
+	
+	@Test
+	public void getPromotionsWithGivenIdFilterTest() throws Exception{
+		HttpEntity<?> req = getHttpEntity("hijkllm");
+		String now = formatter.format(now());
+		String url = format("/organization/promotions?id=630001",now, now);
+        ResponseEntity<String> res = 
+        		template.exchange(url, GET, req, String.class);
+        
+        assertEquals(200, res.getStatusCodeValue());
+        List<PromotionDTO> promotions = objectMapper.readValue(res.getBody(), new TypeReference<List<PromotionDTO>>() {});
+        assertEquals(1, promotions.size());
+        Set<Long> expectedIds = setOf(630001L);
         Set<Long> ids = promotions.stream().map(PromotionDTO::getId).collect(toSet());
         assertEquals(expectedIds, ids);
 	} 
