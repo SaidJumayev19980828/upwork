@@ -439,12 +439,10 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
-    @PostMapping(value = "collection/element",
-            produces = APPLICATION_JSON_UTF8_VALUE,
-            consumes = APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "collection/element", consumes = APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public void updateCollection(@RequestHeader(name = "User-Token", required = false) String token,
-                                    @RequestBody CollectionItemDTO element) throws BusinessException {
+                                 @RequestBody CollectionItemDTO element) {
         productService.updateCollection(element);
     }
 
