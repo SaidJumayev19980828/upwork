@@ -9,4 +9,5 @@ public class PromotionSearchParamDTO{
 	private String status;
 	private String startTime;
 	private String endTime;
+	private Long id;
 }

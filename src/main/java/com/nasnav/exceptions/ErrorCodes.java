@@ -133,6 +133,13 @@ public enum ErrorCodes {
 	
 	,PROMO$ENUM$0001("Saved Promo has invalid status!")
 	,PROMO$JSON$0001("Saved Promo has invalid json string value[%s]!")
+	,PROMO$PARAM$0001("Invalid promo status [%s]!")
+	,PROMO$PARAM$0002("Missing parameters in given promotion [%s]!")
+	,PROMO$PARAM$0003("Promotion start date cannot be after its end date!")
+	,PROMO$PARAM$0004("Promotion dates cannot be in the past!")
+	,PROMO$PARAM$0005("Cannot update promotion with id[%d], only inactive promotions can be update!")
+	,PROMO$PARAM$0006("Promo code [%s] was already used before!")
+	,PROMO$PARAM$0007("No Promo exisits with id[%d]!")
 	;
 	
 	@Getter

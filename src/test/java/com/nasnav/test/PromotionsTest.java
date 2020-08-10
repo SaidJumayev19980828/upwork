@@ -3,17 +3,22 @@ package com.nasnav.test;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.DEFAULT_TIMESTAMP_PATTERN;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
 import static java.lang.String.format;
 import static java.time.LocalDateTime.now;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 
+import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 
+import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +34,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
+import com.nasnav.dao.PromotionRepository;
 import com.nasnav.dto.response.PromotionDTO;
+import com.nasnav.persistence.PromotionsEntity;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -43,6 +50,9 @@ public class PromotionsTest {
 	
 	@Autowired
 	private ObjectMapper objectMapper;
+	
+	@Autowired
+	private PromotionRepository promoRepo;
 	
 	
 	private DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DEFAULT_TIMESTAMP_PATTERN);
@@ -166,5 +176,209 @@ public class PromotionsTest {
         ResponseEntity<String> res = 
         		template.exchange("/organization/promotion", POST, req, String.class);
         assertEquals(401, res.getStatusCodeValue());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void createPromotionsMissingParamsTest() {
+		JSONObject bodyJson = createPromotionRequest();
+		bodyJson.remove("code");
+		String body = bodyJson.toString();
+		
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+        ResponseEntity<String> res = 
+        		template.exchange("/organization/promotion", POST, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+	}
+	
+	
+	
+	
+	@Test
+	public void createPromotionsCodeAlreadyInUseTest() {
+		JSONObject bodyJson = createPromotionRequest();
+		bodyJson.put("code", "MONEY2020");
+		String body = bodyJson.toString();
+		
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+        ResponseEntity<String> res = 
+        		template.exchange("/organization/promotion", POST, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+	}
+	
+	
+	
+	
+	@Test
+	public void createPromotionsWithCodeUsedByOldPromoTest() {
+		JSONObject bodyJson = createPromotionRequest();
+		bodyJson.put("code", "MORE2020");
+		String body = bodyJson.toString();
+		
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+        ResponseEntity<String> res = 
+        		template.exchange("/organization/promotion", POST, req, String.class);
+        assertEquals("Old codes can be reused", 200, res.getStatusCodeValue());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void createPromotionsInvalidDatesTest() {String end = formatter.format(now().minusDays(2));
+		String start = formatter.format(now().plusDays(3));
+		JSONObject bodyJson = createPromotionRequest();
+		bodyJson
+		.put("start_date", start)
+		.put("end_date", end);
+		String body = bodyJson.toString();
+		
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+        ResponseEntity<String> res = 
+        		template.exchange("/organization/promotion", POST, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void createPromotionsInvalidJsonTest() {
+		JSONObject bodyJson = createPromotionRequest();
+		bodyJson.put("constrains", "{");
+		String body = bodyJson.toString();
+		
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+        ResponseEntity<String> res = 
+        		template.exchange("/organization/promotion", POST, req, String.class);
+        assertEquals(400, res.getStatusCodeValue());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void createPromotionsInvalidStatusTest() {
+		JSONObject bodyJson = createPromotionRequest();
+		bodyJson
+		.put("status", "NOT VALID");
+		String body = bodyJson.toString();
+		
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+        ResponseEntity<String> res = 
+        		template.exchange("/organization/promotion", POST, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+	}
+	
+	
+	
+	
+	
+	
+	@Test
+	public void createPromotionsInvalidStatusForUpdateTest() {
+		JSONObject bodyJson = createPromotionRequest();
+		bodyJson.put("id", 630001L);
+		
+		String body = bodyJson.toString();
+		
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+        ResponseEntity<String> res = 
+        		template.exchange("/organization/promotion", POST, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void createPromotionsSuccessTest() {
+		JSONObject bodyJson = createPromotionRequest();
+		String body = bodyJson.toString();
+		
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+        ResponseEntity<Long> res = 
+        		template.exchange("/organization/promotion", POST, req, Long.class);
+        assertEquals(200, res.getStatusCodeValue());
+        
+        assertPromoUpdated(bodyJson, res);
+	}
+	
+	
+	
+	
+	@Test
+	public void updatePromotionsSuccessTest() {
+		JSONObject bodyJson = createPromotionRequest();
+		bodyJson.put("id", 630004L);
+		String body = bodyJson.toString();
+		
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+        ResponseEntity<Long> res = 
+        		template.exchange("/organization/promotion", POST, req, Long.class);
+        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(630004L, res.getBody().longValue());
+        assertPromoUpdated(bodyJson, res);
+	}
+	
+	
+	
+	
+	@Test
+	public void gerPromotionDiscountTest() {
+		JSONObject bodyJson = createPromotionRequest();
+		bodyJson.put("id", 630004L);
+		String body = bodyJson.toString();
+		
+		HttpEntity<?> req = getHttpEntity(body, "123");
+        ResponseEntity<BigDecimal> res = 
+        		template.exchange("/cart/promo/discount?promo=GREEEEEEEEED", GET, req, BigDecimal.class);
+        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(0, res.getBody().compareTo(new BigDecimal("310")));
+	}
+
+
+
+	private void assertPromoUpdated(JSONObject bodyJson, ResponseEntity<Long> res) {
+		PromotionsEntity entity = 
+        		promoRepo
+        		.findById(res.getBody())
+        		.orElseThrow();
+        
+        JSONObject savedConstrainJson = new JSONObject(entity.getConstrainsJson());
+        JSONObject savedDiscountJson = new JSONObject(entity.getDiscountJson());
+        
+        assertTrue(savedConstrainJson.similar(bodyJson.get("constrains")));
+        assertTrue(savedDiscountJson.similar(bodyJson.get("discount")));
+        assertNotNull(entity.getCreatedOn());
+        assertNotNull(entity.getDateEnd());
+        assertNotNull(entity.getDateStart());
+        assertEquals(1, entity.getStatus().intValue());
+        assertEquals(bodyJson.get("identifier"), entity.getIdentifier());
+        assertEquals(bodyJson.get("code"), entity.getCode());
+	}
+
+
+
+	
+	
+	private JSONObject createPromotionRequest() {
+		String start = formatter.format(now().plusDays(2));
+		String end = formatter.format(now().plusDays(3));
+		return json()
+				.put("identifier", "awsome-promo")
+				.put("start_date", start)
+				.put("end_date", end)
+				.put("status", "ACTIVE")
+				.put("code", "GIVE-YOUR-MONEY-OR-ELSE-...")
+				.put("constrains", json().put("amount_max", 1000))
+				.put("discount", json().put("percentage", 20));
 	}
 }

@@ -471,7 +471,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "get organization extra attributes", nickname = "GetOrgExtraAttr", code = 200)
+    @ApiOperation(value = "get organization promotions", nickname = "GetPromotions", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -482,9 +482,28 @@ public class OrganizationController {
     		@RequestHeader (name = "User-Token", required = false) String userToken
     		,@RequestParam(name="status", required = false)String status
     		,@RequestParam(name="start", required = false)String startTime
-    		,@RequestParam(name="end", required = false)String endTime){
-    	PromotionSearchParamDTO searchParams = new PromotionSearchParamDTO(status, startTime, endTime);
+    		,@RequestParam(name="end", required = false)String endTime
+    		,@RequestParam(name="id", required = false)Long id){
+    	PromotionSearchParamDTO searchParams = new PromotionSearchParamDTO(status, startTime, endTime, id);
     	return promotionsService.getPromotions(searchParams);
+    }
+    
+    
+    
+    
+    
+    
+    @ApiOperation(value = "add new promotions", nickname = "registerShippingService", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "promotion")
+    @ResponseStatus(OK)
+    public Long addPromotion(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                    @RequestBody PromotionDTO promotion) throws BusinessException {
+    	return promotionsService.updatePromotion(promotion);
     }
 
 }
