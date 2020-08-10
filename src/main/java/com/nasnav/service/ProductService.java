@@ -21,17 +21,9 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PR
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
 import static com.nasnav.enumerations.OrderStatus.NEW;
-import static com.nasnav.exceptions.ErrorCodes.P$BRA$0001;
-import static com.nasnav.exceptions.ErrorCodes.P$BRA$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0001;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0002;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0003;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0004;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0005;
-import static com.nasnav.exceptions.ErrorCodes.P$PRO$0006;
-import static com.nasnav.exceptions.ErrorCodes.P$VAR$0001;
-import static com.nasnav.exceptions.ErrorCodes.P$VAR$0002;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.persistence.ProductTypes.BUNDLE;
+import static com.nasnav.persistence.ProductTypes.COLLECTION;
 import static com.querydsl.core.types.dsl.Expressions.cases;
 import static com.querydsl.core.types.dsl.Expressions.constant;
 import static java.lang.String.format;
@@ -51,7 +43,7 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static org.apache.commons.beanutils.BeanUtils.copyProperties;
+import static org.springframework.beans.BeanUtils.copyProperties;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -84,12 +76,17 @@ import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
-import org.apache.commons.beanutils.BeanUtils;
+import com.nasnav.dao.*;
+import com.nasnav.dto.request.product.CollectionItemDTO;
+import com.nasnav.model.querydsl.sql.*;
+import com.nasnav.persistence.*;
+import com.querydsl.core.types.SubQueryExpression;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -108,20 +105,6 @@ import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
-import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.BundleRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ProductImagesRepository;
-import com.nasnav.dao.ProductImgsCustomRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dao.ProductsCustomRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.BundleDTO;
 import com.nasnav.dto.BundleElementUpdateDTO;
 import com.nasnav.dto.ExtraAttributeDTO;
@@ -146,22 +129,6 @@ import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.model.querydsl.sql.QBrands;
-import com.nasnav.model.querydsl.sql.QProductFeatures;
-import com.nasnav.model.querydsl.sql.QProductVariants;
-import com.nasnav.model.querydsl.sql.QProducts;
-import com.nasnav.model.querydsl.sql.QShops;
-import com.nasnav.model.querydsl.sql.QStocks;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BundleEntity;
-import com.nasnav.persistence.ExtraAttributesEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductExtraAttributesEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ProductImagesEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.TagsEntity;
 import com.nasnav.persistence.dto.query.result.products.BrandBasicData;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.request.BundleSearchParam;
@@ -250,6 +217,9 @@ public class ProductService {
 
 	@Autowired
 	private ProductImgsCustomRepository productImgsCustomRepo;
+
+	@Autowired
+	private ProductCollectionRepository productCollectionRepo;
 
 	@Autowired
 	private JdbcTemplate template;
@@ -647,49 +617,62 @@ public class ProductService {
 
 		OrderSpecifier<?> order = getProductQueryOrder(params, product, stock);
 
-		SQLQuery<?> fromClause = productsCustomRepo.getProductsBaseQuery(predicate, params);
+		SQLQuery<?> fromProductsClause = productsCustomRepo.getProductsBaseQuery(predicate, params);
 
-		SQLQuery<?> productsQuery =
-				fromClause.select(
-						stock.id.as("stock_id"),
-						stock.quantity.as("quantity"),
-						stock.price.as("price"),
-		                cases()
-		                .when(stock.price.ne(ZERO))
-		                .then(stock.discount.divide(stock.price).multiply(constant(100)))
-		                .otherwise(ZERO)
-		                .as("discount"), 
-		                stock.currency,
-						product.organizationId.as("organization_id"),
-						stock.shopId.as("shop_id"),
-						variant.barcode.as("variant_barcode"),
-						variant.featureSpec,
-						product.id,
-						product.barcode,
-						product.brandId.as("brand_id"),
-						product.categoryId.as("category_id"),
-						product.description.as("description"),
-						product.name.as("name"),
-						product.pName.as("pname"),
-						product.search_360.as("has_360_view"),
-						product.createdAt.as("creation_date"),
-						product.updatedAt.as("update_date"),
-						SQLExpressions.rowNumber()
-								.over()
-								.partitionBy(product.id)
-								.orderBy(stock.price).as("row_num"));
+		SQLQuery<?> fromCollectionsClause = productsCustomRepo.getCollectionsBaseQuery(predicate, params);
 
-		if (order != null)
-			productsQuery.orderBy(order);
+		SubQueryExpression productsQuery = getProductsQuery(stock, product, variant, shop, fromProductsClause, order);
 
-		SQLQuery<?> stocks = 
+		SubQueryExpression collectionsQuery = getProductsQuery(stock, product, variant, shop, fromCollectionsClause, order);
+
+		SQLQuery<?> subQuery = new SQLQuery();
+
+		SQLQuery<?> stocks =
 				queryFactory
-				.from(productsQuery.as("total_products"))
-				.where(Expressions.numberPath(Long.class, "row_num").eq(1L));
+						.from(subQuery.union(productsQuery,collectionsQuery).as("total_products"))
+						.where(Expressions.numberPath(Long.class, "row_num").eq(1L));
 
 		return stocks;
 	}
 
+
+	private SubQueryExpression<?> getProductsQuery(QStocks stock, QProducts product, QProductVariants variant, QShops shop, SQLQuery fromClause,
+										 OrderSpecifier<?> order) {
+		SQLQuery<?> productsQuery = fromClause.select(
+											stock.id.as("stock_id"),
+											stock.quantity.as("quantity"),
+											stock.price.as("price"),
+											cases()
+													.when(stock.price.ne(ZERO))
+													.then(stock.discount.divide(stock.price).multiply(constant(100)))
+													.otherwise(ZERO)
+													.as("discount"),
+											stock.currency,
+											product.organizationId.as("organization_id"),
+											stock.shopId.as("shop_id"),
+											variant.barcode.as("variant_barcode"),
+											variant.featureSpec,
+											product.id,
+											product.barcode,
+											product.brandId.as("brand_id"),
+											product.categoryId.as("category_id"),
+											product.description.as("description"),
+											product.name.as("name"),
+											product.pName.as("pname"),
+											product.search_360.as("has_360_view"),
+											product.createdAt.as("creation_date"),
+											product.updatedAt.as("update_date"),
+											product.productType,
+											SQLExpressions.rowNumber()
+													.over()
+													.partitionBy(product.id)
+													.orderBy(stock.price).as("row_num"));
+
+		if (order != null)
+			productsQuery.orderBy(order);
+
+		return (SubQueryExpression) productsQuery;
+	}
 	
 	
 	public ProductsFiltersResponse getProductAvailableFilters(ProductSearchParam param) throws BusinessException, IllegalAccessException, InvocationTargetException, SQLException {
@@ -827,6 +810,9 @@ public class ProductService {
 		if(params.has_360_view != null)
 			predicate.and( product.search_360.eq(params.has_360_view));
 
+		if(params.product_type != null)
+			predicate.and( product.productType.in(params.product_type));
+
 		predicate.and( shop.removed.eq(0) );
 
 		return predicate;
@@ -836,7 +822,7 @@ public class ProductService {
 
 	ProductSearchParam getProductSearchParams(ProductSearchParam oldParams) throws BusinessException, InvocationTargetException, IllegalAccessException {
 		ProductSearchParam params = new ProductSearchParam();
-		BeanUtils.copyProperties(params, oldParams);
+		copyProperties(oldParams, params);
 
 		if (oldParams.order != null)
 			params.setOrder(oldParams.order.getValue());
@@ -1039,8 +1025,8 @@ public class ProductService {
 
 
 
-	public ProductUpdateResponse updateProduct(String productJson, Boolean isBundle) throws BusinessException {
-		Long id = updateProductBatch(asList(productJson), isBundle)
+	public ProductUpdateResponse updateProduct(String productJson, Boolean isBundle, Boolean isCollection) {
+		Long id = updateProductBatch(asList(productJson), isBundle, isCollection)
 					.stream()
 					.findFirst()
 					.orElse(null);
@@ -1050,9 +1036,9 @@ public class ProductService {
 	
 	
 	
-	public List<Long> updateProductBatch(List<String> productJsonList, Boolean isBundle){
+	public List<Long> updateProductBatch(List<String> productJsonList, Boolean isBundle, Boolean isCollection){
 		ProductUpdateCache cache = createProductUpdateCache(productJsonList, isBundle);
-		List<ProductEntity> entities = prepareProductEntities(productJsonList, isBundle, cache);
+		List<ProductEntity> entities = prepareProductEntities(productJsonList, isBundle, isCollection, cache);
 		Iterable<ProductEntity> saved = productRepository.saveAll(entities); 
 		return getProductIds(saved);
 	}
@@ -1068,18 +1054,18 @@ public class ProductService {
 
 
 
-	private List<ProductEntity> prepareProductEntities(List<String> productJsonList, Boolean isBundle,
+	private List<ProductEntity> prepareProductEntities(List<String> productJsonList, Boolean isBundle, Boolean isCollection,
 			ProductUpdateCache cache) {
 		return productJsonList
 				.stream()
-				.map(json -> prepareProductEntity(json, isBundle, cache))
+				.map(json -> prepareProductEntity(json, isBundle, isCollection, cache))
 				.collect(toList());
 	}
 	
 	
 	
 	
-	private ProductEntity prepareProductEntity(String productJson, Boolean isBundle, ProductUpdateCache cache) {
+	private ProductEntity prepareProductEntity(String productJson, Boolean isBundle, Boolean isCollection, ProductUpdateCache cache) {
 		ObjectMapper mapper = createObjectMapper();
 		JsonNode rootNode;
 		try {
@@ -1091,7 +1077,7 @@ public class ProductService {
 
 		validateProductDto(rootNode, cache);
 
-		return prepareProdcutEntity(rootNode, isBundle, cache);
+		return prepareProdcutEntity(rootNode, isBundle, isCollection, cache);
 	}
 
 
@@ -1152,7 +1138,7 @@ public class ProductService {
 
 
 
-	private ProductEntity prepareProdcutEntity(JsonNode productJsonNode, Boolean isBundle, ProductUpdateCache cache){
+	private ProductEntity prepareProdcutEntity(JsonNode productJsonNode, Boolean isBundle, Boolean isCollection, ProductUpdateCache cache){
 
 		Long id = productJsonNode.path("product_id").asLong();
 		JsonNode operationNode = productJsonNode.path("operation");
@@ -1164,6 +1150,8 @@ public class ProductService {
 			entity = new ProductEntity();
 			if(isBundle) {
 				entity.setProductType(BUNDLE);
+			} else if (isCollection) {
+				entity.setProductType(COLLECTION);
 			}
 		}
 		else {
@@ -1184,7 +1172,7 @@ public class ProductService {
 		ProductUpdateDTO productDto = new ProductUpdateDTO();
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		try {
-			copyProperties(productDto, entity);
+			copyProperties(entity, productDto);
 
 			//readerForUpdating makes the reader update the properties that ONLY exists in JSON string
 			//That's why we are parsing the JSON instead of spring (-_-)
@@ -1197,7 +1185,7 @@ public class ProductService {
 				productDto.setPname(encodeUrl( productDto.getName() ));
 			}
 
-			copyProperties(entity, productDto);
+			copyProperties(productDto, entity);
 		} catch (Exception e) {
 			logger.error(e,e);
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, P$PRO$0006, productJsonNode.toString());
@@ -1858,8 +1846,9 @@ public class ProductService {
 
 	private ProductBaseInfo toProductBaseInfo(ProductRepresentationObject source) {
 		ProductBaseInfo baseInfo = new ProductBaseInfo();
-		try {
-			BeanUtils.copyProperties(baseInfo, source);
+		copyProperties(source, baseInfo);
+		/*try {
+
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			logger.error(e,e);
 			throw new RuntimeException(
@@ -1867,7 +1856,7 @@ public class ProductService {
 							, source.getClass().getName()
 							, baseInfo.getClass().getName() )
 			);
-		}
+		}*/
 
 		return baseInfo;
 	}
@@ -2533,7 +2522,7 @@ public class ProductService {
 	private ProductDetailsDTO toProductDetailsDTO(ProductEntity product) throws IllegalAccessException, InvocationTargetException {
 		ProductDetailsDTO dto = new ProductDetailsDTO();
 		ProductRepresentationObject representationObj = getProductRepresentation(product);
-		BeanUtils.copyProperties( dto , representationObj);
+		copyProperties(representationObj, dto);
 		dto.setDescription( product.getDescription() );
 		dto.setProductType( product.getProductType() );
 		dto.setImageUrl(imgService.getProductCoverImage( product.getId() ));
@@ -2815,6 +2804,82 @@ public class ProductService {
 
 	public void deleteAllTagsForProducts(List<Long> products) {
 		processInBatches(products, 500, productRepository::deleteAllTagsForProducts);
+	}
+
+
+	public void updateCollection(CollectionItemDTO element) {
+		validateCollectionItem(element);
+		if(element.getOperation().equals( Operation.DELETE)) {
+			deleteCollectionItem(element);
+		}else if(element.getOperation().equals( Operation.ADD)){
+			addCollectionItem(element);
+		}
+
+	}
+
+
+	private void validateCollectionItem(CollectionItemDTO element) {
+		if (Objects.equals(element.getProductId(), null))
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0001);
+		if (Objects.equals(element.getVariantId(), null))
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$003);
+	}
+
+
+	private void addCollectionItem(CollectionItemDTO element) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+
+		ProductCollectionEntity entity = getCollectionByProductIdAndOrgId(element.getProductId(), orgId);
+		ProductVariantsEntity variant = productVariantsRepository.findByIdAndProductEntity_OrganizationId(element.getVariantId(), orgId)
+										.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$0001, element.getVariantId()));
+
+		entity.getVariants().add(variant);
+
+		productCollectionRepo.save(entity);
+	}
+
+	private ProductCollectionEntity getCollectionByProductIdAndOrgId(Long productId, Long orgId) {
+		return productCollectionRepo.findByIdAndOrganizationId(productId, orgId)
+								    .orElseThrow(() ->  new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0002, productId));
+	}
+
+	private ProductCollectionEntity getCollectionByProductId(Long productId) {
+		return productCollectionRepo.findById(productId)
+				.orElseThrow(() ->  new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0002, productId));
+	}
+
+
+	private void deleteCollectionItem(CollectionItemDTO element) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ProductCollectionEntity entity = getCollectionByProductIdAndOrgId(element.getProductId(), orgId);
+		ProductVariantsEntity variant = productVariantsRepository.findByIdAndProductEntity_OrganizationId(element.getVariantId(), orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$0001, element.getVariantId()));
+
+		entity.getVariants().remove(variant);
+		productCollectionRepo.save(entity);
+	}
+
+
+	public ProductDetailsDTO getCollection(Long id) {
+		ProductCollectionEntity entity = getCollectionByProductId(id);
+
+
+
+		ProductDetailsDTO dto = new ProductDetailsDTO();
+		copyProperties(entity, dto, new String[] {"variants"});
+
+		if(!entity.getVariants().isEmpty()) {
+			List<ProductImageDTO> productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(id), entity.getVariants()
+					.stream()
+					.map(ProductVariantsEntity::getId)
+					.collect(toList()));
+			dto.setVariants(entity.getVariants()
+					.stream()
+					.map(v -> createVariantDto(null, v, productsAndVariantsImages))
+					.collect(toList()));
+			dto.setImages(getProductImages(productsAndVariantsImages));
+		}
+		return dto;
 	}
 }
 

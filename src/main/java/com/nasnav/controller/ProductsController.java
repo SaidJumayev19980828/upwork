@@ -11,6 +11,8 @@ import java.util.List;
 
 import javax.validation.Valid;
 
+import com.nasnav.dto.*;
+import com.nasnav.dto.request.product.CollectionItemDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,12 +30,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.nasnav.dto.BundleElementUpdateDTO;
-import com.nasnav.dto.ProductImageBulkUpdateDTO;
-import com.nasnav.dto.ProductImageUpdateDTO;
-import com.nasnav.dto.ProductImgDetailsDTO;
-import com.nasnav.dto.ProductTagDTO;
-import com.nasnav.dto.VariantUpdateDTO;
 import com.nasnav.enumerations.ImageCsvTemplateType;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.BundleSearchParam;
@@ -77,9 +73,8 @@ public class ProductsController {
             produces = APPLICATION_JSON_UTF8_VALUE,
             consumes = APPLICATION_JSON_UTF8_VALUE)
     public ProductUpdateResponse updateProduct(           
-            @RequestBody String productJson)
-            		throws BusinessException {
-		return productService.updateProduct(productJson, false);
+            @RequestBody String productJson) {
+		return productService.updateProduct(productJson, false, false);
     }
 	
 	
@@ -93,8 +88,7 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
     @DeleteMapping(
-            produces = APPLICATION_JSON_UTF8_VALUE,
-            consumes = APPLICATION_JSON_UTF8_VALUE)
+            produces = APPLICATION_JSON_UTF8_VALUE)
     public ProductsDeleteResponse deleteProduct(
             @RequestParam("product_id") List<Long> productIds)
             		throws BusinessException {
@@ -212,9 +206,8 @@ public class ProductsController {
             produces = APPLICATION_JSON_UTF8_VALUE,
             consumes = APPLICATION_JSON_UTF8_VALUE)
     public ProductUpdateResponse updateBundle(           
-            @RequestBody String productJson)
-            		throws BusinessException {
-		return productService.updateProduct(productJson, true);
+            @RequestBody String productJson) {
+		return productService.updateProduct(productJson, true, false);
     }
 	
 	
@@ -403,7 +396,7 @@ public class ProductsController {
     @PostMapping(value = "hide")
     public void hideProducts(@RequestHeader(name = "User-Token", required = false) String token,
                              @RequestParam(required = false, defaultValue = "true") Boolean hide,
-                             @RequestParam(name = "product_id") List<Long> productsIds) {
+                             @RequestParam(name = "product_id", required = false) List<Long> productsIds) {
         productService.hideProducts(hide, productsIds);
     }
 
@@ -421,4 +414,38 @@ public class ProductsController {
                              @RequestParam("product_id") List<Long> productIds) {
         productService.includeProductIn360Search(include, productIds);
     }
+
+
+    @ApiOperation(value = "add new collection", nickname = "addCollection", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Collection added successfully"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+    })
+    @ResponseStatus(OK)
+    @PostMapping(value = "collection",
+            produces = APPLICATION_JSON_UTF8_VALUE,
+            consumes = APPLICATION_JSON_UTF8_VALUE)
+    public ProductUpdateResponse addCollection(@RequestHeader(name = "User-Token", required = false) String token,
+                              @RequestBody String productJson ) {
+        return productService.updateProduct(productJson, false,  true);
+    }
+
+
+    @ApiOperation(value = "Add or delete a collection item", nickname = "addCollectionItem", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "collection item added"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "collection/element",
+            produces = APPLICATION_JSON_UTF8_VALUE,
+            consumes = APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public void updateCollection(@RequestHeader(name = "User-Token", required = false) String token,
+                                    @RequestBody CollectionItemDTO element) throws BusinessException {
+        productService.updateCollection(element);
+    }
+
 }
