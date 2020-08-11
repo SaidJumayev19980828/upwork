@@ -94,7 +94,11 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static javax.persistence.criteria.JoinType.LEFT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -106,8 +110,17 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
@@ -116,7 +129,6 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
-import com.nasnav.dto.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -143,6 +155,16 @@ import com.nasnav.dao.ShipmentRepository;
 import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
+import com.nasnav.dto.AddressRepObj;
+import com.nasnav.dto.BasketItem;
+import com.nasnav.dto.BasketItemDTO;
+import com.nasnav.dto.BasketItemDetails;
+import com.nasnav.dto.DetailedOrderRepObject;
+import com.nasnav.dto.MetaOrderBasicInfo;
+import com.nasnav.dto.OrderJsonDto;
+import com.nasnav.dto.OrderPhoneNumberPair;
+import com.nasnav.dto.OrderRepresentationObject;
+import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.cart.CartOptimizeDTO;
@@ -3035,9 +3057,9 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-
-	private BigDecimal calculateCartTotal() {
-		return  calculateCartTotal(getCart().getItems());
+	@Override
+	public BigDecimal calculateCartTotal() {
+		return  calculateCartTotal(getCart());
 	}
 	
 	
@@ -3060,13 +3082,14 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
-	
 	private BigDecimal calculateCartTotal(Cart cart) {
 		return ofNullable(cart)
 				.map(Cart::getItems)
 				.map(this::calculateCartTotal)
 				.orElse(ZERO);
 	}
+	
+	
 	
 	
 	private BigDecimal calculateCartTotal(List<CartItem> cartItems) {

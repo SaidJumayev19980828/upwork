@@ -1,8 +1,11 @@
 package com.nasnav.commons.utils;
 
 import static java.util.Arrays.asList;
+import static java.util.Optional.ofNullable;
 
 import java.lang.reflect.InvocationTargetException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -21,6 +24,11 @@ import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 
 public class EntityUtils {
+	
+	
+	public static final String DEFAULT_TIMESTAMP_PATTERN = "yyyy-MM-dd-HH-mm-ss"; 
+	
+	
 	public static UserApiResponse createFailedLoginResponse(List<ResponseStatus> responseStatuses) {
 		return new ApiResponseBuilder().setSuccess(false).setResponseStatuses(responseStatuses).build();
 
@@ -174,6 +182,25 @@ public class EntityUtils {
 		}catch(Throwable e) {
 			return Optional.empty();
 		}
+	}
+	
+	
+	
+	
+	
+	
+	public static Optional<LocalDateTime> parseTimeString(String timeStr, String pattern) {
+		String pattenStr = ofNullable(pattern).orElse(DEFAULT_TIMESTAMP_PATTERN);
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattenStr);
+		return ofNullable(timeStr)
+				.map(t -> LocalDateTime.parse(timeStr, formatter));
+	}
+	
+	
+	
+	
+	public static Optional<LocalDateTime> parseTimeString(String timeStr) {
+		return parseTimeString(timeStr, DEFAULT_TIMESTAMP_PATTERN);
 	}
 }
 
