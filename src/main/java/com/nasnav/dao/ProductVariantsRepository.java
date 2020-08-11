@@ -34,8 +34,13 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 	@Query("SELECT variant FROM ProductVariantsEntity variant INNER JOIN FETCH variant.productEntity prod where prod.organizationId = :orgId")
 	List<ProductVariantsEntity> findByOrganizationId(@Param("orgId") Long orgId);
 
-	@Query("SELECT variant FROM ProductVariantsEntity variant INNER JOIN FETCH variant.productEntity prod where prod.organizationId = :orgId order by variant.name")
-	List<ProductVariantsEntity> findByOrganizationId(@Param("orgId") Long orgId, Pageable pageable);
+	@Query("SELECT variant FROM ProductVariantsEntity variant INNER JOIN FETCH variant.productEntity prod " +
+			"where prod.organizationId = :orgId and " +
+			"(variant.barcode = :name or LOWER(variant.name) like %:name% or LOWER(variant.description) like %:name%) "+
+			"order by variant.name ")
+	List<ProductVariantsEntity> findByOrganizationId(@Param("orgId") Long orgId,
+													 @Param("name") String name,
+													 Pageable pageable);
 
 	@Query("SELECT NEW com.nasnav.service.model.VariantBasicData(variant.id, variant.productEntity.id, variant.productEntity.organizationId, variant.barcode) "
 			+ " FROM ProductVariantsEntity variant "

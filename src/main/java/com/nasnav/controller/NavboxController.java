@@ -197,8 +197,9 @@ public class NavboxController {
 	@GetMapping(value = "variants", produces = APPLICATION_JSON_UTF8_VALUE)
 	@ResponseStatus(HttpStatus.OK)
 	public List<VariantDTO> getVariants(@RequestParam("org_id") Long orgId,
+										@RequestParam(required = false, defaultValue = "") String name,
 										@RequestParam( "page") Integer page) {
-		return productService.getVariants(orgId, page);
+		return productService.getVariants(orgId, name, page);
 	}
 
 	

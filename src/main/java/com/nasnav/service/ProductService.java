@@ -2892,10 +2892,8 @@ public class ProductService {
 		copyProperties(entity, dto, new String[] {"variants"});
 
 		if(!entity.getVariants().isEmpty()) {
-			List<Long> variantsIds = entity.getVariants()
-					.stream()
-					.map(ProductVariantsEntity::getId)
-					.collect(toList());
+			List<ProductVariantsEntity> variantsList = new ArrayList<>(entity.getVariants());
+			List<Long> variantsIds = getVariantsIds(variantsList);
 
 			List<ProductImageDTO> productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(id), variantsIds);
 
@@ -2909,18 +2907,23 @@ public class ProductService {
 	}
 
 
-	public List<VariantDTO> getVariants(Long orgId, Integer page) {
+	private List<Long> getVariantsIds(List<ProductVariantsEntity> variants) {
+		return variants
+				.stream()
+				.map(ProductVariantsEntity::getId)
+				.collect(toList());
+	}
+
+
+	public List<VariantDTO> getVariants(Long orgId, String name, Integer page) {
 		if (isBlankOrNull(page) || page < 0) {
 			page = 0;
 		}
 		List<ProductVariantsEntity> variantsEntities =
-				productVariantsRepository.findByOrganizationId(orgId, PageRequest.of(page, 100));
+				productVariantsRepository.findByOrganizationId(orgId, name, PageRequest.of(page, 100));
 
-		List<ProductImageDTO> productsAndVariantsImages =
-				imgService.getProductsAndVariantsImages(null, variantsEntities
-																				.stream()
-																				.map(ProductVariantsEntity::getId)
-																				.collect(toList()));
+		List<Long> variantsIds = getVariantsIds(variantsEntities);
+		List<ProductImageDTO> productsAndVariantsImages = variantsIds.isEmpty() ? new ArrayList<>() : imgService.getProductsAndVariantsImages(null,variantsIds) ;
 
 		return variantsEntities
 				.stream()
