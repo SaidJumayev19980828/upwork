@@ -17,7 +17,7 @@ public enum ErrorCodes {
 	,U$AUTH$0001("User is not an authorized to modify %s!")
 	
 	,P$EXP$0001("No column found in csv for writing additional field with name[%s]!")
-	,P$VAR$0001("No Variant found with id[%d]!")
+	,P$VAR$0001("No Variant found with id[%s]!")
 	,P$VAR$0002("No Extra Attribute exists with name[%s] for organization[%id]")
 	,P$VAR$003("No variant id provided!")
 	
@@ -28,6 +28,7 @@ public enum ErrorCodes {
 	,P$PRO$0005("Brand Id Must be provided!")
 	,P$PRO$0006("Failed to parse product update json [%s]!")
 	,P$PRO$0007("No Operation provided! parameter operation should have values in[\"create\",\"update\"]!")
+	,P$PRO$0008("No Operation provided! parameter operation should have values in[%s]!")
 
 	,P$STO$0001("No stock exists with ID:[%d]!")
 	

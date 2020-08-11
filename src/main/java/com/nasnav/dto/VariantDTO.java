@@ -16,6 +16,8 @@ import java.util.Map;
 public class VariantDTO extends BaseRepresentationObject {
 	private Long id;
 	private String barcode;
+	private String name;
+	private String description;
 	private String sku;
 	private String productCode;
 	private List<StockDTO> stocks;
