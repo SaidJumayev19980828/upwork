@@ -446,4 +446,17 @@ public class ProductsController {
         productService.updateCollection(element);
     }
 
+
+    @ApiOperation(value = "get collections by organization id", nickname = "getCollections", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "collections returned"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+    })
+    @GetMapping(value = "empty_collections", produces = APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public List<ProductDetailsDTO> getCollections(@RequestParam("org_id") Long orgId) {
+        return productService.getCollections(orgId);
+    }
+
 }

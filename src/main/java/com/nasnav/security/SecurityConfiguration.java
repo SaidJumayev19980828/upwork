@@ -146,6 +146,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						, patternOf("/user/v2/register/activate")
 						, patternOf("/user/v2/register/activate/resend")
                         , patternOf("/payment/**")
+						, patternOf("/product/empty_collections"			, HttpMethod.GET)
                         , patternOf("/product/bundles"					, HttpMethod.GET)
                         , patternOf("/product/info"						, HttpMethod.GET)
                         , patternOf("/product/image"					, HttpMethod.GET)

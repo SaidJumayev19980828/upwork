@@ -2818,7 +2818,7 @@ public class ProductService {
 
 	private void validateCollectionItems(CollectionItemDTO element) {
 		if(!(element.getOperation().equals(Operation.DELETE) || element.getOperation().equals( Operation.ADD))) {
-
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0008, "add, delete");
 		}
 		if (Objects.equals(element.getProductId(), null))
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0001);
@@ -2864,30 +2864,32 @@ public class ProductService {
 	}
 
 
-	private List<ProductCollectionEntity> getCollectionByProductId(Long productId) {
-		return asList(productCollectionRepo.findById(productId)
-				.orElseThrow(() ->  new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0002, productId)));
+	private ProductCollectionEntity getCollectionByProductId(Long productId) {
+		return productCollectionRepo.findById(productId)
+				.orElseThrow(() ->  new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0002, productId));
 	}
 
 
-	public List<ProductDetailsDTO> getCollections(Long id, Long orgId) {
-		List<ProductCollectionEntity> collectionsEntities = new ArrayList<>();
-		if (id != null && orgId == null) {
-			collectionsEntities = getCollectionByProductId(id);
-		} else if (orgId != null) {
-			collectionsEntities = productCollectionRepo.findByOrganizationId(orgId);
-		}
+	public ProductDetailsDTO getCollection(Long id) {
+		ProductCollectionEntity entity = getCollectionByProductId(id);
+		return toProductDetailsDTO(entity);
+	}
+
+
+	public List<ProductDetailsDTO> getCollections(Long orgId) {
+		List<ProductCollectionEntity> collectionsEntities = productCollectionRepo.findByOrganizationId(orgId);
 
 		List<ProductDetailsDTO> collections = collectionsEntities
 				.stream()
-				.map(c -> toProductDetailsDTO(id, c))
+				.filter(c -> c.getVariants().isEmpty())
+				.map(c -> toProductDetailsDTO(c))
 				.collect(toList());
 
 		return collections;
 	}
 
 
-	private ProductDetailsDTO toProductDetailsDTO(Long id, ProductCollectionEntity entity) {
+	private ProductDetailsDTO toProductDetailsDTO(ProductCollectionEntity entity) {
 		ProductDetailsDTO dto = new ProductDetailsDTO();
 		copyProperties(entity, dto, new String[] {"variants"});
 
@@ -2895,7 +2897,7 @@ public class ProductService {
 			List<ProductVariantsEntity> variantsList = new ArrayList<>(entity.getVariants());
 			List<Long> variantsIds = getVariantsIds(variantsList);
 
-			List<ProductImageDTO> productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(id), variantsIds);
+			List<ProductImageDTO> productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(entity.getId()), variantsIds);
 
 			dto.setVariants(entity.getVariants()
 					.stream()

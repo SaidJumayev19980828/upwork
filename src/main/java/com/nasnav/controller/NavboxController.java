@@ -173,8 +173,7 @@ public class NavboxController {
 	}
 
 
-
-	@ApiOperation(value = "get collections by id or organization id", nickname = "getCollection", code = 201)
+	@ApiOperation(value = "get collection by id", nickname = "getCollection", code = 201)
 	@ApiResponses(value = {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "collection returned"),
 			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
@@ -182,9 +181,8 @@ public class NavboxController {
 	})
 	@GetMapping(value = "collection", produces = APPLICATION_JSON_UTF8_VALUE)
 	@ResponseStatus(HttpStatus.OK)
-	public List<ProductDetailsDTO> getCollections(@RequestParam(required = false) Long id,
-												 @RequestParam(required = false, value = "org_id") Long orgId) {
-		return productService.getCollections(id, orgId);
+	public ProductDetailsDTO getCollection(@RequestParam Long id) {
+		return productService.getCollection(id);
 	}
 
 
