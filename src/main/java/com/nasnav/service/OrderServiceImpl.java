@@ -987,9 +987,19 @@ public class OrderServiceImpl implements OrderService {
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(orderTime);
 		String total = getMetaOrderTotal(order).toPlainString();
+
+		String userName =
+				order
+						.getSubOrders()
+						.stream()
+						.filter(Objects::nonNull)
+						.findFirst()
+						.map(OrdersEntity::getName)
+						.orElse("");
 		
 		Map<String, Object> params = new HashMap<>();
 		params.put("metaOrder", order);
+		params.put("name", userName);
 		params.put("creationDate", orderTimeStr);
 		params.put("total", total);
 		return params;

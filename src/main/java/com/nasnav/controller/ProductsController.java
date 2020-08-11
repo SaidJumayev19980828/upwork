@@ -439,13 +439,24 @@ public class ProductsController {
             @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
-    @PostMapping(value = "collection/element",
-            produces = APPLICATION_JSON_UTF8_VALUE,
-            consumes = APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(value = "collection/element", consumes = APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public void updateCollection(@RequestHeader(name = "User-Token", required = false) String token,
-                                    @RequestBody CollectionItemDTO element) throws BusinessException {
+                                 @RequestBody CollectionItemDTO element) {
         productService.updateCollection(element);
+    }
+
+
+    @ApiOperation(value = "get collections by organization id", nickname = "getCollections", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "collections returned"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+    })
+    @GetMapping(value = "empty_collections", produces = APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public List<ProductDetailsDTO> getCollections(@RequestParam("org_id") Long orgId) {
+        return productService.getCollections(orgId);
     }
 
 }

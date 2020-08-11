@@ -90,6 +90,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -404,6 +405,8 @@ public class ProductService {
 	private VariantDTO createVariantDto(Long shopId, ProductVariantsEntity variant, List<ProductImageDTO> variantsImages)  {
 		VariantDTO variantObj = new VariantDTO();
 		variantObj.setId(variant.getId());
+		variantObj.setName(variant.getName());
+		variantObj.setDescription(variant.getDescription());
 		variantObj.setBarcode( variant.getBarcode() );
 		variantObj.setStocks( getStockList(variant, shopId) );
 		variantObj.setVariantFeatures( getVariantFeaturesValuesWithNullDefault(variant) );
@@ -2293,7 +2296,7 @@ public class ProductService {
 		if( opr.equals( UPDATE)) {
 			entity = ofNullable(cache.getVariantsEntities())
 					.map( entities -> entities.get(id))
-					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE , P$VAR$0001, id) );
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE , P$VAR$0001, id.toString()) );
 		}
 
 		if(variant.isUpdated("productId")){
@@ -2807,41 +2810,59 @@ public class ProductService {
 	}
 
 
-	public void updateCollection(CollectionItemDTO element) {
-		validateCollectionItem(element);
-		if(element.getOperation().equals( Operation.DELETE)) {
-			deleteCollectionItem(element);
-		}else if(element.getOperation().equals( Operation.ADD)){
-			addCollectionItem(element);
-		}
-
+	public void updateCollection(CollectionItemDTO elements) {
+		validateCollectionItems(elements);
+		updateCollectionItems(elements);
 	}
 
 
-	private void validateCollectionItem(CollectionItemDTO element) {
+	private void validateCollectionItems(CollectionItemDTO element) {
+		if(!(element.getOperation().equals(Operation.DELETE) || element.getOperation().equals( Operation.ADD))) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0008, "add, delete");
+		}
 		if (Objects.equals(element.getProductId(), null))
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0001);
-		if (Objects.equals(element.getVariantId(), null))
+		if (Objects.equals(element.getVariantIds(), null) || element.getVariantIds().isEmpty())
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$003);
 	}
 
 
-	private void addCollectionItem(CollectionItemDTO element) {
+	private void updateCollectionItems(CollectionItemDTO element) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 
 		ProductCollectionEntity entity = getCollectionByProductIdAndOrgId(element.getProductId(), orgId);
-		ProductVariantsEntity variant = productVariantsRepository.findByIdAndProductEntity_OrganizationId(element.getVariantId(), orgId)
-										.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$0001, element.getVariantId()));
 
-		entity.getVariants().add(variant);
+		List<ProductVariantsEntity> variantsEntities = productVariantsRepository.findByIdInAndProductEntity_OrganizationId(element.getVariantIds(), orgId);
+
+		validateVariantsExistence(variantsEntities, element.getVariantIds());
+
+		if(element.getOperation().equals( Operation.DELETE)) {
+			entity.getVariants().removeAll(variantsEntities);
+		}else if(element.getOperation().equals( Operation.ADD)){
+			entity.getVariants().addAll(variantsEntities);
+		}
 
 		productCollectionRepo.save(entity);
 	}
+
+
+	private void validateVariantsExistence(List<ProductVariantsEntity> variantsEntities, List<Long> variantsIds) {
+		List<Long> fetchedVariantsIds = variantsEntities.stream()
+				.map(ProductVariantsEntity::getId)
+				.collect(toList());
+
+		if (fetchedVariantsIds.size() != variantsIds.size()) {
+			variantsIds.removeAll(fetchedVariantsIds);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$0001, variantsIds.toString());
+		}
+	}
+
 
 	private ProductCollectionEntity getCollectionByProductIdAndOrgId(Long productId, Long orgId) {
 		return productCollectionRepo.findByIdAndOrganizationId(productId, orgId)
 								    .orElseThrow(() ->  new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0002, productId));
 	}
+
 
 	private ProductCollectionEntity getCollectionByProductId(Long productId) {
 		return productCollectionRepo.findById(productId)
@@ -2849,30 +2870,35 @@ public class ProductService {
 	}
 
 
-	private void deleteCollectionItem(CollectionItemDTO element) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		ProductCollectionEntity entity = getCollectionByProductIdAndOrgId(element.getProductId(), orgId);
-		ProductVariantsEntity variant = productVariantsRepository.findByIdAndProductEntity_OrganizationId(element.getVariantId(), orgId)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$0001, element.getVariantId()));
-
-		entity.getVariants().remove(variant);
-		productCollectionRepo.save(entity);
+	public ProductDetailsDTO getCollection(Long id) {
+		ProductCollectionEntity entity = getCollectionByProductId(id);
+		return toProductDetailsDTO(entity);
 	}
 
 
-	public ProductDetailsDTO getCollection(Long id) {
-		ProductCollectionEntity entity = getCollectionByProductId(id);
+	public List<ProductDetailsDTO> getCollections(Long orgId) {
+		List<ProductCollectionEntity> collectionsEntities = productCollectionRepo.findByOrganizationId(orgId);
+
+		List<ProductDetailsDTO> collections = collectionsEntities
+				.stream()
+				.filter(c -> c.getVariants().isEmpty())
+				.map(c -> toProductDetailsDTO(c))
+				.collect(toList());
+
+		return collections;
+	}
 
 
-
+	private ProductDetailsDTO toProductDetailsDTO(ProductCollectionEntity entity) {
 		ProductDetailsDTO dto = new ProductDetailsDTO();
 		copyProperties(entity, dto, new String[] {"variants"});
 
 		if(!entity.getVariants().isEmpty()) {
-			List<ProductImageDTO> productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(id), entity.getVariants()
-					.stream()
-					.map(ProductVariantsEntity::getId)
-					.collect(toList()));
+			List<ProductVariantsEntity> variantsList = new ArrayList<>(entity.getVariants());
+			List<Long> variantsIds = getVariantsIds(variantsList);
+
+			List<ProductImageDTO> productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(entity.getId()), variantsIds);
+
 			dto.setVariants(entity.getVariants()
 					.stream()
 					.map(v -> createVariantDto(null, v, productsAndVariantsImages))
@@ -2880,6 +2906,31 @@ public class ProductService {
 			dto.setImages(getProductImages(productsAndVariantsImages));
 		}
 		return dto;
+	}
+
+
+	private List<Long> getVariantsIds(List<ProductVariantsEntity> variants) {
+		return variants
+				.stream()
+				.map(ProductVariantsEntity::getId)
+				.collect(toList());
+	}
+
+
+	public List<VariantDTO> getVariants(Long orgId, String name, Integer page) {
+		if (isBlankOrNull(page) || page < 0) {
+			page = 0;
+		}
+		List<ProductVariantsEntity> variantsEntities =
+				productVariantsRepository.findByOrganizationId(orgId, name, PageRequest.of(page, 100));
+
+		List<Long> variantsIds = getVariantsIds(variantsEntities);
+		List<ProductImageDTO> productsAndVariantsImages = variantsIds.isEmpty() ? new ArrayList<>() : imgService.getProductsAndVariantsImages(null,variantsIds) ;
+
+		return variantsEntities
+				.stream()
+				.map(v -> createVariantDto(null, v, productsAndVariantsImages))
+				.collect(toList());
 	}
 }
 

@@ -209,7 +209,6 @@ public class UserServiceImpl implements UserService {
 		
 		Map<String, String> parametersMap = new HashMap<>();
 		parametersMap.put(USERNAME_PARAMETER, userEntity.getName());
-		parametersMap.put(ACCOUNT_EMAIL_PARAMETER, userEntity.getEmail());
 		parametersMap.put(ACTIVATION_ACCOUNT_URL_PARAMETER, activationRedirectUrl);				
 		return parametersMap;
 	}
