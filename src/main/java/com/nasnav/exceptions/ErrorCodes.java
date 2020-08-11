@@ -17,7 +17,7 @@ public enum ErrorCodes {
 	,U$AUTH$0001("User is not an authorized to modify %s!")
 	
 	,P$EXP$0001("No column found in csv for writing additional field with name[%s]!")
-	,P$VAR$0001("No Variant found with id[%d]!")
+	,P$VAR$0001("No Variant found with id[%s]!")
 	,P$VAR$0002("No Extra Attribute exists with name[%s] for organization[%id]")
 	,P$VAR$003("No variant id provided!")
 	

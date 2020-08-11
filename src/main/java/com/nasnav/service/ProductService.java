@@ -2296,7 +2296,7 @@ public class ProductService {
 		if( opr.equals( UPDATE)) {
 			entity = ofNullable(cache.getVariantsEntities())
 					.map( entities -> entities.get(id))
-					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE , P$VAR$0001, id) );
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE , P$VAR$0001, id.toString()) );
 		}
 
 		if(variant.isUpdated("productId")){
@@ -2834,15 +2834,8 @@ public class ProductService {
 
 		List<ProductVariantsEntity> variantsEntities = productVariantsRepository.findByIdInAndProductEntity_OrganizationId(element.getVariantIds(), orgId);
 
-		Map<Long, ProductVariantsEntity> variantsMap = variantsEntities.stream()
-																	   .collect(toMap(ProductVariantsEntity::getId, v -> v));
-		if (variantsMap.size() != element.getVariantIds().size()) {
-			for (Long variantId : element.getVariantIds()) {
-				if (variantsMap.get(variantId) == null) {
-					throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$0001, variantId);
-				}
-			}
-		}
+		validateVariantsExistence(variantsEntities, element.getVariantIds());
+
 		if(element.getOperation().equals( Operation.DELETE)) {
 			entity.getVariants().removeAll(variantsEntities);
 		}else if(element.getOperation().equals( Operation.ADD)){
@@ -2850,6 +2843,18 @@ public class ProductService {
 		}
 
 		productCollectionRepo.save(entity);
+	}
+
+
+	private void validateVariantsExistence(List<ProductVariantsEntity> variantsEntities, List<Long> variantsIds) {
+		List<Long> fetchedVariantsIds = variantsEntities.stream()
+				.map(ProductVariantsEntity::getId)
+				.collect(toList());
+
+		if (fetchedVariantsIds.size() != variantsIds.size()) {
+			variantsIds.removeAll(fetchedVariantsIds);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$VAR$0001, variantsIds.toString());
+		}
 	}
 
 
@@ -2873,25 +2878,34 @@ public class ProductService {
 			collectionsEntities = productCollectionRepo.findByOrganizationId(orgId);
 		}
 
-		List<ProductDetailsDTO> collections = new ArrayList<>();
-		for (ProductCollectionEntity entity : collectionsEntities) {
-			ProductDetailsDTO dto = new ProductDetailsDTO();
-			copyProperties(entity, dto, new String[] {"variants"});
+		List<ProductDetailsDTO> collections = collectionsEntities
+				.stream()
+				.map(c -> toProductDetailsDTO(id, c))
+				.collect(toList());
 
-			if(!entity.getVariants().isEmpty()) {
-				List<ProductImageDTO> productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(id), entity.getVariants()
-						.stream()
-						.map(ProductVariantsEntity::getId)
-						.collect(toList()));
-				dto.setVariants(entity.getVariants()
-						.stream()
-						.map(v -> createVariantDto(null, v, productsAndVariantsImages))
-						.collect(toList()));
-				dto.setImages(getProductImages(productsAndVariantsImages));
-			}
-			collections.add(dto);
-		}
 		return collections;
+	}
+
+
+	private ProductDetailsDTO toProductDetailsDTO(Long id, ProductCollectionEntity entity) {
+		ProductDetailsDTO dto = new ProductDetailsDTO();
+		copyProperties(entity, dto, new String[] {"variants"});
+
+		if(!entity.getVariants().isEmpty()) {
+			List<Long> variantsIds = entity.getVariants()
+					.stream()
+					.map(ProductVariantsEntity::getId)
+					.collect(toList());
+
+			List<ProductImageDTO> productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(id), variantsIds);
+
+			dto.setVariants(entity.getVariants()
+					.stream()
+					.map(v -> createVariantDto(null, v, productsAndVariantsImages))
+					.collect(toList()));
+			dto.setImages(getProductImages(productsAndVariantsImages));
+		}
+		return dto;
 	}
 
 
