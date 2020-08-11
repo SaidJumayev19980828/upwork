@@ -1,5 +1,7 @@
 package com.nasnav.dao;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -29,6 +31,17 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 			+ " AND org.id = :orgId"
 			+ " AND now() between promo.dateStart and promo.dateEnd ")
 	boolean existsByCodeAndOrganization_IdAndActiveNow(
+			@Param("code")String code
+			,@Param("orgId") Long orgId);
+	
+	
+	@Query("SELECT promo "
+			+ " FROM PromotionsEntity promo "
+			+ " LEFT JOIN promo.organization org "
+			+ " WHERE promo.code = :code "
+			+ " AND org.id = :orgId"
+			+ " AND now() between promo.dateStart and promo.dateEnd ")
+	Optional<PromotionsEntity> findByCodeAndOrganization_IdAndActiveNow(
 			@Param("code")String code
 			,@Param("orgId") Long orgId);
 

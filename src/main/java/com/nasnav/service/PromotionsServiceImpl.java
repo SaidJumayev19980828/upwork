@@ -11,10 +11,13 @@ import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0004;
 import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0005;
 import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0006;
 import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0007;
+import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0008;
+import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0009;
 import static java.time.LocalDateTime.now;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static javax.persistence.criteria.JoinType.INNER;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -26,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -34,6 +38,7 @@ import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,12 +46,14 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.PromotionRepository;
 import com.nasnav.dto.PromotionSearchParamDTO;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.enumerations.PromotionStatus;
+import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
@@ -133,7 +140,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 	private Map<String,Object> readJsonStrAsMap(String jsonStr){
 		String rectified = ofNullable(jsonStr).orElse("{}");
 		try {
-			return objectMapper.readValue(rectified, new TypeReference<Map<String,Object>>(){});
+			Map<String,Object> initialData =
+					objectMapper.readValue(rectified, new TypeReference<Map<String,Object>>(){});
+			return setNumbersAsBigDecimals(initialData);
 		} catch (Exception e) {
 			logger.error(e,e);
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, PROMO$JSON$0001, jsonStr);
@@ -141,6 +150,33 @@ public class PromotionsServiceImpl implements PromotionsService {
 	}
 	
 	
+
+	private Map<String, Object> setNumbersAsBigDecimals(Map<String, Object> initialData) {
+		return initialData
+				.entrySet()
+				.stream()
+				.map(this::doSetNumbersAsBigDecimals)
+				.collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+	}
+	
+	
+	
+	
+	private Map.Entry<String,Object> doSetNumbersAsBigDecimals(Map.Entry<String, Object> entry){
+		return ofNullable(entry.getValue())
+				.map(Object::toString)
+				.filter(NumberUtils::isParsable)
+				.map(BigDecimal::new)
+				.map(Object.class::cast)
+				.map(val -> new Map.(entry.getKey(), val) {
+				})
+				.orElse(entry);
+	}
+
+
+
+
+
 
 	private SearchParams createSearchParam(PromotionSearchParamDTO searchParams) {
 		Optional<Integer> status = 
@@ -357,8 +393,32 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	@Override
 	public BigDecimal calcPromoDiscountForCart(String promoCode) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		PromotionsEntity promo = 
+				promoRepo
+				.findByCodeAndOrganization_IdAndActiveNow(promoCode, orgId)
+				.orElseThrow(()-> new RuntimeBusinessException(NOT_ACCEPTABLE
+										, PROMO$PARAM$0008, promoCode));
+		
 		BigDecimal cartTotal = orderService.calculateCartTotal();
+		
+		if(!isPromoValidForTheCart(promo, cartTotal)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE
+						, PROMO$PARAM$0009, promoCode);
+		}
+		
 		return cartTotal.divide(new BigDecimal("10"));
+	}
+
+
+
+
+
+
+	private boolean isPromoValidForTheCart(PromotionsEntity promo, BigDecimal cartTotal) {
+		Map<String,Object> constrains = readJsonStrAsMap(promo.getConstrainsJson());
+		BigDecimal minAmount = new BigDecimal();
+		return false;
 	}
 
 }
