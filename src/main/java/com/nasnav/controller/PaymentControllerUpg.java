@@ -3,6 +3,8 @@ package com.nasnav.controller;
 import java.util.ArrayList;
 import java.util.Properties;
 
+import com.nasnav.dao.MetaOrderRepository;
+import com.nasnav.payments.misc.Commons;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -31,6 +33,8 @@ import com.nasnav.service.OrderService;
 
 import springfox.documentation.annotations.ApiIgnore;
 
+import static org.springframework.http.HttpStatus.OK;
+
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/payment/upg")
@@ -38,18 +42,20 @@ public class PaymentControllerUpg {
 
     private static final Logger upgLogger = LogManager.getLogger("Payment:UPG");
 
-    private final OrdersRepository ordersRepository;
-
-    private final PaymentsRepository paymentsRepository;
-
     private final UpgSession session;
 
     @Autowired
     private AppConfig config;
 
     @Autowired
+    private Commons paymentCommons;
+
+    @Autowired
     private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
-    
+
+    @Autowired
+    private MetaOrderRepository ordersRepository;
+
     @Autowired
     private OrderService orderService;
 
@@ -58,8 +64,6 @@ public class PaymentControllerUpg {
             OrdersRepository ordersRepository,
             PaymentsRepository paymentsRepository,
             UpgSession session) {
-        this.ordersRepository = ordersRepository;
-        this.paymentsRepository = paymentsRepository;
         this.session = session;
     }
 
@@ -96,7 +100,7 @@ public class PaymentControllerUpg {
     public ResponseEntity<?> upgCallback(@RequestBody String content) throws BusinessException {
         upgLogger.info("Received payment confirmation: {}", content);
         UpgLightbox lightbox = new UpgLightbox();
-        return lightbox.callback(content, ordersRepository, paymentsRepository, session.getUpgAccount(), orderService, upgLogger);
+        return lightbox.callback(content, session.getUpgAccount(), orderService, paymentCommons, ordersRepository, upgLogger);
     }
 
  }

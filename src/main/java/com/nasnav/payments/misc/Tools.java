@@ -10,21 +10,20 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.Properties;
 
-import com.nasnav.dto.response.navbox.Order;
-import com.nasnav.enumerations.TransactionCurrency;
-import com.nasnav.persistence.MetaOrderEntity;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.payments.mastercard.MastercardSession;
+import com.nasnav.payments.mastercard.MastercardService;
 import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.OrganizationPaymentGatewaysEntity;
 import com.nasnav.service.OrderService;
 
 public class Tools {
+
+
 
 	public static ArrayList<OrdersEntity> getOrdersFromString(OrdersRepository ordersRepository, String ordersList, String separator) throws BusinessException {
 		if (ordersList == null || ordersList.length() == 0) {
@@ -93,8 +92,8 @@ public class Tools {
 			oValue.amount = oValue.amount.add(ov.amount);
 		}
 		if (oValue.currency == null) {
-			oValue.currency = MastercardSession.DEFAULT_CURRENCY_IF_NOT_SPECIFIED;
-			logger.info("No currency specified for order, assuming {}", MastercardSession.DEFAULT_CURRENCY_IF_NOT_SPECIFIED.name());
+			oValue.currency = MastercardService.DEFAULT_CURRENCY_IF_NOT_SPECIFIED;
+			logger.info("No currency specified for order, assuming {}", MastercardService.DEFAULT_CURRENCY_IF_NOT_SPECIFIED.name());
 		}
 		return oValue;
 	}
@@ -127,6 +126,7 @@ public class Tools {
 
 		Properties props = null;
 		String file = null;
+
 		try  {
 			if (propertiesDir == null || propertiesDir.equals("#")) {
 				// load file from bundled resources

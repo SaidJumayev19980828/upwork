@@ -399,7 +399,7 @@ public class OrganizationController {
             if ("mcard".equalsIgnoreCase(gateway.getGateway())) {
                 list.append("\"script\": \"");
                 MastercardAccount account = new MastercardAccount();
-                account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir));
+                account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), gateway.getId());
                 list.append(account.getScriptUrl());
                 list.append('"');
             } else if ("upg".equalsIgnoreCase(gateway.getGateway())) {

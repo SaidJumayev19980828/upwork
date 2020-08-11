@@ -19,4 +19,6 @@ public interface PaymentsRepository extends JpaRepository<PaymentEntity, Long> {
     List<PaymentEntity> findRecentByOrdersEntity_Id(@Param("orderId") Long orderId);
 
     Optional<PaymentEntity> findByMetaOrderId(Long orderId);
+
+    List<PaymentEntity> findBySessionId(String sessionId);
 }

@@ -79,6 +79,12 @@ public class PaymentEntity {
 	@Column(name = "meta_order_id")
 	private Long metaOrderId;
 
+	@Column(name = "org_payment_id")
+	private Integer orgPaymentId;
+
+	@Column(name = "session_id")
+	private String sessionId;
+
 	@Transient
     @Setter(NONE)
     private PaymentEntity previousState;

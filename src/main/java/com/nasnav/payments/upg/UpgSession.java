@@ -18,16 +18,16 @@ public class UpgSession {
 	@Getter
 	OrderService orderService;
 
-	private final PaymentsRepository paymentsRepository;
-
-	private final OrdersRepository ordersRepository;
+//	private final PaymentsRepository paymentsRepository;
+//
+//	private final OrdersRepository ordersRepository;
 
 	@Autowired
 	public UpgSession(UpgAccount account, OrderService orderService, PaymentsRepository paymentsRepository, OrdersRepository ordersRepository) {
 		this.orderService = orderService;
 		this.upgAccount = account;
-		this.paymentsRepository = paymentsRepository;
-		this.ordersRepository = ordersRepository;
+//		this.paymentsRepository = paymentsRepository;
+//		this.ordersRepository = ordersRepository;
 	}
 
 

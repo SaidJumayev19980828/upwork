@@ -21,6 +21,9 @@ import java.util.stream.Collectors;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import com.nasnav.dao.MetaOrderRepository;
+import com.nasnav.payments.misc.Commons;
+import com.nasnav.persistence.MetaOrderEntity;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.Logger;
@@ -29,23 +32,20 @@ import org.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.misc.Tools;
-import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.service.OrderService;
 
+
 public class UpgLightbox {
 
-	private static DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+	private static final DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
-	public ResponseEntity<?> callback(String content, OrdersRepository ordersRepository, PaymentsRepository paymentsRepository, UpgAccount account, OrderService orderService, Logger upgLogger) throws BusinessException {
+	public ResponseEntity<?> callback(String content, UpgAccount account, OrderService orderService, Commons paymentCommons, MetaOrderRepository metaRepo, Logger upgLogger) throws BusinessException {
 		JSONObject jsonObject = null;
-		ArrayList<OrdersEntity> orders = new ArrayList<>();
 		try {
 			jsonObject = new JSONObject(content);
 		} catch (JSONException ex) { ; }
@@ -55,30 +55,22 @@ public class UpgLightbox {
 		}
 		// get the order id from merchant reference
 		String ref = jsonObject.getString("MerchantReference");
-		ResponseEntity response = null;
-		long metaOrderId = -1;
+		MetaOrderEntity metaOrderEntity = null;
 		try {
 			String metaOrderStr = ref.substring(0, ref.indexOf('-'));
-			metaOrderId = Long.parseLong(metaOrderStr);
-			orders = new ArrayList<>(ordersRepository.findByMetaOrderId(metaOrderId));
-		} catch (Exception ex) { ; }
-		if (orders.size() <= 0) {
-			upgLogger.error("Unable to retrieve orders from the reference: {}", ref);
+			long metaOrderId = Long.parseLong(metaOrderStr);
+			metaOrderEntity = metaRepo.findById(metaOrderId).get();
+		} catch (Exception ex) {
+			upgLogger.error("Unable to retrieve order from the reference: {}", ref);
 			return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to process Order ID\"}", BAD_GATEWAY);
 		}
-		PaymentEntity payment = UpgLightbox.verifyPayment(jsonObject, metaOrderId, upgLogger, account, orderService);
+		PaymentEntity payment = UpgLightbox.verifyPayment(jsonObject, metaOrderEntity, upgLogger, account, orderService);
 		if (payment == null) {
 			return new ResponseEntity<>("{\"status\": \"ERROR\", \"message\": \"Unable to verify payment confirmation\"}", BAD_REQUEST);
 		}
-		paymentsRepository.saveAndFlush(payment);
+		paymentCommons.finalizePayment(payment);
 
-		for (OrdersEntity order : orders) {
-			orderService.setOrderAsPaid(payment, order);			
-		}
-		ordersRepository.flush();
-		orderService.finalizeOrder(payment.getMetaOrderId());
-
-		return response == null ? new ResponseEntity<>("{\"status\": \"SUCCESS\"}", OK) : response;
+		return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", OK);
 	}
 
 	public JSONObject getJsonConfig(long metaOrderId, UpgAccount account, OrderService orderService, Logger upgLogger) throws BusinessException {
@@ -112,7 +104,7 @@ public class UpgLightbox {
 		return result;
 	}
 
-	public static PaymentEntity verifyPayment(JSONObject json, long metaOrderId, Logger upgLogger, UpgAccount account, OrderService orderService) throws BusinessException {
+	public static PaymentEntity verifyPayment(JSONObject json, MetaOrderEntity metaOrderEntity, Logger upgLogger, UpgAccount account, OrderService orderService) throws BusinessException {
 //System.out.println("Received: " + json.toString(2));
 		JSONObject verifier = new JSONObject();
 		for (String param: new String[] {"Amount", "Currency", "MerchantReference", "PaidThrough", "TxnDate"}) {
@@ -130,29 +122,28 @@ public class UpgLightbox {
 		try {
 			paidAmount = Long.parseLong(json.getString("Amount"));
 		} catch (Exception ex) {;}
-		StringBuilder orderList = new StringBuilder();
 
-		OrderService.OrderValue orderValue = orderService.getMetaOrderTotalValue(metaOrderId);
+		OrderService.OrderValue orderValue = orderService.getMetaOrderTotalValue(metaOrderEntity.getId());
 		if (orderValue == null) {
-			upgLogger.error("Invalid order ID: {}", metaOrderId);
+			upgLogger.error("Invalid order ID: {}", metaOrderEntity.getId());
 			return null;
 		}
 
 		if (orderValue.amount.movePointRight(2).longValue() != paidAmount) {
-			upgLogger.error("Paid amount: {} does not equal order {} amount: {}", json.getString("Amount"), orderList.toString(), orderValue.amount.movePointRight(2));
+			upgLogger.error("Paid amount: {} does not equal order {} amount: {}", json.getString("Amount"), metaOrderEntity.getId(), orderValue.amount.movePointRight(2));
 			return null;
 		}
 		PaymentEntity payment = new PaymentEntity();
 		payment.setOperator(account.getAccountId());
-//payment.setOrdersEntity(order);
+//      payment.setOrdersEntity(order);
 		payment.setUid("CFM-" + json.getString("MerchantReference"));
 		payment.setExecuted(new Date());
 		payment.setStatus(PaymentStatus.PAID);
 		payment.setAmount(new BigDecimal(paidAmount).movePointLeft(2));
 		payment.setCurrency(TransactionCurrency.EGP);
 		payment.setObject(json.toString());
-//		payment.setUserId(orders.get(0).getUserId());
-		payment.setMetaOrderId(metaOrderId);
+		payment.setUserId(metaOrderEntity.getUser().getId());
+		payment.setMetaOrderId(metaOrderEntity.getId());
 
 		return payment;
 	}
@@ -189,6 +180,7 @@ public class UpgLightbox {
 		InputStream is = UpgLightbox.class.getClassLoader().getResourceAsStream(template);
 		if (is == null) {
 			System.err.println("######## LIGHTBOX TEMPLATE NOT AVAILABLE #######");
+			return "";
 		}
 		BufferedReader reader = new BufferedReader(new InputStreamReader(is));
 		htmlPage = reader.lines().collect(Collectors.joining(System.lineSeparator()));

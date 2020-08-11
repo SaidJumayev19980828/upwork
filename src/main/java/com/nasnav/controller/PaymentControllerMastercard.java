@@ -4,12 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.dto.OrderSessionResponse;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.payments.mastercard.MastercardSession;
+import com.nasnav.payments.mastercard.MastercardAccount;
+import com.nasnav.payments.mastercard.MastercardService;
+import com.nasnav.payments.misc.Commons;
+import com.nasnav.payments.misc.Gateway;
 import com.nasnav.payments.misc.HTMLConfigurer;
-import com.nasnav.payments.misc.Tools;
+import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.service.OrderService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
@@ -22,8 +24,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
-import java.util.Properties;
-
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/payment/mcard")
@@ -31,25 +31,21 @@ public class PaymentControllerMastercard {
 
     private static final Logger mastercardLogger = LogManager.getLogger("Payment:MCARD");
 
-    private final OrdersRepository ordersRepository;
-
-    private final OrderService orderService;
-
-    private final MastercardSession session;
+    private final MastercardService session;
 
     @Autowired
     private AppConfig config;
 
     @Autowired
-    private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
+    private Commons paymentCommons;
 
     @Autowired
     public PaymentControllerMastercard(
             OrdersRepository ordersRepository,
             OrderService orderService,
-            MastercardSession session) {
-        this.ordersRepository = ordersRepository;
-        this.orderService = orderService;
+            MastercardService session) {
+//        this.ordersRepository = ordersRepository;
+//        this.orderService = orderService;
         this.session = session;
     }
 
@@ -112,28 +108,28 @@ public class PaymentControllerMastercard {
     public ResponseEntity<?> initPayment(@RequestParam(name = "order_id") Long metaOrderId) throws BusinessException {
         OrderSessionResponse response = new OrderSessionResponse();
         response.setSuccess(false);
-        String accountName = Tools.getAccount(metaOrderId, "mcard", this.session.getOrderService(), orgPaymentGatewaysRep);
-        Properties props = Tools.getPropertyForAccount(accountName, mastercardLogger, config.paymentPropertiesDir);
-        if (props == null) {
-            throw new BusinessException("Unknown payment account","",HttpStatus.NOT_ACCEPTABLE);
-        }
-        session.getMerchantAccount().init(props);
-        mastercardLogger.info("Setting up payment for meta order: {} via processor: {}", metaOrderId, session.getMerchantAccount().getMerchantId());
 
-        if (session.initialize(ordersRepository, metaOrderId, orderService)) {
+
+        MastercardAccount merchantAccount = (MastercardAccount)paymentCommons.getMerchantAccount(metaOrderId, Gateway.MASTERCARD);
+        if (merchantAccount == null) {
+            mastercardLogger.info("Unable to find payment account for meta order {} via gateway: mcard", metaOrderId);
+            throw new BusinessException("Unable to identify payment gateway","",HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        mastercardLogger.info("Setting up payment for meta order: {} via processor: {}", metaOrderId, merchantAccount.getMerchantId());
+
+        PaymentEntity payment = session.initialize(merchantAccount, metaOrderId);
+        if (payment != null) {
             try {
-                response.setOrderRef(session.getOrderRef());
-                response.setOrderRef(session.getOrderRef());
-                response.setSessionId(session.getSessionId());
-                response.setMerchantId(session.getMerchantId());
-                response.setApiUrl(session.getMerchantAccount().getApiUrl());
-                response.setScriptUrl(session.getMerchantAccount().getScriptUrl());
+                response.setOrderRef(payment.getUid());
+                response.setSessionId(payment.getSessionId());
+                response.setMerchantId(merchantAccount.getMerchantId());
+                response.setApiUrl(merchantAccount.getApiUrl());
+                response.setScriptUrl(merchantAccount.getScriptUrl());
                 response.setSuccessUrl("/payment/mcard/verify");
 
-                if (session.getOrderValue() != null) {
-                    response.setOrderCurrency(session.getOrderValue().currency);
-                    response.setOrderAmount(session.getOrderValue().amount);
-                }
+                response.setOrderCurrency(payment.getCurrency());
+                response.setOrderAmount(payment.getAmount());
+
                 // TODO :  look into
                 response.setExecuteUrl("/payment/mcard/execute");
                 response.setSuccess(true);

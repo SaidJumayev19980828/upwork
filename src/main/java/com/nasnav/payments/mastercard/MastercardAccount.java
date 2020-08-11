@@ -17,7 +17,7 @@ public class MastercardAccount extends Account {
     protected String apiUrl;
     protected String scriptUrl;
 
-    public void init(Properties props) {
+    public void init(Properties props, int dbId) {
 
         super.setup(props);
         this.merchantId = props.getProperty("mcard.merchant_id");
@@ -27,5 +27,6 @@ public class MastercardAccount extends Account {
 //        this.apiVersion = props.getProperty("mcard.api_version");
         this.scriptUrl = props.getProperty("mcard.script_url");
         super.accountId = "MCARD:" +super.accountId;
+        super.dbId = dbId;
     }
 }

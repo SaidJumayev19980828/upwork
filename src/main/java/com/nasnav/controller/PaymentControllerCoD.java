@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Optional;
 
+import com.nasnav.payments.misc.Commons;
+import com.nasnav.payments.misc.Gateway;
 import com.nasnav.shipping.services.PickupFromShop;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,16 +39,13 @@ public class PaymentControllerCoD {
 	private static final Logger codLogger = LogManager.getLogger("Payment:COD");
 
 	@Autowired
+	private Commons paymentCommons;
+
+	@Autowired
 	private OrdersRepository ordersRepository;
 
 	@Autowired
 	private MetaOrderRepository metaOrdersRepository;
-
-	@Autowired
-	private PaymentsRepository paymentsRepository;
-
-	@Autowired
-	private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
 
 	@Autowired
 	private OrderService orderService;
@@ -70,12 +69,11 @@ public class PaymentControllerCoD {
 			throw new BusinessException("Order ID is invalid", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
 		}
 		// check if CoD is avaialble
-		String accountName = Tools.getAccount(orders, "cod", orgPaymentGatewaysRep);
-		if (accountName == null) {
+		if (paymentCommons.getPaymentAccount(metaOrderId, Gateway.COD) == null) {
 			throw new BusinessException("CoD payment not available for order", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
 		}
 		for (OrdersEntity subOrder: ordersRepository.findByMetaOrderId(metaOrderId)) {
-			if (PickupFromShop.SERVICE_ID.equalsIgnoreCase(subOrder.getShipment().getShippingServiceId())) {
+			if (subOrder.getShipment() != null && PickupFromShop.SERVICE_ID.equalsIgnoreCase(subOrder.getShipment().getShippingServiceId())) {
 				codLogger.warn("Sub-order ({}) marked for pickup, COD not allowed.", subOrder.getId());
 				throw new BusinessException("At least one of the sub-orders marked for pickup", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
 			}
@@ -88,18 +86,11 @@ public class PaymentControllerCoD {
 		payment.setStatus(PaymentStatus.COD_REQUESTED);
 		payment.setAmount(orderValue.amount);
 		payment.setCurrency(orderValue.currency);
-		payment.setMetaOrderId(metaOrderId);
 		// TODO: this shall probably be changed to logged-in user rather than the meta-order owner later on
 		payment.setUserId(metaOrderOpt.get().getUser().getId());
+		payment.setMetaOrderId(metaOrderId);
 
-		paymentsRepository.saveAndFlush(payment);
-
-		for (OrdersEntity order : orders) {
-			orderService.setOrderAsPaid(payment, order);
-		}
-		ordersRepository.flush();
-		orderService.finalizeOrder(metaOrderId);
-
+		paymentCommons.finalizePayment(payment);
 
 		return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
 

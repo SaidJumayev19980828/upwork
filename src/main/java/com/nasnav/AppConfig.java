@@ -21,7 +21,7 @@ public class AppConfig {
     @Value("${email.activationurl}")  	public String accountActivationUrl;
     @Value("${email.port}")        		public int    mailHostPort;
     @Value("${email.ssl}")         		public String mailUseSSL;
-    @Value("${paymnet.properties_dir}") public String paymentPropertiesDir = "";
+    @Value("${payment.properties_dir}") public String paymentPropertiesDir = "";
     @Value("${cookies.secureToken}")    public boolean secureTokens;
     @Value("${dashbaord.order.page}")  	public String dashBoardOrderPageUrl;
     
