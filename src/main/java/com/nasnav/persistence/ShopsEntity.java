@@ -40,6 +40,9 @@ public class ShopsEntity implements BaseEntity{
 
     private Integer removed;
 
+    @Column(name = "place_id")
+    private String placeId;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "organization_id", nullable = false)
     @JsonIgnore
@@ -64,6 +67,7 @@ public class ShopsEntity implements BaseEntity{
         shopRepresentationObject.setBanner(getBanner());
         shopRepresentationObject.setName(getName());
         shopRepresentationObject.setPname(getPname());
+        shopRepresentationObject.setPlaceId(getPlaceId());
 
         if (getAddressesEntity() != null) {
             shopRepresentationObject.setAddress((AddressRepObj) getAddressesEntity().getRepresentation());
