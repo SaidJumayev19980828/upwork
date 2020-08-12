@@ -90,6 +90,12 @@ VALUES(630004, 'MORE_MONEY', 99001, now() - INTERVAL '100 DAY', now() - INTERVAL
 
 
 
+-- used codes
+INSERT INTO public.promotions_codes_used
+(promotion_id, user_id, "time")
+VALUES(630002, 88, now() - INTERVAL '1 DAY');
+
+
 
 --inserting products
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());

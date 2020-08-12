@@ -13,6 +13,14 @@ import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0006;
 import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0007;
 import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0008;
 import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0009;
+import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0010;
+import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_AMOUNT;
+import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_PERCENT;
+import static com.nasnav.persistence.PromotionsEntity.MAX_AMOUNT_PROP;
+import static com.nasnav.persistence.PromotionsEntity.MIN_AMOUNT_PROP;
+import static java.lang.Long.MAX_VALUE;
+import static java.math.BigDecimal.ZERO;
+import static java.math.RoundingMode.HALF_EVEN;
 import static java.time.LocalDateTime.now;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
@@ -24,12 +32,12 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -38,6 +46,7 @@ import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,18 +55,18 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.PromotionRepository;
+import com.nasnav.dao.PromotionsCodesUsedRepository;
 import com.nasnav.dto.PromotionSearchParamDTO;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.enumerations.PromotionStatus;
-import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.PromotionsEntity;
+import com.nasnav.persistence.UserEntity;
 
 import lombok.AllArgsConstructor;
 
@@ -87,6 +96,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 	
 	@Autowired
 	private OrderService orderService;
+	
+	@Autowired
+	private PromotionsCodesUsedRepository usedPromoRepo;
 	
 	@Override
 	public List<PromotionDTO> getPromotions(PromotionSearchParamDTO searchParams) {
@@ -162,14 +174,15 @@ public class PromotionsServiceImpl implements PromotionsService {
 	
 	
 	
+	@SuppressWarnings("unchecked")
 	private Map.Entry<String,Object> doSetNumbersAsBigDecimals(Map.Entry<String, Object> entry){
 		return ofNullable(entry.getValue())
 				.map(Object::toString)
 				.filter(NumberUtils::isParsable)
 				.map(BigDecimal::new)
 				.map(Object.class::cast)
-				.map(val -> new Map.(entry.getKey(), val) {
-				})
+				.map(val -> new SimpleEntry<>(entry.getKey(), val))
+				.map(Map.Entry.class::cast)
 				.orElse(entry);
 	}
 
@@ -402,12 +415,51 @@ public class PromotionsServiceImpl implements PromotionsService {
 		
 		BigDecimal cartTotal = orderService.calculateCartTotal();
 		
+		validatePromoCode(promoCode, promo, cartTotal);
+		
+		Map<String,Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
+		return getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
+				.orElse(calcDiscount(discountData, cartTotal));
+	}
+
+
+
+
+
+
+	private BigDecimal calcDiscount(Map<String, Object> discountData, BigDecimal cartTotal) {
+		BigDecimal percent = 
+				getOptionalBigDecimal(discountData, DISCOUNT_PERCENT)
+				.orElse(ZERO);
+		return percent
+				.multiply(new BigDecimal("0.01"))
+				.multiply(cartTotal)
+				.setScale(2, HALF_EVEN);
+	}
+
+
+
+
+
+
+	private void validatePromoCode(String promoCode, PromotionsEntity promo, BigDecimal cartTotal) {
 		if(!isPromoValidForTheCart(promo, cartTotal)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
 						, PROMO$PARAM$0009, promoCode);
+		}else if(promoAlreadyUsedByUser(promo)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE
+						, PROMO$PARAM$0010, promoCode);
 		}
-		
-		return cartTotal.divide(new BigDecimal("10"));
+	}
+
+
+
+
+
+
+	private boolean promoAlreadyUsedByUser(PromotionsEntity promo) {
+		UserEntity user = (UserEntity)securityService.getCurrentUser();
+		return usedPromoRepo.existsByPromotionAndUser(promo, user);
 	}
 
 
@@ -417,8 +469,23 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private boolean isPromoValidForTheCart(PromotionsEntity promo, BigDecimal cartTotal) {
 		Map<String,Object> constrains = readJsonStrAsMap(promo.getConstrainsJson());
-		BigDecimal minAmount = new BigDecimal();
-		return false;
+		BigDecimal minAmount = 
+				getOptionalBigDecimal(constrains, MIN_AMOUNT_PROP)
+				.orElse(ZERO);
+		BigDecimal maxAmount = 
+				getOptionalBigDecimal(constrains, MAX_AMOUNT_PROP)
+				.orElse(new BigDecimal(MAX_VALUE));
+		return Range.between(minAmount, maxAmount).contains(cartTotal);
+	}
+
+
+
+
+
+
+	private Optional<BigDecimal> getOptionalBigDecimal(Map<String, Object> map, String key) {
+		return ofNullable(map.get(key))
+				.map(BigDecimal.class::cast);
 	}
 
 }
