@@ -108,7 +108,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -2053,6 +2052,16 @@ public class OrderServiceImpl implements OrderService {
 
 
 
+	private void setPromoCodeAsUsed(MetaOrderEntity metaOrder) {
+		metaOrder
+		.getPromotions()
+		.forEach(promo -> promoService.setPromotionAsUsed(promo, metaOrder.getUser()));
+	}
+
+
+
+
+
 	private OrdersEntity getAndValidateOrderForConfirmation(Long orderId, EmployeeUserEntity user) {
 		OrdersEntity order;
 		if(securityService.currentUserHasRole(ORGANIZATION_MANAGER)) {
@@ -2199,6 +2208,8 @@ public class OrderServiceImpl implements OrderService {
 		validateCartCheckoutDTO(dto);
 
 		MetaOrderEntity order = createMetaOrder(dto);
+		
+		setPromoCodeAsUsed(order);
 		
 		return getOrderResponse(order);
 	}
@@ -2600,6 +2611,7 @@ public class OrderServiceImpl implements OrderService {
 		order.setDiscounts(discounts);
 		subOrders.forEach(order::addSubOrder);
 		promotion.ifPresent(order::addPromotion);
+		
 		return metaOrderRepo.save(order);
 	}
 
@@ -2763,7 +2775,7 @@ public class OrderServiceImpl implements OrderService {
 	private BigDecimal addPromoDiscount(BigDecimal promoDiscount, OrdersEntity subOrder
 				, BigDecimal subTotal) {
 		BigDecimal proportion = subOrder.getAmount().divide(subTotal, 2, FLOOR);
-		BigDecimal subOrderPromoDiscount = proportion.multiply(promoDiscount);
+		BigDecimal subOrderPromoDiscount = proportion.multiply(promoDiscount).setScale(2, FLOOR);
 		addToSubOrderDiscounts(subOrder, subOrderPromoDiscount);
 		
 		return subOrderPromoDiscount;

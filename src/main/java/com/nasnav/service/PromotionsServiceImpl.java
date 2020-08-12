@@ -65,6 +65,7 @@ import com.nasnav.enumerations.PromotionStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.PromotionsCodesUsedEntity;
 import com.nasnav.persistence.PromotionsEntity;
 import com.nasnav.persistence.UserEntity;
 
@@ -496,6 +497,30 @@ public class PromotionsServiceImpl implements PromotionsService {
 		Map<String,Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
 		return getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
 				.orElse(calcDiscount(discountData, subTotal));
+	}
+
+
+
+
+
+
+	@Override
+	public void setPromotionAsUsed(PromotionsEntity promotion, UserEntity user) {
+		PromotionsCodesUsedEntity usedPromotion = new PromotionsCodesUsedEntity();
+		usedPromotion.setPromotion(promotion);
+		usedPromotion.setUser(user);
+		usedPromotion.setTime(now());		
+		usedPromoRepo.save(usedPromotion);
+	}
+
+
+
+
+
+
+	@Override
+	public void redeemUsedPromotion(PromotionsEntity promotion, UserEntity user) {
+		usedPromoRepo.deleteByPromotion_IdAndUser_Id(promotion.getId(), user.getId());
 	}
 
 }
