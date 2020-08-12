@@ -455,7 +455,8 @@ public class ProductsController {
     })
     @GetMapping(value = "empty_collections", produces = APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public List<ProductDetailsDTO> getCollections(@RequestParam("org_id") Long orgId) {
+    public List<ProductDetailsDTO> getCollections(@RequestHeader(name = "User-Token", required = false) String token,
+                                                  @RequestParam("org_id") Long orgId) {
         return productService.getCollections(orgId);
     }
 
