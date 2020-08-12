@@ -13,4 +13,6 @@ public class CartCheckoutDTO {
     private String serviceId;
     @JsonProperty("additional_data")
     private Map<String, String> additionalData;
+    @JsonProperty("promo_code")
+    private String promoCode;
 }

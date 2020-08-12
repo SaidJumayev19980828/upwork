@@ -5,6 +5,8 @@ import java.util.List;
 
 import com.nasnav.dto.PromotionSearchParamDTO;
 import com.nasnav.dto.response.PromotionDTO;
+import com.nasnav.persistence.PromotionsEntity;
+import com.nasnav.persistence.UserEntity;
 
 public interface PromotionsService {
 	List<PromotionDTO> getPromotions(PromotionSearchParamDTO searchParams);
@@ -12,4 +14,13 @@ public interface PromotionsService {
 	Long updatePromotion(PromotionDTO promotion);
 
 	BigDecimal calcPromoDiscountForCart(String promoCode);
+	
+	BigDecimal calcPromoDiscount(String promoCode, BigDecimal subTotal);
+	
+	void setPromotionAsUsed(PromotionsEntity promotion, UserEntity user);
+	
+	/**
+	 * set a used promo as un-used again
+	 * */
+	void redeemUsedPromotion(PromotionsEntity promotion, UserEntity user);
 }

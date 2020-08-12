@@ -140,8 +140,11 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0003("Promotion start date cannot be after its end date!")
 	,PROMO$PARAM$0004("Promotion dates cannot be in the past!")
 	,PROMO$PARAM$0005("Cannot update promotion with id[%d], only inactive promotions can be update!")
-	,PROMO$PARAM$0006("Promo code [%s] was already used before!")
-	,PROMO$PARAM$0007("No Promo exisits with id[%d]!")
+	,PROMO$PARAM$0006("Promo code [%s] was already used before by another promotion!")
+	,PROMO$PARAM$0007("No Promo exists with id[%d]!")
+	,PROMO$PARAM$0008("No active Promo exists with code[%s]!")
+	,PROMO$PARAM$0009("Promo code [%s] is not applicable to the current cart!")
+	,PROMO$PARAM$0010("Promo code[%s] was already used!")
 	;
 	
 	@Getter
