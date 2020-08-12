@@ -406,20 +406,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	@Override
 	public BigDecimal calcPromoDiscountForCart(String promoCode) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		PromotionsEntity promo = 
-				promoRepo
-				.findByCodeAndOrganization_IdAndActiveNow(promoCode, orgId)
-				.orElseThrow(()-> new RuntimeBusinessException(NOT_ACCEPTABLE
-										, PROMO$PARAM$0008, promoCode));
-		
 		BigDecimal cartTotal = orderService.calculateCartTotal();
 		
-		validatePromoCode(promoCode, promo, cartTotal);
-		
-		Map<String,Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
-		return getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
-				.orElse(calcDiscount(discountData, cartTotal));
+		return calcPromoDiscount(promoCode, cartTotal);
 	}
 
 
@@ -486,6 +475,27 @@ public class PromotionsServiceImpl implements PromotionsService {
 	private Optional<BigDecimal> getOptionalBigDecimal(Map<String, Object> map, String key) {
 		return ofNullable(map.get(key))
 				.map(BigDecimal.class::cast);
+	}
+
+
+
+
+
+
+	@Override
+	public BigDecimal calcPromoDiscount(String promoCode, BigDecimal subTotal) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		PromotionsEntity promo = 
+				promoRepo
+				.findByCodeAndOrganization_IdAndActiveNow(promoCode, orgId)
+				.orElseThrow(()-> new RuntimeBusinessException(NOT_ACCEPTABLE
+										, PROMO$PARAM$0008, promoCode));
+		
+		validatePromoCode(promoCode, promo, subTotal);
+		
+		Map<String,Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
+		return getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
+				.orElse(calcDiscount(discountData, subTotal));
 	}
 
 }

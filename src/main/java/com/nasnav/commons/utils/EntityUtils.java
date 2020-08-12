@@ -26,7 +26,7 @@ import com.nasnav.response.UserApiResponse;
 public class EntityUtils {
 	
 	
-	public static final String DEFAULT_TIMESTAMP_PATTERN = "yyyy-MM-dd-HH-mm-ss"; 
+	public static final String DEFAULT_TIMESTAMP_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'"; 
 	
 	
 	public static UserApiResponse createFailedLoginResponse(List<ResponseStatus> responseStatuses) {

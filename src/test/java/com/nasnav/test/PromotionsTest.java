@@ -395,7 +395,12 @@ public class PromotionsTest {
         		template.exchange(url, GET, req, String.class);
         assertEquals(406, res.getStatusCodeValue());
 	}
-
+	
+	
+	
+	
+	
+	
 
 
 	private void assertPromoUpdated(JSONObject bodyJson, ResponseEntity<Long> res) {

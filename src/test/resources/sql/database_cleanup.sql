@@ -14,6 +14,7 @@ DELETE FROM public.shipment where id IN (
 	WHERE ord.organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.organization_shipping_service WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.shipping_service;
+DELETE FROM meta_orders_promotions;
 DELETE FROM public.PROMOTIONS_CART_CODES;
 DELETE FROM public.PROMOTIONS_CODES_USED;
 DELETE FROM public.promotions;

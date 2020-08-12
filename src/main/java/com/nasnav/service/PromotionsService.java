@@ -12,4 +12,6 @@ public interface PromotionsService {
 	Long updatePromotion(PromotionDTO promotion);
 
 	BigDecimal calcPromoDiscountForCart(String promoCode);
+	
+	BigDecimal calcPromoDiscount(String promoCode, BigDecimal subTotal);
 }

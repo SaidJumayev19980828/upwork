@@ -4,6 +4,7 @@ import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static javax.persistence.CascadeType.MERGE;
 import static javax.persistence.CascadeType.PERSIST;
 import static javax.persistence.CascadeType.REMOVE;
+import static javax.persistence.FetchType.LAZY;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,11 +13,12 @@ import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
@@ -58,12 +60,12 @@ public class MetaOrderEntity implements BaseEntity {
     private BigDecimal shippingTotal;
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "organization_id", nullable = false)
     private OrganizationEntity organization;
 
@@ -73,6 +75,12 @@ public class MetaOrderEntity implements BaseEntity {
     private Set<OrdersEntity> subOrders;
     
     private BigDecimal discounts;
+    
+    @ManyToMany(fetch = LAZY)
+    @JoinTable(name = "meta_orders_promotions"
+    , joinColumns = {@JoinColumn(name="meta_order")}
+    , inverseJoinColumns = {@JoinColumn(name="promotion")})
+    private Set<PromotionsEntity> promotions;
 
     @Override
     public BaseRepresentationObject getRepresentation() {
@@ -81,6 +89,7 @@ public class MetaOrderEntity implements BaseEntity {
 
     public MetaOrderEntity() {
         subOrders = new HashSet<>();
+        this.promotions = new HashSet<>();
         this.status = CLIENT_CONFIRMED.getValue();
     }
 
@@ -94,5 +103,15 @@ public class MetaOrderEntity implements BaseEntity {
     public void removeSubOrder(OrdersEntity subOrder) {
         subOrder.setMetaOrder(null);
         subOrders.remove(subOrder);
+    }
+    
+    
+    public void addPromotion(PromotionsEntity promotion) {
+    	promotions.add(promotion);
+    }
+    
+    
+    public void removePromotion(PromotionsEntity promotion) {
+    	promotions.remove(promotion);
     }
 }
