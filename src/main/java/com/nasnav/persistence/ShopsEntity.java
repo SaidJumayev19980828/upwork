@@ -40,7 +40,7 @@ public class ShopsEntity implements BaseEntity{
 
     private Integer removed;
 
-    @Column(name = "place_id")
+    @Column(name = "google_place_id")
     private String placeId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
