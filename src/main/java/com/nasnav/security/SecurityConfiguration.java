@@ -102,6 +102,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/product/**"					,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/product/images"				,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/product/image/bulk/template"						, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/product/empty_collections"	, HttpMethod.GET	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, NASNAV_ADMIN)),
 						patternOf( "/admin/**"	   	 									, setOf(NASNAV_ADMIN) ),
 						patternOf( "/files/**"),
 						patternOf( "/organization/info"									, setOf(ORGANIZATION_ADMIN)),
@@ -148,7 +149,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						, patternOf("/user/v2/register/activate")
 						, patternOf("/user/v2/register/activate/resend")
                         , patternOf("/payment/**")
-						, patternOf("/product/empty_collections"			, HttpMethod.GET)
                         , patternOf("/product/bundles"					, HttpMethod.GET)
                         , patternOf("/product/info"						, HttpMethod.GET)
                         , patternOf("/product/image"					, HttpMethod.GET)
