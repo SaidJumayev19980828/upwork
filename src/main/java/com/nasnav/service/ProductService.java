@@ -78,6 +78,7 @@ import javax.persistence.criteria.Root;
 
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
+import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.model.querydsl.sql.*;
 import com.nasnav.persistence.*;
 import com.querydsl.core.types.SubQueryExpression;
@@ -2917,20 +2918,27 @@ public class ProductService {
 	}
 
 
-	public List<VariantDTO> getVariants(Long orgId, String name, Integer page) {
-		if (isBlankOrNull(page) || page < 0) {
-			page = 0;
+	public VariantsResponse getVariants(Long orgId, String name, Integer start, Integer count) {
+		if (isBlankOrNull(start) || start < 0) {
+			start = 0;
 		}
+
+		if (isBlankOrNull(count) || count < 0) {
+			count = 10;
+		}
+
+		Long total = productVariantsRepository.countByProductEntity_organizationId(orgId);
 		List<ProductVariantsEntity> variantsEntities =
-				productVariantsRepository.findByOrganizationId(orgId, name, PageRequest.of(page, 100));
+				productVariantsRepository.findByOrganizationId(orgId, name, PageRequest.of(start, count));
 
 		List<Long> variantsIds = getVariantsIds(variantsEntities);
 		List<ProductImageDTO> productsAndVariantsImages = variantsIds.isEmpty() ? new ArrayList<>() : imgService.getProductsAndVariantsImages(null,variantsIds) ;
 
-		return variantsEntities
+		List<VariantDTO> variants =  variantsEntities
 				.stream()
 				.map(v -> createVariantDto(null, v, productsAndVariantsImages))
 				.collect(toList());
+		return new VariantsResponse(total, variants);
 	}
 }
 
