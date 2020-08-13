@@ -15,9 +15,10 @@ import java.util.List;
         "id",
         "name",
         "p_name",
-        "address",
         "logo",
         "banner",
+        "place_id",
+        "address",
         "open"
 })
 
@@ -39,6 +40,9 @@ public class ShopRepresentationObject extends BaseRepresentationObject{
     private String banner;
     @JsonProperty("open")
     private OpenWorkingDays openWorkingDays;
+
+    @JsonProperty("place_id")
+    private String placeId;
 
     private List<OrganizationImagesRepresentationObject> images;
 }

@@ -30,6 +30,9 @@ public class ShopJsonDTO extends BaseJsonDTO{
 
     private String banner;
 
+    @JsonProperty("place_id")
+    private String placeId;
+
     @Override
     protected void initRequiredProperties() { }
 
@@ -61,6 +64,11 @@ public class ShopJsonDTO extends BaseJsonDTO{
     public void setAddress(AddressDTO address) {
         setPropertyAsUpdated("address");
         this.address = address;
+    }
+
+    public void setPlaceId(String placeId) {
+        setPropertyAsUpdated("placeId");
+        this.placeId = placeId;
     }
 
 }
