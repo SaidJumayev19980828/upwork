@@ -49,17 +49,11 @@ public class OrdersEntity implements BaseEntity{
 	@Column(name = "id", unique = true, nullable = false)
 	private Long id;
 
-	@Column(name = "email", length = 40)
-	private String email;
-
 	@Column(name = "name", length = 40)
 	private String name;
 
 	@Column(name = "user_id", nullable = false)
 	private Long userId;
-
-	@Column(name = "payment_type")
-	private Integer payment_type;
 
 	@Column(name = "payment_status", nullable = false)
 	private Integer paymentStatus;
@@ -93,10 +87,6 @@ public class OrdersEntity implements BaseEntity{
 
 	private Integer status;
 
-    @Type(type = "com.nasnav.persistence.GenericArrayType")
-	private String []cancelation_reasons;
-	private String driver_name;
-	private Boolean equipped;
 	private BigDecimal amount;
 
 	@OneToOne(cascade = CascadeType.ALL)

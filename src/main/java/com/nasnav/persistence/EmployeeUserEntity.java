@@ -28,29 +28,11 @@ public class EmployeeUserEntity extends BaseUserEntity {
 	@Column(name = "name")
 	private String name;
 
-    @Column(name = "job_title")
-    private String jobTitle;
-
     @Column(name = "remember_created_at")
     private LocalDateTime rememberCreatedAt;
 
-    @Column(name = "type")
-    private String type;
-
     @Column(name = "created_by")
     private Integer createdBy;
-
-    @Column(name = "seo")
-    private Boolean seo;
-
-    @Column(name = "following_standards")
-    private Boolean followingStandards;
-
-    @Column(name = "service_type")
-    private Integer serviceType;
-
-    @Column(name = "tutorial")
-    private Boolean tutorial;
 
     @Column(name = "shop_id")
     private Long shopId;

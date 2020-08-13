@@ -30,7 +30,6 @@ public class StocksEntity {
 	private Long id;
 
 	private Integer quantity;
-	private String location;
 
 	@Column(name = "price")
 	private BigDecimal price;
