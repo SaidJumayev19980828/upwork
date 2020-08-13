@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.nasnav.dto.*;
+import com.nasnav.dto.response.navbox.VariantsResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -195,10 +196,12 @@ public class NavboxController {
 	})
 	@GetMapping(value = "variants", produces = APPLICATION_JSON_UTF8_VALUE)
 	@ResponseStatus(HttpStatus.OK)
-	public List<VariantDTO> getVariants(@RequestParam("org_id") Long orgId,
+	public VariantsResponse getVariants(@RequestParam("org_id") Long orgId,
 										@RequestParam(required = false, defaultValue = "") String name,
-										@RequestParam( "page") Integer page) {
-		return productService.getVariants(orgId, name, page);
+										@RequestParam(required = false, defaultValue = "0") Integer start,
+										@RequestParam(required = false, defaultValue = "10") Integer count) {
+
+		return productService.getVariants(orgId, name, start, count);
 	}
 
 	
