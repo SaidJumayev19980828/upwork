@@ -943,11 +943,12 @@ public class OrderServiceImpl implements OrderService {
 				.format(orderTime);
 		String total = getMetaOrderTotal(order).toPlainString();
 
-		String orgLogo = ofNullable(ofNullable(orgThemeRepo.findOneByOrganizationEntity_Id(order.getOrganization().getId()))
-											  .orElse(new OrganizationThemeEntity())
-									.getLogo())
-									.orElse("nasnav-logo.png");
-		
+		String orgLogo = ofNullable(order).map(o -> o.getOrganization())
+									  	  .map(OrganizationEntity::getId)
+										  .map(orgThemeRepo::findOneByOrganizationEntity_Id)
+										  .map(OrganizationThemeEntity::getLogo)
+										  .orElse("nasnav-logo.png");
+
 		Map<String, Object> params = new HashMap<>();
 		params.put("org_logo", orgLogo);
 		params.put("data", this.getOrderResponse(order));
