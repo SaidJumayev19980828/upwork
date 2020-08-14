@@ -14,12 +14,17 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_NO_VARIAN
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_READ_ZIP;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_USER_CANNOT_MODIFY_PRODUCT;
 import static com.nasnav.exceptions.ErrorCodes.P$PRO$0001;
+import static com.nasnav.model.querydsl.sql.QProductImages.productImages;
+import static com.nasnav.model.querydsl.sql.QProductVariants.productVariants;
+import static com.nasnav.model.querydsl.sql.QProducts.products;
 import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_BARCODE;
 import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_EXTERNAL_ID;
 import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_IMAGE_FILE;
 import static com.nasnav.service.CsvDataImportService.IMG_CSV_HEADER_VARIANT_ID;
+import static com.querydsl.core.types.dsl.Expressions.cases;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
@@ -67,6 +72,8 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -101,6 +108,7 @@ import com.nasnav.service.model.VariantBasicData;
 import com.nasnav.service.model.VariantCache;
 import com.nasnav.service.model.VariantIdentifier;
 import com.nasnav.service.model.VariantIdentifierAndUrlPair;
+import com.querydsl.sql.SQLQueryFactory;
 import com.sun.istack.logging.Logger;
 import com.univocity.parsers.common.record.Record;
 import com.univocity.parsers.csv.CsvParser;
@@ -146,6 +154,12 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	@Autowired
 	private CachingHelper cachingHelper;
+	
+	@Autowired
+	private JdbcTemplate template;
+	
+	@Autowired
+	private SQLQueryFactory queryFactory;
 	
 
 	@Override
@@ -1526,18 +1540,23 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-
+	/**
+	 * as this method can be used to get images of soft-deleted variants, it should use
+	 * native queries
+	 * @return a map of variant id and its cover image. cover image are selected based
+	 * on the method electVariantCoverImage.
+	 * */
 	@Override
 	public Map<Long, Optional<String>> getVariantsCoverImages(List<Long> variantsIds) {
-		List<VariantBasicData> variantData = productVariantsRepository.findVariantBasicDataByIdIn(variantsIds);
-		List<Long> productsIds = 
-				variantData
-				.stream()
-				.map(VariantBasicData::getProductId)
-				.collect(toList());
-		List<ProductImageDTO> allImgs = productImagesRepository.getProductsAndVariantsImages(productsIds, variantsIds);
+		if(variantsIds.isEmpty()) {
+			return emptyMap();
+		}
 		
-		return variantData
+		List<ProductVariantPair> productVariantIdPairs = getProductVariantPairs(variantsIds);
+
+		List<ProductImageDTO> allImgs = getAllImgsFor(variantsIds, productVariantIdPairs);
+		
+		return productVariantIdPairs
 				.stream()
 				.map(variant -> getVariantImgs(variant, allImgs))
 				.map(this::electVariantCoverImage)
@@ -1549,7 +1568,63 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private VariantBasicDataWithImgs getVariantImgs(VariantBasicData variant, List<ProductImageDTO> allImgs) {
+	private List<ProductImageDTO> getAllImgsFor(List<Long> variantsIds
+							, List<ProductVariantPair> productVariantIdPairs) {
+		List<Long> productsIds = 
+				productVariantIdPairs
+				.stream()
+				.map(ProductVariantPair::getProductId)
+				.collect(toList());
+		
+		String variantImgsQuery = 
+				queryFactory
+				.select(productImages.id.as("id")
+						, productImages.uri.as("imagePath")
+						, products.id.as("productId")
+						, productVariants.id.as("variantId")
+						, productImages.priority.as("priority"))
+				.from(productImages)
+				.leftJoin(products)
+					.on(productImages.productId.eq(products.id))
+				.leftJoin(productVariants)
+					.on(productImages.variantId.eq(productVariants.id))
+				.where(products.id.in(productsIds)
+						.or(productVariants.id.in(variantsIds)))
+				.orderBy(
+						cases()
+						.when(productImages.variantId.isNull())
+						.then(0)
+						.otherwise(1).asc()
+						, productImages.priority.asc())
+				.getSQL().getSQL();
+				
+				
+		return template.query(variantImgsQuery, new BeanPropertyRowMapper<>(ProductImageDTO.class));
+	}
+	
+	
+	
+	
+	private List<ProductVariantPair> getProductVariantPairs(List<Long> variantsIds){
+		String productIdsQuery = 
+				queryFactory
+				.select(productVariants.productId.as("productId")
+						, productVariants.id.as("variantId"))
+				.from(productVariants)
+				.where(productVariants.id.in(variantsIds))
+				.getSQL().getSQL();
+		
+		
+		return template.query(productIdsQuery
+						 , new BeanPropertyRowMapper<>(ProductVariantPair.class));
+	}
+
+
+
+
+
+
+	private VariantBasicDataWithImgs getVariantImgs(ProductVariantPair variant, List<ProductImageDTO> allImgs) {
 		return allImgs
 				.stream()
 				.filter(img -> imgBelongToVariantOrItsProduct(variant, img))
@@ -1564,7 +1639,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private boolean imgBelongToVariantOrItsProduct(VariantBasicData variant, ProductImageDTO img) {
+	private boolean imgBelongToVariantOrItsProduct(ProductVariantPair variant, ProductImageDTO img) {
 		return Objects.equals(variant.getProductId(), img.getProductId()) 
 						|| Objects.equals(variant.getVariantId(), img.getVariantId());
 	}
@@ -1608,7 +1683,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 @Data
 @AllArgsConstructor
 class VariantBasicDataWithImgs{
-	private VariantBasicData variant;
+	private ProductVariantPair variant;
 	private List<ProductImageDTO> imgs;
 }
 
@@ -1619,6 +1694,14 @@ class VariantBasicDataWithImgs{
 class VariantCoverImg{
 	private Long variantId;
 	private Optional<String> imgUrl;
+}
+
+
+
+@Data
+class ProductVariantPair{
+	Long productId;
+	Long variantId;
 }
 
 

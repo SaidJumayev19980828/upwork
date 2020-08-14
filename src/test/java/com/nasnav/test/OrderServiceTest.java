@@ -65,7 +65,6 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nasnav.NavBox;
 import com.nasnav.controller.OrdersController;
 import com.nasnav.dao.CartItemRepository;
@@ -110,7 +109,7 @@ public class OrderServiceTest {
 	
 	//TODO: test adding bundle product as basket item, test the quantity calculation will work
 	
-	private static final String EXPECTED_COVER_IMG_URL = "99001/cover_img.jpg";
+	private static final String EXPECTED_COVER_IMG_URL = "99001/img1.jpg";
 
 	@Autowired
 	private TestRestTemplate template;
@@ -690,7 +689,7 @@ public class OrderServiceTest {
 		ResponseEntity<String> response = template.exchange("/order/list?details_level=2&count=1", GET,
 				new HttpEntity<>(getHeaders("101112")), String.class);
 
-		DetailedOrderRepObject body = getOrderListDetailedObject(response);
+		DetailedOrderRepObject body = getOrderListDetailedObject(response).get(0);
 
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertTrue( body.getTotalQuantity() != null);
@@ -730,8 +729,8 @@ public class OrderServiceTest {
 		ResponseEntity<String> response = template.exchange("/order/list?start=1&count=1&details_level=3", GET,
 				new HttpEntity<>(getHeaders("101112")), String.class);
 
-		DetailedOrderRepObject body = getOrderListDetailedObject(response);
-		DetailedOrderRepObject expectedBody = createExpectedOrderInfo(330005L, new BigDecimal("50"), 1, "NEW", 89L, ZERO);
+		DetailedOrderRepObject body = getOrderListDetailedObject(response).get(0);
+		DetailedOrderRepObject expectedBody = createExpectedOrderInfo(330005L, new BigDecimal("50.00"), 1, "NEW", 89L, ZERO);
 
 		assertEquals(expectedBody, body);
 
@@ -739,9 +738,9 @@ public class OrderServiceTest {
 		response = template.exchange("/order/list?start=2&count=1&details_level=3", GET,
 				new HttpEntity<>(getHeaders("101112")), String.class);
 
-		body = getOrderListDetailedObject(response);
+		body = getOrderListDetailedObject(response).get(0);
 
-		expectedBody = createExpectedOrderInfo(330003L, new BigDecimal("300"), 7, "NEW", 88L, ZERO);
+		expectedBody = createExpectedOrderInfo(330003L, new BigDecimal("300.00"), 7, "NEW", 88L, ZERO);
 
 		assertEquals(expectedBody, body);
 
@@ -749,9 +748,9 @@ public class OrderServiceTest {
 		response = template.exchange("/order/list?start=3&count=1&details_level=3", GET,
 				new HttpEntity<>(getHeaders("101112")), String.class);
 
-		body = getOrderListDetailedObject(response);
+		body = getOrderListDetailedObject(response).get(0);
 
-		expectedBody = createExpectedOrderInfo(330004L, new BigDecimal("200"), 5, "NEW", 89L, new BigDecimal("50"));
+		expectedBody = createExpectedOrderInfo(330004L, new BigDecimal("200.00"), 5, "NEW", 89L, new BigDecimal("50.00"));
 
 		assertEquals(expectedBody, body);
 
@@ -761,13 +760,9 @@ public class OrderServiceTest {
 	
 	
 	
-	private DetailedOrderRepObject getOrderListDetailedObject(ResponseEntity<String> response) throws IOException {
-		JSONArray json = new JSONArray(response.getBody());
-
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new JavaTimeModule());
-
-		return mapper.readValue(json.getJSONObject(0).toString(), DetailedOrderRepObject.class);
+	private List<DetailedOrderRepObject> getOrderListDetailedObject(ResponseEntity<String> response) throws IOException {
+		return mapper
+				.readValue(response.getBody(), new TypeReference<List<DetailedOrderRepObject>>() {});
 	}
 	
 	

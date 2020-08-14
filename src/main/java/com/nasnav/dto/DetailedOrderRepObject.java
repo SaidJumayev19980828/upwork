@@ -12,12 +12,6 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-/*@JsonPropertyOrder({
-        "user_id",
-        "store_id",
-        "price",
-        "status"
-})*/
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
@@ -43,6 +37,7 @@ public class DetailedOrderRepObject extends BaseRepresentationObject{
     private Integer totalQuantity;
     private String paymentStatus;
     private AddressRepObj shippingAddress;
+    @EqualsAndHashCode.Exclude
     private List<BasketItem> items;
     private Long metaOrderId;
     private String shippingStatus;

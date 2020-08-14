@@ -114,15 +114,7 @@ public class TestHelper {
 	
 	@Transactional
 	public OrdersEntity getOrderEntityFullData(Long orderId) {
-		OrdersEntity order = orderRepo.findById(orderId).get();
-		
-		//just call them to make hibernate cache these entities while being in the transaction
-		order.getBasketsEntity().stream().forEach( i-> i.toString());		
-		order.getOrganizationEntity();
-		order.getShopsEntity();
-		order.getShopsEntity().getName();
-
-		return order;
+		return orderRepo.findFullDataById(orderId).get();
 	}
 	
 	
