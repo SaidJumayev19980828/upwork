@@ -2445,7 +2445,12 @@ public class OrderServiceImpl implements OrderService {
 		order.setOrderId(metaOrder.getId());
 		order.setCurrency(getOrderCurrency(metaOrder));
 		order.setCreationDate(metaOrder.getCreatedAt());
-		order.setStatus(OrderStatus.findEnum(metaOrder.getStatus()).name());
+
+		String status = ofNullable(findEnum(metaOrder.getStatus()))
+						.orElse(NEW)
+						.name();
+		order.setStatus(status);
+
 		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(metaOrder.getId());
 		if (payment.isPresent()) {
 			PaymentStatus paymentStatus =
