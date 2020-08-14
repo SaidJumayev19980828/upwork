@@ -1375,7 +1375,7 @@ public class OrderServiceImpl implements OrderService {
 		List<BasketItemDetails> basketItemsDetails = ofNullable(basketItemsDetailsMap)
 															.map(map -> map.get(order.getId()) )
 															.orElse(new ArrayList<>());
-		Map<Long, Optional<String>> variantsImagesList = getVariantsImagesList(order);
+		Map<Long, Optional<String>> variantsImagesList = getVariantsImagesList(basketItemsDetails);
 		
 		BeanUtils.copyProperties(getOrderSummary(order), representation);
 		if (detailsLevel == null)
@@ -2414,15 +2414,12 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private Map<Long, Optional<String>> getVariantsImagesList(OrdersEntity order) {
+	private Map<Long, Optional<String>> getVariantsImagesList(List<BasketItemDetails> basketItems) {
 		List<Long> variantsIds =
-				order
-						.getBasketsEntity()
-						.stream()
-						.map(BasketsEntity::getStocksEntity)
-						.map(StocksEntity::getProductVariantsEntity)
-						.map(ProductVariantsEntity::getId)
-						.collect(toList());
+				basketItems
+				.stream()
+				.map(BasketItemDetails::getVariantId)
+				.collect(toList());
 		return imgService.getVariantsCoverImages(variantsIds);
 	}
 
