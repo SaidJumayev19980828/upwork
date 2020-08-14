@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 @JsonPropertyOrder({"user_id", "user_name", "order_id", "subtotal", "shipping", "total",
-                    "currency", "operator", "creation_date", "sub_orders"})
+                    "currency", "operator", "status", "creation_date", "sub_orders"})
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
@@ -28,4 +28,5 @@ public class Order {
     private String operator;
     private BigDecimal discount;
     private String paymentStatus;
+    private String status;
 }
