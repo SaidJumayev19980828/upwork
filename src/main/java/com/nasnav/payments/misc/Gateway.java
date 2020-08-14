@@ -11,7 +11,7 @@ public enum Gateway {
 		this.value = value;
 	}
 
-	String getValue() {
+	public String getValue() {
 		return this.value;
 	}
 }

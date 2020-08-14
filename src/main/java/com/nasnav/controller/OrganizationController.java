@@ -1,5 +1,6 @@
 package com.nasnav.controller;
 
+import static com.nasnav.payments.misc.Gateway.*;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.lang.reflect.InvocationTargetException;
@@ -7,6 +8,7 @@ import java.util.List;
 
 import javax.validation.Valid;
 
+import com.nasnav.shipping.services.PickupFromShop;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -379,7 +381,8 @@ public class OrganizationController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
     })
     @GetMapping(value = "payments", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<?> getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId) {
+    public ResponseEntity<?> getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId,
+                                                            @RequestParam(required = false) String deliveryService) {
 
         List<OrganizationPaymentGatewaysEntity> gateways = orgPaymentGatewaysRep.findAllByOrganizationId(orgId);
         if (gateways == null || gateways.size() == 0) {
@@ -389,6 +392,12 @@ public class OrganizationController {
         StringBuilder list = new StringBuilder();
         list.append("{ ");
         for (OrganizationPaymentGatewaysEntity gateway: gateways) {
+            if (deliveryService != null) {
+                // For now - hardcoded rule for not allowing CoD for Pickup service (to prevent misuse)
+                if (COD.getValue().equalsIgnoreCase(gateway.getGateway()) && PickupFromShop.SERVICE_ID.equalsIgnoreCase(deliveryService)) {
+                    continue;
+                }
+            }
             if (list.length() > 2) {
                 list.append(", ");
             }
@@ -396,13 +405,13 @@ public class OrganizationController {
             list.append(gateway.getGateway());
             list.append("\": { ");
 
-            if ("mcard".equalsIgnoreCase(gateway.getGateway())) {
+            if (MASTERCARD.getValue().equalsIgnoreCase(gateway.getGateway())) {
                 list.append("\"script\": \"");
                 MastercardAccount account = new MastercardAccount();
                 account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir), gateway.getId());
                 list.append(account.getScriptUrl());
                 list.append('"');
-            } else if ("upg".equalsIgnoreCase(gateway.getGateway())) {
+            } else if (UPG.getValue().equalsIgnoreCase(gateway.getGateway())) {
                 list.append("\"script\": \"");
                 UpgAccount account = new UpgAccount();
                 account.init(Tools.getPropertyForAccount(gateway.getAccount(), classLogger, config.paymentPropertiesDir));
