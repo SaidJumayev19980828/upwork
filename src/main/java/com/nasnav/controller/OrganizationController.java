@@ -382,7 +382,7 @@ public class OrganizationController {
     })
     @GetMapping(value = "payments", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<?> getOrganizationPaymentGateways(@RequestParam(value = "org_id") Long orgId,
-                                                            @RequestParam(required = false) String deliveryService) {
+                                                            @RequestParam(value = "delivery", required = false) String deliveryService) {
 
         List<OrganizationPaymentGatewaysEntity> gateways = orgPaymentGatewaysRep.findAllByOrganizationId(orgId);
         if (gateways == null || gateways.size() == 0) {
