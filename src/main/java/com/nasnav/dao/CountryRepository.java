@@ -16,4 +16,6 @@ public interface CountryRepository extends CrudRepository<CountriesEntity, Long>
 
     @Query(value = "select a.id from AreasEntity a join a.citiesEntity city join city.countriesEntity country where country.id = :id")
     List<Long> findAreasByCountryId(@Param("id") Long id);
+
+    Optional<CountriesEntity> findByNameIgnoreCase(String name);
 }
