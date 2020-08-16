@@ -842,10 +842,26 @@ public class OrderServiceImpl implements OrderService {
 				DateTimeFormatter
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(order.getCreationDate());
-		params.put("id", order.getId().toString());
+		String orgLogo = ofNullable(order).map(o -> o.getOrganizationEntity())
+										.map(OrganizationEntity::getId)
+										.map(orgThemeRepo::findOneByOrganizationEntity_Id)
+										.map(OrganizationThemeEntity::getLogo)
+										.orElse("nasnav-logo.png");
+
+		SubOrder subOrder = getSubOrder(order, getVariantsImagesList(order));
+
+		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(order.getMetaOrder().getId());
+		String operator = "";
+		if (payment.isPresent()) {
+			PaymentStatus paymentStatus = payment.map(PaymentEntity::getStatus).orElse(UNPAID);
+			operator = payment.get().getOperator();
+		}
+
+		params.put("orgLogo", orgLogo);
 		params.put("creationTime", orderTime);
 		params.put("orderPageUrl", buildDashboardPageUrl(order));
-		params.put("sub", order);
+		params.put("sub", subOrder);
+		params.put("operator", operator);
 		return params;
 	}
 	
