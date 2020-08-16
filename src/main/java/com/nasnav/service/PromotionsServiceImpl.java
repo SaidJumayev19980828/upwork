@@ -103,7 +103,6 @@ public class PromotionsServiceImpl implements PromotionsService {
 	
 	@Override
 	public List<PromotionDTO> getPromotions(PromotionSearchParamDTO searchParams) {
-		
 		SearchParams params = createSearchParam(searchParams);
 		
 		CriteriaBuilder builder = entityMgr.getCriteriaBuilder();
@@ -193,6 +192,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	private SearchParams createSearchParam(PromotionSearchParamDTO searchParams) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+
 		Optional<Integer> status = 
 				ofNullable(searchParams)
 				.map(PromotionSearchParamDTO::getStatus)
@@ -213,7 +214,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 				ofNullable(searchParams)
 				.map(PromotionSearchParamDTO::getId);
 		
-		return new SearchParams(status, startTime, endTime, id);
+		return new SearchParams(status, startTime, endTime, id, orgId);
 	}
 
 
@@ -224,7 +225,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 	private ArrayList<Predicate> createPromotionsQueryPerdicates(CriteriaBuilder builder
 			, Root<PromotionsEntity> root ,SearchParams searchParams) {
 		ArrayList<Predicate> predicates = new ArrayList<>();
-		
+
 		if(searchParams.status.isPresent()) {
 			Predicate predicate = builder.equal(root.get("status"), searchParams.status.get());
 			predicates.add(predicate);
@@ -234,6 +235,8 @@ public class PromotionsServiceImpl implements PromotionsService {
 			Predicate predicate = builder.equal(root.get("id"), searchParams.id.get());
 			predicates.add(predicate);
 		}
+
+		predicates.add(builder.equal(root.get("organization").get("id"), searchParams.orgId));
 		
 		Predicate isPromotionInTimeWindowPredicate = 
 				createPromotionInTimeWindowPerdicate(builder, root, searchParams);
@@ -537,4 +540,5 @@ class SearchParams{
 	public Optional<LocalDateTime> startTime;
 	public Optional<LocalDateTime> endTime;
 	public Optional<Long> id;
+	public Long orgId;
 }
