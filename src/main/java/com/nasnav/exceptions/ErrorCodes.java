@@ -60,6 +60,7 @@ public enum ErrorCodes {
 	,ADDR$ADDR$0005("Address has no city!")
 	,ADDR$ADDR$0006("No %s exists with ID:[%d]!")
 	,ADDR$ADDR$0007("Can't delete %s linked to address")
+	,ADDR$ADDR$0008("No Country name was provided!")
 
 	,G$USR$0001("User is not an employee!")
 	,G$JSON$0001("Failed to read json into an object!")

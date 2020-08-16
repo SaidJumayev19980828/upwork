@@ -1,25 +1,39 @@
 package com.nasnav.service;
 
-import com.nasnav.dao.AddressRepository;
-import com.nasnav.dao.AreaRepository;
-import com.nasnav.dao.CityRepository;
-import com.nasnav.dao.CountryRepository;
-import com.nasnav.dto.*;
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.AreasEntity;
-import com.nasnav.persistence.CitiesEntity;
-import com.nasnav.persistence.CountriesEntity;
+import static com.google.common.primitives.Longs.asList;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0003;
+import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0006;
+import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0007;
+import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0008;
+import static com.nasnav.exceptions.ErrorCodes.TYP$0001;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toMap;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-
-import static com.google.common.primitives.Longs.asList;
-import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
-import static com.nasnav.exceptions.ErrorCodes.*;
-import static java.util.stream.Collectors.*;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import com.nasnav.dao.AddressRepository;
+import com.nasnav.dao.AreaRepository;
+import com.nasnav.dao.CityRepository;
+import com.nasnav.dao.CountryRepository;
+import com.nasnav.dto.AreaDTO;
+import com.nasnav.dto.AreasRepObj;
+import com.nasnav.dto.CitiesRepObj;
+import com.nasnav.dto.CityDTO;
+import com.nasnav.dto.CountriesRepObj;
+import com.nasnav.dto.CountryDTO;
+import com.nasnav.dto.CountryInfoDTO;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.AreasEntity;
+import com.nasnav.persistence.CitiesEntity;
+import com.nasnav.persistence.CountriesEntity;
 
 @Service
 public class AddressService {
@@ -75,11 +89,13 @@ public class AddressService {
 
     @Transactional
     public void addCountries(List<CountryDTO> dto) {
-        for(CountryDTO coutnry : dto) {
-            createCountry(new CountryInfoDTO(coutnry.getId(), coutnry.getName()));
-            for (CityDTO city : coutnry.getCities()) {
-                createCity(new CountryInfoDTO(city.getId(), city.getName(), coutnry.getId()));
-                for (AreaDTO area : city.getAreas()) {
+        for(CountryDTO country : dto) {
+        	CountriesEntity countryEntity = getOrCreateCountry(new CountryInfoDTO(country.getId(), country.getName()));
+        	List<CityDTO> cities = ofNullable(country.getCities()).orElse(emptyList());
+            for (CityDTO city : cities) {
+                createCity(new CountryInfoDTO(city.getId(), city.getName(), countryEntity.getId()));
+                List<AreaDTO> areas =  ofNullable(city.getAreas()).orElse(emptyList());
+                for (AreaDTO area : areas) {
                     createArea(new CountryInfoDTO(area.getId(), area.getName(), city.getId()));
                 }
             }
@@ -87,11 +103,14 @@ public class AddressService {
     }
 
 
+    
+    
+    
     public void addCountry(CountryInfoDTO dto) {
         if(isBlankOrNull(dto.getType()))
             throw new RuntimeBusinessException(NOT_ACCEPTABLE, TYP$0001, "country, city, area");
         if (dto.getType().equals("country")) {
-            createCountry(dto);
+            getOrCreateCountry(dto);
         } else if (dto.getType().equals("city")) {
             createCity(dto);
         } else if (dto.getType().equals("area")) {
@@ -100,14 +119,26 @@ public class AddressService {
     }
 
 
-    private void createCountry(CountryInfoDTO dto) {
-        if (countryRepo.existsByNameIgnoreCase(dto.getName().toUpperCase())) {
-            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0001,"country", dto.getName());
+    
+    
+    
+    private CountriesEntity getOrCreateCountry(CountryInfoDTO dto) {
+    	String name = dto.getName();
+    	if (isBlankOrNull(name)){
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0008);
         }
-        CountriesEntity country = new CountriesEntity();
-        country.setId(dto.getId());
-        country.setName(dto.getName());
-        countryRepo.save(country);
+    	return countryRepo
+    			.findByNameIgnoreCase(name.toUpperCase())
+				.orElseGet(() -> createNewCountry(dto.getId(), name));
+    }
+    
+    
+    
+    private CountriesEntity createNewCountry(Long id, String name) {
+    	CountriesEntity country = new CountriesEntity();
+        country.setId(id);
+        country.setName(name);
+        return countryRepo.save(country);
     }
 
 

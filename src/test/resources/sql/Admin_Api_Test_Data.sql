@@ -37,3 +37,10 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 70, 2);
 
 INSERT INTO public.products(id, name, brand_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',104, 99001, now(), now());
+
+
+
+--INSERT countries 
+INSERT INTO public.countries(id,"name")VALUES(1,'Egypt');
+INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
+INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
