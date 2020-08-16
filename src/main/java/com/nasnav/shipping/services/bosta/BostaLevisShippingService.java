@@ -104,17 +104,55 @@ public class BostaLevisShippingService implements ShippingService{
 			ImmutableMap
 				.<Long,String>builder()
 				.put(1L, "EG-01")
-				.put(2L, "EG-02")
+				.put(2L, "EG-01")
+				.put(3L, "EG-02")
+				.put(13L, "EG-21")
+				.put(14L, "EG-17")
+				.put(15L, "EG-04")
+				.put(16L, "EG-16")
+				.put(17L, "EG-05")
+				.put(18L, "EG-14")
+				.put(19L, "EG-15")
+				.put(20L, "EG-07")
+				.put(21L, "EG-11")
+				.put(22L, "EG-08")
+				.put(23L, "EG-22")
+				.put(25L, "EG-19")
+				.put(26L, "EG-09")
+				.put(29L, "EG-13")
+				.put(30L, "EG-06")
+				.put(31L, "EG-20")
+				.put(33L, "EG-10")
+				.put(34L, "EG-18")
+				.put(36L, "EG-12")
 				.build();
 	
-	//TODO eta table for each city
 	
-	//TODO parameterize both the mapping and eta table?	
 	private static final Map<Long,ShippingPeriod> cityShippingEta = 
 			ImmutableMap
 				.<Long,ShippingPeriod>builder()
 				.put(1L, new ShippingPeriod(Period.ofDays(1), Period.ofDays(2)))
 				.put(2L, new ShippingPeriod(Period.ofDays(1), Period.ofDays(2)))
+				.put(3L, new ShippingPeriod(Period.ofDays(1), Period.ofDays(2)))
+				.put(13L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
+				.put(14L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
+				.put(15L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
+				.put(16L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
+				.put(17L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
+				.put(18L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
+				.put(19L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
+				.put(20L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
+				.put(21L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
+				.put(22L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
+				.put(23L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
+				.put(25L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
+				.put(26L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
+				.put(29L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
+				.put(30L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
+				.put(31L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
+				.put(33L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
+				.put(34L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
+				.put(36L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
 				.build();
 
 
