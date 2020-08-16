@@ -130,6 +130,8 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.dao.*;
+import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -143,20 +145,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.EntityUtils;
-import com.nasnav.dao.AddressRepository;
-import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.MetaOrderRepository;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.PaymentsRepository;
-import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.PromotionRepository;
-import com.nasnav.dao.RoleEmployeeUserRepository;
-import com.nasnav.dao.ShipmentRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.BasketItemDTO;
@@ -190,22 +179,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
-import com.nasnav.persistence.AddressesEntity;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BasketsEntity;
-import com.nasnav.persistence.CartItemEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.MetaOrderEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.PaymentEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.PromotionsEntity;
-import com.nasnav.persistence.ShipmentEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.persistence.dto.query.result.CartItemStock;
@@ -302,6 +276,9 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	private UserRepository userRepo;
+
+	@Autowired
+	private OrganizationThemeRepository orgThemeRepo;
 	
 	@Autowired
 	private ApplicationContext context;
@@ -997,20 +974,15 @@ public class OrderServiceImpl implements OrderService {
 				.format(orderTime);
 		String total = getMetaOrderTotal(order).toPlainString();
 
-		String userName =
-				order
-						.getSubOrders()
-						.stream()
-						.filter(Objects::nonNull)
-						.findFirst()
-						.map(OrdersEntity::getName)
-						.orElse("");
-		
+		String orgLogo = ofNullable(order).map(o -> o.getOrganization())
+									  	  .map(OrganizationEntity::getId)
+										  .map(orgThemeRepo::findOneByOrganizationEntity_Id)
+										  .map(OrganizationThemeEntity::getLogo)
+										  .orElse("nasnav-logo.png");
+
 		Map<String, Object> params = new HashMap<>();
-		params.put("metaOrder", order);
-		params.put("name", userName);
-		params.put("creationDate", orderTimeStr);
-		params.put("total", total);
+		params.put("org_logo", orgLogo);
+		params.put("data", this.getOrderResponse(order));
 		return params;
 	}
 
