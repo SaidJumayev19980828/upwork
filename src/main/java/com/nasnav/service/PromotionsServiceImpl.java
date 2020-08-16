@@ -192,7 +192,6 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 	private SearchParams createSearchParam(PromotionSearchParamDTO searchParams) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
 
 		Optional<Integer> status = 
 				ofNullable(searchParams)
@@ -214,7 +213,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 				ofNullable(searchParams)
 				.map(PromotionSearchParamDTO::getId);
 		
-		return new SearchParams(status, startTime, endTime, id, orgId);
+		return new SearchParams(status, startTime, endTime, id);
 	}
 
 
@@ -224,6 +223,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private ArrayList<Predicate> createPromotionsQueryPerdicates(CriteriaBuilder builder
 			, Root<PromotionsEntity> root ,SearchParams searchParams) {
+
+		Long orgId = securityService.getCurrentUserOrganizationId();
+
 		ArrayList<Predicate> predicates = new ArrayList<>();
 
 		if(searchParams.status.isPresent()) {
@@ -236,7 +238,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 			predicates.add(predicate);
 		}
 
-		predicates.add(builder.equal(root.get("organization").get("id"), searchParams.orgId));
+		predicates.add(builder.equal(root.get("organization").get("id"), orgId));
 		
 		Predicate isPromotionInTimeWindowPredicate = 
 				createPromotionInTimeWindowPerdicate(builder, root, searchParams);
@@ -540,5 +542,3 @@ class SearchParams{
 	public Optional<LocalDateTime> startTime;
 	public Optional<LocalDateTime> endTime;
 	public Optional<Long> id;
-	public Long orgId;
-}
