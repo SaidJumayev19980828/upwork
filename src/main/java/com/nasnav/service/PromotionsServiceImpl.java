@@ -537,8 +537,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 @AllArgsConstructor
-class SearchParams{
+class SearchParams {
 	public Optional<Integer> status;
 	public Optional<LocalDateTime> startTime;
 	public Optional<LocalDateTime> endTime;
 	public Optional<Long> id;
+}
