@@ -34,6 +34,14 @@ INSERT INTO public.users(id, email,  user_name, authentication_token, organizati
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (101, '123', now(), null, 88);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (102, '456', now(), null,89);
 
+
+-- insert user addresses
+INSERT INTO public.addresses(id, address_line_1) values(12300001, 'address line');
+
+INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
+
+
+--insert employee users
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
@@ -101,10 +109,10 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 --inserting orders
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 1);
 
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) 
-values(330031, 88, now(), now(), 99001, 1, 501, 310001);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) 
-values(330032, 88, now(), now(), 99001, 1, 502, 310001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id ) 
+values(330031, 88, now(), now(), 99001, 1, 501, 310001, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id) 
+values(330032, 88, now(), now(), 99001, 1, 502, 310001, 12300001);
 
 INSERT INTO public.shipment
 (sub_order_id, shipping_service_id, parameters, created_at, updated_at, status)
@@ -117,14 +125,6 @@ VALUES(330032, 'TEST', '{"Shop Id":502}' , now(), now(), 0);
 -- insert order items
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330031, 601, 14, 60.0, 1);
 INSERT INTO public.baskets(order_id, stock_id, quantity, price, currency)VALUES(330032, 602, 2, 70.0, 1);
-
-
-
-
--- insert user addresses
-INSERT INTO public.addresses(id, address_line_1) values(12300001, 'address line');
-
-INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 
 
 -- insert cart
