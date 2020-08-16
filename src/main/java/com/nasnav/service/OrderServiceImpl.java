@@ -873,13 +873,18 @@ public class OrderServiceImpl implements OrderService {
 				DateTimeFormatter
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(order.getCreationDate());
-		String orgLogo = ofNullable(order).map(o -> o.getOrganizationEntity())
-										.map(OrganizationEntity::getId)
-										.map(orgThemeRepo::findOneByOrganizationEntity_Id)
-										.map(OrganizationThemeEntity::getLogo)
-										.orElse("nasnav-logo.png");
+		String orgLogo = ofNullable(order)
+						.map(o -> o.getOrganizationEntity())
+						.map(OrganizationEntity::getId)
+						.map(orgThemeRepo::findOneByOrganizationEntity_Id)
+						.map(OrganizationThemeEntity::getLogo)
+						.orElse("nasnav-logo.png");
 
-		SubOrder subOrder = getSubOrder(order, getVariantsImagesList(order));
+		List<BasketItemDetails> basketItemsDetails = 
+				getBasketItemsDetailsMap( setOf(order.getId()) )
+				.get(order.getId());
+		
+		SubOrder subOrder = getSubOrder(order, getVariantsImagesList(basketItemsDetails));
 
 		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(order.getMetaOrder().getId());
 		String operator = "";
@@ -1361,9 +1366,10 @@ public class OrderServiceImpl implements OrderService {
 														String phoneNumber) {
 		DetailedOrderRepObject representation = new DetailedOrderRepObject();
 
-		List<BasketItemDetails> basketItemsDetails = ofNullable(basketItemsDetailsMap)
-															.map(map -> map.get(order.getId()) )
-															.orElse(new ArrayList<>());
+		List<BasketItemDetails> basketItemsDetails = 
+				ofNullable(basketItemsDetailsMap)
+				.map(map -> map.get(order.getId()) )
+				.orElse(new ArrayList<>());
 		Map<Long, Optional<String>> variantsImagesList = getVariantsImagesList(basketItemsDetails);
 		
 		BeanUtils.copyProperties(getOrderSummary(order), representation);
