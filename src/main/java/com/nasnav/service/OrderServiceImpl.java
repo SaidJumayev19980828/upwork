@@ -950,6 +950,7 @@ public class OrderServiceImpl implements OrderService {
 										  .orElse("nasnav-logo.png");
 
 		Map<String, Object> params = new HashMap<>();
+		params.put("creation_date", orderTimeStr);
 		params.put("org_logo", orgLogo);
 		params.put("data", this.getOrderResponse(order));
 		return params;
