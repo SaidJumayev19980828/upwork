@@ -1,7 +1,7 @@
 package com.nasnav.test;
 
-import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
+import static com.nasnav.enumerations.OrderStatus.DISCARDED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
@@ -862,16 +862,16 @@ public class CartTest {
 		MetaOrderEntity paidOrderAfter = metaOrderRepo.findFullDataById(paidOrderId).get();
 		MetaOrderEntity errorPaymentOrder = metaOrderRepo.findFullDataById(errorPaymentOrderId).get();
 		
-		assertEquals(CLIENT_CANCELLED.getValue(), unpaidOrderAfter.getStatus());
-		assertEquals(CLIENT_CANCELLED.getValue(), cancelPaymentOrderAfter.getStatus());
-		assertEquals(CLIENT_CANCELLED.getValue(), errorPaymentOrder.getStatus());
+		assertEquals(DISCARDED.getValue(), unpaidOrderAfter.getStatus());
+		assertEquals(DISCARDED.getValue(), cancelPaymentOrderAfter.getStatus());
+		assertEquals(DISCARDED.getValue(), errorPaymentOrder.getStatus());
 		assertEquals(STORE_CONFIRMED.getValue(), paidOrderAfter.getStatus());
 		
 		asList(unpaidOrderAfter, cancelPaymentOrderAfter, errorPaymentOrder)
 		.stream()
 		.map(MetaOrderEntity::getSubOrders)
 		.flatMap(Set::stream)
-		.forEach(subOrder -> assertEquals(CLIENT_CANCELLED.getValue(), subOrder.getStatus()));
+		.forEach(subOrder -> assertEquals(DISCARDED.getValue(), subOrder.getStatus()));
 		
 		paidOrderAfter
 		.getSubOrders()

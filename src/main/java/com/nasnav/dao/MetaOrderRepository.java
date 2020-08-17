@@ -94,7 +94,8 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 			+ " LEFT JOIN FETCH shop.addressesEntity shopAddr "
 			+ " LEFT JOIN FETCH stock.productVariantsEntity variant "
 			+ " LEFT JOIN FETCH variant.productEntity product "
-			+ " WHERE usr.id =:userId AND org.id = :orgId")
+			+ " WHERE usr.id =:userId AND org.id = :orgId"
+			+ " AND meta.status != 10 ")
 	List<MetaOrderEntity> findByUser_IdAndOrganization_Id(@Param("userId") Long userId,
 														  @Param("orgId") Long orgId);
 
@@ -111,7 +112,8 @@ public interface MetaOrderRepository extends JpaRepository<MetaOrderEntity, Long
 			+ "LEFT JOIN PaymentEntity pay on meta.id = pay.metaOrderId "
 			+ "LEFT JOIN meta.user user "
 			+ "LEFT JOIN meta.organization org "
-			+ "WHERE user.id = :userId and org.id = :orgId "
+			+ "WHERE user.id = :userId AND org.id = :orgId "
+			+ " AND meta.status != 10 "
 			+ "group by meta.id, meta.createdAt, meta.status, meta.grandTotal"
 			+ " , pay.operator, shipment.shippingServiceId, pay.status")
 	List<MetaOrderBasicInfo> getMetaOrderList(@Param("userId") Long userId,
