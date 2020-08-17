@@ -1,5 +1,9 @@
 package com.nasnav.dto;
 
+import static com.nasnav.dto.Required.ALWAYS;
+import static com.nasnav.dto.Required.FOR_CREATE;
+import static com.nasnav.dto.Required.FOR_UPDATE;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -23,6 +27,8 @@ public class VariantUpdateDTO extends BaseJsonDTO{
 	private String barcode;
 	private String features;
 	private String extraAttr;
+	private String sku;
+	private String productCode;
 	
 	@JsonProperty("p_name")
 	private String pname;
@@ -30,10 +36,10 @@ public class VariantUpdateDTO extends BaseJsonDTO{
 	
 	@Override
 	protected void initRequiredProperties() {
-		setPropertyAsRequired("productId", Required.ALWAYS);
-		setPropertyAsRequired("operation", Required.ALWAYS);
-		setPropertyAsRequired("variantId", Required.FOR_UPDATE);
-		setPropertyAsRequired("features", Required.FOR_CREATE);		
+		setPropertyAsRequired("productId", ALWAYS);
+		setPropertyAsRequired("operation", ALWAYS);
+		setPropertyAsRequired("variantId", FOR_UPDATE);
+		setPropertyAsRequired("features", FOR_CREATE);		
 	}
 
 
@@ -85,5 +91,15 @@ public class VariantUpdateDTO extends BaseJsonDTO{
 	}
 	
 	
+	public void setSku(String sku) {
+		setPropertyAsUpdated("sku");
+		this.sku = sku;
+	}
+	
+	
+	public void setProductCode(String productCode) {
+		setPropertyAsUpdated("productCode");
+		this.productCode = productCode;
+	}
 	
 }

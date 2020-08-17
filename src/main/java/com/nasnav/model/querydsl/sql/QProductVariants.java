@@ -35,6 +35,10 @@ public class QProductVariants extends com.querydsl.sql.RelationalPathBase<QProdu
     public final StringPath name = createString("name");
 
     public final StringPath pName = createString("pName");
+    
+    public final StringPath sku = createString("sku");
+    
+    public final StringPath productCode = createString("productCode");
 
     public final NumberPath<Long> productId = createNumber("productId", Long.class);
 
@@ -89,6 +93,8 @@ public class QProductVariants extends com.querydsl.sql.RelationalPathBase<QProdu
         addMetadata(productId, ColumnMetadata.named("product_id").withIndex(2).ofType(Types.BIGINT).withSize(19));
         addMetadata(removed, ColumnMetadata.named("removed").withIndex(9).ofType(Types.INTEGER).withSize(10).notNull());
         addMetadata(subProductIdTemp, ColumnMetadata.named("sub_product_id_temp").withIndex(8).ofType(Types.BIGINT).withSize(19));
+        addMetadata(sku, ColumnMetadata.named("sku").withIndex(10).ofType(Types.VARCHAR).withSize(2147483647));
+        addMetadata(productCode, ColumnMetadata.named("product_code").withIndex(11).ofType(Types.VARCHAR).withSize(2147483647));
     }
 
 }

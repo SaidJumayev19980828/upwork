@@ -63,13 +63,13 @@ INSERT INTO public.products(id, name, p_name, brand_id, category_id, organizatio
 
 
 -- variants for each product
-insert into public.product_variants(id, "name" , product_id, barcode ) values(310001, 'var' 	, 1001, '54852222s');
-insert into public.product_variants(id, "name" , product_id, barcode ) values(310002, 'var' 	, 1002, '5564688');
-insert into public.product_variants(id, "name" , product_id, barcode ) values(310003, 'var' 	, 1003, 'erdsfd587');
-insert into public.product_variants(id, "name" , product_id, barcode ) values(310005, 'var' 	, 1005, 'sdfsd5f8');
-insert into public.product_variants(id, "name" , product_id, barcode ) values(310006, 'var' 	, 1006, 'sfds5f8');
-insert into public.product_variants(id, "name" , product_id, barcode ) values(310007, 'var' 	, 1007, 'sdfsd587');
-insert into public.product_variants(id, "name" , product_id, barcode ) values(310008, 'var' 	, 1008, '5564sdfsd');
+insert into public.product_variants(id, "name" , product_id, barcode ,sku, product_code ) values(310001, 'var' 	, 1001, '54852222s' ,'sfasd223' ,'111-111');
+insert into public.product_variants(id, "name" , product_id, barcode ,sku, product_code) values(310002, 'var' 	, 1002, '5564688', 'qwe1121' ,'111-112');
+insert into public.product_variants(id, "name" , product_id, barcode ,sku, product_code) values(310003, 'var' 	, 1003, 'erdsfd587' ,'zxc213' ,'111-113');
+insert into public.product_variants(id, "name" , product_id, barcode ,sku, product_code) values(310005, 'var' 	, 1005, 'sdfsd5f8' ,'fgh1232' ,'111-114' );
+insert into public.product_variants(id, "name" , product_id, barcode ,sku, product_code) values(310006, 'var' 	, 1006, 'sfds5f8' ,'tyr1212' ,'111-115');
+insert into public.product_variants(id, "name" , product_id, barcode ,sku, product_code) values(310007, 'var' 	, 1007, 'sdfsd587' ,'uiuyrewr' ,'111-116');
+insert into public.product_variants(id, "name" , product_id, barcode ,sku, product_code) values(310008, 'var' 	, 1008, '5564sdfsd' ,'bvn2322', '111-117');
 
 update public.product_variants 
 set feature_spec = '{"7001":"Blue", "7002":"XL"}'
@@ -107,11 +107,16 @@ insert into product_tags(product_id, tag_id) values(1008, 5001);
 -- insertign extra attributes
 INSERT INTO public.extra_attributes (id, key_name, attribute_type, organization_id, icon) VALUES(100001, 'Extra Prop', 'String'::character varying, 99001, null);
 INSERT INTO public.extra_attributes (id, key_name, attribute_type, organization_id, icon) VALUES(100002, 'more data', 'String'::character varying, 99001, null);
+INSERT INTO public.extra_attributes (id, key_name, attribute_type, organization_id, icon) VALUES(100003, 'EXTRA EXTRA', 'String'::character varying, 99002, null);
+INSERT INTO public.extra_attributes (id, key_name, attribute_type, organization_id, icon) VALUES(100004, 'SPECs', 'String'::character varying, 99002, null);
+
 
 INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100001, 'extra data', 310001);
 INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100001, 'good info', 310002);
 INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100002, 'bla bla', 310001);
 INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100002, 'yep!', 310002);
+INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100003, 'bla bla', 310007);
+INSERT INTO public.products_extra_attributes (extra_attribute_id, value, variant_id) VALUES(100004, 'cool!', 310007);
 
 
 

@@ -45,6 +45,8 @@ public interface CsvDataImportService {
 					.put("externalId", "external_id")
 					.put("productGroupKey", "product_group_key")
 					.put("discount", "discount")
+					.put("sku", "sku")
+					.put("productCode", "product_code")
 					.getMap();
 	
 	

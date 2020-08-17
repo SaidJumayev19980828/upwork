@@ -7,6 +7,7 @@ import static com.nasnav.enumerations.TransactionCurrency.USD;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
+import static com.nasnav.test.commons.TestCommons.readResource;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
@@ -760,8 +761,8 @@ public class DataImportApiTest {
 
 
 		ExpectedSavedData expected = getExpectedAllNewData();
-		expected.setDescriptions(setOf(TestCommons.readResource(largeDescription), "too hard"));
-		expected.setVariantDescriptions(setOf(TestCommons.readResource(largeDescription), "too hard"));
+		expected.setDescriptions(setOf(readResource(largeDescription), "too hard"));
+		expected.setVariantDescriptions(setOf(readResource(largeDescription), "too hard"));
 		assertProductDataImported(TEST_IMPORT_SHOP, expected);
 
 	}
@@ -1127,7 +1128,8 @@ public class DataImportApiTest {
 	public void getProductsCsvTemplate() {
 		Set<String> expectedTemplateHeaders = 
 				setOf("product_name", "barcode", "tags", "brand", "price", "quantity", "description"
-						, "variant_id", "external_id", "color", "size", "product_group_key", "discount");
+						, "variant_id", "external_id", "color", "size", "product_group_key", "discount"
+						, "sku", "product_code");
 		HttpEntity<Object> request = getHttpEntity("","131415");
 		ResponseEntity<String> res = template.exchange("/upload/productlist/template", GET, request ,String.class);
 		
@@ -1488,6 +1490,8 @@ public class DataImportApiTest {
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getName, expected.getVariantNames()) );
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getPname, expected.getVariantsPNames()) );
         assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getDescription, expected.getVariantDescriptions()) );
+        assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getSku, expected.getSku()) );
+        assertTrue( propertyValuesIn(variants, ProductVariantsEntity::getProductCode, expected.getProductCodes()) );
         assertTrue( jsonValuesIn(variants, ProductVariantsEntity::getFeatureSpec, expected.getFeatureSpecs()) );
         assertTrue( jsonValuesIn(variants, this::getExtraAtrributesStr, expected.getExtraAttributes()) );
         
@@ -1567,6 +1571,8 @@ public class DataImportApiTest {
 		data.setBrands(setOf(101L, 102L) );
 		data.setStocksNum(2);
 		data.setDiscounts(setOf(new BigDecimal("2"), new BigDecimal("8")));
+		data.setSku(setOf("ABC123", "XYZ456"));
+		data.setProductCodes(setOf("123-111","123-222"));
         
 		return data;
 	}
@@ -2104,6 +2110,8 @@ class ExpectedSavedData{
 	private Set<TransactionCurrency> currencies;
 	private Set<JSONObject> featureSpecs;
 	private Set<JSONObject> extraAttributes;
+	private Set<String> sku;
+	private Set<String> productCodes;
 	private Integer stocksNum;
 	
 	public ExpectedSavedData() {
@@ -2112,6 +2120,8 @@ class ExpectedSavedData{
 		featureSpecs = new HashSet<>();
 		featureSpecs.add(new JSONObject("{}") );
 		discounts = new HashSet<>();
+		sku = new HashSet<>();
+		productCodes = new HashSet<>();
 	}
 	
 	
