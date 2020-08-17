@@ -31,6 +31,8 @@ public class CsvRow {
 	protected String productGroupKey;
 	protected BigDecimal discount;
 	protected Long productId;
+	protected String sku;
+	protected String productCode;
 	
 	public CsvRow() {
 		extraAttributes = new HashMap<>();
@@ -57,6 +59,8 @@ public class CsvRow {
 		product.setExtraAttributes(getExtraAttributes());
 		product.setProductGroupKey(productGroupKey);
 		product.setDiscount(discount);
+		product.setSku(sku);
+		product.setProductCode(productCode);
 		
 		return product;
 	}

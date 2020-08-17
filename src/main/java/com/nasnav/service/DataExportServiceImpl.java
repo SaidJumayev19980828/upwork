@@ -192,6 +192,8 @@ public class DataExportServiceImpl implements DataExportService{
 		row.setProductId(data.getProductId());
 		row.setQuantity(data.getQuantity());
 		row.setVariantId(data.getVariantId());
+		row.setSku(data.getSku());
+		row.setProductCode(data.getProductCode());
 		return row;
 	}
 
@@ -244,6 +246,8 @@ public class DataExportServiceImpl implements DataExportService{
 											product.description.as("description"),
 											product.name.as("name"),
 											product.id.as("product_id"),
+											variant.sku.as("sku"),
+											variant.productCode.as("product_code"),
 											SQLExpressions.rowNumber()
 													.over()
 													.partitionBy(product.id)

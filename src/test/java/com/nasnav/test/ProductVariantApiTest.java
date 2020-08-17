@@ -4,15 +4,12 @@ import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.util.Map;
 
-import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dao.ProductExtraAttributesEntityRepository;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -210,6 +207,8 @@ public class ProductVariantApiTest {
 		assertEquals(json.getLong("product_id"), saved.getProductEntity().getId().longValue() );
 		assertEquals(json.getString("description"), saved.getDescription());
 		assertEquals(json.getString("features"), saved.getFeatureSpec());
+		assertEquals(json.getString("sku"), saved.getSku());
+		assertEquals(json.getString("product_code"), saved.getProductCode());
 		assertEquals("shoe-size-37-shoe-color-black", saved.getPname());		
 		assertTrue(extraAtrrJson.similar(getExtraAttributesAsJson(saved)));
 	}
@@ -342,7 +341,8 @@ public class ProductVariantApiTest {
 		json.put("barcode", "ABC12345");
 		json.put("features", "{\"234\": 37, \"235\": \"BLack\"}");
 		json.put("extra_attr", "{\"extra\": \"Cool Add-on\", \"Model\": \"D2R2\"}");
-		
+		json.put("sku", "ABC123");
+		json.put("product_code", "111-222");
 		return json;
 	}
 	

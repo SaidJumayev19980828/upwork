@@ -1,4 +1,4 @@
-barcode,product_name,description,brand,tags,quantity,price,variant_id,external_id,product_group_key,discount
-TT232222,Squishy shoes,squishy,squish,squishy things,101,10.25,,,k1,
-BB232222,Squishy shoes,squishy,squish,squishy things,101,8.25,,,,
-87847777EW,hard shoes,too hard,hardy,squishy things,102,88.6,,,k1,
+barcode,product_name,description,brand,tags,quantity,price,variant_id,external_id,product_group_key,discount,sku,product_code
+TT232222,Squishy shoes,squishy,squish,squishy things,101,10.25,,,k1,,,
+BB232222,Squishy shoes,squishy,squish,squishy things,101,8.25,,,,,,
+87847777EW,hard shoes,too hard,hardy,squishy things,102,88.6,,,k1,,,

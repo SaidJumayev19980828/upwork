@@ -19,5 +19,7 @@ public class ProductExportedData {
 	protected String productGroupKey;
 	protected BigDecimal discount;
 	protected Long productId;
+	protected String sku;
+	protected String productCode;
 }
 

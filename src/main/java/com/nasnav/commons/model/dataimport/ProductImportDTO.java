@@ -26,6 +26,8 @@ public class ProductImportDTO {
 	protected Map<String,String> extraAttributes;
 	protected String productGroupKey;
 	protected BigDecimal discount;
+	protected String sku;
+	protected String productCode;
 	
 	
 	public ProductImportDTO() {

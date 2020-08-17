@@ -2321,6 +2321,14 @@ public class ProductService {
 		if(variant.isUpdated("features")) {
 			entity.setFeatureSpec( variant.getFeatures() );
 		}
+		
+		if(variant.isUpdated("sku")) {
+			entity.setSku(variant.getSku());
+		}
+		
+		if(variant.isUpdated("productCode")) {
+			entity.setProductCode(variant.getProductCode());
+		}
 
 		String pname = getPname(variant, opr);
 		if(!isBlankOrNull(pname)) {
