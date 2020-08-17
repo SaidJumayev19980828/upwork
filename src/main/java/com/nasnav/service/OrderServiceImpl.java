@@ -131,6 +131,8 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import com.nasnav.dao.*;
+import com.nasnav.dto.*;
+import com.nasnav.dto.request.ReturnItemsDTO;
 import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -146,16 +148,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.PromotionRepository;
-import com.nasnav.dto.AddressRepObj;
-import com.nasnav.dto.BasketItem;
-import com.nasnav.dto.BasketItemDTO;
-import com.nasnav.dto.BasketItemDetails;
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.MetaOrderBasicInfo;
-import com.nasnav.dto.OrderJsonDto;
-import com.nasnav.dto.OrderPhoneNumberPair;
-import com.nasnav.dto.OrderRepresentationObject;
-import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.cart.CartOptimizeDTO;
@@ -3369,6 +3361,31 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
+
+	@Override
+	@Transactional
+	public void receiveItems(ReturnItemsDTO returnedItems) {
+		List<ReturnedItemList> returnRequestItems = returnedItems.getReturnedItemList();
+
+		List<ReturnedBasketItem> returnBasketItems = returnedItems.getBasketItems();
+
+		if (!returnRequestItems.isEmpty()) {
+			returnRequestItems(returnRequestItems);
+		}
+		if (!returnBasketItems.isEmpty()) {
+			returnBasketItems(returnBasketItems);
+		}
+	}
+
+
+	private void returnRequestItems(List<ReturnedItemList> returnedItems) {
+
+	}
+
+
+	private void returnBasketItems(List<ReturnedBasketItem> returnedItems) {
+
+	}
 }
 
 
