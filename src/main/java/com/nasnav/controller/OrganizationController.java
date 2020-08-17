@@ -502,7 +502,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "add new promotions", nickname = "registerShippingService", code = 200)
+    @ApiOperation(value = "add new promotions", nickname = "addPromotion", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -515,4 +515,17 @@ public class OrganizationController {
     	return promotionsService.updatePromotion(promotion);
     }
 
+
+    @ApiOperation(value = "cancelling the registration of an organization into a certain shipping service", nickname = "unregisterShippingService", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @DeleteMapping(value = "shipping/service")
+    @ResponseStatus(OK)
+    public void unregisterFromShippingService(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                              @RequestParam("service_id") String serviceId){
+        shippingMngService.unregisterFromShippingService(serviceId);
+    }
 }

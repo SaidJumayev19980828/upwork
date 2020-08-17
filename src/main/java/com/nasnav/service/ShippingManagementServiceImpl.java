@@ -883,6 +883,18 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		serviceReg.setServiceParameters(serviceParams);
 		return serviceReg;
 	}
+
+
+	@Override
+	public void unregisterFromShippingService(String serviceId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		OrganizationShippingServiceEntity orgService =
+				orgShippingServiceRepo
+						.getByOrganization_IdAndServiceId(orgId, serviceId)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0006, serviceId));
+
+		orgShippingServiceRepo.delete(orgService);
+	}
 	
 }
 
