@@ -73,4 +73,6 @@ public interface BasketRepository extends JpaRepository<BasketsEntity, Long> {
     		+ " left join stock.productVariantsEntity variant"
     		+ " WHERE basket.id = :id")
     StockBasicData getItemStockBasicDataById( @Param("id") Long id);
+
+    List<BasketsEntity> findByIdIn(List<Long> ids);
 }

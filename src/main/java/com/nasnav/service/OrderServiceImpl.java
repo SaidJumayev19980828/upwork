@@ -43,6 +43,7 @@ import static com.nasnav.enumerations.OrderStatus.findEnum;
 import static com.nasnav.enumerations.PaymentStatus.ERROR;
 import static com.nasnav.enumerations.PaymentStatus.FAILED;
 import static com.nasnav.enumerations.PaymentStatus.UNPAID;
+import static com.nasnav.enumerations.ReturnRequestStatus.RECEIVED;
 import static com.nasnav.enumerations.Roles.CUSTOMER;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
@@ -133,6 +134,7 @@ import javax.persistence.criteria.Root;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.ReturnItemsDTO;
+import com.nasnav.enumerations.*;
 import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -160,12 +162,6 @@ import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.Shipment;
 import com.nasnav.dto.response.navbox.SubOrder;
-import com.nasnav.enumerations.OrderFailedStatus;
-import com.nasnav.enumerations.OrderStatus;
-import com.nasnav.enumerations.PaymentStatus;
-import com.nasnav.enumerations.Roles;
-import com.nasnav.enumerations.ShippingStatus;
-import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
@@ -3370,7 +3366,7 @@ public class OrderServiceImpl implements OrderService {
 		List<ReturnedBasketItem> returnBasketItems = returnedItems.getBasketItems();
 
 		if (!returnRequestItems.isEmpty()) {
-			returnRequestItems(returnRequestItems);
+			createReturnRequest(returnBasketItems);
 		}
 		if (!returnBasketItems.isEmpty()) {
 			returnBasketItems(returnBasketItems);
@@ -3378,13 +3374,49 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+	private ReturnRequestEntity createReturnRequest(List<ReturnedBasketItem> returnedItems) {
+		EmployeeUserEntity emp = (EmployeeUserEntity)securityService.getCurrentUser();
+
+		List<BasketsEntity> baskets = basketRepository.findByIdIn(returnedItems.stream().map(ReturnedBasketItem::getOrderItemId).collect(toList()));
+
+		ReturnRequestEntity returnRequest = new ReturnRequestEntity();
+
+		returnRequest.setMetaOrder(baskets.stream().findFirst().get().getOrdersEntity().getMetaOrder());
+		returnRequest.setCreatedByEmployee(emp);
+		returnRequest.setStatus(RECEIVED.getValue());
+
+		Set<ReturnRequestItemEntity> returnedRequestItems = new HashSet<>();
+
+		for(ReturnedBasketItem item : returnedItems) {
+			BasketsEntity basket = baskets.stream().filter(b -> b.getId().equals(item.getOrderItemId())).findFirst().get();
+			ReturnRequestItemEntity returnedItem = createReturnRequestItem(returnRequest, basket, item.getReceivedQuantity());
+			returnedRequestItems.add(returnedItem);
+		}
+
+		returnRequest.setReturnedItems(returnedRequestItems);
+
+		return returnRequest;
+	}
+
+
+	private ReturnRequestItemEntity createReturnRequestItem(ReturnRequestEntity returnRequest, BasketsEntity basket, Integer receivedQuantity) {
+		ReturnRequestItemEntity item = new ReturnRequestItemEntity();
+
+		item.setReturnRequest(returnRequest);
+		item.setBasket(basket);
+		item.setReceivedQuantity(receivedQuantity);
+
+
+		return item;
+	}
+
 	private void returnRequestItems(List<ReturnedItemList> returnedItems) {
 
 	}
 
 
 	private void returnBasketItems(List<ReturnedBasketItem> returnedItems) {
-
+		List<Returned>
 	}
 }
 
