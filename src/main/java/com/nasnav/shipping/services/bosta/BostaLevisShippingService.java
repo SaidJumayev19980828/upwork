@@ -2,6 +2,10 @@ package com.nasnav.shipping.services.bosta;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.StringUtils.parseLongWithDefault;
+import static com.nasnav.enumerations.ShippingStatus.DELIVERED;
+import static com.nasnav.enumerations.ShippingStatus.EN_ROUTE;
+import static com.nasnav.enumerations.ShippingStatus.FAILED;
+import static com.nasnav.enumerations.ShippingStatus.PICKED_UP;
 import static com.nasnav.exceptions.ErrorCodes.G$JSON$0001;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0001;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0002;
@@ -9,6 +13,7 @@ import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0003;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0004;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0005;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0010;
+import static com.nasnav.shipping.model.ParameterType.LONG;
 import static com.nasnav.shipping.model.ParameterType.STRING;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -45,7 +50,6 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.nasnav.commons.model.IndexedData;
-import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.model.Parameter;
@@ -72,6 +76,8 @@ import com.nasnav.shipping.services.bosta.webclient.dto.PackageDetails;
 import com.nasnav.shipping.services.bosta.webclient.dto.PackageSpec;
 import com.nasnav.shipping.services.bosta.webclient.dto.Receiver;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -92,70 +98,67 @@ public class BostaLevisShippingService implements ShippingService{
 	public static final String BUSINESS_ID_PARAM = "BUSINESS_ID";
 	public static final String SERVER_URL = "SERVER_URL";
 	public static final String WEBHOOK_URL = "WEBHOOK_URL";
+	public static final String CAIRO_PRICE = "CAIRO_PRICE";
+	public static final String ALEXANDRIA_PRICE = "ALEXANDRIA_PRICE";
+	public static final String DELTA_CANAL_PRICE = "DELTA_CANAL_PRICE";
+	public static final String UPPER_EGYPT_PRICE = "UPPER_EGYPT_PRICE";
+	
 	private static List<Parameter> SERVICE_PARAM_DEFINITION = 
 			asList(new Parameter(AUTH_TOKEN_PARAM, STRING)
 					, new Parameter(BUSINESS_ID_PARAM, STRING)
 					, new Parameter(SERVER_URL, STRING)
-					, new Parameter(WEBHOOK_URL, STRING));
+					, new Parameter(WEBHOOK_URL, STRING)
+					, new Parameter(CAIRO_PRICE, LONG)
+					, new Parameter(ALEXANDRIA_PRICE, LONG)
+					, new Parameter(DELTA_CANAL_PRICE, LONG)
+					, new Parameter(UPPER_EGYPT_PRICE, LONG));
 	
-	//TODO add the rest of cities mapping
-	//TODO cities in nasnav database must have predefined ids
-	private static final Map<Long,String> cityIdMapping = 
+	private static final ShippingPeriodAndPrice CAIRO_SHIPPING = 
+			new ShippingPeriodAndPrice(
+					CAIRO_PRICE,
+					new ShippingPeriod(Period.ofDays(1), Period.ofDays(2)));
+	private static final ShippingPeriodAndPrice ALEXANDRIA_SHIPPING = 
+			new ShippingPeriodAndPrice(
+					ALEXANDRIA_PRICE,
+					new ShippingPeriod(Period.ofDays(1), Period.ofDays(2)));
+	private static final ShippingPeriodAndPrice DELTA_CANAL_SHIPPING = 
+			new ShippingPeriodAndPrice(
+					DELTA_CANAL_PRICE,
+					new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)));
+	private static final ShippingPeriodAndPrice UPPER_EGYPT_SHIPPING = 
+			new ShippingPeriodAndPrice(
+					UPPER_EGYPT_PRICE,
+					new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)));
+	
+	
+	private static final Map<Long,BostaCity> cityIdMapping = 
 			ImmutableMap
-				.<Long,String>builder()
-				.put(1L, "EG-01")
-				.put(2L, "EG-01")
-				.put(3L, "EG-02")
-				.put(13L, "EG-21")
-				.put(14L, "EG-17")
-				.put(15L, "EG-04")
-				.put(16L, "EG-16")
-				.put(17L, "EG-05")
-				.put(18L, "EG-14")
-				.put(19L, "EG-15")
-				.put(20L, "EG-07")
-				.put(21L, "EG-11")
-				.put(22L, "EG-08")
-				.put(23L, "EG-22")
-				.put(25L, "EG-19")
-				.put(26L, "EG-09")
-				.put(29L, "EG-13")
-				.put(30L, "EG-06")
-				.put(31L, "EG-20")
-				.put(33L, "EG-10")
-				.put(34L, "EG-18")
-				.put(36L, "EG-12")
-				.build();
+				.<Long,BostaCity>builder()
+			     .put(1L, new BostaCity("EG-01" ,CAIRO_SHIPPING))           
+			     .put(2L, new BostaCity("EG-01" ,CAIRO_SHIPPING))            
+			     .put(3L, new BostaCity("EG-02" ,ALEXANDRIA_SHIPPING))       
+			     .put(13L, new BostaCity("EG-21" ,UPPER_EGYPT_SHIPPING))     
+			     .put(14L, new BostaCity("EG-17" ,UPPER_EGYPT_SHIPPING))     
+			     .put(15L, new BostaCity("EG-04" ,DELTA_CANAL_SHIPPING))     
+			     .put(16L, new BostaCity("EG-16" ,UPPER_EGYPT_SHIPPING))     
+			     .put(17L, new BostaCity("EG-05" ,DELTA_CANAL_SHIPPING))     
+			     .put(18L, new BostaCity("EG-14" ,DELTA_CANAL_SHIPPING))     
+			     .put(19L, new BostaCity("EG-15" ,UPPER_EGYPT_SHIPPING))     
+			     .put(20L, new BostaCity("EG-07" ,DELTA_CANAL_SHIPPING))     
+			     .put(21L, new BostaCity("EG-11" ,DELTA_CANAL_SHIPPING))     
+			     .put(22L, new BostaCity("EG-08" ,DELTA_CANAL_SHIPPING))     
+			     .put(23L, new BostaCity("EG-22" ,UPPER_EGYPT_SHIPPING))     
+			     .put(25L, new BostaCity("EG-19" ,UPPER_EGYPT_SHIPPING))     
+			     .put(26L, new BostaCity("EG-09" ,DELTA_CANAL_SHIPPING))     
+			     .put(29L, new BostaCity("EG-13" ,DELTA_CANAL_SHIPPING))     
+			     .put(30L, new BostaCity("EG-06" ,DELTA_CANAL_SHIPPING))     
+			     .put(31L, new BostaCity("EG-20" ,UPPER_EGYPT_SHIPPING))     
+			     .put(33L, new BostaCity("EG-10" ,DELTA_CANAL_SHIPPING))     
+			     .put(34L, new BostaCity("EG-18" ,UPPER_EGYPT_SHIPPING))     
+			     .put(36L, new BostaCity("EG-12" ,DELTA_CANAL_SHIPPING))     
+			     .build();
 	
 	
-	private static final Map<Long,ShippingPeriod> cityShippingEta = 
-			ImmutableMap
-				.<Long,ShippingPeriod>builder()
-				.put(1L, new ShippingPeriod(Period.ofDays(1), Period.ofDays(2)))
-				.put(2L, new ShippingPeriod(Period.ofDays(1), Period.ofDays(2)))
-				.put(3L, new ShippingPeriod(Period.ofDays(1), Period.ofDays(2)))
-				.put(13L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
-				.put(14L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
-				.put(15L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
-				.put(16L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
-				.put(17L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
-				.put(18L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
-				.put(19L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
-				.put(20L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
-				.put(21L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
-				.put(22L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
-				.put(23L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
-				.put(25L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
-				.put(26L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
-				.put(29L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
-				.put(30L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
-				.put(31L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
-				.put(33L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
-				.put(34L, new ShippingPeriod(Period.ofDays(3), Period.ofDays(4)))
-				.put(36L, new ShippingPeriod(Period.ofDays(2), Period.ofDays(3)))
-				.build();
-
-
 	private static final Long PACKAGE = 10L;
 
 	private static final List<Integer> enRouteStateMapping = asList(10, 15, 16, 35, 36);
@@ -249,7 +252,7 @@ public class BostaLevisShippingService implements ShippingService{
 	
 	
 	
-	public Mono<ShipmentTracker> requestSingleShipment(ShippingDetails shipment) {
+	private Mono<ShipmentTracker> requestSingleShipment(ShippingDetails shipment) {
 		String serverUrl = 
 				ofNullable(paramMap.get(SERVER_URL))
 					.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0003, SERVER_URL, SERVICE_ID));
@@ -327,9 +330,9 @@ public class BostaLevisShippingService implements ShippingService{
 
 
 	private String createItemDetailsString(ShipmentItems item) {
-		return format("* name[%s]/ barcode[%s] / specs[%s] / qty[%d] "
+		return format("* name[%s]/ product Code[%s] / specs[%s] / qty[%d] "
 				, ofNullable(item.getName()).orElse("")
-				, ofNullable(item.getBarcode()).orElse("")
+				, ofNullable(item.getProductCode()).orElse("")
 				, ofNullable(item.getSpecs()).orElse("")
 				, ofNullable(item.getQuantity()).orElse(0));
 	}
@@ -392,6 +395,7 @@ public class BostaLevisShippingService implements ShippingService{
 		Long cityId = data.getCity();
 		String cityExtId = 
 				ofNullable(cityIdMapping.get(cityId))
+				.map(BostaCity::getCityCode)
 				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0005, SERVICE_ID, cityId));
 		Address addr = new Address();
 		addr.setApartment(apartmentNum);
@@ -447,7 +451,9 @@ public class BostaLevisShippingService implements ShippingService{
 
 	private ShippingPeriod getShippingPeriod(IndexedData<ShippingDetails> details) {
 		return getDestinationCityId(details)
-				.map(cityShippingEta::get)
+				.map(cityIdMapping::get)
+				.map(BostaCity::getShippingAndPriceInfo)
+				.map(ShippingPeriodAndPrice::getShippingPeriod)
 				.orElse(DEFUALT_SHIPPING_PERIOD);
 	}
 
@@ -548,15 +554,35 @@ public class BostaLevisShippingService implements ShippingService{
 
 	private Integer getShippingStatus(Integer state) {
 		if (enRouteStateMapping.contains(state)) {
-			return ShippingStatus.EN_ROUTE.getValue();
+			return EN_ROUTE.getValue();
 		} else if (pickedUpStateMapping.contains(state)) {
-			return ShippingStatus.PICKED_UP.getValue();
+			return PICKED_UP.getValue();
 		} else if (deliveredStateMapping.contains(state)) {
-			return ShippingStatus.DELIVERED.getValue();
+			return DELIVERED.getValue();
 		} else if (failedStateMapping.contains(state)) {
-			return ShippingStatus.FAILED.getValue();
+			return FAILED.getValue();
 		} else {
 			return state;
 		}
 	}
+}
+
+
+
+
+
+@Data
+@AllArgsConstructor
+class ShippingPeriodAndPrice{
+	private String priceId;
+	private ShippingPeriod shippingPeriod;
+}
+
+
+
+@Data
+@AllArgsConstructor
+class BostaCity{
+	private String cityCode;
+	private ShippingPeriodAndPrice shippingAndPriceInfo;
 }

@@ -731,18 +731,42 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		String name = getProductName(orderItem);
 		Integer quantity = getQuantity(orderItem);
 		String specs = getVariantSpecs(orderItem);
+		String productCode = getProductCode(orderItem);
+		String sku = getSku(orderItem);
 
 		shpItem.setStockId(stockId);
 		shpItem.setBarcode(barcode);
 		shpItem.setName(name);
 		shpItem.setQuantity(quantity);
 		shpItem.setSpecs(specs);
+		shpItem.setProductCode(productCode);
+		shpItem.setSku(sku);
 
 		return shpItem;
 	}
 
 
 
+
+
+
+	private String getSku(BasketsEntity orderItem) {
+		return ofNullable(orderItem)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getProductVariantsEntity)
+				.map(ProductVariantsEntity::getSku)
+				.orElse(null);
+	}
+
+
+
+	private String getProductCode(BasketsEntity orderItem) {
+		return ofNullable(orderItem)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getProductVariantsEntity)
+				.map(ProductVariantsEntity::getProductCode)
+				.orElse(null);
+	}
 
 
 

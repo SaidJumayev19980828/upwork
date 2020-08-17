@@ -1,9 +1,13 @@
 package com.nasnav.test.shipping.services.bosta;
 
+import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.ALEXANDRIA_PRICE;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.AUTH_TOKEN_PARAM;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.BUSINESS_ID_PARAM;
+import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.CAIRO_PRICE;
+import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.DELTA_CANAL_PRICE;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVER_URL;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
+import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.UPPER_EGYPT_PRICE;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.WEBHOOK_URL;
 import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDate.now;
@@ -39,6 +43,7 @@ import com.nasnav.shipping.model.ShipmentTracker;
 import com.nasnav.shipping.model.ShippingAddress;
 import com.nasnav.shipping.model.ShippingDetails;
 import com.nasnav.shipping.model.ShippingOffer;
+import com.nasnav.shipping.services.bosta.BostaLevisShippingService;
 
 import reactor.core.publisher.Mono;
 
@@ -151,7 +156,11 @@ public class BostaLevisServiceTest {
 		return asList(new ServiceParameter(AUTH_TOKEN_PARAM,token)
 				, new ServiceParameter(BUSINESS_ID_PARAM, id)
 				, new ServiceParameter(SERVER_URL, server)
-				, new ServiceParameter(WEBHOOK_URL, webhook));
+				, new ServiceParameter(WEBHOOK_URL, webhook)
+				, new ServiceParameter(CAIRO_PRICE, "25")
+				, new ServiceParameter(ALEXANDRIA_PRICE, "30")
+				, new ServiceParameter(DELTA_CANAL_PRICE, "30")
+				, new ServiceParameter(UPPER_EGYPT_PRICE, "45"));
 //				, new ServiceParameter(SERVER_URL, "https://stg-app.bosta.co/api/v0"));
 	}
 	
