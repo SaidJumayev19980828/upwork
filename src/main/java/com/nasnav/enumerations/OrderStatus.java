@@ -19,7 +19,8 @@ public enum OrderStatus {
 	, STORE_CANCELLED(6)
 	, CLIENT_CANCELLED(7)
 	, FINALIZED(8)
-	, RETURNED(9);
+	, RETURNED(9)
+	, DISCARDED(10);
 
 	@Getter
 	private Integer value;

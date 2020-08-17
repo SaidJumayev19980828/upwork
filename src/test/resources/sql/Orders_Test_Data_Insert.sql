@@ -95,6 +95,7 @@ INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status)
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310046 , now(),88, 99001, 8);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310047 , now(),88, 99001, 8);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310048 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310049 , now(),88, 99001, 10);
 
 
 
@@ -115,7 +116,7 @@ insert into public.orders(id,user_id,created_at, updated_at, organization_id,sta
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330046, 90, now(), now(), 99003, 1, 505, 310046);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330047, 89, now(), now(), 99001, 1, 502, 310047);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330048, 89, now(), now(), 99002, 0, 502, 310048);
-
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330049, 89, now(), now(), 99001, 10, 502, 310049);
 
 
 

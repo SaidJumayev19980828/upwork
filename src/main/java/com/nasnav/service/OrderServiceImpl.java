@@ -33,6 +33,7 @@ import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.DELIVERED;
+import static com.nasnav.enumerations.OrderStatus.DISCARDED;
 import static com.nasnav.enumerations.OrderStatus.DISPATCHED;
 import static com.nasnav.enumerations.OrderStatus.FINALIZED;
 import static com.nasnav.enumerations.OrderStatus.NEW;
@@ -1682,7 +1683,9 @@ public class OrderServiceImpl implements OrderService {
 
 	private Predicate[] getOrderQueryPredicates(OrderSearchParam params, CriteriaBuilder builder, Root<OrdersEntity> root) {
 		List<Predicate> predicates = new ArrayList<>();
-
+		
+		predicates.add( builder.notEqual(root.get("status"), DISCARDED.getValue()) );
+				
 		if(params.getUser_id() != null)
 			predicates.add( builder.equal(root.get("userId"), params.getUser_id()) );
 
@@ -2237,10 +2240,10 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	private void cancelAbandonedOrder(MetaOrderEntity metaOrder) {
-		metaOrder.setStatus(CLIENT_CANCELLED.getValue());
+		metaOrder.setStatus(DISCARDED.getValue());
 		metaOrder
 		.getSubOrders()
-		.forEach(subOrder -> subOrder.setStatus(CLIENT_CANCELLED.getValue()));
+		.forEach(subOrder -> subOrder.setStatus(DISCARDED.getValue()));
 	}
 
 

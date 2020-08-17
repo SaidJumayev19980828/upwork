@@ -544,7 +544,7 @@ public class OrderServiceTest {
 		long count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("user#70 is Organization employee in org#99003 so he can view all orderes within org#99003", 7, count);
+		assertEquals("user#70 is Organization employee in org#99001 so he can view all orderes within org#99001", 7, count);
 		//-------------------------------------------------------------------------
 		
 		response = template.exchange("/order/list?details_level=3"
@@ -1236,7 +1236,7 @@ public class OrderServiceTest {
 				new HttpEntity<>(getHeaders("131415")),
 				String.class);
 		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(14, orderRepository.findAll().size());
+		assertEquals(15, orderRepository.findAll().size());
 	}
 
 	@Test
