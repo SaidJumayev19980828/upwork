@@ -893,6 +893,9 @@ public class OrderServiceImpl implements OrderService {
 			operator = payment.get().getOperator();
 		}
 
+		String domain = domainService.getCurrentServerDomain();
+
+		params.put("orgDomain", domain);
 		params.put("orgLogo", orgLogo);
 		params.put("creationTime", orderTime);
 		params.put("orderPageUrl", buildDashboardPageUrl(order));

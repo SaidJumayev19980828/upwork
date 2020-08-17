@@ -266,7 +266,7 @@
 	<div class="Header">
 		<div class="Header-logo">
 			<img
-					th:src="@{https://backend.nasnav.org/files/} + ${orgLogo}"
+					th:src="${orgDomain} + '/files/' + ${orgLogo}"
 					alt="logo"
 			/>
 		</div>
@@ -277,7 +277,7 @@
 			<table class="sm-w-full" cellpadding="0" cellspacing="0" role="presentation">
 				<tr>
 					<td align="center" class="hover-bg-brand-600" style="mso-padding-alt: 20px 32px; border-radius: 4px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .1), 0 1px 2px 0 rgba(0, 0, 0, .06); color: #ffffff;" bgcolor="#0052e2">
-						<a href="#orderPageUrl#" class="sm-text-14 sm-py-16" style="display: inline-block; font-weight: 700; line-height: 16px; padding-top: 20px; padding-bottom: 20px; padding-left: 32px; padding-right: 32px; color: #ffffff; font-size: 16px; text-decoration: none;">Confirm Order</a>
+						<a th:href="${orderPageUrl}" class="sm-text-14 sm-py-16" style="display: inline-block; font-weight: 700; line-height: 16px; padding-top: 20px; padding-bottom: 20px; padding-left: 32px; padding-right: 32px; color: #ffffff; font-size: 16px; text-decoration: none;">Confirm Order</a>
 					</td>
 				</tr>
 			</table>
@@ -293,7 +293,7 @@
 			<table>
 				<tbody>
 				<tr th:each="item : ${sub.items}">
-					<img class="thumb" th:src="@{https://backend.nasnav.org/files/} + ${item.thumb}" alt="#"/>
+					<img class="thumb" th:src="${orgDomain} + '/files/' + ${item.thumb}" alt="#"/>
 					<h3 th:text="${item.name}"/>
 					<table class="variant-features">
 						<tr th:each="feature : ${item.variantFeatures}">
