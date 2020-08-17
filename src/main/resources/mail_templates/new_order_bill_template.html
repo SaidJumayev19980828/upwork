@@ -216,7 +216,7 @@
       <div class="Header">
         <div class="Header-logo">
           <img
-                  th:src="@{https://backend.nasnav.org/files/} + ${org_logo}"
+                  th:src="${orgDomain} + '/files/' + ${orgLogo}"
             alt="logo"
           />
         </div>
@@ -240,7 +240,7 @@
                 <table>
                   <tbody>
                     <tr th:each="item : ${sub.items}">
-                      <img class="thumb" th:src="@{https://backend.nasnav.org/files/} + ${item.thumb}" alt="#"/>
+                      <img class="thumb" th:src="${orgDomain} + '/files/' + ${item.thumb}" alt="#"/>
                       <h3 th:text="${item.name}"/>
                       <h3 class="shopName" th:text="${sub.shopName}"/>
                       <table class="variant-features">

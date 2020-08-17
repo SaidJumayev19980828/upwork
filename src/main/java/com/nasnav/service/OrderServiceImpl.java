@@ -1004,7 +1004,10 @@ public class OrderServiceImpl implements OrderService {
 										  .map(OrganizationThemeEntity::getLogo)
 										  .orElse("nasnav-logo.png");
 
+		String domain = domainService.getCurrentServerDomain();
+
 		Map<String, Object> params = new HashMap<>();
+		params.put("orgDomain", domain);
 		params.put("creation_date", orderTimeStr);
 		params.put("org_logo", orgLogo);
 		params.put("data", this.getOrderResponse(order));
