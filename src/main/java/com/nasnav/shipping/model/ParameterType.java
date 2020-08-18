@@ -11,7 +11,7 @@ import lombok.Getter;
 
 public enum ParameterType {
 	STRING("String", String.class)
-	, NUMBER("Number", Long.class)
+	, NUMBER("Number", Number.class)
 	, STRING_ARRAY("StringArray", JSONArray.class)
 	, LONG_ARRAY("LongArray", JSONArray.class);
 	

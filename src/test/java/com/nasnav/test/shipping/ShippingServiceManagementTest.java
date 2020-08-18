@@ -124,7 +124,7 @@ public class ShippingServiceManagementTest {
 
 	private JSONObject createDummyServiceParams() {
 		return json()
-				.put("Hot Line", "19777")
+				.put("Hot Line", 19777)
 				.put("Shops", jsonArray().put("Wiakiki"));
 	}
 	
