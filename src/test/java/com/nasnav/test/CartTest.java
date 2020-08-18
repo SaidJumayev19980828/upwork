@@ -594,7 +594,9 @@ public class CartTest {
 		Order order = checkOutCart(requestBody, new BigDecimal("3125"), new BigDecimal("3100"), new BigDecimal("25"));
 		Long orderId = order.getOrderId();
 		
-		orderService.finalizeOrder(orderId);
+		HttpEntity<?> request = getHttpEntity("123");
+		template.postForEntity("/payment/cod/execute?order_id="+orderId, request, Void.class);
+//		orderService.finalizeOrder(orderId);
 		
 		asList(new ShopManager(502L, "161718"), new ShopManager(501L,"131415"))
 		.forEach(mgr -> confrimOrder(order, mgr));
