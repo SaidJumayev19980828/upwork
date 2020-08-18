@@ -134,7 +134,15 @@ values('BOSTA_LEVIS', 99001,
     "AUTH_TOKEN": "ae5d5b5601fb68f1b26bf1f059ecaa1a5f9963675707879f2d8a9b0ccfb00357",
     "BUSINESS_ID": "yM1ngytZ0",
     "SERVER_URL": "https://stg-app.bosta.co/api/v0",
-	"WEBHOOK_URL": "https://backend.nasnav.org/callbacks/shipping/service/BOSTA_LEVIS/99001"
+	"WEBHOOK_URL": "https://backend.nasnav.org/callbacks/shipping/service/BOSTA_LEVIS/99001",
+	"CAIRO_PRICE": 25,
+	"ALEXANDRIA_PRICE":30,
+	"DELTA_CANAL_PRICE":30,
+	"UPPER_EGYPT":45
  }');
+
+--assign organization to cod payment
+INSERT into public.organization_payments(id,organization_id ,gateway, account )
+values(100025, 99001, 'cod', 'dummy');
 
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);

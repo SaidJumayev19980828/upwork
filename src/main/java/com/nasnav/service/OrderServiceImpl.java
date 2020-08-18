@@ -339,7 +339,9 @@ public class OrderServiceImpl implements OrderService {
 	private void buildOrderStatusTransitionMap() {
 		orderStateMachine = new HashMap<>();
 		buildMap(orderStateMachine)
-			.put(CLIENT_CONFIRMED	, setOf(CLIENT_CANCELLED, FINALIZED))
+			.put(CLIENT_CONFIRMED	, setOf(CLIENT_CANCELLED, FINALIZED, DISCARDED))
+			.put(DISCARDED			, setOf(DISCARDED))
+			.put(CLIENT_CANCELLED	, setOf(CLIENT_CANCELLED))
 			.put(FINALIZED	 		, setOf(STORE_CONFIRMED, STORE_CANCELLED, CLIENT_CANCELLED))
 			.put(STORE_CONFIRMED	, setOf(STORE_PREPARED, STORE_CANCELLED, DISPATCHED, DELIVERED))
 			.put(STORE_PREPARED		, setOf(DISPATCHED, DELIVERED, STORE_CANCELLED))
@@ -2238,18 +2240,18 @@ public class OrderServiceImpl implements OrderService {
 						, CLIENT_CONFIRMED.getValue());
 		
 		abandonedOrders.addAll(noPaymentOrders);
-		abandonedOrders.forEach(this::cancelAbandonedOrder);
+		abandonedOrders.forEach(this::discardAbandonedOrder);
 	}
 
 
 	
 	
 	
-	private void cancelAbandonedOrder(MetaOrderEntity metaOrder) {
-		metaOrder.setStatus(DISCARDED.getValue());
+	private void discardAbandonedOrder(MetaOrderEntity metaOrder) {
+		updateOrderStatus(metaOrder, DISCARDED);
 		metaOrder
 		.getSubOrders()
-		.forEach(subOrder -> subOrder.setStatus(DISCARDED.getValue()));
+		.forEach(subOrder -> updateOrderStatus(subOrder, DISCARDED));
 	}
 
 

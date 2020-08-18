@@ -8,8 +8,12 @@ import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Optional;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -24,6 +28,8 @@ import com.nasnav.persistence.OrganizationEntity;
 
 @Service
 public class DomainServiceImpl implements DomainService{
+	
+	private static Logger logger = LogManager.getLogger();
 	
 	@Autowired
 	private SecurityService securityService; 
@@ -68,8 +74,17 @@ public class DomainServiceImpl implements DomainService{
 	
 	@Override
 	public String getCurrentServerDomain() {
-		final String baseUrl = 
-				ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+		String baseUrl = "";
+		try{
+			baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+		}catch(Throwable t) {
+			logger.error(t,t);					
+			try {
+				baseUrl = InetAddress.getLocalHost().getHostName();
+			} catch (UnknownHostException e) {
+				logger.error(e,e);	
+			}
+		}
 		return ofNullable(baseUrl)
 				.map(this::addProtocolIfNeeded)
 				.orElse("");

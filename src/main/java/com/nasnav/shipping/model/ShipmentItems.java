@@ -15,6 +15,8 @@ public class ShipmentItems {
 	private String specs;
 	private String notes;
 	private BigDecimal weight;
+	private String productCode;
+	private String sku;
 	
 	public ShipmentItems(Long stockId) {
 		this.stockId = stockId;
