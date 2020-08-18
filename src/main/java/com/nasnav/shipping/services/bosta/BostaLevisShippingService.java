@@ -13,7 +13,7 @@ import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0003;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0004;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0005;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0010;
-import static com.nasnav.shipping.model.ParameterType.LONG;
+import static com.nasnav.shipping.model.ParameterType.NUMBER;
 import static com.nasnav.shipping.model.ParameterType.STRING;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -108,10 +108,10 @@ public class BostaLevisShippingService implements ShippingService{
 					, new Parameter(BUSINESS_ID_PARAM, STRING)
 					, new Parameter(SERVER_URL, STRING)
 					, new Parameter(WEBHOOK_URL, STRING)
-					, new Parameter(CAIRO_PRICE, LONG)
-					, new Parameter(ALEXANDRIA_PRICE, LONG)
-					, new Parameter(DELTA_CANAL_PRICE, LONG)
-					, new Parameter(UPPER_EGYPT_PRICE, LONG));
+					, new Parameter(CAIRO_PRICE, NUMBER)
+					, new Parameter(ALEXANDRIA_PRICE, NUMBER)
+					, new Parameter(DELTA_CANAL_PRICE, NUMBER)
+					, new Parameter(UPPER_EGYPT_PRICE, NUMBER));
 	
 	private static final ShippingPeriodAndPrice CAIRO_SHIPPING = 
 			new ShippingPeriodAndPrice(

@@ -1,7 +1,7 @@
 package com.nasnav.shipping.services;
 
 import static com.nasnav.exceptions.ErrorCodes.G$JSON$0001;
-import static com.nasnav.shipping.model.ParameterType.LONG;
+import static com.nasnav.shipping.model.ParameterType.NUMBER;
 import static com.nasnav.shipping.model.ParameterType.STRING;
 import static com.nasnav.shipping.model.ParameterType.STRING_ARRAY;
 import static java.time.LocalDate.now;
@@ -55,7 +55,7 @@ public class DummyShippingService implements ShippingService {
 	public ShippingServiceInfo getServiceInfo() {
 		List<Parameter> serviceParamerters = 
 				asList( new Parameter("Hot Line", STRING), new Parameter("Shops", STRING_ARRAY));
-		List<Parameter> additionalData = asList(new Parameter("Shop Id", LONG));
+		List<Parameter> additionalData = asList(new Parameter("Shop Id", NUMBER));
 		return new ShippingServiceInfo(ID, NAME, false, serviceParamerters, additionalData);
 	}
 
