@@ -169,10 +169,11 @@ public class ProductsController {
     })
 	@ResponseStatus(OK)
 	@DeleteMapping(value = "image/all")
-    public void deleteAllProductImages(@RequestHeader(name = "User-Token", required = false) String token
-    		, @RequestParam(name = "confirmed",defaultValue = "false", required = true) boolean isConfirmed)
-            		throws BusinessException {
-		productImgService.deleteAllImages(isConfirmed);
+    public void deleteAllProductImages(@RequestHeader(name = "User-Token", required = false) String token,
+                                       @RequestParam(name = "productId", required = false) Long productId,
+                                       @RequestParam(name = "all_products",defaultValue = "false", required = true) boolean allProducts)
+            		                throws BusinessException {
+		productImgService.deleteAllImages(allProducts, productId);
     }
 	
 	

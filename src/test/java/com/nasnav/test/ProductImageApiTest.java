@@ -1002,7 +1002,7 @@ public class ProductImageApiTest {
 		
 		HttpEntity<?> request =  getHttpEntity("" , "101112");
 		ResponseEntity<String> response = 
-				template.exchange("/product/image/all?confirmed=true"
+				template.exchange("/product/image/all?all_products=true"
 						, DELETE
 						, request
 						, String.class);

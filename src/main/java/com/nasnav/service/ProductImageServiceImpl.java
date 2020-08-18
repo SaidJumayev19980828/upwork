@@ -1,8 +1,7 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
-import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
-import static com.nasnav.commons.utils.StringUtils.startsWithAnyOfAndIgnoreCase;
+import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CSV_PARSE_FAILURE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING_IMGS;
@@ -595,7 +594,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	@Transactional(rollbackFor = Throwable.class)
 	public List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs, boolean deleteOldImages) throws BusinessException {		
 		if(deleteOldImages) {
-			deleteOrgProductmages();
+			deleteOrgProductImages();
 		}
 		return saveImgsBulk(importedImgs);
 	}
@@ -605,14 +604,17 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private void deleteOrgProductmages() {
+	private void deleteOrgProductImages() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		productImagesRepository.deleteByProductEntity_organizationId(orgId);
 	}
 	
 	
 	
-	
+	private void deleteProductImages(Long productId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		productImagesRepository.deleteByProductEntity_IdAndProductEntity_organizationId(productId, orgId);
+	}
 	
 
 
@@ -1495,12 +1497,16 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	@Override
-	public void deleteAllImages(boolean isConfirmed) throws BusinessException {
-		if(!isConfirmed) {
-			throw new BusinessException("Delete operation for all images is not confirmed!", "INVALID PARAM: confirm", NOT_ACCEPTABLE);
+	public void deleteAllImages(boolean allProducts, Long productId) throws BusinessException {
+		if (isBlankOrNull(productId) && allProducts) {
+			deleteOrgProductImages();
+		} else if(isNotBlankOrNull(productId) && !allProducts) {
+			deleteProductImages(productId);
+		} else if (isNotBlankOrNull(productId) && allProducts){
+			throw new RuntimeBusinessException("Both 'product_id' and 'all_products' params can't be set in the same call!", "INVALID PARAM", NOT_ACCEPTABLE);
+		} else {
+			throw new RuntimeBusinessException("Either provide 'product_id' or 'all_products'!", "INVALID PARAM", NOT_ACCEPTABLE);
 		}
-		
-		deleteOrgProductmages();
 	}
 
 

@@ -25,6 +25,10 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
 
 	void deleteByProductEntity_Id(Long productId);
 
+	@Transactional
+    @Modifying
+	void deleteByProductEntity_IdAndProductEntity_organizationId(Long productId, Long orgId);
+
 	List<ProductImagesEntity> findByProductEntity_IdOrderByPriority(Long productId);
 
 	Long countByUri(String uri);
