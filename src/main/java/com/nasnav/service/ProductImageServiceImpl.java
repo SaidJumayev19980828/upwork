@@ -497,21 +497,26 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	
 	@Override
-	public ProductImageDeleteResponse deleteImage(Long imgId) throws BusinessException {
-		ProductImagesEntity img = 
-				productImagesRepository.findById(imgId)
-				 				.orElseThrow(()-> new BusinessException("No Image exists with id ["+ imgId+"] !", "INVALID PARAM:image_id", HttpStatus.NOT_ACCEPTABLE));
-		
-		Long productId = Optional.ofNullable(img.getProductEntity())
-								.map(prod -> prod.getId())
-								.orElse(null);					
-		
-		validateImgToDelete(img);		
-		
-		Long cnt = productImagesRepository.countByUri(img.getUri());
-		productImagesRepository.deleteById(imgId);
-		
-		deleteImgFileIfNotUsed(img,cnt);		
+	public ProductImageDeleteResponse deleteImage(Long imgId, Long productId) throws BusinessException {
+		if (!isBlankOrNull(productId) && isBlankOrNull(imgId)) {
+			deleteProductImages(productId);
+		}
+		else if(isBlankOrNull(productId) && !isBlankOrNull(imgId)){
+			ProductImagesEntity img =
+					productImagesRepository.findById(imgId)
+							.orElseThrow(() -> new BusinessException("No Image exists with id [" + imgId + "] !", "INVALID PARAM:image_id", HttpStatus.NOT_ACCEPTABLE));
+
+			productId = Optional.ofNullable(img.getProductEntity())
+					.map(prod -> prod.getId())
+					.orElse(null);
+
+			validateImgToDelete(img);
+
+			Long cnt = productImagesRepository.countByUri(img.getUri());
+			productImagesRepository.deleteById(imgId);
+
+			deleteImgFileIfNotUsed(img, cnt);
+		}
 		
 		return new ProductImageDeleteResponse(productId);
 	}
@@ -934,7 +939,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private void rollbackImgBulkImport(List<ProductImageUpdateResponse> responses) throws BusinessException {
 		for(ProductImageUpdateResponse res: responses) {
-			deleteImage( res.getImageId() );
+			deleteImage( null, res.getImageId() );
 		}
 		
 		TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -1497,16 +1502,12 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 	@Override
-	public void deleteAllImages(boolean allProducts, Long productId) throws BusinessException {
-		if (isBlankOrNull(productId) && allProducts) {
-			deleteOrgProductImages();
-		} else if(isNotBlankOrNull(productId) && !allProducts) {
-			deleteProductImages(productId);
-		} else if (isNotBlankOrNull(productId) && allProducts){
-			throw new RuntimeBusinessException("Both 'product_id' and 'all_products' params can't be set in the same call!", "INVALID PARAM", NOT_ACCEPTABLE);
-		} else {
-			throw new RuntimeBusinessException("Either provide 'product_id' or 'all_products'!", "INVALID PARAM", NOT_ACCEPTABLE);
+	public void deleteAllImages(boolean isConfirmed) throws BusinessException {
+		if(!isConfirmed) {
+			throw new BusinessException("Delete operation for all images is not confirmed!", "INVALID PARAM: confirm", NOT_ACCEPTABLE);
 		}
+
+		deleteOrgProductImages();
 	}
 
 
