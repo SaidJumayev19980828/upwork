@@ -1,8 +1,7 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
-import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
-import static com.nasnav.commons.utils.StringUtils.startsWithAnyOfAndIgnoreCase;
+import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_CSV_PARSE_FAILURE;
 import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_IMPORTING_IMGS;
@@ -498,21 +497,26 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	
 	@Override
-	public ProductImageDeleteResponse deleteImage(Long imgId) throws BusinessException {
-		ProductImagesEntity img = 
-				productImagesRepository.findById(imgId)
-				 				.orElseThrow(()-> new BusinessException("No Image exists with id ["+ imgId+"] !", "INVALID PARAM:image_id", HttpStatus.NOT_ACCEPTABLE));
-		
-		Long productId = Optional.ofNullable(img.getProductEntity())
-								.map(prod -> prod.getId())
-								.orElse(null);					
-		
-		validateImgToDelete(img);		
-		
-		Long cnt = productImagesRepository.countByUri(img.getUri());
-		productImagesRepository.deleteById(imgId);
-		
-		deleteImgFileIfNotUsed(img,cnt);		
+	public ProductImageDeleteResponse deleteImage(Long imgId, Long productId) throws BusinessException {
+		if (!isBlankOrNull(productId) && isBlankOrNull(imgId)) {
+			deleteProductImages(productId);
+		}
+		else if(isBlankOrNull(productId) && !isBlankOrNull(imgId)){
+			ProductImagesEntity img =
+					productImagesRepository.findById(imgId)
+							.orElseThrow(() -> new BusinessException("No Image exists with id [" + imgId + "] !", "INVALID PARAM:image_id", HttpStatus.NOT_ACCEPTABLE));
+
+			productId = Optional.ofNullable(img.getProductEntity())
+					.map(prod -> prod.getId())
+					.orElse(null);
+
+			validateImgToDelete(img);
+
+			Long cnt = productImagesRepository.countByUri(img.getUri());
+			productImagesRepository.deleteById(imgId);
+
+			deleteImgFileIfNotUsed(img, cnt);
+		}
 		
 		return new ProductImageDeleteResponse(productId);
 	}
@@ -595,7 +599,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 	@Transactional(rollbackFor = Throwable.class)
 	public List<ProductImageUpdateResponse> saveImgsBulk(Set<ImportedImage> importedImgs, boolean deleteOldImages) throws BusinessException {		
 		if(deleteOldImages) {
-			deleteOrgProductmages();
+			deleteOrgProductImages();
 		}
 		return saveImgsBulk(importedImgs);
 	}
@@ -605,14 +609,17 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 
 
-	private void deleteOrgProductmages() {
+	private void deleteOrgProductImages() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		productImagesRepository.deleteByProductEntity_organizationId(orgId);
 	}
 	
 	
 	
-	
+	private void deleteProductImages(Long productId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		productImagesRepository.deleteByProductEntity_IdAndProductEntity_organizationId(productId, orgId);
+	}
 	
 
 
@@ -932,7 +939,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private void rollbackImgBulkImport(List<ProductImageUpdateResponse> responses) throws BusinessException {
 		for(ProductImageUpdateResponse res: responses) {
-			deleteImage( res.getImageId() );
+			deleteImage( null, res.getImageId() );
 		}
 		
 		TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -1499,8 +1506,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 		if(!isConfirmed) {
 			throw new BusinessException("Delete operation for all images is not confirmed!", "INVALID PARAM: confirm", NOT_ACCEPTABLE);
 		}
-		
-		deleteOrgProductmages();
+
+		deleteOrgProductImages();
 	}
 
 

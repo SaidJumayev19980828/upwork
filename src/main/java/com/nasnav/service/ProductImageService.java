@@ -30,7 +30,7 @@ public interface ProductImageService {
 
 	ProductImageUpdateResponse updateProductImage(MultipartFile file, ProductImageUpdateDTO imgMetaData) throws BusinessException;
 	
-	ProductImageDeleteResponse deleteImage(Long imgId) throws BusinessException;
+	ProductImageDeleteResponse deleteImage(Long imgId, Long productId) throws BusinessException;
 	
 	List<ProductImageUpdateResponse> updateProductImageBulk(
 			@Valid MultipartFile zip
@@ -52,7 +52,7 @@ public interface ProductImageService {
 
 	Flux<ImportedImage> readImgsFromUrls(Map<String, List<VariantIdentifier>> imgToProductsMapping,
 			ProductImageBulkUpdateDTO metaData, WebClient client);
-	
+
 	void deleteAllImages(boolean isConfirmed) throws BusinessException;
 
 	List<ProductImageDTO> getProductsAndVariantsImages(List<Long> productsIdList, List<Long> variantsIdList);

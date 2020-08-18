@@ -150,10 +150,11 @@ public class ProductsController {
 	@ResponseStatus(HttpStatus.OK)
 	@DeleteMapping(value = "image",
             produces = APPLICATION_JSON_UTF8_VALUE)
-    public ProductImageDeleteResponse deleteProductImage(@RequestHeader(name = "User-Token", required = false) String token
-    		,@RequestParam("image_id") @Valid Long imageId)
+    public ProductImageDeleteResponse deleteProductImage(@RequestHeader(name = "User-Token", required = false) String token,
+    		                                             @RequestParam(value = "image_id", required = false) @Valid Long imageId,
+                                                         @RequestParam(name = "productId", required = false) Long productId)
             		throws BusinessException {
-		return  productImgService.deleteImage(imageId);
+		return  productImgService.deleteImage(imageId, productId);
     }
 	
 	
@@ -170,9 +171,9 @@ public class ProductsController {
 	@ResponseStatus(OK)
 	@DeleteMapping(value = "image/all")
     public void deleteAllProductImages(@RequestHeader(name = "User-Token", required = false) String token
-    		, @RequestParam(name = "confirmed",defaultValue = "false", required = true) boolean isConfirmed)
-            		throws BusinessException {
-		productImgService.deleteAllImages(isConfirmed);
+            , @RequestParam(name = "confirmed",defaultValue = "false", required = true) boolean isConfirmed)
+            throws BusinessException {
+        productImgService.deleteAllImages(isConfirmed);
     }
 	
 	
