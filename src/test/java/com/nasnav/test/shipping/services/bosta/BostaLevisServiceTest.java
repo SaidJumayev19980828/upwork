@@ -90,7 +90,7 @@ public class BostaLevisServiceTest {
 		ShippingOffer offer = service.createShippingOffer(details).block();
 		List<Shipment> shipments = offer.getShipments();
 		assertEquals(2, shipments.size());
-		assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("25")));
+		assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("30")));
 		assertEquals(0 , shipments.get(1).getShippingFee().compareTo(ZERO));
 		assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
 		assertEquals(now().plusDays(2) , shipments.get(0).getEta().getTo());
@@ -189,7 +189,7 @@ public class BostaLevisServiceTest {
 		customerAddr.setAddressLine1("Mama st.");
 		customerAddr.setArea(181818L);
 		customerAddr.setBuildingNumber("555");
-		customerAddr.setCity(1L);
+		customerAddr.setCity(3L);
 		customerAddr.setCountry(1L);
 		customerAddr.setFlatNumber("5A");
 		customerAddr.setId(12300001L);

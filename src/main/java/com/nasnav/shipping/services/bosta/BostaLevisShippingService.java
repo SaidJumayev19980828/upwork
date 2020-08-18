@@ -13,10 +13,12 @@ import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0003;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0004;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0005;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0010;
+import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0012;
 import static com.nasnav.shipping.model.ParameterType.NUMBER;
 import static com.nasnav.shipping.model.ParameterType.STRING;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
+import static java.math.RoundingMode.HALF_EVEN;
 import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -50,6 +52,7 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.nasnav.commons.model.IndexedData;
+import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.model.Parameter;
@@ -482,7 +485,24 @@ public class BostaLevisShippingService implements ShippingService{
 			return empty();
 		}
 		//curstomer pay for only first shipment, rest are free
-		return Objects.equals(details.getIndex(), 0)? Optional.of(FLAT_RATE) : Optional.of(ZERO);
+		BigDecimal fee = getCityShippingFee(details);
+		return Objects.equals(details.getIndex(), 0)? 
+					Optional.of(fee) : Optional.of(ZERO);
+	}
+
+
+
+	private BigDecimal getCityShippingFee(IndexedData<ShippingDetails> details) {
+		return getDestinationCityId(details)
+				.map(cityIdMapping::get)
+				.map(BostaCity::getShippingAndPriceInfo)
+				.map(ShippingPeriodAndPrice::getPriceId)
+				.map(paramMap::get)
+				.map(BigDecimal::new)
+				.map(fee -> fee.setScale(2, HALF_EVEN))
+				.orElseThrow(() -> 
+					new RuntimeBusinessException(INTERNAL_SERVER_ERROR
+							, SHP$SRV$0012, SERVICE_ID, details.getData()));
 	}
 
 

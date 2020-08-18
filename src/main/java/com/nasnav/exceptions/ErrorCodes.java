@@ -126,6 +126,8 @@ public enum ErrorCodes {
 	,SHP$SRV$0009("Shipment not found!")
 	,SHP$SRV$0010("Cannot create shipment with the given parameters!")
 	,SHP$SRV$0011("Cannot create shipment with the given parameters due to : %s!")
+	,SHP$SRV$0012("Failed to calculate shipping fees for shipping service [%s], with shipment details[%s]!"
+			+ " Make sure there is no missing data , and the destination city is supported by the shipping service!")
 
 	,SHP$PARS$0001("Error while parsing status update request!")
 
