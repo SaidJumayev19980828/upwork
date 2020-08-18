@@ -340,6 +340,8 @@ public class OrderServiceImpl implements OrderService {
 		orderStateMachine = new HashMap<>();
 		buildMap(orderStateMachine)
 			.put(CLIENT_CONFIRMED	, setOf(CLIENT_CANCELLED, FINALIZED, DISCARDED))
+			.put(DISCARDED			, setOf(DISCARDED))
+			.put(CLIENT_CANCELLED	, setOf(CLIENT_CANCELLED))
 			.put(FINALIZED	 		, setOf(STORE_CONFIRMED, STORE_CANCELLED, CLIENT_CANCELLED))
 			.put(STORE_CONFIRMED	, setOf(STORE_PREPARED, STORE_CANCELLED, DISPATCHED, DELIVERED))
 			.put(STORE_PREPARED		, setOf(DISPATCHED, DELIVERED, STORE_CANCELLED))
