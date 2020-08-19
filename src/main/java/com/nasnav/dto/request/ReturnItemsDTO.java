@@ -12,6 +12,6 @@ import java.util.List;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class ReturnItemsDTO {
 
-    List<ReturnedItemList> returnedItemList;
+    List<ReturnedItem> returnedItems;
     List<ReturnedBasketItem> BasketItems;
 }

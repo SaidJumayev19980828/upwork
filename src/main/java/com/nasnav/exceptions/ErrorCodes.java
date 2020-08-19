@@ -105,6 +105,9 @@ public enum ErrorCodes {
 	
 	,O$ORG$0001("Sub-Order with id[%d] has no Organization!")
 
+	,O$RET$0001("No return request item found with ID[%d]!")
+	,O$RET$0002("Returned item quantity cannot be greater than requested quantity!")
+
 	,O$0001("No order exists with ID[%d]!")
 	
 	,O$GNRL$0001("Cannot update order staus from [%s] to [%s]!")

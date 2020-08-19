@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class ReturnedItemList {
+public class ReturnedItem {
     private Long returnRequestItemId;
     private Integer receivedQuantity;
 }

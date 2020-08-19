@@ -52,39 +52,7 @@ import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0004;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0005;
-import static com.nasnav.exceptions.ErrorCodes.G$STK$0001;
-import static com.nasnav.exceptions.ErrorCodes.G$USR$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0004;
-import static com.nasnav.exceptions.ErrorCodes.O$CHK$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CHK$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CHK$0004;
-import static com.nasnav.exceptions.ErrorCodes.O$CNCL$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0004;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0005;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0006;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0007;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0008;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0009;
-import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0003;
-import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0003;
-import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
-import static com.nasnav.exceptions.ErrorCodes.S$0005;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.isValidStrategy;
 import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.SAME_CITY;
 import static com.nasnav.shipping.services.PickupFromShop.SHOP_ID;
@@ -279,6 +247,12 @@ public class OrderServiceImpl implements OrderService {
 	
 	@Autowired
 	private PromotionRepository promoRepo;
+
+	@Autowired
+	private ReturnRequestRepository returnRequestRepo;
+
+	@Autowired
+	private ReturnRequestItemRepository returnRequestItemRepo;
 	
 	private Map<OrderStatus, Set<OrderStatus>> orderStateMachine;
 	private Set<OrderStatus> orderStatusForCustomers;
@@ -3360,16 +3334,15 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional
-	public void receiveItems(ReturnItemsDTO returnedItems) {
-		List<ReturnedItemList> returnRequestItems = returnedItems.getReturnedItemList();
+	public void receiveItems(ReturnItemsDTO returnedItemsDTO) {
+		List<ReturnedItem> returnRequestItems = returnedItemsDTO.getReturnedItems();
 
-		List<ReturnedBasketItem> returnBasketItems = returnedItems.getBasketItems();
+		List<ReturnedBasketItem> returnBasketItems = returnedItemsDTO.getBasketItems();
 
-		if (!returnRequestItems.isEmpty()) {
-			createReturnRequest(returnBasketItems);
-		}
-		if (!returnBasketItems.isEmpty()) {
-			returnBasketItems(returnBasketItems);
+		if (isNullOrEmpty(returnRequestItems)) {
+			returnRequestRepo.save(createReturnRequest(returnBasketItems));
+		} else {
+			receiveReturnRequestItems(returnRequestItems);
 		}
 	}
 
@@ -3389,34 +3362,55 @@ public class OrderServiceImpl implements OrderService {
 
 		for(ReturnedBasketItem item : returnedItems) {
 			BasketsEntity basket = baskets.stream().filter(b -> b.getId().equals(item.getOrderItemId())).findFirst().get();
-			ReturnRequestItemEntity returnedItem = createReturnRequestItem(returnRequest, basket, item.getReceivedQuantity());
+			ReturnRequestItemEntity returnedItem = createReturnRequestItem(returnRequest, basket, item.getReceivedQuantity(), emp);
 			returnedRequestItems.add(returnedItem);
 		}
-
+		returnRequestItemRepo.saveAll(returnedRequestItems);
 		returnRequest.setReturnedItems(returnedRequestItems);
 
 		return returnRequest;
 	}
 
 
-	private ReturnRequestItemEntity createReturnRequestItem(ReturnRequestEntity returnRequest, BasketsEntity basket, Integer receivedQuantity) {
+	private ReturnRequestItemEntity createReturnRequestItem(ReturnRequestEntity returnRequest, BasketsEntity basket,
+															Integer receivedQuantity, EmployeeUserEntity emp) {
 		ReturnRequestItemEntity item = new ReturnRequestItemEntity();
 
 		item.setReturnRequest(returnRequest);
 		item.setBasket(basket);
 		item.setReceivedQuantity(receivedQuantity);
+		item.setReturnedQuantity(receivedQuantity);
+		item.setCreatedByEmployee(emp);
+		item.setReceivedBy(emp);
 
+		increaseStock(basket, receivedQuantity);
 
 		return item;
 	}
 
-	private void returnRequestItems(List<ReturnedItemList> returnedItems) {
+	private void increaseStock(BasketsEntity basket, Integer receivedQuantity) {
 
+		validateRequestItemQuantity(basket, receivedQuantity);
+
+		StocksEntity stock = basket.getStocksEntity();
+		stock.setQuantity(stock.getQuantity().intValue() + receivedQuantity);
+		stockRepository.save(stock);
 	}
 
 
-	private void returnBasketItems(List<ReturnedBasketItem> returnedItems) {
-		List<Returned>
+	private void receiveReturnRequestItems(List<ReturnedItem> returnRequestItems) {
+		for (ReturnedItem item : returnRequestItems) {
+			ReturnRequestItemEntity itemEntity = returnRequestItemRepo.findById(item.getReturnRequestItemId())
+																	  .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0001, item.getReturnRequestItemId()));
+			increaseStock(itemEntity.getBasket(), item.getReceivedQuantity());
+			itemEntity.getReturnRequest().setStatus(RECEIVED.getValue());
+		}
+	}
+
+	private void validateRequestItemQuantity(BasketsEntity basket, Integer receivedQuantity) {
+		if(basket.getQuantity().intValue() < receivedQuantity) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0002);
+		}
 	}
 }
 
