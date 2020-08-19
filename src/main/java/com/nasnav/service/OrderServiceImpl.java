@@ -1508,6 +1508,7 @@ public class OrderServiceImpl implements OrderService {
 		String currency = ofNullable(TransactionCurrency.getTransactionCurrency(entity.getCurrency())).orElse(EGP).name();
 
 		BasketItem item = new BasketItem();
+		item.setId(entity.getId());
 		item.setProductId(product.getId());
 		item.setName(product.getName());
 		item.setPname(product.getPname());

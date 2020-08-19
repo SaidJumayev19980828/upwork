@@ -14,6 +14,7 @@ import java.util.Map;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class BasketItem {
 
+    private Long id;
     private Long productId;
     private String name;
     @JsonProperty("p_name")
