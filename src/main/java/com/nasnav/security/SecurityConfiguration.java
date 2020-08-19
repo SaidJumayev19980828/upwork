@@ -113,7 +113,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/organization/tag/**"								, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/tags"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/shipping/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-						patternOf( "/organization/shipping/service", HttpMethod.DELETE, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/promotions/**"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/organization/promotion/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/organization/themes/class"							, setOf(NASNAV_ADMIN)),
