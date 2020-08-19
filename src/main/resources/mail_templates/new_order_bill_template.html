@@ -305,22 +305,22 @@
           Any further questions or concerns, please look at our FAQ page where
           we have answered the most common question regarding this topic or
           write us at
-          <a target="_blank" href="https://develop.nasnav.org/#/">nasnav.org</a>
+          <a target="_blank" th:href="${orgDomain}" th:text="${orgName}"></a>
         </p>
       </div>
 
       <div class="footer">
         <p>
           This email was sent to you as a registered member of
-          <a target="_blank" href="https://develop.nasnav.org/#/">nasnav.org</a>
+          <a target="_blank" th:href="${orgDomain}" th:text="${orgName}"></a>
           Use of the service and website is subject to our
-          <a target="_blank" href="https://develop.nasnav.org/#/terms"
-            >Terms of Use</a
-          >
+          <a target="_blank" th:href="${orgDomain}">
+            Terms of Use
+          </a>
           and
-          <a target="_blank" href="https://develop.nasnav.org/#/privacy"
-            >Privacy Statement.</a
-          >
+          <a target="_blank" th:href="${orgDomain}">
+            Privacy Statement.
+          </a>
         </p>
         <p class="copyright">&copy; 2020 NasNav. All rights reserved.</p>
       </div>
