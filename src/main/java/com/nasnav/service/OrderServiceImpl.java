@@ -279,7 +279,7 @@ public class OrderServiceImpl implements OrderService {
 	private UserRepository userRepo;
 
 	@Autowired
-	private OrganizationThemeRepository orgThemeRepo;
+	private OrganizationImagesRepository orgImagesRepo;
 	
 	@Autowired
 	private ApplicationContext context;
@@ -876,12 +876,8 @@ public class OrderServiceImpl implements OrderService {
 				DateTimeFormatter
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(order.getCreationDate());
-		String orgLogo = ofNullable(order)
-						.map(o -> o.getOrganizationEntity())
-						.map(OrganizationEntity::getId)
-						.map(orgThemeRepo::findOneByOrganizationEntity_Id)
-						.map(OrganizationThemeEntity::getLogo)
-						.orElse("nasnav-logo.png");
+
+		String orgLogo = getOrganizationLogo(order.getOrganizationEntity());
 
 		List<BasketItemDetails> basketItemsDetails = 
 				getBasketItemsDetailsMap( setOf(order.getId()) )
@@ -1001,16 +997,15 @@ public class OrderServiceImpl implements OrderService {
 				.format(orderTime);
 		String total = getMetaOrderTotal(order).toPlainString();
 
-		String orgLogo = ofNullable(order).map(o -> o.getOrganization())
-									  	  .map(OrganizationEntity::getId)
-										  .map(orgThemeRepo::findOneByOrganizationEntity_Id)
-										  .map(OrganizationThemeEntity::getLogo)
-										  .orElse("nasnav-logo.png");
+		String orgLogo = getOrganizationLogo(order.getOrganization());
 
 		String domain = domainService.getCurrentServerDomain();
 
+		String orgName = order.getOrganization().getName();
+
 		Map<String, Object> params = new HashMap<>();
 		params.put("orgDomain", domain);
+		params.put("orgName", orgName);
 		params.put("creation_date", orderTimeStr);
 		params.put("org_logo", orgLogo);
 		params.put("data", this.getOrderResponse(order));
@@ -1018,7 +1013,13 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-
+	private String getOrganizationLogo(OrganizationEntity org) {
+		return ofNullable(org)
+				.map(OrganizationEntity::getId)
+				.map(orgId -> orgImagesRepo.findByOrganizationEntityIdAndType(orgId, 1))
+				.map(OrganizationImagesEntity::getUri)
+				.orElse("nasnav-logo.png");
+	}
 
 
 	private BigDecimal getMetaOrderTotal(MetaOrderEntity order) {

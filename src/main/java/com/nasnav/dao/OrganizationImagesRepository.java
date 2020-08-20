@@ -9,4 +9,6 @@ public interface OrganizationImagesRepository extends CrudRepository<Organizatio
 
     List<OrganizationImagesEntity> findByOrganizationEntityId(Long id);
     List<OrganizationImagesEntity> findByShopsEntityId(Long id);
+
+    OrganizationImagesEntity findByOrganizationEntityIdAndType(Long id, Integer type);
 }
