@@ -8,12 +8,15 @@ import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0007;
 import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0008;
 import static com.nasnav.exceptions.ErrorCodes.TYP$0001;
 import static java.util.Collections.emptyList;
+import static java.util.Map.Entry.comparingByKey;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -61,11 +64,15 @@ public class AddressService {
 
 
     private CountriesRepObj getCountriesRepObj(CountriesEntity countriesEntity) {
+        Map<String, CitiesRepObj> citiesRepObjMap = countriesEntity.getCities().stream()
+                .collect( toMap(CitiesEntity::getName, this::getCitiesRepObj));
+
+        TreeMap<String, CitiesRepObj> sorted = new TreeMap<>(citiesRepObjMap);
+
         CountriesRepObj country = new CountriesRepObj();
         country.setId(countriesEntity.getId());
         country.setName(countriesEntity.getName());
-        country.setCities(countriesEntity.getCities().stream()
-                .collect( toMap(CitiesEntity::getName, this::getCitiesRepObj)));
+        country.setCities(sorted);
         return country;
     }
 
@@ -83,7 +90,8 @@ public class AddressService {
         Map<String, AreasRepObj> areas = city.getAreas()
                 .stream()
                 .collect( toMap(AreasEntity::getName, c-> (AreasRepObj) c.getRepresentation()));
-        return areas;
+        TreeMap<String, AreasRepObj> sorted = new TreeMap<>(areas);
+        return sorted;
     }
 
 
