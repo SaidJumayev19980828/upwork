@@ -64,9 +64,10 @@ public class AddressService {
 
 
     private CountriesRepObj getCountriesRepObj(CountriesEntity countriesEntity) {
-        TreeMap<String, CitiesRepObj> sorted = new TreeMap<>();
-        sorted.putAll(countriesEntity.getCities().stream()
-                .collect( toMap(CitiesEntity::getName, this::getCitiesRepObj)));
+        Map<String, CitiesRepObj> citiesRepObjMap = countriesEntity.getCities().stream()
+                .collect( toMap(CitiesEntity::getName, this::getCitiesRepObj));
+
+        TreeMap<String, CitiesRepObj> sorted = new TreeMap<>(citiesRepObjMap);
 
         CountriesRepObj country = new CountriesRepObj();
         country.setId(countriesEntity.getId());
@@ -86,11 +87,10 @@ public class AddressService {
 
 
     private Map getAreasMap(CitiesEntity city) {
-        TreeMap<String, AreasRepObj> sorted = new TreeMap<>();
         Map<String, AreasRepObj> areas = city.getAreas()
                 .stream()
                 .collect( toMap(AreasEntity::getName, c-> (AreasRepObj) c.getRepresentation()));
-        sorted.putAll(areas);
+        TreeMap<String, AreasRepObj> sorted = new TreeMap<>(areas);
         return sorted;
     }
 
