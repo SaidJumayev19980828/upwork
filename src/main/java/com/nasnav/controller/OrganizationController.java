@@ -1,6 +1,8 @@
 package com.nasnav.controller;
 
-import static com.nasnav.payments.misc.Gateway.*;
+import static com.nasnav.payments.misc.Gateway.COD;
+import static com.nasnav.payments.misc.Gateway.MASTERCARD;
+import static com.nasnav.payments.misc.Gateway.UPG;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.lang.reflect.InvocationTargetException;
@@ -8,7 +10,6 @@ import java.util.List;
 
 import javax.validation.Valid;
 
-import com.nasnav.shipping.services.PickupFromShop;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,7 @@ import com.nasnav.dto.PromotionSearchParamDTO;
 import com.nasnav.dto.TagsDTO;
 import com.nasnav.dto.TagsTreeCreationDTO;
 import com.nasnav.dto.ThemeClassDTO;
+import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.dto.request.theme.OrganizationThemeClass;
 import com.nasnav.dto.response.OrgThemeRepObj;
@@ -63,6 +65,7 @@ import com.nasnav.service.OrganizationService;
 import com.nasnav.service.PromotionsService;
 import com.nasnav.service.ShippingManagementService;
 import com.nasnav.service.ThemeService;
+import com.nasnav.shipping.services.PickupFromShop;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -527,5 +530,38 @@ public class OrganizationController {
     public void unregisterFromShippingService(@RequestHeader (name = "User-Token", required = false) String userToken,
                                               @RequestParam("service_id") String serviceId){
         shippingMngService.unregisterFromShippingService(serviceId);
+    }
+    
+    
+    
+    
+    
+    @ApiOperation(value = "delete an organization setting", nickname = "deleteSetting", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @DeleteMapping(value = "settings")
+    @ResponseStatus(OK)
+    public void deleteSetting(@RequestHeader (name = "User-Token", required = false) String userToken,
+                                              @RequestParam("name") String settingName){
+        orgService.deleteSetting(settingName);
+    }
+    
+    
+    
+    
+    @ApiOperation(value = "add/udpate an organization setting", nickname = "udpateSetting", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "settings")
+    @ResponseStatus(OK)
+    public void udpateSetting(@RequestHeader (name = "User-Token", required = false) String userToken,
+    								@RequestBody SettingDTO setting){
+        orgService.updateSetting(setting);
     }
 }

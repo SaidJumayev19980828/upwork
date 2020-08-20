@@ -5,11 +5,13 @@ import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_ID;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_DOMAINS;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_EXTRA_ATTRIBUTES;
+import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.validateName;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
+import static com.nasnav.exceptions.ErrorCodes.G$PRAM$0001;
 import static com.nasnav.exceptions.ErrorCodes.ORG$EXTRATTR$0001;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -25,9 +27,6 @@ import java.util.Optional;
 
 import javax.cache.annotation.CacheResult;
 
-import com.nasnav.dto.response.OrgThemeRepObj;
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
@@ -39,7 +38,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.constatnts.EntityConstants.Operation;
-import com.nasnav.dao.*;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.dao.OrganizationDomainsRepository;
+import com.nasnav.dao.OrganizationImagesRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.OrganizationThemeRepository;
+import com.nasnav.dao.OrganizationThemeSettingsRepository;
+import com.nasnav.dao.ProductExtraAttributesEntityRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.SettingRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.SocialRepository;
+import com.nasnav.dao.ThemesRepository;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.ExtraAttributeDTO;
 import com.nasnav.dto.ExtraAttributeDefinitionDTO;
@@ -55,7 +67,23 @@ import com.nasnav.dto.ProductFeatureDTO;
 import com.nasnav.dto.ProductFeatureUpdateDTO;
 import com.nasnav.dto.SocialRepresentationObject;
 import com.nasnav.dto.ThemeDTO;
+import com.nasnav.dto.request.organization.SettingDTO;
+import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.BrandsEntity;
+import com.nasnav.persistence.ExtraAttributesEntity;
+import com.nasnav.persistence.OrganizationDomainsEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.OrganizationImagesEntity;
+import com.nasnav.persistence.OrganizationThemeEntity;
+import com.nasnav.persistence.OrganizationThemesSettingsEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.SettingEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.SocialEntity;
+import com.nasnav.persistence.ThemeEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
@@ -100,6 +128,8 @@ public class OrganizationService {
     private ProductExtraAttributesEntityRepository productExtraAttrRepo;
     @Autowired
     private ExtraAttributesRepository extraAttrRepo;
+    @Autowired
+    private SettingRepository settingRepo;
 
 
     public List<OrganizationRepresentationObject> listOrganizations() {
@@ -859,6 +889,38 @@ public class OrganizationService {
 		dto.setName(entity.getName());
 		dto.setType(entity.getType());
 		return dto;
+	}
+
+
+
+	public void deleteSetting(String settingName) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		settingRepo.deleteBySettingNameAndOrganization_Id(settingName, orgId);
+	}
+
+
+
+	public void updateSetting(SettingDTO settingDto) {
+		if(anyIsNull(settingDto, settingDto.getName(), settingDto.getValue())) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, settingDto.toString());
+		}
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		SettingEntity setting = 
+				settingRepo
+				.findBySettingNameAndOrganization_Id(settingDto.getName(), orgId)
+				.orElseGet(()-> createSettingEntity(settingDto));
+		settingRepo.save(setting);		
+	}
+
+
+
+	private SettingEntity createSettingEntity(SettingDTO settingDto) {
+		OrganizationEntity organization = securityService.getCurrentUserOrganization();
+		SettingEntity entity = new SettingEntity();
+		entity.setSettingName(settingDto.getName());
+		entity.setSettingValue(settingDto.getValue());
+		entity.setOrganization(organization);
+		return entity;
 	}
 
 }
