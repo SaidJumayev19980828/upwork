@@ -250,7 +250,9 @@
                       </table>
                       <span class="shippingdate" th:text=" 'Shipping Arrival: ' + ${sub.shipment.shippingEta.from} + ' to ' + ${sub.shipment.shippingEta.to}"/>
                       <span class="quantity" th:text="'Qty: ' + ${item.quantity}"/>
-                      <p th:text="${item.price} +' '+ ${data.currency}"/>
+                      <div th:with="price=${(item.price - item.discount) * item.quantity}">
+                        <p th:text="${#numbers.formatDecimal(price, 0,  2, 'POINT')} +' '+ ${data.currency}"/>
+                      </div>
                     </tr>
                   </tbody>
                 </table>
@@ -260,18 +262,18 @@
         </div>
         <div class="pricePanel">
           <div class="container">
-            <div class="price">
+            <div class="price" th:with="subtotal=${data.subtotal - data.discount}">
               <p>Subtotal</p>
-              <span id="subtotal" th:text="${data.subtotal} +' '+ ${data.currency}"/>
+              <span id="subtotal" th:text="${subtotal} +' '+ ${data.currency}"/>
             </div>
             <div class="price">
               <p>Shipping</p>
               <span id="shipping" th:text="${data.shipping} +' '+ ${data.currency}"></span>
             </div>
           </div>
-          <div class="price total">
+          <div class="price total" th:with="total=${data.total - data.discount}">
             <p>Total</p>
-            <span id="total" th:text="${data.total} +' '+ ${data.currency}"></span>
+            <span id="total" th:text="${total} +' '+ ${data.currency}"></span>
           </div>
         </div>
       </div>
@@ -282,7 +284,7 @@
           <div style="width: 70%;" class="column">
             <h3>Shipping Address</h3>
             <ul>
-              <li id="address_Line_1" th:text="${data.subOrders[0].deliveryAddress.addressLine1}"></li>
+              <li id="address_Line_1" th:text="${data.subOrders[0].deliveryAddress.flatNumber} +', '+ ${data.subOrders[0].deliveryAddress.buildingNumber}+ ', ' + ${data.subOrders[0].deliveryAddress.addressLine1}"></li>
               <li id="area" th:text="${data.subOrders[0].deliveryAddress.area}"></li>
               <li id="city" th:text="${data.subOrders[0].deliveryAddress.city}"></li>
               <li id="country" th:text="${data.subOrders[0].deliveryAddress.country}"></li>

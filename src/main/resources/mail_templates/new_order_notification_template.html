@@ -302,25 +302,27 @@
 					</table>
 					<span class="shippingdate" th:text=" 'Shipping Arrival: ' + ${sub.shipment.shippingEta.from} + ' to ' + ${sub.shipment.shippingEta.to}"/>
 					<span class="quantity" th:text="'Qty: ' + ${item.quantity}"/>
-					<p th:text="${item.price}"/>
+					<div th:with="price=${(item.price - item.discount) * item.quantity}">
+						<p th:text="${#numbers.formatDecimal(price, 0,  2, 'POINT')} +' '+ ${item.currency}"/>
+					</div>
 				</tr>
 				</tbody>
 			</table>
 		</div>
 		<div class="pricePanel">
 			<div class="container">
-				<div class="price">
+				<div class="price" th:with="subtotal=${sub.subtotal - sub.discount}">
 					<p>Subtotal</p>
-					<span id="subtotal" th:text="${sub.subtotal}"/>
+					<span id="subtotal" th:text="${subtotal} +' '+ ${sub.items[0].currency}"/>
 				</div>
 				<div class="price">
 					<p>Shipping</p>
-					<span id="shipping" th:text="${sub.shipment.shippingFee}"></span>
+					<span id="shipping" th:text="${sub.shipment.shippingFee} +' '+ ${sub.items[0].currency}"></span>
 				</div>
 			</div>
-			<div class="price total">
+			<div class="price total" th:with="total=${sub.total - sub.discount}">
 				<p>Total</p>
-				<span id="total" th:text="${sub.total}"></span>
+				<span id="total" th:text="${total} +' '+ ${sub.items[0].currency}"></span>
 			</div>
 		</div>
 	</div>
@@ -331,7 +333,7 @@
 			<div style="width: 70%;" class="column">
 				<h3>Shipping Address</h3>
 				<ul>
-					<li id="address_Line_1" th:text="${sub.deliveryAddress.addressLine1}"></li>
+					<li id="address_Line_1" th:text="${sub.deliveryAddress.flatNumber} +', '+ ${sub.deliveryAddress.buildingNumber}+ ', ' +${sub.deliveryAddress.addressLine1}"></li>
 					<li id="area" th:text="${sub.deliveryAddress.area}"></li>
 					<li id="city" th:text="${sub.deliveryAddress.city}"></li>
 					<li id="country" th:text="${sub.deliveryAddress.country}"></li>
