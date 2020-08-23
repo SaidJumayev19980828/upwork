@@ -2902,6 +2902,9 @@ public class ProductService {
 		ProductDetailsDTO dto = new ProductDetailsDTO();
 		copyProperties(entity, dto, new String[] {"variants"});
 
+		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(entity.getId());
+		dto.setTags(tagsDTOList);
+
 		if(!entity.getVariants().isEmpty()) {
 			List<ProductVariantsEntity> variantsList = new ArrayList<>(entity.getVariants());
 			List<Long> variantsIds = getVariantsIds(variantsList);
