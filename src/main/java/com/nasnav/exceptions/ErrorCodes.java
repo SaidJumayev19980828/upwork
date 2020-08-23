@@ -105,8 +105,16 @@ public enum ErrorCodes {
 	
 	,O$ORG$0001("Sub-Order with id[%d] has no Organization!")
 
-	,O$RET$0001("No return request item found with ID[%d]!")
+	,O$RET$0001("No return request item found with ID[%s]!")
 	,O$RET$0002("Returned item quantity cannot be greater than requested quantity!")
+	,O$RET$0003("Either provide return request item or basket item!")
+	,O$RET$0004("Must provide return request item ID!")
+	,O$RET$0005("Must provide return request item Quantity!")
+	,O$RET$0006("Must provide return basket item ID!")
+	,O$RET$0007("Must provide return basket item Quantity!")
+	,O$RET$0008("No return basket items found with ID[%s]!")
+	,O$RET$0009("Return basket items are in different meta orders!")
+	,O$RET$0010("Return request items are in different return request!")
 
 	,O$0001("No order exists with ID[%d]!")
 	

@@ -3,6 +3,7 @@ package com.nasnav.dao;
 import java.util.List;
 import java.util.Set;
 
+import com.nasnav.persistence.OrganizationEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -74,5 +75,9 @@ public interface BasketRepository extends JpaRepository<BasketsEntity, Long> {
     		+ " WHERE basket.id = :id")
     StockBasicData getItemStockBasicDataById( @Param("id") Long id);
 
-    List<BasketsEntity> findByIdIn(List<Long> ids);
+    @Query(value = "select b from BasketsEntity b" +
+			" left join fetch OrdersEntity o" +
+			" left join fetch MetaOrdersEntity m" +
+			" where b.id in :ids and m.organization = :org")
+    List<BasketsEntity> findByIdIn(@Param("ids") List<Long> ids, @Param("org")OrganizationEntity org);
 }
