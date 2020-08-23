@@ -3448,9 +3448,13 @@ public class OrderServiceImpl implements OrderService {
 
 		Map<Long, BasketsEntity> basketsEntityMap = getBasketsMap(returnBasketIds);
 
+		Map<Long, ReturnRequestItemEntity> returnRequestItemEntityMap = returnRequestItemEntities
+				.stream()
+				.collect(toMap(ReturnRequestItemEntity::getId, e -> e));
+
 		for (ReturnRequestItemEntity entity : returnRequestItemEntities) { //TODO add assigning basket item to request item
 			if (basketsEntityMap.get(entity.getBasket().getId()) != null) {
-				//BasketsEntity basket =
+				returnRequestItemEntityMap.get()
 			}
 		}
 	}
@@ -3520,7 +3524,8 @@ public class OrderServiceImpl implements OrderService {
 
 		ReturnRequestEntity returnRequest = new ReturnRequestEntity();
 
-		returnRequest.setMetaOrder(basketsEntityMap.values().iterator().next().getOrdersEntity().getMetaOrder());
+		MetaOrderEntity entity = basketsEntityMap.values().iterator().next().getOrdersEntity().getMetaOrder();
+		returnRequest.setMetaOrder(entity);
 		returnRequest.setCreatedByEmployee(emp);
 		returnRequest.setStatus(RECEIVED.getValue());
 
@@ -3597,6 +3602,7 @@ public class OrderServiceImpl implements OrderService {
 			}
 		}
 	}
+
 }
 
 
