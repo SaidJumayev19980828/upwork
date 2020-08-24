@@ -1,5 +1,7 @@
 package com.nasnav.test;
 
+import static com.nasnav.enumerations.Settings.CART_OPTIMIZATION_STARTEGY;
+import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.SAME_CITY;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static org.json.JSONObject.NULL;
@@ -10,11 +12,11 @@ import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import java.util.Optional;
 
-import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +31,9 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.nasnav.NavBox;
+import com.nasnav.dao.OrganizationCartOptimizationRepository;
 import com.nasnav.dao.SettingRepository;
+import com.nasnav.persistence.OrganizationCartOptimization;
 import com.nasnav.persistence.SettingEntity;
 
 @RunWith(SpringRunner.class)
@@ -45,6 +49,10 @@ public class SettingsServiceTest {
 	
 	@Autowired
 	private SettingRepository settingRepo;
+	
+	@Autowired
+	private OrganizationCartOptimizationRepository optimizationRepo;
+	
 	
 	@Test
 	public void postSettingsSuccessTest() {
@@ -151,5 +159,83 @@ public class SettingsServiceTest {
 	    
 	    Optional<SettingEntity> entity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
 	    assertFalse(entity.isPresent());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void postCartOptimizationSettingNoAuthZTest() {
+		HttpEntity<?> req = getHttpEntity("eereeee");
+        ResponseEntity<String> res = 
+        		template
+        		.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
+        assertEquals(FORBIDDEN, res.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	public void postCartOptimizationSettingNoAuthNTest() {
+		HttpEntity<?> req = getHttpEntity("NOT EXIST");
+        ResponseEntity<String> res = 
+        		template
+        		.exchange("/organization/settings/cart_optimization/strategy",DELETE, req, String.class);
+        assertEquals(UNAUTHORIZED, res.getStatusCode());
+	}
+	
+	
+	
+	
+	@Test
+	public void postCartOptimizationSettingInvalidParamTest() {
+		String settingName = CART_OPTIMIZATION_STARTEGY.name();
+		String strategy = "INVALID";
+		String body = 
+				json()
+				.put("strategy_name", strategy)
+				.toString();
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+	        ResponseEntity<String> res = 
+	        		template
+	        		.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
+	    assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	    
+	    Optional<SettingEntity> entity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
+	    assertFalse(entity.isPresent());
+	}
+	
+	
+	
+	
+	@Test
+	public void postCartOptimizationSettingSuccessTest() {
+		String settingName = CART_OPTIMIZATION_STARTEGY.name();
+		String strategy = SAME_CITY.name();
+		String optimizationParams = 
+				json()
+				.toString();
+		String body = 
+				json()
+				.put("strategy_name", strategy)
+				.toString();
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+	        ResponseEntity<String> res = 
+	        		template
+	        		.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
+	    assertEquals(OK, res.getStatusCode());
+	    
+	    Optional<SettingEntity> settingEntity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
+	    Optional<OrganizationCartOptimization> optimizationParamsEntity = 
+	    		optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
+	    assertTrue(settingEntity.isPresent());
+	    assertTrue(optimizationParamsEntity.isPresent());
+	    assertEquals(settingName, settingEntity.get().getSettingName());
+	    assertEquals(strategy, settingEntity.get().getSettingValue());
+	    
+	    assertEquals(strategy, optimizationParamsEntity.get().getOptimizationStrategy());
+	    assertEquals(optimizationParams, optimizationParamsEntity.get().getParameters());
 	}
 }

@@ -1,4 +1,4 @@
-package com.nasnav.shipping.model;
+package com.nasnav.service.model.common;
 
 import org.json.JSONArray;
 

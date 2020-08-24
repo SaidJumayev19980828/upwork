@@ -44,6 +44,7 @@ import com.nasnav.dto.PromotionSearchParamDTO;
 import com.nasnav.dto.TagsDTO;
 import com.nasnav.dto.TagsTreeCreationDTO;
 import com.nasnav.dto.ThemeClassDTO;
+import com.nasnav.dto.request.organization.CartOptimizationSetttingDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.dto.request.theme.OrganizationThemeClass;
@@ -564,4 +565,24 @@ public class OrganizationController {
     								@RequestBody SettingDTO setting){
         orgService.updateSetting(setting);
     }
+    
+    
+    
+    
+    @ApiOperation(value = "set cart optimization strategy for the organization", nickname = "setCartOptimization", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @PostMapping(value = "settings/cart_optimization/strategy")
+    @ResponseStatus(OK)
+    public void setCartOptmizationStrategy(@RequestHeader (name = "User-Token", required = false) String userToken,
+    								@RequestBody CartOptimizationSetttingDTO setting){
+        orgService.setCartOptimizationStrategy(setting);
+    }
+    
+    
+    
+    
 }

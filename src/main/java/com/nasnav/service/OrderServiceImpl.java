@@ -3038,7 +3038,7 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public <T> CartOptimizeResponseDTO optimizeCart(CartOptimizeDTO dto) {
+	public <T> CartOptimizeResponseDTO optimizeCart(CartCheckout dto) {
 		validteCartOptimizeRequest(dto);
 		Optional<OptimizedCart> optimizedCart = createOptimizedCart(dto);
 		boolean anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart);
@@ -3052,11 +3052,11 @@ public class OrderServiceImpl implements OrderService {
 
 	private Cart getCartObject(Optional<OptimizedCart> optimizedCart) {
 		return optimizedCart
-		.map(OptimizedCart::getCartItems)
-		.orElse(emptyList())
-		.stream()
-		.map(OptimizedCartItem::getCartItem)
-		.collect(collectingAndThen(toList(), Cart::new));
+				.map(OptimizedCart::getCartItems)
+				.orElse(emptyList())
+				.stream()
+				.map(OptimizedCartItem::getCartItem)
+				.collect(collectingAndThen(toList(), Cart::new));
 	}
 
 

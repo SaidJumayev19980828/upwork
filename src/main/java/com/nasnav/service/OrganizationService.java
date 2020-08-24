@@ -13,6 +13,11 @@ import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
 import static com.nasnav.exceptions.ErrorCodes.G$PRAM$0001;
 import static com.nasnav.exceptions.ErrorCodes.ORG$EXTRATTR$0001;
+import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0003;
+import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0007;
+import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0008;
+import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.isValidStrategy;
+import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -28,6 +33,7 @@ import java.util.Optional;
 import javax.cache.annotation.CacheResult;
 
 import org.apache.http.client.utils.URIBuilder;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +73,7 @@ import com.nasnav.dto.ProductFeatureDTO;
 import com.nasnav.dto.ProductFeatureUpdateDTO;
 import com.nasnav.dto.SocialRepresentationObject;
 import com.nasnav.dto.ThemeDTO;
+import com.nasnav.dto.request.organization.CartOptimizationSetttingDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.exceptions.BusinessException;
@@ -88,6 +95,9 @@ import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.service.helpers.OrganizationServiceHelper;
+import com.nasnav.service.model.cart.optimization.CartOptimizationStrategyInfo;
+import com.nasnav.service.model.common.Parameter;
+import com.nasnav.shipping.model.ShippingServiceInfo;
 
 
 @Service
@@ -921,6 +931,62 @@ public class OrganizationService {
 		entity.setSettingValue(settingDto.getValue());
 		entity.setOrganization(organization);
 		return entity;
+	}
+
+
+	
+	
+	
+
+	public void setCartOptimizationStrategy(CartOptimizationSetttingDTO setting) {
+		String strategy = setting.getStrategyName(); 
+		if(isBlankOrNull(strategy)|| !isValidStrategy(strategy)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, setting.toString());
+		}
+		
+		//TODO : get parameters json, try to parse it, then check for missing parameters
+		//to check for missing parameters , get the optimization service bean by name
+		//get its parameters list and check if the parameter exists, and its value type
+		//is valid?
+		String parameters = ofNullable(setting.getParameters()).orElse("{}");
+		
+		//if the parameters are valid, save the optimization parameter to the database
+		
+		//save a setting of the default optimization parameters
+	}
+	
+	
+	
+	
+	private void validateServiceParameters(String serviceId, CartOptimizationStrategyInfo info, String paramsString) {
+		try {
+			JSONObject paramsJson = new JSONObject(paramsString);
+			info
+			.getServiceParams()
+			.stream()
+			.forEach(param -> validateServiceParameter(param, paramsJson, serviceId));
+		}catch(JSONException t) {
+			logger.error(t,t);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0007, paramsString);
+		}
+	}
+	
+	
+	
+	
+	
+	private void validateServiceParameter(Parameter param, JSONObject paramsJson, String serviceId) {
+		try {
+			Object paramVal = ofNullable(paramsJson.get(param.getName())).orElse("null");
+			if(isNull(paramVal)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0003, param.getName(), serviceId);
+			}
+			if(!param.getType().getJavaType().isInstance(paramVal)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0008, paramVal.toString(), param.getName(), serviceId);
+			}
+		}catch(JSONException e) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0003, param.getName(), serviceId);
+		}
 	}
 
 }

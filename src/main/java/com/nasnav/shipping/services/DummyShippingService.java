@@ -1,8 +1,8 @@
 package com.nasnav.shipping.services;
 
 import static com.nasnav.exceptions.ErrorCodes.G$JSON$0001;
-import static com.nasnav.shipping.model.ParameterType.NUMBER;
-import static com.nasnav.shipping.model.ParameterType.STRING_ARRAY;
+import static com.nasnav.service.model.common.ParameterType.NUMBER;
+import static com.nasnav.service.model.common.ParameterType.STRING_ARRAY;
 import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -22,8 +22,8 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dto.DummyCallbackDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.service.model.common.Parameter;
 import com.nasnav.shipping.ShippingService;
-import com.nasnav.shipping.model.Parameter;
 import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.Shipment;
 import com.nasnav.shipping.model.ShipmentItems;

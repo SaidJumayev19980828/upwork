@@ -1,8 +1,8 @@
 package com.nasnav.shipping.services;
 
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0011;
-import static com.nasnav.shipping.model.ParameterType.NUMBER;
-import static com.nasnav.shipping.model.ParameterType.LONG_ARRAY;
+import static com.nasnav.service.model.common.ParameterType.LONG_ARRAY;
+import static com.nasnav.service.model.common.ParameterType.NUMBER;
 import static java.lang.Long.MIN_VALUE;
 import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
@@ -26,8 +26,8 @@ import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.service.OrderService;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
+import com.nasnav.service.model.common.Parameter;
 import com.nasnav.shipping.ShippingService;
-import com.nasnav.shipping.model.Parameter;
 import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.Shipment;
 import com.nasnav.shipping.model.ShipmentItems;
