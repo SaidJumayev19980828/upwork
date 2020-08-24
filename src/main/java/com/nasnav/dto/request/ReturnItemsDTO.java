@@ -13,5 +13,5 @@ import java.util.List;
 public class ReturnItemsDTO {
 
     List<ReturnedItem> returnedItems;
-    List<ReturnedBasketItem> BasketItems;
+    List<ReturnedBasketItem> basketItems;
 }

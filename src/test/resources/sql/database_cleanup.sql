@@ -24,6 +24,11 @@ DELETE FROM public.cart_items where id in (
 	left join public.users usr on crt.user_id  = usr.id 
 	where usr.organization_id between 99000 and 99999
 );
+DELETE FROM public.return_request_item WHERE return_request_id IN
+     (SELECT Id from public.return_request where meta_order_id in
+         (select id from meta_orders where organization_id between 99000 and 99999));
+DELETE FROM public.return_request where meta_order_id in
+     (select id from meta_orders where organization_id between 99000 and 99999);
 DELETE FROM public.baskets WHERE stock_id IN (SELECT Id from public.stocks where organization_id between 99000 and 99999);
 DELETE FROM public.orders WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.payments WHERE user_id IN (SELECT Id from public.users where organization_id between 99000 and 99999);

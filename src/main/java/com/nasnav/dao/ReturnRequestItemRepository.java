@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ReturnRequestItemRepository extends JpaRepository<ReturnRequestItemEntity, Long> {
 
@@ -14,4 +15,7 @@ public interface ReturnRequestItemRepository extends JpaRepository<ReturnRequest
             " left join fetch i.basket b " +
             " where i.id in :ids")
     List<ReturnRequestItemEntity> findByIdIn(@Param("ids") List<Long> ids);
+
+
+    List<ReturnRequestItemEntity> findByBasket_IdIn(List<Long> basketIds);
 }

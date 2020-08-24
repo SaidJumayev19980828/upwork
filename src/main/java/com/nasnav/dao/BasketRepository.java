@@ -76,8 +76,8 @@ public interface BasketRepository extends JpaRepository<BasketsEntity, Long> {
     StockBasicData getItemStockBasicDataById( @Param("id") Long id);
 
     @Query(value = "select b from BasketsEntity b" +
-			" left join fetch OrdersEntity o" +
-			" left join fetch MetaOrdersEntity m" +
-			" where b.id in :ids and m.organization = :org")
-    List<BasketsEntity> findByIdIn(@Param("ids") List<Long> ids, @Param("org")OrganizationEntity org);
+			" left join fetch b.ordersEntity o" +
+			" left join fetch o.metaOrder m" +
+			" where b.id in :ids and m.organization.id = :orgId")
+    List<BasketsEntity> findByIdIn(@Param("ids") List<Long> ids, @Param("orgId")Long orgId);
 }
