@@ -2656,7 +2656,7 @@ public class ProductService {
 
 	private void validateTagIdsExists(Set<Long> tagIds) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		Collection<Long> batch = mapInBatches(tagIds, 500, t -> orgTagRepo.getExistingTagIds(tagIds, orgId))
+		Collection<Long> batch = mapInBatches(tagIds, 500, t -> orgTagRepo.getExistingTagIds(tagIds, orgId));
 		Set<Long> existingIds = new HashSet<>(batch);
 		tagIds
 		.stream()
