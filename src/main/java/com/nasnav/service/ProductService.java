@@ -54,17 +54,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.SQLException;
-import java.util.AbstractMap;
+import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -2665,7 +2656,8 @@ public class ProductService {
 
 	private void validateTagIdsExists(Set<Long> tagIds) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		Set<Long> existingIds = new HashSet<>(mapInBatches(tagIds, 500, t -> orgTagRepo.getExistingTagIds(tagIds, orgId)));
+		Collection<Long> batch = mapInBatches(tagIds, 500, t -> orgTagRepo.getExistingTagIds(tagIds, orgId))
+		Set<Long> existingIds = new HashSet<>(batch);
 		tagIds
 		.stream()
 		.filter(id -> !existingIds.contains(id))
@@ -2681,7 +2673,8 @@ public class ProductService {
 
 	private void validateProductIdsExists(Set<Long> productIds) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		Set<Long> existingIds = new HashSet<>(mapInBatches(productIds, 500, p -> productRepository.getExistingProductIds(productIds, orgId)));
+		Collection<Long> batch =  mapInBatches(productIds, 500, p -> productRepository.getExistingProductIds(productIds, orgId));
+		Set<Long> existingIds = new HashSet<>(batch);
 		productIds
 		.stream()
 		.filter(id -> !existingIds.contains(id))
