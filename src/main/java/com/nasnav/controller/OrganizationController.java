@@ -44,7 +44,7 @@ import com.nasnav.dto.PromotionSearchParamDTO;
 import com.nasnav.dto.TagsDTO;
 import com.nasnav.dto.TagsTreeCreationDTO;
 import com.nasnav.dto.ThemeClassDTO;
-import com.nasnav.dto.request.organization.CartOptimizationSetttingDTO;
+import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.dto.request.theme.OrganizationThemeClass;
@@ -61,6 +61,7 @@ import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
 import com.nasnav.response.TagResponse;
 import com.nasnav.service.BrandService;
+import com.nasnav.service.CartOptimizationService;
 import com.nasnav.service.CategoryService;
 import com.nasnav.service.OrganizationService;
 import com.nasnav.service.PromotionsService;
@@ -102,6 +103,9 @@ public class OrganizationController {
     @Autowired
     private PromotionsService promotionsService;
 
+    @Autowired
+	private CartOptimizationService cartOptimizeService;
+    
     private Logger classLogger = LogManager.getLogger(OrganizationController.class);
 
 
@@ -569,7 +573,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "set cart optimization strategy for the organization", nickname = "setCartOptimization", code = 200)
+    @ApiOperation(value = "set cart optimization strategy for the organization or the shipping service", nickname = "setCartOptimization", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -578,8 +582,8 @@ public class OrganizationController {
     @PostMapping(value = "settings/cart_optimization/strategy")
     @ResponseStatus(OK)
     public void setCartOptmizationStrategy(@RequestHeader (name = "User-Token", required = false) String userToken,
-    								@RequestBody CartOptimizationSetttingDTO setting){
-        orgService.setCartOptimizationStrategy(setting);
+    								@RequestBody CartOptimizationSettingDTO setting){
+    	cartOptimizeService.setCartOptimizationStrategy(setting);
     }
     
     

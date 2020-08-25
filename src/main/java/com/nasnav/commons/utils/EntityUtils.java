@@ -176,6 +176,20 @@ public class EntityUtils {
 	
 	
 	
+	
+	@SafeVarargs
+	public static <T> Optional<T> firstExistingValueOf(Optional<T>... values) {
+		return Stream
+				.of(values)
+				.filter(Objects::nonNull)
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.findFirst();
+	}
+	
+	
+	
+	
 	public static Optional<Long> parseLongSafely(String str){
 		try {
 			return Optional.of(Long.parseLong(str));

@@ -7,7 +7,8 @@ import lombok.Data;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class CartOptimizationSetttingDTO {
+public class CartOptimizationSettingDTO {
 	private String strategyName;
+	private String shippingServiceId;
 	private String parameters;
 }

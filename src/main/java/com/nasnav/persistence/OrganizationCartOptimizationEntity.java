@@ -14,7 +14,7 @@ import lombok.Data;
 @Entity
 @Table(name="organiztion_cart_optimization")
 @Data
-public class OrganizationCartOptimization {
+public class OrganizationCartOptimizationEntity {
 	
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

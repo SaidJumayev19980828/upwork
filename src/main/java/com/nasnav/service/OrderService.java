@@ -10,11 +10,9 @@ import com.nasnav.dto.MetaOrderBasicInfo;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
-import com.nasnav.dto.request.cart.CartOptimizeDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
-import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.TransactionCurrency;
@@ -79,8 +77,6 @@ public interface OrderService {
 	List<MetaOrderBasicInfo> getMetaOrderList();
 
 	public OrderValue getMetaOrderTotalValue(long metaOrderId);
-
-	public <T> CartOptimizeResponseDTO optimizeCart(CartOptimizeDTO dto);
 
 	List<ShopFulfillingCart> getShopsThatCanProvideCartItems();
 

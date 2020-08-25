@@ -3,11 +3,25 @@ package com.nasnav.dao;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-import com.nasnav.persistence.OrganizationCartOptimization;
+import com.nasnav.persistence.OrganizationCartOptimizationEntity;
 
-public interface OrganizationCartOptimizationRepository extends JpaRepository<OrganizationCartOptimization, Long> {
+public interface OrganizationCartOptimizationRepository extends JpaRepository<OrganizationCartOptimizationEntity, Long> {
 
-	Optional<OrganizationCartOptimization> findByOptimizationStrategyAndOrganization_Id(String strategy, long l);
+	Optional<OrganizationCartOptimizationEntity> findByOptimizationStrategyAndOrganization_Id(String strategy, long l);
 
+	Optional<OrganizationCartOptimizationEntity> findByOptimizationStrategyAndShippingServiceIdAndOrganization_Id(String strategy,
+			String shippingServiceId, Long id);
+
+	
+	@Query("SELECT optimize.optimizationStrategy "
+			+ " FROM OrganizationCartOptimizationEntity optimize "
+			+ " LEFT JOIN optimize.organization org "
+			+ " WHERE org.id = :orgId "
+			+ " AND optimize.shippingServiceId IS NULL ")
+	Optional<String> findOrganizationDefaultOptimizationStrategy(@Param("orgId")Long orgId);
+
+	Optional<OrganizationCartOptimizationEntity> findByShippingServiceIdAndOrganization_Id(String shippingServiceId, Long orgId);
 }

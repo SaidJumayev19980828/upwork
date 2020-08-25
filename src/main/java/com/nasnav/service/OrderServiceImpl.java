@@ -3,6 +3,7 @@ package com.nasnav.service;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
+import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
@@ -72,7 +73,6 @@ import static com.nasnav.exceptions.ErrorCodes.O$CRT$0004;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0005;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0006;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0007;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0008;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0009;
 import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0002;
@@ -85,9 +85,8 @@ import static com.nasnav.exceptions.ErrorCodes.O$SHP$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0003;
 import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
 import static com.nasnav.exceptions.ErrorCodes.S$0005;
+import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.DEFAULT_OPTIMIZER;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.isValidStrategy;
-import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.SAME_CITY;
-import static com.nasnav.shipping.services.PickupFromShop.SHOP_ID;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.FLOOR;
@@ -131,8 +130,6 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
-import com.nasnav.dao.*;
-import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -146,7 +143,21 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.EntityUtils;
+import com.nasnav.dao.AddressRepository;
+import com.nasnav.dao.BasketRepository;
+import com.nasnav.dao.CartItemRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.MetaOrderRepository;
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.OrganizationImagesRepository;
+import com.nasnav.dao.PaymentsRepository;
+import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.PromotionRepository;
+import com.nasnav.dao.RoleEmployeeUserRepository;
+import com.nasnav.dao.ShipmentRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.BasketItemDTO;
@@ -159,7 +170,6 @@ import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.ProductImageDTO;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
-import com.nasnav.dto.request.cart.CartOptimizeDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
@@ -180,7 +190,23 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
 import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
+import com.nasnav.persistence.AddressesEntity;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.BasketsEntity;
+import com.nasnav.persistence.CartItemEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.MetaOrderEntity;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.OrganizationImagesEntity;
+import com.nasnav.persistence.PaymentEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.PromotionsEntity;
+import com.nasnav.persistence.ShipmentEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.CartItemData;
 import com.nasnav.persistence.dto.query.result.CartItemStock;
@@ -188,6 +214,7 @@ import com.nasnav.persistence.dto.query.result.StockAdditionalData;
 import com.nasnav.persistence.dto.query.result.StockBasicData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
+import com.nasnav.service.cart.optimizers.CartOptimizationStrategy;
 import com.nasnav.service.cart.optimizers.CartOptimizer;
 import com.nasnav.service.cart.optimizers.OptimizedCart;
 import com.nasnav.service.cart.optimizers.OptimizedCartItem;
@@ -258,9 +285,6 @@ public class OrderServiceImpl implements OrderService {
 	private PaymentsRepository paymentsRepo;
 	
 	@Autowired
-	private ShippingManagementService shippingManagementService;
-
-	@Autowired
 	private ProductImageService imgService;
 	
 	@Autowired
@@ -282,16 +306,13 @@ public class OrderServiceImpl implements OrderService {
 	private OrganizationImagesRepository orgImagesRepo;
 	
 	@Autowired
-	private ApplicationContext context;
-	
-	@Autowired
-	private ObjectMapper objectMapper;
-	
-	@Autowired
 	private PromotionsService promoService;
 	
 	@Autowired
 	private PromotionRepository promoRepo;
+	
+	@Autowired
+	private CartOptimizationService cartOptimizationService;
 	
 	private Map<OrderStatus, Set<OrderStatus>> orderStateMachine;
 	private Set<OrderStatus> orderStatusForCustomers;
@@ -2275,12 +2296,14 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private CartItemsGroupedByShopId getAndValidateCheckoutData(CartCheckoutDTO checkoutDto) {
+		//TODO: this should be moved to checkOut main method, and then passes
+		//the optimized cart to the rest of the logic.
 		Cart optimizedCart = optimizeCartForCheckout(checkoutDto); 
 		List<CartCheckoutData> userCartItems = createCheckoutData(optimizedCart);
-
+		
 		validateCartCheckoutItems(userCartItems);
 		
-		shippingManagementService.validateCartForShipping(userCartItems, checkoutDto);
+		shippingMgrService.validateCartForShipping(userCartItems, checkoutDto);
 
 		return userCartItems
 				.stream()
@@ -2293,8 +2316,8 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private Cart optimizeCartForCheckout(CartCheckoutDTO checkoutDto) {
-		CartOptimizeDTO dto = createCartOptimizeDtoFromCheckoutDto(checkoutDto); 
-		CartOptimizeResponseDTO optimizationResult = optimizeCart(dto);
+		CartOptimizeResponseDTO optimizationResult = 
+				cartOptimizationService.optimizeCart(checkoutDto);
 		if(optimizationResult.getTotalChanged()) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CHK$0004);
 		}
@@ -2302,24 +2325,6 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-
-
-
-	private CartOptimizeDTO createCartOptimizeDtoFromCheckoutDto(CartCheckoutDTO checkoutDto) {
-		Map<Object, Object> parameters = new HashMap<>();
-		parameters.put("CUSTOMER_ADDRESS_ID", checkoutDto.getAddressId());
-		
-		ofNullable(checkoutDto)
-		.map(CartCheckoutDTO::getAdditionalData)
-		.map(data -> data.get(SHOP_ID))
-		.flatMap(EntityUtils::parseLongSafely)
-		.ifPresent(shopId -> parameters.put("SHOP_ID", shopId));
-		
-		CartOptimizeDTO dto = new CartOptimizeDTO();
-		dto.setStrategy(SAME_CITY);
-		dto.setParametersJson(parameters);
-		return dto;
-	}
 
 
 
@@ -2716,8 +2721,8 @@ public class OrderServiceImpl implements OrderService {
 		List<ShippingOfferDTO> shippingOffers =
 				subOrders
 				.stream()
-				.map(subOrder -> shippingManagementService.createShippingDetailsFromOrder(subOrder, dto.getAdditionalData()))
-				.collect(collectingAndThen(toList(), shippingManagementService::getOffersFromOrganizationShippingServices));
+				.map(subOrder -> shippingMgrService.createShippingDetailsFromOrder(subOrder, dto.getAdditionalData()))
+				.collect(collectingAndThen(toList(), shippingMgrService::getOffersFromOrganizationShippingServices));
 		
 		addPromoDiscounts(dto, subOrders);
 		
@@ -3033,74 +3038,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-
-
-
-	@Override
-	@Transactional(rollbackFor = Throwable.class)
-	public <T> CartOptimizeResponseDTO optimizeCart(CartCheckout dto) {
-		validteCartOptimizeRequest(dto);
-		Optional<OptimizedCart> optimizedCart = createOptimizedCart(dto);
-		boolean anyPriceChanged = isAnyItemPriceChangedAfterOptimization(optimizedCart);
-		Cart returnedCart = getCartObject(optimizedCart);
-		return new CartOptimizeResponseDTO(anyPriceChanged, returnedCart);
-	}
-
-
-
-
-
-	private Cart getCartObject(Optional<OptimizedCart> optimizedCart) {
-		return optimizedCart
-				.map(OptimizedCart::getCartItems)
-				.orElse(emptyList())
-				.stream()
-				.map(OptimizedCartItem::getCartItem)
-				.collect(collectingAndThen(toList(), Cart::new));
-	}
-
-
-
-
-
-	private boolean isAnyItemPriceChangedAfterOptimization(Optional<OptimizedCart> optimizedCart) {
-		return optimizedCart
-		.map(OptimizedCart::getCartItems)
-		.orElse(emptyList())
-		.stream()
-		.map(OptimizedCartItem::getPriceChanged)
-		.anyMatch(isPriceChanged -> isPriceChanged);
-	}
-
-
-
-
-	@SuppressWarnings("unchecked")
-	private <T> Optional<OptimizedCart> createOptimizedCart(CartOptimizeDTO dto) {
-		
-		CartOptimizer<T> optimizer = null;
-		try {
-			optimizer = context.getBean(dto.getStrategy(), CartOptimizer.class);
-		}catch(Throwable t) {
-			logger.error(t,t);
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0009, dto.getStrategy());
-		}
-		
-		Optional<T> parametersOptional = Optional.empty();
-		try {
-			String json = new JSONObject(dto.getParametersJson()).toString();
-			T parameters = objectMapper.readValue(json, optimizer.getParameterClass());
-			parametersOptional = ofNullable(parameters);
-		} catch (IOException e) {
-			logger.error(e,e);
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0008);
-		}
-		
-		return optimizer.createOptimizedCart(parametersOptional);
-	}
-
-
-
+	
 
 
 	private Cart replaceCart(Cart newCart) {
@@ -3224,17 +3162,6 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-
-
-
-	private void validteCartOptimizeRequest(CartOptimizeDTO dto) {
-		String strategy  = dto.getStrategy();
-		if(isBlankOrNull(strategy)) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0006);
-		}else if(!isValidStrategy(strategy)) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0007, strategy);
-		}
-	}
 
 
 

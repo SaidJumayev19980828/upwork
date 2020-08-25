@@ -33,7 +33,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.nasnav.NavBox;
 import com.nasnav.dao.OrganizationCartOptimizationRepository;
 import com.nasnav.dao.SettingRepository;
-import com.nasnav.persistence.OrganizationCartOptimization;
+import com.nasnav.persistence.OrganizationCartOptimizationEntity;
 import com.nasnav.persistence.SettingEntity;
 
 @RunWith(SpringRunner.class)
@@ -228,7 +228,7 @@ public class SettingsServiceTest {
 	    assertEquals(OK, res.getStatusCode());
 	    
 	    Optional<SettingEntity> settingEntity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
-	    Optional<OrganizationCartOptimization> optimizationParamsEntity = 
+	    Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity = 
 	    		optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
 	    assertTrue(settingEntity.isPresent());
 	    assertTrue(optimizationParamsEntity.isPresent());

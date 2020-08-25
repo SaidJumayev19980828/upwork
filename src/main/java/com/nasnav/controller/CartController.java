@@ -17,12 +17,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
-import com.nasnav.dto.request.cart.CartOptimizeDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.service.CartOptimizationService;
 import com.nasnav.service.OrderService;
 import com.nasnav.service.PromotionsService;
 
@@ -40,6 +40,9 @@ public class CartController {
 	
 	@Autowired
 	private PromotionsService promoService;
+	
+	@Autowired
+	private CartOptimizationService cartOptimizeService;
 
 	@ApiOperation(value = "get user cart", nickname = "getCart")
 	@ApiResponses(value = {
@@ -101,8 +104,8 @@ public class CartController {
 	})
 	@PostMapping(value = "/optimize", consumes = APPLICATION_JSON_VALUE, produces=APPLICATION_JSON_VALUE)
 	public CartOptimizeResponseDTO optimizeCart(@RequestHeader(name = "User-Token", required = false) String userToken,
-							  @RequestBody CartOptimizeDTO dto) {
-		return orderService.optimizeCart(dto);
+								@RequestBody CartCheckoutDTO dto) {
+		return cartOptimizeService.optimizeCart(dto);
 	}
 	
 	
