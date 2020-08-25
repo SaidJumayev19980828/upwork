@@ -1,5 +1,6 @@
 package com.nasnav.dto;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -12,7 +13,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @EqualsAndHashCode(callSuper=true)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class ProductDetailsDTO extends ProductRepresentationObject {
@@ -29,5 +29,11 @@ public class ProductDetailsDTO extends ProductRepresentationObject {
 	@JsonIgnore
 	public  String getImageUrl() {
 		return null;
+	}
+
+	public ProductDetailsDTO() {
+		images = new ArrayList<>();
+		variants = new ArrayList<>();
+		variantFeatures = new ArrayList<>();
 	}
 }

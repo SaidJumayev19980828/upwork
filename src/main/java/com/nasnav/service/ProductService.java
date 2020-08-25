@@ -2902,12 +2902,15 @@ public class ProductService {
 		ProductDetailsDTO dto = new ProductDetailsDTO();
 		copyProperties(entity, dto, new String[] {"variants"});
 
-		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(entity.getId());
-		dto.setTags(tagsDTOList);
-
 		dto.setCreationDate(entity.getCreationDate().toString());
 		dto.setUpdateDate(entity.getUpdateDate().toString());
 		dto.setHas_360_view(entity.getSearch360());
+
+		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(entity.getId());
+		dto.setTags(tagsDTOList);
+
+		List<ProductImageDTO> collectionImages = imgService.getProductsAndVariantsImages(asList(entity.getId()), null);
+		dto.setImages(getProductImages(collectionImages));
 
 		if(!entity.getVariants().isEmpty()) {
 			List<ProductVariantsEntity> variantsList = new ArrayList<>(entity.getVariants());
