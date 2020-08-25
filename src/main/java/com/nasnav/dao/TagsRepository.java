@@ -60,7 +60,7 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
                                                               @Param("orgId") Long orgId);
     
     @Query("SELECT tag.id from TagsEntity tag where tag.id in :ids and tag.organizationEntity.id = :orgId")
-    List<Long> getExistingTagIds(@Param("ids") List<Long> tagIds, @Param("orgId") Long orgId);
+    List<Long> getExistingTagIds(@Param("ids") Set<Long> tagIds, @Param("orgId") Long orgId);
 
     @Query("select t.id from TagsEntity t where t.categoriesEntity.id  = :id")
     List<Long> findByCategoryId(@Param("id") Long id);

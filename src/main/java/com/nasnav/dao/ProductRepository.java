@@ -126,7 +126,7 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	
 	
 	@Query("SELECT product.id from ProductEntity product where product.id in :ids and product.organizationId = :orgId")
-	List<Long> getExistingProductIds(@Param("ids")List<Long> productIds, @Param("orgId")Long orgId);
+	List<Long> getExistingProductIds(@Param("ids")Set<Long> productIds, @Param("orgId")Long orgId);
 
 
     @Modifying

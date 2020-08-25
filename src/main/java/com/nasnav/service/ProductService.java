@@ -2571,8 +2571,8 @@ public class ProductService {
 
 
 	public void addTagsToProducts(Set<ProductTagPair> newProductTags) {
-		List<Long> prodIds = getProductIds(newProductTags);
-		List<Long> tgIds = getTagIds(newProductTags);
+		Set<Long> prodIds = getProductIds(newProductTags);
+		Set<Long> tgIds = getTagIds(newProductTags);
 		
 		validateProductIdsExists(prodIds);
 		validateTagIdsExists(tgIds);
@@ -2616,25 +2616,25 @@ public class ProductService {
 	
 
 
-	private List<Long> getProductIds(Set<ProductTagPair> newProductTags) {
+	private Set<Long> getProductIds(Set<ProductTagPair> newProductTags) {
 		return newProductTags
 				.parallelStream()
 				.map(ProductTagPair::getProductId)
-				.collect(toList());
+				.collect(toSet());
 	}
 
 
 
-	private List<Long> getTagIds(Set<ProductTagPair> newProductTags) {
+	private Set<Long> getTagIds(Set<ProductTagPair> newProductTags) {
 		return newProductTags
 				.parallelStream()
 				.map(ProductTagPair::getTagId)
-				.collect(toList());
+				.collect(toSet());
 	}
 
 
 
-	private Set<ProductTagPair> getExistingProductTags(List<Long> prodIds) {
+	private Set<ProductTagPair> getExistingProductTags(Set<Long> prodIds) {
 		return ofNullable(prodIds)
 				.filter(EntityUtils::noneIsEmpty)
 				.map(ids -> mapInBatches(ids, 500, orgTagRepo::getTagsByProductIdIn))
@@ -2663,7 +2663,7 @@ public class ProductService {
 
 
 
-	private void validateTagIdsExists(List<Long> tagIds) {
+	private void validateTagIdsExists(Set<Long> tagIds) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		Set<Long> existingIds = new HashSet<>(mapInBatches(tagIds, 500, t -> orgTagRepo.getExistingTagIds(tagIds, orgId)));
 		tagIds
@@ -2679,7 +2679,7 @@ public class ProductService {
 
 
 
-	private void validateProductIdsExists(List<Long> productIds) {
+	private void validateProductIdsExists(Set<Long> productIds) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		Set<Long> existingIds = new HashSet<>(mapInBatches(productIds, 500, p -> productRepository.getExistingProductIds(productIds, orgId)));
 		productIds
