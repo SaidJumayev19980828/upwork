@@ -2571,8 +2571,8 @@ public class ProductService {
 
 
 	public void addTagsToProducts(Set<ProductTagPair> newProductTags) {
-		Set<Long> prodIds = getProductIds(newProductTags);
-		Set<Long> tgIds = getTagIds(newProductTags);
+		List<Long> prodIds = getProductIds(newProductTags);
+		List<Long> tgIds = getTagIds(newProductTags);
 		
 		validateProductIdsExists(prodIds);
 		validateTagIdsExists(tgIds);
@@ -2616,25 +2616,25 @@ public class ProductService {
 	
 
 
-	private Set<Long> getProductIds(Set<ProductTagPair> newProductTags) {
+	private List<Long> getProductIds(Set<ProductTagPair> newProductTags) {
 		return newProductTags
 				.parallelStream()
 				.map(ProductTagPair::getProductId)
-				.collect(toSet());
+				.collect(toList());
 	}
 
 
 
-	private Set<Long> getTagIds(Set<ProductTagPair> newProductTags) {
+	private List<Long> getTagIds(Set<ProductTagPair> newProductTags) {
 		return newProductTags
 				.parallelStream()
 				.map(ProductTagPair::getTagId)
-				.collect(toSet());
+				.collect(toList());
 	}
 
 
 
-	private Set<ProductTagPair> getExistingProductTags(Set<Long> prodIds) {
+	private Set<ProductTagPair> getExistingProductTags(List<Long> prodIds) {
 		return ofNullable(prodIds)
 				.filter(EntityUtils::noneIsEmpty)
 				.map(ids -> mapInBatches(ids, 500, orgTagRepo::getTagsByProductIdIn))
@@ -2663,8 +2663,9 @@ public class ProductService {
 
 
 
-	private void validateTagIdsExists(Set<Long> tagIds) {
-		Set<Long> existingIds = new HashSet<>(mapInBatches(tagIds, 500, orgTagRepo::getExistingTagIds));	
+	private void validateTagIdsExists(List<Long> tagIds) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		Set<Long> existingIds = new HashSet<>(mapInBatches(tagIds, 500, t -> orgTagRepo.getExistingTagIds(tagIds, orgId)));
 		tagIds
 		.stream()
 		.filter(id -> !existingIds.contains(id))
@@ -2678,8 +2679,9 @@ public class ProductService {
 
 
 
-	private void validateProductIdsExists(Set<Long> productIds) {
-		Set<Long> existingIds = new HashSet<>(mapInBatches(productIds, 500, productRepository::getExistingProductIds));	
+	private void validateProductIdsExists(List<Long> productIds) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		Set<Long> existingIds = new HashSet<>(mapInBatches(productIds, 500, p -> productRepository.getExistingProductIds(productIds, orgId)));
 		productIds
 		.stream()
 		.filter(id -> !existingIds.contains(id))
