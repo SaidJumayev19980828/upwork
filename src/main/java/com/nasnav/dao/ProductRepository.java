@@ -125,8 +125,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	void insertProductTag(@Param("productId")Long productId, @Param("tagId")Long tagId);
 	
 	
-	@Query("SELECT product.id from ProductEntity product where product.id in :ids")
-	List<Long> getExistingProductIds(@Param("ids")List<Long> productIds);
+	@Query("SELECT product.id from ProductEntity product where product.id in :ids and product.organizationId = :orgId")
+	List<Long> getExistingProductIds(@Param("ids")Set<Long> productIds, @Param("orgId")Long orgId);
 
 
     @Modifying
