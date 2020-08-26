@@ -30,11 +30,13 @@ public interface UserTokenRepository extends CrudRepository<UserTokensEntity, Lo
 
     @Transactional
     @Modifying
-	void deleteAllByEmployeeUserEntity(EmployeeUserEntity emp);
+    @Query(value = "delete from UserTokensEntity t where t.employeeUserEntity = :emp")
+	void deleteByEmployeeUserEntity(@Param("emp") EmployeeUserEntity emp);
 
 
     @Transactional
     @Modifying
-    void deleteAllByUserEntity(UserEntity emp);
+    @Query(value = "delete from UserTokensEntity t where t.userEntity = :usr")
+    void deleteByUserEntity(@Param("usr") UserEntity usr);
 
 }

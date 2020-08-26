@@ -167,9 +167,9 @@ public class SecurityServiceImpl implements SecurityService {
 		BaseUserEntity user = getCurrentUser();
 
 		if ( user instanceof EmployeeUserEntity) {
-			userTokenRepo.deleteAllByEmployeeUserEntity( (EmployeeUserEntity)user);
+			userTokenRepo.deleteByEmployeeUserEntity( (EmployeeUserEntity)user);
 		} else {
-			userTokenRepo.deleteAllByUserEntity( (UserEntity) user);
+			userTokenRepo.deleteByUserEntity( (UserEntity) user);
 		}
 		Cookie c = createCookie(null, true);
 
