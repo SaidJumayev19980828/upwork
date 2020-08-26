@@ -78,7 +78,6 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -943,6 +942,11 @@ public class ProductService {
 					.stream()
 					.collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
 
+			Map<Long, Prices> collectionsPricesMap =
+					mapInBatches(productIdList, 500, stockRepository::getCollectionsPrices)
+							.stream()
+							.collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
+
 			Map<Long, String> productCoverImages = imgService.getProductsImagesMap(productIdList, variantsIds);
 
 			Map<Long, List<TagsRepresentationObject>> productsTags = getProductsTagsDTOList(productIdList);
@@ -956,6 +960,7 @@ public class ProductService {
 					.map(s -> setProductTags(s, productsTags))
 					.map(s -> setProductMultipleVariants(s, productsVariantsCountFlag))
 					.map(s -> setProductPrices(s, productsPricesMap))
+					.map(s -> setCollectionPrices(s, collectionsPricesMap))
 					.map(s -> setProductShops(s, product360Shops))
 					.collect(toList());
 		}
@@ -1000,7 +1005,17 @@ public class ProductService {
 	private ProductRepresentationObject setProductPrices(ProductRepresentationObject product,
 													   Map<Long, Prices> pricesMap) {
 		Prices prices = pricesMap.get(product.getId());
-		product.setPrices(prices);
+		if (product.getProductType().intValue() == 0)
+			product.setPrices(prices);
+		return product;
+	}
+
+
+	private ProductRepresentationObject setCollectionPrices(ProductRepresentationObject product,
+														 Map<Long, Prices> pricesMap) {
+		Prices prices = pricesMap.get(product.getId());
+		if (product.getProductType().intValue() == 2)
+			product.setPrices(prices);
 		return product;
 	}
 
@@ -2842,11 +2857,11 @@ public class ProductService {
 
 
 	private void addProduct360Shops(List<ProductEntity> existingProducts, List<ShopsEntity> existingShops) {
-		List<Product360ShopsEntity> product360Shops = new ArrayList<>();
+		List<Shop360ProductsEntity> product360Shops = new ArrayList<>();
 		for(ProductEntity product : existingProducts) {
 			for(ShopsEntity shop : existingShops) {
 				if (!product360ShopsRepo.existsByProductEntityAndShopEntity(product, shop)) {
-					Product360ShopsEntity product360Shop = new Product360ShopsEntity();
+					Shop360ProductsEntity product360Shop = new Shop360ProductsEntity();
 					product360Shop.setProductEntity(product);
 					product360Shop.setShopEntity(shop);
 					product360Shops.add(product360Shop);

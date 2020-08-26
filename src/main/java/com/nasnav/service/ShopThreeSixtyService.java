@@ -587,11 +587,9 @@ public class ShopThreeSixtyService {
             }
         }
 
-        List<TagsRepresentationObject> tagsList = categoryService.findCollections(name, shop.getOrganizationEntity().getId());
-
         JSONObject response = new JSONObject();
         response.put("products", products);
-        response.put("collections", tagsList);
+        //response.put("collections", tagsList);
         return response.toString();
     }
 

@@ -16,11 +16,13 @@ public class ThreeSixtyProductsDTO {
     private String description;
     private Set<String> images;
     private Prices prices;
+    private Integer productType;
 
-    public ThreeSixtyProductsDTO(Long id, String name, String description) {
+    public ThreeSixtyProductsDTO(Long id, String name, String description, Integer productType) {
         this.id = id;
         this.name = name;
         this.description = description;
+        this.productType = productType;
         images = new HashSet<>();
     }
 }

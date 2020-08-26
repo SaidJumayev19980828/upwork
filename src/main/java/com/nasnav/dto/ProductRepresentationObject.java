@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
@@ -32,5 +33,6 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private Long quantity;
     private Boolean has_360_view;
     protected Integer productType;
+    @JsonProperty("360_shops")
     private List<Long> shops;
 }
