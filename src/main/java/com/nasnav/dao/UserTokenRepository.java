@@ -26,6 +26,8 @@ public interface UserTokenRepository extends CrudRepository<UserTokensEntity, Lo
 
 	long countByUserEntity_Id(Long userId);
 
+    long countByEmployeeUserEntity_Id(Long employeeUserId);
+
 	UserTokensEntity saveAndFlush(UserTokensEntity token);
 
     @Transactional
