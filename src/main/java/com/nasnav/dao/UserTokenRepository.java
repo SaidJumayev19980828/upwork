@@ -1,5 +1,7 @@
 package com.nasnav.dao;
 
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.UserEntity;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -25,5 +27,14 @@ public interface UserTokenRepository extends CrudRepository<UserTokensEntity, Lo
 	long countByUserEntity_Id(Long userId);
 
 	UserTokensEntity saveAndFlush(UserTokensEntity token);
+
+    @Transactional
+    @Modifying
+	void deleteAllByEmployeeUserEntity(EmployeeUserEntity emp);
+
+
+    @Transactional
+    @Modifying
+    void deleteAllByUserEntity(UserEntity emp);
 
 }
