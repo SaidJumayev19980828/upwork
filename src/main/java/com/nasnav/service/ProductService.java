@@ -4,9 +4,8 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
 import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
-import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.commons.utils.EntityUtils.areEqual;
-import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
+import static com.nasnav.commons.utils.EntityUtils.*;
+import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
@@ -69,6 +68,7 @@ import javax.persistence.criteria.Root;
 
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
+import com.nasnav.dto.request.product.Product360ShopsDTO;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.model.querydsl.sql.*;
 import com.nasnav.persistence.*;
@@ -227,6 +227,12 @@ public class ProductService {
 	private ProductsCustomRepository productsCustomRepo;
 
 	@Autowired
+	private ShopsRepository shopsRepo;
+
+	@Autowired
+	private Product360ShopsRepository product360ShopsRepo;
+
+	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
 	                      ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
 	                      ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
@@ -271,10 +277,12 @@ public class ProductService {
 
 		List<VariantDTO> variantsDTOList = getVariantsList(productVariants, product.getId(), shopId, productsAndVariantsImages);
 		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(product.getId());
+		List<Long> product360Shops = product360ShopsRepo.findShopsByProductId(product.getId());
 		ProductDetailsDTO productDTO = null;
 		try {
 			productDTO = toProductDetailsDTO(product);
 			productDTO.setVariants(variantsDTOList);
+			productDTO.setShops(product360Shops);
 			if (variantsDTOList != null && variantsDTOList.size() > 1)
 				productDTO.setMultipleVariants(true);
 				productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
@@ -941,11 +949,14 @@ public class ProductService {
 
 			List<Long> productsVariantsCountFlag = filterProductsWithMultipleVariants(productIdList);
 
+			Map<Long, List<Long>> product360Shops = getProducts360ShopsList(productIdList);
+
 			stocks.stream()
 					.map(s -> setAdditionalInfo(s, productCoverImages))
 					.map(s -> setProductTags(s, productsTags))
 					.map(s -> setProductMultipleVariants(s, productsVariantsCountFlag))
 					.map(s -> setProductPrices(s, productsPricesMap))
+					.map(s -> setProductShops(s, product360Shops))
 					.collect(toList());
 		}
 
@@ -953,6 +964,21 @@ public class ProductService {
 
 	}
 
+
+	private ProductRepresentationObject setProductShops(ProductRepresentationObject product, Map<Long, List<Long>> shops) {
+		List<Long> shopsList = shops.get(product.getId());
+		product.setShops(shopsList);
+		return product;
+	}
+
+
+	private Map<Long, List<Long>> getProducts360ShopsList(List<Long> productIdList) {
+		return product360ShopsRepo.findByProductEntity_IdIn(productIdList)
+				.stream()
+				.collect(groupingBy(ps -> ps.getProductEntity().getId(),
+						 mapping(ps -> ps.getShopEntity().getId(),
+								toList())));
+	}
 
 	private ProductRepresentationObject setProductMultipleVariants(ProductRepresentationObject product,
 																   List<Long> productsWithMultipleVariants) {
@@ -2799,11 +2825,52 @@ public class ProductService {
 
 
 
-	public void includeProductIn360Search(Boolean include, List<Long> productIdsList) {
+	public void addProducts360Shops(Product360ShopsDTO dto) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		if (!(productIdsList == null || productIdsList.isEmpty())) {
-			divideToBatches(productIdsList, 500)
-					.forEach(batch -> productRepository.includeProductsIn360Search(batch, include, orgId));
+
+		validateProduct360ShopsDTO(dto);
+
+		List<ProductEntity> existingProducts = productRepository.getExistingProducts(dto.getProductIds(), orgId);
+		List<ShopsEntity> existingShops = shopsRepo.getExistingShops(dto.getShopIds(), orgId);
+
+		if (dto.getInclude()) {
+			addProduct360Shops(existingProducts, existingShops);
+		} else {
+			removeProduct360Shops(existingProducts, existingShops);
+		}
+	}
+
+
+	private void addProduct360Shops(List<ProductEntity> existingProducts, List<ShopsEntity> existingShops) {
+		List<Product360ShopsEntity> product360Shops = new ArrayList<>();
+		for(ProductEntity product : existingProducts) {
+			for(ShopsEntity shop : existingShops) {
+				if (!product360ShopsRepo.existsByProductEntityAndShopEntity(product, shop)) {
+					Product360ShopsEntity product360Shop = new Product360ShopsEntity();
+					product360Shop.setProductEntity(product);
+					product360Shop.setShopEntity(shop);
+					product360Shops.add(product360Shop);
+				}
+			}
+		}
+		product360ShopsRepo.saveAll(product360Shops);
+	}
+
+
+	private void removeProduct360Shops(List<ProductEntity> existingProducts, List<ShopsEntity> existingShops) {
+		product360ShopsRepo.deleteByProductEntityInAndShopEntityIn(existingProducts, existingShops);
+	}
+
+
+	private void validateProduct360ShopsDTO(Product360ShopsDTO dto) {
+		if (isNullOrEmpty(dto.getProductIds())){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0001);
+		}
+		if (isNullOrEmpty(dto.getShopIds())){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0006);
+		}
+		if (isBlankOrNull(dto.getInclude())){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0002, "include");
 		}
 	}
 

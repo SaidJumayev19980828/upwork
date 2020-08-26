@@ -128,6 +128,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	@Query("SELECT product.id from ProductEntity product where product.id in :ids and product.organizationId = :orgId")
 	List<Long> getExistingProductIds(@Param("ids")Set<Long> productIds, @Param("orgId")Long orgId);
 
+    @Query("SELECT product from ProductEntity product where product.id in :ids and product.organizationId = :orgId")
+    List<ProductEntity> getExistingProducts(@Param("ids")Set<Long> productIds, @Param("orgId")Long orgId);
 
     @Modifying
     @Transactional

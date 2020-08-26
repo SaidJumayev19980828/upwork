@@ -48,4 +48,8 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
     @Modifying
     @Query(value = "update ShopsEntity s set s.removed = 1 where s.id = :id")
     void setShopHidden(@Param("id") Long id);
+
+
+    @Query("SELECT shop from ShopsEntity shop where shop.id in :ids and shop.organizationEntity.id = :orgId")
+    List<ShopsEntity> getExistingShops(@Param("ids")Set<Long> shopIds, @Param("orgId")Long orgId);
 }

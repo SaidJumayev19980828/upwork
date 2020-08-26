@@ -1,6 +1,7 @@
 package com.nasnav.dto;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
@@ -31,4 +32,5 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private Long quantity;
     private Boolean has_360_view;
     protected Integer productType;
+    private List<Long> shops;
 }

@@ -1,6 +1,7 @@
 package com.nasnav.test;
+import static com.google.common.primitives.Longs.asList;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.*;
 import static java.lang.Math.random;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -19,6 +20,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.IntStream;
 
+import com.nasnav.dao.*;
+import com.nasnav.persistence.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -38,29 +41,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
-import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dao.FilesRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ProductImagesRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductsFiltersResponse;
 import com.nasnav.dto.ProductsResponse;
-import com.nasnav.persistence.ExtraAttributesEntity;
-import com.nasnav.persistence.FileEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductExtraAttributesEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ProductImagesEntity;
-import com.nasnav.persistence.ProductTypes;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.StocksEntity;
 import com.nasnav.request.ProductSearchParam;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -92,6 +75,9 @@ public class ProductServiceTest {
 
 	@Autowired
 	private ProductRepository productRepository;
+
+	@Autowired
+	private Product360ShopsRepository product360ShopsRepo;
 
 	@Autowired
 	private ProductVariantsRepository productVariantsRepository;
@@ -1049,26 +1035,39 @@ public class ProductServiceTest {
 	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
 	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
 	public void setProducts360Search() {
-		// include products in search 360
+		// include products in 360 shops
+		JSONArray productIds = jsonArray()
+				.put(1001)
+				.put(1002);
 
-		HttpEntity<?> req = getHttpEntity("131415");
+		JSONArray shopIds = jsonArray()
+				.put(501);
+
+		JSONObject body = json()
+				.put("include", true)
+				.put("product_ids", productIds)
+				.put("shop_ids", shopIds);
+
+		HttpEntity<?> req = getHttpEntity(body.toString(), "131415");
 		//-----------------------------------------
 		ResponseEntity<String> response = template.postForEntity(
-				"/product/set_360_search?include=true&product_id=1002&product_id=1006",
+				"/product/360_shops",
 				req, String.class);
 		//-----------------------------------------
 		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(true, productRepository.findById(1002L).get().getSearch360().booleanValue());
-		assertEquals(true, productRepository.findById(1002L).get().getSearch360().booleanValue());
+		assertTrue(!product360ShopsRepo.findByProductEntity_IdIn(asList(1002L)).isEmpty());
 
 		//exclude the above included products
+
+		body = body.put("include", false);
+		req = getHttpEntity(body.toString(), "131415");
+
 		response = template.postForEntity(
-				"/product/set_360_search?include=false&product_id=1002&product_id=1006",
+				"/product/360_shops",
 				req, String.class);
 		//-----------------------------------------
 		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(false, productRepository.findById(1002L).get().getSearch360().booleanValue());
-		assertEquals(false, productRepository.findById(1002L).get().getSearch360().booleanValue());
+		assertTrue(product360ShopsRepo.findByProductEntity_IdIn(asList(1002L)).isEmpty());
 	}
 }
 
