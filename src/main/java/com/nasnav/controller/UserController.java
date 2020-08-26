@@ -134,16 +134,28 @@ public class UserController {
     @PostMapping(value = "logout")
     public UserApiResponse logout(@RequestHeader(name = "User-Token", required = false) String token,
                                   HttpServletRequest request,
-                                  HttpServletResponse response) throws BusinessException {
+                                  HttpServletResponse response) {
         if (token == null || token.isEmpty())
             token = request.getCookies()[0].getValue();
         UserApiResponse userApiResponse = securityService.logout(token);
         response.addCookie(userApiResponse.getCookie());
         return userApiResponse;
     }
-    
-    
-    
+
+
+    @ApiOperation(value = "logout user of all sessions", nickname = "userLogoutAll")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "User logged out"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Invalid credentials"),
+            @io.swagger.annotations.ApiResponse(code = 423, message = "Account unavailable"),
+    })
+    @PostMapping(value = "logout_all")
+    public UserApiResponse logoutAll(@RequestHeader(name = "User-Token", required = false) String token,
+                                  HttpServletResponse response) {
+        UserApiResponse userApiResponse = securityService.logoutAll();
+        response.addCookie(userApiResponse.getCookie());
+        return userApiResponse;
+    }
     
 
     @ApiOperation(value = "Update an employee user", nickname = "employeeUserUpdate", code = 200)

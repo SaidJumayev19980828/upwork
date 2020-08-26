@@ -33,4 +33,6 @@ public interface SecurityService {
 	UserApiResponse login(BaseUserEntity userEntity, boolean rememberMe) throws BusinessException;
 	
 	UserTokensEntity extendUserExpirationTokenIfNeeded(UserTokensEntity token);
+
+    UserApiResponse logoutAll();
 }

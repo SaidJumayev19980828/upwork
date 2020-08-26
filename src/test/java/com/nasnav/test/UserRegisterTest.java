@@ -1121,6 +1121,30 @@ public class UserRegisterTest {
 	}
 
 
+	@Test
+	public void logoutUserTest() {
+		Long userTokensCount = userTokenRepo.countByUserEntity_Id(88005L);
+		assertEquals(4 ,userTokensCount.intValue());
+
+		HttpEntity req = getHttpEntity("77");
+		template.postForEntity("/user/logout_all", req, UserApiResponse.class);
+
+		Long userTokensCountAfter = userTokenRepo.countByUserEntity_Id(88005L);
+		assertEquals(0 ,userTokensCountAfter.intValue());
+	}
+
+
+	@Test
+	public void logoutEmployeeUserTest() {
+		Long userTokensCount = userTokenRepo.countByEmployeeUserEntity_Id(159l);
+		assertEquals(4 ,userTokensCount.intValue());
+
+		HttpEntity req = getHttpEntity("101112");
+		template.postForEntity("/user/logout_all", req, UserApiResponse.class);
+
+		Long userTokensCountAfter = userTokenRepo.countByEmployeeUserEntity_Id(159l);
+		assertEquals(0 ,userTokensCountAfter.intValue());
+	}
 
 	private JSONObject createUserRegisterV2Request(String redirectUrl) {
 		return json()

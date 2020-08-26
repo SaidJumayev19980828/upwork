@@ -160,6 +160,23 @@ public class SecurityServiceImpl implements SecurityService {
 		return new ApiResponseBuilder().setCookie(c).setSuccess(true).build();
 	}
 
+	@Override
+	@Transactional
+	@CacheEvict(cacheNames = {USERS_BY_TOKENS})
+	public UserApiResponse logoutAll() {
+		BaseUserEntity user = getCurrentUser();
+
+		if ( user instanceof EmployeeUserEntity) {
+			userTokenRepo.deleteByEmployeeUserEntity( (EmployeeUserEntity)user);
+		} else {
+			userTokenRepo.deleteByUserEntity( (UserEntity) user);
+		}
+		Cookie c = createCookie(null, true);
+
+		return new ApiResponseBuilder().setCookie(c).setSuccess(true).build();
+	}
+
+
 
 	
 	
