@@ -4,6 +4,7 @@ import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0011;
 import static com.nasnav.service.model.common.ParameterType.LONG_ARRAY;
 import static com.nasnav.service.model.common.ParameterType.NUMBER;
 import static java.lang.Long.MIN_VALUE;
+import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
@@ -16,16 +17,18 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.nasnav.commons.utils.EntityUtils;
+import com.nasnav.dao.ShopsRepository;
 import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.service.OrderService;
-import com.nasnav.service.model.cart.ShopFulfillingCart;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.service.SecurityService;
 import com.nasnav.service.model.common.Parameter;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.model.ServiceParameter;
@@ -41,32 +44,35 @@ import com.nasnav.shipping.model.ShippingServiceInfo;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public class PickupFromShop implements ShippingService{
-	
-	public static final String SERVICE_ID = "PICKUP"; 
-	public static final String SERVICE_NAME = "Pickup from Shop";
-	public static final String ALLOWED_SHOP_ID_LIST = "ALLOWED_SHOP_ID_LIST";
+public class PickupPointsWithInternalLogistics implements ShippingService{
+
+	public static final String SERVICE_ID = "PICKUP_POINTS"; 
+	public static final String SERVICE_NAME = "Pickup point";
+	public static final String WAREHOUSE_ID = "WAREHOUSE_ID";
 	public static final String SHOP_ID = "SHOP_ID";
+	public static final String PICKUP_POINTS_ID_LIST = "PICKUP_POINTS_ID_LIST";
 	
 	private static List<Parameter> SERVICE_PARAM_DEFINITION = 
-			asList(new Parameter(ALLOWED_SHOP_ID_LIST, LONG_ARRAY));
+			asList(new Parameter(WAREHOUSE_ID, NUMBER)
+					, new Parameter(PICKUP_POINTS_ID_LIST, LONG_ARRAY));
 	
 	private static List<Parameter> ADDITIONAL_PARAM_DEFINITION = 
 			asList(new Parameter(SHOP_ID, NUMBER));
 	
+	private Long warehouseId;
 	private Set<Long> allowedShops;
-
-	
 	
 	
 	@Autowired
-	private OrderService orderService;
+	ShopsRepository shopRepo;
 	
+	@Autowired
+	SecurityService securityService;
 	
-	
-	public PickupFromShop() {
+	public PickupPointsWithInternalLogistics() {
 		allowedShops = emptySet();
 	}
+	
 	
 	
 	
@@ -84,7 +90,7 @@ public class PickupFromShop implements ShippingService{
 		allowedShops = 
 				params
 				.stream()
-				.filter(param -> Objects.equals(param.getParameter(), ALLOWED_SHOP_ID_LIST))
+				.filter(param -> Objects.equals(param.getParameter(), PICKUP_POINTS_ID_LIST))
 				.map(ServiceParameter::getValue)
 				.map(JSONArray::new)
 				.map(JSONArray::spliterator)
@@ -94,17 +100,23 @@ public class PickupFromShop implements ShippingService{
 				.filter(Optional::isPresent)
 				.map(Optional::get)
 				.collect(toSet());
+		warehouseId = 
+				params
+				.stream()
+				.filter(param -> Objects.equals(param.getParameter(), WAREHOUSE_ID))
+				.map(ServiceParameter::getValue)
+				.findFirst()
+				.flatMap(EntityUtils::parseLongSafely)
+				.get();
 	}
-	
-	
 	
 	
 
 	@Override
 	public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> items) {
-		List<String> possiblePickupShops = getShopsThatCanProvideWholeCart();
+		List<String> pickupShops = getPickupShopsNames();
 		
-		ShippingServiceInfo serviceInfo = createServiceInfoWithShopsOptions(possiblePickupShops);
+		ShippingServiceInfo serviceInfo = createServiceInfoWithShopsOptions(pickupShops);
 		
 		List<Shipment> shipments =
 				items
@@ -113,16 +125,42 @@ public class PickupFromShop implements ShippingService{
 				.collect(toList());
 		
 		ShippingOffer offer = new ShippingOffer(serviceInfo, shipments);
-		return possiblePickupShops.isEmpty()? 
+		return pickupShops.isEmpty()? 
 				Mono.empty() : Mono.just(offer) ;
 	}
-
-
-
+	
+	
+	
+	private List<String> getPickupShopsNames(){
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		return shopRepo
+				.findByIdInAndOrganizationEntity_IdAndRemoved(allowedShops, orgId, 0)
+				.stream()
+				.map(ShopsEntity::getName)
+				.collect(toList());
+	}
+	
+	
+	
+	
+	
+	private ShippingServiceInfo createServiceInfoWithShopsOptions(List<String> possiblePickupShops) {
+		ShippingServiceInfo serviceInfo = getServiceInfo();
+		serviceInfo
+		.getAdditionalDataParams()
+		.stream()
+		.filter(param -> Objects.equals(param.getName(), SHOP_ID))
+		.findFirst()
+		.ifPresent(param -> param.setOptions(possiblePickupShops));
+		
+		return serviceInfo;
+	}
+	
+	
 	
 	
 	private Shipment createShipment(ShippingDetails shippingDetails) {
-		BigDecimal fee = BigDecimal.ZERO;
+		BigDecimal fee = ZERO;
 		ShippingEta eta = new ShippingEta(now().plusDays(1), now().plusDays(7));
 		List<Long> stocks = 
 				shippingDetails
@@ -133,44 +171,16 @@ public class PickupFromShop implements ShippingService{
 		Long orderId = shippingDetails.getSubOrderId();
 		return new Shipment(fee, eta, stocks ,orderId);
 	}
-	
-	
-	
-	
-	private ShippingServiceInfo createServiceInfoWithShopsOptions(List<String> possiblePickupShops) {
-		ShippingServiceInfo serviceInfo = getServiceInfo();
-		
-		serviceInfo
-		.getAdditionalDataParams()
-		.stream()
-		.filter(param -> Objects.equals(param.getName(), SHOP_ID))
-		.findFirst()
-		.ifPresent(param -> param.setOptions(possiblePickupShops));
-		
-		return serviceInfo;
-	}
 
-
-
-	private List<String> getShopsThatCanProvideWholeCart() {
-		return orderService
-				.getShopsThatCanProvideWholeCart()
-				.stream()
-				.map(ShopFulfillingCart::getShopId)
-				.filter(allowedShops::contains)
-				.map(id -> id.toString())
-				.collect(toList());
-	}
-
-	
 	
 	
 	@Override
 	public Flux<ShipmentTracker> requestShipment(List<ShippingDetails> items) {
+		//need to return csv containing items - selected pickup point - addresses 
+		//- order and meta order as the airwaybill
 		return Flux.just(new ShipmentTracker());
 	}
 
-	
 	
 	
 	@Override
@@ -180,18 +190,18 @@ public class PickupFromShop implements ShippingService{
 		
 		String message = "";
 		if(!isCartFromSingleShop) {
-			message = "Cart has items from multiple shops, while pickup service is allowed "
+			message = "Cart has items from multiple shops, while pickup points service is allowed "
 					+ "for a single shop!";
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0011, message);
 		}else if(!isShopAllowedForPickup) {
-			message = "Selected shop is not valid for pickup service!";
+			message = "Selected shop is not a valid pickup point!";
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0011, message);
 		}
-		
 	}
-
-
-
+	
+	
+	
+	
 	private boolean isShopAllowedForPickup(List<ShippingDetails> items) {
 		return items
 				.stream()
@@ -201,10 +211,8 @@ public class PickupFromShop implements ShippingService{
 				.map(id -> id.orElse(MIN_VALUE))
 				.allMatch(allowedShops::contains);
 	}
+	
 
-	
-	
-	
 	@Override
 	public ShipmentStatusData createShipmentStatusData(String serviceId, Long orgId, String params) {
 		ShipmentStatusData status = new ShipmentStatusData();
