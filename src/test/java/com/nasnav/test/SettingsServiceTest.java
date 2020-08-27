@@ -212,7 +212,6 @@ public class SettingsServiceTest {
 	
 	@Test
 	public void postCartOptimizationSettingSuccessTest() {
-		String settingName = CART_OPTIMIZATION_STARTEGY.name();
 		String strategy = SAME_CITY.name();
 		String optimizationParams = 
 				json()
@@ -227,14 +226,9 @@ public class SettingsServiceTest {
 	        		.exchange("/organization/settings/cart_optimization/strategy",POST, req, String.class);
 	    assertEquals(OK, res.getStatusCode());
 	    
-	    Optional<SettingEntity> settingEntity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
 	    Optional<OrganizationCartOptimizationEntity> optimizationParamsEntity = 
 	    		optimizationRepo.findByOptimizationStrategyAndOrganization_Id(strategy, 99001L);
-	    assertTrue(settingEntity.isPresent());
 	    assertTrue(optimizationParamsEntity.isPresent());
-	    assertEquals(settingName, settingEntity.get().getSettingName());
-	    assertEquals(strategy, settingEntity.get().getSettingValue());
-	    
 	    assertEquals(strategy, optimizationParamsEntity.get().getOptimizationStrategy());
 	    assertEquals(optimizationParams, optimizationParamsEntity.get().getParameters());
 	}

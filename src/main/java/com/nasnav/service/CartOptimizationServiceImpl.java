@@ -5,15 +5,16 @@ import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.exceptions.ErrorCodes.G$PRAM$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0006;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0007;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0008;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0009;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0012;
+import static com.nasnav.exceptions.ErrorCodes.O$CRT$0014;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.DEFAULT_OPTIMIZER;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.isValidStrategy;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.util.Optional;
@@ -103,25 +104,26 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	
 	private <T,P> Optional<OptimizedCart> createOptimizedCart(CartCheckoutDTO dto) {
 		CartOptimizationStrategy strategy = getOptimizationStrategyForCart(dto);
+	
+		CartOptimizer<T,P> optimizer = getCartOptimizer(strategy.getValue());
+		Optional<T> parameters = optimizer.createCartOptimizationParameters(dto);
+		Cart cart = orderService.getCart();
 		
-		try {
-			CartOptimizer<T,P> optimizer = getCartOptimizer(strategy.getValue());
-			Optional<T> parameters = optimizer.createCartOptimizationParameters(dto);
-			Cart cart = orderService.getCart();
-			
-			return optimizer.createOptimizedCart(parameters, cart);
-		}catch(Throwable t) {
-			logger.error(t,t);
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0009, strategy.getValue());
-		}
+		return optimizer.createOptimizedCart(parameters, cart);
+		
 	}
 
 
 
 
 	@SuppressWarnings("unchecked")
-	private <T,P> CartOptimizer<T,P> getCartOptimizer(String strategy) throws Throwable{
-		return context.getBean(strategy, CartOptimizer.class);
+	private <T,P> CartOptimizer<T,P> getCartOptimizer(String strategy){
+		try {
+			return context.getBean(strategy, CartOptimizer.class);
+		}catch(Throwable t) {
+			logger.error(t,t);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$CRT$0009, strategy);
+		}
 	}
 
 
@@ -135,7 +137,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 				getCartOptimizationStrategyForShippingService(shippingServiceId);
 		Optional<String> organizationCartOptimizer = 
 				getCartOptimizationStrategyForOrganization();
-		Optional<String> defaultOptimizer = Optional.of(DEFAULT_OPTIMIZER.name());
+		Optional<String> defaultOptimizer = Optional.of(DEFAULT_OPTIMIZER.getValue());
 		
 		return firstExistingValueOf(
 				shippingServiceOptimizer
@@ -160,7 +162,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 	
 	
 	
-	
+	@Override
 	public Optional<String> getCartOptimizationStrategyForOrganization(){
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		return orgCartOptimizerRepo
@@ -212,6 +214,8 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		parametersEntity.setOrganization(org);
 		parametersEntity.setParameters(parameters);
 		parametersEntity.setShippingServiceId(shippingServiceId);
+		
+		orgCartOptimizerRepo.save(parametersEntity);
 	}
 
 
@@ -227,7 +231,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 			};
 		} catch (Throwable e) {
 			logger.error(e,e);
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0008, parameters.toString());
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0014, parameters.toString());
 		}
 	}
 
