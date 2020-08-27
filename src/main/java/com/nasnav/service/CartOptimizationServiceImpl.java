@@ -10,13 +10,16 @@ import static com.nasnav.exceptions.ErrorCodes.O$CRT$0012;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0014;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.DEFAULT_OPTIMIZER;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.isValidStrategy;
+import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.WAREHOUSE;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
+import java.util.Map;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
@@ -26,6 +29,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.OrganizationCartOptimizationRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
@@ -191,7 +195,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, settingDto.toString());
 		}
 		
-		String parameters = ofNullable(settingDto.getParameters()).orElse("{}");
+		Map<String,Object> parameters = ofNullable(settingDto.getParameters()).orElse(emptyMap());
 		validateCommonParametersJson(strategy, parameters);
 		
 		persistCartOptimizationInfo(settingDto, strategy, parameters);
@@ -202,9 +206,18 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 
 	private void persistCartOptimizationInfo(CartOptimizationSettingDTO settingDto, String strategy,
-			String parameters) {
+			Map<String,Object> parameters) {
 		String shippingServiceId = settingDto.getShippingServiceId();
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
+		String parametersJsonStr;
+		try {
+			parametersJsonStr = objectMapper.writeValueAsString(parameters);
+		} catch (JsonProcessingException e) {
+			Long orgId = securityService.getCurrentUserOrganizationId();
+			logger.error(e,e);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0014, orgId, WAREHOUSE);
+		}
+		
 		OrganizationCartOptimizationEntity parametersEntity = 
 				orgCartOptimizerRepo
 				.findByOptimizationStrategyAndShippingServiceIdAndOrganization_Id(strategy, shippingServiceId, org.getId())
@@ -212,7 +225,7 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		
 		parametersEntity.setOptimizationStrategy(strategy);
 		parametersEntity.setOrganization(org);
-		parametersEntity.setParameters(parameters);
+		parametersEntity.setParameters(parametersJsonStr);
 		parametersEntity.setShippingServiceId(shippingServiceId);
 		
 		orgCartOptimizerRepo.save(parametersEntity);
@@ -222,16 +235,17 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 
 
 
-	private <T,P> void validateCommonParametersJson(String strategy, String parameters) {
+	private <T,P> void validateCommonParametersJson(String strategy, Map<String,Object> parameters) {
 		try {
 			CartOptimizer<T,P> optimizer = getCartOptimizer(strategy);
-			P parametersObj = objectMapper.readValue(parameters, optimizer.getCommonParametersClass());
+			P parametersObj = objectMapper.convertValue(parameters, optimizer.getCommonParametersClass());
 			if(!optimizer.areCommonParametersValid(parametersObj)) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0012, parameters.toString());
 			};
 		} catch (Throwable e) {
 			logger.error(e,e);
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0014, parameters.toString());
+			Long orgId = securityService.getCurrentUserOrganizationId();
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0014, orgId, WAREHOUSE);
 		}
 	}
 

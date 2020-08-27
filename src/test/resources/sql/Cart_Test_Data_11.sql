@@ -122,10 +122,10 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(612, 504, 3, 99001, 800.00, 310009, 1);
 
 
--- warhouse in alexandria has all items, but with less quantites
+-- warhouse in alexandria has all items, but with one has low quantity
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(613, 505, 3, 99001, 700.00, 310004, 1);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(614, 505, 3, 99001, 1200.0, 310002, 1);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(615, 505, 3, 99001, 800.00, 310009, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(615, 505, 1, 99001, 800.00, 310009, 1);
 
 
 
@@ -158,6 +158,6 @@ INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name"
 
 INSERT INTO public.organiztion_cart_optimization
 (optimization_parameters, optimization_strategy, organization_id, shipping_service_id)
-VALUES('{"warehouse_id":505}', 'WAREHOUSE', 99001, null);
+VALUES('{"warehouse_id":505}', 'WAREHOUSE', 99001, 'TEST');
 
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);

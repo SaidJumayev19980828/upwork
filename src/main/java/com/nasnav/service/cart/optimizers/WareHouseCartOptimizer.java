@@ -7,6 +7,8 @@ import static com.nasnav.exceptions.ErrorCodes.O$CRT$0013;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0014;
 import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.WAREHOUSE;
 import static java.math.BigDecimal.ZERO;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
@@ -18,6 +20,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.beanutils.BeanUtils;
@@ -28,12 +31,14 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.OrganizationCartOptimizationRepository;
+import com.nasnav.dao.ShopsRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.OrganizationCartOptimizationEntity;
+import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.cart.optimizers.parameters.WarehouseOptimizerCommonParameters;
@@ -58,6 +63,10 @@ public class WareHouseCartOptimizer implements CartOptimizer<WarhouseOptimizerCa
 	
 	@Autowired
 	private StockRepository stockRepo;
+	
+	
+	@Autowired
+	private ShopsRepository shopRepo; 
 	
 	@Override
 	public Optional<WarhouseOptimizerCartParameters> createCartOptimizationParameters(CartCheckoutDTO dto) {
@@ -238,11 +247,24 @@ public class WareHouseCartOptimizer implements CartOptimizer<WarhouseOptimizerCa
 
 	
 	
+	
+	
 	@Override
 	public Boolean areCommonParametersValid(WarehouseOptimizerCommonParameters parameters) {
-		return noneIsNull(parameters, parameters.getWarehouseId());
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		Long warehouseId = 
+				ofNullable(parameters)
+				.map(param -> param.getWarehouseId())
+				.orElse(-1L);
+		ShopsEntity shop = 
+				shopRepo
+				.findByIdAndOrganizationEntity_IdAndRemoved(warehouseId, orgId, 0);
+		return nonNull(shop);
 	}
 
+	
+	
+	
 	
 	
 	@Override

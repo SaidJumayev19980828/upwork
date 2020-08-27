@@ -1001,18 +1001,40 @@ public class CartTest {
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_10.sql"})
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void checkoutWithWareHouseOptimizationStrategyWithMissingParameter() {
-		OrganizationCartOptimizationEntity entity = 
-				orgOptimizerRepo
-				.findByOptimizationStrategyAndOrganization_Id(WAREHOUSE.getValue(), 99001L)
-				.get();
-		entity.setParameters("{}");
-		orgOptimizerRepo.save(entity);
+		clearWarehouseOptimizationParameters();
 		
 		JSONObject requestBody = createCartCheckoutBody();
 		
 		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
 		assertEquals(500, res.getStatusCodeValue());
+	}
+
+
+
+
+
+	private void clearWarehouseOptimizationParameters() {
+		OrganizationCartOptimizationEntity entity = 
+				orgOptimizerRepo
+				.findByOptimizationStrategyAndOrganization_Id(WAREHOUSE.getValue(), 99001L)
+				.get();
+		entity.setParameters("{}");
+		orgOptimizerRepo.save(entity);
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_11.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutWithWareHouseOptimizationStrategyWithInsuffecientStock() {
+		JSONObject requestBody = createCartCheckoutBody();
+		
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
+		assertEquals(406, res.getStatusCodeValue());
 	}
 	
 	
