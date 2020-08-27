@@ -1522,6 +1522,9 @@ public class OrderServiceImpl implements OrderService {
 		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec(), 0));
 		item.setThumb(thumb);
 		item.setCurrency(currency);
+		item.setProductType(product.getProductType());
+		item.setVariantId(variant.getId());
+		item.setVariantName(variant.getName());
 		//TODO set item unit //
 
 		return item;
@@ -2022,6 +2025,8 @@ public class OrderServiceImpl implements OrderService {
 		itemDto.setId(itemData.getId());
 		itemDto.setProductId(itemData.getProductId());
 		itemDto.setVariantId(itemData.getVariantId());
+		itemDto.setVariantName(itemData.getVariantName());
+		itemDto.setProductType(itemData.getProductType());
 		itemDto.setStockId(itemData.getStockId());
 		itemDto.setDiscount(itemData.getDiscount());
 		

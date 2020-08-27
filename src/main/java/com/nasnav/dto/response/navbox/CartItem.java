@@ -14,6 +14,7 @@ public class CartItem {
 	private Long id;
 	private Long productId;
 	private Long variantId;
+	private String variantName;
 	private Long stockId;
 	private Map<String,String> variantFeatures;
 	private String coverImg;
@@ -23,5 +24,6 @@ public class CartItem {
 	private Long brandId;
 	private String brandLogo;
 	private String name;
+	private Integer productType;
 	private BigDecimal discount;
 }
