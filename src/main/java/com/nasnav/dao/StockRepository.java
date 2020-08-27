@@ -102,8 +102,9 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 
 
 	@Query(value = "select NEW com.nasnav.dto.Prices(p.id, MIN(s.price) , MAX(s.price) )" +
-			" from StocksEntity s join ProductVariantsEntity v on s.productVariantsEntity = v " +
-			" where p.id in :productIds And v.id in (Select p from ProductCollectionEntity p) group by p.id")
+			" from ProductCollectionEntity p join p.variants v " +
+			" join v.stocks s" +
+			" where p.id in :productIds group by p.id")
 	List<Prices> getCollectionsPrices(@Param("productIds") List<Long> productIds);
 	
 	

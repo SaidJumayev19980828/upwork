@@ -93,15 +93,22 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	Set<Long> listProductIdByOrganizationId(@Param("orgId")Long orgId);
 
 
-	@Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description, p.productType)"+
-            " from ProductEntity p join ProductVariantsEntity v on p = v.productEntity" +
-            " join ProductCollectionEntity c" +
-            " join StocksEntity s on s.productVariantsEntity = v" +
-            " join Shop360ProductsEntity sp on sp.shopEntity.id = s.id and sp.productEntity.id = p.id"+
-            " where s.shopsEntity.id = :shopId " +
+	@Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
+            " from ProductEntity p join p.variants v join v.stocks s "+
+            " join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p"+
+            " where s.shopsEntity.id = :shopId and p.productType = 0" +
             " and (v.barcode like %:name% or p.barcode like %:name% " +
             " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
     List<ThreeSixtyProductsDTO> find360Products(@Param("name") String name, @Param("shopId") Long shopId);
+
+
+    @Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
+            " from ProductCollectionEntity p join p.variants v join v.stocks s "+
+            " join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p"+
+            " where s.shopsEntity.id = :shopId " +
+            " and (v.barcode like %:name% or p.barcode like %:name% " +
+            " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
+    List<ThreeSixtyProductsDTO> find360Collections(@Param("name") String name, @Param("shopId") Long shopId);
 
 
     @Modifying

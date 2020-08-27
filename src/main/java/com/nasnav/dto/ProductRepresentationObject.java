@@ -33,6 +33,6 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private Long quantity;
     private Boolean has_360_view;
     protected Integer productType;
-    @JsonProperty("360_shops")
+    @JsonProperty("shop_360s")
     private List<Long> shops;
 }

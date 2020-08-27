@@ -72,7 +72,9 @@ import com.nasnav.dto.request.product.Product360ShopsDTO;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.model.querydsl.sql.*;
 import com.nasnav.persistence.*;
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.SubQueryExpression;
+import com.querydsl.core.types.dsl.NumberPath;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -686,13 +688,14 @@ public class ProductService {
 
 		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock, shop);
 
-		SQLQuery<?> baseQuery = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
+		SQLQuery<?> fromProductsClause = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
+		SQLQuery<?> fromCollectionsClause = productsCustomRepo.getCollectionsBaseQuery(predicate, finalParams);
 
-		Prices prices = getProductPrices(baseQuery,stock);
+		Prices prices = getProductPrices(fromProductsClause, fromCollectionsClause, stock);
 
-		List<Organization_BrandRepresentationObject> brands = getProductBrands(queryFactory, baseQuery, product);
+		List<Organization_BrandRepresentationObject> brands = getProductBrands(fromProductsClause, fromCollectionsClause, product);
 
-        Map<String, List<String>> variantsFeatures = getProductVariantFeatures(queryFactory, baseQuery);
+        Map<String, List<String>> variantsFeatures = getProductVariantFeatures(fromProductsClause);
 
 		ProductsFiltersResponse response = new ProductsFiltersResponse(prices, brands, variantsFeatures);
 
@@ -701,33 +704,49 @@ public class ProductService {
 
 
 
-	private Prices getProductPrices(SQLQuery<?> baseQuery, QStocks stock) throws SQLException {
-		SQLQuery<?> query = 
-				baseQuery.select(
-						stock.price.min().as("minPrice"),
-						stock.price.max().as("maxPrice"));
+	private Prices getProductPrices(SQLQuery<?> productsQuery, SQLQuery<?> collectionsQuery, QStocks stock) {
+		SubQueryExpression products = productsQuery.select(stock.price.min().as("minPrice"), stock.price.max().as("maxPrice"));
+		SubQueryExpression collections = collectionsQuery.select(stock.price.min().as("minPrice"), stock.price.max().as("maxPrice"));
+
+		SQLQuery<?> sqlQuery = new SQLQuery<>();
+		SQLQuery<?> query = queryFactory
+				.select(SQLExpressions.min(Expressions.numberPath(BigDecimal.class, "minPrice")).as("minPrice"),
+						SQLExpressions.min(Expressions.numberPath(BigDecimal.class, "maxPrice")).as("maxPrice"))
+				.from(sqlQuery.union(products, collections).as("total"));
+
 		return template.queryForObject(query.getSQL().getSQL() , new BeanPropertyRowMapper<>(Prices.class));
 	}
 
 
 
-	private List<Organization_BrandRepresentationObject> getProductBrands(SQLQueryFactory factory, SQLQuery<?> baseQuery, QProducts product) throws SQLException {
+	private List<Organization_BrandRepresentationObject> getProductBrands(SQLQuery<?> productsQuery, SQLQuery<?> collectionsQuery, QProducts product) {
 		QBrands brand = QBrands.brands;
 
-		SQLQuery<?> query = factory.select(brand.id, brand.name).from(brand)
-								.where(brand.id.in(baseQuery.select(product.brandId)));
+		SubQueryExpression products = queryFactory
+				.select(brand.id, brand.name)
+				.from(brand)
+				.where(brand.id.in(productsQuery.select(product.brandId)));
+		SubQueryExpression collections = queryFactory
+				.select(brand.id, brand.name)
+				.from(brand)
+				.where(brand.id.in(collectionsQuery.select(product.brandId)));
+
+		SQLQuery<?> sqlQuery = new SQLQuery<>();
+		SQLQuery<?> query = queryFactory
+				.select(Expressions.numberPath(Long.class, "id"),Expressions.stringPath("name"))
+				.from(sqlQuery.union(products, collections).as("total"));
 
 		return template.query(query.getSQL().getSQL(),
 				new BeanPropertyRowMapper<>(Organization_BrandRepresentationObject.class));
 	}
 	
 	
-	private Map<String, List<String>> getProductVariantFeatures(SQLQueryFactory factory, SQLQuery<?> baseQuery) throws SQLException {
+	private Map<String, List<String>> getProductVariantFeatures(SQLQuery<?> baseQuery) throws SQLException {
 		QProductVariants variant = QProductVariants.productVariants;
 		QProductFeatures feature = QProductFeatures.productFeatures;
 
 		SQLQuery<?> featuresVal =
-				factory
+				queryFactory
 				.select(
 						Expressions.numberTemplate(Long.class, "(json_each(text_to_json(feature_spec))).key::int8").as("id"),
 						Expressions.stringTemplate("(json_each(text_to_json(feature_spec))).value::varchar").as("feature_value"))
@@ -736,7 +755,7 @@ public class ProductService {
 				.where(variant.featureSpec.isNotNull()
 						.and(variant.featureSpec.ne("{}")));
 
-		SQLQuery<?> query = factory.select(Expressions.numberTemplate(Long.class, "features_val.id"),
+		SQLQuery<?> query = queryFactory.select(Expressions.numberTemplate(Long.class, "features_val.id"),
 										Expressions.stringTemplate("name"),
 										Expressions.stringTemplate("p_name"),
 										Expressions.stringTemplate("features_val.feature_value").as("value")).distinct()
@@ -808,9 +827,6 @@ public class ProductService {
 
 		if(params.shop_id != null && params.org_id == null)
 			predicate.and( stock.shopId.eq(params.shop_id) );
-
-		if(params.has_360_view != null)
-			predicate.and( product.search_360.eq(params.has_360_view));
 
 		if(params.product_type != null)
 			predicate.and( product.productType.in(params.product_type));
