@@ -19,6 +19,7 @@ public class BasketItem {
     private String name;
     @JsonProperty("p_name")
     private String pname;
+    private Integer productType;
     private Long stockId;
     private Long brandId;
     private Map<String, String> variantFeatures;
@@ -28,6 +29,8 @@ public class BasketItem {
     private String thumb;
     private BigDecimal price;
     private BigDecimal discount;
+    private Long variantId;
+    private String variantName;
     
     @JsonIgnore
     private String currency;

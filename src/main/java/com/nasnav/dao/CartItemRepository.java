@@ -16,9 +16,9 @@ import com.nasnav.persistence.dto.query.result.CartItemStock;
 
 public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long> {
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartItemData("
-			+ " item.id, user.id, product.id, variant.id, stock.id, variant.featureSpec "
+			+ " item.id, user.id, product.id, variant.id, variant.name, stock.id, variant.featureSpec "
 			+ " , item.coverImage, stock.price, item.quantity"
-			+ " , brand.id, brand.name, brand.logo, product.name, stock.discount ) "
+			+ " , brand.id, brand.name, brand.logo, product.name, product.productType, stock.discount ) "
 			+ " FROM CartItemEntity item "
 			+ "	LEFT JOIN item.user user"			
 			+ " LEFT JOIN item.stock stock "
