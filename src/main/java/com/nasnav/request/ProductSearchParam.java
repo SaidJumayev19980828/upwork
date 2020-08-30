@@ -27,7 +27,6 @@ public class ProductSearchParam {
     public SortOrder order;
     public BigDecimal minPrice;
     public BigDecimal maxPrice;
-    public Boolean has_360_view;
     public Integer[] product_type;
 
     public void setSort(String sort) {

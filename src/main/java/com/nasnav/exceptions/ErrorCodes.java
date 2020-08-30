@@ -36,12 +36,14 @@ public enum ErrorCodes {
 	,P$BRA$0002("Brand with id [%d] doesnot belong to organization with id [%d]")
 
 	,GEN$0001("NO %s exists with ID:[%d]!")
+	,GEN$0002("Missing or invalid %s, available values are [true, false]!")
 
 	,S$0001("Shop is linked to %s !")
 	,S$0002( "No Shop exists with ID: [%d]!")
 	,S$0003("No shops found!")
 	,S$0004("Shop with id[%d] has invalid address id[%d]")
 	,S$0005( "No Shop exists with ID: [%d] for organization[%d]!")
+	,S$0006("No shop id provided!")
 
 	,S$360$0001("No 360 shop found!")
 	,S$360$F$0001("floor [%d] number can't be null!")

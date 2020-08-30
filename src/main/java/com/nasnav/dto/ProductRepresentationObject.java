@@ -1,8 +1,10 @@
 package com.nasnav.dto;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
@@ -31,4 +33,6 @@ public class ProductRepresentationObject extends ProductBaseInfo{
     private Long quantity;
     private Boolean has_360_view;
     protected Integer productType;
+    @JsonProperty("shop_360s")
+    private List<Long> shops;
 }

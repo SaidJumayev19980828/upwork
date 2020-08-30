@@ -94,12 +94,21 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
 
 	@Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
-            " from ProductEntity p join ProductVariantsEntity v on p = v.productEntity" +
-            " join StocksEntity s on s.productVariantsEntity = v" +
-            " where s.shopsEntity.id = :shopId and p.search360 = true " +
+            " from ProductEntity p join p.variants v join v.stocks s "+
+            " join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p"+
+            " where s.shopsEntity.id = :shopId and p.productType = 0" +
             " and (v.barcode like %:name% or p.barcode like %:name% " +
             " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
     List<ThreeSixtyProductsDTO> find360Products(@Param("name") String name, @Param("shopId") Long shopId);
+
+
+    @Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
+            " from ProductCollectionEntity p join p.variants v join v.stocks s "+
+            " join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p"+
+            " where s.shopsEntity.id = :shopId " +
+            " and (v.barcode like %:name% or p.barcode like %:name% " +
+            " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
+    List<ThreeSixtyProductsDTO> find360Collections(@Param("name") String name, @Param("shopId") Long shopId);
 
 
     @Modifying
@@ -128,6 +137,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	@Query("SELECT product.id from ProductEntity product where product.id in :ids and product.organizationId = :orgId")
 	List<Long> getExistingProductIds(@Param("ids")Set<Long> productIds, @Param("orgId")Long orgId);
 
+    @Query("SELECT product from ProductEntity product where product.id in :ids and product.organizationId = :orgId")
+    List<ProductEntity> getExistingProducts(@Param("ids")Set<Long> productIds, @Param("orgId")Long orgId);
 
     @Modifying
     @Transactional

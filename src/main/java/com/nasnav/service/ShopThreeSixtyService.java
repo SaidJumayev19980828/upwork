@@ -564,37 +564,63 @@ public class ShopThreeSixtyService {
                     "INVALID_PARAM: shop_id", NOT_ACCEPTABLE);
 
         name = ofNullable(name).map(String::toLowerCase).orElse("");
-        ShopsEntity shop = shopRepo.findById(shopId).get();
         List<ThreeSixtyProductsDTO> products = productsRepo.find360Products(name, shopId);
+        List<ThreeSixtyProductsDTO> collections = productsRepo.find360Collections(name, shopId);
 
         if (products != null && !products.isEmpty()) {
-            List<Long> productIds = products.stream().map(p -> p.getId()).collect(toList());
-            Map<Long, List<ProductImagesEntity>> productsImagesMap = productImageService.getProductsImageList(productIds);
-
-            Map<Long, Prices> productsPricesMap = stockRepo.getProductsPrices(productIds)
-                            .stream()
-                            .collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
-
-            for (ThreeSixtyProductsDTO dto : products) {
-
-                if (productsImagesMap.get(dto.getId()) != null)
-                    dto.setImages(productsImagesMap.get(dto.getId()).stream()
-                                                                    .map(i -> of(i.getUri()).orElse(null))
-                                                                    .collect(toSet()));
-
-                if (productsPricesMap.get(dto.getId()) != null)
-                    dto.setPrices(productsPricesMap.get(dto.getId()));
-            }
+            getProductsListAdditionalData(products);
         }
-
-        List<TagsRepresentationObject> tagsList = categoryService.findCollections(name, shop.getOrganizationEntity().getId());
+        if (collections != null && !collections.isEmpty()) {
+            getCollectionsListAdditionalData(collections);
+        }
 
         JSONObject response = new JSONObject();
         response.put("products", products);
-        response.put("collections", tagsList);
+        response.put("collections", collections);
         return response.toString();
     }
 
+
+    private List<ThreeSixtyProductsDTO> getProductsListAdditionalData(List<ThreeSixtyProductsDTO> products) {
+        List<Long> productIds = products.stream().map(p -> p.getId()).collect(toList());
+        Map<Long, List<ProductImagesEntity>> productsImagesMap = productImageService.getProductsImageList(productIds);
+        Map<Long, Prices> productsPricesMap = stockRepo.getProductsPrices(productIds)
+                .stream()
+                .collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
+
+        return setPricesAndImages(products, productsImagesMap, productsPricesMap);
+    }
+
+
+    private List<ThreeSixtyProductsDTO> getCollectionsListAdditionalData(List<ThreeSixtyProductsDTO> collections) {
+        List<Long> collectionIds = collections.stream().map(p -> p.getId()).collect(toList());
+
+        Map<Long, List<ProductImagesEntity>> collectionsImagesMap = productImageService.getProductsImageList(collectionIds);
+        Map<Long, Prices> collectionsPricesMap = stockRepo.getCollectionsPrices(collectionIds)
+                .stream()
+                .collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
+
+        return setPricesAndImages(collections, collectionsImagesMap, collectionsPricesMap);
+    }
+
+
+    private List<ThreeSixtyProductsDTO> setPricesAndImages(List<ThreeSixtyProductsDTO> list, Map<Long, List<ProductImagesEntity>> imagesMap, Map<Long, Prices> pricesMap) {
+        for (ThreeSixtyProductsDTO dto : list) {
+            if (imagesMap.get(dto.getId()) != null) {
+                Set<String> imagesSet = imagesMap
+                        .get(dto.getId())
+                        .stream()
+                        .map(i -> of(i.getUri()).orElse(null))
+                        .collect(toSet());
+                dto.setImages(imagesSet);
+            }
+            ofNullable(dto.getId())
+                    .map(pricesMap::get)
+                    .ifPresent(dto::setPrices);
+
+        }
+        return list;
+    }
 
 
     public ShopResponse publishJsonData(Long shopId) throws BusinessException {

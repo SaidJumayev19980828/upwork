@@ -13,6 +13,7 @@ import javax.validation.Valid;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
+import com.nasnav.dto.request.product.Product360ShopsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -72,8 +73,8 @@ public class ProductsController {
     @PostMapping(value = "info",
             produces = APPLICATION_JSON_UTF8_VALUE,
             consumes = APPLICATION_JSON_UTF8_VALUE)
-    public ProductUpdateResponse updateProduct(           
-            @RequestBody String productJson) {
+    public ProductUpdateResponse updateProduct(@RequestHeader(name = "User-Token", required = false) String token,
+                                               @RequestBody String productJson) {
 		return productService.updateProduct(productJson, false, false);
     }
 	
@@ -89,8 +90,8 @@ public class ProductsController {
     })
     @DeleteMapping(
             produces = APPLICATION_JSON_UTF8_VALUE)
-    public ProductsDeleteResponse deleteProduct(
-            @RequestParam("product_id") List<Long> productIds)
+    public ProductsDeleteResponse deleteProduct(@RequestHeader(name = "User-Token", required = false) String token,
+                                                @RequestParam("product_id") List<Long> productIds)
             		throws BusinessException {
 		return productService.deleteProduct(productIds);
     }
@@ -110,6 +111,7 @@ public class ProductsController {
             produces = APPLICATION_JSON_UTF8_VALUE,
             consumes = MULTIPART_FORM_DATA_VALUE)
     public ProductImageUpdateResponse updateProductImage(
+            @RequestHeader(name = "User-Token", required = false) String token,
             @RequestPart("image") @Valid MultipartFile file,
             @RequestPart("properties") @Valid ProductImageUpdateDTO imgMetaData)
             		throws BusinessException {
@@ -206,7 +208,8 @@ public class ProductsController {
     @PostMapping(value = "bundle",
             produces = APPLICATION_JSON_UTF8_VALUE,
             consumes = APPLICATION_JSON_UTF8_VALUE)
-    public ProductUpdateResponse updateBundle(           
+    public ProductUpdateResponse updateBundle(
+            @RequestHeader(name = "User-Token", required = false) String token,
             @RequestBody String productJson) {
 		return productService.updateProduct(productJson, true, false);
     }
@@ -225,6 +228,7 @@ public class ProductsController {
             produces = APPLICATION_JSON_UTF8_VALUE,
             consumes = APPLICATION_JSON_UTF8_VALUE)
     public ProductsDeleteResponse deleteBundle(
+            @RequestHeader(name = "User-Token", required = false) String token,
             @RequestParam("product_id") Long productId)
             		throws BusinessException {
 		return productService.deleteBundle(productId);
@@ -244,7 +248,8 @@ public class ProductsController {
             produces = APPLICATION_JSON_UTF8_VALUE,
             consumes = APPLICATION_JSON_UTF8_VALUE)
 	@ResponseStatus(HttpStatus.OK)
-    public void updateBundleElement(           
+    public void updateBundleElement(
+            @RequestHeader(name = "User-Token", required = false) String token,
             @RequestBody BundleElementUpdateDTO element)
             		throws BusinessException {
 		productService.updateBundleElement(element);
@@ -265,7 +270,8 @@ public class ProductsController {
 	@PostMapping(value = "variant",
             produces = APPLICATION_JSON_UTF8_VALUE
             ,consumes = APPLICATION_JSON_UTF8_VALUE)
-    public VariantUpdateResponse updateProductVariant(@RequestBody VariantUpdateDTO variant)
+    public VariantUpdateResponse updateProductVariant(@RequestHeader(name = "User-Token", required = false) String token,
+                                                      @RequestBody VariantUpdateDTO variant)
             		throws BusinessException {
 		return  productService.updateVariant(variant);
     }
@@ -332,7 +338,7 @@ public class ProductsController {
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "tag", consumes = APPLICATION_JSON_UTF8_VALUE)
     public void updateProductTags(@RequestHeader(name = "User-Token", required = false) String token,
-                                            @RequestBody ProductTagDTO productTagDTO ) throws BusinessException {
+                                  @RequestBody ProductTagDTO productTagDTO ) throws BusinessException {
         productService.updateProductTags(productTagDTO);
     }
 
@@ -402,18 +408,17 @@ public class ProductsController {
     }
 
 
-    @ApiOperation(value = "Include/exclude products from 360 search", nickname = "Include/excludeProduct", code = 200)
+    @ApiOperation(value = "assign/unassign products with 360 shops", nickname = "Include/excludeProduct", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Products Included/excluded successfully"),
             @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
     })
     @ResponseStatus(OK)
-    @PostMapping(value = "set_360_search")
+    @PostMapping(value = "360_shops")
     public void includeProductIn360Search(@RequestHeader(name = "User-Token", required = false) String token,
-                             @RequestParam(required = false, defaultValue = "true") Boolean include,
-                             @RequestParam("product_id") List<Long> productIds) {
-        productService.includeProductIn360Search(include, productIds);
+                                          @RequestBody Product360ShopsDTO dto) {
+        productService.addProducts360Shops(dto);
     }
 
 
@@ -428,7 +433,7 @@ public class ProductsController {
             produces = APPLICATION_JSON_UTF8_VALUE,
             consumes = APPLICATION_JSON_UTF8_VALUE)
     public ProductUpdateResponse addCollection(@RequestHeader(name = "User-Token", required = false) String token,
-                              @RequestBody String productJson ) {
+                                               @RequestBody String productJson ) {
         return productService.updateProduct(productJson, false,  true);
     }
 

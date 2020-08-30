@@ -4,9 +4,8 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
 import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
-import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.commons.utils.EntityUtils.areEqual;
-import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
+import static com.nasnav.commons.utils.EntityUtils.*;
+import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
@@ -69,16 +68,18 @@ import javax.persistence.criteria.Root;
 
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
+import com.nasnav.dto.request.product.Product360ShopsDTO;
 import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.model.querydsl.sql.*;
 import com.nasnav.persistence.*;
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.SubQueryExpression;
+import com.querydsl.core.types.dsl.NumberPath;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -227,6 +228,12 @@ public class ProductService {
 	private ProductsCustomRepository productsCustomRepo;
 
 	@Autowired
+	private ShopsRepository shopsRepo;
+
+	@Autowired
+	private Product360ShopsRepository product360ShopsRepo;
+
+	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
 	                      ProductVariantsRepository productVariantsRepository, ProductImagesRepository productImagesRepository,
 	                      ProductFeaturesRepository productFeaturesRepository , BundleRepository bundleRepository,
@@ -271,10 +278,12 @@ public class ProductService {
 
 		List<VariantDTO> variantsDTOList = getVariantsList(productVariants, product.getId(), shopId, productsAndVariantsImages);
 		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(product.getId());
+		List<Long> product360Shops = product360ShopsRepo.findShopsByProductId(product.getId());
 		ProductDetailsDTO productDTO = null;
 		try {
 			productDTO = toProductDetailsDTO(product);
 			productDTO.setVariants(variantsDTOList);
+			productDTO.setShops(product360Shops);
 			if (variantsDTOList != null && variantsDTOList.size() > 1)
 				productDTO.setMultipleVariants(true);
 				productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
@@ -679,13 +688,14 @@ public class ProductService {
 
 		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock, shop);
 
-		SQLQuery<?> baseQuery = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
+		SQLQuery<?> fromProductsClause = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
+		SQLQuery<?> fromCollectionsClause = productsCustomRepo.getCollectionsBaseQuery(predicate, finalParams);
 
-		Prices prices = getProductPrices(baseQuery,stock);
+		Prices prices = getProductPrices(fromProductsClause, fromCollectionsClause, stock);
 
-		List<Organization_BrandRepresentationObject> brands = getProductBrands(queryFactory, baseQuery, product);
+		List<Organization_BrandRepresentationObject> brands = getProductBrands(fromProductsClause, fromCollectionsClause, product);
 
-        Map<String, List<String>> variantsFeatures = getProductVariantFeatures(queryFactory, baseQuery);
+        Map<String, List<String>> variantsFeatures = getProductVariantFeatures(fromProductsClause);
 
 		ProductsFiltersResponse response = new ProductsFiltersResponse(prices, brands, variantsFeatures);
 
@@ -694,33 +704,49 @@ public class ProductService {
 
 
 
-	private Prices getProductPrices(SQLQuery<?> baseQuery, QStocks stock) throws SQLException {
-		SQLQuery<?> query = 
-				baseQuery.select(
-						stock.price.min().as("minPrice"),
-						stock.price.max().as("maxPrice"));
+	private Prices getProductPrices(SQLQuery<?> productsQuery, SQLQuery<?> collectionsQuery, QStocks stock) {
+		SubQueryExpression products = productsQuery.select(stock.price.min().as("minPrice"), stock.price.max().as("maxPrice"));
+		SubQueryExpression collections = collectionsQuery.select(stock.price.min().as("minPrice"), stock.price.max().as("maxPrice"));
+
+		SQLQuery<?> sqlQuery = new SQLQuery<>();
+		SQLQuery<?> query = queryFactory
+				.select(SQLExpressions.min(Expressions.numberPath(BigDecimal.class, "minPrice")).as("minPrice"),
+						SQLExpressions.min(Expressions.numberPath(BigDecimal.class, "maxPrice")).as("maxPrice"))
+				.from(sqlQuery.union(products, collections).as("total"));
+
 		return template.queryForObject(query.getSQL().getSQL() , new BeanPropertyRowMapper<>(Prices.class));
 	}
 
 
 
-	private List<Organization_BrandRepresentationObject> getProductBrands(SQLQueryFactory factory, SQLQuery<?> baseQuery, QProducts product) throws SQLException {
+	private List<Organization_BrandRepresentationObject> getProductBrands(SQLQuery<?> productsQuery, SQLQuery<?> collectionsQuery, QProducts product) {
 		QBrands brand = QBrands.brands;
 
-		SQLQuery<?> query = factory.select(brand.id, brand.name).from(brand)
-								.where(brand.id.in(baseQuery.select(product.brandId)));
+		SubQueryExpression products = queryFactory
+				.select(brand.id, brand.name)
+				.from(brand)
+				.where(brand.id.in(productsQuery.select(product.brandId)));
+		SubQueryExpression collections = queryFactory
+				.select(brand.id, brand.name)
+				.from(brand)
+				.where(brand.id.in(collectionsQuery.select(product.brandId)));
+
+		SQLQuery<?> sqlQuery = new SQLQuery<>();
+		SQLQuery<?> query = queryFactory
+				.select(Expressions.numberPath(Long.class, "id"),Expressions.stringPath("name"))
+				.from(sqlQuery.union(products, collections).as("total"));
 
 		return template.query(query.getSQL().getSQL(),
 				new BeanPropertyRowMapper<>(Organization_BrandRepresentationObject.class));
 	}
 	
 	
-	private Map<String, List<String>> getProductVariantFeatures(SQLQueryFactory factory, SQLQuery<?> baseQuery) throws SQLException {
+	private Map<String, List<String>> getProductVariantFeatures(SQLQuery<?> baseQuery) throws SQLException {
 		QProductVariants variant = QProductVariants.productVariants;
 		QProductFeatures feature = QProductFeatures.productFeatures;
 
 		SQLQuery<?> featuresVal =
-				factory
+				queryFactory
 				.select(
 						Expressions.numberTemplate(Long.class, "(json_each(text_to_json(feature_spec))).key::int8").as("id"),
 						Expressions.stringTemplate("(json_each(text_to_json(feature_spec))).value::varchar").as("feature_value"))
@@ -729,7 +755,7 @@ public class ProductService {
 				.where(variant.featureSpec.isNotNull()
 						.and(variant.featureSpec.ne("{}")));
 
-		SQLQuery<?> query = factory.select(Expressions.numberTemplate(Long.class, "features_val.id"),
+		SQLQuery<?> query = queryFactory.select(Expressions.numberTemplate(Long.class, "features_val.id"),
 										Expressions.stringTemplate("name"),
 										Expressions.stringTemplate("p_name"),
 										Expressions.stringTemplate("features_val.feature_value").as("value")).distinct()
@@ -801,9 +827,6 @@ public class ProductService {
 
 		if(params.shop_id != null && params.org_id == null)
 			predicate.and( stock.shopId.eq(params.shop_id) );
-
-		if(params.has_360_view != null)
-			predicate.and( product.search_360.eq(params.has_360_view));
 
 		if(params.product_type != null)
 			predicate.and( product.productType.in(params.product_type));
@@ -935,17 +958,26 @@ public class ProductService {
 					.stream()
 					.collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
 
+			Map<Long, Prices> collectionsPricesMap =
+					mapInBatches(productIdList, 500, stockRepository::getCollectionsPrices)
+							.stream()
+							.collect(toMap(Prices::getId, p -> new Prices(p.getMinPrice(), p.getMaxPrice())));
+
 			Map<Long, String> productCoverImages = imgService.getProductsImagesMap(productIdList, variantsIds);
 
 			Map<Long, List<TagsRepresentationObject>> productsTags = getProductsTagsDTOList(productIdList);
 
 			List<Long> productsVariantsCountFlag = filterProductsWithMultipleVariants(productIdList);
 
+			Map<Long, List<Long>> product360Shops = getProducts360ShopsList(productIdList);
+
 			stocks.stream()
 					.map(s -> setAdditionalInfo(s, productCoverImages))
 					.map(s -> setProductTags(s, productsTags))
 					.map(s -> setProductMultipleVariants(s, productsVariantsCountFlag))
 					.map(s -> setProductPrices(s, productsPricesMap))
+					.map(s -> setCollectionPrices(s, collectionsPricesMap))
+					.map(s -> setProductShops(s, product360Shops))
 					.collect(toList());
 		}
 
@@ -953,6 +985,21 @@ public class ProductService {
 
 	}
 
+
+	private ProductRepresentationObject setProductShops(ProductRepresentationObject product, Map<Long, List<Long>> shops) {
+		List<Long> shopsList = shops.get(product.getId());
+		product.setShops(shopsList);
+		return product;
+	}
+
+
+	private Map<Long, List<Long>> getProducts360ShopsList(List<Long> productIdList) {
+		return product360ShopsRepo.findByProductEntity_IdIn(productIdList)
+				.stream()
+				.collect(groupingBy(ps -> ps.getProductEntity().getId(),
+						 mapping(ps -> ps.getShopEntity().getId(),
+								toList())));
+	}
 
 	private ProductRepresentationObject setProductMultipleVariants(ProductRepresentationObject product,
 																   List<Long> productsWithMultipleVariants) {
@@ -974,7 +1021,17 @@ public class ProductService {
 	private ProductRepresentationObject setProductPrices(ProductRepresentationObject product,
 													   Map<Long, Prices> pricesMap) {
 		Prices prices = pricesMap.get(product.getId());
-		product.setPrices(prices);
+		if (product.getProductType().intValue() == 0)
+			product.setPrices(prices);
+		return product;
+	}
+
+
+	private ProductRepresentationObject setCollectionPrices(ProductRepresentationObject product,
+														 Map<Long, Prices> pricesMap) {
+		Prices prices = pricesMap.get(product.getId());
+		if (product.getProductType().intValue() == 2)
+			product.setPrices(prices);
 		return product;
 	}
 
@@ -2799,11 +2856,52 @@ public class ProductService {
 
 
 
-	public void includeProductIn360Search(Boolean include, List<Long> productIdsList) {
+	public void addProducts360Shops(Product360ShopsDTO dto) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
-		if (!(productIdsList == null || productIdsList.isEmpty())) {
-			divideToBatches(productIdsList, 500)
-					.forEach(batch -> productRepository.includeProductsIn360Search(batch, include, orgId));
+
+		validateProduct360ShopsDTO(dto);
+
+		List<ProductEntity> existingProducts = productRepository.getExistingProducts(dto.getProductIds(), orgId);
+		List<ShopsEntity> existingShops = shopsRepo.getExistingShops(dto.getShopIds(), orgId);
+
+		if (dto.getInclude()) {
+			addProduct360Shops(existingProducts, existingShops);
+		} else {
+			removeProduct360Shops(existingProducts, existingShops);
+		}
+	}
+
+
+	private void addProduct360Shops(List<ProductEntity> existingProducts, List<ShopsEntity> existingShops) {
+		List<Shop360ProductsEntity> product360Shops = new ArrayList<>();
+		for(ProductEntity product : existingProducts) {
+			for(ShopsEntity shop : existingShops) {
+				if (!product360ShopsRepo.existsByProductEntityAndShopEntity(product, shop)) {
+					Shop360ProductsEntity product360Shop = new Shop360ProductsEntity();
+					product360Shop.setProductEntity(product);
+					product360Shop.setShopEntity(shop);
+					product360Shops.add(product360Shop);
+				}
+			}
+		}
+		product360ShopsRepo.saveAll(product360Shops);
+	}
+
+
+	private void removeProduct360Shops(List<ProductEntity> existingProducts, List<ShopsEntity> existingShops) {
+		product360ShopsRepo.deleteByProductEntityInAndShopEntityIn(existingProducts, existingShops);
+	}
+
+
+	private void validateProduct360ShopsDTO(Product360ShopsDTO dto) {
+		if (isNullOrEmpty(dto.getProductIds())){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0001);
+		}
+		if (isNullOrEmpty(dto.getShopIds())){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$0006);
+		}
+		if (isBlankOrNull(dto.getInclude())){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0002, "include");
 		}
 	}
 
@@ -2906,6 +3004,9 @@ public class ProductService {
 
 		List<ProductImageDTO> collectionImages = imgService.getProductsAndVariantsImages(asList(entity.getId()), null);
 		dto.setImages(getProductImages(collectionImages));
+
+		List<Long> collection360Shops = product360ShopsRepo.findShopsByProductId(entity.getId());
+		dto.setShops(collection360Shops);
 
 		if(!entity.getVariants().isEmpty()) {
 			List<ProductVariantsEntity> variantsList = new ArrayList<>(entity.getVariants());
