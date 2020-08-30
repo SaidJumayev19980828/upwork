@@ -9,6 +9,7 @@ import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.MetaOrderBasicInfo;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.request.OrderRejectDTO;
+import com.nasnav.dto.request.ReturnItemsDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.cart.CartOptimizeDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
@@ -97,4 +98,6 @@ public interface OrderService {
 	OrdersEntity updateOrderStatus(OrdersEntity orderEntity, OrderStatus newStatus);
 
 	BigDecimal calculateCartTotal();
+
+	void receiveItems(ReturnItemsDTO returnedItems);
 }
