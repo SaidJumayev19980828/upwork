@@ -594,6 +594,7 @@ public class ShopThreeSixtyService {
 
     private List<ThreeSixtyProductsDTO> getCollectionsListAdditionalData(List<ThreeSixtyProductsDTO> collections) {
         List<Long> collectionIds = collections.stream().map(p -> p.getId()).collect(toList());
+
         Map<Long, List<ProductImagesEntity>> collectionsImagesMap = productImageService.getProductsImageList(collectionIds);
         Map<Long, Prices> collectionsPricesMap = stockRepo.getCollectionsPrices(collectionIds)
                 .stream()
@@ -605,12 +606,18 @@ public class ShopThreeSixtyService {
 
     private List<ThreeSixtyProductsDTO> setPricesAndImages(List<ThreeSixtyProductsDTO> list, Map<Long, List<ProductImagesEntity>> imagesMap, Map<Long, Prices> pricesMap) {
         for (ThreeSixtyProductsDTO dto : list) {
-            if (imagesMap.get(dto.getId()) != null)
-                dto.setImages(imagesMap.get(dto.getId()).stream()
+            if (imagesMap.get(dto.getId()) != null) {
+                Set<String> imagesSet = imagesMap
+                        .get(dto.getId())
+                        .stream()
                         .map(i -> of(i.getUri()).orElse(null))
-                        .collect(toSet()));
-            if (pricesMap.get(dto.getId()) != null)
-                dto.setPrices(pricesMap.get(dto.getId()));
+                        .collect(toSet());
+                dto.setImages(imagesSet);
+            }
+            ofNullable(dto.getId())
+                    .map(pricesMap::get)
+                    .ifPresent(dto::setPrices);
+
         }
         return list;
     }
