@@ -4,27 +4,41 @@ import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0011;
 import static com.nasnav.service.model.common.ParameterType.LONG_ARRAY;
 import static com.nasnav.service.model.common.ParameterType.NUMBER;
 import static java.lang.Long.MIN_VALUE;
+import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.springframework.context.i18n.LocaleContextHolder.getLocale;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
+import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
+import javax.annotation.PostConstruct;
 
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring5.SpringTemplateEngine;
+import org.thymeleaf.templatemode.TemplateMode;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+import org.thymeleaf.templateresolver.ITemplateResolver;
 
 import com.nasnav.commons.utils.EntityUtils;
+import com.nasnav.commons.utils.MapBuilder;
 import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dto.AddressRepObj;
+import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.ShopsEntity;
@@ -41,6 +55,8 @@ import com.nasnav.shipping.model.ShippingEta;
 import com.nasnav.shipping.model.ShippingOffer;
 import com.nasnav.shipping.model.ShippingServiceInfo;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -59,6 +75,8 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 	private static List<Parameter> ADDITIONAL_PARAM_DEFINITION = 
 			asList(new Parameter(SHOP_ID, NUMBER));
 	
+	private static String SHIPPING_REPORT_TEMPLATE = "shipping_report.html";
+	
 	private Long warehouseId;
 	private Set<Long> allowedShops;
 	
@@ -68,6 +86,15 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 	
 	@Autowired
 	SecurityService securityService;
+	
+	private  SpringTemplateEngine templateEngine;
+    
+    
+    @PostConstruct
+    public void init() {
+        templateEngine = new SpringTemplateEngine();
+        templateEngine.addTemplateResolver(htmlTemplateResolver());
+    }
 	
 	public PickupPointsWithInternalLogistics() {
 		allowedShops = emptySet();
@@ -80,6 +107,28 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 	public ShippingServiceInfo getServiceInfo() {
 		return new ShippingServiceInfo(SERVICE_ID, SERVICE_NAME, true
 				, SERVICE_PARAM_DEFINITION, ADDITIONAL_PARAM_DEFINITION);
+	}
+	
+	
+	
+	private ITemplateResolver htmlTemplateResolver() {
+        final ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+//        templateResolver.setApplicationContext(applicationContext);
+        templateResolver.setOrder(Integer.valueOf(1));
+//        templateResolver.setResolvablePatterns(singleton("html/*"));
+        templateResolver.setPrefix("/templates/shipping/pickup_points/");
+        templateResolver.setSuffix(".html");
+        templateResolver.setTemplateMode(TemplateMode.HTML);
+        templateResolver.setCharacterEncoding("UTF-8");
+        templateResolver.setCacheable(true);
+        return templateResolver;
+    }
+	
+	
+	private String createHtmlFromThymeleafTemplate(String template, Map<String,Object> variables) {
+		Context ctx = new Context(getLocale());
+		ctx.setVariables(variables);
+		return this.templateEngine.process(template, ctx);
 	}
 
 	
@@ -114,7 +163,7 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 
 	@Override
 	public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> items) {
-		List<String> pickupShops = getPickupShopsNames();
+		List<String> pickupShops = getPickupShops();
 		
 		ShippingServiceInfo serviceInfo = createServiceInfoWithShopsOptions(pickupShops);
 		
@@ -131,12 +180,12 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 	
 	
 	
-	private List<String> getPickupShopsNames(){
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		return shopRepo
-				.findByIdInAndOrganizationEntity_IdAndRemoved(allowedShops, orgId, 0)
+	
+	
+	private List<String> getPickupShops(){
+		return allowedShops
 				.stream()
-				.map(ShopsEntity::getName)
+				.map(id -> id.toString())
 				.collect(toList());
 	}
 	
@@ -178,14 +227,115 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 	public Flux<ShipmentTracker> requestShipment(List<ShippingDetails> items) {
 		//need to return csv containing items - selected pickup point - addresses 
 		//- order and meta order as the airwaybill
-		return Flux.just(new ShipmentTracker());
+		ShipmentTracker tracker = new ShipmentTracker();
+		String reportBase64String = createShipmentReport(items);
+		tracker.setAirwayBillFile(reportBase64String);
+		return Flux.just(tracker);
 	}
 
 	
 	
+	private String createShipmentReport(List<ShippingDetails> shipmentDetails) {
+		List<ShipmentData> shipments = createShipmentReportData(shipmentDetails);
+		String report = processReportTemplate(shipments);
+		return convertToBase64String(report);
+	}
+
+
+
+
+	private String convertToBase64String(String report) {
+		return Base64.getEncoder().encodeToString(report.getBytes());
+	}
+
+
+
+
+	private String processReportTemplate(List<ShipmentData> shipments) {
+		Map<String, Object> templateVariables = 
+				MapBuilder
+				.<String,Object>map()
+				.put("shipments", shipments)
+				.getMap();
+		return createHtmlFromThymeleafTemplate(SHIPPING_REPORT_TEMPLATE, templateVariables);
+	}
+
+
+
+
+	private List<ShipmentData> createShipmentReportData(List<ShippingDetails> shipmentDetails) {
+		return shipmentDetails
+				.stream()
+				.map(this::createShipmentData)
+				.collect(toList());
+	}
+
+	
+	
+	
+	private ShipmentData createShipmentData(ShippingDetails shippingDetails) {
+		String fullName = shippingDetails.getReceiver().getFirstName()
+							+" "+ shippingDetails.getReceiver().getLastName();
+		String orderFullId = "" + shippingDetails.getMetaOrderId() + "-" +shippingDetails.getSubOrderId();
+		ShopData shopData = createShopData(shippingDetails);
+		
+		ShipmentData data = new ShipmentData();
+		data.setCustomerName(fullName);
+		data.setCustomerPhone(shippingDetails.getReceiver().getPhone());
+		data.setOrderFullId(orderFullId);
+		data.setShop(shopData);
+		data.setItems(shippingDetails.getItems());
+		return data;
+	}
+
+	
+
+	private ShopData createShopData(ShippingDetails shippingDetails) {
+		ShopsEntity shop = 
+				ofNullable(shippingDetails)
+				.map(ShippingDetails::getAdditionalData)
+				.map(additionalData -> additionalData.get(SHOP_ID))
+				.flatMap(EntityUtils::parseLongSafely)
+				.flatMap(shopRepo::findShopFullData)
+				.orElseThrow(() -> {
+					String message = "Selected shop is not a valid pickup point!";
+					return new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0011, message);
+				});
+		String addressString = createAddressString(shop);
+		return new ShopData(shop.getId(), shop.getName(), addressString);
+	}
+
+
+
+
+	private String createAddressString(ShopsEntity shop) {
+		AddressRepObj addressData = ((ShopRepresentationObject)shop.getRepresentation()).getAddress();
+		return format("%s,%s,%s,%s%s%s%s"
+				, addressData.getCountry()
+				, addressData.getCity()
+				, addressData.getArea()
+				, addressData.getAddressLine1()
+				, createAddressElement(addressData.getAddressLine2())
+				, createAddressElement(addressData.getBuildingNumber())
+				, createAddressElement(addressData.getFlatNumber()));
+	}
+
+
+
+
+	private String createAddressElement(String element) {
+		return ofNullable(element)
+				.map(e -> ","+e)
+				.orElse("");
+	}
+
+
+
+
 	@Override
 	public void validateShipment(List<ShippingDetails> items) {
 		boolean isCartFromSingleShop = items.size() == 1;
+		boolean isCartStocksFromWarehouse = isCartStocksFromWarehouseOnly(items);
 		boolean isShopAllowedForPickup = isShopAllowedForPickup(items);
 		
 		String message = "";
@@ -196,12 +346,24 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 		}else if(!isShopAllowedForPickup) {
 			message = "Selected shop is not a valid pickup point!";
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0011, message);
+		}else if(!isCartStocksFromWarehouse) {
+			message = "Cart items are not from the warehouse!";
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0011, message);
 		}
 	}
 	
 	
 	
 	
+	private boolean isCartStocksFromWarehouseOnly(List<ShippingDetails> items) {
+		return items
+				.stream()
+				.allMatch(shippingDetails -> Objects.equals(shippingDetails.getShopId(), warehouseId));
+	}
+
+
+
+
 	private boolean isShopAllowedForPickup(List<ShippingDetails> items) {
 		return items
 				.stream()
@@ -222,4 +384,35 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 		return status;
 	}
 
+}
+
+
+
+@Data
+class ShipmentData{
+	private ShopData shop;
+	private String customerName;
+	private String customerPhone;
+	private String orderFullId;
+	private List<ShipmentItems> items;
+}
+
+
+@Data
+@AllArgsConstructor
+class ShopData{
+	private Long id;
+	private String name;
+	private String address;
+}
+
+
+
+@Data
+@AllArgsConstructor
+class Item{
+	private String name;
+	private String productCode;
+	private String barcode;
+	private String specs;
 }

@@ -49,5 +49,13 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
     @Query(value = "update ShopsEntity s set s.removed = 1 where s.id = :id")
     void setShopHidden(@Param("id") Long id);
 
-	List<ShopsEntity> findByIdInAndOrganizationEntity_IdAndRemoved(Set<Long> allowedShops, Long orgId, int i);
+	List<ShopsEntity> findByIdInAndOrganizationEntity_IdAndRemoved(Set<Long> shops, Long orgId, int removed);
+	
+	@Query("SELECT shop FROM ShopsEntity shop "
+			+ " LEFT JOIN FETCH shop.addressesEntity address "
+			+ " LEFT JOIN FETCH address.areasEntity area "
+			+ " LEFT JOIN FETCH area.citiesEntity city "
+			+ " LEFT JOIN FETCH city.countriesEntity country "
+			+ " WHERE shop.id = :id")
+	Optional<ShopsEntity> findShopFullData(@Param("id")Long id);
 }

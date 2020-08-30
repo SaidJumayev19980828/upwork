@@ -139,4 +139,4 @@ VALUES(602, '99001/cover_img.jpg', '{"Color":"Yellow"}', 3, 88);
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) 
 VALUES(603, '99001/cover_img.jpg', '{"Color":"Yellow"}', 3, 88);
 
-INSERT INTO public.organization_shipping_service values('PICKUP_POINTS', 99001, '{ "WAREHOUSE_ID":503 }', 99001);
+INSERT INTO public.organization_shipping_service values('PICKUP_POINTS', 99001, '{ "WAREHOUSE_ID":503 , "PICKUP_POINTS_ID_LIST":[501,502]}', 99001);

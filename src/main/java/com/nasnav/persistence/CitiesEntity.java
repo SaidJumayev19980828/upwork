@@ -1,7 +1,6 @@
 package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.nasnav.dto.AreasRepObj;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.CitiesRepObj;
 import lombok.Data;
@@ -9,10 +8,8 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import javax.persistence.*;
-import java.util.List;
 import java.util.Set;
 
-import static java.util.stream.Collectors.*;
 
 @Table(name = "cities")
 @Entity

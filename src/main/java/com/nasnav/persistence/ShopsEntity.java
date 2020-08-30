@@ -10,9 +10,6 @@ import com.nasnav.dto.ShopRepresentationObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.EqualsAndHashCode.Exclude;
-import org.hibernate.annotations.Loader;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
 
 @Table(name = "shops")
 @Entity
