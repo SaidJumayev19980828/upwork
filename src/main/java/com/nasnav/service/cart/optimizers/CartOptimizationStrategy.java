@@ -1,8 +1,10 @@
 package com.nasnav.service.cart.optimizers;
 
 import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -10,7 +12,10 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 public enum CartOptimizationStrategy {
-	SAME_CITY(OptimizationStratigiesNames.SAME_CITY), GIVEN_SHOP(OptimizationStratigiesNames.GIVEN_SHOP);
+	SAME_CITY(OptimizationStratigiesNames.SAME_CITY)
+	, GIVEN_SHOP(OptimizationStratigiesNames.GIVEN_SHOP)
+	, DEFAULT_OPTIMIZER(OptimizationStratigiesNames.SAME_CITY)
+	, WAREHOUSE(OptimizationStratigiesNames.WAREHOUSE);
 	
 	@Getter
 	@JsonValue
@@ -27,4 +32,13 @@ public enum CartOptimizationStrategy {
 				.map(CartOptimizationStrategy::getValue)
 				.anyMatch(val -> Objects.equals(val, strategy));
 	}
+	
+	
+	
+	
+	public static Optional<CartOptimizationStrategy> getCartOptimizationStrategy(String name) {
+		return stream(values())
+				.filter(strategy -> Objects.equals(strategy.getValue(), name))
+				.findFirst();
+	};
 }

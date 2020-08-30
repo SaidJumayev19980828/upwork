@@ -19,32 +19,43 @@ INSERT INTO public.product_features(id, name, p_name, description, organization_
 
 INSERT INTO public.countries(id,"name")VALUES(1,'Egypt');
 INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
+INSERT INTO public.cities(id,country_id, "name") VALUES(2,1, 'Alexandria');
 INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
+INSERT INTO public.areas(id, "name", city_id)VALUES(2, 'Mokatem', 1);
+INSERT INTO public.areas(id, "name", city_id)VALUES(3, 'Miami', 2);
 
 INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300001, 'address line', 1, '01111234567');
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300002, 'address line', 2, '01111234567');
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300003, 'shop address', 3, '01111234567');
+
 
 --inserting shops
 INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (501, 'shop_1', 102, 99001, 12300001);
-INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (502, 'shop_2', 101, 99001, 12300001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (502, 'shop_2', 101, 99001, 12300002);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (503, 'shop_3', 101, 99001, 12300003);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (504, 'shop_4', 101, 99001, 12300002);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (505, 'warehouse', 101, 99001, 12300001);
 
 --insering employees
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (69, 'testuser2@nasnav.com', 99002, '131415',  501);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+VALUES (70, 'ahmed.galal@nasnav.com', 99001, '161718',  502);
 
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1, '101112', now(), 68, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (2, '131415', now(), 69, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700001, '101112', now(), 68, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '131415', now(), 69, null);
 
 --inserting users
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
     VALUES (88, 'user1@nasnav.com','user1','123', 99001);
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
-    VALUES (89, 'user2@nasnav.com','user2','456', 99002);
+    VALUES (89, 'test2@nasnav.com','user2','456', 99001);
 
 
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700001, '123', now(), null, 88);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '456', now(), null, 89);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700003, '123', now(), null, 88);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700004, '456', now(), null, 89);
 
 
 --inserting Roles
@@ -67,9 +78,9 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1003, 'product_3',101, 202, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1004, 'product_4',102, 201, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1005, 'product_5',102, 202, 99001, now(), now());
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1006, 'product_6',102, 201, 99002, now(), now());
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1007, 'product_7',101, 202, 99002, now(), now());
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1008, 'product_8',102, 202, 99002, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1006, 'product_6',102, 201, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1007, 'product_7',101, 202, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1008, 'product_8',102, 202, 99001, now(), now());
 
 -- variants for each product
 insert into public.product_variants(id, "name" , product_id, feature_spec ) values(310001, 'var' 	, 1001, '{"234":"66"
@@ -87,12 +98,35 @@ insert into public.product_variants(id, "name" , product_id ) values(310010, 'va
 
 
 --inserting stocks
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(601, 502, 6, 99002, 600.00, 310001);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(602, 501, 8, 99001, 1200.0, 310002);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(603, 501, 4, 99002, 200.00, 310003);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(604, 502, 6, 99001, 700.00, 310004);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(605, 502, 0, 99001, 700.00, 310009, 0);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(606, 502, 1, 99001, 700.00, 310010, 1);
+
+-- alexandria branch which the cart was assigned to
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(601, 503, 6, 99001, 700.00, 310004, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(602, 503, 8, 99001, 1200.0, 310002, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(603, 503, 6, 99001, 800.00, 310009, 1);
+
+-- first shop in cairo has the items, but not enough quantities
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(604, 501, 1, 99001, 700.00, 310004, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(605, 501, 1, 99001, 1200.0, 310002, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(606, 501, 1, 99001, 800.00, 310009, 1);
+
+
+-- second shop in cairo has 2 items, but not enough quantities of the third
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(607, 502, 8, 99001, 700.00, 310004, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(608, 502, 8, 99001, 1200.0, 310002, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(609, 502, 1, 99001, 800.00, 310009, 1);
+
+
+-- thrid shop in cairo has 2 items, but not enough quantities of the first
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(610, 504, 1, 99001, 700.00, 310004, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(611, 504, 3, 99001, 1200.0, 310002, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(612, 504, 3, 99001, 800.00, 310009, 1);
+
+
+-- warhouse in alexandria has all items, but with one has low quantity
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(613, 505, 3, 99001, 700.00, 310004, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(614, 505, 3, 99001, 1200.0, 310002, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(615, 505, 1, 99001, 800.00, 310009, 1);
+
 
 
 --INSERT dummy images
@@ -113,9 +147,17 @@ INSERT INTO public.product_images(product_id, variant_id, "type", priority, uri)
 
 
 -- insert cart
-INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(602, '99001/img2.jpg', '{"Color":"Blue"}', 10000, 88);
-INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(604, '99001/cover_img.jpg', '{"Color":"Yellow"}', 1, 88);
+INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) 
+VALUES(601, '99001/img2.jpg', '{"Color":"Blue"}', 3, 88);
+INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) 
+VALUES(602, '99001/cover_img.jpg', '{"Color":"Yellow"}', 3, 88);
+INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) 
+VALUES(603, '99001/cover_img.jpg', '{"Color":"Yellow"}', 3, 88);
 
 INSERT INTO public.organization_shipping_service values('TEST', 99001, '{ "name": "Shop","type": "long","value": "14" }', 99001);
+
+INSERT INTO public.organiztion_cart_optimization
+(optimization_parameters, optimization_strategy, organization_id, shipping_service_id)
+VALUES('{"warehouse_id":505}', 'WAREHOUSE', 99001, 'TEST');
 
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);

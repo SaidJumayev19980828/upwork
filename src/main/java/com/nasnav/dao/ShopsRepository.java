@@ -52,4 +52,14 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
 
     @Query("SELECT shop from ShopsEntity shop where shop.id in :ids and shop.organizationEntity.id = :orgId")
     List<ShopsEntity> getExistingShops(@Param("ids")Set<Long> shopIds, @Param("orgId")Long orgId);
+
+	List<ShopsEntity> findByIdInAndOrganizationEntity_IdAndRemoved(Set<Long> shops, Long orgId, int removed);
+	
+	@Query("SELECT shop FROM ShopsEntity shop "
+			+ " LEFT JOIN FETCH shop.addressesEntity address "
+			+ " LEFT JOIN FETCH address.areasEntity area "
+			+ " LEFT JOIN FETCH area.citiesEntity city "
+			+ " LEFT JOIN FETCH city.countriesEntity country "
+			+ " WHERE shop.id = :id")
+	Optional<ShopsEntity> findShopFullData(@Param("id")Long id);
 }

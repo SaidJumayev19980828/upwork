@@ -230,7 +230,7 @@ public class UserController {
     })
     @PostMapping(value = "login/oauth2",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<UserApiResponse> login(@RequestParam("token") String socialLoginToken) throws BusinessException {
+    public ResponseEntity<UserApiResponse> oauth2Login(@RequestParam("token") String socialLoginToken) throws BusinessException {
     	ResponseEntity.BodyBuilder response = ResponseEntity.ok();
     	try {
     		UserApiResponse body = securityService.socialLogin(socialLoginToken);

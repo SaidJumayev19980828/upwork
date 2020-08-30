@@ -4,6 +4,7 @@ import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
 import static com.nasnav.enumerations.OrderStatus.DISCARDED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
+import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.WAREHOUSE;
 import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
@@ -48,6 +49,7 @@ import com.nasnav.NavBox;
 import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.OrganizationCartOptimizationRepository;
 import com.nasnav.dto.BasketItem;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Cart;
@@ -59,6 +61,7 @@ import com.nasnav.dto.response.navbox.SubOrder;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.MetaOrderEntity;
 import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.OrganizationCartOptimizationEntity;
 import com.nasnav.persistence.ShipmentEntity;
 import com.nasnav.service.OrderService;
 
@@ -91,6 +94,8 @@ public class CartTest {
 	@Autowired
 	private MetaOrderRepository metaOrderRepo;
 	
+	@Autowired
+	private OrganizationCartOptimizationRepository orgOptimizerRepo;
 	
 	@Test
 	public void getCartNoAuthz() {
@@ -548,6 +553,8 @@ public class CartTest {
 		assertEquals(406, res.getStatusCodeValue());
 	}
 
+	
+	
 
 	@Test
 	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_3.sql"})
@@ -688,13 +695,7 @@ public class CartTest {
 		Long userId = 88L;
 		Cart initialCart = orderService.getUserCart(userId);
 		//---------------------------------------------------------------		
-		String requestBody = 
-				json()
-				.put("strategy", "SAME_CITY")
-				.put("parameters", 
-						json()
-						.put("CUSTOMER_ADDRESS_ID",12300001L ))
-				.toString();
+		String requestBody = createCartCheckoutBody().toString();
 		HttpEntity<?> request = getHttpEntity(requestBody, "123");
 		ResponseEntity<CartOptimizeResponseDTO> res = 
 				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
@@ -727,13 +728,7 @@ public class CartTest {
 	public void optimizeCartSelectShopWithHighestStockTest() {
 		
 		//---------------------------------------------------------------		
-		String requestBody = 
-				json()
-				.put("strategy", "SAME_CITY")
-				.put("parameters", 
-						json()
-						.put("CUSTOMER_ADDRESS_ID",12300001L ))
-				.toString();
+		String requestBody = createCartCheckoutBody().toString();
 		HttpEntity<?> request = getHttpEntity(requestBody, "123");
 		ResponseEntity<CartOptimizeResponseDTO> res = 
 				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
@@ -760,15 +755,11 @@ public class CartTest {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void optimizeCartSelectShop() {
 		
-		//---------------------------------------------------------------		
-		String requestBody = 
-				json()
-				.put("strategy", "SAME_CITY")
-				.put("parameters", 
-						json()
-						.put("CUSTOMER_ADDRESS_ID",12300001L )
-						.put("SHOP_ID",503L ))
-				.toString();
+		//---------------------------------------------------------------	
+		JSONObject requestJson = createCartCheckoutBody();
+		requestJson.put("additional_data", json().put("SHOP_ID", 503L));
+		
+		String requestBody = requestJson.toString();
 		HttpEntity<?> request = getHttpEntity(requestBody, "123");
 		ResponseEntity<CartOptimizeResponseDTO> res = 
 				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
@@ -794,15 +785,11 @@ public class CartTest {
 	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 	public void optimizeCartSelectShopThatHaveNoEnoughQuantity() {
 		
-		//---------------------------------------------------------------		
-		String requestBody = 
-				json()
-				.put("strategy", "SAME_CITY")
-				.put("parameters", 
-						json()
-						.put("CUSTOMER_ADDRESS_ID",12300001L )
-						.put("SHOP_ID",504L ))
-				.toString();
+		//---------------------------------------------------------------
+		JSONObject requestJson = createCartCheckoutBody();
+		requestJson.put("additional_data", json().put("SHOP_ID", 504L));
+		
+		String requestBody = requestJson.toString();
 		HttpEntity<?> request = getHttpEntity(requestBody, "123");
 		ResponseEntity<CartOptimizeResponseDTO> res = 
 				template.postForEntity("/cart/optimize", request, CartOptimizeResponseDTO.class);
@@ -850,7 +837,6 @@ public class CartTest {
 	
 	
 	
-	//TODO: invalid startegy test
 	//TODO: invalid parameter json test
 	
 
@@ -979,6 +965,76 @@ public class CartTest {
 		body.put("additional_data", additionalData);
 
 		return body;
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_10.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutWithWareHouseOptimizationStrategy() {
+		JSONObject requestBody = createCartCheckoutBody();
+		Order order = checkOutCart(requestBody, new BigDecimal("8125.5"), new BigDecimal("8100") ,new BigDecimal("25.5"));
+		
+		List<BasketItem> items = 
+				order
+				.getSubOrders()
+				.stream()
+				.map(SubOrder::getItems)
+				.flatMap(List::stream)
+				.collect(toList());
+		List<Long> orderStocks = 
+				items
+				.stream()
+				.map(BasketItem::getStockId)
+				.collect(toList());
+		assertEquals(3, items.size());
+		assertTrue("The optimization should pick stocks from warehouse only"
+					, asList(613L, 614L, 615L).stream().allMatch(orderStocks::contains));	
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_10.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutWithWareHouseOptimizationStrategyWithMissingParameter() {
+		clearWarehouseOptimizationParameters();
+		
+		JSONObject requestBody = createCartCheckoutBody();
+		
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
+		assertEquals(500, res.getStatusCodeValue());
+	}
+
+
+
+
+
+	private void clearWarehouseOptimizationParameters() {
+		OrganizationCartOptimizationEntity entity = 
+				orgOptimizerRepo
+				.findByOptimizationStrategyAndOrganization_Id(WAREHOUSE.getValue(), 99001L)
+				.get();
+		entity.setParameters("{}");
+		orgOptimizerRepo.save(entity);
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_11.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutWithWareHouseOptimizationStrategyWithInsuffecientStock() {
+		JSONObject requestBody = createCartCheckoutBody();
+		
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
+		assertEquals(406, res.getStatusCodeValue());
 	}
 	
 	

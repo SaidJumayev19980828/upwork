@@ -2,6 +2,8 @@ package com.nasnav.shipping.model;
 
 import java.util.List;
 
+import com.nasnav.service.model.common.Parameter;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

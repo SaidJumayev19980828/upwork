@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+    <header>
+        <style type="text/css">
+            td{
+                padding: 10%;
+                white-space: nowrap; 
+            }
+            .item-table{
+                width: 100%;
+                table-layout:fixed
+            }
+            .item-table th,
+            td {
+                padding: 1%;
+                text-align: left;
+                word-wrap: break-word;
+            }
+            body{
+                padding: 4%;
+                width: 210mm;
+            }
+        </style>
+    </header>
+    <body>
+        <h1>Pickup Shippment report</h1>
+        <div th:each="shipment : ${shipments}">
+            <h2>Shipment</h2>
+            <div>
+                <h3>Pickup point</h3>
+                <table>
+                    <tr>
+                        <td>Shop Name</td> <td th:text="${shipment.shop.name}">New Branch</td>
+                    </tr>
+                    <tr>
+                        <td>Shop Id</td> <td th:text="${shipment.shop.id}">111</td>
+                    </tr>
+                    <tr>
+                        <td>Shop address</td> <td th:text="${shipment.shop.address}"> 123 sesam str.</td>
+                    </tr>
+                </table>
+            </div>
+            <div>
+                <h3>Order Info</h3>
+                <table>
+                    <tr>
+                        <td>Order Id</td><td th:text="${shipment.orderFullId}">132-896</td>
+                    </tr>
+                    <tr>
+                        <td>Customer name</td><td th:text="${shipment.customerName}">NemNem</td>
+                    </tr>
+                    <tr>
+                        <td>Customer Phone</td><td th:text="${shipment.customerPhone}">011122333669</td>
+                    </tr>
+                </table>
+            </div>
+            <div>
+                <h3>Items</h3>
+                <table class="item-table">
+                    <tr>
+                        <th>Name</th><th>Product Code</th><th>barcode</th><th>Specs</th>
+                    </tr>
+                    <tr th:each="item: ${shipment.items}">
+                        <td th:text="${item.name}">test product</td>
+                        <td th:text="${item.productCode}">ABC-123</td>
+                        <td th:text="${item.barcode}">1234687</td>
+                        <td th:text="${item.specs}">XL/black</td>
+                    </tr>
+                </table>
+            </div>            
+        </div>
+    </body>
+</html>

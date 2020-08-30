@@ -19,7 +19,8 @@ import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0008;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0009;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SVC$0001;
 import static com.nasnav.exceptions.ErrorCodes.SHP$USR$0001;
-import static com.nasnav.shipping.model.ParameterType.STRING;
+import static com.nasnav.service.model.common.ParameterType.STRING;
+import static com.nasnav.shipping.model.CommonServiceParameters.CART_OPTIMIZER;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
@@ -92,10 +93,10 @@ import com.nasnav.persistence.StocksEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.CartItemShippingData;
+import com.nasnav.service.model.common.Parameter;
+import com.nasnav.service.model.common.ParameterType;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
-import com.nasnav.shipping.model.Parameter;
-import com.nasnav.shipping.model.ParameterType;
 import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.Shipment;
 import com.nasnav.shipping.model.ShipmentItems;
@@ -911,13 +912,34 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	@Override
 	public void unregisterFromShippingService(String serviceId) {
+		OrganizationShippingServiceEntity orgService = getServiceParameters(serviceId);
+
+		orgShippingServiceRepo.delete(orgService);
+	}
+
+
+
+	private OrganizationShippingServiceEntity getServiceParameters(String serviceId) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		OrganizationShippingServiceEntity orgService =
 				orgShippingServiceRepo
 						.getByOrganization_IdAndServiceId(orgId, serviceId)
 						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0006, serviceId));
+		return orgService;
+	}
 
-		orgShippingServiceRepo.delete(orgService);
+
+
+	@Override
+	public Optional<String> getShippingServiceCartOptimizer(String shippingServiceId) {
+		OrganizationShippingServiceEntity orgService = 
+				getServiceParameters(shippingServiceId);
+		List<ServiceParameter> parameters = parseServiceParameters(orgService);
+		return parameters
+				.stream()
+				.filter(param -> Objects.equals(param.getParameter(), CART_OPTIMIZER.name()))
+				.map(ServiceParameter::getValue)
+				.findFirst();
 	}
 	
 }

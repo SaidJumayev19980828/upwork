@@ -1,8 +1,10 @@
 package com.nasnav.service.cart.optimizers;
 
+import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0010;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0011;
 import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.SAME_CITY;
+import static com.nasnav.shipping.services.PickupFromShop.SHOP_ID;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
@@ -26,7 +28,10 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.AddressRepository;
+import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.AddressesEntity;
@@ -34,6 +39,7 @@ import com.nasnav.persistence.AreasEntity;
 import com.nasnav.persistence.CitiesEntity;
 import com.nasnav.persistence.dto.query.result.CartItemStock;
 import com.nasnav.service.OrderService;
+import com.nasnav.service.cart.optimizers.parameters.EmptyParams;
 import com.nasnav.service.cart.optimizers.parameters.SameCityCartOptimizerParameters;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 
@@ -41,7 +47,7 @@ import com.nasnav.service.model.cart.ShopFulfillingCart;
 
 
 @Service(SAME_CITY)
-public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimizerParameters> {
+public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimizerParameters, EmptyParams> {
 	
 	private Logger logger = LogManager.getLogger();
 	
@@ -53,7 +59,7 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 	
 	
 	@Override
-	public Optional<OptimizedCart> createOptimizedCart(Optional<SameCityCartOptimizerParameters> parameters) {
+	public Optional<OptimizedCart> createOptimizedCart(Optional<SameCityCartOptimizerParameters> parameters, Cart cart ) {
 		
 		Long customerCityId = 
 				parameters
@@ -74,8 +80,7 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 				format("Optimizing cart using parameters [%s], selecing shops by the priority list : [%s]"
 						, parameters.toString(),  shopsOrderdByPriority.toString()));
 		
-		return orderService
-				.getCart()
+		return cart
 				.getItems()
 				.stream()
 				.map(item -> createOptimizedCartItem(item, shopsOrderdByPriority))
@@ -199,7 +204,7 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 	
 	
 	@Override
-	public Class<? extends SameCityCartOptimizerParameters> getParameterClass() {
+	public Class<? extends SameCityCartOptimizerParameters> getCartParametersClass() {
 		return SameCityCartOptimizerParameters.class;
 	}
 
@@ -215,6 +220,55 @@ public class SameCityCartOptimizer implements CartOptimizer<SameCityCartOptimize
 				.map(AddressesEntity::getAreasEntity)
 				.map(AreasEntity::getCitiesEntity)
 				.map(CitiesEntity::getId);
+	}
+
+
+
+
+
+	@Override
+	public Optional<SameCityCartOptimizerParameters> createCartOptimizationParameters(CartCheckoutDTO checkoutDto) {
+		SameCityCartOptimizerParameters params = 
+				new SameCityCartOptimizerParameters();
+		
+		params.setCustomerAddressId(checkoutDto.getAddressId());
+		
+		ofNullable(checkoutDto)
+		.map(CartCheckoutDTO::getAdditionalData)
+		.map(data -> data.get(SHOP_ID))
+		.flatMap(EntityUtils::parseLongSafely)
+		.ifPresent(shopId -> params.setShopId(shopId));
+		
+		return Optional.of(params);
+	}
+
+
+
+
+
+	@Override
+	public Boolean areCartParametersValid(SameCityCartOptimizerParameters parameters) {
+		return noneIsNull(parameters
+				, parameters.getCustomerAddressId()
+				, parameters.getShopId());
+	}
+
+
+
+
+
+	@Override
+	public Class<? extends EmptyParams> getCommonParametersClass() {
+		return EmptyParams.class;
+	}
+
+
+
+
+
+	@Override
+	public Boolean areCommonParametersValid(EmptyParams parameters) {
+		return true;
 	}
 }
 

@@ -71,6 +71,8 @@ DELETE FROM public.tags WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_themes_settings where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_theme_classes where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_domains WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.settings  WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.organiztion_cart_optimization  WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;
 DELETE FROM public.organization_image_types;
 DELETE FROM public.themes where id between 5001 and 5003;
