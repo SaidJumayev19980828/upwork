@@ -3005,6 +3005,9 @@ public class ProductService {
 		List<ProductImageDTO> collectionImages = imgService.getProductsAndVariantsImages(asList(entity.getId()), null);
 		dto.setImages(getProductImages(collectionImages));
 
+		List<Long> collection360Shops = product360ShopsRepo.findShopsByProductId(entity.getId());
+		dto.setShops(collection360Shops);
+
 		if(!entity.getVariants().isEmpty()) {
 			List<ProductVariantsEntity> variantsList = new ArrayList<>(entity.getVariants());
 			List<Long> variantsIds = getVariantsIds(variantsList);
