@@ -70,6 +70,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
+import static javax.persistence.criteria.JoinType.INNER;
 import static javax.persistence.criteria.JoinType.LEFT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -94,6 +95,7 @@ import javax.persistence.criteria.Root;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.ReturnItemsDTO;
+import com.nasnav.dto.response.ReturnRequestDTO;
 import com.nasnav.enumerations.*;
 import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
@@ -1644,9 +1646,37 @@ public class OrderServiceImpl implements OrderService {
 		
 		return query;
 	}
-	
-	
-	
+
+
+	private CriteriaQuery<ReturnRequestEntity> getReturnRequestCriteriaQuery(ReturnRequestSearchParams params) {
+		CriteriaBuilder builder = em.getCriteriaBuilder();
+		CriteriaQuery<ReturnRequestEntity> query = builder.createQuery(ReturnRequestEntity.class);
+		Root<ReturnRequestEntity> root = query.from(ReturnRequestEntity.class);
+		root.fetch("metaOrder", INNER);
+
+		Predicate[] predicatesArr = getReturnRequestQueryPredicates(params, builder, root);
+
+		query.where(predicatesArr);
+
+		return query;
+	}
+
+
+	private Predicate[] getReturnRequestQueryPredicates(ReturnRequestSearchParams params, CriteriaBuilder builder, Root<ReturnRequestEntity> root) {
+		List<Predicate> predicates = new ArrayList<>();
+
+		if (params.getStatus() != null)
+			predicates.add(builder.equal(root.get("status"), params.getStatus().getValue()));
+
+		if (params.getMetaOrderId() != null)
+			predicates.add(builder.equal(root.get("metaOrder").get("id"), params.getMetaOrderId()));
+
+		if(params.getShopId() != null)
+			predicates.add(builder.equal(root.get("returnedItems").get("basket").get("stocksEntity").get("shopsEntity").get("id"), params.getMetaOrderId()));
+
+		return predicates.stream().toArray( Predicate[]::new) ;
+	}
+
 
 	private Predicate[] getOrderQueryPredicates(OrderSearchParam params, CriteriaBuilder builder, Root<OrdersEntity> root) {
 		List<Predicate> predicates = new ArrayList<>();
@@ -3342,9 +3372,22 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	@Override
-	public List<ReturnItemsDTO> getOrderReturnRequests(ReturnRequestSearchParams params) {
-		//List<ReturnRequestEntity> entities = returnRequestRepo.findBy()
-		return null;
+	public List<ReturnRequestDTO> getOrderReturnRequests(ReturnRequestSearchParams params) {
+		if(params.getStart() == null || params.getStart() < 0){
+			params.setStart(0);
+		}
+		if(params.getCount() == null || (params.getCount() < 1 || params.getCount() > 1000)){
+			params.setCount(10);
+		}
+
+		List<ReturnRequestEntity> entities = em.createQuery(getReturnRequestCriteriaQuery(params))
+				.setFirstResult(params.getStart())
+				.setMaxResults(params.getCount())
+				.getResultList();
+
+		return entities.stream()
+				.map(request -> (ReturnRequestDTO)request.getRepresentation())
+				.collect(toList());
 	}
 
 	@Override

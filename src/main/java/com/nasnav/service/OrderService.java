@@ -14,6 +14,7 @@ import com.nasnav.dto.request.ReturnItemsDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.cart.CartOptimizeDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
+import com.nasnav.dto.response.ReturnRequestDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartItem;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
@@ -102,5 +103,5 @@ public interface OrderService {
 
 	void receiveItems(ReturnItemsDTO returnedItems);
 
-	List<ReturnItemsDTO> getOrderReturnRequests(ReturnRequestSearchParams params);
+	List<ReturnRequestDTO> getOrderReturnRequests(ReturnRequestSearchParams params);
 }

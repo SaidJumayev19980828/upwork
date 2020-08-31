@@ -245,6 +245,6 @@ public class OrdersController {
 			@RequestHeader(name = "User-Token", required = false) String userToken,
 			ReturnRequestSearchParams params) {
 
-		return null;//orderService.getOrderReturnRequests(params);
+		return orderService.getOrderReturnRequests(params);
 	}
 }

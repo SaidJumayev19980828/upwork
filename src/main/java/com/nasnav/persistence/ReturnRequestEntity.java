@@ -59,7 +59,7 @@ public class ReturnRequestEntity implements BaseEntity{
         dto.setId(getId());
         dto.setCreatedOn(getCreatedOn());
         dto.setStatus(ReturnRequestStatus.findEnum(getStatus()));
-        if (dto.getMetaOrderId() != null) {
+        if (getMetaOrder() != null) {
             dto.setMetaOrderId(getMetaOrder().getId());
         }
         if (getCreatedByEmployee() != null) {
@@ -68,6 +68,6 @@ public class ReturnRequestEntity implements BaseEntity{
         if (getCreatedByUser() != null) {
             dto.setCreatedByUser(getCreatedByUser().getId());
         }
-        return null;
+        return dto;
     }
 }

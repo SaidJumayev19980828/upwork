@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.enumerations.ReturnRequestStatus;
 import lombok.Data;
 
-@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @Data
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class ReturnRequestSearchParams {
 
     private ReturnRequestStatus status;

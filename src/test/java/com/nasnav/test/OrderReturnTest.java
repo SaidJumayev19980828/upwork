@@ -240,4 +240,12 @@ public class OrderReturnTest {
 
         assertEquals(406, response.getStatusCodeValue());
     }
+
+
+    @Test
+    public void getReturnRequests() {
+        HttpEntity request = getHttpEntity( "131415");
+        ResponseEntity<String> response = template.postForEntity("/order/return/requests", request, String.class);
+        assertEquals(200,response.getStatusCodeValue());
+    }
 }
