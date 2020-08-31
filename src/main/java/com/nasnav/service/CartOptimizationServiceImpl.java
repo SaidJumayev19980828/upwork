@@ -11,6 +11,7 @@ import static com.nasnav.exceptions.ErrorCodes.O$CRT$0014;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.DEFAULT_OPTIMIZER;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.isValidStrategy;
 import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.WAREHOUSE;
+import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Optional.ofNullable;
@@ -37,6 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.OrganizationCartOptimizationRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
+import com.nasnav.dto.response.CartOptimizationStrategyDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -298,4 +300,39 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 		return settingDto;
 	}
 
+
+
+
+
+	@Override
+	public List<CartOptimizationStrategyDTO> listAllCartOptimizationStrategies() {
+		return stream(CartOptimizationStrategy.values())
+				.map(CartOptimizationStrategy::getValue)
+				.distinct()
+				.map(this::createCartOptimizationStrategyDTO)
+				.collect(toList());
+	}
+
+	
+	
+	
+	private <CartParams, CommonParams> CartOptimizationStrategyDTO createCartOptimizationStrategyDTO(
+											String strategyName) {
+		CartOptimizer<CartParams, CommonParams> optimizer = getCartOptimizer(strategyName);
+		CommonParams params = createParamsObject(optimizer);
+		return new CartOptimizationStrategyDTO(strategyName, params);
+	}
+
+
+
+
+
+	private <CartParams, CommonParams> CommonParams createParamsObject(CartOptimizer<CartParams, CommonParams> optimizer) {
+		try {
+			return optimizer.getCommonParametersClass().newInstance();
+		} catch (InstantiationException | IllegalAccessException e) {
+			logger.error(e,e);
+			return null;
+		}
+	}
 }

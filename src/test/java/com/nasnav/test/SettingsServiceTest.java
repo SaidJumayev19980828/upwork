@@ -4,6 +4,8 @@ import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.SAME_C
 import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.WAREHOUSE;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toSet;
 import static org.json.JSONObject.NULL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -18,6 +20,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.json.JSONObject;
 import org.junit.Test;
@@ -39,8 +42,10 @@ import com.nasnav.NavBox;
 import com.nasnav.dao.OrganizationCartOptimizationRepository;
 import com.nasnav.dao.SettingRepository;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
+import com.nasnav.dto.response.CartOptimizationStrategyDTO;
 import com.nasnav.persistence.OrganizationCartOptimizationEntity;
 import com.nasnav.persistence.SettingEntity;
+import com.nasnav.service.cart.optimizers.CartOptimizationStrategy;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -364,7 +369,7 @@ public class SettingsServiceTest {
 	@Test
 	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert_2.sql"})
 	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void getOptimizationStrategyTestNoAuthz() throws JsonParseException, Exception {
+	public void getOptimizationStrategyNoAuthzTest() throws JsonParseException, Exception {
 		HttpEntity<?> req = getHttpEntity("eereeee");
         ResponseEntity<String> res = 
         		template
@@ -379,11 +384,69 @@ public class SettingsServiceTest {
 	@Test
 	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert_2.sql"})
 	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void getOptimizationStrategyTestNoAuthN() throws JsonParseException, Exception {
+	public void getOptimizationStrategyNoAuthNTest() throws JsonParseException, Exception {
 		HttpEntity<?> req = getHttpEntity("Non existing");
         ResponseEntity<String> res = 
         		template
         		.exchange("/organization/settings/cart_optimization/strategy",GET, req, String.class);
+        assertEquals(UNAUTHORIZED, res.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void listOptimizationStrategiesTest() throws JsonParseException, Exception {
+		HttpEntity<?> req = getHttpEntity("hijkllm");
+        ResponseEntity<String> res = 
+        		template
+        		.exchange("/organization/settings/cart_optimization/strategies",GET, req, String.class);
+        assertEquals(OK, res.getStatusCode());
+        
+        List<CartOptimizationStrategyDTO> strategies = 
+        		objectMapper.readValue(res.getBody(), new TypeReference<List<CartOptimizationStrategyDTO>>(){});
+       
+        
+        Set<String> strategiesNames = 
+        		stream(CartOptimizationStrategy.values())
+        		.map(CartOptimizationStrategy::getValue)
+        		.collect(toSet());
+        
+        boolean allStrategiesReturned =
+        		strategies
+        		.stream()
+        		.map(CartOptimizationStrategyDTO::getName)
+        		.allMatch(strategiesNames::contains);
+        
+        
+        assertEquals(strategiesNames.size(), strategies.size());
+        assertTrue(allStrategiesReturned);
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void listOptimizationStrategiesNoAuthzTest() throws JsonParseException, Exception {
+		HttpEntity<?> req = getHttpEntity("eereeee");
+        ResponseEntity<String> res = 
+        		template
+        		.exchange("/organization/settings/cart_optimization/strategies",GET, req, String.class);
+        assertEquals(FORBIDDEN, res.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	public void listOptimizationStrategiesAuthNTest() throws JsonParseException, Exception {
+		HttpEntity<?> req = getHttpEntity("Non existing");
+        ResponseEntity<String> res = 
+        		template
+        		.exchange("/organization/settings/cart_optimization/strategies",GET, req, String.class);
         assertEquals(UNAUTHORIZED, res.getStatusCode());
 	}
 }
