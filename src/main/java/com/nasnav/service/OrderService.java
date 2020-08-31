@@ -8,6 +8,7 @@ import java.util.List;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.MetaOrderBasicInfo;
 import com.nasnav.dto.OrderJsonDto;
+import com.nasnav.dto.ReturnRequestSearchParams;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.ReturnItemsDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
@@ -100,4 +101,6 @@ public interface OrderService {
 	BigDecimal calculateCartTotal();
 
 	void receiveItems(ReturnItemsDTO returnedItems);
+
+	List<ReturnItemsDTO> getOrderReturnRequests(ReturnRequestSearchParams params);
 }

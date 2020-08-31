@@ -1,6 +1,9 @@
 package com.nasnav.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.dto.response.ReturnRequestDTO;
+import com.nasnav.enumerations.ReturnRequestStatus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -14,7 +17,7 @@ import java.util.Set;
 @Entity
 @Table(name="return_request")
 @Data
-public class ReturnRequestEntity {
+public class ReturnRequestEntity implements BaseEntity{
 
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
@@ -47,5 +50,24 @@ public class ReturnRequestEntity {
 
     public ReturnRequestEntity() {
         returnedItems = new HashSet<>();
+    }
+
+    @Override
+    public BaseRepresentationObject getRepresentation() {
+        ReturnRequestDTO dto = new ReturnRequestDTO();
+
+        dto.setId(getId());
+        dto.setCreatedOn(getCreatedOn());
+        dto.setStatus(ReturnRequestStatus.findEnum(getStatus()));
+        if (dto.getMetaOrderId() != null) {
+            dto.setMetaOrderId(getMetaOrder().getId());
+        }
+        if (getCreatedByEmployee() != null) {
+            dto.setCreatedByEmployee(getCreatedByEmployee().getId());
+        }
+        if (getCreatedByUser() != null) {
+            dto.setCreatedByUser(getCreatedByUser().getId());
+        }
+        return null;
     }
 }

@@ -2,7 +2,9 @@ package com.nasnav.controller;
 
 import java.util.List;
 
+import com.nasnav.dto.ReturnRequestSearchParams;
 import com.nasnav.dto.request.ReturnItemsDTO;
+import com.nasnav.dto.response.ReturnRequestDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -232,5 +234,17 @@ public class OrdersController {
 	public void receiveItems(@RequestHeader(name = "User-Token", required = false) String userToken,
 							 @RequestBody ReturnItemsDTO itemsList) throws BusinessException {
 		orderService.receiveItems(itemsList);
+	}
+
+
+	@ApiOperation(value = "Get order return requests", nickname = "getOrderReturnRequests", code = 201)
+	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
+	@GetMapping(value = "return/requests", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
+	public List<ReturnRequestDTO> getOrderReturnRequests(
+			@RequestHeader(name = "User-Token", required = false) String userToken,
+			ReturnRequestSearchParams params) {
+
+		return null;//orderService.getOrderReturnRequests(params);
 	}
 }

@@ -3341,6 +3341,11 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
+	@Override
+	public List<ReturnItemsDTO> getOrderReturnRequests(ReturnRequestSearchParams params) {
+		//List<ReturnRequestEntity> entities = returnRequestRepo.findBy()
+		return null;
+	}
 
 	@Override
 	@Transactional
