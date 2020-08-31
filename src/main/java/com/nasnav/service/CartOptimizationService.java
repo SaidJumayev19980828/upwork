@@ -1,5 +1,6 @@
 package com.nasnav.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
@@ -10,5 +11,5 @@ public interface CartOptimizationService {
 	public <T> void setCartOptimizationStrategy(CartOptimizationSettingDTO settingDto);
 	public Optional<String> getCartOptimizationStrategyForOrganization();
 	public CartOptimizeResponseDTO optimizeCart(CartCheckoutDTO dto);
-	
+	public List<CartOptimizationSettingDTO> getCartOptimizationStrategy();
 }

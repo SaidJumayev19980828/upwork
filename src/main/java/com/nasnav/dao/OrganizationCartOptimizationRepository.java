@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,4 +25,6 @@ public interface OrganizationCartOptimizationRepository extends JpaRepository<Or
 	Optional<String> findOrganizationDefaultOptimizationStrategy(@Param("orgId")Long orgId);
 
 	Optional<OrganizationCartOptimizationEntity> findByShippingServiceIdAndOrganization_Id(String shippingServiceId, Long orgId);
+
+	List<OrganizationCartOptimizationEntity> findByOrganization_Id(Long orgId);
 }

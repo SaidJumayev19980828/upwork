@@ -7,7 +7,6 @@ import static com.nasnav.exceptions.ErrorCodes.O$CRT$0013;
 import static com.nasnav.exceptions.ErrorCodes.O$CRT$0014;
 import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.WAREHOUSE;
 import static java.math.BigDecimal.ZERO;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -20,7 +19,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.beanutils.BeanUtils;

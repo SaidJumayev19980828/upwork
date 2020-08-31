@@ -589,4 +589,17 @@ public class OrganizationController {
     
     
     
+    @ApiOperation(value = "set cart optimization strategy for the organization or the shipping service", nickname = "setCartOptimization", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "settings/cart_optimization/strategy")
+    @ResponseStatus(OK)
+    public List<CartOptimizationSettingDTO> getCartOptmizationStrategy(@RequestHeader (name = "User-Token", required = false) String userToken){
+    	return cartOptimizeService.getCartOptimizationStrategy();
+    }
+    
+    
 }

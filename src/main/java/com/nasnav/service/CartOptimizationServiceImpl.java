@@ -19,6 +19,8 @@ import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -30,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.OrganizationCartOptimizationRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
@@ -260,7 +263,39 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 				.findByOptimizationStrategyAndOrganization_Id(strategy, orgId)
 				.orElse(new OrganizationCartOptimizationEntity());
 	}
+
+
+
+
+
+	@Override
+	public List<CartOptimizationSettingDTO> getCartOptimizationStrategy() {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		return orgCartOptimizerRepo
+				.findByOrganization_Id(orgId)
+				.stream()
+				.map(this::createSettingDTO)
+				.collect(toList());
+	}
 	
 
+	
+	
+	
+	private CartOptimizationSettingDTO createSettingDTO(OrganizationCartOptimizationEntity entity) {
+		String parametersJson = ofNullable(entity.getParameters()).orElse("{}");
+		Map<String,Object> params = emptyMap();
+		try {
+			 params = objectMapper.readValue(parametersJson, new TypeReference<Map<String,Object>>(){});
+		} catch (IOException e) {
+			logger.error(e,e);
+		}
+		
+		CartOptimizationSettingDTO settingDto = new CartOptimizationSettingDTO();
+		settingDto.setShippingServiceId(entity.getShippingServiceId());
+		settingDto.setStrategyName(entity.getOptimizationStrategy());
+		settingDto.setParameters(params);
+		return settingDto;
+	}
 
 }

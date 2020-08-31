@@ -9,12 +9,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.json.JSONObject;
@@ -30,9 +32,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.dao.OrganizationCartOptimizationRepository;
 import com.nasnav.dao.SettingRepository;
+import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.persistence.OrganizationCartOptimizationEntity;
 import com.nasnav.persistence.SettingEntity;
 
@@ -53,6 +59,8 @@ public class SettingsServiceTest {
 	@Autowired
 	private OrganizationCartOptimizationRepository optimizationRepo;
 	
+	@Autowired
+	private ObjectMapper objectMapper;
 	
 	@Test
 	public void postSettingsSuccessTest() {
@@ -328,5 +336,54 @@ public class SettingsServiceTest {
 	    assertTrue(optimizationParamsEntity.isPresent());
 	    assertEquals(strategy, optimizationParamsEntity.get().getOptimizationStrategy());
 	    assertEquals(optimizationParams.toString(), optimizationParamsEntity.get().getParameters());
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getOptimizationStrategyTest() throws JsonParseException, Exception {
+		HttpEntity<?> req = getHttpEntity("hijkllm");
+        ResponseEntity<String> res = 
+        		template
+        		.exchange("/organization/settings/cart_optimization/strategy",GET, req, String.class);
+        assertEquals(OK, res.getStatusCode());
+        
+        List<CartOptimizationSettingDTO> strategyConfigs = 
+        		objectMapper.readValue(res.getBody(), new TypeReference<List<CartOptimizationSettingDTO>>(){});
+        
+        assertEquals(2, strategyConfigs.size());
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getOptimizationStrategyTestNoAuthz() throws JsonParseException, Exception {
+		HttpEntity<?> req = getHttpEntity("eereeee");
+        ResponseEntity<String> res = 
+        		template
+        		.exchange("/organization/settings/cart_optimization/strategy",GET, req, String.class);
+        assertEquals(FORBIDDEN, res.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Organization_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getOptimizationStrategyTestNoAuthN() throws JsonParseException, Exception {
+		HttpEntity<?> req = getHttpEntity("Non existing");
+        ResponseEntity<String> res = 
+        		template
+        		.exchange("/organization/settings/cart_optimization/strategy",GET, req, String.class);
+        assertEquals(UNAUTHORIZED, res.getStatusCode());
 	}
 }
