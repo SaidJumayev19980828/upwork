@@ -48,6 +48,7 @@ import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.dto.request.theme.OrganizationThemeClass;
+import com.nasnav.dto.response.CartOptimizationStrategyDTO;
 import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.dto.response.PromotionDTO;
 import com.nasnav.exceptions.BusinessException;
@@ -587,6 +588,34 @@ public class OrganizationController {
     }
     
     
+    
+    
+    @ApiOperation(value = "set cart optimization strategy for the organization or the shipping service", nickname = "setCartOptimization", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "settings/cart_optimization/strategy")
+    @ResponseStatus(OK)
+    public List<CartOptimizationSettingDTO> getCartOptmizationStrategy(@RequestHeader (name = "User-Token", required = false) String userToken){
+    	return cartOptimizeService.getCartOptimizationStrategy();
+    }
+    
+    
+    
+    
+    @ApiOperation(value = "set cart optimization strategy for the organization or the shipping service", nickname = "setCartOptimization", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "settings/cart_optimization/strategies")
+    @ResponseStatus(OK)
+    public List<CartOptimizationStrategyDTO> listCartOptmizationStrategies(@RequestHeader (name = "User-Token", required = false) String userToken){
+    	return cartOptimizeService.listAllCartOptimizationStrategies();
+    }
     
     
 }

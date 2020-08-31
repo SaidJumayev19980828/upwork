@@ -13,7 +13,6 @@ import lombok.Getter;
 
 public enum CartOptimizationStrategy {
 	SAME_CITY(OptimizationStratigiesNames.SAME_CITY)
-	, GIVEN_SHOP(OptimizationStratigiesNames.GIVEN_SHOP)
 	, DEFAULT_OPTIMIZER(OptimizationStratigiesNames.SAME_CITY)
 	, WAREHOUSE(OptimizationStratigiesNames.WAREHOUSE);
 	

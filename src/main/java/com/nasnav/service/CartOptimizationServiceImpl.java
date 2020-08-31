@@ -11,6 +11,7 @@ import static com.nasnav.exceptions.ErrorCodes.O$CRT$0014;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.DEFAULT_OPTIMIZER;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.isValidStrategy;
 import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.WAREHOUSE;
+import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Optional.ofNullable;
@@ -19,6 +20,8 @@ import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -30,10 +33,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.dao.OrganizationCartOptimizationRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
+import com.nasnav.dto.response.CartOptimizationStrategyDTO;
 import com.nasnav.dto.response.navbox.Cart;
 import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
@@ -260,7 +265,74 @@ public class CartOptimizationServiceImpl implements CartOptimizationService {
 				.findByOptimizationStrategyAndOrganization_Id(strategy, orgId)
 				.orElse(new OrganizationCartOptimizationEntity());
 	}
+
+
+
+
+
+	@Override
+	public List<CartOptimizationSettingDTO> getCartOptimizationStrategy() {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		return orgCartOptimizerRepo
+				.findByOrganization_Id(orgId)
+				.stream()
+				.map(this::createSettingDTO)
+				.collect(toList());
+	}
 	
 
+	
+	
+	
+	private CartOptimizationSettingDTO createSettingDTO(OrganizationCartOptimizationEntity entity) {
+		String parametersJson = ofNullable(entity.getParameters()).orElse("{}");
+		Map<String,Object> params = emptyMap();
+		try {
+			 params = objectMapper.readValue(parametersJson, new TypeReference<Map<String,Object>>(){});
+		} catch (IOException e) {
+			logger.error(e,e);
+		}
+		
+		CartOptimizationSettingDTO settingDto = new CartOptimizationSettingDTO();
+		settingDto.setShippingServiceId(entity.getShippingServiceId());
+		settingDto.setStrategyName(entity.getOptimizationStrategy());
+		settingDto.setParameters(params);
+		return settingDto;
+	}
 
+
+
+
+
+	@Override
+	public List<CartOptimizationStrategyDTO> listAllCartOptimizationStrategies() {
+		return stream(CartOptimizationStrategy.values())
+				.map(CartOptimizationStrategy::getValue)
+				.distinct()
+				.map(this::createCartOptimizationStrategyDTO)
+				.collect(toList());
+	}
+
+	
+	
+	
+	private <CartParams, CommonParams> CartOptimizationStrategyDTO createCartOptimizationStrategyDTO(
+											String strategyName) {
+		CartOptimizer<CartParams, CommonParams> optimizer = getCartOptimizer(strategyName);
+		CommonParams params = createParamsObject(optimizer);
+		return new CartOptimizationStrategyDTO(strategyName, params);
+	}
+
+
+
+
+
+	private <CartParams, CommonParams> CommonParams createParamsObject(CartOptimizer<CartParams, CommonParams> optimizer) {
+		try {
+			return optimizer.getCommonParametersClass().newInstance();
+		} catch (InstantiationException | IllegalAccessException e) {
+			logger.error(e,e);
+			return null;
+		}
+	}
 }
