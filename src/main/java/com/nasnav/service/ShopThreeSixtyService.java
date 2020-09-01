@@ -1,7 +1,6 @@
 package com.nasnav.service;
 
-import static com.nasnav.exceptions.ErrorCodes.S$360$0001;
-import static com.nasnav.exceptions.ErrorCodes.S$360$F$0001;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
@@ -22,7 +21,10 @@ import java.util.*;
 
 import javax.imageio.ImageIO;
 
+import com.nasnav.dao.*;
+import com.nasnav.dto.request.ProductPositionDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.*;
 import org.apache.tika.io.IOUtils;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,15 +34,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.nasnav.dao.FilesRepository;
-import com.nasnav.dao.ProductPositionsRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ShopFloorsRepository;
-import com.nasnav.dao.ShopScenesRepository;
-import com.nasnav.dao.ShopSectionsRepository;
-import com.nasnav.dao.ShopThreeSixtyRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.Prices;
 import com.nasnav.dto.ShopFloorDTO;
 import com.nasnav.dto.ShopFloorsRequestDTO;
@@ -50,15 +43,6 @@ import com.nasnav.dto.ShopThreeSixtyDTO;
 import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.FileEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.ProductImagesEntity;
-import com.nasnav.persistence.ProductPositionEntity;
-import com.nasnav.persistence.ShopFloorsEntity;
-import com.nasnav.persistence.ShopScenesEntity;
-import com.nasnav.persistence.ShopSectionsEntity;
-import com.nasnav.persistence.ShopThreeSixtyEntity;
-import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.response.ShopResponse;
 
 @Service
@@ -95,6 +79,9 @@ public class ShopThreeSixtyService {
 
     @Autowired
     private StockRepository stockRepo;
+
+    @Autowired
+    private Product360ShopsRepository product360ShopsRepo;
 
     @Autowired
     private SecurityService securitySvc;
@@ -159,6 +146,29 @@ public class ShopThreeSixtyService {
 
         return positions;
     }
+
+
+    public String getProductsPositions(Long shopId, Boolean published, Long sceneId, Long sectionId, Long floorId) {
+        List<ProductPositionDTO> productPositions = product360ShopsRepo.findProductsPositionsFullData(shopId, published);
+
+        Map<Long, ProductPositionDTO> products =  productPositions
+                .stream()
+                .filter(p -> p.getProductType() == 0)
+                .collect(toMap(ProductPositionDTO::getProductId, p -> p));
+
+        Map<Long, ProductPositionDTO> collections =  productPositions
+                .stream()
+                .filter(p -> p.getProductType() == 2)
+                .collect(toMap(ProductPositionDTO::getProductId, p -> p));
+
+        JSONObject response = new JSONObject();
+        response.put("shop_id", shopId);
+        response.put("products_data", products);
+        response.put("collections_data", collections);
+
+        return response.toString();
+    }
+
 
     public List<ShopFloorDTO> getSections(Long shopId) {
         ShopThreeSixtyEntity shop = shop360Repo.getFirstByShopsEntity_Id(shopId);
@@ -292,6 +302,49 @@ public class ShopThreeSixtyService {
 
         productPosRepo.save(entity);
         return new ShopResponse(entity.getId(), OK);
+    }
+
+
+    @Transactional
+    public void updateThreeSixtyShopProductsPositions(Long shopId,  List<ProductPositionDTO> json) throws BusinessException {
+        Long orgId = securitySvc.getCurrentUserOrganizationId();
+
+        validateProductPositionsUpdateDTO(shopId);
+
+        ShopThreeSixtyEntity shop = shop360Repo.getFirstByShopsEntity_Id(shopId);
+
+        Map<Long, Shop360ProductsEntity> productsMap = getShop360ProductsMap(shopId);
+
+        for(ProductPositionDTO dto : json) {
+            Shop360ProductsEntity product;
+            if (productsMap.get(dto.getProductId()) != null) {
+                product = productsMap.get(dto.getProductId());
+            } else {
+                ProductEntity productEntity = productsRepo
+                        .findById(dto.getProductId())
+                        .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0002, dto.getProductId()));
+                product = new Shop360ProductsEntity();
+                product.setShopEntity(shop.getShopsEntity());
+                product.setProductEntity(productEntity);
+            }
+            ShopScenesEntity scene = ofNullable(scenesRepo.findByIdAndOrganizationEntity_Id(dto.getSceneId(), orgId))
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, S$360$0002, dto.getSceneId()));
+            product.setScene(scene);
+            product.setSection(scene.getShopSectionsEntity());
+            product.setFloor(scene.getShopSectionsEntity().getShopFloorsEntity());
+            product.setPitch(dto.getPitch());
+            product.setYaw(dto.getYaw());
+            product360ShopsRepo.save(product);
+        }
+    }
+
+
+    private Map<Long, Shop360ProductsEntity> getShop360ProductsMap(Long shopId) {
+        List<Shop360ProductsEntity> shop360ProductsEntities = product360ShopsRepo.findProductsPositionsByShopId(shopId);
+
+        return shop360ProductsEntities
+                .stream()
+                .collect(toMap(e -> e.getProductEntity().getId(), e -> e));
     }
 
     private void validateProductPositionsUpdateDTO(Long shopId) throws BusinessException {

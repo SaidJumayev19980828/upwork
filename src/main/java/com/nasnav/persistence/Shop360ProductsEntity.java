@@ -53,4 +53,7 @@ public class Shop360ProductsEntity {
 
     @Column(name = "yaw")
     private Float yaw;
+
+    @Column(name = "published")
+    private Boolean published;
 }
