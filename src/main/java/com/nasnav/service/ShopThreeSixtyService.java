@@ -27,6 +27,7 @@ import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import org.apache.tika.io.IOUtils;
 import org.json.JSONObject;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockMultipartFile;
@@ -148,18 +149,18 @@ public class ShopThreeSixtyService {
     }
 
 
-    public String getProductsPositions(Long shopId, Boolean published, Long sceneId, Long sectionId, Long floorId) {
+    public String getProductsPositions(Long shopId, Integer published, Long sceneId, Long sectionId, Long floorId) {
         List<ProductPositionDTO> productPositions = product360ShopsRepo.findProductsPositionsFullData(shopId, published);
 
         Map<Long, ProductPositionDTO> products =  productPositions
                 .stream()
-                .filter(p -> p.getProductType() == 0)
-                .collect(toMap(ProductPositionDTO::getProductId, p -> p));
+                .filter(p -> p.getProduct_type() == 0)
+                .collect(toMap(ProductPositionDTO::getId, p -> p));
 
         Map<Long, ProductPositionDTO> collections =  productPositions
                 .stream()
-                .filter(p -> p.getProductType() == 2)
-                .collect(toMap(ProductPositionDTO::getProductId, p -> p));
+                .filter(p -> p.getProduct_type() == 2)
+                .collect(toMap(ProductPositionDTO::getId, p -> p));
 
         JSONObject response = new JSONObject();
         response.put("shop_id", shopId);
@@ -317,23 +318,25 @@ public class ShopThreeSixtyService {
 
         for(ProductPositionDTO dto : json) {
             Shop360ProductsEntity product;
-            if (productsMap.get(dto.getProductId()) != null) {
-                product = productsMap.get(dto.getProductId());
+            if (productsMap.get(dto.getId()) != null) {
+                product = productsMap.get(dto.getId());
             } else {
                 ProductEntity productEntity = productsRepo
-                        .findById(dto.getProductId())
-                        .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0002, dto.getProductId()));
+                        .findById(dto.getId())
+                        .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0002, dto.getId()));
                 product = new Shop360ProductsEntity();
                 product.setShopEntity(shop.getShopsEntity());
                 product.setProductEntity(productEntity);
             }
-            ShopScenesEntity scene = ofNullable(scenesRepo.findByIdAndOrganizationEntity_Id(dto.getSceneId(), orgId))
-                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, S$360$0002, dto.getSceneId()));
+            ShopScenesEntity scene = ofNullable(scenesRepo.findByIdAndOrganizationEntity_Id(dto.getScene_id(), orgId))
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, S$360$0002, dto.getScene_id()));
             product.setScene(scene);
             product.setSection(scene.getShopSectionsEntity());
             product.setFloor(scene.getShopSectionsEntity().getShopFloorsEntity());
             product.setPitch(dto.getPitch());
             product.setYaw(dto.getYaw());
+            product.setPublished(1);
+
             product360ShopsRepo.save(product);
         }
     }
@@ -683,6 +686,19 @@ public class ShopThreeSixtyService {
                     "INVALID_PARAM: shop_id", NOT_ACCEPTABLE);
 
         ProductPositionEntity productPosition = productPosRepo.findByShopsThreeSixtyEntity_Id(shop360.getId());
+
+        product360ShopsRepo.deleteByShopId(shopId);
+        List<Shop360ProductsEntity> existingProductsPositions = product360ShopsRepo.findProductsPositionsByShopId(shopId);
+
+        List<Shop360ProductsEntity> publishedProductsPositions = new ArrayList<>();
+
+        for(Shop360ProductsEntity product : existingProductsPositions) {
+            Shop360ProductsEntity entity = new Shop360ProductsEntity();
+            BeanUtils.copyProperties(product, entity);
+            entity.setPublished(2);
+            publishedProductsPositions.add(entity);
+        }
+        product360ShopsRepo.saveAll(publishedProductsPositions);
 
         if (productPosition == null)
             throw new BusinessException("missing product positions data",

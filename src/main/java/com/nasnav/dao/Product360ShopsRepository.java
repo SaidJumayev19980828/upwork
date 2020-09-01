@@ -26,10 +26,16 @@ public interface Product360ShopsRepository extends JpaRepository<Shop360Products
     @Query("select new com.nasnav.dto.request.ProductPositionDTO(ps.productEntity.id, ps.floor.id, ps.section.id, ps.scene.id, ps.pitch, ps.yaw, ps.productEntity.productType) " +
             " from Shop360ProductsEntity ps where ps.shopEntity.id = :id and ps.published = :published")
     List<ProductPositionDTO> findProductsPositionsFullData(@Param("id") Long id,
-                                                           @Param("published") Boolean published);
+                                                           @Param("published") Integer published);
 
-    @Query("select ps from Shop360ProductsEntity ps where ps.shopEntity.id = :id and ps.published = false")
+    @Query("select ps from Shop360ProductsEntity ps where ps.shopEntity.id = :id and ps.published = 1")
     List<Shop360ProductsEntity> findProductsPositionsByShopId(@Param("id") Long id);
 
     List<Shop360ProductsEntity> findByProductEntity_IdIn(@Param("id") List<Long> ids);
+
+    @Transactional
+    @Modifying
+    @Query(value = "delete from Shop360ProductsEntity sp where sp.shopEntity.id = :shopId and sp.published = 2")
+    void deleteByShopId(@Param("shopId") Long shopId);
+
 }

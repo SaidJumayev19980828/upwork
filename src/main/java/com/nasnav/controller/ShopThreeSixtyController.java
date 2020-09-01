@@ -135,7 +135,7 @@ public class ShopThreeSixtyController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @GetMapping(value = "/products_positions", produces = MediaType.APPLICATION_JSON_VALUE)
     public String getShop360ProductsPositions(@RequestParam("shop_id") Long shopId,
-                                              @RequestParam(defaultValue = "true") Boolean published,
+                                              @RequestParam(defaultValue = "2") Integer published,
                                               @RequestParam(value = "scene_id", required = false) Long sceneId,
                                               @RequestParam(value = "section_id", required = false) Long sectionId,
                                               @RequestParam(value = "floor_id", required = false) Long floorId) {

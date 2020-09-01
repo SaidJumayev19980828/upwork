@@ -55,5 +55,5 @@ public class Shop360ProductsEntity {
     private Float yaw;
 
     @Column(name = "published")
-    private Boolean published;
+    private Integer published;
 }
