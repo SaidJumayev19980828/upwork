@@ -87,10 +87,7 @@ import java.util.AbstractMap.SimpleEntry;
 
 import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import javax.persistence.criteria.*;
 
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
@@ -1652,7 +1649,6 @@ public class OrderServiceImpl implements OrderService {
 		CriteriaBuilder builder = em.getCriteriaBuilder();
 		CriteriaQuery<ReturnRequestEntity> query = builder.createQuery(ReturnRequestEntity.class);
 		Root<ReturnRequestEntity> root = query.from(ReturnRequestEntity.class);
-		root.fetch("metaOrder", INNER);
 
 		Predicate[] predicatesArr = getReturnRequestQueryPredicates(params, builder, root);
 
@@ -1664,6 +1660,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private Predicate[] getReturnRequestQueryPredicates(ReturnRequestSearchParams params, CriteriaBuilder builder, Root<ReturnRequestEntity> root) {
 		List<Predicate> predicates = new ArrayList<>();
+		Path<Map<String, String>> returnedItems = root.join("returnedItems", INNER);
 
 		if (params.getStatus() != null)
 			predicates.add(builder.equal(root.get("status"), params.getStatus().getValue()));
@@ -1672,7 +1669,7 @@ public class OrderServiceImpl implements OrderService {
 			predicates.add(builder.equal(root.get("metaOrder").get("id"), params.getMetaOrderId()));
 
 		if(params.getShopId() != null)
-			predicates.add(builder.equal(root.get("returnedItems").get("basket").get("stocksEntity").get("shopsEntity").get("id"), params.getMetaOrderId()));
+			predicates.add(builder.equal(returnedItems.get("basket").get("stocksEntity").get("shopsEntity").get("id"), params.getShopId()));
 
 		return predicates.stream().toArray( Predicate[]::new) ;
 	}
@@ -3380,15 +3377,27 @@ public class OrderServiceImpl implements OrderService {
 			params.setCount(10);
 		}
 
-		List<ReturnRequestEntity> entities = em.createQuery(getReturnRequestCriteriaQuery(params))
+		Set<ReturnRequestEntity> entities = em.createQuery(getReturnRequestCriteriaQuery(params))
 				.setFirstResult(params.getStart())
 				.setMaxResults(params.getCount())
-				.getResultList();
+				.getResultStream()
+				.collect(toSet());
 
 		return entities.stream()
 				.map(request -> (ReturnRequestDTO)request.getRepresentation())
 				.collect(toList());
 	}
+
+
+
+	public ReturnRequestDTO getOrderReturnRequest(Long id){
+		ReturnRequestDTO dto = returnRequestRepo
+				.findById(id)
+				.map(r -> (ReturnRequestDTO)r.getRepresentation()).orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0013));
+
+		return dto;
+	}
+
 
 	@Override
 	@Transactional

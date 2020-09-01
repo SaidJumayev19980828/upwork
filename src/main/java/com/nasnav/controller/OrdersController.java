@@ -247,4 +247,16 @@ public class OrdersController {
 
 		return orderService.getOrderReturnRequests(params);
 	}
+
+
+	@ApiOperation(value = "Get order return request", nickname = "getOrderReturnRequests", code = 201)
+	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
+	@GetMapping(value = "return/requests", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
+	public ReturnRequestDTO getOrderReturnRequest(
+			@RequestHeader(name = "User-Token", required = false) String userToken,
+			@RequestParam Long id) {
+
+		return orderService.getOrderReturnRequest(id);
+	}
 }
