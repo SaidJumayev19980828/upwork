@@ -26,4 +26,7 @@ public interface PromotionsCodesUsedRepository
 			+ "   WHERE promo.id = :promoId "
 			+ "   AND usr.id = :userId)")
 	void deleteByPromotion_IdAndUser_Id(@Param("promoId")Long promoId, @Param("userId")Long userId);
+
+
+	boolean existsByPromotion_IdAndUser_Id(Long promoId, Long userId);
 }

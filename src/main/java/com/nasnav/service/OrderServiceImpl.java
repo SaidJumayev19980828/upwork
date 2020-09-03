@@ -836,6 +836,7 @@ public class OrderServiceImpl implements OrderService {
 		
 		order.getSubOrders().forEach(this::finalizeSubOrder);
 		updateOrderStatus(order, FINALIZED);
+		setPromoCodeAsUsed(order);
 		
 		try {
 			order.getSubOrders().forEach(this::sendNotificationEmailToStoreManager);
@@ -2228,8 +2229,6 @@ public class OrderServiceImpl implements OrderService {
 		validateCartCheckoutDTO(dto);
 
 		MetaOrderEntity order = createMetaOrder(dto);
-		
-		setPromoCodeAsUsed(order);
 		
 		return getOrderResponse(order);
 	}

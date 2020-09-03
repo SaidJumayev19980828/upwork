@@ -14,7 +14,7 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 	@Query("SELECT COUNT(promo) > 0 "
 			+ " FROM PromotionsEntity promo "
 			+ " LEFT JOIN promo.organization org "
-			+ " WHERE promo.code = :code "
+			+ " WHERE UPPER(promo.code) = UPPER(:code) "
 			+ " AND promo.id != :id "
 			+ " AND org.id = :orgId "
 			+ " AND now() between promo.dateStart and promo.dateEnd ")
@@ -27,7 +27,7 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 	@Query("SELECT COUNT(promo) > 0 "
 			+ " FROM PromotionsEntity promo "
 			+ " LEFT JOIN promo.organization org "
-			+ " WHERE promo.code = :code "
+			+ " WHERE UPPER(promo.code) = UPPER(:code) "
 			+ " AND org.id = :orgId"
 			+ " AND now() between promo.dateStart and promo.dateEnd ")
 	boolean existsByCodeAndOrganization_IdAndActiveNow(
@@ -38,7 +38,7 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 	@Query("SELECT promo "
 			+ " FROM PromotionsEntity promo "
 			+ " LEFT JOIN promo.organization org "
-			+ " WHERE promo.code = :code "
+			+ " WHERE UPPER(promo.code) = UPPER(:code) "
 			+ " AND org.id = :orgId"
 			+ " AND now() between promo.dateStart and promo.dateEnd ")
 	Optional<PromotionsEntity> findByCodeAndOrganization_IdAndActiveNow(
