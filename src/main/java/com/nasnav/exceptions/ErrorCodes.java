@@ -46,6 +46,7 @@ public enum ErrorCodes {
 	,S$0006("No shop id provided!")
 
 	,S$360$0001("No 360 shop found!")
+	,S$360$0002("No scene found with ID[%d]!")
 	,S$360$F$0001("floor [%d] number can't be null!")
 
 	,TYP$0001("Missing or invalid type, available types are [%s]!")
