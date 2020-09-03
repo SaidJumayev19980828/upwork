@@ -23,6 +23,7 @@ import javax.imageio.ImageIO;
 
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.ProductPositionDTO;
+import com.nasnav.dto.response.ProductsPositionDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
 import org.apache.tika.io.IOUtils;
@@ -149,25 +150,25 @@ public class ShopThreeSixtyService {
     }
 
 
-    public String getProductsPositions(Long shopId, Integer published, Long sceneId, Long sectionId, Long floorId) {
+    public ProductsPositionDTO getProductsPositions(Long shopId, Integer published, Long sceneId, Long sectionId, Long floorId) {
         List<ProductPositionDTO> productPositions = product360ShopsRepo.findProductsPositionsFullData(shopId, published);
 
         Map<Long, ProductPositionDTO> products =  productPositions
                 .stream()
-                .filter(p -> p.getProduct_type() == 0)
+                .filter(p -> p.getProductType() == 0)
                 .collect(toMap(ProductPositionDTO::getId, p -> p));
 
         Map<Long, ProductPositionDTO> collections =  productPositions
                 .stream()
-                .filter(p -> p.getProduct_type() == 2)
+                .filter(p -> p.getProductType() == 2)
                 .collect(toMap(ProductPositionDTO::getId, p -> p));
 
-        JSONObject response = new JSONObject();
-        response.put("shop_id", shopId);
-        response.put("products_data", products);
-        response.put("collections_data", collections);
+        ProductsPositionDTO response = new ProductsPositionDTO();
+        response.setShopId(shopId);
+        response.setProductsData(products);
+        response.setCollectionsData(collections);
 
-        return response.toString();
+        return response;
     }
 
 
@@ -328,8 +329,8 @@ public class ShopThreeSixtyService {
                 product.setShopEntity(shop.getShopsEntity());
                 product.setProductEntity(productEntity);
             }
-            ShopScenesEntity scene = ofNullable(scenesRepo.findByIdAndOrganizationEntity_Id(dto.getScene_id(), orgId))
-                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, S$360$0002, dto.getScene_id()));
+            ShopScenesEntity scene = ofNullable(scenesRepo.findByIdAndOrganizationEntity_Id(dto.getSceneId(), orgId))
+                    .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, S$360$0002, dto.getSceneId()));
             product.setScene(scene);
             product.setSection(scene.getShopSectionsEntity());
             product.setFloor(scene.getShopSectionsEntity().getShopFloorsEntity());
