@@ -150,7 +150,7 @@ public class ShopThreeSixtyService {
     }
 
 
-    public ProductsPositionDTO getProductsPositions(Long shopId, Integer published, Long sceneId, Long sectionId, Long floorId) {
+    public ProductsPositionDTO getProductsPositions(Long shopId, short published, Long sceneId, Long sectionId, Long floorId) {
         List<ProductPositionDTO> productPositions = product360ShopsRepo.findProductsPositionsFullData(shopId, published);
 
         Map<Long, ProductPositionDTO> products =  productPositions
@@ -336,7 +336,7 @@ public class ShopThreeSixtyService {
             product.setFloor(scene.getShopSectionsEntity().getShopFloorsEntity());
             product.setPitch(dto.getPitch());
             product.setYaw(dto.getYaw());
-            product.setPublished(1);
+            product.setPublished((short)1);
 
             product360ShopsRepo.save(product);
         }
@@ -696,7 +696,7 @@ public class ShopThreeSixtyService {
         for(Shop360ProductsEntity product : existingProductsPositions) {
             Shop360ProductsEntity entity = new Shop360ProductsEntity();
             BeanUtils.copyProperties(product, entity);
-            entity.setPublished(2);
+            entity.setPublished((short)2);
             publishedProductsPositions.add(entity);
         }
         product360ShopsRepo.saveAll(publishedProductsPositions);
