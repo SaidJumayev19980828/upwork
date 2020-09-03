@@ -93,6 +93,7 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.ReturnItemsDTO;
 import com.nasnav.dto.response.ReturnRequestDTO;
+import com.nasnav.dto.response.ReturnRequestItemDTO;
 import com.nasnav.enumerations.*;
 import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
@@ -3391,10 +3392,12 @@ public class OrderServiceImpl implements OrderService {
 
 
 	public ReturnRequestDTO getOrderReturnRequest(Long id){
-		ReturnRequestDTO dto = returnRequestRepo
+		ReturnRequestEntity returnRequestEntity = returnRequestRepo
 				.findById(id)
-				.map(r -> (ReturnRequestDTO)r.getRepresentation()).orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0013));
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0013));
 
+		ReturnRequestDTO dto = (ReturnRequestDTO)returnRequestEntity.getRepresentation();
+		dto.setReturnedItems(returnRequestEntity.getReturnedItems().stream().map(i -> (ReturnRequestItemDTO)i.getRepresentation()).collect(toSet()));
 		return dto;
 	}
 

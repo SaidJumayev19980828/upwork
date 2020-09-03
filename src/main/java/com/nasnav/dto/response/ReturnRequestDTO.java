@@ -21,5 +21,5 @@ public class ReturnRequestDTO extends BaseRepresentationObject {
     private Long createdByEmployee;
     private ReturnRequestStatus status;
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    Set<ReturnRequestItemEntity> returnedItems;
+    Set<ReturnRequestItemDTO> returnedItems;
 }

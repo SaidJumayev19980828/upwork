@@ -1,5 +1,7 @@
 package com.nasnav.persistence;
 
+import com.nasnav.dto.BaseRepresentationObject;
+import com.nasnav.dto.response.ReturnRequestItemDTO;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -9,7 +11,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name="return_request_item")
 @Data
-public class ReturnRequestItemEntity {
+public class ReturnRequestItemEntity implements BaseEntity {
 
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
@@ -45,4 +47,27 @@ public class ReturnRequestItemEntity {
     @JoinColumn(name="created_by_employee")
     private EmployeeUserEntity createdByEmployee;
 
+    @Override
+    public BaseRepresentationObject getRepresentation() {
+        ReturnRequestItemDTO dto = new ReturnRequestItemDTO();
+
+        dto.setId(getId());
+        if (getReceivedBy() != null) {
+            dto.setReceivedBy(getReceivedBy().getId());
+        }
+        if (getCreatedByUser() != null) {
+            dto.setCreatedByUser(getCreatedByUser().getId());
+        }
+        if (getCreatedByEmployee() != null) {
+            dto.setCreatedByEmployee(getCreatedByEmployee().getId());
+        }
+        if (getBasket() != null) {
+            dto.setBasketItem(getBasket().getId());
+        }
+        dto.setReceivedQuantity(getReceivedQuantity());
+        dto.setReturnedQuantity(getReturnedQuantity());
+        dto.setReceivedOn(getReceivedOn());
+
+        return dto;
+    }
 }
