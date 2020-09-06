@@ -23,6 +23,7 @@ import javax.imageio.ImageIO;
 
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.ProductPositionDTO;
+import com.nasnav.dto.response.PostProductPositionsResponse;
 import com.nasnav.dto.response.ProductsPositionDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.*;
@@ -309,7 +310,7 @@ public class ShopThreeSixtyService {
 
 
     @Transactional
-    public ResponseEntity<?> updateThreeSixtyShopProductsPositions(Long shopId,  List<ProductPositionDTO> json) throws BusinessException {
+    public PostProductPositionsResponse updateThreeSixtyShopProductsPositions(Long shopId,  List<ProductPositionDTO> json) throws BusinessException {
         Long orgId = securitySvc.getCurrentUserOrganizationId();
 
         validateProductPositionsUpdateDTO(shopId);
@@ -320,6 +321,15 @@ public class ShopThreeSixtyService {
 
         List<Long> missingProducts = new ArrayList<>();
         List<Long> missingScenes = new ArrayList<>();
+
+        createShop360ProductsEntity(productsMap, json, shop, orgId, missingProducts, missingScenes);
+
+        return new PostProductPositionsResponse(missingProducts, missingScenes);
+    }
+
+
+    private void createShop360ProductsEntity(Map<Long, Shop360ProductsEntity> productsMap, List<ProductPositionDTO> json,
+                                             ShopThreeSixtyEntity shop,Long orgId, List<Long> missingProducts, List<Long> missingScenes) {
         for(ProductPositionDTO dto : json) {
             Shop360ProductsEntity product;
             if (productsMap.get(dto.getId()) != null) {
@@ -341,23 +351,21 @@ public class ShopThreeSixtyService {
                 missingScenes.add(dto.getSceneId());
                 continue;
             }
-            ShopScenesEntity scene = optionalScene.get();
-            product.setScene(scene);
-            product.setSection(scene.getShopSectionsEntity());
-            product.setFloor(scene.getShopSectionsEntity().getShopFloorsEntity());
-            product.setPitch(dto.getPitch());
-            product.setYaw(dto.getYaw());
-            product.setPublished((short)1);
-
+            product = addProductAdditionalData(product, optionalScene.get(), dto);
             product360ShopsRepo.save(product);
         }
-        if (!missingProducts.isEmpty() || !missingScenes.isEmpty()) {
-            LinkedHashMap res = new LinkedHashMap();
-            res.put("missing_products", missingProducts);
-            res.put("missing_scenes", missingScenes);
-            return new ResponseEntity<>(res, OK);
-        }
-        return new ResponseEntity<>(OK);
+    }
+
+
+    private Shop360ProductsEntity addProductAdditionalData(Shop360ProductsEntity product, ShopScenesEntity scene, ProductPositionDTO dto) {
+        product.setScene(scene);
+        product.setSection(scene.getShopSectionsEntity());
+        product.setFloor(scene.getShopSectionsEntity().getShopFloorsEntity());
+        product.setPitch(dto.getPitch());
+        product.setYaw(dto.getYaw());
+        product.setPublished((short)1);
+
+        return product;
     }
 
 
@@ -783,7 +791,7 @@ public class ShopThreeSixtyService {
         if (!scene.isPresent())
             throw new BusinessException("No scene found", "INVALID_PARAM: scene_id", NOT_ACCEPTABLE);
 
-        if(!scene.get().getShopSectionsEntity().getShopFloorsEntity().getShopThreeSixtyEntity().equals(shopThreeSixtyEntity))
+        if(!scene.get().getOrganizationEntity().equals(shopThreeSixtyEntity.getShopsEntity().getOrganizationEntity()))
             throw new BusinessException("Scene doesn't belong to current org!", "INVALID_PARAM: section_id", NOT_ACCEPTABLE);
 
 

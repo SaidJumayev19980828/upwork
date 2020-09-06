@@ -2,6 +2,7 @@ package com.nasnav.controller;
 
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.ProductPositionDTO;
+import com.nasnav.dto.response.PostProductPositionsResponse;
 import com.nasnav.dto.response.ProductsPositionDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.response.ShopResponse;
@@ -122,9 +123,9 @@ public class ShopThreeSixtyController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @PostMapping(value = "/products_positions",consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<?>  updateThreeSixtyShopProductsPositions(@RequestHeader(name = "User-Token", required = false) String userToken,
-                                                            @RequestParam("shop_id") Long shopId,
-                                                            @RequestBody List<ProductPositionDTO>  data)
+    public PostProductPositionsResponse updateThreeSixtyShopProductsPositions(@RequestHeader(name = "User-Token", required = false) String userToken,
+                                                                              @RequestParam("shop_id") Long shopId,
+                                                                              @RequestBody List<ProductPositionDTO>  data)
             throws BusinessException {
         return shop360Svc.updateThreeSixtyShopProductsPositions(shopId, data);
     }
