@@ -122,11 +122,11 @@ public class ShopThreeSixtyController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @PostMapping(value = "/products_positions",consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public void updateThreeSixtyShopProductsPositions(@RequestHeader(name = "User-Token", required = false) String userToken,
+    public ResponseEntity<?>  updateThreeSixtyShopProductsPositions(@RequestHeader(name = "User-Token", required = false) String userToken,
                                                             @RequestParam("shop_id") Long shopId,
                                                             @RequestBody List<ProductPositionDTO>  data)
             throws BusinessException {
-        shop360Svc.updateThreeSixtyShopProductsPositions(shopId, data);
+        return shop360Svc.updateThreeSixtyShopProductsPositions(shopId, data);
     }
 
 
@@ -160,8 +160,10 @@ public class ShopThreeSixtyController {
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
     @GetMapping(value = "/products", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public String getShop360products(@RequestParam("shop_id") Long shopId,
-                                     @RequestParam(value = "name", required = false) String name) throws BusinessException {
-        return shop360Svc.getShop360Products(shopId, name);
+                                            @RequestParam(value = "name", required = false) String name,
+                                            @RequestParam(required = false) Long count,
+                                            @RequestParam(value = "product_type", required = false) Integer productType) throws BusinessException {
+        return shop360Svc.getShop360Products(shopId, name, count, productType);
     }
 
 

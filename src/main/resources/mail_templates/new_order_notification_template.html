@@ -311,7 +311,7 @@
 		</div>
 		<div class="pricePanel">
 			<div class="container">
-				<div class="price" th:with="subtotal=${sub.subtotal - sub.discount}">
+				<div class="price" th:with="subtotal=${sub.subtotal}">
 					<p>Subtotal</p>
 					<span id="subtotal" th:text="${subtotal} +' '+ ${sub.items[0].currency}"/>
 				</div>
@@ -319,10 +319,14 @@
 					<p>Shipping</p>
 					<span id="shipping" th:text="${sub.shipment.shippingFee} +' '+ ${sub.items[0].currency}"></span>
 				</div>
+				<div class="price" th:with="discount=${sub.discount}">
+					<p>Discount</p>
+					<span id="discount" th:text="'-' + ${discount} +' '+ ${sub.items[0].currency}"/>
+				</div>
 			</div>
-			<div class="price total" th:with="total=${sub.total - sub.discount}">
+			<div class="price total">
 				<p>Total</p>
-				<span id="total" th:text="${total} +' '+ ${sub.items[0].currency}"></span>
+				<span id="total" th:text="${sub.total} +' '+ ${sub.items[0].currency}"></span>
 			</div>
 		</div>
 	</div>
