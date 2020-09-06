@@ -71,6 +71,7 @@ import com.nasnav.dao.CartItemRepository;
 import com.nasnav.dao.EmployeeUserRepository;
 import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.PromotionsCodesUsedRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.BasketItem;
@@ -149,6 +150,9 @@ public class OrderServiceTest {
 	
 	@Autowired
 	private MetaOrderRepository metaOrderRepo;
+	
+	@Autowired
+	private PromotionsCodesUsedRepository usePromoRepo;
 
 	@Test
 	public void unregisteredUser() {
@@ -1436,18 +1440,50 @@ public class OrderServiceTest {
 				.anyMatch(stkId -> stkId.equals(602L));
 		assertTrue(cartHasStk);
 		
+		boolean isUsed = usePromoRepo.existsByPromotion_IdAndUser_Id(630002L, 88L);
+		assertFalse(isUsed);
 		//---------------------------------------------------------------------
 		orderService.finalizeOrder(orderId);
 		
 		//---------------------------------------------------------------------		
-		//assert stock reduced
+		assertStockReduced(stock1, stock2);
+		assertCartItemsRemoved();
+		assertOrderStatusChanged(orderId);
+		assertEmailMethodsCalled();
+		assertPromotionUsed(orderId);
+	}
+
+
+
+
+
+
+	private void assertPromotionUsed(Long orderId) {
+		MetaOrderEntity metaOrder = metaOrderRepo.findById(orderId).get();
+		Long userId = metaOrder.getUser().getId();
+		boolean isUsed = usePromoRepo.existsByPromotion_IdAndUser_Id(630002L, userId);
+		assertTrue(isUsed);
+	}
+
+
+
+
+
+
+	private void assertStockReduced(Item stock1, Item stock2) {
 		Item stock1After = getStockItemQty(601L);
 		Item stock2After = getStockItemQty(602L);
 		
 		assertEquals(14, stock1.getQuantity() - stock1After.getQuantity());
 		assertEquals(2, stock2.getQuantity() - stock2After.getQuantity());
-		
-		//assert cart count reduced
+	}
+
+
+
+
+
+
+	private void assertCartItemsRemoved() {
 		List<CartItemData> cartAfter = cartRepo.findCurrentCartItemsByUser_Id(88L); 
 		boolean cartHasStkAfer = 
 				cartAfter
@@ -1456,8 +1492,14 @@ public class OrderServiceTest {
 				.anyMatch(stkId -> stkId.equals(602L));
 		assertFalse(cartHasStkAfer);
 		assertFalse("if the cart had items not in the order, they should remain", cartAfter.isEmpty());
-		//---------------------------------------------------------------------	
-		//assert sub_orders status changed 
+	}
+
+
+
+
+
+
+	private void assertOrderStatusChanged(Long orderId) {
 		OrdersEntity subOrder1 = orderRepository.findById(330031L).get();
 		assertEquals(FINALIZED.getValue(), subOrder1.getStatus());
 		
@@ -1466,8 +1508,14 @@ public class OrderServiceTest {
 		
 		MetaOrderEntity metaOrder = metaOrderRepo.findById(orderId).get();
 		assertEquals(FINALIZED.getValue(), metaOrder.getStatus());
-		//---------------------------------------------------------------------	
-		//assert email methods called
+	}
+
+
+
+
+
+
+	private void assertEmailMethodsCalled() throws MessagingException, IOException {
 		Mockito
 		.verify(mailService)
 		.sendThymeleafTemplateMail(

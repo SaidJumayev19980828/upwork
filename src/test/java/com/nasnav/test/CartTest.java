@@ -346,6 +346,39 @@ public class CartTest {
 				
 		assertEquals(630002L, promoId.longValue());
 	}
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithUsedPromotions() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "GREEEEEED_HEARt");
+		
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
+		
+		assertEquals("if promocode was already used, checkout will faile", 406, res.getStatusCodeValue());
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithPromotionsWithDifferentCase() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "gReEeEeED");
+		
+		Order order = checkOutCart(requestBody, new BigDecimal("5790.45"), new BigDecimal("5900") ,new BigDecimal("51"));
+		
+		MetaOrderEntity entity = metaOrderRepo.findByMetaOrderId(order.getOrderId()).get();
+		Long promoId = 	entity.getPromotions().stream().findFirst().get().getId();
+				
+		assertEquals(630002L, promoId.longValue());
+	}
 
 	
 	

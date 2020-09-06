@@ -315,8 +315,12 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.map(PromotionStatus::getValue)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE
 										, PROMO$PARAM$0001, promotion.getStatus()));
+		String codeUpperCase = 
+				ofNullable(promotion.getCode())
+				.map(String::toUpperCase)
+				.orElse(null);
 		
-		entity.setCode(promotion.getCode());
+		entity.setCode(codeUpperCase);
 		entity.setConstrainsJson(serializeMap(promotion.getConstrains()));
 		entity.setCreatedBy(user);
 		entity.setDateEnd(promotion.getEndDate());

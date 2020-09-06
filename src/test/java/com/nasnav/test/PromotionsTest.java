@@ -211,6 +211,20 @@ public class PromotionsTest {
 	
 	
 	
+	@Test
+	public void createPromotionsCodeAlreadyInUseButWithOtherCaseTest() {
+		JSONObject bodyJson = createPromotionRequest();
+		bodyJson.put("code", "monEy2020");
+		String body = bodyJson.toString();
+		
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+        ResponseEntity<String> res = 
+        		template.exchange("/organization/promotion", POST, req, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+	}
+	
+	
+	
 	
 	@Test
 	public void createPromotionsWithCodeUsedByOldPromoTest() {
