@@ -191,10 +191,10 @@ public class OrderReturnTest {
     @Test
     public void returnOrderItemDifferentBasketItemsMetaOrder() {
         JSONArray items = jsonArray().put(json()
-                                        .put("order_item_id", 330031)
+                                        .put("order_item_id", 330035)
                                         .put("received_quantity", 1))
                                      .put(json()
-                                            .put("order_item_id", 330033)
+                                            .put("order_item_id", 330036)
                                             .put("received_quantity", 1));
 
         JSONObject body = json().put("basket_items", items);
@@ -208,7 +208,7 @@ public class OrderReturnTest {
 
     @Test
     public void returnOrderItemDifferentReturnItemsMetaOrder() {
-        JSONArray basketItems = jsonArray().put(json().put("order_item_id", 330033).put("received_quantity", 1));
+        JSONArray basketItems = jsonArray().put(json().put("order_item_id", 330036).put("received_quantity", 1));
         JSONArray requestItems = jsonArray().put(json().put("return_request_item_id", 330031).put("received_quantity", 1));
 
         JSONObject body = json()

@@ -109,6 +109,8 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 --inserting orders
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 1);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310002 , now(),88, 99001, 1);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310003 , now(),88, 99001, 1);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310004 , now(),88, 99001, 1);
 
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id )
 values(330031, 88, now(), now(), 99001, 1, 501, 310001, 12300001);
@@ -119,6 +121,10 @@ insert into public.orders(id,user_id,created_at, updated_at, organization_id,sta
 values(330033, 88, now(), now(), 99001, 1, 501, 310002, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
 values(330034, 88, now(), now(), 99001, 1, 502, 310002, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
+values(330035, 88, now(), now(), 99001, 1, 502, 310003, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
+values(330036, 88, now(), now(), 99001, 1, 502, 310004, 12300001);
 
 INSERT INTO public.shipment
 (sub_order_id, shipping_service_id, parameters, created_at, updated_at, status)
@@ -133,6 +139,8 @@ INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VAL
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330032, 330032, 602, 2, 70.0, 1);
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330033, 330033, 603, 3, 60.0, 1);
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330034, 330034, 604, 3, 70.0, 1);
+INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330035, 330035, 604, 3, 70.0, 1);
+INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330036, 330036, 604, 3, 70.0, 1);
 
 
 -- insert cart
@@ -147,6 +155,6 @@ INSERT INTO public.return_request(id, created_on, created_by_employee, meta_orde
 INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
     VALUES(330031, 330031, 330031, 1, now());
 INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
-VALUES(330032, 330031, 330032, 1, now());
+    VALUES(330032, 330031, 330032, 1, now());
 INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
-VALUES(330033, 330032, 330033, 1, now());
+    VALUES(330033, 330032, 330033, 1, now());

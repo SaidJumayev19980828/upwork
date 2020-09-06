@@ -3336,10 +3336,10 @@ public class OrderServiceImpl implements OrderService {
 
 		ReturnRequestEntity returnRequest;
 
-		if (!isNullOrEmpty(returnRequestItems) && isNullOrEmpty(returnBasketItems)) { // only ReturnedItem list is provided
+		if (isOnlyReturnedItemsProvided(returnRequestItems, returnBasketItems)) {
 			returnRequest = receiveReturnRequestItems(returnRequestItems);
 		}
-		else if (isNullOrEmpty(returnRequestItems) && !isNullOrEmpty(returnBasketItems)) {
+		else if (isOnlyReturnedBasketItemsProvided(returnRequestItems, returnBasketItems)) {
 			returnRequest = createReturnRequest(returnBasketItems);
 		}
 		else {
@@ -3412,7 +3412,7 @@ public class OrderServiceImpl implements OrderService {
 			boolean hasSameMetaOrder = basketsEntities.stream()
 													.map(BasketsEntity::getOrdersEntity)
 													.map(OrdersEntity::getMetaOrder)
-													.allMatch(m -> Objects.equals(m,metaOrder));
+													.allMatch(m -> m.getId().equals(metaOrder.getId()));
 			if (!hasSameMetaOrder) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0009);
 			}
@@ -3442,10 +3442,19 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+	private boolean isOnlyReturnedItemsProvided(List<ReturnedItem> returnRequestItems, List<ReturnedBasketItem> returnBasketItems) {
+		return !isNullOrEmpty(returnRequestItems) && isNullOrEmpty(returnBasketItems);
+	}
+
+
+	private boolean isOnlyReturnedBasketItemsProvided(List<ReturnedItem> returnRequestItems, List<ReturnedBasketItem> returnBasketItems) {
+		return isNullOrEmpty(returnRequestItems) && !isNullOrEmpty(returnBasketItems);
+	}
+
 	private void assignReturnBasketItemsToReturnRequest(List<ReturnedItem> returnRequestItems,
 																			List<ReturnedBasketItem> returnedBasketItems) {
 
-		List<ReturnRequestItemEntity> returnRequestItemEntities = getReturnRequestItemEntities(returnRequestItems);
+		List<ReturnRequestItemEntity> returnRequestItemEntities = getAndValidateReturnRequestItemEntities(returnRequestItems);
 
 		List<Long> returnBasketIds = returnedBasketItems
 				.stream()
@@ -3478,21 +3487,14 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private List<ReturnRequestItemEntity> getReturnRequestItemEntities(List<ReturnedItem> returnRequestItems) {
+	private List<ReturnRequestItemEntity> getAndValidateReturnRequestItemEntities (List<ReturnedItem> returnRequestItems) {
 		List<Long> returnItemsIds = returnRequestItems
 				.stream()
 				.map(ReturnedItem::getReturnRequestItemId)
 				.collect(toList());
 
-		List<ReturnRequestItemEntity> returnRequestItemEntities = getRequestItemsEntities(returnItemsIds);
-
-		return returnRequestItemEntities;
-	}
-
-
-	private List<ReturnRequestItemEntity> getRequestItemsEntities(List<Long> ids) {
-		List<ReturnRequestItemEntity> returnRequestItemEntities = returnRequestItemRepo.findByIdIn(ids);
-		validateAllReturnItemsExisting(ids, returnRequestItemEntities);
+		List<ReturnRequestItemEntity> returnRequestItemEntities = returnRequestItemRepo.findByIdIn(returnItemsIds);
+		validateAllReturnItemsExisting(returnItemsIds, returnRequestItemEntities);
 		validateAllReturnItemsHasSameReturnRequest(returnRequestItemEntities);
 		return returnRequestItemEntities;
 	}
@@ -3592,7 +3594,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private ReturnRequestEntity receiveReturnRequestItems(List<ReturnedItem> returnRequestItems) {
-		List<ReturnRequestItemEntity> returnRequestItemEntities = getReturnRequestItemEntities(returnRequestItems);
+		List<ReturnRequestItemEntity> returnRequestItemEntities = getAndValidateReturnRequestItemEntities(returnRequestItems);
 
 		Map<Long, ReturnRequestItemEntity> returnRequestItemEntityMap = returnRequestItemEntities
 				.stream()
