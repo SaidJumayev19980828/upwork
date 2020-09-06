@@ -21,10 +21,12 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (69, 'testuser2@nasnav.com', 99002, '131415',  501);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+VALUES (70, 'testuser3@nasnav.com', 99001, '161718',  502);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1, '101112', now(), 68, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (2, '131415', now(), 69, null);
-
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (3, '161718', now(), 70, null);
 --inserting Roles
 insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
 insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
@@ -36,6 +38,7 @@ insert into roles(id, name,  organization_id) values(3, 'CUSTOMER', 99001);
 --inserting Roles EmployeeUsers relations
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 70, 2);
 
 
 
@@ -48,6 +51,7 @@ INSERT INTO public.products(id, name, p_name, brand_id, category_id, organizatio
 INSERT INTO public.products(id, name, p_name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1006, 'product_6', 'product-six',102, 201, 99002, now(), now());
 INSERT INTO public.products(id, name, p_name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1007, 'product_7', 'product-seven',101, 202, 99002, now(), now());
 INSERT INTO public.products(id, name, p_name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1008, 'product_8', 'product-eight',102, 202, 99002, now(), now());
+INSERT INTO public.products(id, name, p_name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1009, 'product_9', 'product-nine',102, 202, 99001, now(), now());
 
 
 
@@ -59,6 +63,7 @@ insert into public.product_variants(id, "name" , product_id ) values(310005, 'va
 insert into public.product_variants(id, "name" , product_id ) values(310006, 'var' 	, 1006);
 insert into public.product_variants(id, "name" , product_id ) values(310007, 'var' 	, 1007);
 insert into public.product_variants(id, "name" , product_id ) values(310008, 'var' 	, 1008);
+insert into public.product_variants(id, "name" , product_id ) values(310009, 'var' 	, 1009);
 
 update public.product_variants 
 set feature_spec = '{"7001":"Blue", "7002":"XL"}'
@@ -68,12 +73,16 @@ where id = 310005;
 insert into public.product_variants(id, "name" , product_id ) values(3100022, 'var' 	, 1002);
 
 --inserting stocks
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(601, 502, 3, 99001, 600.0, 310001);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(601, 502, 1, 99001, 600.0, 310001);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(605, 501, 4, 99001, 400.0, 310001);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(602, 502, 8, 99001, 1200.0, 310003);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(602, 502, 0, 99001, 1200.0, 310003);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(604, 502, 6, 99001, 700.0, 310005);
 
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(606, 501, 6, 99002, 600.0, 310002);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(607, 501, 1, 99002, 600.0, 3100022);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(608, 502, 8, 99002, 1200.0, 310007);
+
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(609, 502, 8, 99001, 0.0, 310009);
+
+
 
