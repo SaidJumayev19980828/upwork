@@ -68,6 +68,7 @@ public enum ErrorCodes {
 	,G$USR$0001("User is not an employee!")
 	,G$JSON$0001("Failed to read json into an object!")
 	,G$PRAM$0001("Missing required parameters in object[%s]!")
+	,G$PRAM$0002("Invalid Parameter value[%s]!")
 	,G$ORG$0001("No organization exists with id[%d]!")
 	,G$STK$0001("Failed to get stock data for stock [%d]!")
 
@@ -154,6 +155,8 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0008("No active Promo exists with code[%s]!")
 	,PROMO$PARAM$0009("Promo code [%s] is not applicable to the current cart!")
 	,PROMO$PARAM$0010("Promo code[%s] was already used!")
+	
+	,ORG$SETTING$0001("No setting exists with name[%s]!")
 	;
 	
 	@Getter

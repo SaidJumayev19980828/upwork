@@ -13,8 +13,11 @@ import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
 import static com.nasnav.exceptions.ErrorCodes.G$PRAM$0001;
 import static com.nasnav.exceptions.ErrorCodes.ORG$EXTRATTR$0001;
+import static com.nasnav.exceptions.ErrorCodes.ORG$SETTING$0001;
+import static java.util.Arrays.stream;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -22,6 +25,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -69,6 +73,7 @@ import com.nasnav.dto.SocialRepresentationObject;
 import com.nasnav.dto.ThemeDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
 import com.nasnav.dto.response.OrgThemeRepObj;
+import com.nasnav.enumerations.Settings;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
@@ -901,15 +906,32 @@ public class OrganizationService {
 
 
 	public void updateSetting(SettingDTO settingDto) {
-		if(anyIsNull(settingDto, settingDto.getName(), settingDto.getValue())) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, settingDto.toString());
-		}
+		validateSetting(settingDto);
+		
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		SettingEntity setting = 
 				settingRepo
 				.findBySettingNameAndOrganization_Id(settingDto.getName(), orgId)
 				.orElseGet(()-> createSettingEntity(settingDto));
 		settingRepo.save(setting);		
+	}
+
+
+
+	private void validateSetting(SettingDTO settingDto) {
+		if(anyIsNull(settingDto, settingDto.getName(), settingDto.getValue())) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, G$PRAM$0001, settingDto.toString());
+		}else if(!isValidSettingName(settingDto)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$SETTING$0001, settingDto.getName());
+		}
+	}
+
+
+
+	private boolean isValidSettingName(SettingDTO settingDto) {
+		return stream(Settings.values())
+				.map(Settings::name)
+				.anyMatch(name -> Objects.equals(name, settingDto.getName()));
 	}
 
 
@@ -922,11 +944,16 @@ public class OrganizationService {
 		entity.setOrganization(organization);
 		return entity;
 	}
+	
+	
+	
+	
+	
+	public Map<String,String> getOrganizationSettings(Long orgId){
+		return settingRepo
+				.findByOrganization_Id(orgId)
+				.stream()
+				.collect(toMap(SettingEntity::getSettingName, SettingEntity::getSettingValue));
+	}
 
-
-	
-	
-	
-
-	
 }

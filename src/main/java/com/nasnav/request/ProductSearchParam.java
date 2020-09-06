@@ -28,6 +28,8 @@ public class ProductSearchParam {
     public BigDecimal minPrice;
     public BigDecimal maxPrice;
     public Integer[] product_type;
+    public Boolean show_free_products;
+    public Boolean hide_empty_stocks;
 
     public void setSort(String sort) {
         this.sort = ProductSortOptions.valueOf(sort.toUpperCase());

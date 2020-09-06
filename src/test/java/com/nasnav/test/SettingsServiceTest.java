@@ -1,5 +1,7 @@
 package com.nasnav.test;
 
+import static com.nasnav.enumerations.Settings.HIDE_EMPTY_STOCKS;
+import static com.nasnav.enumerations.Settings.SHOW_FREE_PRODUCTS;
 import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.SAME_CITY;
 import static com.nasnav.service.cart.optimizers.OptimizationStratigiesNames.WAREHOUSE;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
@@ -17,6 +19,8 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +29,7 @@ import java.util.Set;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.skyscreamer.jsonassert.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,6 +38,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -43,6 +49,7 @@ import com.nasnav.dao.OrganizationCartOptimizationRepository;
 import com.nasnav.dao.SettingRepository;
 import com.nasnav.dto.request.organization.CartOptimizationSettingDTO;
 import com.nasnav.dto.response.CartOptimizationStrategyDTO;
+import com.nasnav.enumerations.Settings;
 import com.nasnav.persistence.OrganizationCartOptimizationEntity;
 import com.nasnav.persistence.SettingEntity;
 import com.nasnav.service.cart.optimizers.CartOptimizationStrategy;
@@ -98,6 +105,27 @@ public class SettingsServiceTest {
 				json()
 				.put("name", settingName)
 				.put("value", NULL)
+				.toString();
+		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
+	        ResponseEntity<String> res = 
+	        		template
+	        		.exchange("/organization/settings",POST, req, String.class);
+	    assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	    
+	    Optional<SettingEntity> entity = settingRepo.findBySettingNameAndOrganization_Id(settingName, 99001L);
+	    assertFalse(entity.isPresent());
+	}
+	
+	
+	
+	
+	@Test
+	public void postSettingsInvalidSettingTest() {
+		String settingName = "INVALID";
+		String body = 
+				json()
+				.put("name", settingName)
+				.put("value", "Bogy")
 				.toString();
 		HttpEntity<?> req = getHttpEntity(body, "hijkllm");
 	        ResponseEntity<String> res = 
@@ -448,5 +476,55 @@ public class SettingsServiceTest {
         		template
         		.exchange("/organization/settings/cart_optimization/strategies",GET, req, String.class);
         assertEquals(UNAUTHORIZED, res.getStatusCode());
+	}
+	
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase = BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void showFreeProductsEnabled() {
+		setOrganizationSetting(SHOW_FREE_PRODUCTS.name(), true);
+		
+		ResponseEntity<String> response = template.getForEntity("/navbox/products?org_id=99001", String.class);
+		System.out.println(response.getBody());
+		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
+		long total = json.getLong("total");
+		assertEquals("there are total 3 products with with org_id = 99001 and single product with zero price",4L , total);
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase = BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void hideEmptyStocksEnabled() {
+		setOrganizationSetting(HIDE_EMPTY_STOCKS.name(), true);
+		
+		ResponseEntity<String> response = template.getForEntity("/navbox/products?org_id=99001", String.class);
+		System.out.println(response.getBody());
+		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
+		long total = json.getLong("total");
+		assertEquals("there are total 3 products with with org_id = 99001 and single product with zero stock, which should be ignored"
+						,2L , total);
+	}
+
+
+
+
+	private void setOrganizationSetting(String settingName, Object settingValue) {
+		String body = 
+				json()
+				.put("name", settingName)
+				.put("value", settingValue)
+				.toString();
+		HttpEntity<?> req = getHttpEntity(body, "161718");
+	        ResponseEntity<String> res = 
+	        		template
+	        		.exchange("/organization/settings",POST, req, String.class);
+	    assertEquals(200, res.getStatusCodeValue());
 	}
 }

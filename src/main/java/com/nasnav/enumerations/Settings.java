@@ -1,5 +1,7 @@
 package com.nasnav.enumerations;
 
 public enum Settings {
-	CART_OPTIMIZATION_STARTEGY
+	TEST_SETTING
+	,SHOW_FREE_PRODUCTS
+	,HIDE_EMPTY_STOCKS
 }

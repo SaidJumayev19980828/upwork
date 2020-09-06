@@ -4,8 +4,10 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 import static com.nasnav.commons.utils.CollectionUtils.divideToBatches;
 import static com.nasnav.commons.utils.CollectionUtils.mapInBatches;
 import static com.nasnav.commons.utils.CollectionUtils.processInBatches;
-import static com.nasnav.commons.utils.EntityUtils.*;
+import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
+import static com.nasnav.commons.utils.EntityUtils.areEqual;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
+import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.Operation.CREATE;
@@ -20,7 +22,22 @@ import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PR
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_READ_FAIL;
 import static com.nasnav.constatnts.error.product.ProductSrvErrorMessages.ERR_PRODUCT_STILL_USED;
 import static com.nasnav.enumerations.OrderStatus.NEW;
-import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.enumerations.Settings.HIDE_EMPTY_STOCKS;
+import static com.nasnav.enumerations.Settings.SHOW_FREE_PRODUCTS;
+import static com.nasnav.exceptions.ErrorCodes.GEN$0002;
+import static com.nasnav.exceptions.ErrorCodes.P$BRA$0001;
+import static com.nasnav.exceptions.ErrorCodes.P$BRA$0002;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0001;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0002;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0003;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0004;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0005;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0006;
+import static com.nasnav.exceptions.ErrorCodes.P$PRO$0008;
+import static com.nasnav.exceptions.ErrorCodes.P$VAR$0001;
+import static com.nasnav.exceptions.ErrorCodes.P$VAR$0002;
+import static com.nasnav.exceptions.ErrorCodes.P$VAR$003;
+import static com.nasnav.exceptions.ErrorCodes.S$0006;
 import static com.nasnav.persistence.ProductTypes.BUNDLE;
 import static com.nasnav.persistence.ProductTypes.COLLECTION;
 import static com.querydsl.core.types.dsl.Expressions.cases;
@@ -43,6 +60,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.springframework.beans.BeanUtils.copyProperties;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -53,8 +71,18 @@ import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -66,15 +94,6 @@ import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
-import com.nasnav.dao.*;
-import com.nasnav.dto.request.product.CollectionItemDTO;
-import com.nasnav.dto.request.product.Product360ShopsDTO;
-import com.nasnav.dto.response.navbox.VariantsResponse;
-import com.nasnav.model.querydsl.sql.*;
-import com.nasnav.persistence.*;
-import com.querydsl.core.types.Expression;
-import com.querydsl.core.types.SubQueryExpression;
-import com.querydsl.core.types.dsl.NumberPath;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -99,6 +118,23 @@ import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
+import com.nasnav.dao.BasketRepository;
+import com.nasnav.dao.BrandsRepository;
+import com.nasnav.dao.BundleRepository;
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.Product360ShopsRepository;
+import com.nasnav.dao.ProductCollectionRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ProductImagesRepository;
+import com.nasnav.dao.ProductImgsCustomRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.ProductsCustomRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.BundleDTO;
 import com.nasnav.dto.BundleElementUpdateDTO;
 import com.nasnav.dto.ExtraAttributeDTO;
@@ -120,9 +156,31 @@ import com.nasnav.dto.TagsRepresentationObject;
 import com.nasnav.dto.VariantDTO;
 import com.nasnav.dto.VariantFeatureDTO;
 import com.nasnav.dto.VariantUpdateDTO;
+import com.nasnav.dto.request.product.CollectionItemDTO;
+import com.nasnav.dto.request.product.Product360ShopsDTO;
+import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.model.querydsl.sql.QBrands;
+import com.nasnav.model.querydsl.sql.QProductFeatures;
+import com.nasnav.model.querydsl.sql.QProductVariants;
+import com.nasnav.model.querydsl.sql.QProducts;
+import com.nasnav.model.querydsl.sql.QShops;
+import com.nasnav.model.querydsl.sql.QStocks;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.BundleEntity;
+import com.nasnav.persistence.ExtraAttributesEntity;
+import com.nasnav.persistence.ProductCollectionEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductExtraAttributesEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.ProductImagesEntity;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.Shop360ProductsEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.StocksEntity;
+import com.nasnav.persistence.TagsEntity;
 import com.nasnav.persistence.dto.query.result.products.BrandBasicData;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.request.BundleSearchParam;
@@ -140,6 +198,7 @@ import com.nasnav.service.model.VariantCache;
 import com.nasnav.service.model.VariantIdentifier;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.SubQueryExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.sql.SQLExpressions;
 import com.querydsl.sql.SQLQuery;
@@ -232,6 +291,9 @@ public class ProductService {
 
 	@Autowired
 	private Product360ShopsRepository product360ShopsRepo;
+	
+	@Autowired
+	private OrganizationService orgService;
 
 	@Autowired
 	public ProductService(ProductRepository productRepository, StockRepository stockRepository,
@@ -830,6 +892,14 @@ public class ProductService {
 
 		if(params.product_type != null)
 			predicate.and( product.productType.in(params.product_type));
+		
+		if(params.hide_empty_stocks) {
+			predicate.and( stock.quantity.gt(0));
+		}
+		
+		if(!params.show_free_products) {
+			predicate.and( stock.price.gt(ZERO));
+		}
 
 		predicate.and( shop.removed.eq(0) );
 
@@ -846,22 +916,22 @@ public class ProductService {
 			params.setOrder(oldParams.order.getValue());
 
 		if (params.sort != null && ProductSortOptions.getProductSortOptions(params.sort.getValue()) == null)
-			throw new BusinessException("Sort is limited to id, name, pname, price", "", HttpStatus.BAD_REQUEST);
+			throw new BusinessException("Sort is limited to id, name, pname, price", "", BAD_REQUEST);
 
 		if (params.order != null && !params.order.getValue().equals("asc") && !params.order.getValue().equals("desc"))
-			throw new BusinessException("Order is limited to asc and desc only", "", HttpStatus.BAD_REQUEST);
+			throw new BusinessException("Order is limited to asc and desc only", "", BAD_REQUEST);
 
 		if (params.start != null && params.start < 0)
-			throw new BusinessException("Start can be zero or more", "", HttpStatus.BAD_REQUEST);
+			throw new BusinessException("Start can be zero or more", "", BAD_REQUEST);
 
 		if (params.count != null && params.count < 1)
-			throw new BusinessException("Count can be One or more", "", HttpStatus.BAD_REQUEST);
+			throw new BusinessException("Count can be One or more", "", BAD_REQUEST);
 
 		if (params.org_id == null && params.shop_id == null)
-			throw new BusinessException("Shop Id or Organization Id shall be provided", "", HttpStatus.BAD_REQUEST);
+			throw new BusinessException("Shop Id or Organization Id shall be provided", "", BAD_REQUEST);
 
-		if (params.minPrice != null && params.minPrice.compareTo(BigDecimal.ZERO) < 0)
-			params.minPrice = BigDecimal.ZERO;
+		if (params.minPrice != null && params.minPrice.compareTo(ZERO) < 0)
+			params.minPrice = ZERO;
 
 		if (params.start == null)
 			params.start = defaultStart;
@@ -874,7 +944,34 @@ public class ProductService {
 		if (params.order == null)
 			params.setOrder(defaultOrder);
 
+		Map<String,String> orgSettings = orgService.getOrganizationSettings(params.org_id);
+		
+		params.show_free_products = isShowFreeProductsAllowed(orgSettings);
+		
+		params.hide_empty_stocks = isHideEmptyStocksAllowed(params, orgSettings);
+		
 		return params;
+	}
+
+
+
+	private Boolean isHideEmptyStocksAllowed(ProductSearchParam params, Map<String,String> orgSettings) {
+		boolean hideStocksSetting = 
+				ofNullable(orgSettings)
+				.map(settings -> settings.get(HIDE_EMPTY_STOCKS.name()))
+				.map(Boolean::parseBoolean)
+				.orElse(false);
+		return ofNullable(params.hide_empty_stocks)
+				.orElse(hideStocksSetting);
+	}
+
+
+
+	private Boolean isShowFreeProductsAllowed(Map<String, String> orgSettings) {
+		return ofNullable(orgSettings)
+		.map(settings -> settings.get(SHOW_FREE_PRODUCTS.name()))
+		.map(Boolean::parseBoolean)
+		.orElse(false);
 	}
 
 	Integer getProductCountParam(Integer count) {
