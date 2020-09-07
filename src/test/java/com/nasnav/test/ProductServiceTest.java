@@ -1,7 +1,9 @@
 package com.nasnav.test;
 import static com.google.common.primitives.Longs.asList;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
-import static com.nasnav.test.commons.TestCommons.*;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
+import static com.nasnav.test.commons.TestCommons.jsonArray;
 import static java.lang.Math.random;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -11,7 +13,10 @@ import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,8 +25,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import com.nasnav.dao.*;
-import com.nasnav.persistence.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -34,16 +37,41 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
+import com.nasnav.dao.ExtraAttributesRepository;
+import com.nasnav.dao.FilesRepository;
+import com.nasnav.dao.OrganizationRepository;
+import com.nasnav.dao.Product360ShopsRepository;
+import com.nasnav.dao.ProductFeaturesRepository;
+import com.nasnav.dao.ProductImagesRepository;
+import com.nasnav.dao.ProductRepository;
+import com.nasnav.dao.ProductVariantsRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.ProductRepresentationObject;
 import com.nasnav.dto.ProductsFiltersResponse;
 import com.nasnav.dto.ProductsResponse;
+import com.nasnav.persistence.ExtraAttributesEntity;
+import com.nasnav.persistence.FileEntity;
+import com.nasnav.persistence.OrganizationEntity;
+import com.nasnav.persistence.ProductEntity;
+import com.nasnav.persistence.ProductExtraAttributesEntity;
+import com.nasnav.persistence.ProductFeaturesEntity;
+import com.nasnav.persistence.ProductImagesEntity;
+import com.nasnav.persistence.ProductTypes;
+import com.nasnav.persistence.ProductVariantsEntity;
+import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.StocksEntity;
 import com.nasnav.request.ProductSearchParam;
 
 import net.jcip.annotations.NotThreadSafe;
@@ -102,6 +130,9 @@ public class ProductServiceTest {
 	
 	@Autowired
 	private ExtraAttributesRepository extraAttributeRepository;
+	
+	@Autowired
+	private ObjectMapper objectMapper;
 	
 	private final String PRODUCT_NAME = "LIPSTICK";
 	private final String PRODUCT_P_NAME = "LIPSTICK PRODUCT";
@@ -968,8 +999,8 @@ public class ProductServiceTest {
 
 
 	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	@Sql(executionPhase = BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
 	public void testGetProductFilters() {
 		ProductSearchParam param = new ProductSearchParam();
 		param.org_id = 99001L;
@@ -989,13 +1020,65 @@ public class ProductServiceTest {
 		JSONObject variantFeatures = res.getJSONObject("variantFeatures");
 		assertTrue(!variantFeatures.isEmpty());
 	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase = BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void testGetProductFiltersSearchByProductCode() throws JsonParseException, JsonMappingException, IOException {
+		ProductSearchParam param = new ProductSearchParam();
+		param.org_id = 99001L;
+		param.name = "code gens";
+
+		ResponseEntity<String> response = 
+				template.getForEntity("/navbox/products?org_id=99001&name=gens", String.class);
+		assertEquals(OK, response.getStatusCode());
+		
+		System.out.println(response.getBody());
+		ProductsResponse products = objectMapper.readValue(response.getBody(), new TypeReference<ProductsResponse>(){});
+		assertEquals("there is 1 products with product code like the given", 1L, products.getTotal().longValue());
+		long expectedProductId = 
+				products
+				.getProducts()
+				.stream()
+				.map(ProductRepresentationObject::getId)
+				.findFirst()
+				.get();
+		assertEquals("only product 1001 has product code like the given", 1001L, expectedProductId);
+	}
+	
+	
+	
+	
+	@Test
+	@Sql(executionPhase = BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	public void testGetProductFiltersSearchBySku() throws JsonParseException, JsonMappingException, IOException {
+		ResponseEntity<String> response = 
+				template.getForEntity("/navbox/products?org_id=99001&name=114", String.class);
+		assertEquals(OK, response.getStatusCode());
+		
+		System.out.println(response.getBody());
+		ProductsResponse products = objectMapper.readValue(response.getBody(), new TypeReference<ProductsResponse>(){});
+		assertEquals("there is 1 products with sku like the given", 1L, products.getTotal().longValue());
+		long expectedProductId = 
+				products
+				.getProducts()
+				.stream()
+				.map(ProductRepresentationObject::getId)
+				.findFirst()
+				.get();
+		assertEquals("only product 1001 has product code like the given", 1001L, expectedProductId);
+	}
 
 
 
 
 	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_4.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	@Sql(executionPhase = BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
 	public void getProductWithMultipleIndenticalImagesTest() {
 		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=1001", String.class);
 
