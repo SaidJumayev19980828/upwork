@@ -3348,6 +3348,8 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 		if (returnRequest != null) {
+            returnRequest.setStatus(RECEIVED.getValue());
+            returnRequestRepo.save(returnRequest);
 			increaseReturnRequestStock(returnRequest);
 		}
 	}
@@ -3549,7 +3551,6 @@ public class OrderServiceImpl implements OrderService {
 		MetaOrderEntity entity = basketsEntityMap.values().iterator().next().getOrdersEntity().getMetaOrder();
 		returnRequest.setMetaOrder(entity);
 		returnRequest.setCreatedByEmployee(emp);
-		returnRequest.setStatus(RECEIVED.getValue());
 
 		Set<ReturnRequestItemEntity> returnedRequestItems = new HashSet<>();
 
@@ -3560,7 +3561,7 @@ public class OrderServiceImpl implements OrderService {
 		}
 		returnRequest.setReturnedItems(returnedRequestItems);
 
-		return returnRequestRepo.save(returnRequest);
+		return returnRequest;
 	}
 
 
@@ -3605,7 +3606,6 @@ public class OrderServiceImpl implements OrderService {
 		for (ReturnedItem item : returnRequestItems) {
 			ReturnRequestItemEntity itemEntity = returnRequestItemEntityMap.get(item.getReturnRequestItemId());
 			itemEntity.setReceivedQuantity(item.getReceivedQuantity());
-			itemEntity.getReturnRequest().setStatus(RECEIVED.getValue());
 			returnRequestItemRepo.save(itemEntity);
 		}
 		return returnRequestItemEntities.get(0).getReturnRequest();
