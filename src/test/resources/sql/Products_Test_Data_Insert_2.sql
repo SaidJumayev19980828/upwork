@@ -57,14 +57,14 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1004, 'product_4',102, 201, 99001, now(), now());
 
 -- variants for each product
-insert into public.product_variants(id, "name" , product_id, barcode, feature_spec ) values(310001, 'var' 	, 1001, 'ABCD1234', '{"234":"40", "235":"pink"}');
-insert into public.product_variants(id, "name" , product_id, barcode, feature_spec ) values(310002, 'var' 	, 1002, 'EFGH1234', '{"234":"41", "235":"grey"}');
-insert into public.product_variants(id, "name" , product_id, barcode, feature_spec ) values(310003, 'var' 	, 1003, 'HIJK1234', '{"234":"42", "235":"black"}');
-insert into public.product_variants(id, "name" , product_id, barcode, feature_spec ) values(310004, 'var' 	, 1004, 'LMNO1234', '{"234":"43", "235":"white"}');
-insert into public.product_variants(id, "name" , product_id, barcode, feature_spec ) values(310005, 'var' 	, 1001, 'TRYU1234', '{"234":"44", "235":"brown"}');
-insert into public.product_variants(id, "name" , product_id, barcode, feature_spec ) values(310006, 'var' 	, 1001, 'ASDFG234', '{"234":"45", "235":"blue"}');
-insert into public.product_variants(id, "name" , product_id, barcode, feature_spec ) values(310007, 'var' 	, 1001, 'QWER1234', '{"234":"46", "235":"lattece heart"}');
-insert into public.product_variants(id, "name" , product_id, barcode, feature_spec ) values(310008, 'var' 	, 1001, 'ZCXV1234', '{"234":"47", "235":"elephant tooth"}');
+insert into public.product_variants(id, "name" , product_id, barcode, feature_spec, product_code, sku ) values(310001, 'var' 	, 1001, 'ABCD1234', '{"234":"40", "235":"pink"}', 'code gensis', '1144');
+insert into public.product_variants(id, "name" , product_id, barcode, feature_spec, product_code, sku ) values(310002, 'var' 	, 1002, 'EFGH1234', '{"234":"41", "235":"grey"}', 'code gelsis', '5522');
+insert into public.product_variants(id, "name" , product_id, barcode, feature_spec, product_code, sku ) values(310003, 'var' 	, 1003, 'HIJK1234', '{"234":"42", "235":"black"}', 'code gefecis', '9966');
+insert into public.product_variants(id, "name" , product_id, barcode, feature_spec, product_code, sku ) values(310004, 'var' 	, 1004, 'LMNO1234', '{"234":"43", "235":"white"}', 'code gamosis', '8855');
+insert into public.product_variants(id, "name" , product_id, barcode, feature_spec, product_code, sku ) values(310005, 'var' 	, 1001, 'TRYU1234', '{"234":"44", "235":"brown"}', 'code golisis', '3366');
+insert into public.product_variants(id, "name" , product_id, barcode, feature_spec, product_code, sku ) values(310006, 'var' 	, 1001, 'ASDFG234', '{"234":"45", "235":"blue"}', 'code gekomis', '7569');
+insert into public.product_variants(id, "name" , product_id, barcode, feature_spec, product_code, sku ) values(310007, 'var' 	, 1001, 'QWER1234', '{"234":"46", "235":"lattece heart"}', 'code gakotis', '4521');
+insert into public.product_variants(id, "name" , product_id, barcode, feature_spec, product_code, sku ) values(310008, 'var' 	, 1001, 'ZCXV1234', '{"234":"47", "235":"elephant tooth"}', 'code g', '3654');
 
 --inserting additional variants
 INSERT INTO public.product_variants(id,product_id, feature_spec, name, p_name, description, barcode)

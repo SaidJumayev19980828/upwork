@@ -679,7 +679,7 @@ public class ProductService {
 		QProductVariants variant = QProductVariants.productVariants;
 		QShops shop = QShops.shops;
 
-		BooleanBuilder predicate = getQueryPredicate(params, product, stock, shop);
+		BooleanBuilder predicate = getQueryPredicate(params, product, stock, shop, variant);
 
 		OrderSpecifier<?> order = getProductQueryOrder(params, product, stock);
 
@@ -718,6 +718,8 @@ public class ProductService {
 											stock.shopId.as("shop_id"),
 											variant.barcode.as("variant_barcode"),
 											variant.featureSpec,
+											variant.productCode,
+											variant.sku,
 											product.id,
 											product.barcode,
 											product.brandId.as("brand_id"),
@@ -747,8 +749,9 @@ public class ProductService {
 		QStocks stock = QStocks.stocks;
 		QProducts product = QProducts.products;
 		QShops shop = QShops.shops;
+		QProductVariants variant = QProductVariants.productVariants;
 
-		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock, shop);
+		BooleanBuilder predicate = getQueryPredicate(finalParams, product, stock, shop, variant);
 
 		SQLQuery<?> fromProductsClause = productsCustomRepo.getProductsBaseQuery(predicate, finalParams);
 		SQLQuery<?> fromCollectionsClause = productsCustomRepo.getCollectionsBaseQuery(predicate, finalParams);
@@ -862,7 +865,8 @@ public class ProductService {
 	
 	
 	
-	private BooleanBuilder getQueryPredicate(ProductSearchParam params, QProducts product, QStocks stock, QShops shop) {
+	private BooleanBuilder getQueryPredicate(ProductSearchParam params, QProducts product
+								, QStocks stock, QShops shop, QProductVariants variant) {
 		BooleanBuilder predicate = new BooleanBuilder();
 
 		predicate.and(product.removed.eq(0));
@@ -885,7 +889,9 @@ public class ProductService {
 
 		if(params.name != null)
 			predicate.and( product.name.likeIgnoreCase("%" + params.name + "%")
-						   .or(product.description.likeIgnoreCase("%" + params.name + "%") ));
+						   .or(product.description.likeIgnoreCase("%" + params.name + "%") )
+						   .or(variant.productCode.likeIgnoreCase("%" + params.name + "%") )
+						   .or(variant.sku.likeIgnoreCase("%" + params.name + "%") ));
 
 		if(params.shop_id != null && params.org_id == null)
 			predicate.and( stock.shopId.eq(params.shop_id) );
