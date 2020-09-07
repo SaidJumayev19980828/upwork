@@ -43,6 +43,7 @@ import static com.nasnav.enumerations.OrderStatus.findEnum;
 import static com.nasnav.enumerations.PaymentStatus.ERROR;
 import static com.nasnav.enumerations.PaymentStatus.FAILED;
 import static com.nasnav.enumerations.PaymentStatus.UNPAID;
+import static com.nasnav.enumerations.ReturnRequestStatus.RECEIVED;
 import static com.nasnav.enumerations.Roles.CUSTOMER;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
@@ -73,6 +74,18 @@ import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0003;
 import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$RET$0001;
+import static com.nasnav.exceptions.ErrorCodes.O$RET$0002;
+import static com.nasnav.exceptions.ErrorCodes.O$RET$0003;
+import static com.nasnav.exceptions.ErrorCodes.O$RET$0004;
+import static com.nasnav.exceptions.ErrorCodes.O$RET$0005;
+import static com.nasnav.exceptions.ErrorCodes.O$RET$0006;
+import static com.nasnav.exceptions.ErrorCodes.O$RET$0007;
+import static com.nasnav.exceptions.ErrorCodes.O$RET$0008;
+import static com.nasnav.exceptions.ErrorCodes.O$RET$0009;
+import static com.nasnav.exceptions.ErrorCodes.O$RET$0010;
+import static com.nasnav.exceptions.ErrorCodes.O$RET$0011;
+import static com.nasnav.exceptions.ErrorCodes.O$RET$0012;
 import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0001;
 import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0002;
 import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
@@ -107,6 +120,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -143,6 +157,8 @@ import com.nasnav.dao.OrganizationImagesRepository;
 import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.PromotionRepository;
+import com.nasnav.dao.ReturnRequestItemRepository;
+import com.nasnav.dao.ReturnRequestRepository;
 import com.nasnav.dao.RoleEmployeeUserRepository;
 import com.nasnav.dao.ShipmentRepository;
 import com.nasnav.dao.ShopsRepository;
@@ -158,7 +174,10 @@ import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.OrderPhoneNumberPair;
 import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.ProductImageDTO;
+import com.nasnav.dto.ReturnedBasketItem;
+import com.nasnav.dto.ReturnedItem;
 import com.nasnav.dto.request.OrderRejectDTO;
+import com.nasnav.dto.request.ReturnItemsDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
@@ -193,6 +212,8 @@ import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.ProductEntity;
 import com.nasnav.persistence.ProductVariantsEntity;
 import com.nasnav.persistence.PromotionsEntity;
+import com.nasnav.persistence.ReturnRequestEntity;
+import com.nasnav.persistence.ReturnRequestItemEntity;
 import com.nasnav.persistence.ShipmentEntity;
 import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.persistence.StocksEntity;
@@ -296,9 +317,14 @@ public class OrderServiceImpl implements OrderService {
 	
 	@Autowired
 	private PromotionRepository promoRepo;
-	
 	@Autowired
 	private CartOptimizationService cartOptimizationService;
+	
+	@Autowired
+	private ReturnRequestRepository returnRequestRepo;
+
+	@Autowired
+	private ReturnRequestItemRepository returnRequestItemRepo;
 	
 	private Map<OrderStatus, Set<OrderStatus>> orderStateMachine;
 	private Set<OrderStatus> orderStatusForCustomers;
@@ -3296,6 +3322,314 @@ public class OrderServiceImpl implements OrderService {
 				.allMatch(acceptedStatuses::contains);
 		if(!(acceptedStatuses.contains(status) && areAllSubOrdersFinalized)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CNCL$0002, order.getId(), status.toString());
+		}
+	}
+
+
+	@Override
+	@Transactional
+	public void receiveItems(ReturnItemsDTO returnedItemsDTO) {
+
+		validateReturnedItemsDTO(returnedItemsDTO);
+
+		List<ReturnedItem> returnRequestItems = returnedItemsDTO.getReturnedItems();
+
+		List<ReturnedBasketItem> returnBasketItems = returnedItemsDTO.getBasketItems();
+
+		ReturnRequestEntity returnRequest;
+
+		if (isOnlyReturnedItemsProvided(returnRequestItems, returnBasketItems)) {
+			returnRequest = receiveReturnRequestItems(returnRequestItems);
+		}
+		else if (isOnlyReturnedBasketItemsProvided(returnRequestItems, returnBasketItems)) {
+			returnRequest = createReturnRequest(returnBasketItems);
+		}
+		else {
+			assignReturnBasketItemsToReturnRequest(returnRequestItems, returnBasketItems);
+			returnRequest = receiveReturnRequestItems(returnRequestItems);
+		}
+
+		if (returnRequest != null) {
+            returnRequest.setStatus(RECEIVED.getValue());
+            returnRequestRepo.save(returnRequest);
+			increaseReturnRequestStock(returnRequest);
+		}
+	}
+
+
+	private void validateReturnedItemsDTO(ReturnItemsDTO returnedItemsDTO) {
+		if (isNullOrEmpty(returnedItemsDTO.getBasketItems()) && isNullOrEmpty(returnedItemsDTO.getReturnedItems())) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0003);
+		}
+		if (!isNullOrEmpty(returnedItemsDTO.getReturnedItems())) {
+			validateReturnedItemsList(returnedItemsDTO.getReturnedItems());
+		}
+		if (!isNullOrEmpty(returnedItemsDTO.getBasketItems())) {
+			validateReturnedBasketItem(returnedItemsDTO.getBasketItems());
+		}
+	}
+
+
+	private void validateReturnedItemsList(List<ReturnedItem> returnRequestItems) {
+		for(ReturnedItem item : returnRequestItems) {
+			if (Objects.equals(item.getReturnRequestItemId(), null)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0004);
+			}
+			if (Objects.equals(item.getReceivedQuantity(), null)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0005);
+			}
+		}
+	}
+
+
+	private void validateReturnedBasketItem(List<ReturnedBasketItem> returnBasketItems) {
+		for(ReturnedBasketItem item : returnBasketItems) {
+			if (Objects.equals(item.getOrderItemId(), null)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0006);
+			}
+			if (Objects.equals(item.getReceivedQuantity(), null)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0007);
+			}
+		}
+	}
+
+
+	private Map<Long, BasketsEntity> getBasketsMap(List<Long> ids) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		List<BasketsEntity> basketsEntities = basketRepository.findByIdIn(ids, orgId);
+
+		validateBasketsInSameMetaOrder(basketsEntities);
+
+		Map<Long, BasketsEntity> basketsMap = basketsEntities
+				.stream()
+				.collect(toMap(BasketsEntity::getId, b -> b));
+
+		validateAllBasketsExisting(ids, basketsMap);
+
+		return basketsMap;
+	}
+
+
+	private void validateBasketsInSameMetaOrder(List<BasketsEntity> basketsEntities) {
+		if(!basketsEntities.isEmpty()) {
+			MetaOrderEntity metaOrder = basketsEntities.stream().findFirst().get().getOrdersEntity().getMetaOrder();
+			boolean hasSameMetaOrder = basketsEntities.stream()
+													.map(BasketsEntity::getOrdersEntity)
+													.map(OrdersEntity::getMetaOrder)
+													.allMatch(m -> m.getId().equals(metaOrder.getId()));
+			if (!hasSameMetaOrder) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0009);
+			}
+		}
+	}
+
+
+	private void validateBasketsInSameMetaOrder(MetaOrderEntity metaOrder, Collection<BasketsEntity> basketsEntities) {
+		if(!basketsEntities.isEmpty()) {
+			boolean hasSameMetaOrder = basketsEntities.stream()
+					.map(BasketsEntity::getOrdersEntity)
+					.map(OrdersEntity::getMetaOrder)
+					.allMatch(m -> Objects.equals(m,metaOrder));
+			if (!hasSameMetaOrder) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0011);
+			}
+		}
+	}
+
+
+	private void validateAllBasketsExisting(List<Long> ids, Map<Long, BasketsEntity> basketsMap) {
+		Set<Long> fetchedBasketsIds = basketsMap.keySet();
+		ids.removeAll(fetchedBasketsIds);
+		if (!ids.isEmpty()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0008, ids.toString());
+		}
+	}
+
+
+	private boolean isOnlyReturnedItemsProvided(List<ReturnedItem> returnRequestItems, List<ReturnedBasketItem> returnBasketItems) {
+		return !isNullOrEmpty(returnRequestItems) && isNullOrEmpty(returnBasketItems);
+	}
+
+
+	private boolean isOnlyReturnedBasketItemsProvided(List<ReturnedItem> returnRequestItems, List<ReturnedBasketItem> returnBasketItems) {
+		return isNullOrEmpty(returnRequestItems) && !isNullOrEmpty(returnBasketItems);
+	}
+
+	private void assignReturnBasketItemsToReturnRequest(List<ReturnedItem> returnRequestItems,
+																			List<ReturnedBasketItem> returnedBasketItems) {
+
+		List<ReturnRequestItemEntity> returnRequestItemEntities = getAndValidateReturnRequestItemEntities(returnRequestItems);
+
+		List<Long> returnBasketIds = returnedBasketItems
+				.stream()
+				.map(ReturnedBasketItem::getOrderItemId)
+				.collect(toList());
+
+
+		validateReturnBasketItemsIsNew(returnBasketIds);
+
+		Map<Long, BasketsEntity> basketsEntityMap = getBasketsMap(returnBasketIds);
+
+		EmployeeUserEntity emp = (EmployeeUserEntity) securityService.getCurrentUser();
+
+		Set<ReturnRequestItemEntity> createdItems = new HashSet<>();
+
+		ReturnRequestEntity requestEntity = returnRequestItemEntities.get(0).getReturnRequest();
+
+		validateBasketsInSameMetaOrder(requestEntity.getMetaOrder(), basketsEntityMap.values());
+
+		for (ReturnedBasketItem basketItem : returnedBasketItems) { // add assigning basket item to request
+			BasketsEntity basket = basketsEntityMap.get(basketItem.getOrderItemId());
+			ReturnRequestItemEntity item = createReturnRequestItem(requestEntity, basket, basketItem.getReceivedQuantity(), emp);
+			createdItems.add(item);
+		}
+
+		createdItems.addAll(requestEntity.getReturnedItems());
+		requestEntity.setReturnedItems(createdItems);
+
+		returnRequestRepo.save(requestEntity);
+	}
+
+
+	private List<ReturnRequestItemEntity> getAndValidateReturnRequestItemEntities (List<ReturnedItem> returnRequestItems) {
+		List<Long> returnItemsIds = returnRequestItems
+				.stream()
+				.map(ReturnedItem::getReturnRequestItemId)
+				.collect(toList());
+
+		List<ReturnRequestItemEntity> returnRequestItemEntities = returnRequestItemRepo.findByIdIn(returnItemsIds);
+		validateAllReturnItemsExisting(returnItemsIds, returnRequestItemEntities);
+		validateAllReturnItemsHasSameReturnRequest(returnRequestItemEntities);
+		return returnRequestItemEntities;
+	}
+
+
+	private void validateAllReturnItemsExisting(List<Long> ids, List<ReturnRequestItemEntity> returnRequestItemEntities) {
+		List<Long> existingIds = returnRequestItemEntities
+				.stream()
+				.map(ReturnRequestItemEntity::getId)
+				.collect(toList());
+
+		ids.removeAll(existingIds);
+
+		if(!ids.isEmpty()) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0001, ids.toString());
+		}
+	}
+
+
+	private void validateAllReturnItemsHasSameReturnRequest(List<ReturnRequestItemEntity> returnRequestItemEntities) {
+		if(!returnRequestItemEntities.isEmpty()) {
+			ReturnRequestEntity returnRequestEntity = returnRequestItemEntities
+											.stream()
+											.findFirst()
+											.get()
+											.getReturnRequest();
+
+			boolean hasSameReturnRequest = returnRequestItemEntities
+											.stream()
+											.map(ReturnRequestItemEntity::getReturnRequest)
+											.allMatch(r -> Objects.equals(r,returnRequestEntity));
+			if(!hasSameReturnRequest) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0010);
+			}
+		}
+	}
+
+
+	private ReturnRequestEntity createReturnRequest(List<ReturnedBasketItem> returnedItems) {
+		EmployeeUserEntity emp = (EmployeeUserEntity)securityService.getCurrentUser();
+
+		List<Long> returnBasketIds = returnedItems.stream().map(ReturnedBasketItem::getOrderItemId).collect(toList());
+
+		validateReturnBasketItemsIsNew(returnBasketIds);
+
+		Map<Long, BasketsEntity> basketsEntityMap = getBasketsMap(returnBasketIds);
+
+		validateReturnBasketItemQuantity(basketsEntityMap, returnedItems);
+
+		ReturnRequestEntity returnRequest = new ReturnRequestEntity();
+
+		MetaOrderEntity entity = basketsEntityMap.values().iterator().next().getOrdersEntity().getMetaOrder();
+		returnRequest.setMetaOrder(entity);
+		returnRequest.setCreatedByEmployee(emp);
+
+		Set<ReturnRequestItemEntity> returnedRequestItems = new HashSet<>();
+
+		for(ReturnedBasketItem item : returnedItems) {
+			BasketsEntity basket = basketsEntityMap.get(item.getOrderItemId());
+			ReturnRequestItemEntity returnedItem = createReturnRequestItem(returnRequest, basket, item.getReceivedQuantity(), emp);
+			returnedRequestItems.add(returnedItem);
+		}
+		returnRequest.setReturnedItems(returnedRequestItems);
+
+		return returnRequest;
+	}
+
+
+	private void validateReturnBasketItemsIsNew(List<Long> basketItemsIds) {
+		List<ReturnRequestItemEntity> items = returnRequestItemRepo.findByBasket_IdIn(basketItemsIds);
+		if (!items.isEmpty())
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0012, items.get(0).getBasket().getId());
+	}
+
+	private ReturnRequestItemEntity createReturnRequestItem(ReturnRequestEntity returnRequest, BasketsEntity basket,
+															Integer receivedQuantity, EmployeeUserEntity emp) {
+		ReturnRequestItemEntity item = new ReturnRequestItemEntity();
+
+		item.setReturnRequest(returnRequest);
+		item.setBasket(basket);
+		item.setReceivedQuantity(receivedQuantity);
+		item.setReturnedQuantity(receivedQuantity);
+		item.setCreatedByEmployee(emp);
+		item.setReceivedBy(emp);
+
+		return returnRequestItemRepo.save(item);
+	}
+
+	private void increaseReturnRequestStock(ReturnRequestEntity requestEntity) {
+		for(ReturnRequestItemEntity item : requestEntity.getReturnedItems()) {
+			Integer receivedQuantity = item.getReceivedQuantity();
+			StocksEntity stock = item.getBasket().getStocksEntity();
+			stockService.incrementStockBy(stock, receivedQuantity);
+		}
+	}
+
+
+	private ReturnRequestEntity receiveReturnRequestItems(List<ReturnedItem> returnRequestItems) {
+		List<ReturnRequestItemEntity> returnRequestItemEntities = getAndValidateReturnRequestItemEntities(returnRequestItems);
+
+		Map<Long, ReturnRequestItemEntity> returnRequestItemEntityMap = returnRequestItemEntities
+				.stream()
+				.collect(toMap(ReturnRequestItemEntity::getId, e -> e));
+
+		validateReturnRequestItemQuantity(returnRequestItemEntityMap, returnRequestItems);
+
+		for (ReturnedItem item : returnRequestItems) {
+			ReturnRequestItemEntity itemEntity = returnRequestItemEntityMap.get(item.getReturnRequestItemId());
+			itemEntity.setReceivedQuantity(item.getReceivedQuantity());
+			returnRequestItemRepo.save(itemEntity);
+		}
+		return returnRequestItemEntities.get(0).getReturnRequest();
+	}
+
+
+	private void validateReturnRequestItemQuantity(Map<Long, ReturnRequestItemEntity> requestItemEntityMap, List<ReturnedItem> returnedItems) {
+		for (ReturnedItem item : returnedItems) {
+			Integer basketQuantity = requestItemEntityMap.get(item.getReturnRequestItemId()).getBasket().getQuantity().intValue();
+			if(basketQuantity < item.getReceivedQuantity()) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0002);
+			}
+		}
+	}
+
+
+	private void validateReturnBasketItemQuantity(Map<Long, BasketsEntity> basketsMap, List<ReturnedBasketItem> returnedBasketItems) {
+		for (ReturnedBasketItem item : returnedBasketItems) {
+			Integer basketQuantity = basketsMap.get(item.getOrderItemId()).getQuantity().intValue();
+			if(basketQuantity < item.getReceivedQuantity()) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0002);
+			}
 		}
 	}
 
