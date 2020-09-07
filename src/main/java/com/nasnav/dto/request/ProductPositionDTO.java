@@ -10,7 +10,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class ProductPositionDTO {
     private Long id;
-    private Long floorId;
+    private Integer floorNumber;
     private Long sectionId;
     private Long sceneId;
     private Float pitch;
