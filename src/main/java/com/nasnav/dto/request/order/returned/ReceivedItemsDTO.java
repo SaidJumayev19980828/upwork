@@ -1,12 +1,16 @@
-package com.nasnav.dto;
+package com.nasnav.dto.request.order.returned;
+
+
+import java.util.List;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
 import lombok.Data;
 
 @Data
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class ReturnedBasketItem {
-    private Long orderItemId;
-    private Integer receivedQuantity;
+public class ReceivedItemsDTO {
+    private List<ReceivedItem> returnedItems;
+    private List<ReceivedBasketItem> basketItems;
 }

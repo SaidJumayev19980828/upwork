@@ -174,11 +174,12 @@ import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.OrderPhoneNumberPair;
 import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.ProductImageDTO;
-import com.nasnav.dto.ReturnedBasketItem;
-import com.nasnav.dto.ReturnedItem;
 import com.nasnav.dto.request.OrderRejectDTO;
-import com.nasnav.dto.request.ReturnItemsDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.dto.request.order.returned.ReceivedBasketItem;
+import com.nasnav.dto.request.order.returned.ReceivedItem;
+import com.nasnav.dto.request.order.returned.ReceivedItemsDTO;
+import com.nasnav.dto.request.order.returned.ReturnRequestItemsDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
@@ -3328,13 +3329,13 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional
-	public void receiveItems(ReturnItemsDTO returnedItemsDTO) {
+	public void receiveItems(ReceivedItemsDTO returnedItemsDTO) {
 
 		validateReturnedItemsDTO(returnedItemsDTO);
 
-		List<ReturnedItem> returnRequestItems = returnedItemsDTO.getReturnedItems();
+		List<ReceivedItem> returnRequestItems = returnedItemsDTO.getReturnedItems();
 
-		List<ReturnedBasketItem> returnBasketItems = returnedItemsDTO.getBasketItems();
+		List<ReceivedBasketItem> returnBasketItems = returnedItemsDTO.getBasketItems();
 
 		ReturnRequestEntity returnRequest;
 
@@ -3357,7 +3358,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private void validateReturnedItemsDTO(ReturnItemsDTO returnedItemsDTO) {
+	private void validateReturnedItemsDTO(ReceivedItemsDTO returnedItemsDTO) {
 		if (isNullOrEmpty(returnedItemsDTO.getBasketItems()) && isNullOrEmpty(returnedItemsDTO.getReturnedItems())) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0003);
 		}
@@ -3370,8 +3371,8 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private void validateReturnedItemsList(List<ReturnedItem> returnRequestItems) {
-		for(ReturnedItem item : returnRequestItems) {
+	private void validateReturnedItemsList(List<ReceivedItem> returnRequestItems) {
+		for(ReceivedItem item : returnRequestItems) {
 			if (Objects.equals(item.getReturnRequestItemId(), null)) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0004);
 			}
@@ -3382,8 +3383,8 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private void validateReturnedBasketItem(List<ReturnedBasketItem> returnBasketItems) {
-		for(ReturnedBasketItem item : returnBasketItems) {
+	private void validateReturnedBasketItem(List<ReceivedBasketItem> returnBasketItems) {
+		for(ReceivedBasketItem item : returnBasketItems) {
 			if (Objects.equals(item.getOrderItemId(), null)) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0006);
 			}
@@ -3446,23 +3447,23 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private boolean isOnlyReturnedItemsProvided(List<ReturnedItem> returnRequestItems, List<ReturnedBasketItem> returnBasketItems) {
+	private boolean isOnlyReturnedItemsProvided(List<ReceivedItem> returnRequestItems, List<ReceivedBasketItem> returnBasketItems) {
 		return !isNullOrEmpty(returnRequestItems) && isNullOrEmpty(returnBasketItems);
 	}
 
 
-	private boolean isOnlyReturnedBasketItemsProvided(List<ReturnedItem> returnRequestItems, List<ReturnedBasketItem> returnBasketItems) {
+	private boolean isOnlyReturnedBasketItemsProvided(List<ReceivedItem> returnRequestItems, List<ReceivedBasketItem> returnBasketItems) {
 		return isNullOrEmpty(returnRequestItems) && !isNullOrEmpty(returnBasketItems);
 	}
 
-	private void assignReturnBasketItemsToReturnRequest(List<ReturnedItem> returnRequestItems,
-																			List<ReturnedBasketItem> returnedBasketItems) {
+	private void assignReturnBasketItemsToReturnRequest(List<ReceivedItem> returnRequestItems,
+																			List<ReceivedBasketItem> returnedBasketItems) {
 
 		List<ReturnRequestItemEntity> returnRequestItemEntities = getAndValidateReturnRequestItemEntities(returnRequestItems);
 
 		List<Long> returnBasketIds = returnedBasketItems
 				.stream()
-				.map(ReturnedBasketItem::getOrderItemId)
+				.map(ReceivedBasketItem::getOrderItemId)
 				.collect(toList());
 
 
@@ -3478,7 +3479,7 @@ public class OrderServiceImpl implements OrderService {
 
 		validateBasketsInSameMetaOrder(requestEntity.getMetaOrder(), basketsEntityMap.values());
 
-		for (ReturnedBasketItem basketItem : returnedBasketItems) { // add assigning basket item to request
+		for (ReceivedBasketItem basketItem : returnedBasketItems) { // add assigning basket item to request
 			BasketsEntity basket = basketsEntityMap.get(basketItem.getOrderItemId());
 			ReturnRequestItemEntity item = createReturnRequestItem(requestEntity, basket, basketItem.getReceivedQuantity(), emp);
 			createdItems.add(item);
@@ -3491,10 +3492,10 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private List<ReturnRequestItemEntity> getAndValidateReturnRequestItemEntities (List<ReturnedItem> returnRequestItems) {
+	private List<ReturnRequestItemEntity> getAndValidateReturnRequestItemEntities (List<ReceivedItem> returnRequestItems) {
 		List<Long> returnItemsIds = returnRequestItems
 				.stream()
-				.map(ReturnedItem::getReturnRequestItemId)
+				.map(ReceivedItem::getReturnRequestItemId)
 				.collect(toList());
 
 		List<ReturnRequestItemEntity> returnRequestItemEntities = returnRequestItemRepo.findByIdIn(returnItemsIds);
@@ -3537,10 +3538,10 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private ReturnRequestEntity createReturnRequest(List<ReturnedBasketItem> returnedItems) {
+	private ReturnRequestEntity createReturnRequest(List<ReceivedBasketItem> returnedItems) {
 		EmployeeUserEntity emp = (EmployeeUserEntity)securityService.getCurrentUser();
 
-		List<Long> returnBasketIds = returnedItems.stream().map(ReturnedBasketItem::getOrderItemId).collect(toList());
+		List<Long> returnBasketIds = returnedItems.stream().map(ReceivedBasketItem::getOrderItemId).collect(toList());
 
 		validateReturnBasketItemsIsNew(returnBasketIds);
 
@@ -3556,7 +3557,7 @@ public class OrderServiceImpl implements OrderService {
 
 		Set<ReturnRequestItemEntity> returnedRequestItems = new HashSet<>();
 
-		for(ReturnedBasketItem item : returnedItems) {
+		for(ReceivedBasketItem item : returnedItems) {
 			BasketsEntity basket = basketsEntityMap.get(item.getOrderItemId());
 			ReturnRequestItemEntity returnedItem = createReturnRequestItem(returnRequest, basket, item.getReceivedQuantity(), emp);
 			returnedRequestItems.add(returnedItem);
@@ -3596,7 +3597,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private ReturnRequestEntity receiveReturnRequestItems(List<ReturnedItem> returnRequestItems) {
+	private ReturnRequestEntity receiveReturnRequestItems(List<ReceivedItem> returnRequestItems) {
 		List<ReturnRequestItemEntity> returnRequestItemEntities = getAndValidateReturnRequestItemEntities(returnRequestItems);
 
 		Map<Long, ReturnRequestItemEntity> returnRequestItemEntityMap = returnRequestItemEntities
@@ -3605,7 +3606,7 @@ public class OrderServiceImpl implements OrderService {
 
 		validateReturnRequestItemQuantity(returnRequestItemEntityMap, returnRequestItems);
 
-		for (ReturnedItem item : returnRequestItems) {
+		for (ReceivedItem item : returnRequestItems) {
 			ReturnRequestItemEntity itemEntity = returnRequestItemEntityMap.get(item.getReturnRequestItemId());
 			itemEntity.setReceivedQuantity(item.getReceivedQuantity());
 			returnRequestItemRepo.save(itemEntity);
@@ -3614,8 +3615,8 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private void validateReturnRequestItemQuantity(Map<Long, ReturnRequestItemEntity> requestItemEntityMap, List<ReturnedItem> returnedItems) {
-		for (ReturnedItem item : returnedItems) {
+	private void validateReturnRequestItemQuantity(Map<Long, ReturnRequestItemEntity> requestItemEntityMap, List<ReceivedItem> returnedItems) {
+		for (ReceivedItem item : returnedItems) {
 			Integer basketQuantity = requestItemEntityMap.get(item.getReturnRequestItemId()).getBasket().getQuantity().intValue();
 			if(basketQuantity < item.getReceivedQuantity()) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0002);
@@ -3624,13 +3625,23 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private void validateReturnBasketItemQuantity(Map<Long, BasketsEntity> basketsMap, List<ReturnedBasketItem> returnedBasketItems) {
-		for (ReturnedBasketItem item : returnedBasketItems) {
+	private void validateReturnBasketItemQuantity(Map<Long, BasketsEntity> basketsMap, List<ReceivedBasketItem> returnedBasketItems) {
+		for (ReceivedBasketItem item : returnedBasketItems) {
 			Integer basketQuantity = basketsMap.get(item.getOrderItemId()).getQuantity().intValue();
 			if(basketQuantity < item.getReceivedQuantity()) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0002);
 			}
 		}
+	}
+
+
+
+
+
+	@Override
+	public void createReturnRequest(ReturnRequestItemsDTO itemsList) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

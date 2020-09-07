@@ -6,6 +6,8 @@ import static com.nasnav.test.commons.TestCommons.json;
 import static com.nasnav.test.commons.TestCommons.jsonArray;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
@@ -22,6 +24,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -244,5 +247,82 @@ public class OrderReturnTest {
         ResponseEntity<String> response = template.postForEntity("/order/return/received_item", request, String.class);
 
         assertEquals(406, response.getStatusCodeValue());
+    }
+    
+    
+    //TODO: POST/receive_items -> received quantity for basket item more than original order.
+    
+    
+    @Test
+    public void customerCreateReturnRequestNoAuthZTest() {
+    	JSONObject body = createReturnRequestBody();
+    			
+    	HttpEntity<?> request = getHttpEntity(body.toString(), "131415");
+    	ResponseEntity<String> response = template.postForEntity("/order/return", request, String.class);
+    	
+    	assertEquals(FORBIDDEN, response.getStatusCode());
+    }
+
+
+	private JSONObject createReturnRequestBody() {
+		JSONArray returnedItems = 
+        		jsonArray()
+                .put(json()
+                        .put("order_item_id", 330031)
+                        .put("returned_quantity", 1))
+                .put(json()
+                        .put("order_item_id", 330033)
+                        .put("returned_quantity", 1));
+    	JSONObject body = json().put("item_list", returnedItems);
+		return body;
+	}
+    
+    
+    
+    
+    @Test
+    public void customerCreateReturnRequestNoAuthNTest() {
+    	JSONObject body = createReturnRequestBody();
+		
+    	HttpEntity<?> request = getHttpEntity(body.toString(), "INVALID");
+    	ResponseEntity<String> response = template.postForEntity("/order/return", request, String.class);
+    	
+    	assertEquals(UNAUTHORIZED, response.getStatusCode());
+    }
+    
+    
+    
+    @Test
+    public void customerCreateReturnRequestOrderPast14DaysTest() {
+    	
+    }
+    
+    
+    
+    @Test
+    public void customerCreateReturnRequestItemsNotFromSameOrderTest() {
+    	
+    }
+    
+    
+    
+    @Test
+    public void customerCreateReturnRequestZeroQuantitiesTest() {
+    	
+    	
+    }
+    
+    
+    
+    @Test
+    public void customerCreateReturnRequestTooMuchQuantityTest() {
+    	
+    	
+    }
+    
+    
+    @Test
+    public void customerCreateReturnOrderTest() {
+    	
     }
 }
