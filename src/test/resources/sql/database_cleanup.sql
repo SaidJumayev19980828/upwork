@@ -35,6 +35,7 @@ DELETE FROM public.product_images WHERE
  product_id IN (SELECT id from public.products where organization_id between 99000 and 99999)
  or variant_id in (SELECT id FROM public.product_variants WHERE product_id IN (SELECT id FROM public.products WHERE organization_id BETWEEN 99000 AND 99999));
 DELETE FROM public.product_variants WHERE product_id IN (SELECT id FROM public.products WHERE organization_id BETWEEN 99000 AND 99999);
+DELETE FROM public.shop360_products where shop_id in (select id from public.shops WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.products WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.roles WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.user_addresses WHERE user_id in (select id from public.users WHERE organization_id BETWEEN 99000 AND 99999);
