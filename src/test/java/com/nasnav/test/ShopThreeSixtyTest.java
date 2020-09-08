@@ -1,9 +1,12 @@
 package com.nasnav.test;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.dao.Product360ShopsRepository;
 import com.nasnav.dto.response.PostProductPositionsResponse;
 import com.nasnav.dto.response.ProductsPositionDTO;
+import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,6 +21,9 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import java.io.IOException;
+import java.util.List;
 
 import static com.nasnav.test.commons.TestCommons.*;
 import static org.junit.Assert.*;
@@ -35,7 +41,8 @@ public class ShopThreeSixtyTest {
 
     @Autowired
     private TestRestTemplate template;
-
+    @Autowired
+    private ObjectMapper mapper;
     @Autowired
     private Product360ShopsRepository product360ShopsRepo;
 
@@ -55,8 +62,8 @@ public class ShopThreeSixtyTest {
         assertEquals(200, res.getStatusCodeValue());
         body = res.getBody();
         assertEquals(501, body.getShopId().intValue());
-        assertTrue(!body.getProductsData().isEmpty());
-        assertTrue(!body.getCollectionsData().isEmpty());
+        assertFalse(body.getProductsData().isEmpty());
+        assertFalse(body.getCollectionsData().isEmpty());
     }
 
 
@@ -145,5 +152,41 @@ public class ShopThreeSixtyTest {
         ResponseEntity<PostProductPositionsResponse> response = template.postForEntity("/360view/products_positions?shop_id=502",
                 request, PostProductPositionsResponse.class);
         assertEquals(403, response.getStatusCodeValue());
+    }
+
+    @Test
+    public void getAllProducts() throws IOException {
+        ResponseEntity<String> response = template.getForEntity("/360view/products?shop_id=502", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        JSONObject object = new JSONObject(response.getBody());
+        List<ThreeSixtyProductsDTO> products = mapper.readValue(object.get("products").toString(), new TypeReference<List<ThreeSixtyProductsDTO>>(){});
+        assertEquals(4, products.size());
+    }
+
+    @Test
+    public void getCollectionsOnly() throws IOException {
+        ResponseEntity<String> response = template.getForEntity("/360view/products?shop_id=502&product_type=2", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        JSONObject object = new JSONObject(response.getBody());
+        List<ThreeSixtyProductsDTO> products = mapper.readValue(object.get("products").toString(), new TypeReference<List<ThreeSixtyProductsDTO>>(){});
+        assertEquals(1, products.size());
+    }
+
+    @Test
+    public void getProductsOnly() throws IOException {
+        ResponseEntity<String> response = template.getForEntity("/360view/products?shop_id=502&product_type=0", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        JSONObject object = new JSONObject(response.getBody());
+        List<ThreeSixtyProductsDTO> products = mapper.readValue(object.get("products").toString(), new TypeReference<List<ThreeSixtyProductsDTO>>(){});
+        assertEquals(3, products.size());
+    }
+
+    @Test
+    public void get360Products() throws IOException {
+        ResponseEntity<String> response = template.getForEntity("/360view/products?shop_id=502&has_360=true", String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        JSONObject object = new JSONObject(response.getBody());
+        List<ThreeSixtyProductsDTO> products = mapper.readValue(object.get("products").toString(), new TypeReference<List<ThreeSixtyProductsDTO>>(){});
+        assertEquals(1, products.size());
     }
 }

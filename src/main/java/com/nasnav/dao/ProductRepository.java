@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -93,13 +94,27 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 	Set<Long> listProductIdByOrganizationId(@Param("orgId")Long orgId);
 
 
-	@Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
-            " from ProductEntity p join p.variants v join v.stocks s "+
+    @Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
+            " from ProductEntity p join ProductVariantsEntity v on v.productEntity = p" +
+            " join v.stocks s "+
             " join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p"+
-            " where s.shopsEntity.id = :shopId and p.productType = 0" +
+            " where s.shopsEntity.id = :shopId" +
             " and (v.barcode like %:name% or p.barcode like %:name% " +
             " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
-    List<ThreeSixtyProductsDTO> find360Products(@Param("name") String name, @Param("shopId") Long shopId);
+    List<ThreeSixtyProductsDTO> find360Products(@Param("name") String name,
+                                                @Param("shopId") Long shopId,
+                                                Pageable pageable);
+
+    @Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
+            " from ProductEntity p join ProductVariantsEntity v on v.productEntity = p" +
+            " join v.stocks s "+
+            " join s.shopsEntity shop "+
+            " where shop.id = :shopId" +
+            " and (v.barcode like %:name% or p.barcode like %:name% " +
+            " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
+    List<ThreeSixtyProductsDTO> findProducts(@Param("name") String name,
+                                             @Param("shopId") Long shopId,
+                                             Pageable pageable);
 
 
     @Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
@@ -108,7 +123,20 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
             " where s.shopsEntity.id = :shopId " +
             " and (v.barcode like %:name% or p.barcode like %:name% " +
             " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
-    List<ThreeSixtyProductsDTO> find360Collections(@Param("name") String name, @Param("shopId") Long shopId);
+    List<ThreeSixtyProductsDTO> find360Collections(@Param("name") String name,
+                                                   @Param("shopId") Long shopId,
+                                                   Pageable pageable);
+
+
+    @Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
+            " from ProductCollectionEntity p join p.variants v join v.stocks s "+
+            " join s.shopsEntity shop "+
+            " where shop.id = :shopId " +
+            " and (v.barcode like %:name% or p.barcode like %:name% " +
+            " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
+    List<ThreeSixtyProductsDTO> findCollections(@Param("name") String name,
+                                                @Param("shopId") Long shopId,
+                                                Pageable pageable);
 
 
     @Modifying

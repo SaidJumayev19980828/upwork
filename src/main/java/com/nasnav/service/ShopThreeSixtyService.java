@@ -32,6 +32,7 @@ import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
@@ -640,27 +641,53 @@ public class ShopThreeSixtyService {
     }
 
 
-    public String getShop360Products(Long shopId, String name, Long count, Integer productType) throws BusinessException {
-
+    public LinkedHashMap getShop360Products(Long shopId, String name, Integer count, Integer productType, boolean has360) throws BusinessException {
         if (!shopRepo.existsById(shopId))
             throw new BusinessException("Provided shop_id doesn't match any existing shop!",
                     "INVALID_PARAM: shop_id", NOT_ACCEPTABLE);
 
         name = ofNullable(name).map(String::toLowerCase).orElse("");
-        List<ThreeSixtyProductsDTO> products = productsRepo.find360Products(name, shopId);
-        List<ThreeSixtyProductsDTO> collections = productsRepo.find360Collections(name, shopId);
+        List<ThreeSixtyProductsDTO> products = new ArrayList<>();
+        List<ThreeSixtyProductsDTO> collections = new ArrayList<>();
 
-        if (products != null && !products.isEmpty()) {
+        return fetchProductsAndCollections(shopId, name, productType, has360, count, products, collections);
+    }
+
+
+    private LinkedHashMap fetchProductsAndCollections(Long shopId, String name, Integer productType, boolean has360, Integer count,
+                                             List<ThreeSixtyProductsDTO> products, List<ThreeSixtyProductsDTO> collections) {
+        if (has360) {
+            if (productType == null) {
+                products = productsRepo.find360Products(name, shopId, PageRequest.of(0, count));
+                collections = productsRepo.find360Collections(name, shopId, PageRequest.of(0, count));
+            } else if (productType == 0) {
+                products = productsRepo.find360Products(name, shopId, PageRequest.of(0, count));
+            } else if (productType == 2) {
+                collections = productsRepo.find360Collections(name, shopId, PageRequest.of(0, count));
+            }
+        } else {
+            if (productType == null) {
+                products = productsRepo.findProducts(name, shopId, PageRequest.of(0, count));
+                collections = productsRepo.findCollections(name, shopId, PageRequest.of(0, count));
+            } else if (productType == 0) {
+                products = productsRepo.findProducts(name, shopId, PageRequest.of(0, count));
+            } else if (productType == 2) {
+                collections = productsRepo.findCollections(name, shopId, PageRequest.of(0, count));
+            }
+        }
+        if (!products.isEmpty() && (productType == null || productType == 0)) {
             getProductsListAdditionalData(products);
         }
-        if (collections != null && !collections.isEmpty()) {
+        if (!collections.isEmpty() && (productType == null || productType == 2)) {
             getCollectionsListAdditionalData(collections);
         }
-
-        JSONObject response = new JSONObject();
+        products.addAll(collections);
+        if (products.size() > 5) {
+            products = products.subList(0,5);
+        }
+        LinkedHashMap response = new LinkedHashMap();
         response.put("products", products);
-        response.put("collections", collections);
-        return response.toString();
+        return response;
     }
 
 
