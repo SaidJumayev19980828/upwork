@@ -5,6 +5,7 @@ import com.nasnav.dao.MetaOrderRepository;
 import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
 import com.nasnav.dao.PaymentsRepository;
+import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.Account;
 import com.nasnav.payments.mastercard.MastercardAccount;
@@ -22,8 +23,12 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Properties;
 
+import static com.nasnav.enumerations.TransactionCurrency.EGP;
+
 @Service
 public class Commons {
+
+	public static TransactionCurrency DEFAULT_CURRENCY_IF_NOT_SPECIFIED = EGP;
 
 	private static final Logger classLogger = LogManager.getLogger("Payment:COMMONS");
 
@@ -100,5 +105,13 @@ public class Commons {
 		}
 		ordersRepository.flush();
 		orderService.finalizeOrder(payment.getMetaOrderId());
+	}
+
+	public PaymentEntity getPaymentForOrderUid(String uid) {
+		return paymentsRepository.findByUid(uid).orElse(null);
+	}
+
+	public OrderService.OrderValue getMetaOrderValue(long metaOrderId) {
+		return orderService.getMetaOrderTotalValue(metaOrderId);
 	}
 }

@@ -17,9 +17,15 @@
         Checkout.configure({
             merchant: '$merchant',
             order: {
-                id: "$order_id"
+                id: "$order_id",
+                description: 'Ordered goods',   /**/
+                amount: "$order_amount",        /**/
+                currency: "$order_currency",    /**/
+                reference: "REF-$order_id"      /**/
+
             },
-            interaction: {
+                interaction: {
+                operation: 'PURCHASE',          /**/
                 merchant: {
                     name: "$seller_name",
                     address: {
@@ -51,6 +57,8 @@
 
 <input type="button" value="Pay with Lightbox" onclick="Checkout.showLightbox();" />
 <!-- input type="button" value="Pay with Payment Page" onclick="Checkout.showPaymentPage();" /-->
-
+<br><br>
+<strong>Card number: </strong> 5111 1111 1111 1118<br>
+<strong>Card number: </strong> 5111 1111 1111 1118<br>
 </body>
 </html>

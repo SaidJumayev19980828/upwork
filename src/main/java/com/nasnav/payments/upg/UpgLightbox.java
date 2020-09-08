@@ -136,7 +136,7 @@ public class UpgLightbox {
 		PaymentEntity payment = new PaymentEntity();
 		payment.setOperator(account.getAccountId());
 //      payment.setOrdersEntity(order);
-		payment.setUid("CFM-" + json.getString("MerchantReference"));
+		payment.setUid(json.getString("MerchantReference"));
 		payment.setExecuted(new Date());
 		payment.setStatus(PaymentStatus.PAID);
 		payment.setAmount(new BigDecimal(paidAmount).movePointLeft(2));

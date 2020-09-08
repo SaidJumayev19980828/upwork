@@ -3,7 +3,6 @@ package com.nasnav.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.AppConfig;
-import com.nasnav.dao.OrdersRepository;
 import com.nasnav.dto.OrderSessionResponse;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.mastercard.MastercardAccount;
@@ -17,12 +16,15 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponses;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
+
+import java.math.BigDecimal;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -31,7 +33,7 @@ public class PaymentControllerMastercard {
 
     private static final Logger mastercardLogger = LogManager.getLogger("Payment:MCARD");
 
-    private final MastercardService session;
+    private final MastercardService mastercardService;
 
     @Autowired
     private AppConfig config;
@@ -40,20 +42,55 @@ public class PaymentControllerMastercard {
     private Commons paymentCommons;
 
     @Autowired
-    public PaymentControllerMastercard(
-            OrdersRepository ordersRepository,
-            OrderService orderService,
-            MastercardService session) {
-//        this.ordersRepository = ordersRepository;
-//        this.orderService = orderService;
-        this.session = session;
+    public PaymentControllerMastercard(MastercardService service) {
+        this.mastercardService = service;
     }
+
+    private String testRefundOrderId = null;
+    private boolean testRefundPartial = false;
 
     @ApiIgnore
     @GetMapping(value = "test/lightbox",produces=MediaType.TEXT_HTML_VALUE)
-    public ResponseEntity<?> testLightbox(@RequestParam(name = "order_id") Long metaOrderId) throws BusinessException {
+    public ResponseEntity<?> testLightbox(@RequestParam(name = "order_id") Long metaOrderId,
+                                          @RequestParam(name = "refund", required = false, defaultValue = "false") boolean refund,
+                                          @RequestParam(name = "partial", required = false, defaultValue = "false") boolean partial) throws BusinessException {
+        if (!config.develEnvironment) {
+            return new ResponseEntity<>("{\"status\": \"FAILED\", \"message\": \"Not available on production environment\"", HttpStatus.NOT_FOUND);
+        }
         String initResult = initPayment(metaOrderId).getBody().toString();
-        return new ResponseEntity<>(HTMLConfigurer.getConfiguredHtml(initResult, "static/mastercard-lightbox.html"), HttpStatus.OK);
+        if (refund) {
+            JSONObject jsonResult = new JSONObject(initResult);
+            this.testRefundOrderId = jsonResult.getString("order_id");
+            this.testRefundPartial = partial;
+        }
+        String paymentResponseJson = HTMLConfigurer.getConfiguredHtml(initResult, "static/mastercard-lightbox.html");
+        return new ResponseEntity<>(paymentResponseJson, HttpStatus.OK);
+    }
+
+    @ApiIgnore
+    @GetMapping(value = "test/refund")
+    public ResponseEntity<?> testRefund() throws BusinessException {
+        if (!config.develEnvironment) {
+            return new ResponseEntity<>("{\"status\": \"FAILED\", \"message\": \"Not available on production environment\"", HttpStatus.NOT_FOUND);
+        }
+        if (this.testRefundOrderId == null) {
+            return new ResponseEntity<>("{\"status\": \"FAILED\", \"message\": \"No test payment set up\"", HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            PaymentEntity payment = paymentCommons.getPaymentForOrderUid(testRefundOrderId);
+            if (payment == null) {
+                return new ResponseEntity<>("{\"status\": \"FAILED\", \"message\": \"Payment UID: " + this.testRefundOrderId + " not recognized\"", HttpStatus.NOT_ACCEPTABLE);
+            }
+            // null - means refund the whole transaction amount
+            OrderService.OrderValue ov = null;
+            if (testRefundPartial) {
+                ov = paymentCommons.getMetaOrderValue(payment.getMetaOrderId());
+                ov.amount = ov.amount.divideToIntegralValue(BigDecimal.valueOf(2));
+            }
+            if (mastercardService.refundTransaction(payment, ov)) {
+                return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
+            }
+        }
+        return new ResponseEntity<>("{\"status\": \"FAILED\", \"message\": \"Refund failed\"", HttpStatus.NOT_ACCEPTABLE);
     }
 
     @ApiOperation(value = "Execute the payment after setup and user's data collection", nickname = "mastercardExecute")
@@ -66,7 +103,7 @@ public class PaymentControllerMastercard {
     @PostMapping(value = "/execute")
     public ResponseEntity<?> executePayment(@RequestParam(name = "session_id") String sessionId) {
         try {
-            session.execute(sessionId);
+            mastercardService.execute(sessionId);
             return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
         } catch (BusinessException ex) {
             return new ResponseEntity<>("{\"status\": \"FAILED\", \"code\": \""
@@ -88,7 +125,7 @@ public class PaymentControllerMastercard {
             @RequestParam(name = "resultIndicator") String resultIndicator
     ) {
         try {
-            session.verifyAndStore(orderId, resultIndicator);
+            mastercardService.verifyAndStore(orderId, resultIndicator);
             return  new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
         } catch (BusinessException ex) {
             return new ResponseEntity<>("{\"status\": \"FAILED\", \"code\": \""
@@ -109,15 +146,9 @@ public class PaymentControllerMastercard {
         OrderSessionResponse response = new OrderSessionResponse();
         response.setSuccess(false);
 
+        MastercardAccount merchantAccount = mastercardService.getAccountForOrder(metaOrderId);
 
-        MastercardAccount merchantAccount = (MastercardAccount)paymentCommons.getMerchantAccount(metaOrderId, Gateway.MASTERCARD);
-        if (merchantAccount == null) {
-            mastercardLogger.info("Unable to find payment account for meta order {} via gateway: mcard", metaOrderId);
-            throw new BusinessException("Unable to identify payment gateway","",HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        mastercardLogger.info("Setting up payment for meta order: {} via processor: {}", metaOrderId, merchantAccount.getMerchantId());
-
-        PaymentEntity payment = session.initialize(merchantAccount, metaOrderId);
+        PaymentEntity payment = mastercardService.initialize(merchantAccount, metaOrderId);
         if (payment != null) {
             try {
                 response.setOrderRef(payment.getUid());

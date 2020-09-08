@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.stream.Collectors;
 
 public class HTMLConfigurer {
@@ -33,9 +34,12 @@ public class HTMLConfigurer {
 				} else if (data.get(key)instanceof BigDecimal) {
 						System.out.println(key + " !->  " + data.getBigDecimal(key).toString());
 						modified = modified.replace("$" + key, data.getBigDecimal(key).toString());
+				} else if (data.get(key)instanceof Double) {
+					System.out.println(key + " !!->  " + data.getDouble(key));
+					modified = modified.replace("$" + key, Double.toString(data.getDouble(key)));
 				} else if (data.get(key)instanceof Integer) {
-					System.out.println(key + " !->  " + data.getBigDecimal(key).toString());
-					modified = modified.replace("$" + key, new Integer(data.getInt(key)).toString());
+					System.out.println(key + " !->  " + data.getInt(key));
+					modified = modified.replace("$" + key, Integer.toString(data.getInt(key)));
 				} else {
 					System.out.println(key + " ?->  " + data.get(key).getClass());
 				}

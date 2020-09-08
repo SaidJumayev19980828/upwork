@@ -1,6 +1,5 @@
 package com.nasnav.payments.mastercard;
 
-import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
@@ -8,15 +7,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import com.nasnav.AppConfig;
-import com.nasnav.dao.MetaOrderRepository;
-import com.nasnav.dao.OrganizationPaymentGatewaysRepository;
+import com.nasnav.dao.*;
 import com.nasnav.payments.misc.Commons;
-import com.nasnav.persistence.MetaOrderEntity;
-import com.nasnav.persistence.OrganizationPaymentGatewaysEntity;
+import com.nasnav.payments.misc.Gateway;
+import com.nasnav.persistence.*;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -33,20 +32,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.PaymentsRepository;
 import com.nasnav.enumerations.PaymentStatus;
-import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.misc.Tools;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.service.OrderService;
 
 @Service
 public class MastercardService {
-
-    public static TransactionCurrency DEFAULT_CURRENCY_IF_NOT_SPECIFIED = EGP;
 
     private Logger classLogger = LogManager.getLogger("Payment:MCARD");
 
@@ -60,7 +52,11 @@ public class MastercardService {
 
     private final PaymentsRepository paymentsRepository;
 
-    private final OrdersRepository ordersRepository;
+    @Autowired
+    private PaymentRefundsRepository paymentRefundsRepository;
+
+    @Autowired
+    private OrdersRepository ordersRepository;
 
     @Autowired
     private OrganizationPaymentGatewaysRepository orgPaymentGatewaysRep;
@@ -69,7 +65,6 @@ public class MastercardService {
     public MastercardService(OrderService orderService, PaymentsRepository paymentsRepository, OrdersRepository ordersRepository) {
         this.orderService = orderService;
         this.paymentsRepository = paymentsRepository;
-        this.ordersRepository = ordersRepository;
     }
 
     private String readInputStream(InputStream stream) {
@@ -128,6 +123,7 @@ public class MastercardService {
             // Execute call and fetch the result
             StringEntity requestEntity = new StringEntity(data.toString(), ContentType.APPLICATION_JSON);
             request.setEntity(requestEntity);
+            classLogger.info("Payment execution, entity: {}", data );
             request.setHeader("Authorization", "Basic " + getAuthString(merchantAccount));
             HttpResponse response = client.execute(request);
 
@@ -199,9 +195,10 @@ public class MastercardService {
             throw new BusinessException("Invalid state for the payment ", "INVALID_INPUT", HttpStatus.NOT_ACCEPTABLE);
         }
         if (json.getString("successIndicator").equals(paymentIndicator)) {
-            payment.setUid("CFM-" + payment.getUid());
+//            payment.setUid("CFM-" + payment.getUid());
             payment.setExecuted(new Date());
             payment.setStatus(PaymentStatus.PAID);
+            payment.setObject(json.toString());
             paymentCommons.finalizePayment(payment);
             return;
         }
@@ -232,7 +229,7 @@ public class MastercardService {
         order.put("amount", orderValue.amount);
 
         JSONObject interaction = new JSONObject();
-        interaction.put("operation", "NONE");
+        interaction.put("operation", "PURCHASE");
 
         JSONObject data = new JSONObject();
         data.put("apiOperation", "CREATE_CHECKOUT_SESSION");
@@ -246,8 +243,7 @@ public class MastercardService {
             StringEntity requestEntity = new StringEntity(data.toString(), ContentType.APPLICATION_JSON);
             request.setEntity(requestEntity);
             request.setHeader("Authorization", "Basic " + getAuthString(merchantAccount));
-//System.out.println(merchantAccount.getMerchantId() + " : " + this.orderValue.currency.toString() + " : " + data.toString());Me
-//System.out.println(request.getURI());
+
             HttpResponse response = client.execute(request);
             int status = response.getStatusLine().getStatusCode();
             if (status > 299) {
@@ -284,14 +280,90 @@ public class MastercardService {
         return null;
     }
 
-    
-//    public String getSessionId() {
-//        return this.sessionId;
-//    }
+    public boolean refundTransaction(PaymentEntity payment, OrderService.OrderValue orderValue) throws BusinessException {
 
-//    public String getOrderRef() {
-//        return this.orderUid;
-//    }
+        String transactionUid = "" + payment.getId() + "-" + new Date().getTime();
+
+        MastercardAccount merchantAccount = getAccountForOrder(payment.getMetaOrderId());
+            if (orderValue == null) {
+                // if not provided, refund the original amount
+                orderValue = new OrderService.OrderValue();
+                orderValue.currency = payment.getCurrency();
+                orderValue.amount = payment.getAmount();
+            }
+            // Make sure we do not refund more than originally paid
+            BigDecimal alreadyRefunded = new BigDecimal(0);
+            List<PaymentRefundEntity> refunds = paymentRefundsRepository.findAllByPaymentEntity(payment);
+            if (refunds != null) {
+                for (PaymentRefundEntity refund: refunds) {
+                    alreadyRefunded = alreadyRefunded.add(refund.getAmount());
+                }
+            }
+
+            if (orderValue.amount.compareTo(payment.getAmount()) > 0) {
+                classLogger.error("Attempt to execute refund for amount ({}), which is larger than the initial amount ({}) registered in payment ({})", orderValue.amount, payment.getAmount(), payment.getId());
+                throw new BusinessException("Refund amount higher than payment", "REFUND_FAILED", NOT_ACCEPTABLE);
+            }
+            if (orderValue.amount.compareTo(payment.getAmount().subtract(alreadyRefunded)) > 0) {
+                classLogger.error("Attempt to execute refund for amount ({}), which exceeds what remains after after already refunded ({})", orderValue.amount, alreadyRefunded);
+                throw new BusinessException("Refund amount higher than payment", "REFUND_FAILED", NOT_ACCEPTABLE);
+            }
+            if (orderValue.currency != payment.getCurrency()) {
+                classLogger.error("Requested refund currency ({}) differs from original payment currency ({})", orderValue.currency.name(), payment.getCurrency().name());
+                throw new BusinessException("Refund currency doesn't match payment", "REFUND_FAILED", NOT_ACCEPTABLE);
+            }
+
+            PaymentRefundEntity refund = new PaymentRefundEntity();
+            refund.setAmount(orderValue.amount);
+            refund.setCurrency(orderValue.currency);
+            refund.setPaymentEntity(payment);
+            refund.setExecuted(new Date());
+            refund.setStatus(PaymentStatus.STARTED);
+            refund.setUid(transactionUid);
+            paymentRefundsRepository.saveAndFlush(refund);
+
+        try {
+            HttpClient client= HttpClientBuilder.create().build();
+            HttpPut request = new HttpPut(merchantAccount.getApiUrl()
+                    + "/merchant/" + merchantAccount.getMerchantId()
+                    + "/order/" + payment.getUid()
+                    + "/transaction/" + transactionUid);
+
+            JSONObject transactionObj = new JSONObject();
+            transactionObj.put("amount", orderValue.amount);
+            transactionObj.put("currency", orderValue.currency.name());
+
+            JSONObject data = new JSONObject();
+            data.put("apiOperation", "REFUND");
+            data.put("transaction", transactionObj);
+
+System.out.println("URI: " + request.getURI().toString());
+System.out.println("PAYLOAD: " + data.toString());
+
+            // Execute call and fetch the result
+            StringEntity requestEntity = new StringEntity(data.toString(), ContentType.APPLICATION_JSON);
+            request.setEntity(requestEntity);
+            request.setHeader("Authorization", "Basic " + getAuthString(merchantAccount));
+            HttpResponse response = client.execute(request);
+
+            // Process the result
+            int status = response.getStatusLine().getStatusCode();
+            if (status > 299) {
+                refund.setStatus(PaymentStatus.FAILED);
+                paymentRefundsRepository.saveAndFlush(refund);
+                String errorResponse = readInputStream(response.getEntity().getContent());
+                classLogger.error("Attempt to execute refund for payment {} failed. Error provided: {}", payment.getId(), errorResponse);
+                throw new BusinessException("Refund attempt failed", "REFUND_FAILED", NOT_ACCEPTABLE);
+            }
+            refund.setStatus(PaymentStatus.REFUNDED);
+            paymentRefundsRepository.saveAndFlush(refund);
+            return true;
+
+        } catch (IOException ex) {
+            classLogger.error("Unable to communicate with mastercard gateway", ex);
+            throw new BusinessException("Unable to contact payment gateway", "", HttpStatus.BAD_GATEWAY);
+        }
+    }
 
     private String getAuthString(MastercardAccount merchantAccount) {
         String authString = "merchant."+merchantAccount.getMerchantId()
@@ -300,12 +372,14 @@ public class MastercardService {
 
     }
 
-//    public String getMerchantId() {
-//        return this.merchantAccount == null ? null : this.merchantAccount.getMerchantId();
-//    }
-
-//    public OrderService.OrderValue getOrderValue() {
-//        return orderValue;
-//    }
+    public MastercardAccount getAccountForOrder(long metaOrderId) throws BusinessException {
+        MastercardAccount merchantAccount = (MastercardAccount)paymentCommons.getMerchantAccount(metaOrderId, Gateway.MASTERCARD);
+        if (merchantAccount == null) {
+            classLogger.warn("Unable to find payment account for meta order {} via gateway: mcard", metaOrderId);
+            throw new BusinessException("Unable to identify payment gateway","",HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        classLogger.info("Setting up payment for meta order: {} via processor: {}", metaOrderId, merchantAccount.getMerchantId());
+        return merchantAccount;
+    }
 
 }

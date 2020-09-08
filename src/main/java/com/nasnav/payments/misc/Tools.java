@@ -24,7 +24,7 @@ import com.nasnav.service.OrderService;
 public class Tools {
 
 
-
+/*
 	public static ArrayList<OrdersEntity> getOrdersFromString(OrdersRepository ordersRepository, String ordersList, String separator) throws BusinessException {
 		if (ordersList == null || ordersList.length() == 0) {
 			throw new BusinessException("Empty orders list", "INVALID_ORDER", HttpStatus.NOT_ACCEPTABLE);
@@ -44,6 +44,7 @@ public class Tools {
 			throw new BusinessException("Unable to parse orders list", "INVALID_ORDER", HttpStatus.NOT_ACCEPTABLE);
 		}
 	}
+*/
 
 	public static String getAccount(long metaOrderId, String gateway, OrderService orderService, OrganizationPaymentGatewaysRepository gatewaysRepo) throws BusinessException {
 		ArrayList<OrdersEntity> subOrders = orderService.getOrdersForMetaOrder(metaOrderId);
@@ -70,7 +71,8 @@ public class Tools {
 		return account.map(OrganizationPaymentGatewaysEntity::getAccount).orElse(null);
 	}
 
-	/* DEPRECATED */
+/*
+
 	private static OrderService.OrderValue getTotalOrderValue(ArrayList<OrdersEntity> orders, OrderService orderService, Logger logger) throws BusinessException {
 		if (orders == null || orders.size() < 1) {
 			throw new BusinessException("Empty order list", "MISSING_ORDER", HttpStatus.NOT_ACCEPTABLE);
@@ -92,11 +94,12 @@ public class Tools {
 			oValue.amount = oValue.amount.add(ov.amount);
 		}
 		if (oValue.currency == null) {
-			oValue.currency = MastercardService.DEFAULT_CURRENCY_IF_NOT_SPECIFIED;
-			logger.info("No currency specified for order, assuming {}", MastercardService.DEFAULT_CURRENCY_IF_NOT_SPECIFIED.name());
+			oValue.currency = Commons.DEFAULT_CURRENCY_IF_NOT_SPECIFIED;
+			logger.info("No currency specified for order, assuming {}", Commons.DEFAULT_CURRENCY_IF_NOT_SPECIFIED.name());
 		}
 		return oValue;
 	}
+*/
 
 	public static String getOrderUid(long metaOrderId, Logger logger) throws BusinessException {
 		if (metaOrderId < 1) {

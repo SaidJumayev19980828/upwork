@@ -24,7 +24,7 @@ public class AppConfig {
     @Value("${payment.properties_dir}") public String paymentPropertiesDir = "";
     @Value("${cookies.secureToken}")    public boolean secureTokens;
     @Value("${dashbaord.order.page}")  	public String dashBoardOrderPageUrl;
-    
+    @Value("${environment.development}") public boolean develEnvironment = false;
 
     
     

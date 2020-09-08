@@ -153,7 +153,7 @@ public class PaymentControllerRave {
         ordersRepository.flush();
 
         payment.setStatus(PaymentStatus.PAID);
-        payment.setUid("CFM-" + payment.getUid());
+//        payment.setUid("CFM-" + payment.getUid());
         paymentsRepository.saveAndFlush(payment);
         orderService.finalizeOrder(payment.getMetaOrderId());
 
