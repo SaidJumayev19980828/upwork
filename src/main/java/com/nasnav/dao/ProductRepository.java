@@ -97,47 +97,26 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     @Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
             " from ProductEntity p join ProductVariantsEntity v on v.productEntity = p" +
             " join v.stocks s "+
-            " join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p"+
-            " where s.shopsEntity.id = :shopId" +
+            " left join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p " +
+            " where s.shopsEntity.id = :shopId and (:has360 = false OR sp is not null)" +
             " and (v.barcode like %:name% or p.barcode like %:name% " +
             " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
     List<ThreeSixtyProductsDTO> find360Products(@Param("name") String name,
                                                 @Param("shopId") Long shopId,
+                                                @Param("has360") boolean has360,
                                                 Pageable pageable);
-
-    @Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
-            " from ProductEntity p join ProductVariantsEntity v on v.productEntity = p" +
-            " join v.stocks s "+
-            " join s.shopsEntity shop "+
-            " where shop.id = :shopId" +
-            " and (v.barcode like %:name% or p.barcode like %:name% " +
-            " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
-    List<ThreeSixtyProductsDTO> findProducts(@Param("name") String name,
-                                             @Param("shopId") Long shopId,
-                                             Pageable pageable);
 
 
     @Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
             " from ProductCollectionEntity p join p.variants v join v.stocks s "+
-            " join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p"+
-            " where s.shopsEntity.id = :shopId " +
+            " left join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p"+
+            " where s.shopsEntity.id = :shopId and (:has360 = false OR sp is not null)" +
             " and (v.barcode like %:name% or p.barcode like %:name% " +
             " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
     List<ThreeSixtyProductsDTO> find360Collections(@Param("name") String name,
                                                    @Param("shopId") Long shopId,
+                                                   @Param("has360") boolean has360,
                                                    Pageable pageable);
-
-
-    @Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description)"+
-            " from ProductCollectionEntity p join p.variants v join v.stocks s "+
-            " join s.shopsEntity shop "+
-            " where shop.id = :shopId " +
-            " and (v.barcode like %:name% or p.barcode like %:name% " +
-            " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
-    List<ThreeSixtyProductsDTO> findCollections(@Param("name") String name,
-                                                @Param("shopId") Long shopId,
-                                                Pageable pageable);
-
 
     @Modifying
     @Transactional

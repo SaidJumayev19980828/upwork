@@ -656,31 +656,20 @@ public class ShopThreeSixtyService {
 
     private LinkedHashMap fetchProductsAndCollections(Long shopId, String name, Integer productType, boolean has360, Integer count,
                                              List<ThreeSixtyProductsDTO> products, List<ThreeSixtyProductsDTO> collections) {
-        if (has360) {
-            if (productType == null) {
-                products = productsRepo.find360Products(name, shopId, PageRequest.of(0, count));
-                collections = productsRepo.find360Collections(name, shopId, PageRequest.of(0, count));
-            } else if (productType == 0) {
-                products = productsRepo.find360Products(name, shopId, PageRequest.of(0, count));
-            } else if (productType == 2) {
-                collections = productsRepo.find360Collections(name, shopId, PageRequest.of(0, count));
-            }
-        } else {
-            if (productType == null) {
-                products = productsRepo.findProducts(name, shopId, PageRequest.of(0, count));
-                collections = productsRepo.findCollections(name, shopId, PageRequest.of(0, count));
-            } else if (productType == 0) {
-                products = productsRepo.findProducts(name, shopId, PageRequest.of(0, count));
-            } else if (productType == 2) {
-                collections = productsRepo.findCollections(name, shopId, PageRequest.of(0, count));
+        if (isFindProductsRequired(productType)) {
+            products = productsRepo.find360Products(name, shopId, has360, PageRequest.of(0, count));
+            if (products.size() > 0) {
+                products = getProductsListAdditionalData(products);
             }
         }
-        if (!products.isEmpty() && (productType == null || productType == 0)) {
-            getProductsListAdditionalData(products);
+
+        if (isFindCollectionsRequired(productType)) {
+            collections = productsRepo.find360Collections(name, shopId, has360, PageRequest.of(0, count));
+            if (collections.size() > 0) {
+                collections = getCollectionsListAdditionalData(collections);
+            }
         }
-        if (!collections.isEmpty() && (productType == null || productType == 2)) {
-            getCollectionsListAdditionalData(collections);
-        }
+
         products.addAll(collections);
         if (products.size() > 5) {
             products = products.subList(0,5);
@@ -688,6 +677,16 @@ public class ShopThreeSixtyService {
         LinkedHashMap response = new LinkedHashMap();
         response.put("products", products);
         return response;
+    }
+
+
+    private boolean isFindProductsRequired(Integer productType) {
+        return productType == null || productType == 0 ? true : false;
+    }
+
+
+    private boolean isFindCollectionsRequired(Integer productType) {
+        return productType == null || productType == 2 ? true : false;
     }
 
 
