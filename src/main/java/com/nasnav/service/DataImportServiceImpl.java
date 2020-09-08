@@ -1151,7 +1151,7 @@ public class DataImportServiceImpl implements DataImportService {
 
 	private BrandDTO createBrand(BrandDTO brandDto) {
 		try {
-			OrganizationResponse response = organizationService.createOrganizationBrand(brandDto, null, null);
+			OrganizationResponse response = organizationService.createOrganizationBrand(brandDto, null, null, null);
 			BrandDTO createdBrand = new BrandDTO();
 			createdBrand.setId(response.getBrandId());
 			createdBrand.setName(brandDto.getName());
