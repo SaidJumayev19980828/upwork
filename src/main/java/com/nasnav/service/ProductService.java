@@ -3101,6 +3101,7 @@ public class ProductService {
 		dto.setCreationDate(entity.getCreationDate().toString());
 		dto.setUpdateDate(entity.getUpdateDate().toString());
 		dto.setHas_360_view(entity.getSearch360());
+		dto.setImageUrl(imgService.getProductCoverImage(entity.getId()));
 
 		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(entity.getId());
 		dto.setTags(tagsDTOList);
