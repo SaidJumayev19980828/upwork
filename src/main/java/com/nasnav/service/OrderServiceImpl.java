@@ -1655,6 +1655,10 @@ public class OrderServiceImpl implements OrderService {
 
 		query.where(predicatesArr);
 
+		javax.persistence.criteria.Order order = builder.desc(root.get("id"));
+
+		query.orderBy(order);
+
 		return query;
 	}
 
@@ -1663,14 +1667,20 @@ public class OrderServiceImpl implements OrderService {
 		List<Predicate> predicates = new ArrayList<>();
 		Path<Map<String, String>> returnedItems = root.join("returnedItems", INNER);
 
-		if (params.getStatus() != null)
-			predicates.add(builder.equal(root.get("status"), params.getStatus().getValue()));
+		if (params.getStatus() != null) {
+			Predicate status = builder.equal(root.get("status"), params.getStatus().getValue());
+			predicates.add(status);
+		}
 
-		if (params.getMetaOrderId() != null)
-			predicates.add(builder.equal(root.get("metaOrder").get("id"), params.getMetaOrderId()));
+		if (params.getMetaOrderId() != null) {
+			Predicate metaOrderId = builder.equal(root.get("metaOrder").get("id"), params.getMetaOrderId());
+			predicates.add(metaOrderId);
+		}
 
-		if(params.getShopId() != null)
-			predicates.add(builder.equal(returnedItems.get("basket").get("stocksEntity").get("shopsEntity").get("id"), params.getShopId()));
+		if(params.getShopId() != null) {
+			Predicate shopId = builder.equal(returnedItems.get("basket").get("stocksEntity").get("shopsEntity").get("id"), params.getShopId());
+			predicates.add(shopId);
+		}
 
 		return predicates.stream().toArray( Predicate[]::new) ;
 	}
@@ -3374,8 +3384,10 @@ public class OrderServiceImpl implements OrderService {
 		if(params.getStart() == null || params.getStart() < 0){
 			params.setStart(0);
 		}
-		if(params.getCount() == null || (params.getCount() < 1 || params.getCount() > 1000)){
+		if(params.getCount() == null || (params.getCount() < 1)){
 			params.setCount(10);
+		} else if (params.getCount() > 1000) {
+			params.setCount(1000);
 		}
 
 		Set<ReturnRequestEntity> entities = em.createQuery(getReturnRequestCriteriaQuery(params))
@@ -3397,316 +3409,17 @@ public class OrderServiceImpl implements OrderService {
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0013));
 
 		ReturnRequestDTO dto = (ReturnRequestDTO)returnRequestEntity.getRepresentation();
-		dto.setReturnedItems(returnRequestEntity.getReturnedItems().stream().map(i -> (ReturnRequestItemDTO)i.getRepresentation()).collect(toSet()));
+
+		Set<ReturnRequestItemDTO> requestItems = returnRequestEntity
+				.getReturnedItems()
+				.stream()
+				.map(i -> (ReturnRequestItemDTO)i.getRepresentation())
+				.collect(toSet());
+
+		dto.setReturnedItems(requestItems);
+
 		return dto;
 	}
-
-
-	@Override
-	@Transactional
-	public void receiveItems(ReturnItemsDTO returnedItemsDTO) {
-
-		validateReturnedItemsDTO(returnedItemsDTO);
-
-		List<ReturnedItem> returnRequestItems = returnedItemsDTO.getReturnedItems();
-
-		List<ReturnedBasketItem> returnBasketItems = returnedItemsDTO.getBasketItems();
-
-		ReturnRequestEntity returnRequest;
-
-		if (!isNullOrEmpty(returnRequestItems) && isNullOrEmpty(returnBasketItems)) { // only ReturnedItem list is provided
-			returnRequest = receiveReturnRequestItems(returnRequestItems);
-		}
-		else if (isNullOrEmpty(returnRequestItems) && !isNullOrEmpty(returnBasketItems)) {
-			returnRequest = createReturnRequest(returnBasketItems);
-		}
-		else {
-			assignReturnBasketItemsToReturnRequest(returnRequestItems, returnBasketItems);
-			returnRequest = receiveReturnRequestItems(returnRequestItems);
-		}
-
-		if (returnRequest != null) {
-			increaseReturnRequestStock(returnRequest);
-		}
-	}
-
-
-	private void validateReturnedItemsDTO(ReturnItemsDTO returnedItemsDTO) {
-		if (isNullOrEmpty(returnedItemsDTO.getBasketItems()) && isNullOrEmpty(returnedItemsDTO.getReturnedItems())) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0003);
-		}
-		if (!isNullOrEmpty(returnedItemsDTO.getReturnedItems())) {
-			validateReturnedItemsList(returnedItemsDTO.getReturnedItems());
-		}
-		if (!isNullOrEmpty(returnedItemsDTO.getBasketItems())) {
-			validateReturnedBasketItem(returnedItemsDTO.getBasketItems());
-		}
-	}
-
-
-	private void validateReturnedItemsList(List<ReturnedItem> returnRequestItems) {
-		for(ReturnedItem item : returnRequestItems) {
-			if (Objects.equals(item.getReturnRequestItemId(), null)) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0004);
-			}
-			if (Objects.equals(item.getReceivedQuantity(), null)) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0005);
-			}
-		}
-	}
-
-
-	private void validateReturnedBasketItem(List<ReturnedBasketItem> returnBasketItems) {
-		for(ReturnedBasketItem item : returnBasketItems) {
-			if (Objects.equals(item.getOrderItemId(), null)) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0006);
-			}
-			if (Objects.equals(item.getReceivedQuantity(), null)) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0007);
-			}
-		}
-	}
-
-
-	private Map<Long, BasketsEntity> getBasketsMap(List<Long> ids) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-		List<BasketsEntity> basketsEntities = basketRepository.findByIdIn(ids, orgId);
-
-		validateBasketsInSameMetaOrder(basketsEntities);
-
-		Map<Long, BasketsEntity> basketsMap = basketsEntities
-				.stream()
-				.collect(toMap(BasketsEntity::getId, b -> b));
-
-		validateAllBasketsExisting(ids, basketsMap);
-
-		return basketsMap;
-	}
-
-
-	private void validateBasketsInSameMetaOrder(List<BasketsEntity> basketsEntities) {
-		if(!basketsEntities.isEmpty()) {
-			MetaOrderEntity metaOrder = basketsEntities.stream().findFirst().get().getOrdersEntity().getMetaOrder();
-			boolean hasSameMetaOrder = basketsEntities.stream()
-													.map(BasketsEntity::getOrdersEntity)
-													.map(OrdersEntity::getMetaOrder)
-													.allMatch(m -> Objects.equals(m,metaOrder));
-			if (!hasSameMetaOrder) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0009);
-			}
-		}
-	}
-
-
-	private void validateBasketsInSameMetaOrder(MetaOrderEntity metaOrder, Collection<BasketsEntity> basketsEntities) {
-		if(!basketsEntities.isEmpty()) {
-			boolean hasSameMetaOrder = basketsEntities.stream()
-					.map(BasketsEntity::getOrdersEntity)
-					.map(OrdersEntity::getMetaOrder)
-					.allMatch(m -> Objects.equals(m,metaOrder));
-			if (!hasSameMetaOrder) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0011);
-			}
-		}
-	}
-
-
-	private void validateAllBasketsExisting(List<Long> ids, Map<Long, BasketsEntity> basketsMap) {
-		Set<Long> fetchedBasketsIds = basketsMap.keySet();
-		ids.removeAll(fetchedBasketsIds);
-		if (!ids.isEmpty()) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0008, ids.toString());
-		}
-	}
-
-
-	private void assignReturnBasketItemsToReturnRequest(List<ReturnedItem> returnRequestItems,
-																			List<ReturnedBasketItem> returnedBasketItems) {
-
-		List<ReturnRequestItemEntity> returnRequestItemEntities = getReturnRequestItemEntities(returnRequestItems);
-
-		List<Long> returnBasketIds = returnedBasketItems
-				.stream()
-				.map(ReturnedBasketItem::getOrderItemId)
-				.collect(toList());
-
-
-		validateReturnBasketItemsIsNew(returnBasketIds);
-
-		Map<Long, BasketsEntity> basketsEntityMap = getBasketsMap(returnBasketIds);
-
-		EmployeeUserEntity emp = (EmployeeUserEntity) securityService.getCurrentUser();
-
-		Set<ReturnRequestItemEntity> createdItems = new HashSet<>();
-
-		ReturnRequestEntity requestEntity = returnRequestItemEntities.get(0).getReturnRequest();
-
-		validateBasketsInSameMetaOrder(requestEntity.getMetaOrder(), basketsEntityMap.values());
-
-		for (ReturnedBasketItem basketItem : returnedBasketItems) { // add assigning basket item to request
-			BasketsEntity basket = basketsEntityMap.get(basketItem.getOrderItemId());
-			ReturnRequestItemEntity item = createReturnRequestItem(requestEntity, basket, basketItem.getReceivedQuantity(), emp);
-			createdItems.add(item);
-		}
-
-		createdItems.addAll(requestEntity.getReturnedItems());
-		requestEntity.setReturnedItems(createdItems);
-
-		returnRequestRepo.save(requestEntity);
-	}
-
-
-	private List<ReturnRequestItemEntity> getReturnRequestItemEntities(List<ReturnedItem> returnRequestItems) {
-		List<Long> returnItemsIds = returnRequestItems
-				.stream()
-				.map(ReturnedItem::getReturnRequestItemId)
-				.collect(toList());
-
-		List<ReturnRequestItemEntity> returnRequestItemEntities = getRequestItemsEntities(returnItemsIds);
-
-		return returnRequestItemEntities;
-	}
-
-
-	private List<ReturnRequestItemEntity> getRequestItemsEntities(List<Long> ids) {
-		List<ReturnRequestItemEntity> returnRequestItemEntities = returnRequestItemRepo.findByIdIn(ids);
-		validateAllReturnItemsExisting(ids, returnRequestItemEntities);
-		validateAllReturnItemsHasSameReturnRequest(returnRequestItemEntities);
-		return returnRequestItemEntities;
-	}
-
-
-	private void validateAllReturnItemsExisting(List<Long> ids, List<ReturnRequestItemEntity> returnRequestItemEntities) {
-		List<Long> existingIds = returnRequestItemEntities
-				.stream()
-				.map(ReturnRequestItemEntity::getId)
-				.collect(toList());
-
-		ids.removeAll(existingIds);
-
-		if(!ids.isEmpty()) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0001, ids.toString());
-		}
-	}
-
-
-	private void validateAllReturnItemsHasSameReturnRequest(List<ReturnRequestItemEntity> returnRequestItemEntities) {
-		if(!returnRequestItemEntities.isEmpty()) {
-			ReturnRequestEntity returnRequestEntity = returnRequestItemEntities
-											.stream()
-											.findFirst()
-											.get()
-											.getReturnRequest();
-
-			boolean hasSameReturnRequest = returnRequestItemEntities
-											.stream()
-											.map(ReturnRequestItemEntity::getReturnRequest)
-											.allMatch(r -> Objects.equals(r,returnRequestEntity));
-			if(!hasSameReturnRequest) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0010);
-			}
-		}
-	}
-
-
-	private ReturnRequestEntity createReturnRequest(List<ReturnedBasketItem> returnedItems) {
-		EmployeeUserEntity emp = (EmployeeUserEntity)securityService.getCurrentUser();
-
-		List<Long> returnBasketIds = returnedItems.stream().map(ReturnedBasketItem::getOrderItemId).collect(toList());
-
-		validateReturnBasketItemsIsNew(returnBasketIds);
-
-		Map<Long, BasketsEntity> basketsEntityMap = getBasketsMap(returnBasketIds);
-
-		validateReturnBasketItemQuantity(basketsEntityMap, returnedItems);
-
-		ReturnRequestEntity returnRequest = new ReturnRequestEntity();
-
-		MetaOrderEntity entity = basketsEntityMap.values().iterator().next().getOrdersEntity().getMetaOrder();
-		returnRequest.setMetaOrder(entity);
-		returnRequest.setCreatedByEmployee(emp);
-		returnRequest.setStatus(RECEIVED.getValue());
-
-		Set<ReturnRequestItemEntity> returnedRequestItems = new HashSet<>();
-
-		for(ReturnedBasketItem item : returnedItems) {
-			BasketsEntity basket = basketsEntityMap.get(item.getOrderItemId());
-			ReturnRequestItemEntity returnedItem = createReturnRequestItem(returnRequest, basket, item.getReceivedQuantity(), emp);
-			returnedRequestItems.add(returnedItem);
-		}
-		returnRequest.setReturnedItems(returnedRequestItems);
-
-		return returnRequestRepo.save(returnRequest);
-	}
-
-
-	private void validateReturnBasketItemsIsNew(List<Long> basketItemsIds) {
-		List<ReturnRequestItemEntity> items = returnRequestItemRepo.findByBasket_IdIn(basketItemsIds);
-		if (!items.isEmpty())
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0012, items.get(0).getBasket().getId());
-	}
-
-	private ReturnRequestItemEntity createReturnRequestItem(ReturnRequestEntity returnRequest, BasketsEntity basket,
-															Integer receivedQuantity, EmployeeUserEntity emp) {
-		ReturnRequestItemEntity item = new ReturnRequestItemEntity();
-
-		item.setReturnRequest(returnRequest);
-		item.setBasket(basket);
-		item.setReceivedQuantity(receivedQuantity);
-		item.setReturnedQuantity(receivedQuantity);
-		item.setCreatedByEmployee(emp);
-		item.setReceivedBy(emp);
-
-		return returnRequestItemRepo.save(item);
-	}
-
-	private void increaseReturnRequestStock(ReturnRequestEntity requestEntity) {
-		for(ReturnRequestItemEntity item : requestEntity.getReturnedItems()) {
-			Integer receivedQuantity = item.getReceivedQuantity();
-			StocksEntity stock = item.getBasket().getStocksEntity();
-			stockService.incrementStockBy(stock, receivedQuantity);
-		}
-	}
-
-
-	private ReturnRequestEntity receiveReturnRequestItems(List<ReturnedItem> returnRequestItems) {
-		List<ReturnRequestItemEntity> returnRequestItemEntities = getReturnRequestItemEntities(returnRequestItems);
-
-		Map<Long, ReturnRequestItemEntity> returnRequestItemEntityMap = returnRequestItemEntities
-				.stream()
-				.collect(toMap(ReturnRequestItemEntity::getId, e -> e));
-
-		validateReturnRequestItemQuantity(returnRequestItemEntityMap, returnRequestItems);
-
-		for (ReturnedItem item : returnRequestItems) {
-			ReturnRequestItemEntity itemEntity = returnRequestItemEntityMap.get(item.getReturnRequestItemId());
-			itemEntity.setReceivedQuantity(item.getReceivedQuantity());
-			itemEntity.getReturnRequest().setStatus(RECEIVED.getValue());
-			returnRequestItemRepo.save(itemEntity);
-		}
-		return returnRequestItemEntities.get(0).getReturnRequest();
-	}
-
-
-	private void validateReturnRequestItemQuantity(Map<Long, ReturnRequestItemEntity> requestItemEntityMap, List<ReturnedItem> returnedItems) {
-		for (ReturnedItem item : returnedItems) {
-			Integer basketQuantity = requestItemEntityMap.get(item.getReturnRequestItemId()).getBasket().getQuantity().intValue();
-			if(basketQuantity < item.getReceivedQuantity()) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0002);
-			}
-		}
-	}
-
-
-	private void validateReturnBasketItemQuantity(Map<Long, BasketsEntity> basketsMap, List<ReturnedBasketItem> returnedBasketItems) {
-		for (ReturnedBasketItem item : returnedBasketItems) {
-			Integer basketQuantity = basketsMap.get(item.getOrderItemId()).getQuantity().intValue();
-			if(basketQuantity < item.getReceivedQuantity()) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0002);
-			}
-		}
-	}
-
 }
 
 

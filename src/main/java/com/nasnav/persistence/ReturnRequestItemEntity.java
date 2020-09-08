@@ -64,6 +64,7 @@ public class ReturnRequestItemEntity implements BaseEntity {
         if (getBasket() != null) {
             dto.setBasketItem(getBasket().getId());
         }
+
         dto.setReceivedQuantity(getReceivedQuantity());
         dto.setReturnedQuantity(getReturnedQuantity());
         dto.setReceivedOn(getReceivedOn());

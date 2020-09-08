@@ -224,19 +224,6 @@ public class OrdersController {
     }
 
 
-	@ApiOperation(value = "receive returned order items ", nickname = "receiveOrderItems")
-	@ApiResponses(value = {
-			@io.swagger.annotations.ApiResponse(code = 200, message = "Order Cancelled"),
-			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
-			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
-	})
-	@PostMapping(value = "return/received_item")
-	public void receiveItems(@RequestHeader(name = "User-Token", required = false) String userToken,
-							 @RequestBody ReturnItemsDTO itemsList) throws BusinessException {
-		orderService.receiveItems(itemsList);
-	}
-
-
 	@ApiOperation(value = "Get order return requests", nickname = "getOrderReturnRequests", code = 201)
 	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})

@@ -101,8 +101,6 @@ public interface OrderService {
 
 	BigDecimal calculateCartTotal();
 
-	void receiveItems(ReturnItemsDTO returnedItems);
-
 	List<ReturnRequestDTO> getOrderReturnRequests(ReturnRequestSearchParams params);
 	ReturnRequestDTO getOrderReturnRequest(Long id);
 }
