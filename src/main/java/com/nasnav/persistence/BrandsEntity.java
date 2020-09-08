@@ -38,6 +38,9 @@ public class BrandsEntity implements BaseEntity{
     @Column(name = "dark_logo")
     private String darkLogo;
 
+    @Column(name = "cover_url")
+    private String coverUrl;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "organization_id", nullable = false)
     @JsonIgnore
@@ -67,6 +70,7 @@ public class BrandsEntity implements BaseEntity{
         brandRepresentationObject.setName(getName());
         brandRepresentationObject.setPname(getPname());
         brandRepresentationObject.setBannerImage(getBannerImage());
+        brandRepresentationObject.setCoverUrl(getCoverUrl());
         return brandRepresentationObject;
     }
 }

@@ -367,7 +367,8 @@ public class OrganizationService {
 
 
 
-    private OrganizationResponse modifyBrandAdditionalData(BrandsEntity entity, BrandDTO json, MultipartFile logo, MultipartFile banner) throws BusinessException {
+    private OrganizationResponse modifyBrandAdditionalData(BrandsEntity entity, BrandDTO json, MultipartFile logo,
+                                                           MultipartFile banner, MultipartFile cover) throws BusinessException {
         BrandsEntity brand = entity;
 
         if (json.pname != null) {
@@ -396,6 +397,14 @@ public class OrganizationService {
             brand.setBannerImage(fileService.saveFile(banner, orgId));
         }
 
+        if (cover != null) {
+            String mimeType = cover.getContentType();
+            if(!mimeType.startsWith("image"))
+                throw new BusinessException("INVALID PARAM: cover",
+                        "Invalid file type["+mimeType+"]! only MIME 'image' types are accepted!", NOT_ACCEPTABLE);
+            brand.setCoverUrl(fileService.saveFile(cover, orgId));
+        }
+
         brandsRepository.save(brand);
         return new OrganizationResponse(brand.getId(), 1);
     }
@@ -403,12 +412,12 @@ public class OrganizationService {
     
     
     @CacheEvict(allEntries = true, cacheNames = {BRANDS ,ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
-    public OrganizationResponse validateAndUpdateBrand(BrandDTO json, MultipartFile logo, MultipartFile banner) throws BusinessException {
+    public OrganizationResponse validateAndUpdateBrand(BrandDTO json, MultipartFile logo, MultipartFile banner, MultipartFile cover) throws BusinessException {
         if (json.operation != null) {
             if (json.operation.equals("create"))
-                return createOrganizationBrand(json, logo, banner);
+                return createOrganizationBrand(json, logo, banner, cover);
             else if (json.operation.equals("update"))
-                return updateOrganizationBrand(json, logo, banner);
+                return updateOrganizationBrand(json, logo, banner, cover);
             else
                 throw new BusinessException("INVALID_PARAM: operation", "", NOT_ACCEPTABLE);
         }
@@ -420,7 +429,7 @@ public class OrganizationService {
     
     
 
-    public OrganizationResponse createOrganizationBrand(BrandDTO json, MultipartFile logo, MultipartFile banner) throws BusinessException {
+    public OrganizationResponse createOrganizationBrand(BrandDTO json, MultipartFile logo, MultipartFile banner, MultipartFile cover) throws BusinessException {
         BrandsEntity brand = new BrandsEntity();
 
         if (json.name == null)
@@ -430,10 +439,10 @@ public class OrganizationService {
 
         brand.setOrganizationEntity(securityService.getCurrentUserOrganization());
 
-        return modifyBrandAdditionalData(brand, json, logo, banner);
+        return modifyBrandAdditionalData(brand, json, logo, banner, cover);
     }
 
-    private OrganizationResponse updateOrganizationBrand(BrandDTO json, MultipartFile logo, MultipartFile banner) throws BusinessException {
+    private OrganizationResponse updateOrganizationBrand(BrandDTO json, MultipartFile logo, MultipartFile banner, MultipartFile cover) throws BusinessException {
         if (json.id == null) {
             throw new BusinessException("MISSING_PARAM: brand_id", "'brand_id' property can't be empty", NOT_ACCEPTABLE);
         }
@@ -446,7 +455,7 @@ public class OrganizationService {
             brand.setName(json.name);
         }
 
-        return modifyBrandAdditionalData(brand, json, logo, banner);
+        return modifyBrandAdditionalData(brand, json, logo, banner, cover);
     }
     
     
