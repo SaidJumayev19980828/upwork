@@ -160,10 +160,11 @@ public class OrganizationController {
     public OrganizationResponse updateBrandData(@RequestHeader (name = "User-Token", required = false) String userToken,
                                                  @RequestPart("properties") String jsonString,
                                                  @RequestPart(value = "logo", required = false) @Valid MultipartFile logo,
-                                                 @RequestPart(value = "banner", required = false) @Valid MultipartFile banner) throws Exception {
+                                                 @RequestPart(value = "banner", required = false) @Valid MultipartFile banner,
+                                                 @RequestPart(value = "cover", required = false) @Valid MultipartFile cover) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         BrandDTO json = mapper.readValue(jsonString, BrandDTO.class);
-        return orgService.validateAndUpdateBrand(json, logo, banner);
+        return orgService.validateAndUpdateBrand(json, logo, banner, cover);
     }
 
 

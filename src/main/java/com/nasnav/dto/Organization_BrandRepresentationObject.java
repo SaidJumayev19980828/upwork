@@ -34,5 +34,7 @@ public class Organization_BrandRepresentationObject extends BaseRepresentationOb
     private String logoUrl;
     @JsonProperty("banner")
     private String bannerImage;
+    @JsonProperty("cover_url")
+    private String coverUrl;
 
 }
