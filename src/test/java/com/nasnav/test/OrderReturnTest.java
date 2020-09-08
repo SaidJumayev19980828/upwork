@@ -7,6 +7,8 @@ import static com.nasnav.test.commons.TestCommons.jsonArray;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
@@ -292,37 +294,210 @@ public class OrderReturnTest {
     
     
     
+    
+    
     @Test
     public void customerCreateReturnRequestOrderPast14DaysTest() {
+    	JSONObject body = createReturnRequestWithTooOldItemsBody();
+		
+    	HttpEntity<?> request = getHttpEntity(body.toString(), "123");
+    	ResponseEntity<String> response = template.postForEntity("/order/return", request, String.class);
     	
+    	assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
     }
+    
+    
+    
+
+    private JSONObject createReturnRequestWithTooOldItemsBody() {
+		JSONArray returnedItems = 
+        		jsonArray()
+                .put(json()
+                        .put("order_item_id", 330035)
+                        .put("returned_quantity", 1));
+    	JSONObject body = json().put("item_list", returnedItems);
+		return body;
+	}
+    
     
     
     
     @Test
     public void customerCreateReturnRequestItemsNotFromSameOrderTest() {
+    	JSONObject body = createReturnRequestWithItemsFromDifferentOrdersBody();
+		
+    	HttpEntity<?> request = getHttpEntity(body.toString(), "123");
+    	ResponseEntity<String> response = template.postForEntity("/order/return", request, String.class);
     	
+    	assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
     }
+    
+    
+    
+    private JSONObject createReturnRequestWithItemsFromDifferentOrdersBody() {
+		JSONArray returnedItems = 
+        		jsonArray()
+                .put(json()
+                        .put("order_item_id", 330031)
+                        .put("returned_quantity", 1))
+                .put(json()
+                        .put("order_item_id", 330036)
+                        .put("returned_quantity", 1));
+    	JSONObject body = json().put("item_list", returnedItems);
+		return body;
+	}
     
     
     
     @Test
     public void customerCreateReturnRequestZeroQuantitiesTest() {
+    	JSONObject body = createReturnRequestWithZeroQuantityBody();
+		
+    	HttpEntity<?> request = getHttpEntity(body.toString(), "123");
+    	ResponseEntity<String> response = template.postForEntity("/order/return", request, String.class);
     	
-    	
+    	assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
     }
+    
+    
+    
+    private JSONObject createReturnRequestWithZeroQuantityBody() {
+		JSONArray returnedItems = 
+        		jsonArray()
+                .put(json()
+                        .put("order_item_id", 330031)
+                        .put("returned_quantity", 0))
+                .put(json()
+                        .put("order_item_id", 330033)
+                        .put("returned_quantity", 1));
+    	JSONObject body = json().put("item_list", returnedItems);
+		return body;
+	}
     
     
     
     @Test
     public void customerCreateReturnRequestTooMuchQuantityTest() {
+    	JSONObject body = createReturnRequestWithTooMuchQuantityBody();
+		
+    	HttpEntity<?> request = getHttpEntity(body.toString(), "123");
+    	ResponseEntity<String> response = template.postForEntity("/order/return", request, String.class);
     	
-    	
+    	assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
     }
+    
+    
+    
+    
+    private JSONObject createReturnRequestWithTooMuchQuantityBody() {
+		JSONArray returnedItems = 
+        		jsonArray()
+                .put(json()
+                        .put("order_item_id", 330033)
+                        .put("returned_quantity", 1))
+                .put(json()
+                        .put("order_item_id", 330034)
+                        .put("returned_quantity", 1));
+    	JSONObject body = json().put("item_list", returnedItems);
+		return body;
+	}
+    
+    
+    
+    
+    
+    @Test
+    public void customerCreateReturnRequestItemsOfAnotherCustomerTest() {
+    	JSONObject body = createReturnRequestWithAnotherCustomerItemsBody();
+		
+    	HttpEntity<?> request = getHttpEntity(body.toString(), "123");
+    	ResponseEntity<String> response = template.postForEntity("/order/return", request, String.class);
+    	
+    	assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+    }
+    
+    
+    
+    
+    private JSONObject createReturnRequestWithAnotherCustomerItemsBody() {
+		JSONArray returnedItems = 
+        		jsonArray()
+                .put(json()
+                        .put("order_item_id", 330031)
+                        .put("returned_quantity", 1000))
+                .put(json()
+                        .put("order_item_id", 330033)
+                        .put("returned_quantity", 1));
+    	JSONObject body = json().put("item_list", returnedItems);
+		return body;
+	}
+    
+    
+    
+    
+    @Test
+    public void customerCreateReturnRequestWithNoExistingItemsTest() {
+    	JSONObject body = createReturnRequestWithNonExistingItemsBody();
+		
+    	HttpEntity<?> request = getHttpEntity(body.toString(), "123");
+    	ResponseEntity<String> response = template.postForEntity("/order/return", request, String.class);
+    	
+    	assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+    }
+    
+    
+    
+    
+    private JSONObject createReturnRequestWithNonExistingItemsBody() {
+		JSONArray returnedItems = 
+        		jsonArray()
+                .put(json()
+                        .put("order_item_id", -1)
+                        .put("returned_quantity", 1000))
+                .put(json()
+                        .put("order_item_id", 330032)
+                        .put("returned_quantity", 1));
+    	JSONObject body = json().put("item_list", returnedItems);
+		return body;
+	}
+    
+    
+    
+    
+    
+    @Test
+    public void customerCreateReturnRequestWithAlreadyReturnedMetaOrderTest() {
+    	JSONObject body = createReturnRequestWithReturnedItemsBody();
+		
+    	HttpEntity<?> request = getHttpEntity(body.toString(), "123");
+    	ResponseEntity<String> response = template.postForEntity("/order/return", request, String.class);
+    	
+    	assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+    }
+    
+    
+    
+    
+    private JSONObject createReturnRequestWithReturnedItemsBody() {
+		JSONArray returnedItems = 
+        		jsonArray()
+                .put(json()
+                        .put("order_item_id", 330036)
+                        .put("returned_quantity", 1));
+    	JSONObject body = json().put("item_list", returnedItems);
+		return body;
+	}
+    
+    
     
     
     @Test
     public void customerCreateReturnOrderTest() {
+    	JSONObject body = createReturnRequestBody();
+		
+    	HttpEntity<?> request = getHttpEntity(body.toString(), "123");
+    	ResponseEntity<String> response = template.postForEntity("/order/return", request, String.class);
     	
+    	assertEquals(OK, response.getStatusCode());
     }
 }

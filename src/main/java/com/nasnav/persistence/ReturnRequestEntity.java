@@ -7,6 +7,9 @@ import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
+
+import static javax.persistence.CascadeType.ALL;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -39,7 +42,7 @@ public class ReturnRequestEntity {
     @Column(name = "status")
     private Integer status;
 
-    @OneToMany(mappedBy = "returnRequest", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "returnRequest", cascade = ALL)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

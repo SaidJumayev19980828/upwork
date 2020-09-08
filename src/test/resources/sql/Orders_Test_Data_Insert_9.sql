@@ -122,7 +122,7 @@ values(330033, 89, now(), now(), 99001, 1, 501, 310002, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
 values(330034, 89, now(), now(), 99001, 1, 502, 310002, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
-values(330035, 88, now(), now(), 99001, 1, 502, 310003, 12300001);
+values(330035, 88, now() - INTERVAL '100 DAY', now() - INTERVAL '100 DAY', 99001, 1, 502, 310003, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
 values(330036, 88, now(), now(), 99001, 1, 502, 310004, 12300001);
 
@@ -141,6 +141,19 @@ INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VAL
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330034, 330034, 604, 3, 70.0, 1);
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330035, 330035, 604, 3, 70.0, 1);
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330036, 330036, 604, 3, 70.0, 1);
+
+
+
+-- insert return request
+INSERT INTO public.return_request
+(id , created_on, created_by_user, created_by_employee, meta_order_id, status)
+VALUES(440034, now(), 88, null, 330034, 1);
+
+INSERT INTO public.return_request_item
+(return_request_id, order_item_id, returned_quantity, received_quantity, received_by, received_on, created_by_user, created_by_employee)
+VALUES(440034, 330036, 1, 1, 69, now(), 88, null);
+
+
 
 
 -- insert cart
