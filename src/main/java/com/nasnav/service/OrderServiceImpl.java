@@ -1650,6 +1650,9 @@ public class OrderServiceImpl implements OrderService {
 		CriteriaBuilder builder = em.getCriteriaBuilder();
 		CriteriaQuery<ReturnRequestEntity> query = builder.createQuery(ReturnRequestEntity.class);
 		Root<ReturnRequestEntity> root = query.from(ReturnRequestEntity.class);
+		root.fetch("metaOrder", LEFT);
+		root.fetch("createdByUser", LEFT);
+		root.fetch("createdByEmployee", LEFT);
 
 		Predicate[] predicatesArr = getReturnRequestQueryPredicates(params, builder, root);
 
@@ -3405,7 +3408,7 @@ public class OrderServiceImpl implements OrderService {
 
 	public ReturnRequestDTO getOrderReturnRequest(Long id){
 		ReturnRequestEntity returnRequestEntity = returnRequestRepo
-				.findById(id)
+				.findByReturnRequestId(id)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0013));
 
 		ReturnRequestDTO dto = (ReturnRequestDTO)returnRequestEntity.getRepresentation();
