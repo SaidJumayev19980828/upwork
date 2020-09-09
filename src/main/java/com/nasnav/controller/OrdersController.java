@@ -3,6 +3,7 @@ package com.nasnav.controller;
 import java.util.List;
 
 import com.nasnav.dto.request.ReturnItemsDTO;
+import com.nasnav.dto.request.ReturnRequestRejectDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -220,6 +221,19 @@ public class OrdersController {
             		throws BusinessException {
     	orderService.cancelOrder(metaOrderId);
     }
+
+
+	@ApiOperation(value = "reject returned order items ", nickname = "rejectOrderItems")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "Order return rejected"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+	})
+	@PostMapping(value = "return/reject")
+	public void rejectReturnItems(@RequestHeader(name = "User-Token", required = false) String userToken,
+								  @RequestBody ReturnRequestRejectDTO dto) {
+		orderService.rejectReturnItems(dto);
+	}
 
 
 	@ApiOperation(value = "receive returned order items ", nickname = "receiveOrderItems")

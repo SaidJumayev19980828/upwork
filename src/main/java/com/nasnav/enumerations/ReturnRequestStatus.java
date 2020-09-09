@@ -4,7 +4,9 @@ import lombok.Getter;
 
 public enum ReturnRequestStatus {
 
-    RECEIVED(1);
+    DRAFT(0),
+    RECEIVED(1),
+    REJECTED(2);
 
     @Getter
     private Integer value;

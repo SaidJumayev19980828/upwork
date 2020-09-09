@@ -7,10 +7,7 @@ import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
 import static com.nasnav.commons.utils.MathUtils.calculatePercentage;
-import static com.nasnav.constatnts.EmailConstants.ORDER_BILL_TEMPLATE;
-import static com.nasnav.constatnts.EmailConstants.ORDER_CANCEL_NOTIFICATION_TEMPLATE;
-import static com.nasnav.constatnts.EmailConstants.ORDER_NOTIFICATION_TEMPLATE;
-import static com.nasnav.constatnts.EmailConstants.ORDER_REJECT_TEMPLATE;
+import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_CALC_ORDER_FAILED;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ITEM_QUANTITY;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ORDER_STATUS;
@@ -44,6 +41,7 @@ import static com.nasnav.enumerations.PaymentStatus.ERROR;
 import static com.nasnav.enumerations.PaymentStatus.FAILED;
 import static com.nasnav.enumerations.PaymentStatus.UNPAID;
 import static com.nasnav.enumerations.ReturnRequestStatus.RECEIVED;
+import static com.nasnav.enumerations.ReturnRequestStatus.REJECTED;
 import static com.nasnav.enumerations.Roles.CUSTOMER;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
@@ -52,47 +50,7 @@ import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0004;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0005;
-import static com.nasnav.exceptions.ErrorCodes.G$STK$0001;
-import static com.nasnav.exceptions.ErrorCodes.G$USR$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0004;
-import static com.nasnav.exceptions.ErrorCodes.O$CHK$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CHK$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CHK$0004;
-import static com.nasnav.exceptions.ErrorCodes.O$CNCL$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0004;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0005;
-import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0003;
-import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0003;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0004;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0005;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0006;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0007;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0008;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0009;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0010;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0011;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0012;
-import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0003;
-import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
-import static com.nasnav.exceptions.ErrorCodes.S$0005;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.FLOOR;
@@ -137,6 +95,7 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.dto.request.ReturnRequestRejectDTO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -948,6 +907,18 @@ public class OrderServiceImpl implements OrderService {
 		params.put("id", order.getId().toString());
 		params.put("rejectionReason", message);
 		params.put("sub", order);
+		return params;
+	}
+
+
+	private Map<String, Object> createRejectionEmailParams(ReturnRequestEntity returnRequest, String rejectionReason) {
+		Map<String,Object> params = new HashMap<>();
+		String message =
+				ofNullable(rejectionReason)
+						.orElse(DEFAULT_REJECTION_MESSAGE);
+		params.put("id", returnRequest.getId().toString());
+		params.put("rejectionReason", message);
+		params.put("returnRequest", returnRequest);
 		return params;
 	}
 
@@ -3214,7 +3185,19 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+	private void sendRejectionEmailToCustomer(ReturnRequestEntity request, String rejectionReason, Long orgId) {
 
+		String to = request.getMetaOrder().getUser().getEmail();
+		String subject = ORDER_RETURN_REJECT_SUBJECT;
+		List<String> bcc = empRoleRepo.findEmailOfEmployeeWithRoleAndOrganization(ORGANIZATION_MANAGER.getValue(), orgId);
+		Map<String,Object> parametersMap = createRejectionEmailParams(request, rejectionReason);
+		String template = ORDER_RETURN_REJECT_TEMPLATE;
+		try {
+			mailService.sendThymeleafTemplateMail(asList(to), subject, emptyList(), bcc, template, parametersMap);
+		} catch (IOException | MessagingException e) {
+			logger.error(e, e);
+		}
+	}
 
 
 	private void validateOrderRejectRequest(OrderRejectDTO dto) {
@@ -3325,6 +3308,19 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
+
+	@Override
+	public void rejectReturnItems(ReturnRequestRejectDTO dto) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ReturnRequestEntity returnRequest = returnRequestRepo
+				.findByIdAndOrganizationId(dto.getReturnRequestId(), orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0013, dto.getReturnRequestId()));
+
+		returnRequest.setStatus(REJECTED.getValue());
+		returnRequestRepo.save(returnRequest);
+
+		sendRejectionEmailToCustomer(returnRequest, dto.getRejectionReason(), orgId);
+	}
 
 	@Override
 	@Transactional
