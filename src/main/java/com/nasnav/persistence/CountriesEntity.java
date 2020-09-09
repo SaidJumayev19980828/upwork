@@ -24,6 +24,11 @@ public class CountriesEntity implements BaseEntity{
     
     private String name;
 
+    @Column(name = "iso_code")
+    private Integer isoCode;
+
+    private String currency;
+
     @OneToMany(mappedBy = "countriesEntity", cascade = CascadeType.REMOVE)
     @JsonIgnore
     @ToString.Exclude
