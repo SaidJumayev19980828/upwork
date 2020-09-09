@@ -41,6 +41,7 @@ import com.nasnav.dto.Organization_BrandRepresentationObject;
 import com.nasnav.dto.ProductFeatureDTO;
 import com.nasnav.dto.ProductFeatureUpdateDTO;
 import com.nasnav.dto.PromotionSearchParamDTO;
+import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.TagsDTO;
 import com.nasnav.dto.TagsTreeCreationDTO;
 import com.nasnav.dto.ThemeClassDTO;
@@ -591,7 +592,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "set cart optimization strategy for the organization or the shipping service", nickname = "setCartOptimization", code = 200)
+    @ApiOperation(value = "get cart optimization strategies for the organization or the shipping service", nickname = "setCartOptimization", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -606,7 +607,7 @@ public class OrganizationController {
     
     
     
-    @ApiOperation(value = "set cart optimization strategy for the organization or the shipping service", nickname = "setCartOptimization", code = 200)
+    @ApiOperation(value = "get all cart optimization strategies", nickname = "getAllCartOptimization", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
             @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
@@ -619,4 +620,16 @@ public class OrganizationController {
     }
     
     
+    
+    @ApiOperation(value = "get all organization shops including warehouses", nickname = "getAllShops", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @GetMapping(value = "shops")
+    @ResponseStatus(OK)
+    public List<ShopRepresentationObject> getAllShops(@RequestHeader (name = "User-Token", required = false) String userToken){
+    	return orgService.getOrganizationShops();
+    }
 }

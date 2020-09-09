@@ -6,7 +6,7 @@ INSERT INTO public.organizations(id, name,  p_name) VALUES (99002, 'organization
 -- dummy shop
 INSERT INTO public.shops (id,"name",  organization_id) VALUES(100001 , 'Bundle Shop'  , 99001);
 INSERT INTO public.shops (id,"name",  organization_id) VALUES(100002 , 'another Shop'  , 99002);
-
+INSERT INTO public.shops (id,"name",  organization_id, is_warehouse) values(100003 , 'warehouse', 99001, 1);
 
 
 ----inserting in extra_attributes table
@@ -28,3 +28,19 @@ INSERT INTO public.areas values(100002, 'Nasr city', 100001);
 INSERT INTO public.areas values(100003, 'Mohandiseen', 100002);
 INSERT INTO public.areas values(100004, 'Dokki', 100002);
 INSERT INTO public.areas values(100005, 'Agoza', 100002);
+
+
+--insert employee
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+	VALUES (69, 'testuser2@nasnav.com', 99001, 'hijkllm',  100001);
+
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (2, 'hijkllm', now(), 69, null);
+
+
+--inserting Roles
+insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
+insert into roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
+insert into roles(id, name,  organization_id) values(3, 'STORE_MANAGER', 99001);
+
+--inserting Roles EmployeeUsers relations
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);

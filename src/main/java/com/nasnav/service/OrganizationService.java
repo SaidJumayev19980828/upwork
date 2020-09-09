@@ -69,6 +69,7 @@ import com.nasnav.dto.Organization_BrandRepresentationObject;
 import com.nasnav.dto.Pair;
 import com.nasnav.dto.ProductFeatureDTO;
 import com.nasnav.dto.ProductFeatureUpdateDTO;
+import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.SocialRepresentationObject;
 import com.nasnav.dto.ThemeDTO;
 import com.nasnav.dto.request.organization.SettingDTO;
@@ -135,7 +136,8 @@ public class OrganizationService {
     private ExtraAttributesRepository extraAttrRepo;
     @Autowired
     private SettingRepository settingRepo;
-
+    @Autowired
+    private ShopService shopService;
 
     public List<OrganizationRepresentationObject> listOrganizations() {
         return organizationRepository.findAll()
@@ -963,6 +965,14 @@ public class OrganizationService {
 				.findByOrganization_Id(orgId)
 				.stream()
 				.collect(toMap(SettingEntity::getSettingName, SettingEntity::getSettingValue));
+	}
+
+
+	
+
+	public List<ShopRepresentationObject> getOrganizationShops() {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		return shopService.getOrganizationShops(orgId, true);
 	}
 
 }

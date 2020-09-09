@@ -16,6 +16,8 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
     Optional<ShopsEntity> findByIdAndRemoved(Long id, Integer removed);
 
     List<ShopsEntity> findByOrganizationEntity_IdAndRemoved(Long organizationId, Integer removed);
+    
+    List<ShopsEntity> findByOrganizationEntity_IdAndRemovedAndIsWarehouse(Long organizationId, Integer removed, Integer isWarehouse);
 
     @Query(value = "select * from shops s where s.lng between :minLong and :maxLong and s.lat between :minLat and :maxLat and s.organization_id = :orgId" +
             " and s.id in (select st.shop_id from stocks st join Product_Variants v " +

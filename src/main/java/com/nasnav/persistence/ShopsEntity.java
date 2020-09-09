@@ -54,6 +54,14 @@ public class ShopsEntity implements BaseEntity{
     @Exclude
     @lombok.ToString.Exclude
     private AddressesEntity addressesEntity;
+     
+    @Column(name = "is_warehouse")
+    private Integer isWarehouse;
+    
+    
+    public ShopsEntity() {
+    	this.isWarehouse = 0;
+    }
 
     @Override
     public BaseRepresentationObject getRepresentation() {
@@ -65,6 +73,7 @@ public class ShopsEntity implements BaseEntity{
         shopRepresentationObject.setName(getName());
         shopRepresentationObject.setPname(getPname());
         shopRepresentationObject.setPlaceId(getPlaceId());
+        shopRepresentationObject.setIsWarehouse(getIsWarehouse() > 0);
 
         if (getAddressesEntity() != null) {
             shopRepresentationObject.setAddress((AddressRepObj) getAddressesEntity().getRepresentation());
