@@ -27,8 +27,11 @@ public interface ProductExtraAttributesEntityRepository extends JpaRepository<Pr
 
 	@Transactional
 	@Modifying
-	@Query(value = "delete from ProductExtraAttributesEntity pea where pea.extraAttribute.id = :attrId " +
-			"and pea.variant in (select v from ProductVariantsEntity v where v.productEntity.organizationId = :orgId)")
+	@Query(value = "delete from ProductExtraAttributesEntity pea "
+			+ " where pea.extraAttribute.id = :attrId " 
+			+ " and pea.extraAttribute in "
+			+ "   (select extra from ExtraAttributesEntity extra"
+			+ "    where extra.organizationId = :orgId)")
 	void deleteByIdAndOrganizationId(@Param("attrId") Integer attrId, @Param("orgId") Long orgId);
 
 }
