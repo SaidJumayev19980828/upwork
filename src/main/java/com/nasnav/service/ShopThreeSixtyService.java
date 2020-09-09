@@ -671,8 +671,8 @@ public class ShopThreeSixtyService {
         }
 
         products.addAll(collections);
-        if (products.size() > 5) {
-            products = products.subList(0,5);
+        if (products.size() > count) {
+            products = products.subList(0,count);
         }
         LinkedHashMap response = new LinkedHashMap();
         response.put("products", products);
@@ -681,12 +681,12 @@ public class ShopThreeSixtyService {
 
 
     private boolean isFindProductsRequired(Integer productType) {
-        return productType == null || productType == 0 ? true : false;
+        return productType == null || productType == 0;
     }
 
 
     private boolean isFindCollectionsRequired(Integer productType) {
-        return productType == null || productType == 2 ? true : false;
+        return productType == null || productType == 2;
     }
 
 
@@ -722,6 +722,8 @@ public class ShopThreeSixtyService {
                         .map(i -> of(i.getUri()).orElse(null))
                         .collect(toSet());
                 dto.setImages(imagesSet);
+                String coverImage = productImageService.getProductCoverImage(dto.getId());
+                dto.setImageUrl(coverImage);
             }
             ofNullable(dto.getId())
                     .map(pricesMap::get)
