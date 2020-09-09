@@ -124,6 +124,8 @@ public enum ErrorCodes {
 	,O$RET$0010("Return request items are in different return request!")
 	,O$RET$0011("Return basket items are in different meta order that request items meta order!")
     ,O$RET$0012("Return request item with basket[%d] already existing!")
+    ,O$RET$0013("Returned item quantity cannot be less than or equal 0!")
+    ,O$RET$0014("No Order item exists with id[%d]!")
 
 	,O$0001("No order exists with ID[%d]!")
 	
