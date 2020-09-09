@@ -62,7 +62,11 @@ public class ReturnRequestItemEntity implements BaseEntity {
             dto.setCreatedByEmployee(getCreatedByEmployee().getId());
         }
         if (getBasket() != null) {
+            ProductVariantsEntity variant = getBasket().getStocksEntity().getProductVariantsEntity();
+            String productName = variant.getProductEntity().getName();
             dto.setBasketItem(getBasket().getId());
+            dto.setVariantId(variant.getId());
+            dto.setProductName(productName);
         }
 
         dto.setReceivedQuantity(getReceivedQuantity());

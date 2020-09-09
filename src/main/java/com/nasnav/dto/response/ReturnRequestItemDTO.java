@@ -1,5 +1,6 @@
 package com.nasnav.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.dto.BaseRepresentationObject;
@@ -19,4 +20,7 @@ public class ReturnRequestItemDTO extends BaseRepresentationObject {
     private Long createdByEmployee;
     private Long basketItem;
     private String productName;
+    @JsonIgnore
+    private Long variantId;
+    private String coverImage;
 }

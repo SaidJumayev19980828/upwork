@@ -9,6 +9,7 @@ import com.nasnav.persistence.ReturnRequestItemEntity;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Data
@@ -20,6 +21,11 @@ public class ReturnRequestDTO extends BaseRepresentationObject {
     private Long createdByUser;
     private Long createdByEmployee;
     private ReturnRequestStatus status;
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private String userName;
+    private String phoneNumber;
     Set<ReturnRequestItemDTO> returnedItems;
+
+    public ReturnRequestDTO() {
+        returnedItems = new HashSet<>();
+    }
 }

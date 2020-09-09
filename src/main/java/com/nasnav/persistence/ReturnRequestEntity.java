@@ -68,6 +68,8 @@ public class ReturnRequestEntity implements BaseEntity{
         }
         if (getCreatedByUser() != null) {
             dto.setCreatedByUser(getCreatedByUser().getId());
+            dto.setUserName(getCreatedByUser().getName());
+            dto.setPhoneNumber(getCreatedByUser().getPhoneNumber());
         }
         return dto;
     }
