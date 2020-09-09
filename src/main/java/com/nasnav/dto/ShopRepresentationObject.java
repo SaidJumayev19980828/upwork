@@ -45,4 +45,7 @@ public class ShopRepresentationObject extends BaseRepresentationObject{
     private String placeId;
 
     private List<OrganizationImagesRepresentationObject> images;
+    
+    @JsonProperty("is_warehouse")
+    private Boolean isWarehouse;
 }

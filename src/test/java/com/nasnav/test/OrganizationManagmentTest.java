@@ -1,16 +1,22 @@
 package com.nasnav.test;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -37,6 +43,7 @@ import com.nasnav.NavBox;
 import com.nasnav.dao.ExtraAttributesRepository;
 import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.ProductExtraAttributesEntityRepository;
+import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.response.OrganizationResponse;
@@ -381,5 +388,47 @@ public class OrganizationManagmentTest {
     }
     
     
+    
+    
+    
+    @Test
+    @Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/ExtraAttributes_Test_Data_Insert.sql"})
+    @Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void getOrganizationShops() throws Exception {
+        HttpEntity<?> req = getHttpEntity("hijkllm");
+        ResponseEntity<String> res = 
+        		template.exchange("/organization/shops", GET, req, String.class);
+        
+        assertEquals(200, res.getStatusCodeValue());
+        
+        List<ShopRepresentationObject> services = objectMapper.readValue(res.getBody(), new TypeReference<List<ShopRepresentationObject>>() {});
+        assertEquals(2, services.size());
+        Set<Long> fetchedIds = 
+        		services
+        		.stream()
+        		.map(ShopRepresentationObject::getId)
+        		.collect(toSet());
+        assertTrue(fetchedIds.containsAll(asList(100001L, 100003L)));
+    }
+    
+    
+    
+    
+    @Test
+    public void getOrganizationShopsNoAuthZ() {
+        HttpEntity<?> req = getHttpEntity("abcdefg");
+        ResponseEntity<String> res = 
+        		template.exchange("/organization/shops", GET, req, String.class);
+        assertEquals(403, res.getStatusCodeValue());
+    }
 
+
+    
+    @Test
+    public void getOrganizationShopsNoAuthN() {
+        HttpEntity<?> req = getHttpEntity("NotExist");
+        ResponseEntity<String> res = 
+        		template.exchange("/organization/shops", GET, req, String.class);
+        assertEquals(401, res.getStatusCodeValue());
+    }
 }

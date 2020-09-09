@@ -3,32 +3,43 @@ package com.nasnav.service;
 
 import static com.nasnav.cache.Caches.ORGANIZATIONS_SHOPS;
 import static com.nasnav.cache.Caches.SHOPS_BY_ID;
-import static java.lang.String.format;
-import static java.util.stream.Collectors.*;
-import static org.springframework.http.HttpStatus.*;
-import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.exceptions.ErrorCodes.S$0001;
+import static com.nasnav.exceptions.ErrorCodes.S$0002;
+import static com.nasnav.exceptions.ErrorCodes.S$0003;
+import static com.nasnav.exceptions.ErrorCodes.U$AUTH$0001;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.OK;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.cache.annotation.CacheResult;
 
-import com.nasnav.dao.*;
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.nasnav.dao.EmployeeUserRepository;
+import com.nasnav.dao.OrganizationImagesRepository;
+import com.nasnav.dao.ShopsRepository;
+import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.OrganizationImagesRepresentationObject;
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.dto.ShopRepresentationObject;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
+import com.nasnav.persistence.OrganizationImagesEntity;
+import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import com.nasnav.service.helpers.ShopServiceHelper;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ShopService {
@@ -43,12 +54,6 @@ public class ShopService {
 
     @Autowired
     private StockRepository stockRepo;
-
-    @Autowired
-    private OrdersRepository orderRepo;
-
-    @Autowired
-    private ShopThreeSixtyRepository shopThreeSixtyRepo;
 
     @Autowired
     private EmployeeUserRepository empUserRepo;
@@ -67,19 +72,29 @@ public class ShopService {
 
     
     @CacheResult(cacheName = ORGANIZATIONS_SHOPS)
-    public List<ShopRepresentationObject> getOrganizationShops(Long organizationId) {
-
-        List<ShopsEntity> shopsEntities = shopsRepository.findByOrganizationEntity_IdAndRemoved(organizationId, 0);
+    public List<ShopRepresentationObject> getOrganizationShops(Long organizationId, boolean showWarehouses) {
+    	//TODO this filtering is better to be done in the where condition of a single jpa query similar to
+    	//similar to ProductRepository.find360Collections
+    	//but i was in hurry
+    	List<ShopsEntity> shopsEntities = emptyList();
+    	if(showWarehouses) {
+    		shopsEntities = shopsRepository.findByOrganizationEntity_IdAndRemoved(organizationId, 0);
+    	}else {
+    		shopsEntities = shopsRepository.findByOrganizationEntity_IdAndRemovedAndIsWarehouse(organizationId, 0, 0);	
+    	}
 
         if(shopsEntities==null || shopsEntities.isEmpty())
             throw new RuntimeBusinessException(NOT_FOUND, S$0003);
 
-        return shopsEntities.stream().map(shopsEntity -> {
-            ShopRepresentationObject shopRepresentationObject = ((ShopRepresentationObject) shopsEntity.getRepresentation());
-            //TODO why working days won't be returned from the API unlike getShopById API
-            shopRepresentationObject.setOpenWorkingDays(null);
-            return shopRepresentationObject;
-        }).collect(toList());
+        return shopsEntities
+        		.stream()
+        		.map(shopsEntity -> {
+			            ShopRepresentationObject shopRepresentationObject = ((ShopRepresentationObject) shopsEntity.getRepresentation());
+			            //TODO why working days won't be returned from the API unlike getShopById API
+			            shopRepresentationObject.setOpenWorkingDays(null);
+			            return shopRepresentationObject;
+        		})
+        		.collect(toList());
     }
     
     

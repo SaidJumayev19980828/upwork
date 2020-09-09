@@ -2,11 +2,10 @@ package com.nasnav.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
 import io.swagger.annotations.ApiModel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
-import java.math.BigDecimal;
 
 @Data
 @ApiModel(value = "Shops data")
@@ -32,6 +31,9 @@ public class ShopJsonDTO extends BaseJsonDTO{
 
     @JsonProperty("place_id")
     private String placeId;
+    
+    @JsonProperty("is_warehouse")
+    private Boolean isWarehouse;
 
     @Override
     protected void initRequiredProperties() { }
@@ -70,5 +72,12 @@ public class ShopJsonDTO extends BaseJsonDTO{
         setPropertyAsUpdated("placeId");
         this.placeId = placeId;
     }
+    
+    
+    public void setIsWarehouse(Boolean isWarehouse) {
+    	setPropertyAsUpdated("isWarehouse");
+    	this.isWarehouse = isWarehouse;
+    }
+    
 
 }
