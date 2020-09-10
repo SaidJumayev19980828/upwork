@@ -18,4 +18,6 @@ public interface CountryRepository extends CrudRepository<CountriesEntity, Long>
     List<Long> findAreasByCountryId(@Param("id") Long id);
 
     Optional<CountriesEntity> findByNameIgnoreCase(String name);
+
+    CountriesEntity findByIsoCode(Integer isoCode);
 }

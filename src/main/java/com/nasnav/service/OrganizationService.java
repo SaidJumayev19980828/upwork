@@ -31,6 +31,8 @@ import java.util.Optional;
 
 import javax.cache.annotation.CacheResult;
 
+import com.nasnav.dao.*;
+import com.nasnav.persistence.*;
 import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
@@ -42,20 +44,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.nasnav.constatnts.EntityConstants.Operation;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dao.OrganizationDomainsRepository;
-import com.nasnav.dao.OrganizationImagesRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.OrganizationThemeRepository;
-import com.nasnav.dao.OrganizationThemeSettingsRepository;
-import com.nasnav.dao.ProductExtraAttributesEntityRepository;
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.SettingRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.SocialRepository;
-import com.nasnav.dao.ThemesRepository;
 import com.nasnav.dto.BrandDTO;
 import com.nasnav.dto.ExtraAttributeDTO;
 import com.nasnav.dto.ExtraAttributeDefinitionDTO;
@@ -77,19 +65,6 @@ import com.nasnav.dto.response.OrgThemeRepObj;
 import com.nasnav.enumerations.Settings;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BrandsEntity;
-import com.nasnav.persistence.ExtraAttributesEntity;
-import com.nasnav.persistence.OrganizationDomainsEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.OrganizationImagesEntity;
-import com.nasnav.persistence.OrganizationThemeEntity;
-import com.nasnav.persistence.OrganizationThemesSettingsEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.SettingEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.SocialEntity;
-import com.nasnav.persistence.ThemeEntity;
 import com.nasnav.response.OrganizationResponse;
 import com.nasnav.response.ProductFeatureUpdateResponse;
 import com.nasnav.response.ProductImageUpdateResponse;
@@ -100,6 +75,8 @@ import com.nasnav.service.helpers.OrganizationServiceHelper;
 public class OrganizationService {
     @Autowired
     private OrganizationRepository organizationRepository;
+    @Autowired
+    private CountryRepository countryRepo;
     @Autowired
     private SocialRepository socialRepository;
     @Autowired
@@ -281,6 +258,11 @@ public class OrganizationService {
 	    if (json.googleToken != null) {
 		    organization.setGoogleToken(json.googleToken);
 	    }
+
+        if (json.currencyIso != null) {
+            CountriesEntity country = countryRepo.findByIsoCode(json.currencyIso);
+            organization.setCountry(country);
+        }
 
 	    organizationRepository.save(organization);
         return new OrganizationResponse(organization.getId(), 0);

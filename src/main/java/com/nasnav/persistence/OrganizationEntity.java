@@ -53,8 +53,8 @@ public class OrganizationEntity implements BaseEntity {
     @Column(name = "google_token")
     private String googleToken;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "currency_country_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "currency_iso", referencedColumnName = "iso_code", nullable = false)
     @JsonIgnore
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
