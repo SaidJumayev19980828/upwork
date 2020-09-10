@@ -1,17 +1,12 @@
 package com.nasnav.test;
 
-import static com.nasnav.enumerations.ReturnRequestStatus.RECEIVED;
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static com.nasnav.test.commons.TestCommons.json;
-import static com.nasnav.test.commons.TestCommons.jsonArray;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
-import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
-
-import java.util.Arrays;
-import java.util.List;
-
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nasnav.NavBox;
+import com.nasnav.dao.ReturnRequestItemRepository;
+import com.nasnav.dao.StockRepository;
+import com.nasnav.dto.response.ReturnRequestDTO;
+import com.nasnav.persistence.ReturnRequestItemEntity;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -26,10 +21,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.nasnav.NavBox;
-import com.nasnav.dao.ReturnRequestItemRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.persistence.ReturnRequestItemEntity;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
+import static com.nasnav.enumerations.ReturnRequestStatus.RECEIVED;
+import static com.nasnav.test.commons.TestCommons.*;
+import static org.junit.Assert.*;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
+
+
+
+
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -41,6 +46,9 @@ public class OrderReturnTest {
 
     @Autowired
     private TestRestTemplate template;
+
+    @Autowired
+    private ObjectMapper mapper;
 
     @Autowired
     private StockRepository stockRepository;
@@ -69,9 +77,9 @@ public class OrderReturnTest {
         assertEquals(newStockQuantity.intValue(), oldStockQuantity.intValue() + 1);
 
         List<ReturnRequestItemEntity> items =  returnRequestItemRepo.findByBasket_IdIn(Arrays.asList((330034L)));
-        assertTrue(!items.isEmpty());
-        assertTrue(items.get(0).getReturnRequest() != null);
-        assertTrue(items.get(0).getReturnRequest().getStatus().equals(RECEIVED.getValue()));
+        assertFalse(items.isEmpty());
+        assertNotNull(items.get(0).getReturnRequest());
+        assertEquals(items.get(0).getReturnRequest().getStatus(), RECEIVED.getValue());
     }
 
 
@@ -95,9 +103,9 @@ public class OrderReturnTest {
         assertEquals(newStockQuantity.intValue(), oldStockQuantity.intValue() + 1);
 
         List<ReturnRequestItemEntity> items =  returnRequestItemRepo.findByBasket_IdIn(Arrays.asList((330031L)));
-        assertTrue(!items.isEmpty());
-        assertTrue(items.get(0).getReturnRequest() != null);
-        assertTrue(items.get(0).getReturnRequest().getStatus().equals(RECEIVED.getValue()));
+        assertFalse(items.isEmpty());
+        assertNotNull(items.get(0).getReturnRequest());
+        assertEquals(items.get(0).getReturnRequest().getStatus(), RECEIVED.getValue());
     }
 
 
@@ -244,5 +252,19 @@ public class OrderReturnTest {
         ResponseEntity<String> response = template.postForEntity("/order/return/received_item", request, String.class);
 
         assertEquals(406, response.getStatusCodeValue());
+    }
+	
+	
+	
+	
+    @Test
+    public void getReturnRequests() throws IOException {
+        HttpEntity<?> request = getHttpEntity( "131415");
+        ResponseEntity<String> response = template.exchange("/order/return/requests", GET, request, String.class);
+        List<ReturnRequestDTO> body = mapper.readValue(response.getBody(), new TypeReference<List<ReturnRequestDTO>>(){});
+        assertEquals(200,response.getStatusCodeValue());
+        assertEquals(2, body.size());
+        assertEquals(330032, body.get(0).getId().intValue());
+        assertEquals(330031, body.get(1).getId().intValue());
     }
 }

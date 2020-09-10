@@ -1,142 +1,33 @@
 package com.nasnav.service;
 
-import static com.nasnav.commons.utils.CollectionUtils.setOf;
-import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.commons.utils.EntityUtils.collectionContainsAnyOf;
-import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
-import static com.nasnav.commons.utils.EntityUtils.isNullOrZero;
-import static com.nasnav.commons.utils.MapBuilder.buildMap;
-import static com.nasnav.commons.utils.MathUtils.calculatePercentage;
-import static com.nasnav.constatnts.EmailConstants.ORDER_BILL_TEMPLATE;
-import static com.nasnav.constatnts.EmailConstants.ORDER_CANCEL_NOTIFICATION_TEMPLATE;
-import static com.nasnav.constatnts.EmailConstants.ORDER_NOTIFICATION_TEMPLATE;
-import static com.nasnav.constatnts.EmailConstants.ORDER_REJECT_TEMPLATE;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_CALC_ORDER_FAILED;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ITEM_QUANTITY;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ORDER_STATUS;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_INVALID_ORDER_STATUS_UPDATE;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_MANAGER_CANNOT_CREATE_ORDERS;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NEW_ORDER_WITH_EMPTY_BASKET;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NON_EXISTING_STOCK_ID;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NOT_EMP_ACCOUNT;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NO_ENOUGH_STOCK;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_NULL_ITEM;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_CONFIRMED_WITH_EMPTY_BASKET;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_EXISTS;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_OWNED_BY_ADMIN;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_OWNED_BY_SHOP_MANAGER;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_NOT_OWNED_BY_USER;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_ORDER_STATUS_NOT_ALLOWED_FOR_ROLE;
-import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.ERR_UPDATED_ORDER_WITH_NO_ID;
-import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
-import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
-import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
-import static com.nasnav.enumerations.OrderStatus.DELIVERED;
-import static com.nasnav.enumerations.OrderStatus.DISCARDED;
-import static com.nasnav.enumerations.OrderStatus.DISPATCHED;
-import static com.nasnav.enumerations.OrderStatus.FINALIZED;
-import static com.nasnav.enumerations.OrderStatus.NEW;
-import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
-import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
-import static com.nasnav.enumerations.OrderStatus.STORE_PREPARED;
-import static com.nasnav.enumerations.OrderStatus.findEnum;
-import static com.nasnav.enumerations.PaymentStatus.ERROR;
-import static com.nasnav.enumerations.PaymentStatus.FAILED;
-import static com.nasnav.enumerations.PaymentStatus.UNPAID;
-import static com.nasnav.enumerations.ReturnRequestStatus.RECEIVED;
-import static com.nasnav.enumerations.Roles.CUSTOMER;
-import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
-import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
-import static com.nasnav.enumerations.Roles.STORE_MANAGER;
-import static com.nasnav.enumerations.ShippingStatus.DRAFT;
-import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
-import static com.nasnav.enumerations.TransactionCurrency.EGP;
-import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0004;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0005;
-import static com.nasnav.exceptions.ErrorCodes.G$STK$0001;
-import static com.nasnav.exceptions.ErrorCodes.G$USR$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0004;
-import static com.nasnav.exceptions.ErrorCodes.O$CHK$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CHK$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CHK$0004;
-import static com.nasnav.exceptions.ErrorCodes.O$CNCL$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0003;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0004;
-import static com.nasnav.exceptions.ErrorCodes.O$CRT$0005;
-import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$GNRL$0003;
-import static com.nasnav.exceptions.ErrorCodes.O$ORG$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0003;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0004;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0005;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0006;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0007;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0008;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0009;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0010;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0011;
-import static com.nasnav.exceptions.ErrorCodes.O$RET$0012;
-import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$RJCT$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0003;
-import static com.nasnav.exceptions.ErrorCodes.P$STO$0001;
-import static com.nasnav.exceptions.ErrorCodes.S$0005;
-import static java.lang.String.format;
-import static java.math.BigDecimal.ZERO;
-import static java.math.RoundingMode.FLOOR;
-import static java.time.LocalDateTime.now;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
-import static javax.persistence.criteria.JoinType.LEFT;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-
-import javax.mail.MessagingException;
-import javax.persistence.EntityManager;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-
+import com.nasnav.AppConfig;
+import com.nasnav.dao.*;
+import com.nasnav.dto.*;
+import com.nasnav.dto.request.OrderRejectDTO;
+import com.nasnav.dto.request.ReturnItemsDTO;
+import com.nasnav.dto.request.cart.CartCheckoutDTO;
+import com.nasnav.dto.request.shipping.ShipmentDTO;
+import com.nasnav.dto.request.shipping.ShippingOfferDTO;
+import com.nasnav.dto.response.OrderConfrimResponseDTO;
+import com.nasnav.dto.response.ReturnRequestDTO;
+import com.nasnav.dto.response.ReturnRequestItemDTO;
+import com.nasnav.dto.response.navbox.Order;
+import com.nasnav.dto.response.navbox.*;
+import com.nasnav.enumerations.*;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.exceptions.StockValidationException;
+import com.nasnav.integration.IntegrationService;
+import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
+import com.nasnav.persistence.*;
+import com.nasnav.persistence.dto.query.result.*;
+import com.nasnav.request.OrderSearchParam;
+import com.nasnav.response.OrderResponse;
+import com.nasnav.service.helpers.EmployeeUserServiceHelper;
+import com.nasnav.service.model.cart.ShopFulfillingCart;
+import com.nasnav.shipping.model.ShipmentTracker;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -146,91 +37,45 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nasnav.AppConfig;
-import com.nasnav.dao.AddressRepository;
-import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.MetaOrderRepository;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.OrganizationImagesRepository;
-import com.nasnav.dao.PaymentsRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.PromotionRepository;
-import com.nasnav.dao.ReturnRequestItemRepository;
-import com.nasnav.dao.ReturnRequestRepository;
-import com.nasnav.dao.RoleEmployeeUserRepository;
-import com.nasnav.dao.ShipmentRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.UserRepository;
-import com.nasnav.dto.AddressRepObj;
-import com.nasnav.dto.BasketItem;
-import com.nasnav.dto.BasketItemDTO;
-import com.nasnav.dto.BasketItemDetails;
-import com.nasnav.dto.DetailedOrderRepObject;
-import com.nasnav.dto.MetaOrderBasicInfo;
-import com.nasnav.dto.OrderJsonDto;
-import com.nasnav.dto.OrderPhoneNumberPair;
-import com.nasnav.dto.OrderRepresentationObject;
-import com.nasnav.dto.ProductImageDTO;
-import com.nasnav.dto.ReturnedBasketItem;
-import com.nasnav.dto.ReturnedItem;
-import com.nasnav.dto.request.OrderRejectDTO;
-import com.nasnav.dto.request.ReturnItemsDTO;
-import com.nasnav.dto.request.cart.CartCheckoutDTO;
-import com.nasnav.dto.request.shipping.ShipmentDTO;
-import com.nasnav.dto.request.shipping.ShippingOfferDTO;
-import com.nasnav.dto.response.OrderConfrimResponseDTO;
-import com.nasnav.dto.response.navbox.Cart;
-import com.nasnav.dto.response.navbox.CartItem;
-import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
-import com.nasnav.dto.response.navbox.Order;
-import com.nasnav.dto.response.navbox.Shipment;
-import com.nasnav.dto.response.navbox.SubOrder;
-import com.nasnav.enumerations.OrderFailedStatus;
-import com.nasnav.enumerations.OrderStatus;
-import com.nasnav.enumerations.PaymentStatus;
-import com.nasnav.enumerations.Roles;
-import com.nasnav.enumerations.ShippingStatus;
-import com.nasnav.enumerations.TransactionCurrency;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.exceptions.StockValidationException;
-import com.nasnav.integration.IntegrationService;
-import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
-import com.nasnav.persistence.AddressesEntity;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BasketsEntity;
-import com.nasnav.persistence.CartItemEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.MetaOrderEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.OrganizationImagesEntity;
-import com.nasnav.persistence.PaymentEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.PromotionsEntity;
-import com.nasnav.persistence.ReturnRequestEntity;
-import com.nasnav.persistence.ReturnRequestItemEntity;
-import com.nasnav.persistence.ShipmentEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.UserEntity;
-import com.nasnav.persistence.dto.query.result.CartCheckoutData;
-import com.nasnav.persistence.dto.query.result.CartItemData;
-import com.nasnav.persistence.dto.query.result.CartItemStock;
-import com.nasnav.persistence.dto.query.result.StockAdditionalData;
-import com.nasnav.persistence.dto.query.result.StockBasicData;
-import com.nasnav.request.OrderSearchParam;
-import com.nasnav.response.OrderResponse;
-import com.nasnav.service.helpers.EmployeeUserServiceHelper;
-import com.nasnav.service.model.cart.ShopFulfillingCart;
-import com.nasnav.shipping.model.ShipmentTracker;
+import javax.mail.MessagingException;
+import javax.persistence.EntityManager;
+import javax.persistence.criteria.*;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.*;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
+import static com.nasnav.commons.utils.EntityUtils.*;
+import static com.nasnav.commons.utils.MapBuilder.buildMap;
+import static com.nasnav.commons.utils.MathUtils.calculatePercentage;
+import static com.nasnav.constatnts.EmailConstants.*;
+import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.*;
+import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
+import static com.nasnav.enumerations.OrderStatus.*;
+import static com.nasnav.enumerations.PaymentStatus.*;
+import static com.nasnav.enumerations.ReturnRequestStatus.RECEIVED;
+import static com.nasnav.enumerations.Roles.*;
+import static com.nasnav.enumerations.ShippingStatus.DRAFT;
+import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
+import static com.nasnav.enumerations.TransactionCurrency.EGP;
+import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
+import static com.nasnav.exceptions.ErrorCodes.*;
+import static java.lang.String.format;
+import static java.math.BigDecimal.ZERO;
+import static java.math.RoundingMode.FLOOR;
+import static java.time.LocalDateTime.now;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.*;
+import static javax.persistence.criteria.JoinType.INNER;
+import static javax.persistence.criteria.JoinType.LEFT;
+import static org.springframework.http.HttpStatus.*;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -1724,9 +1569,50 @@ public class OrderServiceImpl implements OrderService {
 		
 		return query;
 	}
-	
-	
-	
+
+
+	private CriteriaQuery<ReturnRequestEntity> getReturnRequestCriteriaQuery(ReturnRequestSearchParams params) {
+		CriteriaBuilder builder = em.getCriteriaBuilder();
+		CriteriaQuery<ReturnRequestEntity> query = builder.createQuery(ReturnRequestEntity.class);
+		Root<ReturnRequestEntity> root = query.from(ReturnRequestEntity.class);
+		root.fetch("metaOrder", LEFT);
+		root.fetch("createdByUser", LEFT);
+		root.fetch("createdByEmployee", LEFT);
+
+		Predicate[] predicatesArr = getReturnRequestQueryPredicates(params, builder, root);
+
+		query.where(predicatesArr);
+
+		javax.persistence.criteria.Order order = builder.desc(root.get("id"));
+
+		query.orderBy(order);
+
+		return query;
+	}
+
+
+	private Predicate[] getReturnRequestQueryPredicates(ReturnRequestSearchParams params, CriteriaBuilder builder, Root<ReturnRequestEntity> root) {
+		List<Predicate> predicates = new ArrayList<>();
+		Path<Map<String, String>> returnedItems = root.join("returnedItems", INNER);
+
+		if (params.getStatus() != null) {
+			Predicate status = builder.equal(root.get("status"), params.getStatus().getValue());
+			predicates.add(status);
+		}
+
+		if (params.getMetaOrderId() != null) {
+			Predicate metaOrderId = builder.equal(root.get("metaOrder").get("id"), params.getMetaOrderId());
+			predicates.add(metaOrderId);
+		}
+
+		if(params.getShopId() != null) {
+			Predicate shopId = builder.equal(returnedItems.get("basket").get("stocksEntity").get("shopsEntity").get("id"), params.getShopId());
+			predicates.add(shopId);
+		}
+
+		return predicates.stream().toArray( Predicate[]::new) ;
+	}
+
 
 	private Predicate[] getOrderQueryPredicates(OrderSearchParam params, CriteriaBuilder builder, Root<OrdersEntity> root) {
 		List<Predicate> predicates = new ArrayList<>();
@@ -3633,6 +3519,66 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
+	@Override
+	public List<ReturnRequestDTO> getOrderReturnRequests(ReturnRequestSearchParams params) {
+		if(params.getStart() == null || params.getStart() < 0){
+			params.setStart(0);
+		}
+		if(params.getCount() == null || (params.getCount() < 1)){
+			params.setCount(10);
+		} else if (params.getCount() > 1000) {
+			params.setCount(1000);
+		}
+
+		Set<ReturnRequestEntity> entities = em.createQuery(getReturnRequestCriteriaQuery(params))
+				.setFirstResult(params.getStart())
+				.setMaxResults(params.getCount())
+				.getResultStream()
+				.collect(toSet());
+
+		return entities.stream()
+				.map(request -> (ReturnRequestDTO)request.getRepresentation())
+				.collect(toList());
+	}
+
+
+
+	public ReturnRequestDTO getOrderReturnRequest(Long id){
+		ReturnRequestEntity returnRequestEntity = returnRequestRepo
+				.findByReturnRequestId(id)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0013));
+
+		ReturnRequestDTO dto = (ReturnRequestDTO)returnRequestEntity.getRepresentation();
+
+		Set<ReturnRequestItemDTO> requestItems = returnRequestEntity
+				.getReturnedItems()
+				.stream()
+				.map(i -> (ReturnRequestItemDTO)i.getRepresentation())
+				.collect(toSet());
+
+		requestItems = setReturnRequestItemVariantsCoverImage(requestItems);
+		dto.setReturnedItems(requestItems);
+
+		return dto;
+	}
+
+
+	private Set<ReturnRequestItemDTO> setReturnRequestItemVariantsCoverImage(Set<ReturnRequestItemDTO> requestItems) {
+		List<Long> variantsIds = requestItems
+				.stream()
+				.map(ReturnRequestItemDTO::getVariantId)
+				.collect(toList());
+
+		Map<Long, Optional<String>> images = imgService.getVariantsCoverImages(variantsIds);
+
+		for(ReturnRequestItemDTO dto : requestItems) {
+			Optional<String> image = images.get(dto.getVariantId());
+			if(image.isPresent()){
+				dto.setCoverImage(image.get());
+			}
+		}
+		return requestItems;
+	}
 }
 
 
