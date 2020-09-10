@@ -141,13 +141,15 @@ INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VAL
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330034, 330034, 604, 3, 70.0, 1);
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330035, 330035, 604, 3, 70.0, 1);
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330036, 330036, 604, 3, 70.0, 1);
+INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330037, 330036, 601, 3, 70.0, 1);
+INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330038, 330036, 602, 3, 70.0, 1);
 
 
 
 -- insert return request
 INSERT INTO public.return_request
 (id , created_on, created_by_user, created_by_employee, meta_order_id, status)
-VALUES(440034, now(), 88, null, 330034, 1);
+VALUES(440034, now(), 88, null, 310002, 1);
 
 INSERT INTO public.return_request_item
 (return_request_id, order_item_id, returned_quantity, received_quantity, received_by, received_on, created_by_user, created_by_employee)

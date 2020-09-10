@@ -7,12 +7,11 @@ import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
-
-import static javax.persistence.CascadeType.ALL;
-
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+
+import static javax.persistence.CascadeType.ALL;
 
 @Entity
 @Table(name="return_request")
@@ -48,7 +47,15 @@ public class ReturnRequestEntity {
     @EqualsAndHashCode.Exclude
     private Set<ReturnRequestItemEntity> returnedItems;
 
+
     public ReturnRequestEntity() {
         returnedItems = new HashSet<>();
+    }
+
+
+
+    public void addItem(ReturnRequestItemEntity item){
+        item.setReturnRequest(this);
+        this.returnedItems.add(item);
     }
 }

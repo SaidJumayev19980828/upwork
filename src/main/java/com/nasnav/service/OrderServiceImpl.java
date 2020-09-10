@@ -5,16 +5,14 @@ import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
-import com.nasnav.dto.request.order.returned.ReceivedBasketItem;
-import com.nasnav.dto.request.order.returned.ReceivedItem;
-import com.nasnav.dto.request.order.returned.ReceivedItemsDTO;
-import com.nasnav.dto.request.order.returned.ReturnRequestItemsDTO;
+import com.nasnav.dto.request.order.returned.*;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.enumerations.*;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
@@ -50,6 +48,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.*;
@@ -60,6 +59,7 @@ import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.*;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.PaymentStatus.*;
+import static com.nasnav.enumerations.ReturnRequestStatus.NEW;
 import static com.nasnav.enumerations.ReturnRequestStatus.RECEIVED;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
@@ -72,8 +72,7 @@ import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.FLOOR;
 import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
+import static java.util.Collections.*;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static javax.persistence.criteria.JoinType.LEFT;
@@ -199,7 +198,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private void setOrderStatusPermissions() {
-		orderStatusForCustomers = setOf(NEW, CLIENT_CONFIRMED, CLIENT_CANCELLED);		
+		orderStatusForCustomers = setOf(OrderStatus.NEW, CLIENT_CONFIRMED, CLIENT_CANCELLED);
 		orderStatusForManagers = getManagerPermittedOrderStatuses();
 	}
 
@@ -668,7 +667,7 @@ public class OrderServiceImpl implements OrderService {
 
 		OrderStatus newStatus = ofNullable(orderJsonDto.getStatus())
 										.map(OrderStatus::findEnum)
-										.orElse(NEW);
+										.orElse(OrderStatus.NEW);
 		OrdersEntity orderEntity =  
 				ordersRepository
 				.findById( orderJsonDto.getId() )
@@ -676,14 +675,14 @@ public class OrderServiceImpl implements OrderService {
 		OrderStatus oldStatus = orderEntity.getOrderStatus();
 		OrderResponse orderResponse = updateCurrentOrderStatus(orderJsonDto, orderEntity, newStatus);
 		
-		if ( newStatus.equals(NEW)) {
+		if ( newStatus.equals(OrderStatus.NEW)) {
 			if (orderJsonDto.getAddressId() != null) {
 				orderEntity.setAddressEntity(getOrderDeliveryAddress(orderJsonDto));
 			}
 			orderResponse = updateOrderBasket(orderJsonDto, orderEntity);
 
 		}else if(newStatus.equals(CLIENT_CONFIRMED) 
-					&& Objects.equals(oldStatus, NEW)) {
+					&& Objects.equals(oldStatus, OrderStatus.NEW)) {
 			reduceStocks(orderEntity);
 		}
 		
@@ -968,7 +967,7 @@ public class OrderServiceImpl implements OrderService {
 		orderEntity.setAmount( calculateOrderTotalValue(order) );
 		orderEntity.setShopsEntity( getOrderShop( order) );
 		if (order.getAddressId() != null) {
-			if (orderEntity.getOrderStatus().equals(NEW))
+			if (orderEntity.getOrderStatus().equals(OrderStatus.NEW))
 				orderEntity.setAddressEntity(addressRepo.findById(order.getAddressId()).get());
 		}
 		orderEntity = ordersRepository.save(orderEntity);
@@ -1620,7 +1619,7 @@ public class OrderServiceImpl implements OrderService {
 	public DetailedOrderRepObject getCurrentOrder(Integer detailsLevel) throws BusinessException {
 		BaseUserEntity user = securityService.getCurrentUser();
 		
-		OrdersEntity entity = ordersRepository.findFirstByUserIdAndStatusOrderByUpdateDateDesc( user.getId(), NEW.getValue() )
+		OrdersEntity entity = ordersRepository.findFirstByUserIdAndStatusOrderByUpdateDateDesc( user.getId(), OrderStatus.NEW.getValue() )
 											 .orElseThrow(() -> getNoCurrentOrderFoundException() );
 		
 		return getDetailedOrderInfo(entity, ORDER_FULL_DETAILS_LEVEL);
@@ -1642,13 +1641,13 @@ public class OrderServiceImpl implements OrderService {
 		BaseUserEntity user = securityService.getCurrentUser();
 		
 		List<Long> userNewOrders = 
-				ordersRepository.findByUserIdAndStatus(user.getId(), NEW.getValue())
+				ordersRepository.findByUserIdAndStatus(user.getId(), OrderStatus.NEW.getValue())
 								.stream()
 								.map(OrdersEntity::getId)
 								.collect(toList());
 		
 		basketRepository.deleteByOrderIdIn(userNewOrders);		
-		ordersRepository.deleteByStatusAndUserId( NEW.getValue(), user.getId());
+		ordersRepository.deleteByStatusAndUserId( OrderStatus.NEW.getValue(), user.getId());
 	}
 
 
@@ -1659,8 +1658,8 @@ public class OrderServiceImpl implements OrderService {
 
 		validateOrdersDeletionIds(orderIds, orgId);
 
-		basketRepository.deleteByOrderIdInAndOrganizationIdAndStatus(orderIds, orgId, NEW.getValue());
-		ordersRepository.deleteByStatusAndIdInAndOrgId( NEW.getValue(), orderIds, orgId);
+		basketRepository.deleteByOrderIdInAndOrganizationIdAndStatus(orderIds, orgId, OrderStatus.NEW.getValue());
+		ordersRepository.deleteByStatusAndIdInAndOrgId( OrderStatus.NEW.getValue(), orderIds, orgId);
 	}
 
 	private void validateOrdersDeletionIds(List<Long> orderIds, Long orgId) throws BusinessException {
@@ -1755,7 +1754,7 @@ public class OrderServiceImpl implements OrderService {
 				ofNullable(order)
 					.map(OrdersEntity::getStatus)
 					.orElse(-1);
-		if(!NEW.getValue().equals(status)) {
+		if(!OrderStatus.NEW.getValue().equals(status)) {
 			throw new RuntimeBusinessException(
 					format("Order with id[%d] has invalid status[%d] and can't be checked out!", order.getId(), status)
 					, "Invalid Operation"
@@ -2321,7 +2320,7 @@ public class OrderServiceImpl implements OrderService {
 		order.setCreationDate(metaOrder.getCreatedAt());
 
 		String status = ofNullable(findEnum(metaOrder.getStatus()))
-						.orElse(NEW)
+						.orElse(OrderStatus.NEW)
 						.name();
 		order.setStatus(status);
 
@@ -2416,7 +2415,7 @@ public class OrderServiceImpl implements OrderService {
 
 		String status = 
 				ofNullable(findEnum(order.getStatus()))
-				.orElse(NEW)
+				.orElse(OrderStatus.NEW)
 				.name();
 		
 		List<BasketItem> items =
@@ -3181,28 +3180,24 @@ public class OrderServiceImpl implements OrderService {
 		validateReturnedItemsDTO(returnedItemsDTO);
 
 		List<ReceivedItem> returnRequestItems = returnedItemsDTO.getReturnedItems();
-
 		List<ReceivedBasketItem> returnBasketItems = returnedItemsDTO.getBasketItems();
 
 		ReturnRequestEntity returnRequest;
 
-		if (isOnlyReturnedItemsProvided(returnRequestItems, returnBasketItems)) {
-			returnRequest = receiveReturnRequestItems(returnRequestItems);
-		}else if (isOnlyReturnedBasketItemsProvided(returnRequestItems, returnBasketItems)) {
-			List<ReturnRequestBasketItem> items = 
-					getReturnRequestBasketItemList(returnedItemsDTO);
+		if (isOnlyReturnedBasketItemsProvided(returnRequestItems, returnBasketItems)) {
+			List<ReturnRequestBasketItem> items = getReturnRequestBasketItemList(returnedItemsDTO);
 			returnRequest = createReturnRequest(items);
 		}else {
-			assignReturnBasketItemsToReturnRequest(returnRequestItems, returnBasketItems);
-			returnRequest = receiveReturnRequestItems(returnRequestItems);
+			List<ReturnRequestItemEntity> returnRequestItemEntities =
+					getAndValidateReturnRequestItemEntities(returnRequestItems);
+			ReturnRequestEntity requestEntity = returnRequestItemEntities.get(0).getReturnRequest();
+			assignReturnBasketItemsToReturnRequest(requestEntity, returnBasketItems);
+			returnRequest = receiveReturnRequestItems(returnRequestItems, returnRequestItemEntities);
 		}
 
 		if (returnRequest != null) {
             returnRequest.setStatus(RECEIVED.getValue());
-
-    		//TODO set all items as received by the current employee
-
-            returnRequestRepo.save(returnRequest);
+            returnRequest = returnRequestRepo.save(returnRequest);
 			increaseReturnRequestStock(returnRequest);
 			
 			//TODO refund ??
@@ -3217,7 +3212,7 @@ public class OrderServiceImpl implements OrderService {
 		return ofNullable(returnedItemsDTO.getBasketItems())
 				.orElse(emptyList())
 				.stream()
-				.map(item -> new ReturnRequestBasketItem(item.getOrderItemId(), item.getReceivedQuantity(), 0))
+				.map(item -> new ReturnRequestBasketItem(item.getOrderItemId(), item.getReceivedQuantity(), item.getReceivedQuantity()))
 				.collect(toList());
 	}
 
@@ -3265,6 +3260,9 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	private Map<Long, BasketsEntity> getBasketsMap(List<Long> ids) {
+		if(ids.isEmpty()){
+			return emptyMap();
+		}
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		return basketRepository
 				.findByIdIn(ids, orgId)
@@ -3275,18 +3273,7 @@ public class OrderServiceImpl implements OrderService {
 
 	
 	
-	private void validateBasketsItemsMetaOrder(Collection<BasketsEntity> basketsEntities) {
-		if(basketsEntities.isEmpty()) {
-			return;
-		}
-		MetaOrderEntity metaOrder =
-				basketsEntities
-				.stream()
-				.findFirst()
-				.get()
-				.getOrdersEntity()
-				.getMetaOrder();
-
+	private void validateBasketsItemsMetaOrder(Collection<BasketsEntity> basketsEntities, MetaOrderEntity metaOrder) {
 		validateBasketIemsFromSameMetaOrder(basketsEntities, metaOrder);
 		validateItemsBelongToCustomer(metaOrder);
 		validateBasketItemsAreReturnable(basketsEntities, metaOrder);
@@ -3299,6 +3286,9 @@ public class OrderServiceImpl implements OrderService {
 				basketsEntities
 				.stream()
 				.allMatch(this::isReturnable);
+		if(!allReturnable){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ErrorCodes.O$RET$0016);
+		}
 	}
 
 
@@ -3311,8 +3301,8 @@ public class OrderServiceImpl implements OrderService {
 				.map(OrdersEntity::getMetaOrder)
 				.map(MetaOrderEntity::getCreatedAt)
 				.orElse(LocalDateTime.MIN);
-
-		return Duration.between(orderCreationTime, now()).toDays() > MAX_RETURN_TIME_WINDOW;
+		Long orderAge = Duration.between(orderCreationTime, now()).toDays();
+		return orderAge <= MAX_RETURN_TIME_WINDOW;
 	}
 
 
@@ -3365,39 +3355,44 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
-	private void assignReturnBasketItemsToReturnRequest(List<ReceivedItem> returnRequestItems,
+	private ReturnRequestEntity assignReturnBasketItemsToReturnRequest(ReturnRequestEntity requestEntity,
 																			List<ReceivedBasketItem> receivedBasketItems) {
-		List<ReturnRequestItemEntity> returnRequestItemEntities = getAndValidateReturnRequestItemEntities(returnRequestItems);
-
-		ReturnRequestEntity requestEntity = returnRequestItemEntities.get(0).getReturnRequest();
+		if(receivedBasketItems.isEmpty()){
+			return requestEntity;
+		}
 		MetaOrderEntity metaOrder = requestEntity.getMetaOrder();
+		Map<Long, BasketsEntity> basketsCache = createOrderItemsEntityCache(receivedBasketItems);
+		receivedBasketItems
+				.stream()
+				.map(this::createReturnRequestBasketItem)
+				.collect(collectingAndThen(
+							toList()
+						, items -> createAndValidateReturnItemEntities(items, basketsCache, metaOrder)))
+				.forEach(requestEntity::addItem);
 
+		return requestEntity;
+	}
+
+
+
+
+	private Map<Long, BasketsEntity> createOrderItemsEntityCache(List<ReceivedBasketItem> receivedBasketItems) {
 		List<Long> returnBasketIds =
 				receivedBasketItems
 				.stream()
 				.map(ReceivedBasketItem::getOrderItemId)
 				.collect(toList());
 
-		Map<Long, BasketsEntity> basketsMap = getBasketsMap(returnBasketIds);
-
-		validateReturnBasketItemsIsNew(returnBasketIds);
-		validateBasketIemsFromSameMetaOrder(basketsMap.values(), metaOrder);
-		validateItemsBelongToCustomer(metaOrder);
-		validateBasketItemsAreReturnable(basketsMap.values(), metaOrder);
-
-		Set<ReturnRequestItemEntity> createdItems = new HashSet<>();
-		for (ReceivedBasketItem basketItem : receivedBasketItems) { // add assigning basket item to request
-			BasketsEntity basket = basketsMap.get(basketItem.getOrderItemId());
-			Integer receivedQuantity = basketItem.getReceivedQuantity();
-			ReturnRequestItemEntity item = createReturnRequestItem(requestEntity, basket, receivedQuantity, receivedQuantity);
-			createdItems.add(item);
-		}
-
-		createdItems.addAll(requestEntity.getReturnedItems());
-		requestEntity.setReturnedItems(createdItems);
-		
-		returnRequestRepo.save(requestEntity);
+		Map<Long, BasketsEntity> basketsCache = getBasketsMap(returnBasketIds);
+		return basketsCache;
 	}
+
+
+	private ReturnRequestBasketItem createReturnRequestBasketItem(ReceivedBasketItem item) {
+		Integer receivecedQty = item.getReceivedQuantity();
+		return new ReturnRequestBasketItem(item.getOrderItemId(), receivecedQty, receivecedQty);
+	}
+
 
 
 	private List<ReturnRequestItemEntity> getAndValidateReturnRequestItemEntities (List<ReceivedItem> returnRequestItems) {
@@ -3455,7 +3450,6 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	private ReturnRequestEntity createReturnRequest(List<ReturnRequestBasketItem> returnedItems) {
-
 		List<Long> returnBasketIds =
 				returnedItems
 						.stream()
@@ -3463,33 +3457,55 @@ public class OrderServiceImpl implements OrderService {
 						.collect(toList());
 		Map<Long, BasketsEntity> basketsMap = getBasketsMap(returnBasketIds);
 
-		validateReturnBasketItemsIsNew(returnBasketIds);
-		validateReturnBasketItemQuantity(basketsMap, returnedItems);
-		validateBasketsItemsMetaOrder(basketsMap.values());
-		validateAllBasketsExisting(returnBasketIds, basketsMap);
+		MetaOrderEntity metaOrder = getMetaOrderFromBasketItems(returnBasketIds, basketsMap);
 
-		MetaOrderEntity entity = basketsMap.values().iterator().next().getOrdersEntity().getMetaOrder();
+		List<ReturnRequestItemEntity> returnItemsEntities =
+				createAndValidateReturnItemEntities(returnedItems, basketsMap, metaOrder);
 
 		ReturnRequestEntity returnRequest = new ReturnRequestEntity();
-		returnRequest.setMetaOrder(entity);
+		returnRequest.setMetaOrder(metaOrder);
+		returnRequest.setStatus(NEW.getValue());
+		returnItemsEntities.forEach(returnRequest::addItem);
 		setReturnRequestCreator(returnRequest);
-
-		Set<ReturnRequestItemEntity> returnedRequestItems = new HashSet<>();
-		for(ReturnRequestBasketItem item : returnedItems) {
-			BasketsEntity basket = basketsMap.get(item.getOrderItemId());
-			Integer returnedQty = item.getReturnedQuantity();
-			Integer receivedQty = item.getReceivedQuantity();
-			ReturnRequestItemEntity returnedItem =
-					createReturnRequestItem(returnRequest, basket, returnedQty, receivedQty);
-			returnedRequestItems.add(returnedItem);
-		}
-		returnRequest.setReturnedItems(returnedRequestItems);
 
 		return returnRequest;
 	}
 
 
 
+
+	private MetaOrderEntity getMetaOrderFromBasketItems(List<Long> returnBasketIds, Map<Long, BasketsEntity> basketsMap) {
+		return basketsMap
+				.values()
+				.stream()
+				.filter(Objects::nonNull)
+				.findFirst()
+				.map(BasketsEntity::getOrdersEntity)
+				.map(OrdersEntity::getMetaOrder)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0008, returnBasketIds.toString()));
+	}
+
+
+
+
+	private List<ReturnRequestItemEntity> createAndValidateReturnItemEntities(
+			List<ReturnRequestBasketItem> returnedItems, Map<Long, BasketsEntity> basketsCache, MetaOrderEntity metaOrder) {
+		List<Long> returnBasketIds =
+				returnedItems
+						.stream()
+						.map(ReturnRequestBasketItem::getOrderItemId)
+						.collect(toList());
+
+		validateReturnBasketItemsIsNew(returnBasketIds);
+		validateReturnBasketItemQuantity(basketsCache, returnedItems);
+		validateBasketsItemsMetaOrder(basketsCache.values(), metaOrder);
+		validateAllBasketsExisting(returnBasketIds, basketsCache);
+
+		return returnedItems
+					.stream()
+					.map(item -> createReturnRequestItemEntity(item, basketsCache))
+					.collect(toList());
+	}
 
 
 	private void setReturnRequestCreator(ReturnRequestEntity returnRequest) {
@@ -3515,27 +3531,32 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	
-	private ReturnRequestItemEntity createReturnRequestItem(ReturnRequestEntity returnRequest, BasketsEntity basket, Integer returnedQty,
-															Integer receivedQty) {
+	private ReturnRequestItemEntity createReturnRequestItemEntity(ReturnRequestBasketItem itemDto
+				, Map<Long,BasketsEntity> basketCache) {
+		Integer returnedQty = itemDto.getReturnedQuantity();
+		Integer receivedQty = itemDto.getReceivedQuantity();
+		BasketsEntity basket =
+				ofNullable(itemDto.getOrderItemId())
+				.map(basketCache::get)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0008));
+
 		ReturnRequestItemEntity item = new ReturnRequestItemEntity();
-		item.setReturnRequest(returnRequest);
 		item.setBasket(basket);
+		item.setReturnedQuantity(returnedQty);
 
 		BaseUserEntity user = securityService.getCurrentUser();
 		if(securityService.currentUserIsCustomer()) {
 			UserEntity customer = (UserEntity)user;
 			item.setCreatedByUser(customer);
-			item.setReturnedQuantity(returnedQty);
-			item.setReceivedQuantity(0);
 		}else if(user instanceof EmployeeUserEntity) {
 			EmployeeUserEntity emp = (EmployeeUserEntity)user;
 			item.setCreatedByEmployee(emp);
 			item.setReceivedBy(emp);
+			item.setReceivedOn(now());
 			item.setReceivedQuantity(receivedQty);
-			item.setReturnedQuantity(receivedQty);
 		}
 
-		return returnRequestItemRepo.save(item);
+		return item;
 	}
 
 
@@ -3549,10 +3570,12 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private ReturnRequestEntity receiveReturnRequestItems(List<ReceivedItem> returnRequestItems) {
-		List<ReturnRequestItemEntity> returnRequestItemEntities = getAndValidateReturnRequestItemEntities(returnRequestItems);
 
-		Map<Long, ReturnRequestItemEntity> returnRequestItemEntityMap = returnRequestItemEntities
+
+	private ReturnRequestEntity receiveReturnRequestItems(List<ReceivedItem> returnRequestItems
+							,List<ReturnRequestItemEntity> returnRequestItemEntities) {
+		Map<Long, ReturnRequestItemEntity> returnRequestItemEntityMap =
+				returnRequestItemEntities
 				.stream()
 				.collect(toMap(ReturnRequestItemEntity::getId, e -> e));
 
@@ -3560,8 +3583,11 @@ public class OrderServiceImpl implements OrderService {
 
 		for (ReceivedItem item : returnRequestItems) {
 			ReturnRequestItemEntity itemEntity = returnRequestItemEntityMap.get(item.getReturnRequestItemId());
+			BaseUserEntity emp = securityService.getCurrentUser();
+
+			itemEntity.setReceivedBy((EmployeeUserEntity)emp);
+			itemEntity.setReceivedOn(now());
 			itemEntity.setReceivedQuantity(item.getReceivedQuantity());
-			returnRequestItemRepo.save(itemEntity);
 		}
 		return returnRequestItemEntities.get(0).getReturnRequest();
 	}
@@ -3583,16 +3609,16 @@ public class OrderServiceImpl implements OrderService {
 	private void validateReturnBasketItemQuantity(Map<Long, BasketsEntity> basketsMap, List<ReturnRequestBasketItem> returnedBasketItems) {
 		for (ReturnRequestBasketItem item : returnedBasketItems) {
 			Long id = item.getOrderItemId();
-			Integer receivedQuantity =  item.getReceivedQuantity();
+			Integer returnedQty =  item.getReturnedQuantity();
 			Integer basketQuantity = 
 					ofNullable(basketsMap.get(id))
 					.map(BasketsEntity::getQuantity)
 					.map(BigDecimal::intValue)
 					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0014, id));
 			
-			if(receivedQuantity <= 0) {
+			if(returnedQty <= 0) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0013);
-			}else if(basketQuantity < receivedQuantity) {
+			}else if(basketQuantity < returnedQty) {
 				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0002);
 			}
 		}
@@ -3603,9 +3629,16 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
-	public void createReturnRequest(ReturnRequestItemsDTO itemsList) {
-		// TODO Auto-generated method stub
-		
+	public Long createReturnRequest(ReturnRequestItemsDTO itemsList) {
+		List<ReturnRequestBasketItem> returnedItems =
+				itemsList
+				.getItemList()
+				.stream()
+				.map(item -> new ReturnRequestBasketItem(item.getOrderItemId(), item.getReturnedQuantity(), 0))
+				.collect(toList());
+		ReturnRequestEntity request = createReturnRequest(returnedItems);
+		request = returnRequestRepo.save(request);
+		return request.getId();
 	}
 
 }

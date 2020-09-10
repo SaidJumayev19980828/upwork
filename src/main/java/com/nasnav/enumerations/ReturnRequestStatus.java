@@ -3,7 +3,7 @@ package com.nasnav.enumerations;
 import lombok.Getter;
 
 public enum ReturnRequestStatus {
-
+    NEW(0),
     RECEIVED(1);
 
     @Getter

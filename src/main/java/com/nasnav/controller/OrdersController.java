@@ -246,8 +246,8 @@ public class OrdersController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
 	})
 	@PostMapping(value = "return")
-	public void createReturnRequest(@RequestHeader(name = "User-Token", required = false) String userToken,
+	public Long createReturnRequest(@RequestHeader(name = "User-Token", required = false) String userToken,
 							 @RequestBody ReturnRequestItemsDTO itemsList) throws BusinessException {
-		orderService.createReturnRequest(itemsList);
+		return orderService.createReturnRequest(itemsList);
 	}
 }

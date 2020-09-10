@@ -34,7 +34,6 @@ public class ReturnRequestItemEntity {
     private EmployeeUserEntity receivedBy;
 
     @Column(name="received_on")
-    @CreationTimestamp
     private LocalDateTime receivedOn;
 
     @ManyToOne

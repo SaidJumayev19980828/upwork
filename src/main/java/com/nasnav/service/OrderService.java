@@ -98,5 +98,5 @@ public interface OrderService {
 
 	void receiveItems(ReceivedItemsDTO returnedItems);
 
-	void createReturnRequest(ReturnRequestItemsDTO itemsList);
+	Long createReturnRequest(ReturnRequestItemsDTO itemsList);
 }
