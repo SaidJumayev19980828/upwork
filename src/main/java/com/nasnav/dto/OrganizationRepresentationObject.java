@@ -86,6 +86,7 @@ public class OrganizationRepresentationObject extends BaseRepresentationObject{
     @JsonProperty("google_token")
     private String googleToken;
 
+    private String currency;
 
 }
 

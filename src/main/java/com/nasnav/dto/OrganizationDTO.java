@@ -2,6 +2,7 @@ package com.nasnav.dto;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.annotations.ApiModel;
@@ -33,6 +34,9 @@ public class OrganizationDTO {
         @JsonProperty("google_token")
         public String googleToken;
 
+
+        @JsonProperty("currency_iso")
+        public Integer currencyIso;
     }
 
     @ApiModel(value = "Organization Modification Data")

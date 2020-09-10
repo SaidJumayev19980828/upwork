@@ -10,6 +10,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
@@ -17,12 +18,17 @@ import static java.util.stream.Collectors.toList;
 @Table(name = "countries")
 @Entity
 @Data
-public class CountriesEntity implements BaseEntity{
+public class CountriesEntity implements BaseEntity, Serializable {
 
     @Id
     private Long id;
     
     private String name;
+
+    @Column(name = "iso_code")
+    private Integer isoCode;
+
+    private String currency;
 
     @OneToMany(mappedBy = "countriesEntity", cascade = CascadeType.REMOVE)
     @JsonIgnore
