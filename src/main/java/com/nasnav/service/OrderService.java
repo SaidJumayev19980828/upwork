@@ -10,6 +10,7 @@ import com.nasnav.dto.MetaOrderBasicInfo;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.ReturnRequestSearchParams;
 import com.nasnav.dto.request.OrderRejectDTO;
+import com.nasnav.dto.request.ReturnRequestRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.order.returned.ReceivedItemsDTO;
 import com.nasnav.dto.request.order.returned.ReturnRequestItemsDTO;
@@ -46,6 +47,7 @@ public interface OrderService {
 
 	String BILL_EMAIL_SUBJECT = "Your Order has been Created!";
 	String ORDER_REJECT_SUBJECT = "Sorry! Your Order has been rejected!";
+	String ORDER_RETURN_REJECT_SUBJECT = "Sorry! Your Order return has been rejected!";
 
 	public OrderResponse createNewOrder(OrderJsonDto orderJson) throws BusinessException;
 
@@ -100,6 +102,7 @@ public interface OrderService {
 
 	List<ReturnRequestDTO> getOrderReturnRequests(ReturnRequestSearchParams params);
 	ReturnRequestDTO getOrderReturnRequest(Long id);
+	void rejectReturnItems(ReturnRequestRejectDTO dto);
 
 	void receiveItems(ReceivedItemsDTO returnedItems);
 

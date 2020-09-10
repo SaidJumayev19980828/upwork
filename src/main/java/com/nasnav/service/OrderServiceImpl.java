@@ -4,6 +4,7 @@ import com.nasnav.AppConfig;
 import com.nasnav.dao.*;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.OrderRejectDTO;
+import com.nasnav.dto.request.ReturnRequestRejectDTO;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.order.returned.ReceivedBasketItem;
 import com.nasnav.dto.request.order.returned.ReceivedItem;
@@ -14,8 +15,8 @@ import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.ReturnRequestDTO;
 import com.nasnav.dto.response.ReturnRequestItemDTO;
-import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.*;
+import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.enumerations.*;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ErrorCodes;
@@ -62,6 +63,7 @@ import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 import static com.nasnav.enumerations.OrderStatus.*;
 import static com.nasnav.enumerations.PaymentStatus.*;
 import static com.nasnav.enumerations.ReturnRequestStatus.RECEIVED;
+import static com.nasnav.enumerations.ReturnRequestStatus.REJECTED;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
@@ -79,7 +81,6 @@ import static java.util.stream.Collectors.*;
 import static javax.persistence.criteria.JoinType.INNER;
 import static javax.persistence.criteria.JoinType.LEFT;
 import static org.springframework.http.HttpStatus.*;
-
 @Service
 public class OrderServiceImpl implements OrderService {
 
@@ -677,7 +678,7 @@ public class OrderServiceImpl implements OrderService {
 		OrderStatus oldStatus = orderEntity.getOrderStatus();
 		OrderResponse orderResponse = updateCurrentOrderStatus(orderJsonDto, orderEntity, newStatus);
 		
-		if ( newStatus.equals(OrderStatus.NEW)) {
+		if ( newStatus.equals(NEW)) {
 			if (orderJsonDto.getAddressId() != null) {
 				orderEntity.setAddressEntity(getOrderDeliveryAddress(orderJsonDto));
 			}
@@ -797,6 +798,18 @@ public class OrderServiceImpl implements OrderService {
 		params.put("id", order.getId().toString());
 		params.put("rejectionReason", message);
 		params.put("sub", order);
+		return params;
+	}
+
+
+	private Map<String, Object> createRejectionEmailParams(ReturnRequestEntity returnRequest, String rejectionReason) {
+		Map<String,Object> params = new HashMap<>();
+		String message =
+				ofNullable(rejectionReason)
+						.orElse(DEFAULT_REJECTION_MESSAGE);
+		params.put("id", returnRequest.getId().toString());
+		params.put("rejectionReason", message);
+		params.put("returnRequest", returnRequest);
 		return params;
 	}
 
@@ -969,7 +982,7 @@ public class OrderServiceImpl implements OrderService {
 		orderEntity.setAmount( calculateOrderTotalValue(order) );
 		orderEntity.setShopsEntity( getOrderShop( order) );
 		if (order.getAddressId() != null) {
-			if (orderEntity.getOrderStatus().equals(OrderStatus.NEW))
+			if (orderEntity.getOrderStatus().equals(NEW))
 				orderEntity.setAddressEntity(addressRepo.findById(order.getAddressId()).get());
 		}
 		orderEntity = ordersRepository.save(orderEntity);
@@ -3104,7 +3117,19 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+	private void sendRejectionEmailToCustomer(ReturnRequestEntity request, String rejectionReason, Long orgId) {
 
+		String to = request.getMetaOrder().getUser().getEmail();
+		String subject = ORDER_RETURN_REJECT_SUBJECT;
+		List<String> bcc = empRoleRepo.findEmailOfEmployeeWithRoleAndOrganization(ORGANIZATION_MANAGER.getValue(), orgId);
+		Map<String,Object> parametersMap = createRejectionEmailParams(request, rejectionReason);
+		String template = ORDER_RETURN_REJECT_TEMPLATE;
+		try {
+			mailService.sendThymeleafTemplateMail(asList(to), subject, emptyList(), bcc, template, parametersMap);
+		} catch (IOException | MessagingException e) {
+			logger.error(e, e);
+		}
+	}
 
 
 	private void validateOrderRejectRequest(OrderRejectDTO dto) {
@@ -3215,6 +3240,20 @@ public class OrderServiceImpl implements OrderService {
 		}
 	}
 
+
+	@Override
+	public void rejectReturnItems(ReturnRequestRejectDTO dto) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ReturnRequestEntity returnRequest =
+				returnRequestRepo
+				.findByIdAndOrganizationId(dto.getReturnRequestId(), orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, dto.getReturnRequestId()));
+
+		returnRequest.setStatus(REJECTED.getValue());
+		returnRequestRepo.save(returnRequest);
+
+		sendRejectionEmailToCustomer(returnRequest, dto.getRejectionReason(), orgId);
+	}
 
 	@Override
 	@Transactional
@@ -3330,7 +3369,7 @@ public class OrderServiceImpl implements OrderService {
 				.stream()
 				.allMatch(this::isReturnable);
 		if(!allReturnable){
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, ErrorCodes.O$RET$0016);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0016);
 		}
 	}
 
@@ -3709,9 +3748,10 @@ public class OrderServiceImpl implements OrderService {
 
 
 	public ReturnRequestDTO getOrderReturnRequest(Long id){
-		ReturnRequestEntity returnRequestEntity = returnRequestRepo
+		ReturnRequestEntity returnRequestEntity =
+				returnRequestRepo
 				.findByReturnRequestId(id)
-				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0013));
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, id));
 
 		ReturnRequestDTO dto = (ReturnRequestDTO)returnRequestEntity.getRepresentation();
 

@@ -272,10 +272,14 @@ public class OrderReturnTest {
         HttpEntity<?> request = getHttpEntity( "131415");
         ResponseEntity<String> response = template.exchange("/order/return/requests", GET, request, String.class);
         List<ReturnRequestDTO> body = mapper.readValue(response.getBody(), new TypeReference<List<ReturnRequestDTO>>(){});
+        List<Long> ids =
+                body
+                .stream()
+                .map(ReturnRequestDTO::getId)
+                .collect(toList());
         assertEquals(200,response.getStatusCodeValue());
         assertEquals(3, body.size());
-        assertEquals(330032, body.get(0).getId().intValue());
-        assertEquals(330031, body.get(1).getId().intValue());
+        assertTrue( asList(330032L, 330031L, 440034L).containsAll(ids));
     }
     
     

@@ -127,7 +127,7 @@ public enum ErrorCodes {
     ,O$RET$0014("No Order item exists with id[%d]!")
 	,O$RET$0015("Cannot Return order items that belongs to another user!")
 	,O$RET$0016("Return period has passed for item(s)!")
-	,O$RET$0017("No return request found with ID[%s]!")
+	,O$RET$0017("No return request found with ID[%d]!")
 
 	,O$0001("No order exists with ID[%d]!")
 	
