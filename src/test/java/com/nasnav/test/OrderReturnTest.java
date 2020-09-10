@@ -273,7 +273,7 @@ public class OrderReturnTest {
         ResponseEntity<String> response = template.exchange("/order/return/requests", GET, request, String.class);
         List<ReturnRequestDTO> body = mapper.readValue(response.getBody(), new TypeReference<List<ReturnRequestDTO>>(){});
         assertEquals(200,response.getStatusCodeValue());
-        assertEquals(2, body.size());
+        assertEquals(3, body.size());
         assertEquals(330032, body.get(0).getId().intValue());
         assertEquals(330031, body.get(1).getId().intValue());
     }
