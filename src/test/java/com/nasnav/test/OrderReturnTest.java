@@ -245,4 +245,16 @@ public class OrderReturnTest {
 
         assertEquals(406, response.getStatusCodeValue());
     }
+
+
+    @Test
+    public void rejectReturnOrderRequest() {
+        JSONObject body = json().put("return_request_id", 330031)
+                .put("rejection_reason", "dameged product");
+        HttpEntity request = getHttpEntity(body.toString(), "131415");
+
+        ResponseEntity<String> res = template.postForEntity("/return/reject", request, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+
+    }
 }
