@@ -451,6 +451,11 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 
+	@Override
+	public Boolean currentUserIsCustomer() {
+		BaseUserEntity user = getCurrentUser();
+		return user instanceof UserEntity;
+	}
 
 
 	@Override

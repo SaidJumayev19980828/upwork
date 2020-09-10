@@ -27,6 +27,7 @@ public interface SecurityService {
 
     Boolean userHasRole(BaseUserEntity user, Roles role);
     Boolean currentUserHasRole(Roles role);
+    Boolean currentUserIsCustomer();
 
 	UserApiResponse socialLogin(String socialLoginToken) throws BusinessException;
 

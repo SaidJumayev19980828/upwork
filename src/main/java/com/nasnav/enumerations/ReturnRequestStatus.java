@@ -5,8 +5,7 @@ import lombok.Getter;
 import java.util.Objects;
 
 public enum ReturnRequestStatus {
-
-    ADDED(0),
+    NEW(0),
     RECEIVED(1);
 
     @Getter

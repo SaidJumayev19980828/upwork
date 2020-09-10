@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import static javax.persistence.CascadeType.ALL;
+
 @Entity
 @Table(name="return_request")
 @Data
@@ -42,14 +44,22 @@ public class ReturnRequestEntity implements BaseEntity{
     @Column(name = "status")
     private Integer status;
 
-    @OneToMany(mappedBy = "returnRequest", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "returnRequest", cascade = ALL)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<ReturnRequestItemEntity> returnedItems;
 
+
     public ReturnRequestEntity() {
         returnedItems = new HashSet<>();
+    }
+
+
+
+    public void addItem(ReturnRequestItemEntity item){
+        item.setReturnRequest(this);
+        this.returnedItems.add(item);
     }
 
     @Override

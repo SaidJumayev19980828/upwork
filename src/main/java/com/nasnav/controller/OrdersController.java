@@ -3,7 +3,6 @@ package com.nasnav.controller;
 import java.util.List;
 
 import com.nasnav.dto.ReturnRequestSearchParams;
-import com.nasnav.dto.request.ReturnItemsDTO;
 import com.nasnav.dto.response.ReturnRequestDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -20,6 +19,8 @@ import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.MetaOrderBasicInfo;
 import com.nasnav.dto.OrderJsonDto;
 import com.nasnav.dto.request.OrderRejectDTO;
+import com.nasnav.dto.request.order.returned.ReceivedItemsDTO;
+import com.nasnav.dto.request.order.returned.ReturnRequestItemsDTO;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.exceptions.BusinessException;
@@ -256,7 +257,23 @@ public class OrdersController {
 	})
 	@PostMapping(value = "return/received_item")
 	public void receiveItems(@RequestHeader(name = "User-Token", required = false) String userToken,
-							 @RequestBody ReturnItemsDTO itemsList) throws BusinessException {
+							 @RequestBody ReceivedItemsDTO itemsList) throws BusinessException {
 		orderService.receiveItems(itemsList);
+	}
+	
+	
+	
+	
+	
+	@ApiOperation(value = "create return request ", nickname = "createReturnRequest")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "Return request created"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+	})
+	@PostMapping(value = "return")
+	public Long createReturnRequest(@RequestHeader(name = "User-Token", required = false) String userToken,
+							 @RequestBody ReturnRequestItemsDTO itemsList) throws BusinessException {
+		return orderService.createReturnRequest(itemsList);
 	}
 }
