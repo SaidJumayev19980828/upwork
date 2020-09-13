@@ -1090,7 +1090,7 @@ public class ProductService {
 
 
 	private ProductRepresentationObject setProductShops(ProductRepresentationObject product, Map<Long, List<Long>> shops) {
-		List<Long> shopsList = shops.get(product.getId());
+		List<Long> shopsList = shops.get(product.getId()) != null ? shops.get(product.getId()) : new ArrayList<Long>();
 		product.setShops(shopsList);
 		return product;
 	}

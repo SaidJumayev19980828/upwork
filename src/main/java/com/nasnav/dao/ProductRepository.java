@@ -98,24 +98,26 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
             " from ProductEntity p join ProductVariantsEntity v on v.productEntity = p" +
             " join v.stocks s "+
             " left join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p " +
-            " where s.shopsEntity.id = :shopId and (:has360 = false OR sp is not null)" +
+            " where s.shopsEntity.id = :shopId and (:has360 = false OR (sp is not null and sp.published in (:published)))" +
             " and (v.barcode like %:name% or p.barcode like %:name% " +
             " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
     List<ThreeSixtyProductsDTO> find360Products(@Param("name") String name,
                                                 @Param("shopId") Long shopId,
                                                 @Param("has360") boolean has360,
+                                                @Param("published") List<Short> published,
                                                 Pageable pageable);
 
 
     @Query(value = "select distinct NEW com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO(p.id, p.name, p.description, p.productType)"+
             " from ProductCollectionEntity p join p.variants v join v.stocks s "+
             " left join Shop360ProductsEntity sp on sp.shopEntity = s.shopsEntity and sp.productEntity = p"+
-            " where s.shopsEntity.id = :shopId and (:has360 = false OR sp is not null)" +
+            " where s.shopsEntity.id = :shopId and (:has360 = false OR (sp is not null and sp.published in (:published)))" +
             " and (v.barcode like %:name% or p.barcode like %:name% " +
             " or LOWER(p.name) like %:name% or LOWER(p.description) like %:name%)")
     List<ThreeSixtyProductsDTO> find360Collections(@Param("name") String name,
                                                    @Param("shopId") Long shopId,
                                                    @Param("has360") boolean has360,
+                                                   @Param("published") List<Short> published,
                                                    Pageable pageable);
 
     @Modifying

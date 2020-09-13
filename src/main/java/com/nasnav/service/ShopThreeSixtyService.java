@@ -21,6 +21,7 @@ import java.util.*;
 
 import javax.imageio.ImageIO;
 
+import com.google.common.primitives.Shorts;
 import com.nasnav.dao.*;
 import com.nasnav.dto.request.ProductPositionDTO;
 import com.nasnav.dto.response.PostProductPositionsResponse;
@@ -641,7 +642,8 @@ public class ShopThreeSixtyService {
     }
 
 
-    public LinkedHashMap getShop360Products(Long shopId, String name, Integer count, Integer productType, boolean has360) throws BusinessException {
+    public LinkedHashMap getShop360Products(Long shopId, String name, Integer count, Integer productType,
+                                            Short published, boolean has360) throws BusinessException {
         if (!shopRepo.existsById(shopId))
             throw new BusinessException("Provided shop_id doesn't match any existing shop!",
                     "INVALID_PARAM: shop_id", NOT_ACCEPTABLE);
@@ -650,21 +652,23 @@ public class ShopThreeSixtyService {
         List<ThreeSixtyProductsDTO> products = new ArrayList<>();
         List<ThreeSixtyProductsDTO> collections = new ArrayList<>();
 
-        return fetchProductsAndCollections(shopId, name, productType, has360, count, products, collections);
+        List<Short> publishedFilter = normalizePublishedFilter(published);
+        return fetchProductsAndCollections(shopId, name, productType, has360, count, publishedFilter, products, collections);
     }
 
 
     private LinkedHashMap fetchProductsAndCollections(Long shopId, String name, Integer productType, boolean has360, Integer count,
-                                             List<ThreeSixtyProductsDTO> products, List<ThreeSixtyProductsDTO> collections) {
+                                                      List<Short> publishedFilter, List<ThreeSixtyProductsDTO> products,
+                                                      List<ThreeSixtyProductsDTO> collections) {
         if (isFindProductsRequired(productType)) {
-            products = productsRepo.find360Products(name, shopId, has360, PageRequest.of(0, count));
+            products = productsRepo.find360Products(name, shopId, has360, publishedFilter, PageRequest.of(0, count));
             if (products.size() > 0) {
                 products = getProductsListAdditionalData(products);
             }
         }
 
         if (isFindCollectionsRequired(productType)) {
-            collections = productsRepo.find360Collections(name, shopId, has360, PageRequest.of(0, count));
+            collections = productsRepo.find360Collections(name, shopId, has360, publishedFilter, PageRequest.of(0, count));
             if (collections.size() > 0) {
                 collections = getCollectionsListAdditionalData(collections);
             }
@@ -712,6 +716,12 @@ public class ShopThreeSixtyService {
         return setPricesAndImages(collections, collectionsImagesMap, collectionsPricesMap);
     }
 
+    private List<Short> normalizePublishedFilter(Short published) {
+        if (published != null) {
+            return Shorts.asList(published);
+        }
+        return Shorts.asList((short)1, (short)2);
+    }
 
     private List<ThreeSixtyProductsDTO> setPricesAndImages(List<ThreeSixtyProductsDTO> list, Map<Long, List<ProductImagesEntity>> imagesMap, Map<Long, Prices> pricesMap) {
         for (ThreeSixtyProductsDTO dto : list) {
