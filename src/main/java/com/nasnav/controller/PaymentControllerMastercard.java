@@ -8,7 +8,6 @@ import com.nasnav.exceptions.BusinessException;
 import com.nasnav.payments.mastercard.MastercardAccount;
 import com.nasnav.payments.mastercard.MastercardService;
 import com.nasnav.payments.misc.Commons;
-import com.nasnav.payments.misc.Gateway;
 import com.nasnav.payments.misc.HTMLConfigurer;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.service.OrderService;
@@ -90,7 +89,25 @@ public class PaymentControllerMastercard {
                 return new ResponseEntity<>("{\"status\": \"SUCCESS\"}", HttpStatus.OK);
             }
         }
-        return new ResponseEntity<>("{\"status\": \"FAILED\", \"message\": \"Refund failed\"", HttpStatus.NOT_ACCEPTABLE);
+        return new ResponseEntity<>("{\"status\": \"FAILED\", \"message\": \"Refund failed\"}", HttpStatus.NOT_ACCEPTABLE);
+    }
+
+    @ApiOperation(value = "Log messages handled by third-party e.g. JavaScript functionalities", nickname = "mastercardLogger")
+    @PostMapping(value = "log")
+    public ResponseEntity<?> logErrors(@RequestParam(name = "level") String level, @RequestParam(name = "message") String message)  {
+
+        if (message != null && message.length() > 0) {
+            if (message.length() > 1024) {
+                message = message.substring(0, 1024);
+            }
+            message = message.replaceAll("\\r?\\n", "");
+            if ("error".equals(level)) {
+                mastercardLogger.error("External: {}", message);
+            } else {
+                mastercardLogger.info("External: {}", message);
+            }
+        }
+        return new ResponseEntity<>("", HttpStatus.OK);
     }
 
     @ApiOperation(value = "Execute the payment after setup and user's data collection", nickname = "mastercardExecute")
