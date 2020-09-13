@@ -110,5 +110,5 @@ public interface OrderService {
 
 	Long createReturnRequest(ReturnRequestItemsDTO itemsList);
 
-	void confirmReturnRequest(ReturnRequestRejectDTO dto);
+	void confirmReturnRequest(Long id);
 }

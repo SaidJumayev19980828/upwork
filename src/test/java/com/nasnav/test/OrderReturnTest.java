@@ -521,7 +521,7 @@ public class OrderReturnTest {
     	
     	assertEquals(OK, response.getStatusCode());
 
-        Optional<ReturnRequestEntity> entity = returnRequestRepo.findByReturnRequestId(response.getBody());
+        Optional<ReturnRequestEntity> entity = returnRequestRepo.findByReturnRequestId(response.getBody(), 99001L);
 
         checkReturnRequestData(entity);
         assertReturnRequestItemsCreated(body, entity);
@@ -616,7 +616,7 @@ public class OrderReturnTest {
         HttpEntity<?> request = getHttpEntity("131415");
 
         ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
-        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(406, res.getStatusCodeValue());
     }
 
 

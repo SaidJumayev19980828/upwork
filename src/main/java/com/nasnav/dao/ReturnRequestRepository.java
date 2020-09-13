@@ -13,6 +13,7 @@ public interface ReturnRequestRepository extends JpaRepository<ReturnRequestEnti
             " left join fetch returnRequest.createdByEmployee emp " +
             " left join fetch returnRequest.createdByUser user " +
             " left join fetch returnRequest.metaOrder meta " +
+            " left join fetch meta.organization org " +
             " left join fetch returnRequest.returnedItems item " +
             " left join fetch item.basket basket " +
             " left join fetch basket.stocksEntity stock " +
@@ -24,11 +25,15 @@ public interface ReturnRequestRepository extends JpaRepository<ReturnRequestEnti
             " left join fetch returnRequest.createdByUser user " +
             " left join fetch item.createdByUser itemUser " +
             " left join fetch item.createdByEmployee itemEmployee " +
-            " where returnRequest.id = :id")
-    Optional<ReturnRequestEntity> findByReturnRequestId(@Param("id") Long id);
+            " where returnRequest.id = :id " +
+            " and org.id = :orgId")
+    Optional<ReturnRequestEntity> findByReturnRequestId(@Param("id") Long id, @Param("orgId")Long orgId);
 	
 	
-    @Query(value = "select r from ReturnRequestEntity r where r.id = :id and r.status = :status and r.metaOrder.organization.id = :orgId")
+    @Query(value = "select r from ReturnRequestEntity r " +
+            " where r.id = :id " +
+            " and r.status = :status " +
+            " and r.metaOrder.organization.id = :orgId")
     Optional<ReturnRequestEntity> findByIdAndOrganizationIdAndStatus(@Param("id") Long id,
                                                                      @Param("orgId") Long orgId,
                                                                      @Param("status") Integer status);

@@ -298,9 +298,9 @@ public class OrdersController {
 			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
 			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
 	})
-	@PostMapping(value = "return/confirmed")
+	@PostMapping(value = "return/confirm")
 	public void confirmReturnRequest(@RequestHeader(name = "User-Token", required = false) String userToken,
-								  @RequestBody ReturnRequestRejectDTO dto) {
-		orderService.confirmReturnRequest(dto);
+								  @RequestParam Long id) {
+		orderService.confirmReturnRequest(id);
 	}
 }

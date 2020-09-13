@@ -91,7 +91,7 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1002, 'product_2',101, 201, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1003, 'product_3',101, 201, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1004, 'product_4',101, 201, 99001, now(), now());
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1005, 'product_5',101, 201, 99002, now(), now())
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1005, 'product_5',101, 201, 99002, now(), now());
 
 -- variants for each product
 insert into public.product_variants(id, "name" , product_id ) values(310001, 'var' 	, 1001);
@@ -149,41 +149,12 @@ INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VAL
 
 
 -- insert return request
-INSERT INTO public.return_request
-(id , created_on, created_by_user, created_by_employee, meta_order_id, status)
-    VALUES(450001, now(), 88, null, 310002, 0);
-INSERT INTO public.return_request(id, created_on, created_by_employee, meta_order_id, status)
+INSERT INTO public.return_request(id , created_on, created_by_user, created_by_employee, meta_order_id, status)
+    VALUES(450001, now(), 88, null, 310001, 0);
+INSERT INTO public.return_request(id, created_on, created_by_user, meta_order_id, status)
     VALUES(450002, now(), 88, 310001, 2);
-INSERT INTO public.return_request(id, created_on, created_by_employee, meta_order_id, status)
-    VALUES(450003, now(), 69, 310002, 3);
+INSERT INTO public.return_request(id, created_on, created_by_user, meta_order_id, status)
+    VALUES(450003, now(), 89, 310002, 3);
 
-INSERT INTO public.return_request_item
-(return_request_id, order_item_id, returned_quantity, received_quantity, received_by, received_on, created_by_user, created_by_employee)
-VALUES(440034, 330036, 1, 1, 69, now(), 88, null);
-INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
-    VALUES(330031, 330031, 330031, 1, now());
-INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
-    VALUES(330032, 330031, 330032, 1, now());
-INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
-    VALUES(330033, 330032, 330033, 1, now());
-
-
-
-
-
-
--- insert cart
-INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(602, '99001/img2.jpg', '{"Color":"Blue"}', 2, 88);
-INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) VALUES(603, '99001/cover_img.jpg', '{"Color":"Yellow"}', 4, 88);
-
-INSERT INTO public.return_request(id, created_on, created_by_employee, meta_order_id, status)
-    VALUES(330031, now(), 69, 310001, 0);
-INSERT INTO public.return_request(id, created_on, created_by_employee, meta_order_id, status)
-    VALUES(330032, now(), 69, 310002, 3);
-
-INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
-    VALUES(330031, 330031, 330031, 1, now());
-INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
-    VALUES(330032, 330031, 330032, 1, now());
-INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
-    VALUES(330033, 330032, 330033, 1, now());
+INSERT INTO public.return_request_item(return_request_id, order_item_id, returned_quantity, received_quantity, received_by, received_on, created_by_user, created_by_employee)
+VALUES(450001, 330036, 1, 1, null, now(), 88, null);

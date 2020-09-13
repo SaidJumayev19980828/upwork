@@ -3763,9 +3763,10 @@ public class OrderServiceImpl implements OrderService {
 
 
 	public ReturnRequestDTO getOrderReturnRequest(Long id){
+		Long orgId = securityService.getCurrentUserOrganizationId();
 		ReturnRequestEntity returnRequestEntity =
 				returnRequestRepo
-				.findByReturnRequestId(id)
+				.findByReturnRequestId(id, orgId)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, id));
 
 		ReturnRequestDTO dto = (ReturnRequestDTO)returnRequestEntity.getRepresentation();
@@ -3806,8 +3807,12 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
-	public void confirmReturnRequest(ReturnRequestRejectDTO dto) {
-
+	public void confirmReturnRequest(Long id) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ReturnRequestEntity request =
+				returnRequestRepo
+				.findByReturnRequestId(id, orgId)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, id));
 	}
 }
 
