@@ -51,6 +51,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.*;
@@ -919,7 +920,9 @@ public class OrderServiceImpl implements OrderService {
 	private String getOrganizationLogo(OrganizationEntity org) {
 		return ofNullable(org)
 				.map(OrganizationEntity::getId)
-				.map(orgId -> orgImagesRepo.findByOrganizationEntityIdAndType(orgId, 1))
+				.map(orgId -> orgImagesRepo.findByOrganizationEntityIdAndTypeOrderByIdDesc(orgId, 1))
+				.map(List::stream)
+				.flatMap(Stream::findFirst)
 				.map(OrganizationImagesEntity::getUri)
 				.orElse("nasnav-logo.png");
 	}
