@@ -748,9 +748,7 @@ public class ShopThreeSixtyService {
         List<Shop360ProductsEntity> publishedProductsPositions = new ArrayList<>();
 
         for(Shop360ProductsEntity product : existingProductsPositions) {
-            Shop360ProductsEntity entity = new Shop360ProductsEntity();
-            BeanUtils.copyProperties(product, entity);
-            entity.setPublished((short)2);
+            Shop360ProductsEntity entity = copyProductPositionEntity(product);
             publishedProductsPositions.add(entity);
         }
         product360ShopsRepo.saveAll(publishedProductsPositions);
@@ -766,6 +764,21 @@ public class ShopThreeSixtyService {
         productPosRepo.save(productPosition);
 
         return new ShopResponse(shopId, OK);
+    }
+
+
+    private Shop360ProductsEntity copyProductPositionEntity(Shop360ProductsEntity product) {
+        Shop360ProductsEntity entity = new Shop360ProductsEntity();
+
+        BeanUtils.copyProperties(product, entity, new String[]{"id"});
+        entity.setProductEntity(product.getProductEntity());
+        entity.setShopEntity(product.getShopEntity());
+        entity.setFloor(product.getFloor());
+        entity.setSection(product.getSection());
+        entity.setScene(product.getScene());
+        entity.setPublished((short)2);
+
+        return entity;
     }
 
 
