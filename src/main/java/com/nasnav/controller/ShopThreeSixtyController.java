@@ -165,8 +165,9 @@ public class ShopThreeSixtyController {
                                             @RequestParam(required = false) String name,
                                             @RequestParam(required = false, defaultValue = "5") Integer count,
                                             @RequestParam(value = "product_type", required = false) Integer productType,
-                                            @RequestParam(value = "has_360", required = false, defaultValue = "false") boolean has360) throws BusinessException {
-        return shop360Svc.getShop360Products(shopId, name, count, productType, has360);
+                                            @RequestParam(value = "has_360", required = false, defaultValue = "false") boolean has360,
+                                            @RequestParam(value = "published", required = false) Short published) throws BusinessException {
+        return shop360Svc.getShop360Products(shopId, name, count, productType, published, has360);
     }
 
 
