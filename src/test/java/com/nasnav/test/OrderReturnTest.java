@@ -281,6 +281,94 @@ public class OrderReturnTest {
         assertEquals(3, body.size());
         assertTrue( asList(330032L, 330031L, 440034L).containsAll(ids));
     }
+
+
+    @Test
+    public void getReturnRequestsDifferentFilters() throws IOException {
+        //count filter
+        HttpEntity<?> request = getHttpEntity( "131415");
+        ResponseEntity<String> response = template.exchange("/order/return/requests?count=1", GET, request, String.class);
+        List<ReturnRequestDTO> body = mapper.readValue(response.getBody(), new TypeReference<List<ReturnRequestDTO>>(){});
+        assertEquals(200,response.getStatusCodeValue());
+        assertEquals(1, body.size());
+
+        //status filter
+        response = template.exchange("/order/return/requests?status=NEW", GET, request, String.class);
+        body = mapper.readValue(response.getBody(), new TypeReference<List<ReturnRequestDTO>>(){});
+        List<Long> ids =
+                body
+                        .stream()
+                        .map(ReturnRequestDTO::getId)
+                        .collect(toList());
+        assertEquals(200,response.getStatusCodeValue());
+        assertEquals(2, body.size());
+
+        //meta order filter
+        response = template.exchange("/order/return/requests?meta_order_id=310001", GET, request, String.class);
+        body = mapper.readValue(response.getBody(), new TypeReference<List<ReturnRequestDTO>>(){});
+        assertEquals(200,response.getStatusCodeValue());
+        assertEquals(1, body.size());
+
+        //meta order filter
+        response = template.exchange("/order/return/requests?shop_id=501", GET, request, String.class);
+        body = mapper.readValue(response.getBody(), new TypeReference<List<ReturnRequestDTO>>(){});
+        assertEquals(200,response.getStatusCodeValue());
+        assertEquals(1, body.size());
+    }
+
+
+    @Test
+    public void getReturnRequestsInvalidAuthN() {
+        HttpEntity<?> request = getHttpEntity( "101112");
+        ResponseEntity<String> response = template.exchange("/order/return/requests", GET, request, String.class);
+        assertEquals(403,response.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void getReturnRequestsInvalidAuthZ() {
+        HttpEntity<?> request = getHttpEntity( "invalid token");
+        ResponseEntity<String> response = template.exchange("/order/return/requests", GET, request, String.class);
+        assertEquals(401,response.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void getReturnRequest() {
+        HttpEntity<?> request = getHttpEntity( "131415");
+        ResponseEntity<ReturnRequestDTO> response = template.exchange("/order/return/request?id=330031", GET, request, ReturnRequestDTO.class);
+
+        assertEquals(200,response.getStatusCodeValue());
+        ReturnRequestDTO body = response.getBody();
+        assertEquals(330031, body.getId().longValue());
+        assertEquals(310001, body.getMetaOrderId().longValue());
+        assertFalse(body.getReturnedItems().isEmpty());
+    }
+
+
+    @Test
+    public void getReturnRequestAnotherOrg() {
+        HttpEntity<?> request = getHttpEntity( "131415");
+        ResponseEntity<ReturnRequestDTO> response = template.exchange("/order/return/request?id=330033", GET, request, ReturnRequestDTO.class);
+
+        assertEquals(406,response.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void getReturnRequestInvalidAuthN() {
+        HttpEntity<?> request = getHttpEntity( "101112");
+        ResponseEntity<String> response = template.exchange("/order/return/request?id=330031", GET, request, String.class);
+        assertEquals(403,response.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void getReturnRequestInvalidAuthZ() {
+        HttpEntity<?> request = getHttpEntity( "invalid token");
+        ResponseEntity<String> response = template.exchange("/order/return/request?id=330031", GET, request, String.class);
+        assertEquals(401,response.getStatusCodeValue());
+    }
     
     
     //TODO: POST/receive_items -> received quantity for basket item more than original order.
@@ -531,7 +619,7 @@ public class OrderReturnTest {
     	
     	assertEquals(OK, response.getStatusCode());
 
-        Optional<ReturnRequestEntity> entity = returnRequestRepo.findByReturnRequestId(response.getBody());
+        Optional<ReturnRequestEntity> entity = returnRequestRepo.findByReturnRequestId(response.getBody(), 99001L);
 
         checkReturnRequestData(entity);
         assertReturnRequestItemsCreated(body, entity);

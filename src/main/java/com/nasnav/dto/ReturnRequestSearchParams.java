@@ -12,6 +12,6 @@ public class ReturnRequestSearchParams {
     private ReturnRequestStatus status;
     private Integer start;
     private Integer count;
-    private Long metaOrderId;
-    private Long shopId;
+    private Long meta_order_id;
+    private Long shop_id;
 }

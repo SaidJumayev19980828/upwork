@@ -1,5 +1,7 @@
 package com.nasnav.dto.response.navbox;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.dto.Prices;
 import lombok.Data;
 
@@ -9,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 @Data
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class ThreeSixtyProductsDTO {
 
     private Long id;
