@@ -1624,19 +1624,29 @@ public class OrderServiceImpl implements OrderService {
 	private Predicate[] getReturnRequestQueryPredicates(ReturnRequestSearchParams params, CriteriaBuilder builder, Root<ReturnRequestEntity> root) {
 		List<Predicate> predicates = new ArrayList<>();
 		Path<Map<String, String>> returnedItems = root.join("returnedItems", INNER);
+		Long currentOrgId = securityService.getCurrentUserOrganizationId();
+
+
+		Predicate orgId = builder.equal(root.get("metaOrder").get("organization").get("id"), currentOrgId);
+        predicates.add(orgId);
 
 		if (params.getStatus() != null) {
 			Predicate status = builder.equal(root.get("status"), params.getStatus().getValue());
 			predicates.add(status);
 		}
 
-		if (params.getMetaOrderId() != null) {
-			Predicate metaOrderId = builder.equal(root.get("metaOrder").get("id"), params.getMetaOrderId());
+		if (params.getMeta_order_id() != null) {
+			Predicate metaOrderId = builder.equal(root.get("metaOrder").get("id"), params.getMeta_order_id());
 			predicates.add(metaOrderId);
 		}
 
-		if(params.getShopId() != null) {
-			Predicate shopId = builder.equal(returnedItems.get("basket").get("stocksEntity").get("shopsEntity").get("id"), params.getShopId());
+		if (securityService.currentUserHasRole(STORE_ADMIN) && !securityService.currentUserHasRole(ORGANIZATION_ADMIN)) {
+			Long shopId = ((EmployeeUserEntity)securityService.getCurrentUser()).getShopId();
+			params.setShop_id(shopId);
+		}
+
+		if(params.getShop_id() != null) {
+			Predicate shopId = builder.equal(returnedItems.get("basket").get("stocksEntity").get("shopsEntity").get("id"), params.getShop_id());
 			predicates.add(shopId);
 		}
 
@@ -3761,9 +3771,10 @@ public class OrderServiceImpl implements OrderService {
 
 
 	public ReturnRequestDTO getOrderReturnRequest(Long id){
+		Long orgId = securityService.getCurrentUserOrganizationId();
 		ReturnRequestEntity returnRequestEntity =
 				returnRequestRepo
-				.findByReturnRequestId(id)
+				.findByReturnRequestId(id, orgId)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, id));
 
 		ReturnRequestDTO dto = (ReturnRequestDTO)returnRequestEntity.getRepresentation();

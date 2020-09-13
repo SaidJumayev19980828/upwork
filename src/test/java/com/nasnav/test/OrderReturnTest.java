@@ -29,10 +29,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.enumerations.ReturnRequestStatus.*;
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.*;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.*;
@@ -278,6 +280,104 @@ public class OrderReturnTest {
         assertEquals(200,response.getStatusCodeValue());
         assertEquals(3, body.size());
         assertTrue( asList(330032L, 330031L, 440034L).containsAll(ids));
+    }
+
+
+    @Test
+    public void getReturnRequestsDifferentFilters() throws IOException {
+        //count filter
+        List<ReturnRequestDTO> body = getReturnRequests("131415", "count=1");
+        assertEquals(1, body.size());
+        Set<Long> ids = getReturnedRequestsIds(body);
+        assertTrue(setOf(440034L).containsAll(ids));
+
+        //status filter
+        body = getReturnRequests("131415", "status=NEW");
+        assertEquals(1, body.size());
+        ids = getReturnedRequestsIds(body);
+        assertTrue(setOf(330031L).containsAll(ids));
+
+        //meta order filter
+        body = getReturnRequests("131415", "meta_order_id=310001");
+        assertEquals(1, body.size());
+        ids = getReturnedRequestsIds(body);
+        assertTrue(setOf(330031L).containsAll(ids));
+
+        //shop id filter
+        body = getReturnRequests("131415", "shop_id=501");
+        assertEquals(1, body.size());
+        ids = getReturnedRequestsIds(body);
+        assertTrue(setOf(330031L).containsAll(ids));
+    }
+
+
+    private List<ReturnRequestDTO> getReturnRequests(String authToken, String params) throws IOException {
+        HttpEntity<?> request = getHttpEntity( authToken);
+        ResponseEntity<String> response = template.exchange("/order/return/requests?"+params, GET, request, String.class);
+        assertEquals(200, response.getStatusCodeValue());
+        return mapper.readValue(response.getBody(), new TypeReference<List<ReturnRequestDTO>>(){});
+    }
+
+
+    private Set<Long> getReturnedRequestsIds(List<ReturnRequestDTO> returnedItems) {
+        return returnedItems
+                    .stream()
+                    .map(ReturnRequestDTO::getId)
+                    .collect(toSet());
+    }
+
+
+    @Test
+    public void getReturnRequestsInvalidAuthZ() {
+        HttpEntity<?> request = getHttpEntity( "101112");
+        ResponseEntity<String> response = template.exchange("/order/return/requests", GET, request, String.class);
+        assertEquals(403,response.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void getReturnRequestsInvalidAuthN() {
+        HttpEntity<?> request = getHttpEntity( "invalid token");
+        ResponseEntity<String> response = template.exchange("/order/return/requests", GET, request, String.class);
+        assertEquals(401,response.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void getReturnRequest() {
+        HttpEntity<?> request = getHttpEntity( "131415");
+        ResponseEntity<ReturnRequestDTO> response = template.exchange("/order/return/request?id=330031", GET, request, ReturnRequestDTO.class);
+
+        assertEquals(200,response.getStatusCodeValue());
+        ReturnRequestDTO body = response.getBody();
+        assertEquals(330031, body.getId().longValue());
+        assertEquals(310001, body.getMetaOrderId().longValue());
+        assertFalse(body.getReturnedItems().isEmpty());
+    }
+
+
+    @Test
+    public void getReturnRequestAnotherOrg() {
+        HttpEntity<?> request = getHttpEntity( "131415");
+        ResponseEntity<ReturnRequestDTO> response = template.exchange("/order/return/request?id=330033", GET, request, ReturnRequestDTO.class);
+
+        assertEquals(406,response.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void getReturnRequestInvalidAuthZ() {
+        HttpEntity<?> request = getHttpEntity( "101112");
+        ResponseEntity<String> response = template.exchange("/order/return/request?id=330031", GET, request, String.class);
+        assertEquals(403,response.getStatusCodeValue());
+    }
+
+
+    @Test
+    public void getReturnRequestInvalidAuthN() {
+        HttpEntity<?> request = getHttpEntity( "invalid token");
+        ResponseEntity<String> response = template.exchange("/order/return/request?id=330031", GET, request, String.class);
+        assertEquals(401,response.getStatusCodeValue());
     }
     
     
@@ -529,7 +629,7 @@ public class OrderReturnTest {
     	
     	assertEquals(OK, response.getStatusCode());
 
-        Optional<ReturnRequestEntity> entity = returnRequestRepo.findByReturnRequestId(response.getBody());
+        Optional<ReturnRequestEntity> entity = returnRequestRepo.findByReturnRequestId(response.getBody(), 99001L);
 
         checkReturnRequestData(entity);
         assertReturnRequestItemsCreated(body, entity);
