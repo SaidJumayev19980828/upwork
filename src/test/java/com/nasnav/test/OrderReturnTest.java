@@ -29,8 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.nasnav.enumerations.ReturnRequestStatus.NEW;
-import static com.nasnav.enumerations.ReturnRequestStatus.RECEIVED;
+import static com.nasnav.enumerations.ReturnRequestStatus.*;
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -60,7 +59,6 @@ public class OrderReturnTest {
 
     @Autowired
     private StockRepository stockRepository;
-    
     @Autowired
     private ReturnRequestItemRepository returnRequestItemRepo;
 
@@ -567,5 +565,30 @@ public class OrderReturnTest {
         assertEquals(body.getJSONArray("item_list").length(), returnedItems.size());
         assertTrue("expected Returned quantities", asList(1,2).containsAll(quantities));
         assertTrue("expected Basket items ids", asList(330037L, 330038L).containsAll(ids));
+    }
+
+
+    @Test
+    public void rejectReturnOrderRequest() {
+        JSONObject body = json().put("return_request_id", 330031)
+                .put("rejection_reason", "damaged product");
+        HttpEntity request = getHttpEntity(body.toString(), "131415");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/reject", request, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+
+        Optional<ReturnRequestEntity> entity = returnRequestRepo.findByIdAndOrganizationIdAndStatus(330031L, 99001L, REJECTED.getValue());
+        assertTrue(entity.isPresent());
+    }
+
+
+    @Test
+    public void rejectReturnOrderRequestConfirmedRequest() {
+        JSONObject body = json().put("return_request_id", 330032)
+                .put("rejection_reason", "damaged product");
+        HttpEntity request = getHttpEntity(body.toString(), "131415");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/reject", request, String.class);
+        assertEquals(406, res.getStatusCodeValue());
     }
 }
