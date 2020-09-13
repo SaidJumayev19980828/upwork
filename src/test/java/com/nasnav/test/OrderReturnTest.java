@@ -304,8 +304,7 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330038)
                         .put("returned_quantity", 2));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
@@ -344,8 +343,7 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330035)
                         .put("returned_quantity", 1));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
@@ -372,8 +370,7 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330036)
                         .put("returned_quantity", 1));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
@@ -399,8 +396,7 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330033)
                         .put("returned_quantity", 1));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
@@ -427,8 +423,7 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330034)
                         .put("returned_quantity", 1));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
@@ -457,8 +452,7 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330033)
                         .put("returned_quantity", 1));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
@@ -486,8 +480,7 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330032)
                         .put("returned_quantity", 1));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
@@ -513,8 +506,7 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330036)
                         .put("returned_quantity", 1));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
@@ -561,7 +553,6 @@ public class OrderReturnTest {
                         .stream()
                         .map(ReturnRequestItemEntity::getReturnedQuantity)
                         .collect(toList());
-        ;
         assertEquals(body.getJSONArray("item_list").length(), returnedItems.size());
         assertTrue("expected Returned quantities", asList(1,2).containsAll(quantities));
         assertTrue("expected Basket items ids", asList(330037L, 330038L).containsAll(ids));
@@ -572,7 +563,7 @@ public class OrderReturnTest {
     public void rejectReturnOrderRequest() {
         JSONObject body = json().put("return_request_id", 330031)
                 .put("rejection_reason", "damaged product");
-        HttpEntity request = getHttpEntity(body.toString(), "131415");
+        HttpEntity<?> request = getHttpEntity(body.toString(), "131415");
 
         ResponseEntity<String> res = template.postForEntity("/order/return/reject", request, String.class);
         assertEquals(200, res.getStatusCodeValue());
@@ -586,9 +577,83 @@ public class OrderReturnTest {
     public void rejectReturnOrderRequestConfirmedRequest() {
         JSONObject body = json().put("return_request_id", 330032)
                 .put("rejection_reason", "damaged product");
-        HttpEntity request = getHttpEntity(body.toString(), "131415");
+        HttpEntity<?> request = getHttpEntity(body.toString(), "131415");
 
         ResponseEntity<String> res = template.postForEntity("/order/return/reject", request, String.class);
         assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+
+
+    @Test
+    public void confirmReturnRequestAuthNTest(){
+        Long id= 450002L;
+        HttpEntity<?> request = getHttpEntity("INVALID");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
+        assertEquals(401, res.getStatusCodeValue());
+    }
+
+
+
+
+
+    @Test
+    public void confirmReturnRequestAuthZTest(){
+        Long id= 450001L;
+        HttpEntity<?> request = getHttpEntity("101112");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
+        assertEquals(403, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void confirmReturnRequestNonExistingRequestTest(){
+        Long id= -1L;
+        HttpEntity<?> request = getHttpEntity("131415");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void confirmReturnRequestFromAnotherOrgTest(){
+        Long id= -1L;
+        HttpEntity<?> request = getHttpEntity("131415");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_10.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void confirmReturnRequestWithInvalidStateTest(){
+        Long id= 450002L;
+        HttpEntity<?> request = getHttpEntity("131415");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
+        assertEquals(200, res.getStatusCodeValue());
+    }
+
+
+
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_10.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void confirmReturnRequestTest(){
+        Long id= 450002L;
+        HttpEntity<?> request = getHttpEntity("131415");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
+        assertEquals(200, res.getStatusCodeValue());
     }
 }
