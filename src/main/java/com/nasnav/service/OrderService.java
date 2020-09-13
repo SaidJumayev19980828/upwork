@@ -32,7 +32,9 @@ import com.nasnav.service.model.cart.ShopFulfillingCart;
 
 public interface OrderService {
 
-	public class OrderValue {
+
+
+    public class OrderValue {
 		public BigDecimal amount;
 		public TransactionCurrency currency;
 
@@ -107,4 +109,6 @@ public interface OrderService {
 	void receiveItems(ReceivedItemsDTO returnedItems);
 
 	Long createReturnRequest(ReturnRequestItemsDTO itemsList);
+
+	void confirmReturnRequest(ReturnRequestRejectDTO dto);
 }

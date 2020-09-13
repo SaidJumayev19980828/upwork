@@ -3736,6 +3736,8 @@ public class OrderServiceImpl implements OrderService {
 		return request.getId();
 	}
 
+
+
 	@Override
 	public List<ReturnRequestDTO> getOrderReturnRequests(ReturnRequestSearchParams params) {
 		if(params.getStart() == null || params.getStart() < 0){
@@ -3796,6 +3798,16 @@ public class OrderServiceImpl implements OrderService {
 			}
 		}
 		return requestItems;
+	}
+
+
+
+
+
+
+	@Override
+	public void confirmReturnRequest(ReturnRequestRejectDTO dto) {
+
 	}
 }
 

@@ -650,7 +650,7 @@ public class OrderReturnTest {
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_10.sql"})
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
     public void confirmReturnRequestTest(){
-        Long id= 450002L;
+        Long id= 450001L;
         HttpEntity<?> request = getHttpEntity("131415");
 
         ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);

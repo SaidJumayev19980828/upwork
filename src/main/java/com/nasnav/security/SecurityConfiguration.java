@@ -6,7 +6,6 @@ import static com.nasnav.enumerations.Roles.CUSTOMER;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
-import static com.nasnav.enumerations.Roles.STORE_ADMIN;
 import static com.nasnav.enumerations.Roles.STORE_MANAGER;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -83,64 +82,65 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     //	more fine grained control of the permission (by HttpMethod, by roles) 
 	private  List<AuthPattern> permissions = asList(
 						//url pattern	-------------------------	Method	------------	Roles
-						patternOf( "/360view/**"					,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/360view/**"						,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/order"							,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/order/confirm"					,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
-						patternOf( "/order/reject"					,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
-						patternOf( "/order/cancel"					,HttpMethod.POST	, setOf(CUSTOMER)),
-						patternOf( "/order/meta_order/list/user"	,HttpMethod.GET		, setOf(CUSTOMER)),
-						patternOf( "/order/return/reject"					,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
-						patternOf( "/order/return/received_item"	,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN, STORE_ADMIN)),
-						patternOf( "/order/return"					,HttpMethod.POST	, setOf(CUSTOMER)),
-						patternOf( "/order/return/requests"			,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN, STORE_ADMIN)),
-						patternOf( "/order/return/request"			,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN, STORE_ADMIN)),
+						patternOf( "/order/reject"						,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
+						patternOf( "/order/cancel"						,HttpMethod.POST	, setOf(CUSTOMER)),
+						patternOf( "/order/meta_order/list/user"		,HttpMethod.GET		, setOf(CUSTOMER)),
+						patternOf( "/order/return/reject"				,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
+						patternOf( "/order/return/confirm"				,HttpMethod.POST	, setOf(ORGANIZATION_MANAGER, STORE_MANAGER)),
+						patternOf( "/order/return/received_item"		,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN, STORE_MANAGER)),
+						patternOf( "/order/return"						,HttpMethod.POST	, setOf(CUSTOMER)),
+						patternOf( "/order/return/requests"			,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN, STORE_MANAGER)),
+						patternOf( "/order/return/request"				,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN, STORE_MANAGER)),
 						patternOf( "/order/**"),
-						patternOf( "/stock/**"	 										, getNonCustomersRoles() ),
-						patternOf( "/shop/**"											, setOf(ORGANIZATION_MANAGER, STORE_MANAGER) ),
+						patternOf( "/stock/**"	 											, getNonCustomersRoles() ),
+						patternOf( "/shop/**"												, setOf(ORGANIZATION_MANAGER, STORE_MANAGER) ),
 						patternOf( "/user/list"),
-						patternOf( "/user/address"					,PUT                , setOf(CUSTOMER)),
-						patternOf( "/user/address"					,HttpMethod.DELETE  , setOf(CUSTOMER)),
+						patternOf( "/user/address"						,PUT                , setOf(CUSTOMER)),
+						patternOf( "/user/address"						,HttpMethod.DELETE  , setOf(CUSTOMER)),
 						patternOf( "/user/info"),
-						patternOf( "/user/create"										, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN, STORE_ADMIN) ),
-						patternOf( "/user/update"										, getAllRoles() ),
-						patternOf( "/user/logout"										, getAllRoles() ),
-						patternOf( "/user/logout_all"									, getAllRoles() ),
-						patternOf( "/product/**"					,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
-						patternOf( "/product/**"					,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN)),
-						patternOf( "/product/images"				,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN)),
-						patternOf( "/product/image/bulk/template"						, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/user/create"											, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN, STORE_MANAGER) ),
+						patternOf( "/user/update"											, getAllRoles() ),
+						patternOf( "/user/logout"											, getAllRoles() ),
+						patternOf( "/user/logout_all"										, getAllRoles() ),
+						patternOf( "/product/**"						,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/product/**"						,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/product/images"					,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/product/image/bulk/template"							, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/product/empty_collections"		, HttpMethod.GET	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, NASNAV_ADMIN)),
-						patternOf( "/admin/**"	   	 									, setOf(NASNAV_ADMIN) ),
+						patternOf( "/admin/**"	   	 										, setOf(NASNAV_ADMIN) ),
 						patternOf( "/files/**"),
 						patternOf( "/organization/info"									, setOf(ORGANIZATION_ADMIN)),
-						patternOf( "/organization/brand"								, setOf(ORGANIZATION_ADMIN)),
-						patternOf( "/organization/image"			,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
-						patternOf( "/organization/image"			,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/organization/brand"									, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/organization/image"				,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/organization/image"				,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/products_feature"	,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
-						patternOf( "/organization/tag/**"								, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/organization/tag/**"									, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/organization/tags"									, setOf(ORGANIZATION_ADMIN)),
-						patternOf( "/organization/shipping/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-						patternOf( "/organization/promotions/**"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf( "/organization/shipping/**"								, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf( "/organization/promotions/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/organization/promotion/**"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
 						patternOf( "/organization/themes/class"							, setOf(NASNAV_ADMIN)),
-						patternOf( "/organization/themes"								, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-						patternOf( "/organization/extra_attribute"						, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-						patternOf( "/organization/shops"								, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
-						patternOf( "/organization/settings/**"							, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/organization/themes"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf( "/organization/extra_attribute"							, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf( "/organization/shops"									, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER)),
+						patternOf( "/organization/settings/**"								, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/upload/**"											, setOf(ORGANIZATION_ADMIN)),
-						patternOf( "/export/*"											, setOf(ORGANIZATION_ADMIN)),
-						patternOf( "/integration/import/shops"							, setOf(ORGANIZATION_MANAGER)),
-						patternOf( "/integration/import/products"						, setOf(ORGANIZATION_MANAGER)),
+						patternOf( "/export/*"												, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/integration/import/shops"								, setOf(ORGANIZATION_MANAGER)),
+						patternOf( "/integration/import/products"							, setOf(ORGANIZATION_MANAGER)),
 						patternOf( "/integration/import/product_images"					, setOf(ORGANIZATION_MANAGER)),
-						patternOf( "/integration/module/disable"						, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+						patternOf( "/integration/module/disable"							, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 						patternOf( "/integration/module/enable"							, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
 						patternOf( "/integration/module/**"								, setOf(NASNAV_ADMIN)),
-						patternOf( "/integration/param/**"								, setOf(NASNAV_ADMIN)),
-						patternOf( "/integration/dictionary"							, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
-						patternOf( "/integration/errors"								, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
-						patternOf( "/integration/**"									, setOf(NASNAV_ADMIN)),
-						patternOf( "/cart/**"											, setOf(CUSTOMER)),
-						patternOf( "/shipping/offers"									, setOf(CUSTOMER)),
+						patternOf( "/integration/param/**"									, setOf(NASNAV_ADMIN)),
+						patternOf( "/integration/dictionary"								, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+						patternOf( "/integration/errors"									, setOf(NASNAV_ADMIN, ORGANIZATION_ADMIN)),
+						patternOf( "/integration/**"										, setOf(NASNAV_ADMIN)),
+						patternOf( "/cart/**"												, setOf(CUSTOMER)),
+						patternOf( "/shipping/offers"										, setOf(CUSTOMER)),
 						patternOf( "/**")
 						);
 
@@ -149,7 +149,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     private List<AuthPattern> PUBLIC_URLS =
             	asList(
 						patternOf("/callbacks/**")
-					    , patternOf("/360view/**"							, HttpMethod.GET)
+					    , patternOf("/360view/**"						, HttpMethod.GET)
             			, patternOf("/navbox/**")
                         , patternOf("/user/recover")
                         , patternOf("/user/login/**")
@@ -159,7 +159,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						, patternOf("/user/v2/register/activate/resend")
                         , patternOf("/payment/**")
                         , patternOf("/product/bundles"					, HttpMethod.GET)
-                        , patternOf("/product/info"						, HttpMethod.GET)
+                        , patternOf("/product/info"					, HttpMethod.GET)
                         , patternOf("/product/image"					, HttpMethod.GET)
                         , patternOf("/product/variant"					, HttpMethod.GET)
 		                , patternOf("/organization/payments"			, HttpMethod.GET)
