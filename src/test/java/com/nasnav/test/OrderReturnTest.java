@@ -1,6 +1,7 @@
 package com.nasnav.test;
 
 import static com.nasnav.enumerations.ReturnRequestStatus.RECEIVED;
+import static com.nasnav.enumerations.ReturnRequestStatus.REJECTED;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static com.nasnav.test.commons.TestCommons.jsonArray;
@@ -11,7 +12,11 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
+import com.nasnav.dao.ReturnRequestRepository;
+import com.nasnav.enumerations.ReturnRequestStatus;
+import com.nasnav.persistence.ReturnRequestEntity;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -44,10 +49,10 @@ public class OrderReturnTest {
 
     @Autowired
     private StockRepository stockRepository;
-    
     @Autowired
     private ReturnRequestItemRepository returnRequestItemRepo;
-
+    @Autowired
+    private ReturnRequestRepository returnRequestRepo;
 
     @Test
     public void returnOrderItemUsingBasketItemsSuccess() {
@@ -250,11 +255,24 @@ public class OrderReturnTest {
     @Test
     public void rejectReturnOrderRequest() {
         JSONObject body = json().put("return_request_id", 330031)
-                .put("rejection_reason", "dameged product");
+                .put("rejection_reason", "damaged product");
         HttpEntity request = getHttpEntity(body.toString(), "131415");
 
-        ResponseEntity<String> res = template.postForEntity("/return/reject", request, String.class);
+        ResponseEntity<String> res = template.postForEntity("/order/return/reject", request, String.class);
         assertEquals(200, res.getStatusCodeValue());
 
+        Optional<ReturnRequestEntity> entity = returnRequestRepo.findByIdAndOrganizationIdAndStatus(330031L, 99001L, REJECTED.getValue());
+        assertTrue(entity.isPresent());
+    }
+
+
+    @Test
+    public void rejectReturnOrderRequestConfirmedRequest() {
+        JSONObject body = json().put("return_request_id", 330032)
+                .put("rejection_reason", "damaged product");
+        HttpEntity request = getHttpEntity(body.toString(), "131415");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/reject", request, String.class);
+        assertEquals(406, res.getStatusCodeValue());
     }
 }

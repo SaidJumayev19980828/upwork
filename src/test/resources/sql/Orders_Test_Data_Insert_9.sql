@@ -107,7 +107,7 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 
 
 --inserting orders
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310001 , now(),88, 99001, 1);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status, grand_total) VALUES(310001 , now(),88, 99001, 1, 130.0);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310002 , now(),88, 99001, 1);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310003 , now(),88, 99001, 1);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310004 , now(),88, 99001, 1);
@@ -150,7 +150,7 @@ INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity
 INSERT INTO public.return_request(id, created_on, created_by_employee, meta_order_id, status)
     VALUES(330031, now(), 69, 310001, 0);
 INSERT INTO public.return_request(id, created_on, created_by_employee, meta_order_id, status)
-    VALUES(330032, now(), 69, 310002, 0);
+    VALUES(330032, now(), 69, 310002, 3);
 
 INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
     VALUES(330031, 330031, 330031, 1, now());

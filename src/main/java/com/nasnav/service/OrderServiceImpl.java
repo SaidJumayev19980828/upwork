@@ -40,8 +40,7 @@ import static com.nasnav.enumerations.OrderStatus.findEnum;
 import static com.nasnav.enumerations.PaymentStatus.ERROR;
 import static com.nasnav.enumerations.PaymentStatus.FAILED;
 import static com.nasnav.enumerations.PaymentStatus.UNPAID;
-import static com.nasnav.enumerations.ReturnRequestStatus.RECEIVED;
-import static com.nasnav.enumerations.ReturnRequestStatus.REJECTED;
+import static com.nasnav.enumerations.ReturnRequestStatus.*;
 import static com.nasnav.enumerations.Roles.CUSTOMER;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.Roles.ORGANIZATION_MANAGER;
@@ -96,6 +95,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import com.nasnav.dto.request.ReturnRequestRejectDTO;
+import com.nasnav.enumerations.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -147,12 +147,6 @@ import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.Shipment;
 import com.nasnav.dto.response.navbox.SubOrder;
-import com.nasnav.enumerations.OrderFailedStatus;
-import com.nasnav.enumerations.OrderStatus;
-import com.nasnav.enumerations.PaymentStatus;
-import com.nasnav.enumerations.Roles;
-import com.nasnav.enumerations.ShippingStatus;
-import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
@@ -286,6 +280,7 @@ public class OrderServiceImpl implements OrderService {
 	private ReturnRequestItemRepository returnRequestItemRepo;
 	
 	private Map<OrderStatus, Set<OrderStatus>> orderStateMachine;
+	private Map<ReturnRequestStatus, Set<ReturnRequestStatus>> orderReturnStateMachine;
 	private Set<OrderStatus> orderStatusForCustomers;
 	private Set<OrderStatus> orderStatusForManagers;
 	
@@ -303,6 +298,7 @@ public class OrderServiceImpl implements OrderService {
 		setOrderStatusPermissions();
 		
 		buildOrderStatusTransitionMap();
+		buildOrderReturnStatusTransitionMap();
 	}
 
 
@@ -339,9 +335,14 @@ public class OrderServiceImpl implements OrderService {
 			.put(STORE_PREPARED		, setOf(DISPATCHED, DELIVERED, STORE_CANCELLED))
 			.put(DISPATCHED			, setOf(DELIVERED, STORE_CANCELLED));
 	}
-	
-	
-	
+
+
+	private void buildOrderReturnStatusTransitionMap() {
+		orderReturnStateMachine = new HashMap<>();
+		buildMap(orderReturnStateMachine)
+				.put(ReturnRequestStatus.DRAFT	, setOf(CONFIRMED, REJECTED))
+				.put(CONFIRMED			, setOf(RECEIVED));
+	}
 	
 
 	public OrderValue getOrderValue(OrdersEntity order) {
@@ -1196,8 +1197,14 @@ public class OrderServiceImpl implements OrderService {
 				.orElse(emptySet())
 				.contains(newStatus);
 	}
-	
-	
+
+
+	private boolean canOrderReturnStatusChangeTo(ReturnRequestStatus currentStatus, ReturnRequestStatus newStatus) {
+		return ofNullable(currentStatus)
+				.map(orderReturnStateMachine::get)
+				.orElse(emptySet())
+				.contains(newStatus);
+	}
 	
 
 	private void validateManagerCanSetStatus(OrderStatus newStatus) throws BusinessException {
@@ -3313,7 +3320,7 @@ public class OrderServiceImpl implements OrderService {
 	public void rejectReturnItems(ReturnRequestRejectDTO dto) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		ReturnRequestEntity returnRequest = returnRequestRepo
-				.findByIdAndOrganizationId(dto.getReturnRequestId(), orgId)
+				.findByIdAndOrganizationIdAndStatus(dto.getReturnRequestId(), orgId, ReturnRequestStatus.DRAFT.getValue())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0013, dto.getReturnRequestId()));
 
 		returnRequest.setStatus(REJECTED.getValue());
