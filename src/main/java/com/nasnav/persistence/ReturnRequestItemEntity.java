@@ -1,9 +1,9 @@
 package com.nasnav.persistence;
 
+import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.response.ReturnRequestItemDTO;
 import lombok.Data;
-import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -61,11 +61,19 @@ public class ReturnRequestItemEntity implements BaseEntity {
             dto.setCreatedByEmployee(getCreatedByEmployee().getId());
         }
         if (getBasket() != null) {
-            ProductVariantsEntity variant = getBasket().getStocksEntity().getProductVariantsEntity();
-            String productName = variant.getProductEntity().getName();
+            OrdersEntity subOrder = getBasket().getOrdersEntity();
+            StocksEntity stock = getBasket().getStocksEntity();
+            ProductVariantsEntity variant = stock.getProductVariantsEntity();
+            ProductEntity product = variant.getProductEntity();
+            AddressRepObj address = (AddressRepObj)subOrder.getAddressEntity().getRepresentation();
+            dto.setAddress(address);
             dto.setBasketItem(getBasket().getId());
+            dto.setShopId(stock.getShopsEntity().getId());
+            dto.setPrice(stock.getPrice());
             dto.setVariantId(variant.getId());
-            dto.setProductName(productName);
+            dto.setFeatureSpec(variant.getFeatureSpec());
+            dto.setProductName(product.getName());
+            dto.setProductId(product.getId());
         }
 
         dto.setReceivedQuantity(getReceivedQuantity());

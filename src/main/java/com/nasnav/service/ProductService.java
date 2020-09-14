@@ -1097,7 +1097,7 @@ public class ProductService {
 
 
 	private Map<Long, List<Long>> getProducts360ShopsList(List<Long> productIdList) {
-		return product360ShopsRepo.findByProductEntity_IdIn(productIdList)
+		return product360ShopsRepo.findByProductEntity_IdInAndPublished(productIdList, (short)2)
 				.stream()
 				.collect(groupingBy(ps -> ps.getProductEntity().getId(),
 						 mapping(ps -> ps.getShopEntity().getId(),
