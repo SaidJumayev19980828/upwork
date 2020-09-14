@@ -238,7 +238,7 @@ public class OrderServiceImpl implements OrderService {
 		orderReturnStateMachine = new HashMap<>();
 		buildMap(orderReturnStateMachine)
 				.put(ReturnRequestStatus.NEW	, setOf(CONFIRMED, REJECTED))
-				.put(CONFIRMED			, setOf(RECEIVED));
+				.put(CONFIRMED					, setOf(RECEIVED, REJECTED));
 	}
 	
 
@@ -1061,6 +1061,18 @@ public class OrderServiceImpl implements OrderService {
 		}
 		metaOrderEntity.setStatus(newStatus.getValue());
 		return metaOrderRepo.save(metaOrderEntity);
+	}
+
+
+
+	private ReturnRequestEntity updateReturnRequestStatus(ReturnRequestEntity request, ReturnRequestStatus newStatus){
+		ReturnRequestStatus currentStatus = ReturnRequestStatus.findEnum(request.getStatus());
+
+		if(!canOrderReturnStatusChangeTo(currentStatus, newStatus)){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0018, currentStatus.name(), newStatus.name());
+		}
+		request.setStatus(newStatus.getValue());
+		return returnRequestRepo.save(request);
 	}
 	
 	
@@ -3254,19 +3266,23 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+
 	@Override
-	public void rejectReturnItems(ReturnRequestRejectDTO dto) {
+	@Transactional
+	public void rejectReturnRequest(ReturnRequestRejectDTO dto) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		ReturnRequestEntity returnRequest =
 				returnRequestRepo
 				.findByIdAndOrganizationIdAndStatus(dto.getReturnRequestId(), orgId, ReturnRequestStatus.NEW.getValue())
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, dto.getReturnRequestId()));
 
-		returnRequest.setStatus(REJECTED.getValue());
-		returnRequestRepo.save(returnRequest);
+		updateReturnRequestStatus(returnRequest, REJECTED);
 
 		sendRejectionEmailToCustomer(returnRequest, dto.getRejectionReason(), orgId);
 	}
+
+
+
 
 	@Override
 	@Transactional
@@ -3807,12 +3823,23 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
+	@Transactional
 	public void confirmReturnRequest(Long id) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		ReturnRequestEntity request =
 				returnRequestRepo
 				.findByReturnRequestId(id, orgId)
 						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, id));
+		updateReturnRequestStatus(request, CONFIRMED);
+		shippingMgrService
+				.requestReturnShipments(request)
+				.subscribe(tracker -> sendReturnRequestConfirmationEmail(request, tracker));
+	}
+
+
+
+	private void sendReturnRequestConfirmationEmail(ReturnRequestEntity request, ShipmentTracker tracker) {
+
 	}
 }
 

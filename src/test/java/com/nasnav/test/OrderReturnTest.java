@@ -5,18 +5,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
 import com.nasnav.dao.ReturnRequestItemRepository;
 import com.nasnav.dao.ReturnRequestRepository;
+import com.nasnav.dao.ShipmentRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.response.ReturnRequestDTO;
+import com.nasnav.enumerations.ReturnRequestStatus;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.ReturnRequestEntity;
 import com.nasnav.persistence.ReturnRequestItemEntity;
+import com.nasnav.persistence.ShipmentEntity;
+import com.nasnav.service.MailService;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
@@ -24,13 +30,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.mail.MessagingException;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
 import static com.nasnav.enumerations.ReturnRequestStatus.*;
+import static com.nasnav.service.OrderService.BILL_EMAIL_SUBJECT;
+import static com.nasnav.service.OrderService.ORDER_RETURN_CONFIRM_SUBJECT;
 import static com.nasnav.test.commons.TestCommons.*;
+import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.*;
@@ -64,6 +76,12 @@ public class OrderReturnTest {
 
     @Autowired
     private ReturnRequestRepository returnRequestRepo;
+
+    @MockBean
+    private MailService mailService;
+
+    @Autowired
+    private ShipmentRepository shipmentRepo;
 
     @Test
     public void returnOrderItemUsingBasketItemsSuccess() {
@@ -640,7 +658,7 @@ public class OrderReturnTest {
         HttpEntity<?> request = getHttpEntity("131415");
 
         ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
-        assertEquals(200, res.getStatusCodeValue());
+        assertEquals(406, res.getStatusCodeValue());
     }
 
 
@@ -649,11 +667,34 @@ public class OrderReturnTest {
     @Test
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_10.sql"})
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-    public void confirmReturnRequestTest(){
+    public void confirmReturnRequestTest() throws MessagingException {
         Long id= 450001L;
+        ReturnRequestEntity entityBefore = returnRequestRepo.findById(id).get();
+        assertEquals(NEW.getValue(), entityBefore.getStatus());
+        //-----------------------------------------------
+
         HttpEntity<?> request = getHttpEntity("131415");
 
         ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
+        //-----------------------------------------------
         assertEquals(200, res.getStatusCodeValue());
+
+        ReturnRequestEntity entity = returnRequestRepo.findById(id).get();
+        assertEquals(CONFIRMED.getValue(), entity.getStatus());
+
+        List<ShipmentEntity> shipments = shipmentRepo.findByReturnRequest_Id(id);
+        assertEquals("each item was from different shop, so each will have " +
+                "separate shipment , the same as how they are shipped to customer"
+                ,2, shipments.size());
+        boolean allHaveNoFee = shipments.stream().allMatch(shp -> Objects.equals(shp.getShippingFee(), ZERO));
+        assertTrue("For now, return shipments are globally free", allHaveNoFee);
+
+        Mockito
+            .verify(mailService)
+            .sendThymeleafTemplateMail(
+                    Mockito.eq("user1@nasnav.com")
+                    , Mockito.eq(ORDER_RETURN_CONFIRM_SUBJECT)
+                    , Mockito.anyString()
+                    , Mockito.anyMap());
     }
 }

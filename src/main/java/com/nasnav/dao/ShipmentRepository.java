@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,4 +21,6 @@ public interface ShipmentRepository extends JpaRepository<ShipmentEntity, Long> 
                                                                          @Param("orgId") Long orgId);
 
     ShipmentEntity findBySubOrder_Id(Long subOrderId);
+
+    List<ShipmentEntity> findByReturnRequest_Id(Long id);
 }

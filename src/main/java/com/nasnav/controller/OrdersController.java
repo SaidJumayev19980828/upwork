@@ -258,7 +258,7 @@ public class OrdersController {
 	@PostMapping(value = "return/reject")
 	public void rejectReturnItems(@RequestHeader(name = "User-Token", required = false) String userToken,
 								  @RequestBody ReturnRequestRejectDTO dto) {
-		orderService.rejectReturnItems(dto);
+		orderService.rejectReturnRequest(dto);
 	}
 
 

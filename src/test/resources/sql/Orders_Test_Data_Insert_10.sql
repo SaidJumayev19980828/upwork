@@ -15,13 +15,16 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (103, 2
 INSERT INTO public.categories(id, name) VALUES (201, 'category_1');
 INSERT INTO public.categories(id, name) VALUES (202, 'category_2');
 
+-- insert addresses
+INSERT INTO public.addresses(id, address_line_1) values(12300001, 'address line');
+
 --inserting shops
-INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (501, 'shop_1', 102, 99001, 0);
-INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (502, 'shop_2', 101, 99001, 0);
-INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (503, 'shop_3', 102, 99001, 0);
-INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (504, 'shop_4', 103, 99001, 0);
-INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (505, 'shop_5', 101, 99001, 0);
-INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (506, 'shop_6', 102, 99002, 0);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, address_id) VALUES (501, 'shop_1', 102, 99001, 0, 12300001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, address_id) VALUES (502, 'shop_2', 101, 99001, 0, 12300001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, address_id) VALUES (503, 'shop_3', 102, 99001, 0, 12300001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, address_id) VALUES (504, 'shop_4', 103, 99001, 0, 12300001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, address_id) VALUES (505, 'shop_5', 101, 99001, 0, 12300001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, removed, address_id) VALUES (506, 'shop_6', 102, 99002, 0, 12300001);
 
 --inserting users
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
@@ -36,8 +39,6 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 
 
 -- insert user addresses
-INSERT INTO public.addresses(id, address_line_1) values(12300001, 'address line');
-
 INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 
 
@@ -107,7 +108,7 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(602, 502, 10, 99001, 70.0, 310002);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(603, 502, 5, 99001, 0.0, 310003);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(604, 503, 5, 99001, 0.0, 310004);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(605, 506, 5, 99001, 0.0, 310005);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(605, 505, 5, 99001, 0.0, 310005);
 
 
 --inserting orders
@@ -129,6 +130,8 @@ insert into public.orders(id,user_id,created_at, updated_at, organization_id,sta
 values(330035, 88, now() - INTERVAL '100 DAY', now() - INTERVAL '100 DAY', 99001, 1, 502, 310003, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
 values(330036, 88, now(), now(), 99001, 1, 502, 310004, 12300001);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
+values(330037, 88, now(), now(), 99001, 1, 505, 310004, 12300001);
 
 INSERT INTO public.shipment
 (sub_order_id, shipping_service_id, parameters, created_at, updated_at, status)
@@ -143,7 +146,7 @@ INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VAL
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330032, 330032, 605, 2, 70.0, 1);
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330035, 330035, 604, 3, 70.0, 1);
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330036, 330036, 604, 3, 70.0, 1);
-INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330037, 330036, 601, 3, 70.0, 1);
+INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330037, 330037, 601, 3, 70.0, 1);
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330038, 330036, 602, 3, 70.0, 1);
 
 
@@ -158,3 +161,5 @@ INSERT INTO public.return_request(id, created_on, created_by_user, meta_order_id
 
 INSERT INTO public.return_request_item(return_request_id, order_item_id, returned_quantity, received_quantity, received_by, received_on, created_by_user, created_by_employee)
 VALUES(450001, 330036, 1, 1, null, now(), 88, null);
+INSERT INTO public.return_request_item(return_request_id, order_item_id, returned_quantity, received_quantity, received_by, received_on, created_by_user, created_by_employee)
+VALUES(450001, 330037, 1, 1, null, now(), 88, null);

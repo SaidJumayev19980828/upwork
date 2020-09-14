@@ -47,6 +47,7 @@ import java.util.Optional;
 
 import javax.transaction.Transactional;
 
+import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
@@ -75,22 +76,6 @@ import com.nasnav.dto.request.shipping.ShippingServiceRegistration;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.AddressesEntity;
-import com.nasnav.persistence.AreasEntity;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BasketsEntity;
-import com.nasnav.persistence.CitiesEntity;
-import com.nasnav.persistence.CountriesEntity;
-import com.nasnav.persistence.MetaOrderEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.OrganizationShippingServiceEntity;
-import com.nasnav.persistence.PaymentEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.ShipmentEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.persistence.dto.query.result.CartItemShippingData;
 import com.nasnav.service.model.common.Parameter;
@@ -941,7 +926,14 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 				.map(ServiceParameter::getValue)
 				.findFirst();
 	}
-	
+
+
+
+	@Override
+	public Flux<ShipmentTracker> requestReturnShipments(ReturnRequestEntity returnRequest) {
+		return Flux.empty();
+	}
+
 }
 
 
