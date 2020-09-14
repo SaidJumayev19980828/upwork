@@ -3788,22 +3788,24 @@ public class OrderServiceImpl implements OrderService {
 				.map(i -> (ReturnRequestItemDTO)i.getRepresentation())
 				.collect(toSet());
 
-		requestItems = setReturnRequestItemVariantsCoverImage(requestItems);
+		requestItems = setReturnRequestItemVariantsAdditionalData(requestItems);
 		dto.setReturnedItems(requestItems);
 
 		return dto;
 	}
 
 
-	private Set<ReturnRequestItemDTO> setReturnRequestItemVariantsCoverImage(Set<ReturnRequestItemDTO> requestItems) {
+	private Set<ReturnRequestItemDTO> setReturnRequestItemVariantsAdditionalData(Set<ReturnRequestItemDTO> requestItems) {
 		List<Long> variantsIds = requestItems
 				.stream()
 				.map(ReturnRequestItemDTO::getVariantId)
 				.collect(toList());
 
-		Map<Long, Optional<String>> images = imgService.getVariantsCoverImages(variantsIds);
 
+		Map<Long, Optional<String>> images = imgService.getVariantsCoverImages(variantsIds);
 		for(ReturnRequestItemDTO dto : requestItems) {
+			Map<String, String> variantFeatures = parseVariantFeatures(dto.getFeatureSpec(), 0);
+			dto.setVariantFeatures(variantFeatures);
 			Optional<String> image = images.get(dto.getVariantId());
 			if(image.isPresent()){
 				dto.setCoverImage(image.get());

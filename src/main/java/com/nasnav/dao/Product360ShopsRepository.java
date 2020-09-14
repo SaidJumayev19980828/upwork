@@ -31,7 +31,7 @@ public interface Product360ShopsRepository extends JpaRepository<Shop360Products
     @Query("select ps from Shop360ProductsEntity ps where ps.shopEntity.id = :id and ps.published = 1")
     List<Shop360ProductsEntity> findProductsPositionsByShopId(@Param("id") Long id);
 
-    List<Shop360ProductsEntity> findByProductEntity_IdIn(@Param("id") List<Long> ids);
+    List<Shop360ProductsEntity> findByProductEntity_IdInAndPublished(List<Long> ids, Short published);
 
     @Transactional
     @Modifying
