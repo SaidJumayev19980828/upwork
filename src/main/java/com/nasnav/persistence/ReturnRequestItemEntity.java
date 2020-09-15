@@ -6,6 +6,7 @@ import com.nasnav.dto.response.ReturnRequestItemDTO;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -61,15 +62,17 @@ public class ReturnRequestItemEntity implements BaseEntity {
             dto.setCreatedByEmployee(getCreatedByEmployee().getId());
         }
         if (getBasket() != null) {
-            OrdersEntity subOrder = getBasket().getOrdersEntity();
-            StocksEntity stock = getBasket().getStocksEntity();
+            BasketsEntity basket = getBasket();
+            OrdersEntity subOrder = basket.getOrdersEntity();
+            StocksEntity stock = basket.getStocksEntity();
             ProductVariantsEntity variant = stock.getProductVariantsEntity();
             ProductEntity product = variant.getProductEntity();
             AddressRepObj address = (AddressRepObj)subOrder.getAddressEntity().getRepresentation();
+            BigDecimal totalPrice = basket.getPrice().subtract(basket.getDiscount()).multiply( new BigDecimal(getReturnedQuantity()));
             dto.setAddress(address);
             dto.setBasketItem(getBasket().getId());
             dto.setShopId(stock.getShopsEntity().getId());
-            dto.setPrice(getBasket().getPrice());
+            dto.setPrice(totalPrice);
             dto.setVariantId(variant.getId());
             dto.setFeatureSpec(variant.getFeatureSpec());
             dto.setProductName(product.getName());
