@@ -3790,7 +3790,6 @@ public class OrderServiceImpl implements OrderService {
 
 		requestItems = setReturnRequestItemVariantsAdditionalData(requestItems);
 		dto.setReturnedItems(requestItems);
-		dto.setSubTotal(getReturnItemsTotalPrice(requestItems));
 
 		return dto;
 	}
@@ -3813,13 +3812,6 @@ public class OrderServiceImpl implements OrderService {
 			}
 		}
 		return requestItems;
-	}
-
-	private BigDecimal getReturnItemsTotalPrice(Set<ReturnRequestItemDTO> requestItems) {
-		return requestItems
-				.stream()
-				.map(ReturnRequestItemDTO::getPrice)
-				.reduce(ZERO, BigDecimal::add);
 	}
 }
 
