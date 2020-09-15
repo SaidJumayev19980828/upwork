@@ -44,6 +44,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
+import com.nasnav.shipping.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,23 +53,9 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.nasnav.commons.model.IndexedData;
-import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.service.model.common.Parameter;
 import com.nasnav.shipping.ShippingService;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.Shipment;
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShipmentReceiver;
-import com.nasnav.shipping.model.ShipmentStatusData;
-import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShipmentValidation;
-import com.nasnav.shipping.model.ShippingAddress;
-import com.nasnav.shipping.model.ShippingDetails;
-import com.nasnav.shipping.model.ShippingEta;
-import com.nasnav.shipping.model.ShippingOffer;
-import com.nasnav.shipping.model.ShippingPeriod;
-import com.nasnav.shipping.model.ShippingServiceInfo;
 import com.nasnav.shipping.services.bosta.webclient.BostaWebClient;
 import com.nasnav.shipping.services.bosta.webclient.dto.Address;
 import com.nasnav.shipping.services.bosta.webclient.dto.BostaCallbackDTO;
@@ -96,7 +83,12 @@ public class BostaLevisShippingService implements ShippingService{
 	public static final BigDecimal FLAT_RATE = new BigDecimal("25.00");
 	private static final ShippingPeriod DEFUALT_SHIPPING_PERIOD = 
 			new ShippingPeriod(Period.ofDays(1), Period.ofDays(4));
-	
+	public static final String RETURN_EMAIL_MSG =
+			"Thanks for patience! " +
+			"Our delivery agents will contact you soon to receive the items from you." +
+			"Please make sure to print the attached airway bills and provide them to the " +
+			"delivery agent.";
+
 	public static final String AUTH_TOKEN_PARAM = "AUTH_TOKEN";
 	public static final String BUSINESS_ID_PARAM = "BUSINESS_ID";
 	public static final String SERVER_URL = "SERVER_URL";
@@ -250,11 +242,9 @@ public class BostaLevisShippingService implements ShippingService{
 				.fromIterable(shipments)
 				.flatMap(this::requestSingleShipment);
 	}
-	
-	
-	
-	
-	
+
+
+
 	private Mono<ShipmentTracker> requestSingleShipment(ShippingDetails shipment) {
 		String serverUrl = 
 				ofNullable(paramMap.get(SERVER_URL))
@@ -585,6 +575,16 @@ public class BostaLevisShippingService implements ShippingService{
 			return state;
 		}
 	}
+
+
+
+	@Override
+	public Flux<ReturnShipmentTracker> requestReturnShipment(List<ShippingDetails> items) {
+		return requestShipment(items)
+				.map(shpTracker -> new ReturnShipmentTracker(shpTracker, RETURN_EMAIL_MSG));
+	}
+
+
 }
 
 

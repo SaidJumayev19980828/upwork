@@ -13,6 +13,7 @@ import com.nasnav.persistence.OrganizationShippingServiceEntity;
 import com.nasnav.persistence.ReturnRequestEntity;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.shipping.ShippingService;
+import com.nasnav.shipping.model.ReturnShipmentTracker;
 import com.nasnav.shipping.model.ServiceParameter;
 import com.nasnav.shipping.model.ShipmentTracker;
 import com.nasnav.shipping.model.ShippingDetails;
@@ -35,6 +36,6 @@ public interface ShippingManagementService {
 	void updateShipmentStatus(String serviceId, Long orgId, String params) throws IOException;
 	List<ShippingServiceRegistration> listShippingServices();
 	Optional<String> getShippingServiceCartOptimizer(String shippingServiceId);
-	Flux<ShipmentTracker> requestReturnShipments(ReturnRequestEntity returnRequest);
+	Flux<ReturnShipmentTracker> requestReturnShipments(ReturnRequestEntity returnRequest);
 
 }

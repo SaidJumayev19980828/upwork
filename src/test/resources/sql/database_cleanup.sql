@@ -8,10 +8,19 @@ DELETE FROM public.products_extra_attributes WHERE extra_attribute_id IN (SELECT
 DELETE FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.role_employee_users WHERE employee_user_id IN (SELECT id FROM public.employee_users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.product_bundles WHERE product_id IN (SELECT id FROM public.products WHERE organization_id BETWEEN 99000 AND 99999);
-DELETE FROM public.shipment where id IN ( 
+
+DELETE FROM public.shipment where id IN (
 	SELECT shp.id FROM public.shipment shp 
 	LEFT JOIN public.orders ord on shp.sub_order_id = ord.id 
-	WHERE ord.organization_id BETWEEN 99000 AND 99999);
+	WHERE ord.organization_id BETWEEN 99000 AND 99999)
+	or id in(
+	    select shp2.id from public.shipment shp2
+	    left join public.return_request req
+	    on shp2.return_request_id = req.id
+	    left join public.meta_orders meta
+	    on req.meta_order_id = meta.id
+        where meta.organization_id BETWEEN 99000 AND 99999
+	);
 DELETE FROM public.organization_shipping_service WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.shipping_service;
 DELETE FROM meta_orders_promotions;

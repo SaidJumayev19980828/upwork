@@ -15,7 +15,9 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Stream;
 
+import com.nasnav.shipping.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,15 +26,6 @@ import com.nasnav.dto.DummyCallbackDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.service.model.common.Parameter;
 import com.nasnav.shipping.ShippingService;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.Shipment;
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShipmentStatusData;
-import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingDetails;
-import com.nasnav.shipping.model.ShippingEta;
-import com.nasnav.shipping.model.ShippingOffer;
-import com.nasnav.shipping.model.ShippingServiceInfo;
 
 import lombok.Getter;
 import reactor.core.publisher.Flux;
@@ -45,6 +38,7 @@ public class DummyShippingService implements ShippingService {
 	private static final String NAME = "Dummy shipping service";
 	private static final String BILL_FILE= "NOT EMPTY";
 	public static final int BILL_FILE_SIZE = BILL_FILE.length();
+	public static final String RETURN_EMAIL_MSG = "TEST.. TEST .. YOU WILL GET NOTHING!!!!";
 	
 	@Getter
 	private List<ServiceParameter> serviceParameters;
@@ -79,12 +73,20 @@ public class DummyShippingService implements ShippingService {
 	
 	@Override
 	public Flux<ShipmentTracker> requestShipment(List<ShippingDetails> items) {
+		ShipmentTracker tracker = createRandomShipmentTracker();
+		return Flux.fromIterable(asList(tracker));
+	}
+
+
+
+	private ShipmentTracker createRandomShipmentTracker() {
 		ShipmentTracker tracker = new ShipmentTracker();
 		tracker.setShipmentExternalId(randomUUID().toString());
 		tracker.setTracker(randomUUID().toString());
 		tracker.setAirwayBillFile("NOT EMPTY");
-		return Flux.fromIterable(asList(tracker));
+		return tracker;
 	}
+
 
 	@Override
 	public void validateShipment(List<ShippingDetails> items) {
@@ -136,6 +138,16 @@ public class DummyShippingService implements ShippingService {
 	public void setServiceParameters(List<ServiceParameter> params) {
 		this.serviceParameters = params;
 	}
-	
+
+
+
+	@Override
+	public Flux<ReturnShipmentTracker> requestReturnShipment(List<ShippingDetails> items) {
+		Stream<ReturnShipmentTracker> stream = items
+				.stream()
+				.map(itm -> createRandomShipmentTracker())
+				.map(shpTracker -> new ReturnShipmentTracker(shpTracker, RETURN_EMAIL_MSG));
+		return Flux.fromStream(stream);
+	}
 
 }

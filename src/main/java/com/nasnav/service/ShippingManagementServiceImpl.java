@@ -3,22 +3,8 @@ package com.nasnav.service;
 import static com.nasnav.commons.utils.EntityUtils.firstExistingValueOf;
 import static com.nasnav.controller.PaymentControllerCoD.COD_OPERATOR;
 import static com.nasnav.enumerations.OrderStatus.DISPATCHED;
-import static com.nasnav.enumerations.ShippingStatus.EN_ROUTE;
-import static com.nasnav.enumerations.ShippingStatus.PICKED_UP;
-import static com.nasnav.exceptions.ErrorCodes.ADDR$ADDR$0002;
-import static com.nasnav.exceptions.ErrorCodes.O$CFRM$0003;
-import static com.nasnav.exceptions.ErrorCodes.O$SHP$0001;
-import static com.nasnav.exceptions.ErrorCodes.ORG$SHIP$0001;
-import static com.nasnav.exceptions.ErrorCodes.S$0004;
-import static com.nasnav.exceptions.ErrorCodes.SHP$OFFR$0001;
-import static com.nasnav.exceptions.ErrorCodes.SHP$PARS$0001;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0003;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0006;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0007;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0008;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0009;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SVC$0001;
-import static com.nasnav.exceptions.ErrorCodes.SHP$USR$0001;
+import static com.nasnav.enumerations.ShippingStatus.*;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.service.model.common.ParameterType.STRING;
 import static com.nasnav.shipping.model.CommonServiceParameters.CART_OPTIMIZER;
 import static java.lang.String.format;
@@ -39,15 +25,12 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import javax.transaction.Transactional;
 
 import com.nasnav.persistence.*;
+import com.nasnav.shipping.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
@@ -82,16 +65,6 @@ import com.nasnav.service.model.common.Parameter;
 import com.nasnav.service.model.common.ParameterType;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.Shipment;
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShipmentReceiver;
-import com.nasnav.shipping.model.ShipmentStatusData;
-import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingAddress;
-import com.nasnav.shipping.model.ShippingDetails;
-import com.nasnav.shipping.model.ShippingOffer;
-import com.nasnav.shipping.model.ShippingServiceInfo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -150,6 +123,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	
 	@Autowired
 	private PaymentsRepository paymentRepo;
+
 
 	@Override
 	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
@@ -634,6 +608,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	}
 
 
+
     private boolean isPaidByCashOnDelivery(OrdersEntity subOrder) {
 		return ofNullable(subOrder)
 				.map(OrdersEntity::getMetaOrder)
@@ -930,8 +905,140 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 
 	@Override
-	public Flux<ShipmentTracker> requestReturnShipments(ReturnRequestEntity returnRequest) {
-		return Flux.empty();
+	public Flux<ReturnShipmentTracker> requestReturnShipments(ReturnRequestEntity returnRequest) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+
+		List<ShippingDetails> shippingDetails = createShippingDetailsFromReturnRequest(returnRequest);
+		String shippingServiceId = getShippingServiceId(returnRequest);
+		return ofNullable(shippingServiceId)
+				.flatMap(serviceId -> orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, serviceId))
+				.flatMap(this::getShippingService)
+				.map(service -> service.requestReturnShipment(shippingDetails))
+				.map(trackersFlux -> createNewReturnShipmentsForReturnRequest(returnRequest, trackersFlux, shippingServiceId))
+				.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0004, returnRequest.getId()));
+	}
+
+
+
+
+	private Flux<ReturnShipmentTracker> createNewReturnShipmentsForReturnRequest(ReturnRequestEntity returnRequest
+			, Flux<ReturnShipmentTracker> trackersFlux, String shippingServiceId) {
+		return trackersFlux
+				.doOnNext( tracker -> createShipmentEntity(returnRequest, tracker, shippingServiceId));
+	}
+
+
+
+	private ShipmentEntity createShipmentEntity(ReturnRequestEntity returnRequest, ReturnShipmentTracker tracker, String shippingServiceId) {
+		ShipmentEntity shipment = new ShipmentEntity();
+		shipment.setExternalId(tracker.getShipmentExternalId());
+		shipment.setReturnRequest(returnRequest);
+		shipment.setShippingFee(ZERO);
+		shipment.setShippingServiceId(shippingServiceId);
+		shipment.setStatus(REQUSTED.getValue());
+		shipment.setTrackNumber(tracker.getTracker());
+		shipment.setSubOrder();
+		return shipmentRepo.save(shipment);
+	}
+
+
+
+	private List<OrdersEntity> getReturnRequestSubOrders(ReturnRequestEntity returnRequest) {
+		return returnRequest
+				.getReturnedItems()
+				.stream()
+				.map(ReturnRequestItemEntity::getBasket)
+				.map(BasketsEntity::getOrdersEntity)
+				.collect(toList());
+	}
+
+
+
+
+	private String getShippingServiceId(ReturnRequestEntity returnRequest) {
+		return getReturnRequestSubOrders(returnRequest)
+				.stream()
+				.map(OrdersEntity::getShipment)
+				.map(ShipmentEntity::getShippingServiceId)
+				.findFirst()
+				.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0004, returnRequest.getId()));
+	}
+
+
+
+	private List<ShippingDetails> createShippingDetailsFromReturnRequest(ReturnRequestEntity returnRequest) {
+		return returnRequest
+				.getReturnedItems()
+				.stream()
+				.map(ReturnRequestItemEntity::getBasket)
+				.collect(
+						collectingAndThen(
+							groupingBy(item -> item.getOrdersEntity().getId())
+							, itemsMap -> createShippingDetailsFromReturnRequestItems(returnRequest, itemsMap)));
+	}
+
+
+
+
+	private List<ShippingDetails> createShippingDetailsFromReturnRequestItems(ReturnRequestEntity returnRequest, Map<Long, List<BasketsEntity>> itemsMap) {
+		return itemsMap
+				.values()
+				.stream()
+				.map(items -> createShippingDetailsFromBasketItems(returnRequest, items))
+				.collect(toList());
+	}
+
+
+
+
+	private ShippingDetails createShippingDetailsFromBasketItems(ReturnRequestEntity returnRequest, List<BasketsEntity> orderItems) {
+		OrdersEntity subOrder =
+				orderItems
+					.stream()
+						.map(BasketsEntity::getOrdersEntity)
+						.findFirst()
+						.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0004, returnRequest.getId()));
+		List<ShipmentItems> items =
+				orderItems
+						.stream()
+						.map(this::createShipmentItem)
+						.collect(toList());
+
+		ShippingDetails shippingData = new ShippingDetails();
+		ShippingAddress customerAddr = createShippingAddress(subOrder.getAddressEntity());
+		ShippingAddress shopAddr = createShippingAddress(subOrder.getShopsEntity().getAddressesEntity());
+		ShipmentReceiver receiver = createReturnShipmentReceiver(subOrder);
+		String callBackUrl = createCallBackUrl(subOrder);
+		Long metaOrderId =
+				ofNullable(subOrder)
+						.map(OrdersEntity::getMetaOrder)
+						.map(MetaOrderEntity::getId)
+						.orElse(null);
+
+		shippingData.setAdditionalData(emptyMap());
+		shippingData.setDestination(shopAddr);
+		shippingData.setReceiver(receiver);
+		shippingData.setSource(customerAddr);
+		shippingData.setItems(items);
+		shippingData.setSubOrderId(subOrder.getId());
+		shippingData.setMetaOrderId(metaOrderId);
+		shippingData.setCallBackUrl(callBackUrl);
+		shippingData.setShopId(subOrder.getShopsEntity().getId());
+		return shippingData;
+	}
+
+
+
+	private ShipmentReceiver createReturnShipmentReceiver(OrdersEntity order) {
+		Long userId = order.getUserId();
+		ShopsEntity shop = order.getShopsEntity();
+
+		ShipmentReceiver receiver = new ShipmentReceiver();
+		receiver.setEmail(null);
+		receiver.setFirstName(shop.getName());
+		receiver.setLastName(" ");
+		receiver.setPhone(shop.getPhoneNumber());
+		return receiver;
 	}
 
 }
@@ -950,3 +1057,13 @@ class ShopAndItsAddress{
 		return EntityUtils.anyIsNull(shopId, addressId);
 	}
 }
+
+
+@Data
+class ReturnShipmentData{
+	private ReturnRequestEntity request;
+	private String shippingServiceId;
+	private String trackNumber;
+	private String externalId;
+}
+

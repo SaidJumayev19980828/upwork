@@ -667,7 +667,7 @@ public class OrderReturnTest {
     @Test
     @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_10.sql"})
     @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-    public void confirmReturnRequestTest() throws MessagingException {
+    public void confirmReturnRequestTest() throws MessagingException, InterruptedException {
         Long id= 450001L;
         ReturnRequestEntity entityBefore = returnRequestRepo.findById(id).get();
         assertEquals(NEW.getValue(), entityBefore.getStatus());
@@ -676,6 +676,7 @@ public class OrderReturnTest {
         HttpEntity<?> request = getHttpEntity("131415");
 
         ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
+        Thread.sleep(1000);
         //-----------------------------------------------
         assertEquals(200, res.getStatusCodeValue());
 
@@ -686,7 +687,7 @@ public class OrderReturnTest {
         assertEquals("each item was from different shop, so each will have " +
                 "separate shipment , the same as how they are shipped to customer"
                 ,2, shipments.size());
-        boolean allHaveNoFee = shipments.stream().allMatch(shp -> Objects.equals(shp.getShippingFee(), ZERO));
+        boolean allHaveNoFee = shipments.stream().allMatch(shp ->shp.getShippingFee().compareTo(ZERO) == 0);
         assertTrue("For now, return shipments are globally free", allHaveNoFee);
 
         Mockito

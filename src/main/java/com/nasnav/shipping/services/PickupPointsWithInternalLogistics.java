@@ -26,6 +26,7 @@ import java.util.stream.StreamSupport;
 
 import javax.annotation.PostConstruct;
 
+import com.nasnav.shipping.model.*;
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.thymeleaf.context.Context;
@@ -45,15 +46,6 @@ import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.service.SecurityService;
 import com.nasnav.service.model.common.Parameter;
 import com.nasnav.shipping.ShippingService;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.Shipment;
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShipmentStatusData;
-import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingDetails;
-import com.nasnav.shipping.model.ShippingEta;
-import com.nasnav.shipping.model.ShippingOffer;
-import com.nasnav.shipping.model.ShippingServiceInfo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -67,7 +59,11 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 	public static final String WAREHOUSE_ID = "WAREHOUSE_ID";
 	public static final String SHOP_ID = "SHOP_ID";
 	public static final String PICKUP_POINTS_ID_LIST = "PICKUP_POINTS_ID_LIST";
-	
+	public static final String RETURN_EMAIL_MSG =
+			"Thanks for you patience! To complete the return process, please return " +
+					" the items back to shop and provide the sellers with this email!";
+
+
 	private static List<Parameter> SERVICE_PARAM_DEFINITION = 
 			asList(new Parameter(WAREHOUSE_ID, NUMBER)
 					, new Parameter(PICKUP_POINTS_ID_LIST, LONG_ARRAY));
@@ -233,8 +229,9 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 		return Flux.just(tracker);
 	}
 
-	
-	
+
+
+
 	private String createShipmentReport(List<ShippingDetails> shipmentDetails) {
 		List<ShipmentData> shipments = createShipmentReportData(shipmentDetails);
 		String report = processReportTemplate(shipments);
@@ -384,6 +381,12 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 		return status;
 	}
 
+
+
+	@Override
+	public Flux<ReturnShipmentTracker> requestReturnShipment(List<ShippingDetails> items) {
+		return Flux.fromIterable(asList(new ReturnShipmentTracker(RETURN_EMAIL_MSG)));
+	}
 }
 
 
