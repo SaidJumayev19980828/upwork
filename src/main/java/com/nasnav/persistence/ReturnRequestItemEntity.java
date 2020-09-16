@@ -9,6 +9,9 @@ import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import static java.math.BigDecimal.ZERO;
+import static java.util.Optional.ofNullable;
+
 @Entity
 @Table(name="return_request_item")
 @Data
@@ -68,7 +71,8 @@ public class ReturnRequestItemEntity implements BaseEntity {
             ProductVariantsEntity variant = stock.getProductVariantsEntity();
             ProductEntity product = variant.getProductEntity();
             AddressRepObj address = (AddressRepObj)subOrder.getAddressEntity().getRepresentation();
-            BigDecimal totalPrice = basket.getPrice().subtract(basket.getDiscount()).multiply( new BigDecimal(getReturnedQuantity()));
+            BigDecimal discount = ofNullable(basket.getDiscount()).orElse(ZERO);
+            BigDecimal totalPrice = basket.getPrice().subtract(discount).multiply( new BigDecimal(getReturnedQuantity()));
             dto.setAddress(address);
             dto.setBasketItem(getBasket().getId());
             dto.setShopId(stock.getShopsEntity().getId());
