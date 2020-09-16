@@ -8,6 +8,7 @@ import com.nasnav.enumerations.ReturnRequestStatus;
 import com.nasnav.persistence.ReturnRequestItemEntity;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -24,6 +25,7 @@ public class ReturnRequestDTO extends BaseRepresentationObject {
     private String userName;
     private String phoneNumber;
     Set<ReturnRequestItemDTO> returnedItems;
+    private BigDecimal subTotal;
 
     public ReturnRequestDTO() {
         returnedItems = new HashSet<>();
