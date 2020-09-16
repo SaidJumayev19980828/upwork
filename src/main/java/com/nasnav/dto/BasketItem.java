@@ -31,6 +31,7 @@ public class BasketItem {
     private BigDecimal discount;
     private Long variantId;
     private String variantName;
+    private Boolean isReturnable;
     
     @JsonIgnore
     private String currency;

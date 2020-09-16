@@ -190,7 +190,7 @@ public class OrdersController {
 	
 	
 	
-	@ApiOperation(value = "Confirm an order", nickname = "orderConfirm")
+	@ApiOperation(value = "Reject an order", nickname = "orderReject")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Order Confirmed"),
             @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),

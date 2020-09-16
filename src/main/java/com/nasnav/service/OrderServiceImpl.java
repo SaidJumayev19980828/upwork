@@ -1419,6 +1419,7 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal discountPercentage = calculatePercentage(discount, price);
 		String thumb = variantsCoverImages.get(variant.getId()).orElse(null);
 		String currency = ofNullable(TransactionCurrency.getTransactionCurrency(entity.getCurrency())).orElse(EGP).name();
+		Boolean isReturnable = this.isReturnable(entity);
 
 		BasketItem item = new BasketItem();
 		item.setId(entity.getId());
@@ -1437,6 +1438,7 @@ public class OrderServiceImpl implements OrderService {
 		item.setProductType(product.getProductType());
 		item.setVariantId(variant.getId());
 		item.setVariantName(variant.getName());
+		item.setIsReturnable(isReturnable);
 		//TODO set item unit //
 
 		return item;
@@ -2346,12 +2348,14 @@ public class OrderServiceImpl implements OrderService {
 		Order orderDto = setMetaOrderBasicData(order);
 
 		List<SubOrder> subOrders = 	createSubOrderDtoList(order, variantsCoverImages);
+		Boolean isCancelable = isCancelable(order);
 
 		orderDto.setSubOrders(subOrders);
 		orderDto.setSubtotal(order.getSubTotal());
 		orderDto.setShipping(order.getShippingTotal());
 		orderDto.setTotal(order.getGrandTotal());
 		orderDto.setDiscount(order.getDiscounts());
+		orderDto.setIsCancelable(isCancelable);
 		return orderDto;
 	}
 
@@ -3245,27 +3249,36 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private void validateOrderForCancellation(MetaOrderEntity order) {
-		List<OrderStatus> acceptedStatuses = asList(CLIENT_CONFIRMED, FINALIZED);
 		Long currentUser = securityService.getCurrentUser().getId();
 		if(!Objects.equals(order.getUser().getId(), currentUser)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0003, order.getId());
 		}
-		OrderStatus status =
-				ofNullable(order.getStatus())
-				.map(OrderStatus::findEnum)
-				.orElse(CLIENT_CONFIRMED);
-		boolean areAllSubOrdersFinalized = 
-				order
-				.getSubOrders()
-				.stream()
-				.map(OrdersEntity::getStatus)
-				.map(OrderStatus::findEnum)
-				.allMatch(acceptedStatuses::contains);
-		if(!(acceptedStatuses.contains(status) && areAllSubOrdersFinalized)) {
+		OrderStatus status = getCancelOrderStatus(order);
+		if(!isCancelable(order)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CNCL$0002, order.getId(), status.toString());
 		}
 	}
 
+
+	private Boolean isCancelable(MetaOrderEntity order) {
+		List<OrderStatus> acceptedStatuses = asList(CLIENT_CONFIRMED, FINALIZED);
+		OrderStatus status = getCancelOrderStatus(order);
+		boolean areAllSubOrdersFinalized =
+				order
+						.getSubOrders()
+						.stream()
+						.map(OrdersEntity::getStatus)
+						.map(OrderStatus::findEnum)
+						.allMatch(acceptedStatuses::contains);
+		return acceptedStatuses.contains(status) && areAllSubOrdersFinalized;
+	}
+
+
+	private OrderStatus getCancelOrderStatus(MetaOrderEntity order) {
+		return ofNullable(order.getStatus())
+						.map(OrderStatus::findEnum)
+						.orElse(CLIENT_CONFIRMED);
+	}
 
 	@Override
 	public void rejectReturnItems(ReturnRequestRejectDTO dto) {

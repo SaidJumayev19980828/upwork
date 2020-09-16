@@ -29,4 +29,5 @@ public class Order {
     private BigDecimal discount;
     private String paymentStatus;
     private String status;
+    private Boolean isCancelable;
 }
