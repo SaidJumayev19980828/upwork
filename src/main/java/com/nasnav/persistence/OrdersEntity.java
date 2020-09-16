@@ -1,41 +1,26 @@
 package com.nasnav.persistence;
 
-import static com.nasnav.enumerations.PaymentStatus.UNPAID;
-import static java.time.LocalDateTime.now;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EntityListeners;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Type;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.persistence.listeners.OrdersEntityListener;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.EqualsAndHashCode.Exclude;
 import lombok.ToString;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import javax.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static com.nasnav.enumerations.PaymentStatus.UNPAID;
+import static java.time.LocalDateTime.now;
 
 @Entity
 @Table(name="orders")
@@ -124,10 +109,10 @@ public class OrdersEntity implements BaseEntity{
 	@ToString.Exclude
 	private MetaOrderEntity metaOrder;
 
-	@OneToOne(mappedBy="subOrder")
+	@OneToMany(mappedBy="subOrder")
 	@Exclude
     @ToString.Exclude
-	private ShipmentEntity shipment;
+	private List<ShipmentEntity> shipment;
 
 	
 	private BigDecimal total;

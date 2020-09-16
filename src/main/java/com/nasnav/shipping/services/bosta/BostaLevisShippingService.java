@@ -261,7 +261,7 @@ public class BostaLevisShippingService implements ShippingService{
 				.createDelivery(authToken, deliveryRequestDto)
 				.flatMap(this::throwExceptionIfNotOk)
 				.flatMap(res-> res.bodyToMono(CreateDeliveryResponse.class))
-				.map(res -> new ShipmentTracker(res.getId(), res.getTrackingNumber(), null))
+				.map(res -> new ShipmentTracker(res.getId(), res.getTrackingNumber(), null, shipment))
 				.flatMap(shp -> getShipmentWithAirwaybill(authToken, client, shp));
 	}
 
@@ -274,7 +274,7 @@ public class BostaLevisShippingService implements ShippingService{
 				.flatMap(res -> res.bodyToMono(CreateAwbResponse.class))
 				.map(CreateAwbResponse::getData)
 				.defaultIfEmpty("")
-				.map(bill -> new ShipmentTracker(shipment.getShipmentExternalId(), shipment.getTracker(), bill));
+				.map(bill -> new ShipmentTracker(shipment, bill));
 	}
 	
 	

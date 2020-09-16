@@ -1,5 +1,6 @@
 package com.nasnav.shipping.services;
 
+import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0010;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0011;
 import static com.nasnav.service.model.common.ParameterType.LONG_ARRAY;
 import static com.nasnav.service.model.common.ParameterType.NUMBER;
@@ -223,9 +224,15 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 	public Flux<ShipmentTracker> requestShipment(List<ShippingDetails> items) {
 		//need to return csv containing items - selected pickup point - addresses 
 		//- order and meta order as the airwaybill
+		ShippingDetails details =
+				items
+				.stream()
+				.findFirst()
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, SHP$SRV$0010));
 		ShipmentTracker tracker = new ShipmentTracker();
 		String reportBase64String = createShipmentReport(items);
 		tracker.setAirwayBillFile(reportBase64String);
+		tracker.setShippingDetails(details);
 		return Flux.just(tracker);
 	}
 

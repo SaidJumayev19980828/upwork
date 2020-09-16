@@ -73,17 +73,18 @@ public class DummyShippingService implements ShippingService {
 	
 	@Override
 	public Flux<ShipmentTracker> requestShipment(List<ShippingDetails> items) {
-		ShipmentTracker tracker = createRandomShipmentTracker();
+		ShipmentTracker tracker = createRandomShipmentTracker(items.get(0));
 		return Flux.fromIterable(asList(tracker));
 	}
 
 
 
-	private ShipmentTracker createRandomShipmentTracker() {
+	private ShipmentTracker createRandomShipmentTracker(ShippingDetails item) {
 		ShipmentTracker tracker = new ShipmentTracker();
 		tracker.setShipmentExternalId(randomUUID().toString());
 		tracker.setTracker(randomUUID().toString());
 		tracker.setAirwayBillFile("NOT EMPTY");
+		tracker.setShippingDetails(item);
 		return tracker;
 	}
 
@@ -143,11 +144,13 @@ public class DummyShippingService implements ShippingService {
 
 	@Override
 	public Flux<ReturnShipmentTracker> requestReturnShipment(List<ShippingDetails> items) {
-		Stream<ReturnShipmentTracker> stream = items
+		List<ReturnShipmentTracker> trackers =
+				items
 				.stream()
-				.map(itm -> createRandomShipmentTracker())
-				.map(shpTracker -> new ReturnShipmentTracker(shpTracker, RETURN_EMAIL_MSG));
-		return Flux.fromStream(stream);
+				.map(this::createRandomShipmentTracker)
+				.map(shpTracker -> new ReturnShipmentTracker(shpTracker, RETURN_EMAIL_MSG))
+				.collect(toList());
+		return Flux.fromIterable(trackers);
 	}
 
 }

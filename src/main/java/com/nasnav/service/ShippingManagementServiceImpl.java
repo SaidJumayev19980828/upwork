@@ -930,6 +930,12 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 
 	private ShipmentEntity createShipmentEntity(ReturnRequestEntity returnRequest, ReturnShipmentTracker tracker, String shippingServiceId) {
+		OrdersEntity subOrder =
+			ofNullable(tracker)
+			.map(ShipmentTracker::getShippingDetails)
+			.map(ShippingDetails::getSubOrderId)
+			.map(id -> {OrdersEntity o = new OrdersEntity(); o.setId(id); return o;})
+			.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0004, returnRequest.getId()));
 		ShipmentEntity shipment = new ShipmentEntity();
 		shipment.setExternalId(tracker.getShipmentExternalId());
 		shipment.setReturnRequest(returnRequest);
@@ -937,7 +943,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		shipment.setShippingServiceId(shippingServiceId);
 		shipment.setStatus(REQUSTED.getValue());
 		shipment.setTrackNumber(tracker.getTracker());
-		shipment.setSubOrder();
+		shipment.setSubOrder(subOrder);
 		return shipmentRepo.save(shipment);
 	}
 

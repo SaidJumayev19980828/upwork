@@ -12,6 +12,7 @@ public class ReturnShipmentTracker extends ShipmentTracker{
         this.setAirwayBillFile(tracker.getAirwayBillFile());
         this.setShipmentExternalId(tracker.getShipmentExternalId());
         this.setTracker(tracker.getTracker());
+        this.setShippingDetails(tracker.getShippingDetails());
         this.setEmailMessage(emailMessage);
     }
 
@@ -19,5 +20,11 @@ public class ReturnShipmentTracker extends ShipmentTracker{
 
     public ReturnShipmentTracker(String emailMessage){
         this.setEmailMessage(emailMessage);
+    }
+
+
+    public ReturnShipmentTracker(ShippingDetails shippingDetails, String emailMessage){
+        this.setEmailMessage(emailMessage);
+        this.setShippingDetails(shippingDetails);
     }
 }

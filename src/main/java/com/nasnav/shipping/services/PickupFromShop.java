@@ -162,8 +162,13 @@ public class PickupFromShop implements ShippingService{
 	
 	@Override
 	public Flux<ShipmentTracker> requestShipment(List<ShippingDetails> items) {
-
-		return Flux.just(new ShipmentTracker());
+		ShipmentTracker tracker =
+				items
+				.stream()
+				.map(ShipmentTracker::new)
+				.findFirst()
+				.orElse(new ShipmentTracker());
+		return Flux.just(tracker);
 	}
 
 

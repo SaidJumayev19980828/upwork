@@ -15,6 +15,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import lombok.Data;
 
+import static javax.persistence.FetchType.LAZY;
+
 @Entity
 @Table(name="shipment")
 @Data
@@ -23,7 +25,7 @@ public class ShipmentEntity implements BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
-	@OneToOne
+	@ManyToOne(fetch = LAZY)
 	@JoinColumn(name="sub_order_id", referencedColumnName = "id")
 	private OrdersEntity subOrder;
 
