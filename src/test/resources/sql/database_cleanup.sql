@@ -8,19 +8,10 @@ DELETE FROM public.products_extra_attributes WHERE extra_attribute_id IN (SELECT
 DELETE FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.role_employee_users WHERE employee_user_id IN (SELECT id FROM public.employee_users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.product_bundles WHERE product_id IN (SELECT id FROM public.products WHERE organization_id BETWEEN 99000 AND 99999);
-
 DELETE FROM public.shipment where id IN (
-	SELECT shp.id FROM public.shipment shp 
-	LEFT JOIN public.orders ord on shp.sub_order_id = ord.id 
-	WHERE ord.organization_id BETWEEN 99000 AND 99999)
-	or id in(
-	    select shp2.id from public.shipment shp2
-	    left join public.return_request req
-	    on shp2.return_request_id = req.id
-	    left join public.meta_orders meta
-	    on req.meta_order_id = meta.id
-        where meta.organization_id BETWEEN 99000 AND 99999
-	);
+	SELECT shp.id FROM public.shipment shp
+	LEFT JOIN public.orders ord on shp.sub_order_id = ord.id
+	WHERE ord.organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.organization_shipping_service WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.shipping_service;
 DELETE FROM meta_orders_promotions;
@@ -35,9 +26,18 @@ DELETE FROM public.cart_items where id in (
 );
 DELETE FROM public.return_request_item WHERE return_request_id IN
      (SELECT Id from public.return_request where meta_order_id in
-         (select id from meta_orders where organization_id between 99000 and 99999));
+         (select id from public.meta_orders where organization_id between 99000 and 99999));
 DELETE FROM public.return_request where meta_order_id in
-     (select id from meta_orders where organization_id between 99000 and 99999);
+     (select id from public.meta_orders where organization_id between 99000 and 99999);
+DELETE FROM public.return_shipment where id in (
+    select return_shipment_id
+    from public.return_request_item it
+    left join public.return_request req
+    on it.return_request_id = req.id
+    inner join public.meta_orders meta
+    on req.meta_order_id = meta.id
+    and meta.organization_id between 99000 and 99999
+);
 DELETE FROM public.baskets WHERE stock_id IN (SELECT Id from public.stocks where organization_id between 99000 and 99999);
 DELETE FROM public.orders WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.payments WHERE user_id IN (SELECT Id from public.users where organization_id between 99000 and 99999);

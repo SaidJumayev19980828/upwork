@@ -1,26 +1,41 @@
 package com.nasnav.persistence;
 
+import static com.nasnav.enumerations.PaymentStatus.UNPAID;
+import static java.time.LocalDateTime.now;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.enumerations.PaymentStatus;
 import com.nasnav.persistence.listeners.OrdersEntityListener;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.EqualsAndHashCode.Exclude;
 import lombok.ToString;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import javax.persistence.*;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import static com.nasnav.enumerations.PaymentStatus.UNPAID;
-import static java.time.LocalDateTime.now;
 
 @Entity
 @Table(name="orders")
@@ -46,15 +61,15 @@ public class OrdersEntity implements BaseEntity{
 	public PaymentStatus getPaymentStatus() {
 		return PaymentStatus.getPaymentStatus(paymentStatus);
 	}
-	
+
 	public void setPaymentStatus(PaymentStatus paymentStatus) {
 		this.paymentStatus = paymentStatus.getValue();
 	}
-	
+
 	public void setOrderStatus(OrderStatus status) {
 		this.status = status.getValue();
 	}
-	
+
 	public OrderStatus getOrderStatus() {
 		return OrderStatus.findEnum(status);
 	}
@@ -95,7 +110,7 @@ public class OrdersEntity implements BaseEntity{
 	@OneToMany(mappedBy = "ordersEntity", cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
 	@Exclude
 	@ToString.Exclude
-    private Set<BasketsEntity> basketsEntity;
+	private Set<BasketsEntity> basketsEntity;
 
 	@ManyToOne(cascade = CascadeType.MERGE)
 	@JoinColumn(name = "payment_id", referencedColumnName = "id")
@@ -109,16 +124,16 @@ public class OrdersEntity implements BaseEntity{
 	@ToString.Exclude
 	private MetaOrderEntity metaOrder;
 
-	@OneToMany(mappedBy="subOrder")
+	@OneToOne(mappedBy="subOrder")
 	@Exclude
-    @ToString.Exclude
-	private List<ShipmentEntity> shipment;
+	@ToString.Exclude
+	private ShipmentEntity shipment;
 
-	
+
 	private BigDecimal total;
-	
+
 	private BigDecimal discounts;
-	
+
 	@Override
 	public BaseRepresentationObject getRepresentation() {
 		OrderRepresentationObject orderRepresentationObject = new OrderRepresentationObject();
@@ -138,18 +153,18 @@ public class OrdersEntity implements BaseEntity{
 		this.creationDate = now();
 		basketsEntity = new HashSet<>();
 	}
-	
-	
-	
-	
-	
+
+
+
+
+
 	public void addBasketItem(BasketsEntity item) {
 		item.setOrdersEntity(this);
 		basketsEntity.add(item);
 	}
 
-	
-	
+
+
 	public void removeBasketItem(BasketsEntity item) {
 		item.setOrdersEntity(null);
 		basketsEntity.remove(item);

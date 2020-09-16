@@ -16,7 +16,10 @@ public interface ReturnRequestRepository extends JpaRepository<ReturnRequestEnti
             " left join fetch meta.organization org " +
             " left join fetch returnRequest.returnedItems item " +
             " left join fetch item.basket basket " +
+            " left join fetch basket.ordersEntity subOrder " +
             " left join fetch basket.stocksEntity stock " +
+            " left join fetch subOrder.shopsEntity subOrderShop " +
+            " left join fetch subOrder.addressEntity subOrderAddr " +
             " left join fetch stock.productVariantsEntity variant " +
             " left join fetch variant.productEntity product " +
             " left join fetch returnRequest.createdByEmployee emp " +

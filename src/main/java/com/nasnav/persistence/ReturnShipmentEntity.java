@@ -1,41 +1,38 @@
 package com.nasnav.persistence;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.response.navbox.Shipment;
 import com.nasnav.enumerations.ShippingStatus;
 import com.nasnav.shipping.model.ShippingEta;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import lombok.Data;
+import javax.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import static javax.persistence.CascadeType.MERGE;
+import static javax.persistence.CascadeType.PERSIST;
 
 @Entity
-@Table(name="shipment")
+@Table(name="return_shipment")
 @Data
-public class ShipmentEntity implements BaseEntity {
+public class ReturnShipmentEntity implements BaseEntity {
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
-	@OneToOne
-	@JoinColumn(name="sub_order_id", referencedColumnName = "id")
-	private OrdersEntity subOrder;
-	
-	private String parameters;
-	
+	@OneToMany(mappedBy = "returnShipment", cascade = {PERSIST, MERGE})
+	@EqualsAndHashCode.Exclude
+	@ToString.Exclude
+	private List<ReturnRequestItemEntity> returnRequestItems;
+
 	@Column(name="created_at")
 	@CreationTimestamp
 	private LocalDateTime createdAt;
@@ -56,13 +53,11 @@ public class ShipmentEntity implements BaseEntity {
 	@Column(name="shipping_service_id")
 	private String shippingServiceId;
 
-	@Column(name="shipping_fee")
-	private BigDecimal shippingFee;
 
-	@Column(name="delivery_from")
-	private LocalDate from;
-	@Column(name="delivery_until")
-	private LocalDate to;
+	public ReturnShipmentEntity(){
+		returnRequestItems = new ArrayList<>();
+	}
+
 
 	@Override
 	public BaseRepresentationObject getRepresentation() {
@@ -73,10 +68,14 @@ public class ShipmentEntity implements BaseEntity {
 		shipment.setServiceId(getShippingServiceId());
 		shipment.setServiceName(getShippingServiceId());
 		shipment.setExternalId(getExternalId());
-		shipment.setShippingFee(getShippingFee());
-		shipment.setShippingEta(new ShippingEta(getFrom(), getTo()));
 		shipment.setTrackingNumber(getTrackNumber());
 		shipment.setStatus(status);
 		return shipment;
+	}
+
+
+	public void addReturnItem(ReturnRequestItemEntity item){
+		item.setReturnShipment(this);
+		returnRequestItems.add(item);
 	}
 }

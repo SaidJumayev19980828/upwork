@@ -3,16 +3,12 @@ package com.nasnav.test;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
-import com.nasnav.dao.ReturnRequestItemRepository;
-import com.nasnav.dao.ReturnRequestRepository;
-import com.nasnav.dao.ShipmentRepository;
-import com.nasnav.dao.StockRepository;
+import com.nasnav.commons.utils.EntityUtils;
+import com.nasnav.dao.*;
 import com.nasnav.dto.response.ReturnRequestDTO;
 import com.nasnav.enumerations.ReturnRequestStatus;
-import com.nasnav.persistence.BasketsEntity;
-import com.nasnav.persistence.ReturnRequestEntity;
-import com.nasnav.persistence.ReturnRequestItemEntity;
-import com.nasnav.persistence.ShipmentEntity;
+import com.nasnav.enumerations.ShippingStatus;
+import com.nasnav.persistence.*;
 import com.nasnav.service.MailService;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -38,7 +34,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.enumerations.ReturnRequestStatus.*;
+import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
 import static com.nasnav.service.OrderService.BILL_EMAIL_SUBJECT;
 import static com.nasnav.service.OrderService.ORDER_RETURN_CONFIRM_SUBJECT;
 import static com.nasnav.test.commons.TestCommons.*;
@@ -80,8 +78,9 @@ public class OrderReturnTest {
     @MockBean
     private MailService mailService;
 
+
     @Autowired
-    private ShipmentRepository shipmentRepo;
+    private ReturnShipmentRepository returnShipmentRepo;
 
     @Test
     public void returnOrderItemUsingBasketItemsSuccess() {
@@ -678,17 +677,7 @@ public class OrderReturnTest {
         ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
         Thread.sleep(1000);
         //-----------------------------------------------
-        assertEquals(200, res.getStatusCodeValue());
-
-        ReturnRequestEntity entity = returnRequestRepo.findById(id).get();
-        assertEquals(CONFIRMED.getValue(), entity.getStatus());
-
-        List<ShipmentEntity> shipments = shipmentRepo.findByReturnRequest_Id(id);
-        assertEquals("each item was from different shop, so each will have " +
-                "separate shipment , the same as how they are shipped to customer"
-                ,2, shipments.size());
-        boolean allHaveNoFee = shipments.stream().allMatch(shp ->shp.getShippingFee().compareTo(ZERO) == 0);
-        assertTrue("For now, return shipments are globally free", allHaveNoFee);
+        assertReturnShipmentsCreated(id, res);
 
         Mockito
             .verify(mailService)
@@ -697,5 +686,47 @@ public class OrderReturnTest {
                     , Mockito.eq(ORDER_RETURN_CONFIRM_SUBJECT)
                     , Mockito.anyString()
                     , Mockito.anyMap());
+    }
+
+
+
+    private void assertReturnShipmentsCreated(Long id, ResponseEntity<String> res) {
+        assertEquals(200, res.getStatusCodeValue());
+
+        ReturnRequestEntity entity = returnRequestRepo.findById(id).get();
+        assertEquals(CONFIRMED.getValue(), entity.getStatus());
+
+        List<ReturnShipmentEntity> shipments = returnShipmentRepo.findByReturnRequest_Id(id);
+        assertEquals("each item was from different shop, so each will have " +
+                "separate shipment , the same as how they are shipped to customer"
+                ,2, shipments.size());
+
+        assertTrue("each item was from different shop, so each will have " +
+                        "separate shipment , the same as how they are shipped to customer"
+                ,isAllHasSingleItem(shipments));
+        assertTrue(isAllHasRequestedStatus(shipments));
+        assertTrue( isAllHasTrackingData(shipments));
+    }
+
+    private boolean isAllHasSingleItem(List<ReturnShipmentEntity> shipments) {
+        return shipments
+                .stream()
+                .map(ReturnShipmentEntity::getReturnRequestItems)
+                .allMatch(itms -> itms.size() == 1);
+    }
+
+
+    private boolean isAllHasRequestedStatus(List<ReturnShipmentEntity> shipments) {
+        return shipments
+                .stream()
+                .allMatch(shp -> REQUSTED.getValue().equals(shp.getStatus()));
+    }
+
+
+
+    private boolean isAllHasTrackingData(List<ReturnShipmentEntity> shipments) {
+        return shipments
+                .stream()
+                .allMatch(shp -> noneIsNull(shp.getExternalId(), shp.getTrackNumber(), shp.getShippingServiceId()));
     }
 }

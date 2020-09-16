@@ -3,14 +3,19 @@ package com.nasnav.persistence;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.response.ReturnRequestItemDTO;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name="return_request_item")
 @Data
+@NoArgsConstructor
 public class ReturnRequestItemEntity implements BaseEntity {
 
     @Id
@@ -22,6 +27,12 @@ public class ReturnRequestItemEntity implements BaseEntity {
     private ReturnRequestEntity returnRequest;
 
     @ManyToOne
+    @JoinColumn(name="return_shipment_id", referencedColumnName = "id")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private ReturnShipmentEntity returnShipment;
+
+    @OneToOne
     @JoinColumn(name="order_item_id")
     private BasketsEntity basket;
 
@@ -45,6 +56,12 @@ public class ReturnRequestItemEntity implements BaseEntity {
     @ManyToOne
     @JoinColumn(name="created_by_employee")
     private EmployeeUserEntity createdByEmployee;
+
+
+    public ReturnRequestItemEntity(Long id){
+        this.id = id;
+    }
+
 
     @Override
     public BaseRepresentationObject getRepresentation() {

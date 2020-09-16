@@ -27,8 +27,10 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 
+import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
+import com.nasnav.dao.*;
 import com.nasnav.persistence.*;
 import com.nasnav.shipping.model.*;
 import org.apache.logging.log4j.LogManager;
@@ -43,13 +45,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.MapBuilder;
-import com.nasnav.dao.AddressRepository;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.OrganizationShippingServiceRepository;
-import com.nasnav.dao.PaymentsRepository;
-import com.nasnav.dao.ShipmentRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.request.shipping.ShipmentDTO;
 import com.nasnav.dto.request.shipping.ShippingAdditionalDataDTO;
@@ -111,7 +106,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	@Autowired
 	private ShipmentRepository shipmentRepo;
-	
+
 	@Autowired
 	private DomainService domainService;
 	
@@ -124,6 +119,11 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	@Autowired
 	private PaymentsRepository paymentRepo;
 
+	@Autowired
+	private ReturnShipmentRepository returnShipmentRepo;
+
+	@Autowired
+	private EntityManager entityManager;
 
 	@Override
 	public List<ShippingOfferDTO> getShippingOffers(Long customerAddrId) {
@@ -709,6 +709,15 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 
 
+	private ShipmentItems createShipmentItem(ReturnRequestItemEntity returnItem){
+		ShipmentItems item = createShipmentItem(returnItem.getBasket());
+		item.setReturnedItemId(returnItem.getId());
+		return item;
+	}
+
+
+
+
 
 
 	private String getSku(BasketsEntity orderItem) {
@@ -924,29 +933,30 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	private Flux<ReturnShipmentTracker> createNewReturnShipmentsForReturnRequest(ReturnRequestEntity returnRequest
 			, Flux<ReturnShipmentTracker> trackersFlux, String shippingServiceId) {
 		return trackersFlux
-				.doOnNext( tracker -> createShipmentEntity(returnRequest, tracker, shippingServiceId));
+				.doOnNext( tracker -> createReturnShipmentEntity(returnRequest, tracker, shippingServiceId));
 	}
 
 
 
-	private ShipmentEntity createShipmentEntity(ReturnRequestEntity returnRequest, ReturnShipmentTracker tracker, String shippingServiceId) {
-		OrdersEntity subOrder =
-			ofNullable(tracker)
-			.map(ShipmentTracker::getShippingDetails)
-			.map(ShippingDetails::getSubOrderId)
-			.map(id -> {OrdersEntity o = new OrdersEntity(); o.setId(id); return o;})
-			.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0004, returnRequest.getId()));
-		ShipmentEntity shipment = new ShipmentEntity();
-		shipment.setExternalId(tracker.getShipmentExternalId());
-		shipment.setReturnRequest(returnRequest);
-		shipment.setShippingFee(ZERO);
-		shipment.setShippingServiceId(shippingServiceId);
-		shipment.setStatus(REQUSTED.getValue());
-		shipment.setTrackNumber(tracker.getTracker());
-		shipment.setSubOrder(subOrder);
-		return shipmentRepo.save(shipment);
+	private ReturnShipmentEntity createReturnShipmentEntity(ReturnRequestEntity returnRequest, ReturnShipmentTracker tracker, String shippingServiceId) {
+		ReturnShipmentEntity returnShipment = new ReturnShipmentEntity();
+		returnShipment.setExternalId(tracker.getShipmentExternalId());
+		returnShipment.setShippingServiceId(shippingServiceId);
+		returnShipment.setStatus(REQUSTED.getValue());
+		returnShipment.setTrackNumber(tracker.getTracker());
+		addReturnedItemsToReturnShipment(tracker, returnShipment);
+		return returnShipmentRepo.save(returnShipment);
 	}
 
+	private void addReturnedItemsToReturnShipment(ReturnShipmentTracker tracker, ReturnShipmentEntity returnShipment) {
+		tracker
+			.getShippingDetails()
+			.getItems()
+			.stream()
+			.map(ShipmentItems::getReturnedItemId)
+			.map(id -> entityManager.getReference(ReturnRequestItemEntity.class, id))
+			.forEach(returnShipment::addReturnItem);
+	}
 
 
 	private List<OrdersEntity> getReturnRequestSubOrders(ReturnRequestEntity returnRequest) {
@@ -976,17 +986,17 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		return returnRequest
 				.getReturnedItems()
 				.stream()
-				.map(ReturnRequestItemEntity::getBasket)
 				.collect(
 						collectingAndThen(
-							groupingBy(item -> item.getOrdersEntity().getId())
+							groupingBy(item -> item.getBasket().getOrdersEntity().getId())
 							, itemsMap -> createShippingDetailsFromReturnRequestItems(returnRequest, itemsMap)));
 	}
 
 
 
 
-	private List<ShippingDetails> createShippingDetailsFromReturnRequestItems(ReturnRequestEntity returnRequest, Map<Long, List<BasketsEntity>> itemsMap) {
+	private List<ShippingDetails> createShippingDetailsFromReturnRequestItems(ReturnRequestEntity returnRequest
+					, Map<Long, List<ReturnRequestItemEntity>> itemsMap) {
 		return itemsMap
 				.values()
 				.stream()
@@ -997,15 +1007,17 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 
 
-	private ShippingDetails createShippingDetailsFromBasketItems(ReturnRequestEntity returnRequest, List<BasketsEntity> orderItems) {
+	private ShippingDetails createShippingDetailsFromBasketItems(ReturnRequestEntity returnRequest
+					, List<ReturnRequestItemEntity> returnedItems) {
 		OrdersEntity subOrder =
-				orderItems
+				returnedItems
 					.stream()
+						.map(ReturnRequestItemEntity::getBasket)
 						.map(BasketsEntity::getOrdersEntity)
 						.findFirst()
 						.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0004, returnRequest.getId()));
 		List<ShipmentItems> items =
-				orderItems
+				returnedItems
 						.stream()
 						.map(this::createShipmentItem)
 						.collect(toList());
