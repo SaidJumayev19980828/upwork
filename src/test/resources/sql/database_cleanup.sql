@@ -45,9 +45,6 @@ DELETE FROM public.shop360_products where shop_id in (select id from public.shop
 DELETE FROM public.products WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.roles WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.user_addresses WHERE user_id in (select id from public.users WHERE organization_id BETWEEN 99000 AND 99999);
-DELETE FROM public.areas where id between 100001 and 100005;
-DELETE FROM public.cities where id in (100001, 100002, 100003);
-DELETE FROM public.countries where id in (100001, 100002);
 DELETE FROM public.user_tokens WHERE user_id in (select id from users WHERE organization_id BETWEEN 99000 AND 99999)
   or employee_user_id in (select id from employee_users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.users WHERE organization_id BETWEEN 99000 AND 99999;
@@ -62,9 +59,6 @@ DELETE FROM public.shop_floors WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop360s WHERE shop_id in (select id from public.shops WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.addresses where id between 12300001 and 12300100;
-DELETE FROM public.areas;
-DELETE FROM public.cities;
-DELETE FROM public.countries;
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.tag_graph_edges 
 WHERE child_id IN (
@@ -81,6 +75,9 @@ DELETE FROM public.organization_domains WHERE organization_id BETWEEN 99000 AND 
 DELETE FROM public.settings  WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organiztion_cart_optimization  WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;
+DELETE FROM public.areas;
+DELETE FROM public.cities;
+DELETE FROM public.countries;
 DELETE FROM public.organization_image_types;
 DELETE FROM public.themes where id between 5001 and 5003;
 DELETE FROM public.theme_classes where id between 990011 and 990012;

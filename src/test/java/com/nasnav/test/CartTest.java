@@ -324,7 +324,7 @@ public class CartTest {
 	public void checkoutCartWithDiscounts() {
 		JSONObject requestBody = createCartCheckoutBody();
 		
-		checkOutCart(requestBody, new BigDecimal("5891"), new BigDecimal("5900") ,new BigDecimal("51"));
+		checkOutCart(requestBody, new BigDecimal("5891"), new BigDecimal("5840") ,new BigDecimal("51"));
 	}
 	
 	
@@ -339,7 +339,7 @@ public class CartTest {
 		JSONObject requestBody = createCartCheckoutBody();
 		requestBody.put("promo_code", "GREEEEEED");
 		
-		Order order = checkOutCart(requestBody, new BigDecimal("5790.45"), new BigDecimal("5900") ,new BigDecimal("51"));
+		Order order = checkOutCart(requestBody, new BigDecimal("5848.76"), new BigDecimal("5840") ,new BigDecimal("51"));
 		
 		MetaOrderEntity entity = metaOrderRepo.findByMetaOrderId(order.getOrderId()).get();
 		Long promoId = 	entity.getPromotions().stream().findFirst().get().getId();
@@ -372,7 +372,7 @@ public class CartTest {
 		JSONObject requestBody = createCartCheckoutBody();
 		requestBody.put("promo_code", "gReEeEeED");
 		
-		Order order = checkOutCart(requestBody, new BigDecimal("5790.45"), new BigDecimal("5900") ,new BigDecimal("51"));
+		Order order = checkOutCart(requestBody, new BigDecimal("5848.76"), new BigDecimal("5840") ,new BigDecimal("51"));
 		
 		MetaOrderEntity entity = metaOrderRepo.findByMetaOrderId(order.getOrderId()).get();
 		Long promoId = 	entity.getPromotions().stream().findFirst().get().getId();
@@ -392,7 +392,7 @@ public class CartTest {
 		JSONObject requestBody = createCartCheckoutBody();
 		requestBody.put("promo_code", "MORE_GREEEEEEED");
 		
-		Order order = checkOutCart(requestBody, new BigDecimal("5242.59"), new BigDecimal("5900") ,new BigDecimal("51"));
+		Order order = checkOutCart(requestBody, new BigDecimal("5621.43"), new BigDecimal("5840") ,new BigDecimal("51"));
 		
 		MetaOrderEntity entity = metaOrderRepo.findByMetaOrderId(order.getOrderId()).get();
 		Long promoId = 	entity.getPromotions().stream().findFirst().get().getId();
