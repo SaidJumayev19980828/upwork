@@ -6,6 +6,7 @@ import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_DOMAINS;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_EXTRA_ATTRIBUTES;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
+import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.validateName;
@@ -164,14 +165,14 @@ public class OrganizationService {
         if (organizationThemeEntity != null)
             orgRepObj.setThemes((OrganizationThemesRepresentationObject) organizationThemeEntity.getRepresentation());
 
-        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemoved(orgRepObj.getId(), 0);
-        if (brandsEntityList != null && !brandsEntityList.isEmpty()) {
+        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriority(orgRepObj.getId(), 0);
+        if (!isNullOrEmpty(brandsEntityList)) {
             List<Organization_BrandRepresentationObject> repList = brandsEntityList.stream().map(rep -> ((Organization_BrandRepresentationObject) rep.getRepresentation())).collect(toList());
             orgRepObj.setBrands(repList);
         }
 
         List <OrganizationImagesEntity> orgImgEntities = organizationImagesRepository.findByOrganizationEntityId(orgRepObj.getId());
-        if (orgImgEntities != null && !orgImgEntities.isEmpty()) {
+        if (!isNullOrEmpty(orgImgEntities)) {
             List<OrganizationImagesRepresentationObject> imagesList = orgImgEntities.stream().map(rep -> ((OrganizationImagesRepresentationObject) rep.getRepresentation())).collect(toList());
             orgRepObj.setImages(imagesList);
         }
@@ -342,7 +343,7 @@ public class OrganizationService {
         List<Organization_BrandRepresentationObject> brands = null;
         if (orgId == null)
             return brands;
-        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemoved(orgId, 0);
+        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriority(orgId, 0);
         brands = brandsEntityList.stream().map(brand -> (Organization_BrandRepresentationObject) brand.getRepresentation())
                  .collect(toList());
         return brands;
@@ -363,6 +364,10 @@ public class OrganizationService {
             brand.setPname(json.pname);
         } else if (json.name != null) {
             brand.setPname(encodeUrl(json.name));
+        }
+
+        if (json.priority != null) {
+            entity.setPriority(json.getPriority());
         }
 
         Long orgId = securityService.getCurrentUserOrganizationId();

@@ -879,7 +879,7 @@ public class DataImportServiceImpl implements DataImportService {
 	private Map<String, BrandsEntity> getBrandsMapping() {
 		Long orgId = security.getCurrentUserOrganizationId();
 		return brandRepo
-				.findByOrganizationEntity_IdAndRemoved(orgId, 0)
+				.findByOrganizationEntity_IdAndRemovedOrderByPriority(orgId, 0)
 				.stream()
 				.collect(toMap(
 							brand -> brand.getName().toUpperCase() 
