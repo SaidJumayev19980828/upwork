@@ -8,6 +8,7 @@ import static org.springframework.context.i18n.LocaleContextHolder.getLocale;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
+import com.nasnav.service.model.mail.MailAttachment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -66,14 +68,15 @@ public class MailServiceImpl implements MailService {
     
     
     private void sendMessage(List<String> to, String subject, List<String> cc, String body) throws MessagingException {
-    	sendMessage(to, subject, cc, emptyList(), body);
+    	sendMessage(to, subject, cc, emptyList(), body, emptyList());
     }
     
     
     
     
     
-    private void sendMessage(List<String> to, String subject, List<String> cc, List<String> bcc,String body) throws MessagingException {
+    private void sendMessage(List<String> to, String subject, List<String> cc
+            , List<String> bcc,String body ,List<MailAttachment> attachments) throws MessagingException {
         if (mailSender == null) {
             return;
         }
@@ -88,6 +91,11 @@ public class MailServiceImpl implements MailService {
         }
         if(nonNull(bcc) && !bcc.isEmpty()) {
         	helper.setBcc(bcc.toArray(new String[0]));	
+        }
+        if(nonNull(attachments) && !attachments.isEmpty()){
+            for(MailAttachment attch: attachments){
+                helper.addAttachment(attch.getFileName(), attch.getData());
+            }
         }
         if (config.mailDryRun) {
             System.out.println("Sending email to: " + to + "\n-------\n" + body);
@@ -137,15 +145,22 @@ public class MailServiceImpl implements MailService {
 	public void sendThymeleafTemplateMail(String to, String subject, String template,
 			Map<String, Object> parametersMap) throws MessagingException {
     	String body = createBodyFromThymeleafTemplate(template, parametersMap);
-    	 sendMessage(asList(to), subject, emptyList(), body);
+    	sendMessage(asList(to), subject, emptyList(), body);
 	}
-	
 
 
 
 
+    @Override
+    public void sendThymeleafTemplateMail(String to, String subject, String template, Map<String, Object> parametersMap
+            , List<MailAttachment> attachments) throws MessagingException {
+        String body = createBodyFromThymeleafTemplate(template, parametersMap);
+        sendMessage(asList(to), subject, emptyList(), emptyList(), body, attachments);
+    }
 
-	private String createBodyFromTemplate(String template, Map<String, String> parametersMap) throws IOException {
+
+
+    private String createBodyFromTemplate(String template, Map<String, String> parametersMap) throws IOException {
 		Resource resource = new ClassPathResource(template);
         String body = new BufferedReader(new InputStreamReader(resource.getInputStream()))
                 			.lines()
@@ -188,6 +203,6 @@ public class MailServiceImpl implements MailService {
 	public void sendThymeleafTemplateMail(List<String> to, String subject, List<String> cc, List<String> bcc,
 			String template, Map<String, Object> parametersMap) throws IOException, MessagingException {
 		 String body = createBodyFromThymeleafTemplate(template, parametersMap);
-	     sendMessage(to, subject, cc, bcc, body);
+	     sendMessage(to, subject, cc, bcc, body, emptyList());
 	}
 }

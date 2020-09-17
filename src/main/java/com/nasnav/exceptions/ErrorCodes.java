@@ -130,6 +130,7 @@ public enum ErrorCodes {
 	,O$RET$0016("Return period has passed for item(s)!")
 	,O$RET$0017("No return request found with ID[%d]!")
 	,O$RET$0018("Cannot update return request status from [%s] to [%s]!")
+	,O$RET$0019("Failed to get customer address!")
 
 	,O$0001("No order exists with ID[%d]!")
 

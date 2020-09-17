@@ -1000,14 +1000,14 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		return itemsMap
 				.values()
 				.stream()
-				.map(items -> createShippingDetailsFromBasketItems(returnRequest, items))
+				.map(items -> createShippingDetailsFromReturnedItems(returnRequest, items))
 				.collect(toList());
 	}
 
 
 
 
-	private ShippingDetails createShippingDetailsFromBasketItems(ReturnRequestEntity returnRequest
+	private ShippingDetails createShippingDetailsFromReturnedItems(ReturnRequestEntity returnRequest
 					, List<ReturnRequestItemEntity> returnedItems) {
 		OrdersEntity subOrder =
 				returnedItems
@@ -1042,6 +1042,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		shippingData.setMetaOrderId(metaOrderId);
 		shippingData.setCallBackUrl(callBackUrl);
 		shippingData.setShopId(subOrder.getShopsEntity().getId());
+		shippingData.setReturnRequestId(returnRequest.getId());
 		return shippingData;
 	}
 

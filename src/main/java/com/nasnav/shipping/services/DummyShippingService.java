@@ -83,7 +83,7 @@ public class DummyShippingService implements ShippingService {
 		ShipmentTracker tracker = new ShipmentTracker();
 		tracker.setShipmentExternalId(randomUUID().toString());
 		tracker.setTracker(randomUUID().toString());
-		tracker.setAirwayBillFile("NOT EMPTY");
+		tracker.setAirwayBillFile("Tk9UIEVNUFRZ");
 		tracker.setShippingDetails(item);
 		return tracker;
 	}

@@ -1,7 +1,10 @@
 package com.nasnav.service;
 
+import com.nasnav.service.model.mail.MailAttachment;
+
 import javax.mail.MessagingException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -45,4 +48,7 @@ public interface MailService {
 			Map<String, Object> parametersMap) throws IOException, MessagingException;
 
 	void sendThymeleafTemplateMail(String string, String subject, String template, Map<String, Object> parametersMap) throws MessagingException;
+
+	void sendThymeleafTemplateMail(String string, String subject
+			, String template, Map<String, Object> parametersMap, List<MailAttachment> attachments) throws MessagingException;
 }
