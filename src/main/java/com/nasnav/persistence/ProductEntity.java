@@ -80,6 +80,7 @@ public class ProductEntity {
 
 	public ProductEntity() {
 		removed = 0;
+		priority = 0;
 		tags = new HashSet<>();
 	}
 	
@@ -128,6 +129,8 @@ public class ProductEntity {
 
     @Column(name="search_360")
     private Boolean search360;
+
+    private Integer priority;
 
     //TODO : we only need this until the Column PRODUCTS.PRODUCT_TYPE is set as non-null
     public Integer getProductType(){

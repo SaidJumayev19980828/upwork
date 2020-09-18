@@ -21,4 +21,7 @@ public class BrandDTO {
     @ApiModelProperty(value = "Brand p_name, it will be generated automatically if not provided", example = "alfa-romeo")
     @JsonProperty("p_name")
     public String pname;
+
+    @ApiModelProperty(value = "Brand priority, default value is 0 ", example = "2")
+    public Integer priority;
 }
