@@ -80,6 +80,7 @@ public class ProductEntity {
 
 	public ProductEntity() {
 		removed = 0;
+		priority = 0;
 		tags = new HashSet<>();
 	}
 	

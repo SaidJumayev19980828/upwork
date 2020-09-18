@@ -56,6 +56,8 @@ public class QProducts extends com.querydsl.sql.RelationalPathBase<QProducts> {
 
     public final NumberPath<Integer> removed = createNumber("removed", Integer.class);
 
+    public final NumberPath<Integer> priority = createNumber("priority", Integer.class);
+
     public final DateTimePath<java.sql.Timestamp> updatedAt = createDateTime("updatedAt", java.sql.Timestamp.class);
 
     public final com.querydsl.sql.PrimaryKey<QProducts> productsPkey = createPrimaryKey(id);
@@ -114,6 +116,7 @@ public class QProducts extends com.querydsl.sql.RelationalPathBase<QProducts> {
         addMetadata(pName, ColumnMetadata.named("p_name").withIndex(3).ofType(Types.VARCHAR).withSize(2147483647));
         addMetadata(productType, ColumnMetadata.named("product_type").withIndex(15).ofType(Types.INTEGER).withSize(10).notNull());
         addMetadata(removed, ColumnMetadata.named("removed").withIndex(16).ofType(Types.INTEGER).withSize(10).notNull());
+        addMetadata(priority, ColumnMetadata.named("priority").withIndex(18).ofType(Types.INTEGER).withSize(10).notNull());
         addMetadata(updatedAt, ColumnMetadata.named("updated_at").withIndex(11).ofType(Types.TIMESTAMP).withSize(29).withDigits(6).notNull());
     }
 

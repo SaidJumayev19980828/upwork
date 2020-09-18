@@ -121,19 +121,19 @@ public class ProductServiceTest {
 
 	@Autowired
 	private OrganizationRepository organizationRepository;
-	
+
 	@Autowired
 	private FilesRepository fileRepository;
-	
+
 	@Autowired
 	private ProductImagesRepository imgRepository;
-	
+
 	@Autowired
 	private ExtraAttributesRepository extraAttributeRepository;
-	
+
 	@Autowired
 	private ObjectMapper objectMapper;
-	
+
 	private final String PRODUCT_NAME = "LIPSTICK";
 	private final String PRODUCT_P_NAME = "LIPSTICK PRODUCT";
 	private final String PRODUCT_PRODUCT_BARCODE = "BBE3343222DDF";
@@ -152,315 +152,275 @@ public class ProductServiceTest {
 	private final BigDecimal PRODUCT_PRICE = new BigDecimal("10");
 	private final Integer QUANTITY = 100;
 
-	
+
 	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 	public void getProductWithVariantsWithoutStock() {
-		ProductTestData testData = createProductTestDataWithoutStocks();		
+		ProductTestData testData = createProductTestDataWithoutStocks();
 		//-----------------------------------------
 		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=" + testData.productEntity.getId(),
 				String.class);
 		//-----------------------------------------
-		System.out.println("product without stocks >>> " + response.getBody());		
-		
+		System.out.println("product without stocks >>> " + response.getBody());
+
 		assertValidResponseWithoutStocks(testData, response);
-		
+
 		//-----------------------------------------
 		cleanInsertedData(testData);
 	}
-	
-	
-	
+
 
 	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 	public void getProductWithVariantsWithStock() {
 
 		ProductTestData testData = createProductTestData();
 
 		//-----------------------------------------
 		ResponseEntity<String> response = template.getForEntity(
-				String.format("/navbox/product?product_id=%d&shop_id=%d",testData.productEntity.getId(), testData.shopEntities.get(0).getId()),
+				String.format("/navbox/product?product_id=%d&shop_id=%d", testData.productEntity.getId(), testData.shopEntities.get(0).getId()),
 				String.class);
 		//-----------------------------------------
-		System.out.println( "product with stocks >>> " +response.getBody());
-		
+		System.out.println("product with stocks >>> " + response.getBody());
+
 		assertValidResponse(testData, response);
-		
+
 		//-----------------------------------------
 		cleanInsertedData(testData);
 	}
-	
-	
-	
-	
-	
+
+
 	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 	public void getProductAndNoShopProvied() {
 
 		ProductTestData testData = createProductTestDataWithMultipleStocks();
 
 		//-----------------------------------------
 		ResponseEntity<String> response = template.getForEntity(
-				String.format("/navbox/product?product_id=%d",testData.productEntity.getId()),
+				String.format("/navbox/product?product_id=%d", testData.productEntity.getId()),
 				String.class);
 		//-----------------------------------------
-		System.out.println( "product with stocks for all shops >>> " +response.getBody());
-		
+		System.out.println("product with stocks for all shops >>> " + response.getBody());
+
 		assertValidResponse(testData, response);
-		
+
 		//-----------------------------------------
 		cleanInsertedData(testData);
 	}
-	
-	
-	
-	
-	
-	
+
+
 	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 	public void getProductAndStocksHasZeroDiscounts() {
 
 		ProductTestData testData = createProductTestDataWithZeroDiscountStocks();
 
 		//-----------------------------------------
 		ResponseEntity<String> response = template.getForEntity(
-				String.format("/navbox/product?product_id=%d",testData.productEntity.getId()),
+				String.format("/navbox/product?product_id=%d", testData.productEntity.getId()),
 				String.class);
 		//-----------------------------------------
-		System.out.println( "product with stocks for all shops >>> " +response.getBody());
-		
+		System.out.println("product with stocks for all shops >>> " + response.getBody());
+
 		assertValidResponse(testData, response);
-		
+
 		//-----------------------------------------
 		cleanInsertedData(testData);
 	}
-	
-	
-	
-	
-	
+
+
 	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 	public void getProductAndFilterByShop() {
 
 		ProductTestData testData = createProductTestDataWithMultipleStocks();
-		Long shopId =  testData.shopEntities.get(0).getId();
+		Long shopId = testData.shopEntities.get(0).getId();
 		//-----------------------------------------
 		ResponseEntity<String> response = template.getForEntity(
 				String.format("/navbox/product?product_id=%d&shop_id=%d", testData.productEntity.getId(), shopId),
 				String.class);
 		//-----------------------------------------
-		System.out.println( "product with stocks for all shops >>> " +response.getBody());
-		
+		System.out.println("product with stocks for all shops >>> " + response.getBody());
+
 		assertValidResponseWithSingleStockReturned(testData, response, shopId);
-		
+
 		//-----------------------------------------
 		cleanInsertedData(testData);
 	}
 
-	
-	
-	
+
 	private void assertValidResponseWithSingleStockReturned(ProductTestData testData, ResponseEntity<String> response, Long shopId) {
 		JSONObject productDetails = new JSONObject(response.getBody());
 		JSONObject variant = productDetails.getJSONArray("variants").getJSONObject(0);
 		List<StocksEntity> expectedStocks = testData.stocksEntities
-										.stream()
-										.filter(stock -> Objects.equals(stock.getShopsEntity().getId(), shopId))
-										.collect(toList());
+				.stream()
+				.filter(stock -> Objects.equals(stock.getShopsEntity().getId(), shopId))
+				.collect(toList());
 		JSONArray expectedStocksJSON = createExpectedStocks(expectedStocks);
 		JSONArray stocks = getStocksJsonArray(variant);
-		
 
-		assertProductDetailsRetrieved(response, productDetails);	
+
+		assertProductDetailsRetrieved(response, productDetails);
 		assertVariantDetailRetrieved(variant);
-		assertTrue( stocks.similar(expectedStocksJSON));
+		assertTrue(stocks.similar(expectedStocksJSON));
 	}
-	
-	
-	
-
 
 
 	private void assertValidResponse(ProductTestData testData, ResponseEntity<String> response) {
 		JSONObject productDetails = new JSONObject(response.getBody());
 		JSONObject variant = productDetails.getJSONArray("variants").getJSONObject(0);
-		JSONArray expectedStocks = createExpectedStocks( testData.stocksEntities);
+		JSONArray expectedStocks = createExpectedStocks(testData.stocksEntities);
 		JSONArray stocks = getStocksJsonArray(variant);
-		
 
-		assertProductDetailsRetrieved(response, productDetails);	
+
+		assertProductDetailsRetrieved(response, productDetails);
 		assertVariantDetailRetrieved(variant);
-		assertTrue( stocks.similar(expectedStocks));
+		assertTrue(stocks.similar(expectedStocks));
 	}
-	
-	
-	
-	
+
+
 	private JSONArray getStocksJsonArray(JSONObject variant) {
 		JSONArray stocks = variant.getJSONArray("stocks");
-		for(int i=0;i<stocks.length(); i++) {
+		for (int i = 0; i < stocks.length(); i++) {
 			JSONObject stock = stocks.getJSONObject(i);
-			String discountStr = 
+			String discountStr =
 					ofNullable(stock.get("discount"))
-					.map(Object::toString)
-					.map(BigDecimal::new)
-					.map(discount -> discount.setScale(10))
-					.map(BigDecimal::toString)
-					.orElse("0");
+							.map(Object::toString)
+							.map(BigDecimal::new)
+							.map(discount -> discount.setScale(10))
+							.map(BigDecimal::toString)
+							.orElse("0");
 			stock.put("discount", discountStr);
 		}
 		return stocks;
 	}
 
 
-
-
 	private void assertValidResponseWithExtraAttr(ProductTestData testData, ResponseEntity<String> response) {
 		JSONObject productDetails = new JSONObject(response.getBody());
 		JSONObject variant = productDetails.getJSONArray("variants").getJSONObject(0);
-		JSONArray expectedStocks = createExpectedStocks( testData.stocksEntities);
+		JSONArray expectedStocks = createExpectedStocks(testData.stocksEntities);
 		JSONArray stocks = getStocksJsonArray(variant);
-		
 
-		assertProductDetailsRetrieved(response, productDetails);	
+
+		assertProductDetailsRetrieved(response, productDetails);
 		assertVariantDetailRetrievedWithExtraAttr(variant);
-		assertTrue( stocks.similar(expectedStocks));
+		assertTrue(stocks.similar(expectedStocks));
 	}
-	
-	
-	
-	
-	
+
+
 	private void assertValidResponseWithoutStocks(ProductTestData testData, ResponseEntity<String> response) {
 		JSONObject productDetails = new JSONObject(response.getBody());
 		JSONArray variantList = productDetails.getJSONArray("variants");
 
-		assertProductDetailsRetrieved(response, productDetails);	
+		assertProductDetailsRetrieved(response, productDetails);
 		assertTrue("variants that have no returned stocks are not returned", variantList.isEmpty());
 	}
-	
-	
-
-
 
 
 	private ProductTestData createProductTestData() {
 		ProductTestData testData = new ProductTestData();
-		
-		OrganizationEntity org = organizationRepository.findOneById(99001L);		
-		
-		testData.productEntity = createDummyProduct();		
+
+		OrganizationEntity org = organizationRepository.findOneById(99001L);
+
+		testData.productEntity = createDummyProduct();
 		testData.imgFile = createProductImageFile(org);
 		testData.img = createProductImage(testData.productEntity);
 		testData.productFeaturesEntity_1 = createDummyFeature1(org);
 		testData.productFeaturesEntity_2 = createDummyFeature2(org);
-		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);		
+		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);
 		testData.productVariantsEntity = createDummyVariant(testData.productEntity, testData.spec);
 		testData.shopEntities = createDummyShops(org, 1);
 		testData.stocksEntities = createDummyStocks(testData.productVariantsEntity, org, testData.shopEntities);
-		
+
 		return testData;
 	}
-	
-	
-	
-	
-	
+
+
 	private ProductTestData createProductTestDataWithExtraAttr() {
 		ProductTestData testData = new ProductTestData();
-		
-		OrganizationEntity org = organizationRepository.findOneById(99001L);		
-		
-		testData.productEntity = createDummyProduct();		
+
+		OrganizationEntity org = organizationRepository.findOneById(99001L);
+
+		testData.productEntity = createDummyProduct();
 		testData.imgFile = createProductImageFile(org);
 		testData.img = createProductImage(testData.productEntity);
 		testData.productFeaturesEntity_1 = createDummyFeature1(org);
 		testData.productFeaturesEntity_2 = createDummyFeature2(org);
-		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);		
+		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);
 		testData.productVariantsEntity = createDummyVariantWithExtraAttributes(testData.productEntity, testData.spec);
 		testData.shopEntities = createDummyShops(org, 1);
 		testData.stocksEntities = createDummyStocks(testData.productVariantsEntity, org, testData.shopEntities);
-		
+
 		return testData;
 	}
-	
-	
+
 
 	private ProductTestData createProductTestDataWithoutStocks() {
 		ProductTestData testData = new ProductTestData();
-		
-		OrganizationEntity org = organizationRepository.findOneById(99001L);		
-		
-		testData.productEntity = createDummyProduct();		
+
+		OrganizationEntity org = organizationRepository.findOneById(99001L);
+
+		testData.productEntity = createDummyProduct();
 		testData.imgFile = createProductImageFile(org);
 		testData.img = createProductImage(testData.productEntity);
 		testData.productFeaturesEntity_1 = createDummyFeature1(org);
 		testData.productFeaturesEntity_2 = createDummyFeature2(org);
-		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);		
+		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);
 		testData.productVariantsEntity = createDummyVariant(testData.productEntity, testData.spec);
 		testData.shopEntities = createDummyShops(org, 1);
 		return testData;
 	}
-	
-	
-	
+
+
 	private ProductTestData createProductTestDataWithMultipleStocks() {
 		ProductTestData testData = new ProductTestData();
-		
-		OrganizationEntity org = organizationRepository.findOneById(99001L);		
-		
-		testData.productEntity = createDummyProduct();	
+
+		OrganizationEntity org = organizationRepository.findOneById(99001L);
+
+		testData.productEntity = createDummyProduct();
 		testData.imgFile = createProductImageFile(org);
 		testData.img = createProductImage(testData.productEntity);
 		testData.productFeaturesEntity_1 = createDummyFeature1(org);
 		testData.productFeaturesEntity_2 = createDummyFeature2(org);
-		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);		
+		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);
 		testData.productVariantsEntity = createDummyVariant(testData.productEntity, testData.spec);
 		testData.shopEntities = createDummyShops(org, 2);
 		testData.stocksEntities = createDummyStocks(testData.productVariantsEntity, org, testData.shopEntities);
 		return testData;
 	}
-	
-	
-	
-	
+
+
 	private ProductTestData createProductTestDataWithZeroDiscountStocks() {
 		ProductTestData testData = new ProductTestData();
-		
-		OrganizationEntity org = organizationRepository.findOneById(99001L);		
-		
-		testData.productEntity = createDummyProduct();	
+
+		OrganizationEntity org = organizationRepository.findOneById(99001L);
+
+		testData.productEntity = createDummyProduct();
 		testData.imgFile = createProductImageFile(org);
 		testData.img = createProductImage(testData.productEntity);
 		testData.productFeaturesEntity_1 = createDummyFeature1(org);
 		testData.productFeaturesEntity_2 = createDummyFeature2(org);
-		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);		
+		testData.spec = createDummySpecValues(testData.productFeaturesEntity_1, testData.productFeaturesEntity_2);
 		testData.productVariantsEntity = createDummyVariant(testData.productEntity, testData.spec);
 		testData.shopEntities = createDummyShops(org, 2);
 		testData.stocksEntities = createDummyStocks(testData.productVariantsEntity, org, testData.shopEntities, ZERO);
 		return testData;
 	}
-	
-	
-	
+
 
 	private void assertFeatureArrayRetrieved(JSONObject body) {
-		JSONArray features = body.getJSONArray("variant_features");		
-		JSONArray expectedFeatures = createExpectedFeaturesJson();		
-		assertTrue( features.similar(expectedFeatures));
+		JSONArray features = body.getJSONArray("variant_features");
+		JSONArray expectedFeatures = createExpectedFeaturesJson();
+		assertTrue(features.similar(expectedFeatures));
 	}
-	
-	
-	
+
 
 	private ProductEntity createDummyProduct() {
 		ProductEntity productEntity = new ProductEntity();
@@ -470,49 +430,40 @@ public class ProductServiceTest {
 		productEntity.setDescription(PRODUCT_DESC);
 		productEntity.setBarcode(PRODUCT_PRODUCT_BARCODE);
 		productEntity = productRepository.save(productEntity);
-				
+
 		return productEntity;
 	}
 
 
-
-
 	private ProductImagesEntity createProductImage(ProductEntity productEntity) {
-		
-		
+
+
 		ProductImagesEntity img = new ProductImagesEntity();
-		img.setPriority(0);		//product cover images has priority zero
+		img.setPriority(0);        //product cover images has priority zero
 		img.setProductEntity(productEntity);
 		img.setType(7);
 		img.setUri(PRODUCT_IMG_URL);
-		
+
 		return imgRepository.save(img);
 	}
-	
-	
 
-	
-	
+
 	private FileEntity createProductImageFile(OrganizationEntity org) {
-		FileEntity file = null;		
+		FileEntity file = null;
 		file = fileRepository.findByUrl(PRODUCT_IMG_URL);
-		
-		if(file == null) {
+
+		if (file == null) {
 			file = new FileEntity();
 			file.setLocation("/img.jpg");
 			file.setMimetype("image/jpeg");
 			file.setOrganization(org);
 			file.setUrl(PRODUCT_IMG_URL);
 			file.setOriginalFileName("img.jpg");
-		}		
-		
+		}
+
 		return fileRepository.save(file);
 	}
 
-
-
-	
-	
 
 	private ProductFeaturesEntity createDummyFeature1(OrganizationEntity org) {
 		ProductFeaturesEntity productFeaturesEntity_1 = new ProductFeaturesEntity();
@@ -523,9 +474,7 @@ public class ProductServiceTest {
 		productFeaturesEntity_1 = productFeaturesRepository.save(productFeaturesEntity_1);
 		return productFeaturesEntity_1;
 	}
-	
-	
-	
+
 
 	private ProductFeaturesEntity createDummyFeature2(OrganizationEntity org) {
 		ProductFeaturesEntity productFeaturesEntity_2 = new ProductFeaturesEntity();
@@ -536,19 +485,15 @@ public class ProductServiceTest {
 		productFeaturesEntity_2 = productFeaturesRepository.save(productFeaturesEntity_2);
 		return productFeaturesEntity_2;
 	}
-	
-	
-	
+
 
 	private String createDummySpecValues(ProductFeaturesEntity productFeaturesEntity_1,
-			ProductFeaturesEntity productFeaturesEntity_2) {
+										 ProductFeaturesEntity productFeaturesEntity_2) {
 		return FEATURE_SEPC_TEMPLATE
 				.replace("FEATURE_ID_1", productFeaturesEntity_1.getId() + "")
 				.replace("FEATURE_ID_2", productFeaturesEntity_2.getId() + "");
 	}
-	
-	
-	
+
 
 	private ProductVariantsEntity createDummyVariant(ProductEntity productEntity, String spec) {
 		ProductVariantsEntity productVariantsEntity = new ProductVariantsEntity();
@@ -557,24 +502,20 @@ public class ProductServiceTest {
 		productVariantsEntity.setFeatureSpec(spec);
 		productVariantsEntity.setPname(PRODUCT_VARIANT_P_NAME);
 		productVariantsEntity.setProductEntity(productEntity);
-		productVariantsEntity = productVariantsRepository.save(productVariantsEntity);		
-		
+		productVariantsEntity = productVariantsRepository.save(productVariantsEntity);
+
 		return productVariantsEntity;
 	}
-	
-	
-	
-	
+
+
 	private ProductVariantsEntity createDummyVariantWithExtraAttributes(ProductEntity productEntity, String spec) {
 		ProductVariantsEntity variant = createDummyVariant(productEntity, spec);
 		Set<ProductExtraAttributesEntity> extraAttributes = createDummyExtraAttr(variant);
 		extraAttributes.forEach(variant::addExtraAttribute);
 		return productVariantsRepository.save(variant);
 	}
-	
-	
-	
-	
+
+
 	private Set<ProductExtraAttributesEntity> createDummyExtraAttr(ProductVariantsEntity variant) {
 		ProductExtraAttributesEntity productExtraAttr = new ProductExtraAttributesEntity();
 		ExtraAttributesEntity extraAttr = createDummyExtraAttrDef(variant);
@@ -583,8 +524,6 @@ public class ProductServiceTest {
 		productExtraAttr.setValue(DUMMY_EXTRA_ATTR_VALUE);
 		return setOf(productExtraAttr);
 	}
-
-
 
 
 	private ExtraAttributesEntity createDummyExtraAttrDef(ProductVariantsEntity variant) {
@@ -597,20 +536,16 @@ public class ProductServiceTest {
 	}
 
 
-
-
 	private List<ShopsEntity> createDummyShops(OrganizationEntity org, int shopsNum) {
 		return IntStream.range(0, shopsNum)
-				.mapToObj(i -> createDummyShop(org))				
+				.mapToObj(i -> createDummyShop(org))
 				.collect(toList());
 	}
-	
-	
-	
+
 
 	private ShopsEntity createDummyShop(OrganizationEntity organizationEntity) {
 		ShopsEntity shopsEntity = new ShopsEntity();
-		shopsEntity.setName("Fortune - #"+ getRandomInt());
+		shopsEntity.setName("Fortune - #" + getRandomInt());
 		shopsEntity.setOrganizationEntity(organizationEntity);
 		shopsEntity.setRemoved(0);
 		shopsEntity = shopsRepository.save(shopsEntity);
@@ -618,42 +553,34 @@ public class ProductServiceTest {
 	}
 
 
-
-
 	private int getRandomInt() {
-		return (int)(random()*Integer.MAX_VALUE);
+		return (int) (random() * Integer.MAX_VALUE);
 	}
-	
-	
-	
-	
-	private List<StocksEntity> createDummyStocks(ProductVariantsEntity variant,	OrganizationEntity org
+
+
+	private List<StocksEntity> createDummyStocks(ProductVariantsEntity variant, OrganizationEntity org
 			, List<ShopsEntity> shopsEntities) {
-		BigDecimal discountAmount = 
+		BigDecimal discountAmount =
 				DISCOUNT
-				.divide(new BigDecimal("100"), 10, HALF_EVEN)
-				.multiply(new BigDecimal(PRODUCT_PRICE.toString()));
+						.divide(new BigDecimal("100"), 10, HALF_EVEN)
+						.multiply(new BigDecimal(PRODUCT_PRICE.toString()));
 		return shopsEntities.stream()
-							.map(shop -> createDummyStock(variant, org, shop, discountAmount))
-							.collect(toList());
+				.map(shop -> createDummyStock(variant, org, shop, discountAmount))
+				.collect(toList());
 	}
-	
-	
-	
-	
-	private List<StocksEntity> createDummyStocks(ProductVariantsEntity variant,	OrganizationEntity org
+
+
+	private List<StocksEntity> createDummyStocks(ProductVariantsEntity variant, OrganizationEntity org
 			, List<ShopsEntity> shopsEntities, BigDecimal discountAmount) {
 		return shopsEntities.stream()
-							.map(shop -> createDummyStock(variant, org, shop, discountAmount))
-							.collect(toList());
+				.map(shop -> createDummyStock(variant, org, shop, discountAmount))
+				.collect(toList());
 	}
-	
-	
-	
+
 
 	private StocksEntity createDummyStock(ProductVariantsEntity productVariantsEntity,
-			OrganizationEntity organizationEntity, ShopsEntity shopsEntity, BigDecimal discountAmount) {
-		
+										  OrganizationEntity organizationEntity, ShopsEntity shopsEntity, BigDecimal discountAmount) {
+
 		StocksEntity stocksEntity = new StocksEntity();
 		stocksEntity.setDiscount(new BigDecimal(0));
 		stocksEntity.setPrice(PRODUCT_PRICE);
@@ -665,204 +592,179 @@ public class ProductServiceTest {
 		stocksEntity = stockRepository.save(stocksEntity);
 		return stocksEntity;
 	}
-	
-	
-	
+
 
 	private void cleanInsertedData(ProductTestData testData) {
 		imgRepository.delete(testData.img);
 		fileRepository.delete(testData.imgFile);
 		testData.stocksEntities.forEach(stockRepository::delete);
 		testData.shopEntities.forEach(shopsRepository::delete);
-		productVariantsRepository.delete( testData.productVariantsEntity );		
-		productFeaturesRepository.delete( testData.productFeaturesEntity_1 );
-		productFeaturesRepository.delete( testData.productFeaturesEntity_2 );
-		productRepository.delete( testData.productEntity );
+		productVariantsRepository.delete(testData.productVariantsEntity);
+		productFeaturesRepository.delete(testData.productFeaturesEntity_1);
+		productFeaturesRepository.delete(testData.productFeaturesEntity_2);
+		productRepository.delete(testData.productEntity);
 	}
-	
-	
-	
+
 
 	private void assertVariantDetailRetrieved(JSONObject variant) {
 		assertEquals(PRODUCT_FEATURE_1_VALUE, variant.getString(PRODUCT_FEATURE_1_P_NAME));
 		assertEquals(PRODUCT_FEATURE_2_VALUE, variant.getString(PRODUCT_FEATURE_2_P_NAME));
 		assertEquals(PRODUCT_VARIANT_BARCODE, variant.getString("barcode"));
 	}
-	
-	
-	
+
+
 	private void assertVariantDetailRetrievedWithExtraAttr(JSONObject variant) {
 		assertEquals(PRODUCT_FEATURE_1_VALUE, variant.getString(PRODUCT_FEATURE_1_P_NAME));
 		assertEquals(PRODUCT_FEATURE_2_VALUE, variant.getString(PRODUCT_FEATURE_2_P_NAME));
 		assertEquals(PRODUCT_VARIANT_BARCODE, variant.getString("barcode"));
-		
+
 		JSONObject extraAttr = variant.getJSONArray("extra_attributes").getJSONObject(0);
 		assertEquals(DUMMY_EXTRA_ATTR_NAME, extraAttr.getString("name"));
 		assertEquals(JSONObject.NULL, extraAttr.get("type"));
 		assertEquals(DUMMY_EXTRA_ATTR_VALUE, extraAttr.getString("value"));
 		assertEquals(DUMMY_EXTRA_ATTR_ICON, extraAttr.getString("icon_url"));
 	}
-	
-	
-	
+
 
 	private void assertProductDetailsRetrieved(ResponseEntity<String> response, JSONObject product) {
 		assertEquals(OK, response.getStatusCode());
 		assertEquals(PRODUCT_NAME, product.getString("name"));
 		assertEquals(PRODUCT_P_NAME, product.getString("p_name"));
-		assertEquals(PRODUCT_PRODUCT_BARCODE, product.getString("barcode"));		
+		assertEquals(PRODUCT_PRODUCT_BARCODE, product.getString("barcode"));
 		assertEquals(PRODUCT_DESC, product.getString("description"));
 		assertEquals(ProductTypes.DEFAULT, product.getInt("product_type"));
 		assertTrue(product.has("variant_features"));
 		assertTrue(product.has("variants"));
 		assertFeatureArrayRetrieved(product);
 	}
-	
-	
-	
+
+
 	private JSONArray createExpectedStocks(List<StocksEntity> expectedStocks) {
 		JSONArray expectedStocksJson = new JSONArray();
-		
+
 		expectedStocks.stream()
-					.map(this::createStockJSONObj)
-					.forEach(expectedStocksJson::put);
-		
+				.map(this::createStockJSONObj)
+				.forEach(expectedStocksJson::put);
+
 		return expectedStocksJson;
 	}
-	
-	
-	
+
+
 	private JSONObject createStockJSONObj(StocksEntity stock) {
 		//please note the Types of expected, so it matches the types of retrieved json fields
 		//ex: if discount is integer here and double in the response JSONObject, it won't match
-		String discountStr = 
+		String discountStr =
 				ofNullable(stock.getDiscount())
-				.map(discount -> discount.setScale(10))
-				.map(discount -> discount.divide(stock.getPrice(),10, HALF_EVEN))
-				.map(discount -> discount.multiply(new BigDecimal("100")))
-				.map(discount -> discount.setScale(10))
-				.map(BigDecimal::toString)
-				.orElse("0");
+						.map(discount -> discount.setScale(10))
+						.map(discount -> discount.divide(stock.getPrice(), 10, HALF_EVEN))
+						.map(discount -> discount.multiply(new BigDecimal("100")))
+						.map(discount -> discount.setScale(10))
+						.map(BigDecimal::toString)
+						.orElse("0");
 		JSONObject stockJson = new JSONObject();
 		stockJson.put("id", stock.getId().intValue());
 		stockJson.put("shop_id", stock.getShopsEntity().getId().intValue());
 		stockJson.put("quantity", stock.getQuantity());
 		stockJson.put("price", stock.getPrice().doubleValue());
 		stockJson.put("discount", discountStr);
-		
+
 		return stockJson;
 	}
-	
-	
-	
-	
+
 
 	private JSONArray createExpectedFeaturesJson() {
 		JSONObject expectedFeature1 = new JSONObject();
 		expectedFeature1.put("name", PRODUCT_FEATURE_1_NAME);
 		expectedFeature1.put("label", PRODUCT_FEATURE_1_P_NAME);
-		
+
 		JSONObject expectedFeature2 = new JSONObject();
 		expectedFeature2.put("name", PRODUCT_FEATURE_2_NAME);
 		expectedFeature2.put("label", PRODUCT_FEATURE_2_P_NAME);
-		
-		JSONArray expectedFeatures = new JSONArray( Arrays.asList(expectedFeature1, expectedFeature2) );
+
+		JSONArray expectedFeatures = new JSONArray(Arrays.asList(expectedFeature1, expectedFeature2));
 		return expectedFeatures;
 	}
-	
-	
 
 
-	
-	
 	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
-	public void getSingleProductBundle(){
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Product_Bundle_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void getSingleProductBundle() {
 		ResponseEntity<String> response =
 				template.getForEntity(
-					"/navbox/product?product_id=" + TEST_BUNDLE_ID + "&shop_id=" + TEST_BUNDLE_SHOP_ID,
-				String.class);
+						"/navbox/product?product_id=" + TEST_BUNDLE_ID + "&shop_id=" + TEST_BUNDLE_SHOP_ID,
+						String.class);
 		System.out.println(response.getBody());
-		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
+		JSONObject json = (JSONObject) JSONParser.parseJSON(response.getBody());
 
 		assertEquals(200, response.getStatusCodeValue());
 		assertEquals(BUNDLE_ITEM_NUM, json.getJSONArray("bundle_items").length());
 		assertEquals(BUNDLE_ITEM_MIN_QUANTITY,
-							json.getJSONArray("variants")
-								.getJSONObject(0)
-								.getJSONArray("stocks")
-								.getJSONObject(0)
-								.getInt("quantity"));
+				json.getJSONArray("variants")
+						.getJSONObject(0)
+						.getJSONArray("stocks")
+						.getJSONObject(0)
+						.getInt("quantity"));
 	}
 
 
-
 	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
-	public void getAllProductsIncludingBundle(){
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Product_Bundle_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void getAllProductsIncludingBundle() {
 		ResponseEntity<String> response = template.getForEntity(
 				"/navbox/products?org_id=" + TEST_BUNDLE_ORG_ID + "&shop_id=" + TEST_BUNDLE_SHOP_ID,
 				String.class);
 		System.out.println(response.getBody());
-		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
+		JSONObject json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		JSONArray products = json.getJSONArray("products");
 
 		assertEquals(TEST_BUNDLE_PRODUCTS_NUM, products.length());
 		assertEquals(TEST_BUNDLE_NUM, getBundleItemsNum(products));
 
 	}
-	
-	
-	
 
-	/**in the test bundle test data , bundle names starts with "#Bundle"*/
+
+	/**
+	 * in the test bundle test data , bundle names starts with "#Bundle"
+	 */
 	private int getBundleItemsNum(JSONArray products) {
-		return (int)IntStream.range(0,products.length())
-							.mapToObj(products::getJSONObject)
-							.filter( obj -> obj.getString("name").toLowerCase().startsWith("#bundle"))
-							.count();
+		return (int) IntStream.range(0, products.length())
+				.mapToObj(products::getJSONObject)
+				.filter(obj -> obj.getString("name").toLowerCase().startsWith("#bundle"))
+				.count();
 	}
 
 
-	
-	
-
 	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Product_Bundle_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
-	public void testProductResponseTotal(){
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Product_Bundle_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void testProductResponseTotal() {
 		ResponseEntity<String> response = template.getForEntity(
 				"/navbox/products?org_id=" + TEST_BUNDLE_ORG_ID + "&shop_id=" + TEST_BUNDLE_SHOP_ID,
 				String.class);
 		System.out.println(response.getBody());
-		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
+		JSONObject json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		long total = json.getLong("total");
 
 
-		assertEquals("all products are counted including bundles and services" ,4L , total);
+		assertEquals("all products are counted including bundles and services", 4L, total);
 	}
-	
-	
-	
+
 
 	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
-	public void testProductResponse() throws Throwable{
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void testProductResponse() throws Throwable {
 		performTestProductResponseByFilters();
 		productBarcodeTest();
 	}
 
 
-
-
-
 	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
-	public void testProductWithMultipVariantResponse(){
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void testProductWithMultipVariantResponse() {
 		// product #1002 with 2 variants .. return multiple_variants = true
 		ResponseEntity<ProductsResponse> response = template.getForEntity("/navbox/products?shop_id=501", ProductsResponse.class);
 
@@ -872,59 +774,48 @@ public class ProductServiceTest {
 	}
 
 
-
-
 	private ProductRepresentationObject getProductFromResponse(ResponseEntity<ProductsResponse> response, Long productId) {
 		return response.getBody()
-					.getProducts()
-					.stream()
-					.filter(p -> Objects.equals(p.getId().longValue(), productId))
-					.findAny()
-					.get();
+				.getProducts()
+				.stream()
+				.filter(p -> Objects.equals(p.getId().longValue(), productId))
+				.findAny()
+				.get();
 	}
 
 
-
-
-
-
-	private ProductRepresentationObject getProductFromStringResponse(ResponseEntity<String> response, Long productId) throws Throwable{
+	private ProductRepresentationObject getProductFromStringResponse(ResponseEntity<String> response, Long productId) throws Throwable {
 		ObjectMapper mapper = new ObjectMapper();
 		ProductsResponse body = mapper.readValue(response.getBody(), ProductsResponse.class);
 		return body.getProducts()
-					.stream()
-					.filter(p -> Objects.equals(p.getId().longValue(), productId))
-					.findAny()
-					.get();
+				.stream()
+				.filter(p -> Objects.equals(p.getId().longValue(), productId))
+				.findAny()
+				.get();
 	}
 
 
-
-
 	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
-	public void testProductReturnedMinimumPrice(){
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
+	public void testProductReturnedMinimumPrice() {
 		// product #1001 with 1 variant and two stocks .. one with price 600 and the other 400 .. return lowest price info
 		ResponseEntity<ProductsResponse> response =
 				template.getForEntity("/navbox/products?org_id=99001&category_id=201&brand_id=101", ProductsResponse.class);
 
 		ProductRepresentationObject product = getProductFromResponse(response, 1001L);
 
-		Assert.assertEquals( new BigDecimal("400.00"), product.getPrice());
+		Assert.assertEquals(new BigDecimal("400.00"), product.getPrice());
 	}
-
-
-
 
 
 	private void performTestProductResponseByFilters() throws Throwable {
 		//// testing brand_id filter ////
 		ResponseEntity<String> response = template.getForEntity("/navbox/products?org_id=99001", String.class);
 		System.out.println(response.getBody());
-		JSONObject  json = (JSONObject) JSONParser.parseJSON(response.getBody());
+		JSONObject json = (JSONObject) JSONParser.parseJSON(response.getBody());
 		long total = json.getLong("total");
-		assertEquals("there are total 3 products with with org_id = 99001 and no brand_id filter",3 , total);
+		assertEquals("there are total 3 products with with org_id = 99001 and no brand_id filter", 3, total);
 
 
 		response = template.getForEntity("/navbox/products?org_id=99001&brand_id=101", String.class);
@@ -948,24 +839,19 @@ public class ProductServiceTest {
 		getProductFromStringResponse(response, 1005L);
 
 		response = template.getForEntity("/navbox/product?product_id=1001", String.class);
-		System.out.println("response JSON >>>  "+ response.getBody().toString());
+		System.out.println("response JSON >>>  " + response.getBody().toString());
 		assertTrue(response.getBody().toString().contains("brand_id"));
 		//// finish test
 	}
 
 
-
-
-
 	private void assertJsonFieldExists(ResponseEntity<String> response) {
-		System.out.println("response JSON >>>  "+ response.getBody().toString());
+		System.out.println("response JSON >>>  " + response.getBody().toString());
 		assertTrue(response.getBody().toString().contains("brand_id"));
 		assertTrue(response.getBody().toString().contains("p_name"));
 		assertTrue(response.getBody().toString().contains("image_url"));
 		assertTrue(response.getBody().toString().contains("default_variant_features"));
 	}
-
-
 
 
 	public void productBarcodeTest() {
@@ -982,8 +868,8 @@ public class ProductServiceTest {
 
 
 	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 	public void getProductWithMultipleVariantsTest() {
 		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=1001", String.class);
 
@@ -992,21 +878,21 @@ public class ProductServiceTest {
 		JSONArray variantFeatures = product.getJSONArray("variant_features");
 		JSONArray variants = product.getJSONArray("variants");
 
-		assertEquals("Product 1001 has 5 variants, only the 4 with stock records will be returned" , 4, variants.length());
+		assertEquals("Product 1001 has 5 variants, only the 4 with stock records will be returned", 4, variants.length());
 		assertEquals("The product have only 2 variant features", 2, variantFeatures.length());
 		assertTrue(variantFeatures.similar(expectedVariantFeatures));
 	}
 
 
 	@Test
-	@Sql(executionPhase = BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
-	@Sql(executionPhase = AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 	public void testGetProductFilters() {
 		ProductSearchParam param = new ProductSearchParam();
 		param.org_id = 99001L;
 
 		ResponseEntity<ProductsFiltersResponse> response =
-				template.getForEntity("/navbox/filters?"+param.toString(), ProductsFiltersResponse.class);
+				template.getForEntity("/navbox/filters?" + param.toString(), ProductsFiltersResponse.class);
 		assertEquals(200, response.getStatusCodeValue());
 
 		JSONObject res = new JSONObject(response.getBody());
@@ -1020,65 +906,61 @@ public class ProductServiceTest {
 		JSONObject variantFeatures = res.getJSONObject("variantFeatures");
 		assertTrue(!variantFeatures.isEmpty());
 	}
-	
-	
-	
-	
+
+
 	@Test
-	@Sql(executionPhase = BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
-	@Sql(executionPhase = AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 	public void testGetProductFiltersSearchByProductCode() throws JsonParseException, JsonMappingException, IOException {
 		ProductSearchParam param = new ProductSearchParam();
 		param.org_id = 99001L;
 		param.name = "code gens";
 
-		ResponseEntity<String> response = 
+		ResponseEntity<String> response =
 				template.getForEntity("/navbox/products?org_id=99001&name=gens", String.class);
 		assertEquals(OK, response.getStatusCode());
-		
+
 		System.out.println(response.getBody());
-		ProductsResponse products = objectMapper.readValue(response.getBody(), new TypeReference<ProductsResponse>(){});
+		ProductsResponse products = objectMapper.readValue(response.getBody(), new TypeReference<ProductsResponse>() {
+		});
 		assertEquals("there is 1 products with product code like the given", 1L, products.getTotal().longValue());
-		long expectedProductId = 
+		long expectedProductId =
 				products
-				.getProducts()
-				.stream()
-				.map(ProductRepresentationObject::getId)
-				.findFirst()
-				.get();
+						.getProducts()
+						.stream()
+						.map(ProductRepresentationObject::getId)
+						.findFirst()
+						.get();
 		assertEquals("only product 1001 has product code like the given", 1001L, expectedProductId);
 	}
-	
-	
-	
-	
+
+
 	@Test
-	@Sql(executionPhase = BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
-	@Sql(executionPhase = AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 	public void testGetProductFiltersSearchBySku() throws JsonParseException, JsonMappingException, IOException {
-		ResponseEntity<String> response = 
+		ResponseEntity<String> response =
 				template.getForEntity("/navbox/products?org_id=99001&name=114", String.class);
 		assertEquals(OK, response.getStatusCode());
-		
+
 		System.out.println(response.getBody());
-		ProductsResponse products = objectMapper.readValue(response.getBody(), new TypeReference<ProductsResponse>(){});
+		ProductsResponse products = objectMapper.readValue(response.getBody(), new TypeReference<ProductsResponse>() {
+		});
 		assertEquals("there is 1 products with sku like the given", 1L, products.getTotal().longValue());
-		long expectedProductId = 
+		long expectedProductId =
 				products
-				.getProducts()
-				.stream()
-				.map(ProductRepresentationObject::getId)
-				.findFirst()
-				.get();
+						.getProducts()
+						.stream()
+						.map(ProductRepresentationObject::getId)
+						.findFirst()
+						.get();
 		assertEquals("only product 1001 has product code like the given", 1001L, expectedProductId);
 	}
 
 
-
-
 	@Test
-	@Sql(executionPhase = BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert_4.sql"})
-	@Sql(executionPhase = AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert_4.sql"})
+	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 	public void getProductWithMultipleIndenticalImagesTest() {
 		ResponseEntity<String> response = template.getForEntity("/navbox/product?product_id=1001", String.class);
 
@@ -1086,15 +968,13 @@ public class ProductServiceTest {
 		JSONArray images = product.getJSONArray("images");
 
 		assertEquals("product 1001 and its variant both share the same image, it shoudn't be duplicated in images array"
-						, 1, images.length());
+				, 1, images.length());
 	}
 
-	
-	
-	
+
 	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
+	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert.sql"})
+	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
 	public void getProductWithVariantsWithExtraAttributes() {
 
 		ProductTestData testData = createProductTestDataWithExtraAttr();
@@ -1102,56 +982,15 @@ public class ProductServiceTest {
 		//-----------------------------------------
 		ResponseEntity<String> response = template.getForEntity(
 				format("/navbox/product?product_id=%d&shop_id=%d"
-						,testData.productEntity.getId(), testData.shopEntities.get(0).getId()),
+						, testData.productEntity.getId(), testData.shopEntities.get(0).getId()),
 				String.class);
 		//-----------------------------------------
-		System.out.println( "product with extra attributes >>> " +response.getBody());
-		
+		System.out.println("product with extra attributes >>> " + response.getBody());
+
 		assertValidResponseWithExtraAttr(testData, response);
-		
+
 		//-----------------------------------------
 		cleanInsertedData(testData);
-	}
-
-
-	@Test
-	@Sql(executionPhase = ExecutionPhase.BEFORE_TEST_METHOD , scripts = {"/sql/Products_Test_Data_Insert.sql"})
-	@Sql(executionPhase = ExecutionPhase.AFTER_TEST_METHOD , scripts = {"/sql/database_cleanup.sql"})
-	public void setProducts360Search() {
-		// include products in 360 shops
-		JSONArray productIds = jsonArray()
-				.put(1001)
-				.put(1002);
-
-		JSONArray shopIds = jsonArray()
-				.put(501);
-
-		JSONObject body = json()
-				.put("include", true)
-				.put("product_ids", productIds)
-				.put("shop_ids", shopIds);
-
-		HttpEntity<?> req = getHttpEntity(body.toString(), "131415");
-		//-----------------------------------------
-		ResponseEntity<String> response = template.postForEntity(
-				"/product/360_shops",
-				req, String.class);
-		//-----------------------------------------
-		assertEquals(200, response.getStatusCodeValue());
-		assertTrue(!product360ShopsRepo.findByProductEntity_IdInAndPublished(asList(1002L), (short) 2).isEmpty());
-		assertEquals(1002, product360ShopsRepo.getOne(1002L).getId().intValue());
-
-		//exclude the above included products
-
-		body = body.put("include", false);
-		req = getHttpEntity(body.toString(), "131415");
-
-		response = template.postForEntity(
-				"/product/360_shops",
-				req, String.class);
-		//-----------------------------------------
-		assertEquals(200, response.getStatusCodeValue());
-		assertTrue(product360ShopsRepo.findByProductEntity_IdInAndPublished(asList(1002L), (short) 2).isEmpty());
 	}
 }
 

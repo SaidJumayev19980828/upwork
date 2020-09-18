@@ -167,7 +167,10 @@ public class OrganizationService {
 
         List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriority(orgRepObj.getId(), 0);
         if (!isNullOrEmpty(brandsEntityList)) {
-            List<Organization_BrandRepresentationObject> repList = brandsEntityList.stream().map(rep -> ((Organization_BrandRepresentationObject) rep.getRepresentation())).collect(toList());
+            List<Organization_BrandRepresentationObject> repList = brandsEntityList
+                    .stream()
+                    .map(rep -> ((Organization_BrandRepresentationObject) rep.getRepresentation()))
+                    .collect(toList());
             orgRepObj.setBrands(repList);
         }
 

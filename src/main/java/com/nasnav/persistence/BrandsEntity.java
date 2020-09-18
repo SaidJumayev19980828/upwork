@@ -59,6 +59,7 @@ public class BrandsEntity implements BaseEntity{
     
     public BrandsEntity() {
     	this.removed = 0;
+    	this.priority = 0;
     }
 
     @Override

@@ -408,20 +408,6 @@ public class ProductsController {
     }
 
 
-    @ApiOperation(value = "assign/unassign products with 360 shops", nickname = "Include/excludeProduct", code = 200)
-    @ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "Products Included/excluded successfully"),
-            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
-            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
-    })
-    @ResponseStatus(OK)
-    @PostMapping(value = "360_shops")
-    public void includeProductIn360Search(@RequestHeader(name = "User-Token", required = false) String token,
-                                          @RequestBody Product360ShopsDTO dto) {
-        productService.addProducts360Shops(dto);
-    }
-
-
     @ApiOperation(value = "add new collection", nickname = "addCollection", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Collection added successfully"),

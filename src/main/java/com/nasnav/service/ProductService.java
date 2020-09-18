@@ -217,7 +217,7 @@ public class ProductService {
 	//	@Value("${products.default.count}")
 	private Integer defaultCount = 10;
 	//	@Value("${products.default.sort.attribute}")
-	private String defaultSortAttribute = "update_date";
+	private ProductSortOptions defaultSortAttribute = ProductSortOptions.UPDATE_DATE;
 	//	@Value("${products.default.order}")
 	private String defaultOrder = "desc";
 
@@ -650,14 +650,14 @@ public class ProductService {
 	}
 
 	@Transactional
-	public ProductsResponse getProducts(ProductSearchParam requestParams) throws BusinessException, InvocationTargetException, IllegalAccessException, SQLException {
+	public ProductsResponse getProducts(ProductSearchParam requestParams) throws BusinessException, InvocationTargetException, IllegalAccessException {
 		ProductSearchParam params = getProductSearchParams(requestParams);
 
-		SQLQuery<?> countStocks = getProductsQuery(params);
+		SQLQuery<?> countStocks = getProductsQuery(params, true);
 		String countQuery = countStocks.select(SQLExpressions.countAll).getSQL().getSQL();
 		Long productsCount = template.queryForObject(countQuery, Long.class); 
 
-		SQLQuery<?> stocks = getProductsQuery(params);
+		SQLQuery<?> stocks = getProductsQuery(params, false);
 
 		stocks.select((Expressions.template(ProductRepresentationObject.class,"*")))
 				 .limit(params.count).offset(params.start);
@@ -673,7 +673,7 @@ public class ProductService {
 
 
 
-	private SQLQuery<?> getProductsQuery(ProductSearchParam params) {
+	private SQLQuery<?> getProductsQuery(ProductSearchParam params, boolean count) {
 		QStocks stock = QStocks.stocks;
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
@@ -687,9 +687,9 @@ public class ProductService {
 
 		SQLQuery<?> fromCollectionsClause = productsCustomRepo.getCollectionsBaseQuery(predicate, params);
 
-		SubQueryExpression productsQuery = getProductsQuery(stock, product, variant, shop, fromProductsClause, order);
+		SubQueryExpression productsQuery = getProductsQuery(stock, product, variant, fromProductsClause);
 
-		SubQueryExpression collectionsQuery = getProductsQuery(stock, product, variant, shop, fromCollectionsClause, order);
+		SubQueryExpression collectionsQuery = getProductsQuery(stock, product, variant, fromCollectionsClause);
 
 		SQLQuery<?> subQuery = new SQLQuery();
 
@@ -698,12 +698,14 @@ public class ProductService {
 						.from(subQuery.union(productsQuery,collectionsQuery).as("total_products"))
 						.where(Expressions.numberPath(Long.class, "row_num").eq(1L));
 
+		if (order != null && !count)
+			stocks.orderBy(order);
+
 		return stocks;
 	}
 
 
-	private SubQueryExpression<?> getProductsQuery(QStocks stock, QProducts product, QProductVariants variant, QShops shop, SQLQuery fromClause,
-										 OrderSpecifier<?> order) {
+	private SubQueryExpression<?> getProductsQuery(QStocks stock, QProducts product, QProductVariants variant, SQLQuery fromClause) {
 		SQLQuery<?> productsQuery = fromClause.select(
 											stock.id.as("stock_id"),
 											stock.quantity.as("quantity"),
@@ -731,15 +733,13 @@ public class ProductService {
 											product.createdAt.as("creation_date"),
 											product.updatedAt.as("update_date"),
 											product.productType,
+											product.priority,
 											SQLExpressions.rowNumber()
 													.over()
 													.partitionBy(product.id)
 													.orderBy(stock.price).as("row_num"));
 
-		if (order != null)
-			productsQuery.orderBy(order);
-
-		return (SubQueryExpression) productsQuery;
+		return productsQuery;
 	}
 	
 	
@@ -843,21 +843,23 @@ public class ProductService {
 	private OrderSpecifier<?> getProductQueryOrder(ProductSearchParam params, QProducts product, QStocks stock) {
 		if (params.getOrder().equals(SortOrder.DESC))
 			switch (params.getSort()) {
-				case ID : return product.id.desc();
-				case NAME: return product.name.desc();
-				case P_NAME: return product.pName.desc();
-				case CREATION_DATE: return product.createdAt.desc();
-				case UPDATE_DATE: return product.updatedAt.desc();
-				case PRICE: return stock.price.desc();
+				case ID : return product.id.as("id").desc();
+				case NAME: return product.name.as("name").desc();
+				case P_NAME: return product.pName.as("pname").desc();
+				case CREATION_DATE: return product.createdAt.as("creation_date").desc();
+				case UPDATE_DATE: return product.updatedAt.as("update_date").desc();
+				case PRICE: return stock.price.as("price").desc();
+				case PRIORITY: return product.priority.as("priority").desc();
 			}
 		else if (params.getOrder().equals(SortOrder.ASC))
 			switch (params.getSort()) {
-				case ID : return product.id.asc();
-				case NAME: return product.name.asc();
-				case P_NAME: return product.pName.asc();
-				case CREATION_DATE: return product.createdAt.asc();
-				case UPDATE_DATE: return product.updatedAt.asc();
-				case PRICE: return stock.price.asc();
+				case ID : return product.id.as("id").asc();
+				case NAME: return product.name.as("name").asc();
+				case P_NAME: return product.pName.as("pname").asc();
+				case CREATION_DATE: return product.createdAt.as("creation_date").asc();
+				case UPDATE_DATE: return product.updatedAt.as("update_date").asc();
+				case PRICE: return stock.price.as("price").asc();
+				case PRIORITY: return product.priority.as("priority").asc();
 			}
 		return product.updatedAt.desc();
 	}
@@ -920,6 +922,9 @@ public class ProductService {
 
 		if (oldParams.order != null)
 			params.setOrder(oldParams.order.getValue());
+
+		if (oldParams.sort != null)
+			params.setSort(oldParams.sort);
 
 		if (params.sort != null && ProductSortOptions.getProductSortOptions(params.sort.getValue()) == null)
 			throw new BusinessException("Sort is limited to id, name, pname, price", "", BAD_REQUEST);
@@ -2955,44 +2960,6 @@ public class ProductService {
 			divideToBatches(productIdsList, 500)
 				.forEach(batch -> productRepository.setProductsHidden(batch, hide, orgId));
 		}
-	}
-
-
-
-	public void addProducts360Shops(Product360ShopsDTO dto) {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-
-		validateProduct360ShopsDTO(dto);
-
-		List<ProductEntity> existingProducts = productRepository.getExistingProducts(dto.getProductIds(), orgId);
-		List<ShopsEntity> existingShops = shopsRepo.getExistingShops(dto.getShopIds(), orgId);
-
-		if (dto.getInclude()) {
-			addProduct360Shops(existingProducts, existingShops);
-		} else {
-			removeProduct360Shops(existingProducts, existingShops);
-		}
-	}
-
-
-	private void addProduct360Shops(List<ProductEntity> existingProducts, List<ShopsEntity> existingShops) {
-		List<Shop360ProductsEntity> product360Shops = new ArrayList<>();
-		for(ProductEntity product : existingProducts) {
-			for(ShopsEntity shop : existingShops) {
-				if (!product360ShopsRepo.existsByProductEntityAndShopEntity(product, shop)) {
-					Shop360ProductsEntity product360Shop = new Shop360ProductsEntity();
-					product360Shop.setProductEntity(product);
-					product360Shop.setShopEntity(shop);
-					product360Shops.add(product360Shop);
-				}
-			}
-		}
-		product360ShopsRepo.saveAll(product360Shops);
-	}
-
-
-	private void removeProduct360Shops(List<ProductEntity> existingProducts, List<ShopsEntity> existingShops) {
-		product360ShopsRepo.deleteByProductEntityInAndShopEntityIn(existingProducts, existingShops);
 	}
 
 
