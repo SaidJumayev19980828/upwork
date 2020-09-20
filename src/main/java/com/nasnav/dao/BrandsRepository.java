@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 public interface BrandsRepository extends CrudRepository<BrandsEntity,Long> {
 
-    List<BrandsEntity> findByOrganizationEntity_IdAndRemovedOrderByPriority(Long organizationEntity_Id, Integer removed);
+    List<BrandsEntity> findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(Long organizationEntity_Id, Integer removed);
 
     boolean existsByIdAndOrganizationEntity_IdAndRemoved(Long brandId, Long orgId, Integer removed);
 	boolean existsByIdAndRemoved(Long brandId, Integer removed);

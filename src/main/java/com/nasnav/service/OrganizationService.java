@@ -165,7 +165,7 @@ public class OrganizationService {
         if (organizationThemeEntity != null)
             orgRepObj.setThemes((OrganizationThemesRepresentationObject) organizationThemeEntity.getRepresentation());
 
-        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriority(orgRepObj.getId(), 0);
+        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(orgRepObj.getId(), 0);
         if (!isNullOrEmpty(brandsEntityList)) {
             List<Organization_BrandRepresentationObject> repList = brandsEntityList
                     .stream()
@@ -346,7 +346,7 @@ public class OrganizationService {
         List<Organization_BrandRepresentationObject> brands = null;
         if (orgId == null)
             return brands;
-        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriority(orgId, 0);
+        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(orgId, 0);
         brands = brandsEntityList.stream().map(brand -> (Organization_BrandRepresentationObject) brand.getRepresentation())
                  .collect(toList());
         return brands;
