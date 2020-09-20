@@ -40,6 +40,7 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -4044,11 +4045,9 @@ public class OrderServiceImpl implements OrderService {
 
 	private MailAttachment doCreateReturnConfirmAirwaybill(int i, ReturnShipmentTracker tracker, Integer shipmentsCount) {
 		byte[] fileDecoded = Base64.getDecoder().decode(tracker.getAirwayBillFile());
-		ByteArrayInputStream inStream = new ByteArrayInputStream(fileDecoded);
-		String shipmentNum = shipmentsCount != 1? "_"+i : "";
-		String fileName = format("airwaybill%s.pdf", shipmentNum);
+		String fileName = format("airwaybill-%s.pdf", tracker.getTracker());
 
-		return new MailAttachment(fileName, new InputStreamResource(inStream));
+		return new MailAttachment(fileName, new ByteArrayResource(fileDecoded));
 	}
 }
 

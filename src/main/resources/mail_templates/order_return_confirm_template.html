@@ -270,7 +270,7 @@
           <div style="width: 70%;" class="column">
             <h3>Pickup Address</h3>
             <ul>
-              <li id="address_Line_1" th:text="$pickupAddr.flatNumber} +', '+ ${pickupAddr.buildingNumber}+ ', ' + ${pickupAddr.addressLine1}">there ..</li>
+              <li id="address_Line_1" th:text="${pickupAddr.flatNumber} +', '+ ${pickupAddr.buildingNumber}+ ', ' + ${pickupAddr.addressLine1}">there ..</li>
               <li id="area" th:text="${pickupAddr.area}">miami</li>
               <li id="city" th:text="${pickupAddr.city}">Midetterian mermaid</li>
               <li id="country" th:text="${pickupAddr.country}">The Mother Of All Land</li>

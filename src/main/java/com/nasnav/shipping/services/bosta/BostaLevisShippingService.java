@@ -22,6 +22,7 @@ import static java.math.RoundingMode.HALF_EVEN;
 import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
@@ -338,7 +339,10 @@ public class BostaLevisShippingService implements ShippingService{
 				ofNullable(shipment.getMetaOrderId())
 				.map(id -> id+"-")
 				.orElse("");
-		String description = format("Order Id: %s%d", metaOrderId, shipment.getSubOrderId());
+		String orderDescription = format("Order Id: %s%d", metaOrderId, shipment.getSubOrderId());
+		String returnRequestDescription = format("Return request: %d", shipment.getReturnRequestId());
+		String description =
+				isNull(shipment.getReturnRequestId())? orderDescription : returnRequestDescription;
 
 		PackageDetails details = new PackageDetails();
 		details.setDescription(description);
