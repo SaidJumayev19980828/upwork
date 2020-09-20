@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.StreamSupport;
 
+import com.nasnav.shipping.model.*;
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -28,15 +29,6 @@ import com.nasnav.service.OrderService;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 import com.nasnav.service.model.common.Parameter;
 import com.nasnav.shipping.ShippingService;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.Shipment;
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShipmentStatusData;
-import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingDetails;
-import com.nasnav.shipping.model.ShippingEta;
-import com.nasnav.shipping.model.ShippingOffer;
-import com.nasnav.shipping.model.ShippingServiceInfo;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -47,7 +39,10 @@ public class PickupFromShop implements ShippingService{
 	public static final String SERVICE_NAME = "Pickup from Shop";
 	public static final String ALLOWED_SHOP_ID_LIST = "ALLOWED_SHOP_ID_LIST";
 	public static final String SHOP_ID = "SHOP_ID";
-	
+	public static final String RETURN_EMAIL_MSG =
+			"Thanks for you patience! To complete the return process, please return " +
+			" the items back to shop and provide the sellers with this email!";
+
 	private static List<Parameter> SERVICE_PARAM_DEFINITION = 
 			asList(new Parameter(ALLOWED_SHOP_ID_LIST, LONG_ARRAY));
 	
@@ -167,12 +162,17 @@ public class PickupFromShop implements ShippingService{
 	
 	@Override
 	public Flux<ShipmentTracker> requestShipment(List<ShippingDetails> items) {
-		return Flux.just(new ShipmentTracker());
+		ShipmentTracker tracker =
+				items
+				.stream()
+				.map(ShipmentTracker::new)
+				.findFirst()
+				.orElse(new ShipmentTracker());
+		return Flux.just(tracker);
 	}
 
-	
-	
-	
+
+
 	@Override
 	public void validateShipment(List<ShippingDetails> items) {
 		boolean isCartFromSingleShop = items.size() == 1;
@@ -212,6 +212,15 @@ public class PickupFromShop implements ShippingService{
 		status.setServiceId(serviceId);
 		status.setState(ShippingStatus.valueOf(params).getValue());
 		return status;
+	}
+
+
+
+
+	@Override
+	public Flux<ReturnShipmentTracker> requestReturnShipment(List<ShippingDetails> items) {
+		return requestShipment(items)
+				.map(shpTracker -> new ReturnShipmentTracker(shpTracker, RETURN_EMAIL_MSG));
 	}
 
 }

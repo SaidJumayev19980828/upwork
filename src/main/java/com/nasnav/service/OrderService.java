@@ -32,7 +32,9 @@ import com.nasnav.service.model.cart.ShopFulfillingCart;
 
 public interface OrderService {
 
-	public class OrderValue {
+
+
+    public class OrderValue {
 		public BigDecimal amount;
 		public TransactionCurrency currency;
 
@@ -48,6 +50,8 @@ public interface OrderService {
 	String BILL_EMAIL_SUBJECT = "Your Order has been Created!";
 	String ORDER_REJECT_SUBJECT = "Sorry! Your Order has been rejected!";
 	String ORDER_RETURN_REJECT_SUBJECT = "Sorry! Your Order return has been rejected!";
+	String ORDER_RETURN_CONFIRM_SUBJECT = "Your Order return has been confirmed!";
+
 
 	public OrderResponse createNewOrder(OrderJsonDto orderJson) throws BusinessException;
 
@@ -102,9 +106,11 @@ public interface OrderService {
 
 	List<ReturnRequestDTO> getOrderReturnRequests(ReturnRequestSearchParams params);
 	ReturnRequestDTO getOrderReturnRequest(Long id);
-	void rejectReturnItems(ReturnRequestRejectDTO dto);
+	void rejectReturnRequest(ReturnRequestRejectDTO dto);
 
 	void receiveItems(ReceivedItemsDTO returnedItems);
 
 	Long createReturnRequest(ReturnRequestItemsDTO itemsList);
+
+	void confirmReturnRequest(Long id);
 }

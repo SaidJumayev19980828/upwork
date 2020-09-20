@@ -159,4 +159,5 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 	Long countByShopsEntity_Id(long shopId);
 
 
+	List<StocksEntity> findByIdInOrderById(List<Long> ids);
 }

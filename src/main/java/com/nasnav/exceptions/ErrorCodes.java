@@ -92,6 +92,7 @@ public enum ErrorCodes {
 	,O$SHP$0001("Failed to create shipment for order[%d]!")
 	,O$SHP$0002("Sub-Order with id[%d] has no shop!")
 	,O$SHP$0003("Failed to create a shipment for the order with the given parameters!")
+	,O$SHP$0004("Failed to create a shipment for return request[%d]!")
 
 	,O$CHK$0001("Must have at least one item in cart!")
 	,O$CHK$0002("Must provide shipping service provider")
@@ -128,10 +129,12 @@ public enum ErrorCodes {
 	,O$RET$0015("Cannot Return order items that belongs to another user!")
 	,O$RET$0016("Return period has passed for item(s)!")
 	,O$RET$0017("No return request found with ID[%d]!")
+	,O$RET$0018("Cannot update return request status from [%s] to [%s]!")
+	,O$RET$0019("Failed to get customer address!")
 
 	,O$0001("No order exists with ID[%d]!")
-	
-	,O$GNRL$0001("Cannot update order staus from [%s] to [%s]!")
+
+	,O$GNRL$0001("Cannot update order status from [%s] to [%s]!")
 	,O$GNRL$0002("No Meta order exists with id[%d]!")
 	,O$GNRL$0003("Cannot access Meta order with id[%d] by the current user!")
 	

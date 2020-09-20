@@ -13,23 +13,29 @@ public interface ReturnRequestRepository extends JpaRepository<ReturnRequestEnti
             " left join fetch returnRequest.createdByEmployee emp " +
             " left join fetch returnRequest.createdByUser user " +
             " left join fetch returnRequest.metaOrder meta " +
+            " left join fetch meta.organization org " +
+            " left join fetch meta.user customer " +
             " left join fetch returnRequest.returnedItems item " +
+            " left join fetch item.returnShipment returnShp " +
             " left join fetch item.basket basket " +
+            " left join fetch basket.ordersEntity subOrder " +
             " left join fetch basket.stocksEntity stock " +
+            " left join fetch subOrder.shopsEntity subOrderShop " +
+            " left join fetch subOrder.addressEntity subOrderAddr " +
             " left join fetch stock.productVariantsEntity variant " +
             " left join fetch variant.productEntity product " +
-            " left join fetch returnRequest.createdByEmployee emp " +
-            " left join fetch returnRequest.createdByUser user " +
-            " left join fetch returnRequest.createdByEmployee emp " +
-            " left join fetch returnRequest.createdByUser user " +
             " left join fetch item.createdByUser itemUser " +
             " left join fetch item.createdByEmployee itemEmployee " +
-            " where returnRequest.id = :id and meta.organization.id = :orgId")
+            " where returnRequest.id = :id " +
+            " and org.id = :orgId")
     Optional<ReturnRequestEntity> findByReturnRequestId(@Param("id") Long id,
                                                         @Param("orgId") Long orgId);
 	
 	
-    @Query(value = "select r from ReturnRequestEntity r where r.id = :id and r.status = :status and r.metaOrder.organization.id = :orgId")
+    @Query(value = "select r from ReturnRequestEntity r " +
+            " where r.id = :id " +
+            " and r.status = :status " +
+            " and r.metaOrder.organization.id = :orgId")
     Optional<ReturnRequestEntity> findByIdAndOrganizationIdAndStatus(@Param("id") Long id,
                                                                      @Param("orgId") Long orgId,
                                                                      @Param("status") Integer status);

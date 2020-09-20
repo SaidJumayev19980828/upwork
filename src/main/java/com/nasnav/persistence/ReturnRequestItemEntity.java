@@ -4,6 +4,9 @@ import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.response.ReturnRequestItemDTO;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -15,6 +18,7 @@ import static java.util.Optional.ofNullable;
 @Entity
 @Table(name="return_request_item")
 @Data
+@NoArgsConstructor
 public class ReturnRequestItemEntity implements BaseEntity {
 
     @Id
@@ -24,6 +28,12 @@ public class ReturnRequestItemEntity implements BaseEntity {
     @ManyToOne
     @JoinColumn(name="return_request_id")
     private ReturnRequestEntity returnRequest;
+
+    @ManyToOne
+    @JoinColumn(name="return_shipment_id", referencedColumnName = "id")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private ReturnShipmentEntity returnShipment;
 
     @ManyToOne
     @JoinColumn(name="order_item_id")
@@ -49,6 +59,12 @@ public class ReturnRequestItemEntity implements BaseEntity {
     @ManyToOne
     @JoinColumn(name="created_by_employee")
     private EmployeeUserEntity createdByEmployee;
+
+
+    public ReturnRequestItemEntity(Long id){
+        this.id = id;
+    }
+
 
     @Override
     public BaseRepresentationObject getRepresentation() {

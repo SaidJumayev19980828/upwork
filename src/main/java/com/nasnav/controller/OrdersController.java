@@ -258,7 +258,7 @@ public class OrdersController {
 	@PostMapping(value = "return/reject")
 	public void rejectReturnItems(@RequestHeader(name = "User-Token", required = false) String userToken,
 								  @RequestBody ReturnRequestRejectDTO dto) {
-		orderService.rejectReturnItems(dto);
+		orderService.rejectReturnRequest(dto);
 	}
 
 
@@ -288,5 +288,19 @@ public class OrdersController {
 	public Long createReturnRequest(@RequestHeader(name = "User-Token", required = false) String userToken,
 							 @RequestBody ReturnRequestItemsDTO itemsList) throws BusinessException {
 		return orderService.createReturnRequest(itemsList);
+	}
+
+
+
+	@ApiOperation(value = "confirm returned order request", nickname = "confirmReturnRequest")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "Order return confirmed"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+	})
+	@PostMapping(value = "return/confirm")
+	public void confirmReturnRequest(@RequestHeader(name = "User-Token", required = false) String userToken,
+								  @RequestParam Long id) {
+		orderService.confirmReturnRequest(id);
 	}
 }
