@@ -1411,7 +1411,6 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private BasketItem toBasketItem(BasketsEntity entity, Map<Long, Optional<String>> variantsCoverImages) {
-		OrganizationEntity org = securityService.getCurrentUserOrganization();
 		ProductVariantsEntity variant = entity.getStocksEntity().getProductVariantsEntity();
 		ProductEntity product = variant.getProductEntity();
 		BigDecimal price = entity.getPrice();

@@ -1138,7 +1138,7 @@ public class ProductServiceTest {
 				req, String.class);
 		//-----------------------------------------
 		assertEquals(200, response.getStatusCodeValue());
-		assertTrue(!product360ShopsRepo.findByProductEntity_IdInAndPublished(asList(1002L), (short) 2).isEmpty());
+		assertTrue(!product360ShopsRepo.findByProductEntity_IdInAndPublished(asList(1002L), (short) 0).isEmpty());
 		assertEquals(1002, product360ShopsRepo.getOne(1002L).getId().intValue());
 
 		//exclude the above included products
