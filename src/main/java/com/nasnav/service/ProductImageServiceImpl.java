@@ -939,7 +939,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
 	private void rollbackImgBulkImport(List<ProductImageUpdateResponse> responses) throws BusinessException {
 		for(ProductImageUpdateResponse res: responses) {
-			deleteImage( null, res.getImageId() );
+			deleteImage( res.getImageId(),null);
 		}
 		
 		TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();

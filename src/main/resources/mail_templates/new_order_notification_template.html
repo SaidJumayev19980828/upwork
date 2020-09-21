@@ -302,7 +302,7 @@
 					</table>
 					<span class="shippingdate" th:text=" 'Shipping Arrival: ' + ${sub.shipment.shippingEta.from} + ' to ' + ${sub.shipment.shippingEta.to}"/>
 					<span class="quantity" th:text="'Qty: ' + ${item.quantity}"/>
-					<div th:with="price=${(item.price - item.discount) * item.quantity}">
+					<div th:with="price=${item.price * item.quantity}">
 						<p th:text="${#numbers.formatDecimal(price, 0,  2, 'POINT')} +' '+ ${item.currency}"/>
 					</div>
 				</tr>
@@ -318,10 +318,6 @@
 				<div class="price">
 					<p>Shipping</p>
 					<span id="shipping" th:text="${sub.shipment.shippingFee} +' '+ ${sub.items[0].currency}"></span>
-				</div>
-				<div class="price" th:with="discount=${sub.discount}">
-					<p>Discount</p>
-					<span id="discount" th:text="'-' + ${discount} +' '+ ${sub.items[0].currency}"/>
 				</div>
 			</div>
 			<div class="price total">

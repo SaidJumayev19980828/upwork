@@ -1,9 +1,13 @@
 
 ----------------------------inserting dummy data----------------------------
 
+INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
+INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
+INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
+
 --inserting organizations
-INSERT INTO public.organizations(id, name) VALUES (99001, 'organization_1');
-INSERT INTO public.organizations(id, name) VALUES (99002, 'organization_2');
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
 INSERT INTO public.organizations(id, name) VALUES (99003, 'organization_2');
 
 --inserting brands
@@ -45,9 +49,6 @@ INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (102, '456', now(), null,89);
 
 -- insert user addresses
-INSERT INTO public.countries(id,"name")VALUES(1,'Egypt');
-INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
-INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
 
 
 INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300001, 'address line', 1, '01111234567');

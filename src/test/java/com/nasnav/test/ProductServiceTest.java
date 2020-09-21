@@ -991,6 +991,7 @@ public class ProductServiceTest {
 
 		//-----------------------------------------
 		cleanInsertedData(testData);
+		assertTrue(!product360ShopsRepo.findByProductEntity_IdInAndPublished(asList(1002L), (short) 2).isEmpty());
 	}
 }
 

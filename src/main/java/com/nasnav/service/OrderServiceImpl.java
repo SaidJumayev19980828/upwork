@@ -1441,10 +1441,15 @@ public class OrderServiceImpl implements OrderService {
 		ProductEntity product = variant.getProductEntity();
 		BigDecimal price = entity.getPrice();
 		BigDecimal discount = ofNullable(entity.getDiscount()).orElse(ZERO);
-		BigDecimal totalPrice = price.subtract(discount).multiply(entity.getQuantity());
+		BigDecimal totalPrice = price.multiply(entity.getQuantity());
 		BigDecimal discountPercentage = calculatePercentage(discount, price);
 		String thumb = variantsCoverImages.get(variant.getId()).orElse(null);
 		String currency = ofNullable(getTransactionCurrency(entity.getCurrency())).orElse(EGP).name();
+		CountriesEntity country = entity.getOrdersEntity().getOrganizationEntity().getCountry();
+		String currencyValue = "";
+		if (country != null) {
+			currencyValue = country.getCurrency();
+		}
 		Boolean isReturnable = this.isReturnable(entity);
 
 		BasketItem item = new BasketItem();
@@ -1465,6 +1470,7 @@ public class OrderServiceImpl implements OrderService {
 		item.setVariantId(variant.getId());
 		item.setVariantName(variant.getName());
 		item.setIsReturnable(isReturnable);
+		item.setCurrencyValue(currencyValue);
 		//TODO set item unit //
 
 		return item;
@@ -2559,7 +2565,6 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setShopName(order.getShopsEntity().getName());
 		subOrder.setSubOrderId(order.getId());
 		subOrder.setCreationDate(order.getCreationDate());
-		subOrder.setSubtotal(order.getAmount());
 		subOrder.setStatus(status);
 		subOrder.setDeliveryAddress((AddressRepObj)order.getAddressEntity().getRepresentation());
 		subOrder.setItems(items);
@@ -2899,10 +2904,11 @@ public class OrderServiceImpl implements OrderService {
 		if(stock.getQuantity() < data.getQuantity()) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0003);
 		}
-		
+		BigDecimal discount = ofNullable(data.getDiscount()).orElse(ZERO);
+		BigDecimal totalPrice = data.getPrice().subtract(discount);
 		BasketsEntity basket = new BasketsEntity();
 		basket.setStocksEntity(stock);
-		basket.setPrice(data.getPrice());
+		basket.setPrice(totalPrice);
 		basket.setQuantity(new BigDecimal(data.getQuantity()));
 		basket.setCurrency(data.getCurrency());
 		basket.setDiscount(data.getDiscount());
@@ -2916,8 +2922,7 @@ public class OrderServiceImpl implements OrderService {
 										CartItemsForShop cartItems) {
 		UserEntity user = (UserEntity) securityService.getCurrentUser();
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
-		BigDecimal discounts = calculateDiscounts(cartItems);
-		
+
 		OrdersEntity subOrder = new OrdersEntity();
 		subOrder.setName(user.getName());
 		subOrder.setUserId(user.getId());
@@ -2925,8 +2930,7 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setOrganizationEntity(org);
 		subOrder.setAddressEntity(shippingAddress);
 		subOrder.setStatus(CLIENT_CONFIRMED.getValue());
-		subOrder.setDiscounts(discounts);
-		
+		subOrder.setDiscounts(ZERO);
 		return subOrder;
 	}
 
