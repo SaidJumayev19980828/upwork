@@ -27,6 +27,7 @@ import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.*;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
+import com.nasnav.response.ReturnRequestsResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 import com.nasnav.service.model.mail.MailAttachment;
@@ -1631,8 +1632,8 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private CriteriaQuery<ReturnRequestEntity> getReturnRequestCriteriaQuery(ReturnRequestSearchParams params) {
-		CriteriaBuilder builder = em.getCriteriaBuilder();
+	private ReturnRequestsResponse getReturnRequestCriteriaQuery(ReturnRequestSearchParams params, CriteriaBuilder builder) {
+
 		CriteriaQuery<ReturnRequestEntity> query = builder.createQuery(ReturnRequestEntity.class);
 		Root<ReturnRequestEntity> root = query.from(ReturnRequestEntity.class);
 		root.fetch("metaOrder", LEFT);
@@ -1647,15 +1648,23 @@ public class OrderServiceImpl implements OrderService {
 
 		query.orderBy(order);
 
-		return query;
+		Set<ReturnRequestDTO> returnRequestDTOS = em.createQuery(query)
+				.setFirstResult(params.getStart())
+				.setMaxResults(params.getCount())
+				.getResultStream()
+				.map(request -> (ReturnRequestDTO)request.getRepresentation())
+				.collect(toSet());
+
+		Long count = getOrderReturnRequestsCount(builder, predicatesArr);
+
+		return new ReturnRequestsResponse(count, returnRequestDTOS);
 	}
 
 
 	private Predicate[] getReturnRequestQueryPredicates(ReturnRequestSearchParams params, CriteriaBuilder builder, Root<ReturnRequestEntity> root) {
 		List<Predicate> predicates = new ArrayList<>();
-		Path<Map<String, String>> returnedItems = root.join("returnedItems", INNER);
 		Long currentOrgId = securityService.getCurrentUserOrganizationId();
-
+		Path<Map<String, String>> returnedItems = root.join("returnedItems", INNER);
 
 		Predicate orgId = builder.equal(root.get("metaOrder").get("organization").get("id"), currentOrgId);
         predicates.add(orgId);
@@ -3795,7 +3804,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
-	public List<ReturnRequestDTO> getOrderReturnRequests(ReturnRequestSearchParams params) {
+	public ReturnRequestsResponse getOrderReturnRequests(ReturnRequestSearchParams params) {
 		if(params.getStart() == null || params.getStart() < 0){
 			params.setStart(0);
 		}
@@ -3804,14 +3813,21 @@ public class OrderServiceImpl implements OrderService {
 		} else if (params.getCount() > 1000) {
 			params.setCount(1000);
 		}
-		Set<ReturnRequestEntity> entities = em.createQuery(getReturnRequestCriteriaQuery(params))
-				.setFirstResult(params.getStart())
-				.setMaxResults(params.getCount())
-				.getResultStream()
-				.collect(toSet());
-		return entities.stream()
-				.map(request -> (ReturnRequestDTO)request.getRepresentation())
-				.collect(toList());
+		CriteriaBuilder builder = em.getCriteriaBuilder();
+		return getReturnRequestCriteriaQuery(params, builder);
+	}
+
+
+	private Long getOrderReturnRequestsCount(CriteriaBuilder builder, Predicate[] predicatesArr) {
+		CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
+		countQuery.select(  builder.count(
+										(Expression<?>) countQuery
+												.from(ReturnRequestEntity.class)
+												.join("returnedItems", INNER)
+												.alias("generatedAlias1")) )
+				  .where(predicatesArr);
+		Long count = em.createQuery(countQuery).getSingleResult();
+		return count;
 	}
 
 

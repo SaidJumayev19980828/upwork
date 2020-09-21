@@ -24,8 +24,8 @@ public class ReturnRequestDTO extends BaseRepresentationObject {
     private ReturnRequestStatus status;
     private String userName;
     private String phoneNumber;
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     Set<ReturnRequestItemDTO> returnedItems;
-    private BigDecimal subTotal;
 
     public ReturnRequestDTO() {
         returnedItems = new HashSet<>();

@@ -5,6 +5,7 @@ import java.util.List;
 import com.nasnav.dto.ReturnRequestSearchParams;
 import com.nasnav.dto.response.ReturnRequestDTO;
 import com.nasnav.dto.request.ReturnRequestRejectDTO;
+import com.nasnav.response.ReturnRequestsResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -230,7 +231,7 @@ public class OrdersController {
 	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
 	@GetMapping(value = "return/requests", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
-	public List<ReturnRequestDTO> getOrderReturnRequests(
+	public ReturnRequestsResponse getOrderReturnRequests(
 			@RequestHeader(name = "User-Token", required = false) String userToken,
 			ReturnRequestSearchParams params) {
 
