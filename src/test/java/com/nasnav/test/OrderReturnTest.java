@@ -272,7 +272,7 @@ public class OrderReturnTest {
     public void getReturnRequests() throws IOException {
         HttpEntity<?> request = getHttpEntity( "131415");
         ResponseEntity<ReturnRequestsResponse> response = template.exchange("/order/return/requests", GET, request, ReturnRequestsResponse.class);
-        Set<ReturnRequestDTO> body = response.getBody().getReturnRequest();
+        Set<ReturnRequestDTO> body = response.getBody().getReturnRequests();
         Set<Long> ids = getReturnedRequestsIds(body);
         assertEquals(200,response.getStatusCodeValue());
         assertEquals(3, body.size());
@@ -312,7 +312,7 @@ public class OrderReturnTest {
         HttpEntity<?> request = getHttpEntity( authToken);
         ResponseEntity<ReturnRequestsResponse> response = template.exchange("/order/return/requests?"+params, GET, request, ReturnRequestsResponse.class);
         assertEquals(200, response.getStatusCodeValue());
-        return response.getBody().getReturnRequest();
+        return response.getBody().getReturnRequests();
     }
 
 

@@ -13,5 +13,5 @@ import java.util.Set;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class ReturnRequestsResponse {
     private Long total;
-    private Set<ReturnRequestDTO> returnRequest;
+    private Set<ReturnRequestDTO> returnRequests;
 }

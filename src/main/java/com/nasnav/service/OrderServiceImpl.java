@@ -1629,9 +1629,8 @@ public class OrderServiceImpl implements OrderService {
 				.getResultStream()
 				.map(request -> (ReturnRequestDTO)request.getRepresentation())
 				.collect(toSet());
-		Long count = null;
-		if (params.getShop_id() == null)
-			count =  getOrderReturnRequestsCount(builder, predicatesArr);
+
+		Long count = getOrderReturnRequestsCount(builder, predicatesArr);
 
 		return new ReturnRequestsResponse(count, returnRequestDTOS);
 	}
@@ -1639,9 +1638,8 @@ public class OrderServiceImpl implements OrderService {
 
 	private Predicate[] getReturnRequestQueryPredicates(ReturnRequestSearchParams params, CriteriaBuilder builder, Root<ReturnRequestEntity> root) {
 		List<Predicate> predicates = new ArrayList<>();
-		Path<Map<String, String>> returnedItems = root.join("returnedItems", INNER);
-
 		Long currentOrgId = securityService.getCurrentUserOrganizationId();
+		Path<Map<String, String>> returnedItems = root.join("returnedItems", INNER);
 
 		Predicate orgId = builder.equal(root.get("metaOrder").get("organization").get("id"), currentOrgId);
         predicates.add(orgId);
@@ -1662,7 +1660,6 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 		if(params.getShop_id() != null) {
-			returnedItems.alias("generatedAlias5");
 			Predicate shopId = builder.equal(returnedItems.get("basket").get("stocksEntity").get("shopsEntity").get("id"), params.getShop_id());
 			predicates.add(shopId);
 		}
@@ -3792,7 +3789,11 @@ public class OrderServiceImpl implements OrderService {
 
 	private Long getOrderReturnRequestsCount(CriteriaBuilder builder, Predicate[] predicatesArr) {
 		CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
-		countQuery.select(  builder.count( countQuery.from(ReturnRequestEntity.class) ) )
+		countQuery.select(  builder.count(
+										(Expression<?>) countQuery
+												.from(ReturnRequestEntity.class)
+												.join("returnedItems", INNER)
+												.alias("generatedAlias1")) )
 				  .where(predicatesArr);
 		Long count = em.createQuery(countQuery).getSingleResult();
 		return count;
