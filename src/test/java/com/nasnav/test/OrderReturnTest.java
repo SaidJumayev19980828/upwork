@@ -10,6 +10,7 @@ import com.nasnav.dto.response.ReturnRequestDTO;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.ReturnRequestEntity;
 import com.nasnav.persistence.ReturnRequestItemEntity;
+import com.nasnav.response.ReturnRequestsResponse;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -270,13 +271,9 @@ public class OrderReturnTest {
     @Test
     public void getReturnRequests() throws IOException {
         HttpEntity<?> request = getHttpEntity( "131415");
-        ResponseEntity<String> response = template.exchange("/order/return/requests", GET, request, String.class);
-        List<ReturnRequestDTO> body = mapper.readValue(response.getBody(), new TypeReference<List<ReturnRequestDTO>>(){});
-        List<Long> ids =
-                body
-                .stream()
-                .map(ReturnRequestDTO::getId)
-                .collect(toList());
+        ResponseEntity<ReturnRequestsResponse> response = template.exchange("/order/return/requests", GET, request, ReturnRequestsResponse.class);
+        Set<ReturnRequestDTO> body = response.getBody().getReturnRequest();
+        Set<Long> ids = getReturnedRequestsIds(body);
         assertEquals(200,response.getStatusCodeValue());
         assertEquals(3, body.size());
         assertTrue( asList(330032L, 330031L, 440034L).containsAll(ids));
@@ -286,7 +283,7 @@ public class OrderReturnTest {
     @Test
     public void getReturnRequestsDifferentFilters() throws IOException {
         //count filter
-        List<ReturnRequestDTO> body = getReturnRequests("131415", "count=1");
+        Set<ReturnRequestDTO> body = getReturnRequests("131415", "count=1");
         assertEquals(1, body.size());
         Set<Long> ids = getReturnedRequestsIds(body);
         assertTrue(setOf(440034L).containsAll(ids));
@@ -311,15 +308,15 @@ public class OrderReturnTest {
     }
 
 
-    private List<ReturnRequestDTO> getReturnRequests(String authToken, String params) throws IOException {
+    private Set<ReturnRequestDTO> getReturnRequests(String authToken, String params) throws IOException {
         HttpEntity<?> request = getHttpEntity( authToken);
-        ResponseEntity<String> response = template.exchange("/order/return/requests?"+params, GET, request, String.class);
+        ResponseEntity<ReturnRequestsResponse> response = template.exchange("/order/return/requests?"+params, GET, request, ReturnRequestsResponse.class);
         assertEquals(200, response.getStatusCodeValue());
-        return mapper.readValue(response.getBody(), new TypeReference<List<ReturnRequestDTO>>(){});
+        return response.getBody().getReturnRequest();
     }
 
 
-    private Set<Long> getReturnedRequestsIds(List<ReturnRequestDTO> returnedItems) {
+    private Set<Long> getReturnedRequestsIds(Set<ReturnRequestDTO> returnedItems) {
         return returnedItems
                     .stream()
                     .map(ReturnRequestDTO::getId)

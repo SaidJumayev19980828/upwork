@@ -27,6 +27,7 @@ import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
+import com.nasnav.response.ReturnRequestsResponse;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 
 
@@ -100,7 +101,7 @@ public interface OrderService {
 
 	BigDecimal calculateCartTotal();
 
-	List<ReturnRequestDTO> getOrderReturnRequests(ReturnRequestSearchParams params);
+	ReturnRequestsResponse getOrderReturnRequests(ReturnRequestSearchParams params);
 	ReturnRequestDTO getOrderReturnRequest(Long id);
 	void rejectReturnItems(ReturnRequestRejectDTO dto);
 

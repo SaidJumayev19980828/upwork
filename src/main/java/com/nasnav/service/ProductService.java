@@ -3113,7 +3113,8 @@ public class ProductService {
 			count = 10;
 		}
 
-		Long total = productVariantsRepository.countByProductEntity_organizationId(orgId);
+		Long total = productVariantsRepository.countByProductEntity_organizationIdAndNameContainingIgnoreCase(orgId, name);
+		name = ofNullable(name.toLowerCase()).orElse("");
 		List<ProductVariantsEntity> variantsEntities =
 				productVariantsRepository.findByOrganizationId(orgId, name, PageRequest.of(start, count));
 

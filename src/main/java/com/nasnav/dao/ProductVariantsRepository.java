@@ -57,6 +57,8 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 
 	long countByProductEntity_organizationId(long l);
 
+	long countByProductEntity_organizationIdAndNameContainingIgnoreCase(long l, String name);
+
 	
 	@Transactional
     @Modifying
