@@ -664,8 +664,7 @@ public class OrganizationService {
             throw new BusinessException("INVAILD PARAM: org_id","provided org_id doesn't have corresponding organization",
                     NOT_ACCEPTABLE);
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+        BaseUserEntity user =  securityService.getCurrentUser();
         if (!user.getOrganizationId().equals(imgMetaData.getOrganizationId()))
             throw new BusinessException("INSUFFICIENT RIGHTS","User doesn't belong to organization",
                     FORBIDDEN);

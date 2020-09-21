@@ -989,6 +989,7 @@ public class OrderServiceTest {
 		order.setTotalQuantity(quantity);
 		order.setPaymentStatus(entity.getPaymentStatus().toString());
 		order.setMetaOrderId(310001L);
+		order.setDiscount(ZERO);
 		return order;
 	}
 	

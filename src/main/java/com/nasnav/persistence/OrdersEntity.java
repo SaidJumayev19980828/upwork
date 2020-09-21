@@ -1,11 +1,14 @@
 package com.nasnav.persistence;
 
 import static com.nasnav.enumerations.PaymentStatus.UNPAID;
+import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDateTime.now;
+import static java.util.Optional.ofNullable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -168,5 +171,10 @@ public class OrdersEntity implements BaseEntity{
 	public void removeBasketItem(BasketsEntity item) {
 		item.setOrdersEntity(null);
 		basketsEntity.remove(item);
+	}
+
+
+	public BigDecimal getDiscounts(){
+		return ofNullable(this.discounts).orElse(ZERO);
 	}
 }

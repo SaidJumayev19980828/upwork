@@ -77,7 +77,7 @@ insert into public.product_variants(id, "name" , product_id ) values(310004, 'va
 insert into public.product_variants(id, "name" , product_id ) values(310005, 'var' 	, 1005);
 insert into public.product_variants(id, "name" , product_id ) values(310006, 'var' 	, 1006);
 
-insert into public.product_collections values(10001, 1007, 310004);
+insert into public.product_collections(product_id, variant_id)values( 1007, 310004);
 
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(601, 501, 1, 99001, 600.0, 310001);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(602, 501, 4, 99001, 400.0, 310002);

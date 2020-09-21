@@ -2756,8 +2756,8 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private void addToSubOrderDiscounts(OrdersEntity subOrder, BigDecimal discount) {
-		//BigDecimal subOrderTotalDiscount = subOrder.getDiscounts().add(discount);
-		subOrder.setDiscounts(discount);
+		BigDecimal subOrderTotalDiscount = subOrder.getDiscounts().add(discount);
+		subOrder.setDiscounts(subOrderTotalDiscount);
 	}
 
 
@@ -2888,8 +2888,7 @@ public class OrderServiceImpl implements OrderService {
 										CartItemsForShop cartItems) {
 		UserEntity user = (UserEntity) securityService.getCurrentUser();
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
-		BigDecimal discounts = calculateDiscounts(cartItems);
-		
+
 		OrdersEntity subOrder = new OrdersEntity();
 		subOrder.setName(user.getName());
 		subOrder.setUserId(user.getId());
@@ -2897,8 +2896,7 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setOrganizationEntity(org);
 		subOrder.setAddressEntity(shippingAddress);
 		subOrder.setStatus(CLIENT_CONFIRMED.getValue());
-		//subOrder.setDiscounts(discounts);
-		
+		subOrder.setDiscounts(ZERO);
 		return subOrder;
 	}
 

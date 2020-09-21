@@ -339,7 +339,7 @@ public class CartTest {
 		JSONObject requestBody = createCartCheckoutBody();
 		requestBody.put("promo_code", "GREEEEEED");
 		
-		Order order = checkOutCart(requestBody, new BigDecimal("5848.76"), new BigDecimal("5840") ,new BigDecimal("51"));
+		Order order = checkOutCart(requestBody, new BigDecimal("5790.45"), new BigDecimal("5840") ,new BigDecimal("51"));
 		
 		MetaOrderEntity entity = metaOrderRepo.findByMetaOrderId(order.getOrderId()).get();
 		Long promoId = 	entity.getPromotions().stream().findFirst().get().getId();
@@ -359,7 +359,7 @@ public class CartTest {
 		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
 		
-		assertEquals("if promocode was already used, checkout will faile", 406, res.getStatusCodeValue());
+		assertEquals("if promocode was already used, checkout will fail", 406, res.getStatusCodeValue());
 	}
 	
 	
@@ -372,7 +372,7 @@ public class CartTest {
 		JSONObject requestBody = createCartCheckoutBody();
 		requestBody.put("promo_code", "gReEeEeED");
 		
-		Order order = checkOutCart(requestBody, new BigDecimal("5848.76"), new BigDecimal("5840") ,new BigDecimal("51"));
+		Order order = checkOutCart(requestBody, new BigDecimal("5790.45"), new BigDecimal("5840") ,new BigDecimal("51"));
 		
 		MetaOrderEntity entity = metaOrderRepo.findByMetaOrderId(order.getOrderId()).get();
 		Long promoId = 	entity.getPromotions().stream().findFirst().get().getId();
@@ -392,7 +392,7 @@ public class CartTest {
 		JSONObject requestBody = createCartCheckoutBody();
 		requestBody.put("promo_code", "MORE_GREEEEEEED");
 		
-		Order order = checkOutCart(requestBody, new BigDecimal("5621.43"), new BigDecimal("5840") ,new BigDecimal("51"));
+		Order order = checkOutCart(requestBody, new BigDecimal("5249.18"), new BigDecimal("5840") ,new BigDecimal("51"));
 		
 		MetaOrderEntity entity = metaOrderRepo.findByMetaOrderId(order.getOrderId()).get();
 		Long promoId = 	entity.getPromotions().stream().findFirst().get().getId();
