@@ -257,7 +257,7 @@ public class AdminController {
 			@io.swagger.annotations.ApiResponse(code = 401, message = "user not allowed to delete theme"),
 	})
 	@ResponseStatus(OK)
-	@PostMapping(value = "cache/invalidate", consumes = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "cache/invalidate")
 	public void invalidateAllCaches(@RequestHeader (name = "User-Token", required = false) String userToken) {
 		adminService.invalidateCaches();
 	}
