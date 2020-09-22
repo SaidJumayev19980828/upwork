@@ -19,6 +19,7 @@ import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.enumerations.*;
 import com.nasnav.exceptions.BusinessException;
+import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
@@ -3381,13 +3382,16 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private void validateReturnedItemsDTO(ReceivedItemsDTO returnedItemsDTO) {
-		if (isNullOrEmpty(returnedItemsDTO.getBasketItems()) && isNullOrEmpty(returnedItemsDTO.getReturnedItems())) {
+		boolean hasReturnItems = !isNullOrEmpty(returnedItemsDTO.getReturnedItems());
+		boolean hasBasketItems = !isNullOrEmpty(returnedItemsDTO.getBasketItems());
+		boolean hasEitherReturnItemsOrBasketItems =  hasReturnItems ^  hasBasketItems;
+		if (!hasEitherReturnItemsOrBasketItems) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0003);
 		}
-		if (!isNullOrEmpty(returnedItemsDTO.getReturnedItems())) {
+		if (hasReturnItems) {
 			validateReturnedItemsList(returnedItemsDTO.getReturnedItems());
 		}
-		if (!isNullOrEmpty(returnedItemsDTO.getBasketItems())) {
+		if (hasBasketItems) {
 			validateReturnedBasketItem(returnedItemsDTO.getBasketItems());
 		}
 	}
@@ -3510,8 +3514,15 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+
 	private boolean isOnlyReturnedBasketItemsProvided(List<ReceivedItem> returnRequestItems, List<ReceivedBasketItem> returnBasketItems) {
 		return isNullOrEmpty(returnRequestItems) && !isNullOrEmpty(returnBasketItems);
+	}
+
+
+
+	private boolean areBothReturnedItemsAndBasketItemsProvided(List<ReceivedItem> returnRequestItems, List<ReceivedBasketItem> returnBasketItems) {
+		return !isNullOrEmpty(returnRequestItems) && !isNullOrEmpty(returnBasketItems);
 	}
 
 	
