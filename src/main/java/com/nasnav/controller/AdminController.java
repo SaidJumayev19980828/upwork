@@ -261,4 +261,16 @@ public class AdminController {
 	public void invalidateAllCaches(@RequestHeader (name = "User-Token", required = false) String userToken) {
 		adminService.invalidateCaches();
 	}
+
+
+
+
+	@ApiOperation(value = "Get organization domain", nickname = "getOrgDomain", code = 201)
+	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
+	@GetMapping(value = "organization/domain", produces = MediaType.TEXT_PLAIN_VALUE )
+	public String getOrgDomain(@RequestHeader(name = "User-Token", required = false) String userToken,
+									  @RequestParam Long id) {
+		return domainService.getOrganizationDomainAndSubDir(id);
+	}
 }
