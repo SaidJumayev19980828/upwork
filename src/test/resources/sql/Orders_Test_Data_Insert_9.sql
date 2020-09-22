@@ -170,9 +170,9 @@ INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity
 INSERT INTO public.return_request(id, created_on, created_by_employee, meta_order_id, status)
     VALUES(330031, now(), 69, 310001, 0);
 INSERT INTO public.return_request(id, created_on, created_by_employee, meta_order_id, status)
-    VALUES(330032, now(), 69, 310002, 3);
+    VALUES(330032, now() - interval '100 DAY', 69, 310002, 3);
 INSERT INTO public.return_request(id, created_on, created_by_employee, meta_order_id, status)
-    VALUES(330033, now(), 69, 310005, 0);
+    VALUES(330033, now() , 69, 310005, 0);
 
 INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
     VALUES(330031, 330031, 330031, 1, now());

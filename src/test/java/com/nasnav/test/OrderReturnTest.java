@@ -3,6 +3,7 @@ package com.nasnav.test;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.ReturnRequestItemRepository;
 import com.nasnav.dao.ReturnRequestRepository;
 import com.nasnav.dao.ReturnShipmentRepository;
@@ -32,16 +33,20 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
+import static com.nasnav.commons.utils.EntityUtils.DEFAULT_TIMESTAMP_PATTERN;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.enumerations.ReturnRequestStatus.*;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
 import static com.nasnav.service.OrderService.ORDER_RETURN_CONFIRM_SUBJECT;
 import static com.nasnav.test.commons.TestCommons.*;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -317,6 +322,26 @@ public class OrderReturnTest {
         assertEquals(1, body.size());
         ids = getReturnedRequestsIds(body);
         assertTrue(setOf(330031L).containsAll(ids));
+
+        //date to filter
+        String dateToStr =
+                DateTimeFormatter
+                        .ofPattern(DEFAULT_TIMESTAMP_PATTERN)
+                        .format(now().minusDays(50L));
+        body = getReturnRequests("131415", "date_to="+dateToStr);
+        assertEquals(1, body.size());
+        ids = getReturnedRequestsIds(body);
+        assertTrue(setOf(330032L).containsAll(ids));
+
+        //date from filter
+        String dateFromStr =
+                DateTimeFormatter
+                        .ofPattern(DEFAULT_TIMESTAMP_PATTERN)
+                        .format(now().minusDays(50L));
+        body = getReturnRequests("131415", "date_from="+dateFromStr);
+        assertEquals(2, body.size());
+        ids = getReturnedRequestsIds(body);
+        assertTrue(setOf(330031L, 440034L).containsAll(ids));
     }
 
 

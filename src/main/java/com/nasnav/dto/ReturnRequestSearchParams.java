@@ -14,4 +14,6 @@ public class ReturnRequestSearchParams {
     private Integer count;
     private Long meta_order_id;
     private Long shop_id;
+    private String date_from;
+    private String date_to;
 }
