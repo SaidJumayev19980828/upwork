@@ -216,6 +216,12 @@ public class EntityUtils {
 	public static Optional<LocalDateTime> parseTimeString(String timeStr) {
 		return parseTimeString(timeStr, DEFAULT_TIMESTAMP_PATTERN);
 	}
+
+
+	public static Optional<String> toTimeString(LocalDateTime time){
+		return ofNullable(time)
+				.map(t -> DateTimeFormatter.ofPattern(DEFAULT_TIMESTAMP_PATTERN).format(t));
+	}
 }
 
 

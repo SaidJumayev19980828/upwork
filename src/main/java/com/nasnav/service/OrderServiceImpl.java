@@ -19,7 +19,6 @@ import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.*;
 import com.nasnav.enumerations.*;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.exceptions.StockValidationException;
 import com.nasnav.integration.IntegrationService;
@@ -43,7 +42,6 @@ import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,7 +49,6 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.mail.MessagingException;
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.*;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -59,13 +56,13 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
 import static com.nasnav.commons.utils.MathUtils.calculatePercentage;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.*;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
@@ -1639,6 +1636,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+
 	private ReturnRequestsResponse getReturnRequestCriteriaQuery(ReturnRequestSearchParams params, CriteriaBuilder builder) {
 
 		CriteriaQuery<ReturnRequestEntity> query = builder.createQuery(ReturnRequestEntity.class);
@@ -1668,6 +1666,8 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+
+
 	private Predicate[] getReturnRequestQueryPredicates(ReturnRequestSearchParams params, CriteriaBuilder builder, Root<ReturnRequestEntity> root) {
 		List<Predicate> predicates = new ArrayList<>();
 		Long currentOrgId = securityService.getCurrentUserOrganizationId();
@@ -1675,6 +1675,15 @@ public class OrderServiceImpl implements OrderService {
 
 		Predicate orgId = builder.equal(root.get("metaOrder").get("organization").get("id"), currentOrgId);
         predicates.add(orgId);
+
+        parseTimeString(params.getDate_from())
+			.map(from -> builder.greaterThanOrEqualTo(root.get("createdOn"), from))
+			.ifPresent(predicates::add);
+
+		parseTimeString(params.getDate_to())
+				.map(to -> builder.lessThanOrEqualTo(root.get("createdOn"), to))
+				.ifPresent(predicates::add);
+
 
 		if (params.getStatus() != null) {
 			Predicate status = builder.equal(root.get("status"), params.getStatus().getValue());
@@ -1695,6 +1704,7 @@ public class OrderServiceImpl implements OrderService {
 			Predicate shopId = builder.equal(returnedItems.get("basket").get("stocksEntity").get("shopsEntity").get("id"), params.getShop_id());
 			predicates.add(shopId);
 		}
+
 
 		return predicates.stream().toArray( Predicate[]::new) ;
 	}
@@ -3820,6 +3830,14 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	public ReturnRequestsResponse getOrderReturnRequests(ReturnRequestSearchParams params) {
+		setOrderReturnDefaultParams(params);
+		CriteriaBuilder builder = em.getCriteriaBuilder();
+		return getReturnRequestCriteriaQuery(params, builder);
+	}
+
+
+
+	private void setOrderReturnDefaultParams(ReturnRequestSearchParams params) {
 		if(params.getStart() == null || params.getStart() < 0){
 			params.setStart(0);
 		}
@@ -3828,8 +3846,12 @@ public class OrderServiceImpl implements OrderService {
 		} else if (params.getCount() > 1000) {
 			params.setCount(1000);
 		}
-		CriteriaBuilder builder = em.getCriteriaBuilder();
-		return getReturnRequestCriteriaQuery(params, builder);
+//		if(isBlankOrNull(params.getDate_from())){
+//			toTimeString(LocalDate.now().mi).ifPresent(params::setDate_from);
+//		}
+//		if(isBlankOrNull(params.getDate_to())){
+//			toTimeString(LocalDateTime.MAX.minusYears(100)).ifPresent(params::setDate_to);
+//		}
 	}
 
 
