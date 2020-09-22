@@ -39,6 +39,7 @@ public class StocksEntity {
 
 	private BigDecimal discount;
 
+	private String unit;
 	
 	@ManyToOne
 	@JoinColumn(name = "organization_id", nullable = false)

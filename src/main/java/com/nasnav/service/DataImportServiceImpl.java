@@ -956,6 +956,7 @@ public class DataImportServiceImpl implements DataImportService {
         stock.setPrice(row.getPrice());
         stock.setQuantity(row.getQuantity());
         stock.setDiscount(row.getDiscount());
+        stock.setUnit(row.getUnit());
         return stock;
     }
 

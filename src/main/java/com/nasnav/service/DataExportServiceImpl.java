@@ -194,6 +194,7 @@ public class DataExportServiceImpl implements DataExportService{
 		row.setVariantId(data.getVariantId());
 		row.setSku(data.getSku());
 		row.setProductCode(data.getProductCode());
+		row.setUnit(data.getUnit());
 		return row;
 	}
 
@@ -238,6 +239,7 @@ public class DataExportServiceImpl implements DataExportService{
 											stock.quantity,
 											stock.price,
 											stock.discount,
+											stock.unit,
 											product.organizationId.as("organization_id"),
 											variant.id.as("variant_id"),
 											variant.featureSpec,

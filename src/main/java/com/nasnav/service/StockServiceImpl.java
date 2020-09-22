@@ -233,6 +233,11 @@ public class StockServiceImpl implements StockService {
 		if(stockUpdateReq.getDiscount() != null) {
 			stock.setDiscount( stockUpdateReq.getDiscount() );
 		}
+
+		if(stockUpdateReq.getUnit() != null) {
+			stock.setUnit(stockUpdateReq.getUnit());
+		}
+
 		return stock;
 	}
 	

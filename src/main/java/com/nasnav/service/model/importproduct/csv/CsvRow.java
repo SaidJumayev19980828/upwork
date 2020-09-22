@@ -33,6 +33,7 @@ public class CsvRow {
 	protected Long productId;
 	protected String sku;
 	protected String productCode;
+	protected String unit;
 	
 	public CsvRow() {
 		extraAttributes = new HashMap<>();
@@ -61,6 +62,7 @@ public class CsvRow {
 		product.setDiscount(discount);
 		product.setSku(sku);
 		product.setProductCode(productCode);
+		product.setUnit(unit);
 		
 		return product;
 	}
