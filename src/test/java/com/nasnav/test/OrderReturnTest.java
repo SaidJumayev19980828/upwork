@@ -138,13 +138,11 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
-    public void returnOrderUsingRequestItemsAndBasketItemsSuccess() {
+    public void returnOrderUsingRequestItemsAndBasketItems() {
         JSONArray basketItems = jsonArray().put(json().put("order_item_id", 330034).put("received_quantity", 1));
         JSONArray requestItems = jsonArray().put(json().put("return_request_item_id", 330033).put("received_quantity", 1));
-
-        Integer oldStockQuantity = stockRepository.findById(603L).get().getQuantity();
-        Integer oldStockQuantity2 = stockRepository.findById(604L).get().getQuantity();
 
         JSONObject body = 
         		json()
@@ -154,15 +152,11 @@ public class OrderReturnTest {
 
         ResponseEntity<String> response = template.postForEntity("/order/return/received_item", request, String.class);
 
-        assertEquals(200, response.getStatusCodeValue());
-
-
-        Integer newStockQuantity = stockRepository.findById(603L).get().getQuantity();
-        Integer newStockQuantity2 = stockRepository.findById(604L).get().getQuantity();
-
-        assertEquals(newStockQuantity.intValue(), oldStockQuantity.intValue() + 1);
-        assertEquals(newStockQuantity2.intValue(), oldStockQuantity2.intValue() + 1);
+        assertEquals("providing both basket items and returned items will throw an error"
+                ,406, response.getStatusCodeValue());
     }
+
+
 
 
     @Test
