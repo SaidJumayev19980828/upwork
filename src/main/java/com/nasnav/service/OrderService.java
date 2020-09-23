@@ -53,6 +53,7 @@ public interface OrderService {
 	String ORDER_RETURN_REJECT_SUBJECT = "Sorry! Your Order return has been rejected!";
 	String ORDER_RETURN_CONFIRM_SUBJECT = "Your Order return has been confirmed!";
 	String ORDER_RETURN_RECEIVE_SUBJECT = "Your returned items has been received by the store!";
+	String ORDER_RETURN_NOTIFY_SUBJECT = "New Order return request [%d] has been created!";
 
 
 	public OrderResponse createNewOrder(OrderJsonDto orderJson) throws BusinessException;

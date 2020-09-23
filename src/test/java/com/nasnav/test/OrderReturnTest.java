@@ -35,6 +35,7 @@ import javax.mail.MessagingException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -44,8 +45,7 @@ import static com.nasnav.commons.utils.EntityUtils.DEFAULT_TIMESTAMP_PATTERN;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.enumerations.ReturnRequestStatus.*;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
-import static com.nasnav.service.OrderService.ORDER_RETURN_CONFIRM_SUBJECT;
-import static com.nasnav.service.OrderService.ORDER_RETURN_RECEIVE_SUBJECT;
+import static com.nasnav.service.OrderService.*;
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
@@ -670,7 +670,7 @@ public class OrderReturnTest {
     
     
     @Test
-    public void customerCreateReturnOrderTest() {
+    public void customerCreateReturnOrderTest() throws MessagingException, IOException {
     	JSONObject body = createReturnRequestBody();
 		
     	HttpEntity<?> request = getHttpEntity(body.toString(), "123");
@@ -682,6 +682,15 @@ public class OrderReturnTest {
 
         checkReturnRequestData(entity);
         assertReturnRequestItemsCreated(body, entity);
+
+        Mockito
+            .verify(mailService)
+            .sendThymeleafTemplateMail(
+                    Mockito.eq(asList("testuser2@nasnav.com"))
+                    , Mockito.eq(String.format(ORDER_RETURN_NOTIFY_SUBJECT,response.getBody()))
+                    , Mockito.anyList()
+                    , Mockito.anyString()
+                    , Mockito.anyMap());
     }
 
 
