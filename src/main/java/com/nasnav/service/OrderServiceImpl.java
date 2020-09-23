@@ -4245,16 +4245,23 @@ public class OrderServiceImpl implements OrderService {
 					.findFirst();
 		return range(0, trackers.size())
 				.mapToObj(i -> doCreateReturnConfirmAirwaybill(i, trackers.get(i), trackers.size()))
+				.filter(Optional::isPresent)
+				.map(Optional::get)
 				.collect(toList());
 	}
 
 
 
-	private MailAttachment doCreateReturnConfirmAirwaybill(int i, ReturnShipmentTracker tracker, Integer shipmentsCount) {
-		byte[] fileDecoded = Base64.getDecoder().decode(tracker.getAirwayBillFile());
-		String fileName = format("airwaybill-%s.pdf", tracker.getTracker());
-
-		return new MailAttachment(fileName, new ByteArrayResource(fileDecoded));
+	private Optional<MailAttachment> doCreateReturnConfirmAirwaybill(int i, ReturnShipmentTracker tracker, Integer shipmentsCount) {
+		String fileName =
+				ofNullable(tracker)
+				.map(ReturnShipmentTracker::getTracker)
+				.map(trackNum -> format("airwaybill-%s.pdf", trackNum))
+				.orElse("airwaybill.pdf");
+		return ofNullable(tracker)
+				.map(ReturnShipmentTracker::getAirwayBillFile)
+				.map(Base64.getDecoder()::decode)
+				.map(fileDecoded -> new MailAttachment(fileName, new ByteArrayResource(fileDecoded)));
 	}
 }
 
