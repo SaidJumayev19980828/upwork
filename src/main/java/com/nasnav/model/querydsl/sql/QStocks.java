@@ -34,7 +34,7 @@ public class QStocks extends com.querydsl.sql.RelationalPathBase<QStocks> {
 
     public final StringPath location = createString("location");
 
-    public final StringPath unit = createString("unit");
+    public final NumberPath<Long> unitId = createNumber("unitId", Long.class);
 
     public final NumberPath<Long> organizationId = createNumber("organizationId", Long.class);
 
@@ -53,6 +53,8 @@ public class QStocks extends com.querydsl.sql.RelationalPathBase<QStocks> {
     public final com.querydsl.sql.ForeignKey<QProductVariants> stocksVariantIdFkey = createForeignKey(variantId, "id");
 
     public final com.querydsl.sql.ForeignKey<QOrganizations> stocksOrganizationIdFkey = createForeignKey(organizationId, "id");
+
+    public final com.querydsl.sql.ForeignKey<QUnits> stocksUnitIdFkey = createForeignKey(unitId, "id");
 
     public final com.querydsl.sql.ForeignKey<QShops> railsD8eb88b3bfFk = createForeignKey(shopId, "id");
 
@@ -97,7 +99,7 @@ public class QStocks extends com.querydsl.sql.RelationalPathBase<QStocks> {
         addMetadata(shopId, ColumnMetadata.named("shop_id").withIndex(2).ofType(Types.BIGINT).withSize(19));
         addMetadata(updatedAt, ColumnMetadata.named("updated_at").withIndex(6).ofType(Types.TIMESTAMP).withSize(29).withDigits(6).notNull());
         addMetadata(variantId, ColumnMetadata.named("variant_id").withIndex(10).ofType(Types.BIGINT).withSize(19).notNull());
-        addMetadata(unit, ColumnMetadata.named("unit").withIndex(12).ofType(Types.VARCHAR).withSize(2147483647));
+        addMetadata(unitId, ColumnMetadata.named("unit_id").withIndex(12).ofType(Types.BIGINT).withSize(19));
     }
 
 }

@@ -32,27 +32,17 @@ import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.transaction.Transactional;
 
+import com.nasnav.dao.*;
+import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.nasnav.commons.model.IndexedData;
-import com.nasnav.dao.BundleRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.StockUpdateDTO;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.StockValidationException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductTypes;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.StocksEntity;
 import com.nasnav.response.StockUpdateResponse;
 import com.nasnav.service.helpers.CachingHelper;
 import com.nasnav.service.model.VariantBasicData;
@@ -75,6 +65,9 @@ public class StockServiceImpl implements StockService {
     
     @Autowired
     private ShopsRepository shopRepo;
+
+    @Autowired
+	private StockUnitRepository stockUnitRepo;
 
     @Autowired
     private SecurityService security;
@@ -235,7 +228,13 @@ public class StockServiceImpl implements StockService {
 		}
 
 		if(stockUpdateReq.getUnit() != null) {
-			stock.setUnit(stockUpdateReq.getUnit());
+			StockUnitEntity unit = stockUnitRepo.findByName(stockUpdateReq.getUnit());
+			if (unit == null) {
+				unit = new StockUnitEntity();
+				unit.setName(stockUpdateReq.getUnit());
+				unit = stockUnitRepo.save(unit);
+			}
+			stock.setUnit(unit);
 		}
 
 		return stock;

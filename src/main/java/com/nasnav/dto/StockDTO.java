@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.nasnav.persistence.CountriesEntity;
+import com.nasnav.persistence.StockUnitEntity;
 import com.nasnav.persistence.StocksEntity;
 
 import lombok.Data;
@@ -33,7 +34,10 @@ public class StockDTO extends BaseRepresentationObject {
         this.shopId = shopId;
         this.quantity = ofNullable(entity.getQuantity()).orElse(0);
         this.price = ofNullable(entity.getPrice()).orElse(ZERO);
-        this.unit = ofNullable(entity.getUnit()).orElse("");
+		StockUnitEntity unit = entity.getUnit();
+		if (unit != null){
+			this.unit = unit.getName();
+		}
 		CountriesEntity country = entity.getOrganizationEntity().getCountry();
 		if (country != null){
 			this.currencyValue = country.getCurrency();
