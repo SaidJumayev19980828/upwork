@@ -3345,7 +3345,7 @@ public class OrderServiceImpl implements OrderService {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		ReturnRequestEntity returnRequest =
 				returnRequestRepo
-				.findByIdAndOrganizationIdAndStatus(dto.getReturnRequestId(), orgId, ReturnRequestStatus.NEW.getValue())
+				.findByIdAndOrganizationId(dto.getReturnRequestId(), orgId)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, dto.getReturnRequestId()));
 
 		updateReturnRequestStatus(returnRequest, REJECTED);

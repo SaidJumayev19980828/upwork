@@ -39,4 +39,10 @@ public interface ReturnRequestRepository extends JpaRepository<ReturnRequestEnti
     Optional<ReturnRequestEntity> findByIdAndOrganizationIdAndStatus(@Param("id") Long id,
                                                                      @Param("orgId") Long orgId,
                                                                      @Param("status") Integer status);
+
+    @Query(value = "select r from ReturnRequestEntity r " +
+            " where r.id = :id " +
+            " and r.metaOrder.organization.id = :orgId")
+    Optional<ReturnRequestEntity> findByIdAndOrganizationId(@Param("id") Long id,
+                                                            @Param("orgId") Long orgId);
 }

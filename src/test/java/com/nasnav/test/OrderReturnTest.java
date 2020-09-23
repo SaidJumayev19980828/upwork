@@ -725,6 +725,7 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
     public void rejectReturnOrderRequest() {
         JSONObject body = json().put("return_request_id", 330031)
@@ -739,14 +740,49 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
     public void rejectReturnOrderRequestConfirmedRequest() {
-        JSONObject body = json().put("return_request_id", 330032)
+        Long id = 330032L;
+        Optional<ReturnRequestEntity> entity =
+                returnRequestRepo.findByIdAndOrganizationIdAndStatus(id, 99001L, CONFIRMED.getValue());
+        assertTrue(entity.isPresent());
+        //------------------
+        JSONObject body = json().put("return_request_id", id)
                 .put("rejection_reason", "damaged product");
         HttpEntity<?> request = getHttpEntity(body.toString(), "131415");
 
         ResponseEntity<String> res = template.postForEntity("/order/return/reject", request, String.class);
+        //------------------
+
+        assertEquals(200, res.getStatusCodeValue());
+
+        entity = returnRequestRepo.findByIdAndOrganizationIdAndStatus(id, 99001L, REJECTED.getValue());
+        assertTrue(entity.isPresent());
+    }
+
+
+
+
+    @Test
+    public void rejectReturnOrderRequestReceivedRequest() {
+        Long id = 440034L;
+        Optional<ReturnRequestEntity> entity =
+                returnRequestRepo.findByIdAndOrganizationIdAndStatus(id, 99001L, RECEIVED.getValue());
+        assertTrue(entity.isPresent());
+
+        //------------------
+        JSONObject body = json().put("return_request_id", id)
+                .put("rejection_reason", "damaged product");
+        HttpEntity<?> request = getHttpEntity(body.toString(), "131415");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/reject", request, String.class);
+        //------------------
+
         assertEquals(406, res.getStatusCodeValue());
+
+        entity = returnRequestRepo.findByIdAndOrganizationIdAndStatus(id, 99001L, RECEIVED.getValue());
+        assertTrue(entity.isPresent());
     }
 
 
