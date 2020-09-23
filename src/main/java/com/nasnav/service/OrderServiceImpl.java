@@ -836,6 +836,15 @@ public class OrderServiceImpl implements OrderService {
 		String path = appConfig.dashBoardOrderPageUrl.replace("{order_id}", order.getId().toString());
 		return format("%s/%s", domain, path);
 	}
+
+
+
+	private String buildDashboardPageUrl(ReturnRequestEntity returnRequest) {
+		Long orgId = returnRequest.getMetaOrder().getOrganization().getId();
+		String domain = domainService.getOrganizationDomainOnly(orgId);
+		String path = "dashboard";
+		return format("%s/%s", domain, path);
+	}
 	
 	
 
@@ -3336,7 +3345,7 @@ public class OrderServiceImpl implements OrderService {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		ReturnRequestEntity returnRequest =
 				returnRequestRepo
-				.findByIdAndOrganizationIdAndStatus(dto.getReturnRequestId(), orgId, ReturnRequestStatus.NEW.getValue())
+				.findByIdAndOrganizationId(dto.getReturnRequestId(), orgId)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, dto.getReturnRequestId()));
 
 		updateReturnRequestStatus(returnRequest, REJECTED);
@@ -3373,11 +3382,69 @@ public class OrderServiceImpl implements OrderService {
             returnRequest.setStatus(RECEIVED.getValue());
             returnRequest = returnRequestRepo.save(returnRequest);
 			increaseReturnRequestStock(returnRequest);
-			
+
+			sendItemReceivedEmailToCustomer(returnRequest.getId());
 			//TODO refund ??
 		}
 	}
 
+
+
+	private void sendItemReceivedEmailToCustomer(Long returnRequestId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ReturnRequestEntity request =
+				returnRequestRepo
+						.findByReturnRequestId(returnRequestId, orgId)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, returnRequestId));
+		Optional<String> email =
+				ofNullable(request)
+						.map(ReturnRequestEntity::getMetaOrder)
+						.map(MetaOrderEntity::getUser)
+						.map(UserEntity::getEmail);
+		if(!email.isPresent()) {
+			return;
+		}
+		String subject = format(ORDER_RETURN_RECEIVE_SUBJECT);
+		Map<String,Object> parametersMap = createReturnItemsReceiptionEmailParams(request);
+		String template = ORDER_RETURN_RECEIVED_TEMPLATE;
+		try {
+			mailService.sendThymeleafTemplateMail(email.get(), subject,  template, parametersMap);
+		} catch (MessagingException e) {
+			logger.error(e, e);
+		}
+	}
+
+
+
+
+	private Map<String, Object> createReturnItemsReceiptionEmailParams(ReturnRequestEntity request) {
+		String userName = getCustomerName(request);
+		String creationDate =
+				DateTimeFormatter.ofPattern("dd/MM/YYYY hh:mm").format(request.getCreatedOn());
+
+		Optional<OrganizationEntity> org =
+				ofNullable(request)
+						.map(ReturnRequestEntity::getMetaOrder)
+						.map(MetaOrderEntity::getOrganization);
+		String orgLogo = getOrganizationLogo(org);
+		String orgDomain = domainService.getCurrentServerDomain();
+		String orgName = org.map(OrganizationEntity::getName).orElse("Nasnav");
+		String shippingService = getShippingService(request);
+		AddressRepObj pickupAddr = getPickupAddress(request);
+
+		List<ReturnShipment> returnShipmentsData = getReturnShipmentsData(request);
+
+		Map<String, Object> params = new HashMap<>();
+		params.put("orgDomain", orgDomain);
+		params.put("orgLogo", orgLogo);
+		params.put("userName", userName);
+		params.put("requestId", request.getId());
+		params.put("creationDate", creationDate);
+		params.put("pickupAddr", pickupAddr);
+		params.put("shippingService", shippingService);
+		params.put("returnShipments", returnShipmentsData);
+		return params;
+	}
 
 
 
@@ -3823,6 +3890,8 @@ public class OrderServiceImpl implements OrderService {
 				.collect(toList());
 		ReturnRequestEntity request = createReturnRequest(returnedItems);
 		request = returnRequestRepo.save(request);
+
+		sendOrderReturnNotificationEmail(request.getId());
 		return request.getId();
 	}
 
@@ -3846,12 +3915,6 @@ public class OrderServiceImpl implements OrderService {
 		} else if (params.getCount() > 1000) {
 			params.setCount(1000);
 		}
-//		if(isBlankOrNull(params.getDate_from())){
-//			toTimeString(LocalDate.now().mi).ifPresent(params::setDate_from);
-//		}
-//		if(isBlankOrNull(params.getDate_to())){
-//			toTimeString(LocalDateTime.MAX.minusYears(100)).ifPresent(params::setDate_to);
-//		}
 	}
 
 
@@ -3958,9 +4021,6 @@ public class OrderServiceImpl implements OrderService {
 
 	private Map<String, Object> createReturnConfirmEmailParams(ReturnRequestEntity request, List<ReturnShipmentTracker> trackers) {
 		String userName = getCustomerName(request);
-		String creationDate =
-				DateTimeFormatter.ofPattern("dd/MM/YYYY hh:mm").format(request.getCreatedOn());
-
 		Optional<OrganizationEntity> org =
 				ofNullable(request)
 						.map(ReturnRequestEntity::getMetaOrder)
@@ -3979,11 +4039,66 @@ public class OrderServiceImpl implements OrderService {
 		params.put("orgLogo", orgLogo);
 		params.put("userName", userName);
 		params.put("requestId", request.getId());
-		params.put("creationDate", creationDate);
 		params.put("msg", msg);
 		params.put("pickupAddr", pickupAddr);
 		params.put("shippingService", shippingService);
 		params.put("returnShipments", returnShipmentsData);
+		return params;
+	}
+
+
+
+	private void sendOrderReturnNotificationEmail(Long returnRequestId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ReturnRequestEntity request =
+				returnRequestRepo
+						.findByReturnRequestId(returnRequestId, orgId)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, returnRequestId));
+		List<String> emails = empRoleRepo.findEmailOfEmployeeWithRoleAndOrganization(ORGANIZATION_MANAGER.getValue(), orgId);
+		if(emails.isEmpty()) {
+			return;
+		}
+		String subject = format(ORDER_RETURN_NOTIFY_SUBJECT, returnRequestId);
+		Map<String,Object> parametersMap = createOrderReturnNotificationEmailParams(request);
+		String template = ORDER_RETURN_NOTIFICATION_TEMPLATE;
+		try {
+			mailService.sendThymeleafTemplateMail(emails ,subject, emptyList(),  template, parametersMap);
+		} catch (MessagingException | IOException e) {
+			logger.error(e, e);
+		}
+	}
+
+
+
+
+	private Map<String, Object> createOrderReturnNotificationEmailParams(ReturnRequestEntity request) {
+		String userName = getCustomerName(request);
+		String creationDate =
+				DateTimeFormatter.ofPattern("dd/MM/YYYY hh:mm").format(request.getCreatedOn());
+
+		Optional<OrganizationEntity> org =
+				ofNullable(request)
+						.map(ReturnRequestEntity::getMetaOrder)
+						.map(MetaOrderEntity::getOrganization);
+		String orgLogo = getOrganizationLogo(org);
+		String orgDomain = domainService.getCurrentServerDomain();
+		String orgName = org.map(OrganizationEntity::getName).orElse("Nasnav");
+		String shippingService = getShippingService(request);
+		AddressRepObj pickupAddr = getPickupAddress(request);
+		String returnOrderPageUrl = buildDashboardPageUrl(request);
+
+		List<ReturnShipment> returnShipmentsData = getReturnShipmentsData(request);
+
+		Map<String, Object> params = new HashMap<>();
+		params.put("orgDomain", orgDomain);
+		params.put("orgLogo", orgLogo);
+		params.put("userName", userName);
+		params.put("requestId", request.getId());
+		params.put("creationDate", creationDate);
+		params.put("pickupAddr", pickupAddr);
+		params.put("shippingService", shippingService);
+		params.put("returnShipments", returnShipmentsData);
+		params.put("returnOrderPageUrl", returnOrderPageUrl);
 		return params;
 	}
 
@@ -4003,10 +4118,21 @@ public class OrderServiceImpl implements OrderService {
 				.stream()
 				.collect(
 						collectingAndThen(
-								groupingBy(itm -> itm.getReturnShipment().getTrackNumber())
+								groupingBy(this::getTrackNumber)
 								, itmsGroupedByShipment -> createReturnShipmentData(itmsGroupedByShipment, variantsCoverImages)));
 		return returnShipmentsData;
 	}
+
+
+
+
+	private  String getTrackNumber(ReturnRequestItemEntity itm) {
+		return ofNullable(itm)
+				.map(ReturnRequestItemEntity::getReturnShipment)
+				.map(ReturnShipmentEntity::getTrackNumber)
+				.orElse("N/A");
+	}
+
 
 
 
@@ -4030,9 +4156,9 @@ public class OrderServiceImpl implements OrderService {
 		return request
 				.getReturnedItems()
 				.stream()
+				.findFirst()
 				.map(ReturnRequestItemEntity::getReturnShipment)
 				.map(ReturnShipmentEntity::getShippingServiceId)
-				.findFirst()
 				.orElse("N/A");
 	}
 
@@ -4098,6 +4224,7 @@ public class OrderServiceImpl implements OrderService {
 		ReturnShipmentItem item = new ReturnShipmentItem();
 		item.setName(product.getName());
 		item.setQuantity(returnRequestItemEntity.getReturnedQuantity());
+		item.setReceivedQuantity(returnRequestItemEntity.getReceivedQuantity());
 		item.setCurrency(currency);
 		item.setPrice(price);
 		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec(), 0));
@@ -4186,4 +4313,5 @@ class ReturnShipmentItem{
 	private String name;
 	private String currency;
 	private Integer quantity;
+	private Integer receivedQuantity;
 }

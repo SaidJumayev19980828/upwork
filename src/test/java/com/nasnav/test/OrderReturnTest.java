@@ -35,6 +35,7 @@ import javax.mail.MessagingException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -44,7 +45,7 @@ import static com.nasnav.commons.utils.EntityUtils.DEFAULT_TIMESTAMP_PATTERN;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.enumerations.ReturnRequestStatus.*;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
-import static com.nasnav.service.OrderService.ORDER_RETURN_CONFIRM_SUBJECT;
+import static com.nasnav.service.OrderService.*;
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
@@ -90,7 +91,7 @@ public class OrderReturnTest {
     private ReturnShipmentRepository returnShipmentRepo;
 
     @Test
-    public void returnOrderItemUsingBasketItemsSuccess() {
+    public void receiveReturnOrderItemUsingBasketItemsSuccess() throws MessagingException {
         JSONObject basketItems = 
         		json()
                 .put("order_item_id", 330034)
@@ -112,13 +113,21 @@ public class OrderReturnTest {
         assertFalse(items.isEmpty());
         assertNotNull(items.get(0).getReturnRequest());
         assertEquals(items.get(0).getReturnRequest().getStatus(), RECEIVED.getValue());
+
+        Mockito
+            .verify(mailService)
+            .sendThymeleafTemplateMail(
+                    Mockito.eq("user2@nasnav.com")
+                    , Mockito.eq(ORDER_RETURN_RECEIVE_SUBJECT)
+                    , Mockito.anyString()
+                    , Mockito.anyMap());
     }
 
 
 
 
     @Test
-    public void returnOrderItemUsingRequestItemsSuccess() {
+    public void receiveReturnOrderItemUsingRequestItemsSuccess() throws MessagingException {
         JSONObject basketItems = 
         		json()
                 .put("return_request_item_id", 330031)
@@ -140,6 +149,14 @@ public class OrderReturnTest {
         assertFalse(items.isEmpty());
         assertNotNull(items.get(0).getReturnRequest());
         assertEquals(items.get(0).getReturnRequest().getStatus(), RECEIVED.getValue());
+
+        Mockito
+            .verify(mailService)
+            .sendThymeleafTemplateMail(
+                    Mockito.eq("user1@nasnav.com")
+                    , Mockito.eq(ORDER_RETURN_RECEIVE_SUBJECT)
+                    , Mockito.anyString()
+                    , Mockito.anyMap());
     }
 
 
@@ -165,7 +182,7 @@ public class OrderReturnTest {
 
 
     @Test
-    public void returnOrderInvalidAuthZ() {
+    public void receiveReturnOrderInvalidAuthZ() {
         HttpEntity<?> request = getHttpEntity("101112");
         ResponseEntity<String> response = template.postForEntity("/order/return/received_item", request, String.class);
         assertEquals(403, response.getStatusCodeValue());
@@ -173,15 +190,16 @@ public class OrderReturnTest {
 
 
     @Test
-    public void returnOrderInvalidAuthN() {
+    public void receiveReturnOrderInvalidAuthN() {
         HttpEntity<?> request = getHttpEntity("invalid token");
         ResponseEntity<String> response = template.postForEntity("/order/return/received_item", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
     }
 
 
+
     @Test
-    public void returnOrderInvalidInput() {
+    public void receiveReturnOrderInvalidInput() {
         JSONObject basketItems = 
         		json()
                 .put("order_item_id", 330031);
@@ -195,8 +213,9 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
-    public void returnOrderInvalidReturnBasketItemsIds() {
+    public void receiveReturnOrderInvalidReturnBasketItemsIds() {
         JSONObject basketItems = 
         		json()
                 .put("order_item_id", 3300312)
@@ -211,8 +230,9 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
-    public void returnOrderInvalidReturnRequestItemsIds() {
+    public void receiveReturnOrderInvalidReturnRequestItemsIds() {
         JSONObject basketItems = 
         		json()
                 .put("return_request_item_id", 3300312)
@@ -227,8 +247,9 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
-    public void returnOrderItemDifferentBasketItemsMetaOrder() {
+    public void receiveReturnOrderItemDifferentBasketItemsMetaOrder() {
         JSONArray items = jsonArray().put(json()
                                         .put("order_item_id", 330035)
                                         .put("received_quantity", 1))
@@ -245,8 +266,9 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
-    public void returnOrderItemDifferentReturnItemsMetaOrder() {
+    public void receiveReturnOrderItemDifferentReturnItemsMetaOrder() {
         JSONArray basketItems = jsonArray().put(json().put("order_item_id", 330036).put("received_quantity", 1));
         JSONArray requestItems = jsonArray().put(json().put("return_request_item_id", 330031).put("received_quantity", 1));
 
@@ -262,8 +284,9 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
-    public void returnOrderItemDifferentReturnItemsReturnRequest() {
+    public void receiveReturnOrderItemDifferentReturnItemsReturnRequest() {
         JSONArray requestItems = 
         		jsonArray()
                 .put(json()
@@ -647,7 +670,7 @@ public class OrderReturnTest {
     
     
     @Test
-    public void customerCreateReturnOrderTest() {
+    public void customerCreateReturnOrderTest() throws MessagingException, IOException {
     	JSONObject body = createReturnRequestBody();
 		
     	HttpEntity<?> request = getHttpEntity(body.toString(), "123");
@@ -659,6 +682,15 @@ public class OrderReturnTest {
 
         checkReturnRequestData(entity);
         assertReturnRequestItemsCreated(body, entity);
+
+        Mockito
+            .verify(mailService)
+            .sendThymeleafTemplateMail(
+                    Mockito.eq(asList("testuser2@nasnav.com"))
+                    , Mockito.eq(String.format(ORDER_RETURN_NOTIFY_SUBJECT,response.getBody()))
+                    , Mockito.anyList()
+                    , Mockito.anyString()
+                    , Mockito.anyMap());
     }
 
 
@@ -693,6 +725,7 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
     public void rejectReturnOrderRequest() {
         JSONObject body = json().put("return_request_id", 330031)
@@ -707,14 +740,49 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
     public void rejectReturnOrderRequestConfirmedRequest() {
-        JSONObject body = json().put("return_request_id", 330032)
+        Long id = 330032L;
+        Optional<ReturnRequestEntity> entity =
+                returnRequestRepo.findByIdAndOrganizationIdAndStatus(id, 99001L, CONFIRMED.getValue());
+        assertTrue(entity.isPresent());
+        //------------------
+        JSONObject body = json().put("return_request_id", id)
                 .put("rejection_reason", "damaged product");
         HttpEntity<?> request = getHttpEntity(body.toString(), "131415");
 
         ResponseEntity<String> res = template.postForEntity("/order/return/reject", request, String.class);
+        //------------------
+
+        assertEquals(200, res.getStatusCodeValue());
+
+        entity = returnRequestRepo.findByIdAndOrganizationIdAndStatus(id, 99001L, REJECTED.getValue());
+        assertTrue(entity.isPresent());
+    }
+
+
+
+
+    @Test
+    public void rejectReturnOrderRequestReceivedRequest() {
+        Long id = 440034L;
+        Optional<ReturnRequestEntity> entity =
+                returnRequestRepo.findByIdAndOrganizationIdAndStatus(id, 99001L, RECEIVED.getValue());
+        assertTrue(entity.isPresent());
+
+        //------------------
+        JSONObject body = json().put("return_request_id", id)
+                .put("rejection_reason", "damaged product");
+        HttpEntity<?> request = getHttpEntity(body.toString(), "131415");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/reject", request, String.class);
+        //------------------
+
         assertEquals(406, res.getStatusCodeValue());
+
+        entity = returnRequestRepo.findByIdAndOrganizationIdAndStatus(id, 99001L, RECEIVED.getValue());
+        assertTrue(entity.isPresent());
     }
 
 
@@ -797,13 +865,13 @@ public class OrderReturnTest {
         assertReturnShipmentsCreated(id, res);
 
         Mockito
-            .verify(mailService)
-            .sendThymeleafTemplateMail(
-                    Mockito.eq("user1@nasnav.com")
-                    , Mockito.eq(ORDER_RETURN_CONFIRM_SUBJECT)
-                    , Mockito.anyString()
-                    , Mockito.anyMap()
-                    , Mockito.anyList());
+                .verify(mailService)
+                .sendThymeleafTemplateMail(
+                        Mockito.eq("user1@nasnav.com")
+                        , Mockito.eq(ORDER_RETURN_CONFIRM_SUBJECT)
+                        , Mockito.anyString()
+                        , Mockito.anyMap()
+                        , Mockito.anyList());
     }
 
 

@@ -131,11 +131,11 @@ insert into public.orders(id,user_id,created_at, updated_at, organization_id,sta
 values(330037, 88, now(), now(), 99002, 1, 506, 310005, 12300001);
 
 INSERT INTO public.shipment
-(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status)
-VALUES(330031, 'TEST', '{"Shop Id":501}' , now(), now(), 0);
+(id, sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, track_number, external_id)
+VALUES(330031, 330031, 'TEST', '{"Shop Id":501}' , now(), now(), 0, 'abc44556', '88663');
 INSERT INTO public.shipment
-(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status)
-VALUES(330032, 'TEST', '{"Shop Id":502}' , now(), now(), 0);
+(id, sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, track_number, external_id)
+VALUES(330032, 330032, 'TEST', '{"Shop Id":502}' , now(), now(), 0, 'xyz13245', '1234');
 
 
 -- insert order items
