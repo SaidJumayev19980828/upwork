@@ -81,7 +81,12 @@ public class OrderReturnNoEmailMockTest {
 
 
 
-	@Test
+	//this test data creates shipments with bosta shipping service and call bosta
+    //staging server. so, we can only use it when running this test manually on local machine
+    //to test creating a return shipment with bosta.
+//    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_12.sql"})
+//    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    @Test
     public void orderReturnFullCycle() throws InterruptedException {
         Long returnRequestId = createReturnRequest();
         confirmReturnRequest(returnRequestId);

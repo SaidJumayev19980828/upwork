@@ -26,6 +26,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
@@ -121,6 +122,9 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 	@Autowired
 	private ReturnShipmentRepository returnShipmentRepo;
+
+	@Autowired
+	private ReturnRequestItemRepository returnedItemRepo;
 
 	@Autowired
 	private EntityManager entityManager;
@@ -919,12 +923,12 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 		List<ShippingDetails> shippingDetails = createShippingDetailsFromReturnRequest(returnRequest);
 		String shippingServiceId = getShippingServiceId(returnRequest);
-		return ofNullable(shippingServiceId)
-				.flatMap(serviceId -> orgShippingServiceRepo.getByOrganization_IdAndServiceId(orgId, serviceId))
+		return orgShippingServiceRepo
+				.getByOrganization_IdAndServiceId(orgId, shippingServiceId)
 				.flatMap(this::getShippingService)
 				.map(service -> service.requestReturnShipment(shippingDetails))
 				.map(trackersFlux -> createNewReturnShipmentsForReturnRequest(returnRequest, trackersFlux, shippingServiceId))
-				.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0004, returnRequest.getId()));
+				.orElseGet(Flux::empty);
 	}
 
 
@@ -944,9 +948,12 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		returnShipment.setShippingServiceId(shippingServiceId);
 		returnShipment.setStatus(REQUSTED.getValue());
 		returnShipment.setTrackNumber(tracker.getTracker());
+		returnShipment = returnShipmentRepo.save(returnShipment);
 		addReturnedItemsToReturnShipment(tracker, returnShipment);
 		return returnShipmentRepo.save(returnShipment);
 	}
+
+
 
 	private void addReturnedItemsToReturnShipment(ReturnShipmentTracker tracker, ReturnShipmentEntity returnShipment) {
 		tracker
@@ -954,7 +961,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 			.getItems()
 			.stream()
 			.map(ShipmentItems::getReturnedItemId)
-			.map(id -> entityManager.getReference(ReturnRequestItemEntity.class, id))
+			.collect(collectingAndThen(toList(), returnedItemRepo::findByIdIn))
 			.forEach(returnShipment::addReturnItem);
 	}
 
@@ -1049,14 +1056,17 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 
 
 	private ShipmentReceiver createReturnShipmentReceiver(OrdersEntity order) {
-		Long userId = order.getUserId();
 		ShopsEntity shop = order.getShopsEntity();
+		String phone =
+				ofNullable(shop.getAddressesEntity())
+				.map(AddressesEntity::getPhoneNumber)
+				.orElse(shop.getPhoneNumber());
 
 		ShipmentReceiver receiver = new ShipmentReceiver();
 		receiver.setEmail(null);
 		receiver.setFirstName(shop.getName());
-		receiver.setLastName(" ");
-		receiver.setPhone(shop.getPhoneNumber());
+		receiver.setLastName("...");
+		receiver.setPhone(phone);
 		return receiver;
 	}
 
