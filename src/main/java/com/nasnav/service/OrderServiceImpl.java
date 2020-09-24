@@ -3980,7 +3980,7 @@ public class OrderServiceImpl implements OrderService {
 
 
 	@Override
-	@Transactional
+	@Transactional(rollbackFor = Throwable.class)
 	public void confirmReturnRequest(Long id) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		ReturnRequestEntity request =
@@ -3988,10 +3988,13 @@ public class OrderServiceImpl implements OrderService {
 				.findByReturnRequestId(id, orgId)
 						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, id));
 		updateReturnRequestStatus(request, CONFIRMED);
-		shippingMgrService
+		List<ReturnShipmentTracker> trackers =
+				shippingMgrService
 				.requestReturnShipments(request)
 				.collectList()
-				.subscribe(trackers -> sendReturnRequestConfirmationEmail(request, trackers));
+				.blockOptional()
+				.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0004, request.getId()));
+		sendReturnRequestConfirmationEmail(request, trackers);
 	}
 
 

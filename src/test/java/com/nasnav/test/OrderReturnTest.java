@@ -860,8 +860,9 @@ public class OrderReturnTest {
         HttpEntity<?> request = getHttpEntity("131415");
 
         ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
-        Thread.sleep(1000);
+        Thread.sleep(10000);
         //-----------------------------------------------
+        assertEquals(OK, res.getStatusCode());
         assertReturnShipmentsCreated(id, res);
 
         Mockito
