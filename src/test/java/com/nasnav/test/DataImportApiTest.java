@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 
 import javax.servlet.http.Cookie;
 
+import com.nasnav.dao.*;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -68,13 +69,6 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.IntegrationMappingRepository;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.TagsRepository;
 import com.nasnav.enumerations.TransactionCurrency;
 import com.nasnav.persistence.IntegrationMappingEntity;
 import com.nasnav.persistence.ProductEntity;
@@ -119,7 +113,10 @@ public class DataImportApiTest {
     private Resource csvFileVariants;
 
 	@Value("classpath:/files/product__list_upload.csv")
-    private Resource csvFile;
+	private Resource csvFile;
+
+	@Value("classpath:/files/product__list_upload_units.csv")
+	private Resource csvFileWithUnit;
 	
 	@Value("classpath:/files/product__list_upate_group_variants.csv")
     private Resource csvFileGroupExistingVariants;
@@ -201,6 +198,9 @@ public class DataImportApiTest {
 	
 	@Autowired
 	private OrdersRepository orderRepo;
+
+	@Autowired
+	private StockUnitRepository stockUnitRepo;
 	
 	@Test
     public void uploadProductsCSVNoAuthNTest() throws IOException, Exception {
@@ -415,9 +415,41 @@ public class DataImportApiTest {
        
         validateImportReportForNewData(result);
 	}
-	
-	
-	
+
+
+
+	@Test
+	public void uploadProductCSVNewUnit() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+
+		ExtendedProductDataCount before = countExtendedProductData();
+
+		long unitsCountBefore = stockUnitRepo.count();
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileWithUnit, importProperties);
+
+		result.andExpect(status().is(200));
+
+		long unitsCountAfter = stockUnitRepo.count();
+		assertEquals(unitsCountAfter, unitsCountBefore + 1);
+	}
+
+
+	@Test
+	public void uploadProductCSVExistingUnit() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+
+		ExtendedProductDataCount before = countExtendedProductData();
+
+		long unitsCountBefore = stockUnitRepo.count();
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileWithUnit, importProperties);
+
+		result.andExpect(status().is(200));
+
+		long unitsCountAfter = stockUnitRepo.count();
+		assertEquals(unitsCountAfter, unitsCountBefore + 1);
+	}
 	
 	
 	

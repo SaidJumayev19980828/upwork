@@ -78,6 +78,8 @@ where id = 310005;
 -- mulitple variant for product #1002
 insert into public.product_variants(id, "name" , product_id ) values(3100022, 'var' 	, 1002);
 
+INSERT INTO public.units VALUES(111001, 'm') ;
+
 --inserting stocks
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(601, 502, 3, 99001, 600.0, 310001);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(605, 501, 4, 99001, 400.0, 310001);
@@ -86,7 +88,7 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(606, 501, 6, 99002, 600.0, 310002);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(607, 501, 1, 99002, 600.0, 3100022);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(608, 502, 8, 99002, 1200.0, 310007);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, unit_id) values(608, 502, 8, 99002, 1200.0, 310007, 111001);
 
 
 --inserting tags

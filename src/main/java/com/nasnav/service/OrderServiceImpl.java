@@ -1471,7 +1471,12 @@ public class OrderServiceImpl implements OrderService {
 		item.setVariantName(variant.getName());
 		item.setIsReturnable(isReturnable);
 		item.setCurrencyValue(currencyValue);
-		String unitName = ofNullable(entity.getStocksEntity().getUnit().getName()).orElse("");
+		String unitName = ofNullable(entity)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getUnit)
+				.map(StockUnitEntity::getName)
+				.orElse("");
+
 		item.setUnit(unitName);
 
 		return item;

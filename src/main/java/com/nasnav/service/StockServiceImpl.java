@@ -197,7 +197,8 @@ public class StockServiceImpl implements StockService {
 	
 	
 	
-	private StocksEntity prepareStockEntity(IndexedData<StockUpdateDTO> indexedStkDto, VariantCache variantCache, Map<Long,ShopsEntity> shopCache, VariantStockCache stockCache) {
+	private StocksEntity prepareStockEntity(IndexedData<StockUpdateDTO> indexedStkDto, VariantCache variantCache,
+											Map<Long,ShopsEntity> shopCache, VariantStockCache stockCache, Map<String, StockUnitEntity> unitsCache) {
 		StockUpdateDTO stockUpdateReq = indexedStkDto.getData();
 		try {
 			validateStockToUpdate(stockUpdateReq, variantCache, shopCache);
@@ -228,12 +229,7 @@ public class StockServiceImpl implements StockService {
 		}
 
 		if(stockUpdateReq.getUnit() != null) {
-			StockUnitEntity unit = stockUnitRepo.findByName(stockUpdateReq.getUnit());
-			if (unit == null) {
-				unit = new StockUnitEntity();
-				unit.setName(stockUpdateReq.getUnit());
-				unit = stockUnitRepo.save(unit);
-			}
+			StockUnitEntity unit = unitsCache.get(stockUpdateReq.getUnit());
 			stock.setUnit(unit);
 		}
 
@@ -258,13 +254,36 @@ public class StockServiceImpl implements StockService {
 	public List<Long> updateStockBatch(List<StockUpdateDTO> stocks, VariantCache variantCache){
 		Map<Long, ShopsEntity> shopCache = createShopsCache(stocks);		
 		VariantStockCache stockCache = createStocksCache(stocks);
-		
-		List<StocksEntity> stocksToUpdate = prepareStocksToUpdate(stocks, variantCache, shopCache, stockCache);
+		Map<String, StockUnitEntity> unitsCache = getStockUnitsCache(stocks);
+
+		List<StocksEntity> stocksToUpdate = prepareStocksToUpdate(stocks, variantCache, shopCache, stockCache, unitsCache);
 		
 		return saveAllStocks(stocksToUpdate);
 	}
 
-	
+
+	private Map<String, StockUnitEntity> getStockUnitsCache(List<StockUpdateDTO> stocks) {
+		Set<String> importUnits = stocks.stream()
+				.map(StockUpdateDTO::getUnit)
+				.filter(Objects::nonNull)
+				.collect(toSet());
+
+		List<StockUnitEntity> existingUnits = stockUnitRepo.findAll();
+		Set<String> existingUnitsNames = existingUnits.stream().map(StockUnitEntity::getName).collect(toSet());
+		importUnits.removeAll(existingUnitsNames);
+		if (importUnits.size() > 0) {
+			List<StockUnitEntity> createdStockUnits = importUnits
+					.stream()
+					.map(u -> {
+						StockUnitEntity newUnit = new StockUnitEntity();
+						newUnit.setName(u);
+						return newUnit;
+					}).collect(toList());
+			createdStockUnits = stockUnitRepo.saveAll(createdStockUnits);
+			existingUnits.addAll(createdStockUnits);
+		}
+		return existingUnits.stream().collect(toMap(StockUnitEntity::getName, u -> u));
+	}
 
 
 	private List<Long> saveAllStocks(List<StocksEntity> stocksToUpdate) {
@@ -278,13 +297,13 @@ public class StockServiceImpl implements StockService {
 	
 
 	private List<StocksEntity> prepareStocksToUpdate(List<StockUpdateDTO> stocks, VariantCache variantCache,
-			Map<Long, ShopsEntity> shopCache, VariantStockCache stockCache) {
+			Map<Long, ShopsEntity> shopCache, VariantStockCache stockCache, Map<String, StockUnitEntity> unitsCache) {
 		Set<String> seen = new HashSet<>();
 		return IntStream
 				.range(0, stocks.size())
 				.mapToObj(i -> new IndexedData<>(i, stocks.get(i)))
 				.filter(stk -> isNotSeenBefore(seen, stk))
-				.map(stk -> prepareStockEntity(stk, variantCache, shopCache, stockCache))
+				.map(stk -> prepareStockEntity(stk, variantCache, shopCache, stockCache, unitsCache))
 				.collect(toList());
 	}
 
