@@ -21,5 +21,6 @@ public class ProductExportedData {
 	protected Long productId;
 	protected String sku;
 	protected String productCode;
+	protected String unitName;
 }
 

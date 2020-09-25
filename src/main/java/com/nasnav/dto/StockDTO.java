@@ -8,6 +8,8 @@ import java.math.BigDecimal;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.persistence.CountriesEntity;
+import com.nasnav.persistence.StockUnitEntity;
 import com.nasnav.persistence.StocksEntity;
 
 import lombok.Data;
@@ -24,13 +26,22 @@ public class StockDTO extends BaseRepresentationObject {
     private Integer quantity;
     private BigDecimal price;
     private BigDecimal discount;
-
+	private String unit;
+	private String currencyValue;
 
     public StockDTO(StocksEntity entity, Long shopId){
     	this.id = entity.getId();
         this.shopId = shopId;
         this.quantity = ofNullable(entity.getQuantity()).orElse(0);
         this.price = ofNullable(entity.getPrice()).orElse(ZERO);
+		StockUnitEntity unit = entity.getUnit();
+		if (unit != null){
+			this.unit = unit.getName();
+		}
+		CountriesEntity country = entity.getOrganizationEntity().getCountry();
+		if (country != null){
+			this.currencyValue = country.getCurrency();
+		}
         this.discount = 
         		ofNullable(entity.getDiscount())
         		.map(discount -> calcDiscountPercentage(discount, this.price))

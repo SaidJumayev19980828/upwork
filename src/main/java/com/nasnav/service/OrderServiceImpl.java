@@ -1425,7 +1425,7 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal discount = ofNullable(itemDetails.getDiscount()).orElse(ZERO);
 		BigDecimal totalPrice = price.subtract(discount).multiply(itemDetails.getQuantity());
 		BigDecimal discountPercentage = calculatePercentage(discount, price);
-		
+
 		BasketItem item = new BasketItem();
 		item.setProductId(itemDetails.getProductId());
 		item.setName(itemDetails.getProductName());
@@ -1437,7 +1437,7 @@ public class OrderServiceImpl implements OrderService {
 		item.setDiscount(discountPercentage);
 		item.setThumb( variantsCoverImages.get(itemDetails.getVariantId()).orElse(null));
 		item.setCurrency(ofNullable(getTransactionCurrency(itemDetails.getCurrency())).orElse(EGP).name());
-		//TODO set item unit //
+		item.setUnit(itemDetails.getUnit());
 
 		return item;
 	}
@@ -1478,7 +1478,13 @@ public class OrderServiceImpl implements OrderService {
 		item.setVariantName(variant.getName());
 		item.setIsReturnable(isReturnable);
 		item.setCurrencyValue(currencyValue);
-		//TODO set item unit //
+		String unitName = ofNullable(entity)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getUnit)
+				.map(StockUnitEntity::getName)
+				.orElse("");
+
+		item.setUnit(unitName);
 
 		return item;
 	}

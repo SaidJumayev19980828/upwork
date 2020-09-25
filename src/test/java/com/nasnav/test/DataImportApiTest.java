@@ -11,6 +11,7 @@ import static com.nasnav.test.commons.TestCommons.readResource;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -40,6 +41,8 @@ import java.util.stream.Stream;
 
 import javax.servlet.http.Cookie;
 
+import com.nasnav.dao.*;
+import com.nasnav.persistence.*;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -68,20 +71,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.IntegrationMappingRepository;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.TagsRepository;
 import com.nasnav.enumerations.TransactionCurrency;
-import com.nasnav.persistence.IntegrationMappingEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductExtraAttributesEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.TagsEntity;
 import com.nasnav.service.model.importproduct.context.ImportProductContext;
 import com.nasnav.test.commons.TestCommons;
 import com.nasnav.test.helpers.TestHelper;
@@ -119,7 +109,10 @@ public class DataImportApiTest {
     private Resource csvFileVariants;
 
 	@Value("classpath:/files/product__list_upload.csv")
-    private Resource csvFile;
+	private Resource csvFile;
+
+	@Value("classpath:/files/product__list_upload_units.csv")
+	private Resource csvFileWithUnit;
 	
 	@Value("classpath:/files/product__list_upate_group_variants.csv")
     private Resource csvFileGroupExistingVariants;
@@ -201,6 +194,9 @@ public class DataImportApiTest {
 	
 	@Autowired
 	private OrdersRepository orderRepo;
+
+	@Autowired
+	private StockUnitRepository stockUnitRepo;
 	
 	@Test
     public void uploadProductsCSVNoAuthNTest() throws IOException, Exception {
@@ -415,10 +411,31 @@ public class DataImportApiTest {
        
         validateImportReportForNewData(result);
 	}
-	
-	
-	
-	
+
+
+
+	@Test
+	public void uploadProductCSVNewUnit() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_IMPORT_SHOP);
+
+		ExtendedProductDataCount before = countExtendedProductData();
+
+		long unitsCountBefore = stockUnitRepo.count();
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "ggr45r5", csvFileWithUnit, importProperties);
+
+		result.andExpect(status().is(200));
+
+		long unitsCountAfter = stockUnitRepo.count();
+		assertEquals("imported two units, one already exists and the other is new"
+				, unitsCountAfter, unitsCountBefore + 1);
+
+		ExpectedSavedData expected = getExpectedUpdatedDataWithUnits();
+		assertProductDataImported(TEST_IMPORT_SHOP, expected);
+	}
+
+
+
 	
 	
 	@Test
@@ -1129,7 +1146,7 @@ public class DataImportApiTest {
 		Set<String> expectedTemplateHeaders = 
 				setOf("product_name", "barcode", "tags", "brand", "price", "quantity", "description"
 						, "variant_id", "external_id", "color", "size", "product_group_key", "discount"
-						, "sku", "product_code");
+						, "sku", "product_code", "unit");
 		HttpEntity<Object> request = getHttpEntity("","131415");
 		ResponseEntity<String> res = template.exchange("/upload/productlist/template", GET, request ,String.class);
 		
@@ -1476,11 +1493,12 @@ public class DataImportApiTest {
 				.map(ProductEntity::getId)
 				.collect(toList()); 
         Set<ProductEntity> products = productRepo.findFullDataByIdIn(productIds);
-        
+
         
         assertEquals(expected.getStocksNum().intValue() , stocks.size());
         assertTrue( propertyValuesIn(stocks, StocksEntity::getCurrency, expected.getCurrencies())	);
-        
+        assertTrue( propertyValuesIn(stocks, this::getUnit , expected.getUnits()));
+
         assertTrue( propertyValuesIn(stocks, StocksEntity::getQuantity, expected.getQuantities())	);
         assertTrue( compareEntityBigDecimalFieldValues(stocks, StocksEntity::getPrice, expected.getPrices())	);
         assertTrue( compareEntityBigDecimalFieldValues(stocks, StocksEntity::getDiscount, expected.getDiscounts()));
@@ -1536,6 +1554,12 @@ public class DataImportApiTest {
 				.stream()
 				.map(TagsEntity::getName)
 				.collect(toSet());
+	}
+
+
+
+	private String getUnit(StocksEntity stock){
+		return ofNullable(stock.getUnit()).map(StockUnitEntity::getName).orElse(null);
 	}
 	
 	
@@ -1793,6 +1817,32 @@ public class DataImportApiTest {
 		data.setStocksNum(1);
 		data.setDiscounts(setOf(ZERO));
 		
+		return data;
+	}
+
+
+
+
+	private ExpectedSavedData getExpectedUpdatedDataWithUnits() {
+		ExpectedSavedData data = new ExpectedSavedData();
+
+		data.setQuantities( setOf(101, 102) );
+		data.setPrices( setOf(new BigDecimal("10.25"), new BigDecimal("88.6")));
+		data.setCurrencies( setOf(EGP));
+
+		data.setBarcodes( setOf("1354ABN", "87847777EW") );
+		data.setProductNames( setOf("Squishy shoes", "hard shoes") );
+		data.setProductPNames(setOf("squishy-shoes", "hard-shoes") );
+		data.setVariantsPNames(setOf("squishy-shoes", "hard-shoes") );
+		data.setDescriptions( setOf("squishy", "too hard") );
+		data.setTags( setOf("squishy things", "mountain equipment") );
+		data.setBrands( setOf(101L, 102L) );
+		data.setStocksNum(2);
+		data.setDiscounts(setOf(ZERO));
+		data.setUnits(setOf("KG", "m"));
+		data.setSku(setOf("ABC123", "XYZ456"));
+		data.setProductCodes(setOf("123-111", "123-222"));
+
 		return data;
 	}
 	
@@ -2113,6 +2163,7 @@ class ExpectedSavedData{
 	private Set<String> sku;
 	private Set<String> productCodes;
 	private Integer stocksNum;
+	private Set<String> units;
 	
 	public ExpectedSavedData() {
 		extraAttributes = new HashSet<>();
@@ -2122,6 +2173,7 @@ class ExpectedSavedData{
 		discounts = new HashSet<>();
 		sku = new HashSet<>();
 		productCodes = new HashSet<>();
+		units = new HashSet<>();
 	}
 	
 	

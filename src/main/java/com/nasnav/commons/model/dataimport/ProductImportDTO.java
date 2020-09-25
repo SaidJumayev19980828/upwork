@@ -28,6 +28,7 @@ public class ProductImportDTO {
 	protected BigDecimal discount;
 	protected String sku;
 	protected String productCode;
+	protected String unit;
 	
 	
 	public ProductImportDTO() {

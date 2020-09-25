@@ -21,5 +21,5 @@ public class StockUpdateDTO {
 	private BigDecimal price;
 	private Integer currency;
 	private BigDecimal discount;
-	
+	private String unit;
 }
