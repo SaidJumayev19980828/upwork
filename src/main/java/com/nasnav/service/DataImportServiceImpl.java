@@ -710,7 +710,7 @@ public class DataImportServiceImpl implements DataImportService {
 	
 	private ProductTagPair toTagAndProductIdPair(ProductData data, Map<String, TagsEntity> tagsMap, String tagName){
 		Long orgId = security.getCurrentUserOrganizationId();
-		Long tagId = ofNullable(tagsMap.get(tagName))
+		Long tagId = ofNullable(tagsMap.get(tagName.toLowerCase()))
 					.map(TagsEntity::getId)
 					.orElseThrow(() -> 
 						new RuntimeBusinessException(
@@ -730,7 +730,7 @@ public class DataImportServiceImpl implements DataImportService {
 		Set<String> nonExistingTags = 
         		tagsNames
         		.stream()
-        		.filter(tagName -> !tagsMap.keySet().contains(tagName))
+        		.filter(tagName -> !tagsMap.keySet().contains(tagName.toLowerCase()))
         		.collect(toSet());
         
         if(!nonExistingTags.isEmpty()) {
