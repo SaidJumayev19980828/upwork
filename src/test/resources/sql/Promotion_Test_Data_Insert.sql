@@ -80,13 +80,13 @@ INSERT INTO public.promotions
 VALUES(630001, 'WELCOME', 99001, now() + INTERVAL '200 DAY', now() + INTERVAL '201 DAY', 1, 0, 'WELCOME2020', '{}', '{}', 69, now());
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630002, 'HI', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'GREEEEEED', '{"amount_min":0, "amount_max":20000}', '{"percentage":10}', 69, now());
+VALUES(630002, 'HI', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'GREEEEEED', '{"cart_amount_min":0}', '{"percentage":10}', 69, now());
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630003, 'GIVE_US_MONEY', 99001, now() - INTERVAL '10 min' , now() + INTERVAL '200 min', 1, 0, 'MONEY2020', '{"amount_min":0, "amount_max":500}', '{"percentage":10}', 69, now()); 
+VALUES(630003, 'GIVE_US_MONEY', 99001, now() - INTERVAL '10 min' , now() + INTERVAL '200 min', 1, 0, 'MONEY2020', '{"cart_amount_min":4000}', '{"percentage":10}', 69, now());
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630004, 'MORE_MONEY', 99001, now() - INTERVAL '100 DAY', now() - INTERVAL '50 DAY', 0, 0, 'MORE2020', '{"amount_min":0, "amount_max":2000}', '{"percentage":10}', 69, now());
+VALUES(630004, 'MORE_MONEY', 99001, now() - INTERVAL '100 DAY', now() - INTERVAL '50 DAY', 0, 0, 'MORE2020', '{"cart_amount_min":0}', '{"percentage":10}', 69, now());
 
 
 

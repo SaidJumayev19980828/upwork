@@ -14,10 +14,7 @@ import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0007;
 import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0008;
 import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0009;
 import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0010;
-import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_AMOUNT;
-import static com.nasnav.persistence.PromotionsEntity.DISCOUNT_PERCENT;
-import static com.nasnav.persistence.PromotionsEntity.MAX_AMOUNT_PROP;
-import static com.nasnav.persistence.PromotionsEntity.MIN_AMOUNT_PROP;
+import static com.nasnav.persistence.PromotionsEntity.*;
 import static java.lang.Long.MAX_VALUE;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.HALF_EVEN;
@@ -403,13 +400,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 
-
-
 	private boolean isUpdateOperation(PromotionDTO promotion) {
 		return nonNull(promotion.getId());
 	}
-
-
 
 
 
@@ -426,13 +419,24 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 
 
-	private BigDecimal calcDiscount(Map<String, Object> discountData, BigDecimal cartTotal) {
-		BigDecimal percent = 
+	private BigDecimal calcDiscount(PromotionsEntity promo, BigDecimal cartTotal) {
+		Map<String,Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
+		Map<String,Object> constrains = readJsonStrAsMap(promo.getConstrainsJson());
+
+		BigDecimal percent =
 				getOptionalBigDecimal(discountData, DISCOUNT_PERCENT)
 				.orElse(ZERO);
-		return percent
+
+		Optional<BigDecimal> maxDiscount = getOptionalBigDecimal(constrains, DISCOUNT_AMOUNT_MAX);
+
+		BigDecimal discount =
+				percent
 				.multiply(new BigDecimal("0.01"))
-				.multiply(cartTotal)
+				.multiply(cartTotal);
+
+		return maxDiscount
+				.map( max -> discount.compareTo(max) >=0 ? max: discount)
+				.orElse(discount)
 				.setScale(2, HALF_EVEN);
 	}
 
@@ -471,10 +475,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		BigDecimal minAmount = 
 				getOptionalBigDecimal(constrains, MIN_AMOUNT_PROP)
 				.orElse(ZERO);
-		BigDecimal maxAmount = 
-				getOptionalBigDecimal(constrains, MAX_AMOUNT_PROP)
-				.orElse(new BigDecimal(MAX_VALUE));
-		return Range.between(minAmount, maxAmount).contains(cartTotal);
+		return cartTotal.compareTo(minAmount) >= 0;
 	}
 
 
@@ -505,7 +506,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 		
 		Map<String,Object> discountData = readJsonStrAsMap(promo.getDiscountJson());
 		return getOptionalBigDecimal(discountData, DISCOUNT_AMOUNT)
-				.orElse(calcDiscount(discountData, subTotal));
+				.orElse(calcDiscount(promo, subTotal));
 	}
 
 
