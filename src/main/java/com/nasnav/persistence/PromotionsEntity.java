@@ -20,8 +20,8 @@ import lombok.Data;
 @Data
 public class PromotionsEntity {
 	
-	public final static String MIN_AMOUNT_PROP = "amount_min";
-	public final static String MAX_AMOUNT_PROP = "amount_max";
+	public final static String MIN_AMOUNT_PROP = "cart_amount_min";
+	public final static String DISCOUNT_AMOUNT_MAX = "discount_value_max";
 	public final static String DISCOUNT_PERCENT = "percentage";
 	public final static String DISCOUNT_AMOUNT = "amount";
 	

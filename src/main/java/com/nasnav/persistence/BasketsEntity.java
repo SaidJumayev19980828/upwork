@@ -26,7 +26,7 @@ import lombok.ToString;
 @NamedNativeQuery(
         name = "Basket",
         query ="select b.order_id, p.id as product_id, p.name as product_name, p.p_name as product_pname, v.id as variant_id, s.id as stock_id," +
-                " s.unit as unit, b.id as basket_id , b.quantity, b.price, b.currency, b.discount" +
+                " s.unit_id as unit, b.id as basket_id , b.quantity, b.price, b.currency, b.discount" +
                 " from products p "+
                 " join product_variants v on p.id = v.product_id " + 
                 " join stocks s ON v.id = s.variant_id " +

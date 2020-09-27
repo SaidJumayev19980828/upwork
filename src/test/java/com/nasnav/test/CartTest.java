@@ -381,6 +381,40 @@ public class CartTest {
 		assertEquals(630003L, promoId.longValue());
 	}
 
+
+
+
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithPromotionsWithPercentageButBelowMinCartValue() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "SCAM_GREEEEEEED");
+
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+
+
+
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithPromotionsWithPercentageButWithTooHighDiscount() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "kafa");
+
+		Order order = checkOutCart(requestBody, new BigDecimal("5881"), new BigDecimal("5840") ,new BigDecimal("51"));
+
+		MetaOrderEntity entity = metaOrderRepo.findByMetaOrderId(order.getOrderId()).get();
+		Long promoId = 	entity.getPromotions().stream().findFirst().get().getId();
+
+		assertEquals(630006L, promoId.longValue());
+	}
+
 	
 	
 	
