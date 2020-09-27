@@ -40,17 +40,6 @@ public class ShopThreeSixtyController {
     }
 
 
-
-    @ApiOperation(value = "Get information about shop 360 product positions", nickname = "getShop360ProductPositions")
-    @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
-            @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
-    @GetMapping(value = "/product_positions", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity getShop360ProductPositions(@RequestParam("shop_id") Long shopId,
-                                                     @RequestParam(defaultValue = "true") Boolean published) {
-        return new ResponseEntity<>(shop360Svc.getProductPositions(shopId, published), HttpStatus.OK);
-    }
-
-
     @ApiOperation(value = "Get information about shop 360 sections", nickname = "getShop360Sections")
     @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
@@ -103,19 +92,6 @@ public class ShopThreeSixtyController {
                                                      @RequestBody String json_data)
             throws BusinessException, UnsupportedEncodingException {
         return shop360Svc.updateThreeSixtyShopJsonData(shopId, type, json_data);
-    }
-
-
-    @ApiOperation(value = "Create/Update shop360 product positions", nickname = "updateShop360ProductPositions")
-    @ApiResponses(value = { @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
-            @io.swagger.annotations.ApiResponse(code = 406, message = "INVALID_PARAM")})
-    @PostMapping(value = "/product_positions",consumes = MediaType.APPLICATION_JSON_VALUE,
-                 produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ShopResponse updateThreeSixtyShopProductPositions(@RequestHeader(name = "User-Token", required = false) String userToken,
-                                                             @RequestParam("shop_id") Long shopId,
-                                                             @RequestBody String json_data)
-            throws BusinessException, UnsupportedEncodingException {
-        return shop360Svc.updateThreeSixtyShopProductPositions(shopId, json_data);
     }
 
 
