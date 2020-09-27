@@ -108,7 +108,7 @@ public class NavboxController {
 			@io.swagger.annotations.ApiResponse(code = 404, message = "There are no shops matching this org_id"), })
 	@GetMapping("/shops")
 	public List<ShopRepresentationObject> getShopsByOrganization(@RequestParam(name = "org_id") Long orgId) {
-		return shopService.getOrganizationShops(orgId, false);
+		return shopService.getOrganizationShops(orgId, true);
 	}
 
 	
