@@ -653,7 +653,6 @@ public class IntegrationServiceImpl implements IntegrationService {
 	private Long createNewShop(ImportedShop externalShop, Long orgId)  {
 		ShopJsonDTO shopUpdateDto = new ShopJsonDTO();
 		shopUpdateDto.setName(externalShop.getName());
-		shopUpdateDto.setOrgId(orgId);
 		
 		ShopResponse response;
 		try {

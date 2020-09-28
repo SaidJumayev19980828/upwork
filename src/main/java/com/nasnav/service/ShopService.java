@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import javax.cache.annotation.CacheResult;
 
+import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -33,10 +34,6 @@ import com.nasnav.dto.OrganizationImagesRepresentationObject;
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationImagesEntity;
-import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import com.nasnav.service.helpers.ShopServiceHelper;
@@ -123,19 +120,13 @@ public class ShopService {
     
     @CacheEvict(allEntries = true, cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
     public ShopResponse shopModification(ShopJsonDTO shopJson) {
-        BaseUserEntity baseUser =  securityService.getCurrentUser();
-        if(!(baseUser instanceof EmployeeUserEntity)) {
-            throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001,"shops");
-        }
-        
-        EmployeeUserEntity user = (EmployeeUserEntity)baseUser;
+        EmployeeUserEntity user = (EmployeeUserEntity)securityService.getCurrentUser();
         List<String> userRoles = employeeUserServicehelper.getEmployeeUserRoles(user.getId());
-        Long orgId = user.getOrganizationId();
-        Long shopId = user.getShopId();
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
         if (shopJson.getId() == null){
-            return createShop(shopJson, orgId, userRoles);
+            return createShop(shopJson, org, userRoles);
         } else {
-            return updateShop(shopJson, orgId, shopId, userRoles);
+            return updateShop(shopJson, org);
         }
     }
     
@@ -143,71 +134,35 @@ public class ShopService {
     
     
 
-    private ShopResponse createShop(ShopJsonDTO shopJson, Long employeeUserOrgId, List<String> userRoles) {
-        if (!userRoles.contains("ORGANIZATION_MANAGER") || !employeeUserOrgId.equals(shopJson.getOrgId())){
-        	throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001, "this shop");
+    private ShopResponse createShop(ShopJsonDTO shopJson, OrganizationEntity org, List<String> userRoles) {
+        if (!userRoles.contains("ORGANIZATION_MANAGER")) {
+            throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001, "this shop");
         }
-        
         ShopsEntity shopsEntity = new ShopsEntity();
 
         shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson);
+        shopsEntity.setOrganizationEntity(org);
         shopsEntity.setRemoved(0);
         shopsRepository.save(shopsEntity);
-        return new ShopResponse(shopsEntity.getId(), OK);
+        return new ShopResponse(shopsEntity.getId());
     }
     
-    
-    
-    
 
-    private ShopResponse updateShop(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId,
-                                    List<String> userRoles) {
-
-        validateShopUpdate(shopJson, employeeUserOrgId, employeeUserShopId, userRoles);
-        
-    	ShopsEntity shopsEntity = shopsRepository.findById(shopJson.getId()).get();
+    private ShopResponse updateShop(ShopJsonDTO shopJson, OrganizationEntity org) {
+    	ShopsEntity shopsEntity = validateAndReturnShop(shopJson, org);
         shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson);
-        
         shopsRepository.save(shopsEntity);
         
-        return new ShopResponse(shopsEntity.getId(), OK);
+        return new ShopResponse(shopsEntity.getId());
     }
 
 
-
-
-	private void validateShopUpdate(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId,
-			List<String> userRoles) {
-		
-		validateShop(shopJson);
-		validateUserToUpdateShop(shopJson, employeeUserOrgId, employeeUserShopId, userRoles);
-	}
-
-
-
-
-	private  void validateShop(ShopJsonDTO shopJson)  {
-		ShopsEntity shopsEntity = shopsRepository.findById(shopJson.getId()).get();
+	private  ShopsEntity validateAndReturnShop(ShopJsonDTO shopJson, OrganizationEntity org)  {
+		ShopsEntity shopsEntity = shopsRepository.findByIdAndOrganizationEntity_IdAndRemoved(shopJson.getId(), org.getId(), 0);
         if ( shopsEntity == null) {
             throw new RuntimeBusinessException(NOT_FOUND, S$0002, shopJson.getId());
         }
-	}
-
-
-
-
-	private void validateUserToUpdateShop(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId,
-			List<String> userRoles) {
-        Long orgId = securityService.getCurrentUserOrganizationId();
-		if (!userRoles.contains("ORGANIZATION_MANAGER") && !userRoles.contains("STORE_MANAGER")){
-        	throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001, "this shop");
-        }
-        if (userRoles.contains("ORGANIZATION_MANAGER") && !employeeUserOrgId.equals(orgId)){
-            throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001, "this shop");
-        }
-        if (userRoles.contains("STORE_MANAGER") && !employeeUserShopId.equals(shopJson.getId())){
-            throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001, "this shop");
-        }
+        return shopsEntity;
 	}
     
     
