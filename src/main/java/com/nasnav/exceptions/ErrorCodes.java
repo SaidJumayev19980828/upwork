@@ -137,7 +137,10 @@ public enum ErrorCodes {
 	,O$GNRL$0001("Cannot update order status from [%s] to [%s]!")
 	,O$GNRL$0002("No Meta order exists with id[%d]!")
 	,O$GNRL$0003("Cannot access Meta order with id[%d] by the current user!")
-	
+
+	,O$WISH$0001("Employee users cannot manage wishlists!")
+	,O$WISH$0002("No wishlist item exists with id[%d]")
+
 	,SHP$OFFR$0001("Invalid Stock id's! no stocks were given or stocks doesn't exists!")
 
 	,ENUM$0001("Invalid shipping status")
