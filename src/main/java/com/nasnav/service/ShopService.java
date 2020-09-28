@@ -110,7 +110,7 @@ public class ShopService {
             throw new RuntimeBusinessException(NOT_FOUND, S$0003);
 
         ShopRepresentationObject shopRepObj = (ShopRepresentationObject)shopsEntityOptional.get().getRepresentation();
-        List<OrganizationImagesEntity> imageEntities = orgImgRepo.findByShopsEntityId(shopId);
+        List<OrganizationImagesEntity> imageEntities = orgImgRepo.findByShopsEntityIdAndTypeNot(shopId, 360);
         if(imageEntities != null && !imageEntities.isEmpty())
             shopRepObj.setImages(imageEntities.stream().map(entity -> (OrganizationImagesRepresentationObject) entity.getRepresentation())
                                                        .collect(toList()));

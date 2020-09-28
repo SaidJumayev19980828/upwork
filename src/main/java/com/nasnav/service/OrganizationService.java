@@ -15,6 +15,7 @@ import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
 import static com.nasnav.exceptions.ErrorCodes.G$PRAM$0001;
 import static com.nasnav.exceptions.ErrorCodes.ORG$EXTRATTR$0001;
 import static com.nasnav.exceptions.ErrorCodes.ORG$SETTING$0001;
+import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -174,7 +175,7 @@ public class OrganizationService {
             orgRepObj.setBrands(repList);
         }
 
-        List <OrganizationImagesEntity> orgImgEntities = organizationImagesRepository.findByOrganizationEntityId(orgRepObj.getId());
+        List <OrganizationImagesEntity> orgImgEntities = organizationImagesRepository.findByOrganizationEntityIdAndTypeNotIn(orgRepObj.getId(), asList(360, 400, 410));
         if (!isNullOrEmpty(orgImgEntities)) {
             List<OrganizationImagesRepresentationObject> imagesList = orgImgEntities.stream().map(rep -> ((OrganizationImagesRepresentationObject) rep.getRepresentation())).collect(toList());
             orgRepObj.setImages(imagesList);
