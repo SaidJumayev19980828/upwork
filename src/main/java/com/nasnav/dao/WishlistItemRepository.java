@@ -47,4 +47,6 @@ public interface WishlistItemRepository extends JpaRepository<WishlistItemEntity
 			" AND is_wishlist = 1 "
 			, nativeQuery = true)
 	void moveToCart(@Param("id")Long id, @Param("qty") Integer qty, @Param("userId") Long userId);
+
+	boolean existsByIdAndUser_Id(Long itemId, Long id);
 }

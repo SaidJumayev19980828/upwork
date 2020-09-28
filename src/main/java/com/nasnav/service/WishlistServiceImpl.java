@@ -124,7 +124,7 @@ public class WishlistServiceImpl implements WishlistService{
         }
 
         Long itemId = item.getItemId();
-        if(!wishlistRepo.existsById(itemId)){
+        if(!wishlistRepo.existsByIdAndUser_Id(itemId, user.getId())){
             throw new RuntimeBusinessException(NOT_ACCEPTABLE ,O$WISH$0002 ,itemId);
         }
 
