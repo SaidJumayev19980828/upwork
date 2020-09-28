@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.IntStream;
 
+import com.nasnav.dto.TagsRepresentationObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -887,21 +888,29 @@ public class ProductServiceTest {
 	@Test
 	@Sql(executionPhase = BEFORE_TEST_METHOD, scripts = {"/sql/Products_Test_Data_Insert_2.sql"})
 	@Sql(executionPhase = AFTER_TEST_METHOD, scripts = {"/sql/database_cleanup.sql"})
-	public void testGetProductFilters() {
+	public void testGetProductFilters() throws IOException {
 		ProductSearchParam param = new ProductSearchParam();
 		param.org_id = 99001L;
+		param.brand_id = 101L;
 
 		ResponseEntity<ProductsFiltersResponse> response =
 				template.getForEntity("/navbox/filters?" + param.toString(), ProductsFiltersResponse.class);
 		assertEquals(200, response.getStatusCodeValue());
 
 		JSONObject res = new JSONObject(response.getBody());
-		assertEquals(3, res.length());
+		assertEquals(4, res.length());
 		JSONObject prices = res.getJSONObject("prices");
 		assertEquals(new BigDecimal(200).setScale(2), prices.getBigDecimal("minPrice"));
 		assertEquals(new BigDecimal(1200).setScale(2), prices.getBigDecimal("maxPrice"));
 		JSONArray brands = res.getJSONArray("brands");
 		assertTrue(!brands.isEmpty());
+
+		JSONArray tags = res.getJSONArray("tags");
+		assertTrue(!tags.isEmpty());
+		assertEquals(1, tags.length());
+
+		TagsRepresentationObject tag = objectMapper.readValue(tags.get(0).toString(), TagsRepresentationObject.class);
+		assertEquals("squishy things", tag.getName());
 
 		JSONObject variantFeatures = res.getJSONObject("variantFeatures");
 		assertTrue(!variantFeatures.isEmpty());
