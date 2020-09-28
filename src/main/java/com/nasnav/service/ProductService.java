@@ -820,7 +820,7 @@ public class ProductService {
 		SubQueryExpression union = sqlQuery.union(finalProductsQuery.select(product.id),
 												  finalCollectionsQuery.select(product.id));
 		SQLQuery<?> tags = queryFactory
-				.select(tag.id, tag.name, tag.alias, tag.metadata, tag.pName)
+				.select(tag.id, tag.name, tag.alias, tag.metadata, tag.pName.as("pname"), tag.categoryId)
 				.from(tag)
 				.where(tag.id.in(queryFactory
 									.select(productTag.tagId)
