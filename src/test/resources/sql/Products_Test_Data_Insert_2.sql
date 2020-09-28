@@ -1,5 +1,6 @@
 ----------------------------inserting dummy data----------------------------
 
+INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
 --inserting organizations
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
@@ -82,4 +83,11 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(606, 502, 6, 99001, 700.0, 310006);
 insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id) values(607, 502, 6, 99001, 700.0, 310007);
 
+
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22001, 201, 'squishy things', 'squishy things', 'squishy_things', '{}', 0, 99001);
+INSERT INTO public.tags (id, category_id, "name", alias, p_name, metadata, removed, organization_id) VALUES(22002, 202, 'mountain equipment', 'mountain equipment', 'mountain_equipment', '{}', 0, 99001);
+
+
+insert into product_tags(product_id, tag_id) values(1001, 22001);
+insert into product_tags(product_id, tag_id) values(1004, 22002);
 
