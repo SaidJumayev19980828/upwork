@@ -216,6 +216,8 @@ public class WishlistTest {
     @Test
     public void deleteWishlistItem() {
         Long id = 111602L;
+        assertTrue(wishlistRepo.findById(id).isPresent());
+
         HttpEntity<?> request =  getHttpEntity("123");
         ResponseEntity<Wishlist> response =
                 template.exchange("/wishlist/item?item_id="+id, DELETE, request, Wishlist.class);
@@ -226,6 +228,7 @@ public class WishlistTest {
         Set<Long> ids = getIds(wishlist);
         assertEquals(1, wishlist.getItems().size());
         assertTrue(setOf(111604L).stream().allMatch(ids::contains));
+        assertFalse("The item will be deleted", wishlistRepo.findById(id).isPresent());
     }
 
 
@@ -261,7 +264,54 @@ public class WishlistTest {
     }
 
 
-    //TODO: delete item of another customer
-    //TODO: move item of another customer
-    //TODO: move non-existing item
+
+
+
+    @Test
+    public void deleteWishlistItemOfAnotherCustomer() {
+        Long id = 111602L;
+        assertTrue(wishlistRepo.findById(id).isPresent());
+
+        HttpEntity<?> request =  getHttpEntity("456");
+        ResponseEntity<Wishlist> response =
+                template.exchange("/wishlist/item?item_id="+id, DELETE, request, Wishlist.class);
+
+        assertEquals(OK, response.getStatusCode());
+        assertTrue("The item will not be deleted", wishlistRepo.findById(id).isPresent());
+    }
+
+
+
+
+    @Test
+    public void moveWishlistItemToCartOfAnotherCustomer() {
+        Long id = 111602L;
+        JSONObject requestBody =
+                json()
+                .put("item_id", id)
+                .put("quantity", NULL);
+        HttpEntity<?> request =  getHttpEntity(requestBody.toString(), "456");
+        ResponseEntity<Cart> response =
+                template.exchange("/wishlist/item/into_cart", POST, request, Cart.class);
+
+        assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+    }
+
+
+
+
+
+    @Test
+    public void moveWishlistItemToCartNonExistingItem() {
+        Long id = -1L;
+        JSONObject requestBody =
+                json()
+                .put("item_id", id)
+                .put("quantity", NULL);
+        HttpEntity<?> request =  getHttpEntity(requestBody.toString(),"123");
+        ResponseEntity<Cart> response =
+                template.exchange("/wishlist/item/into_cart", POST, request, Cart.class);
+
+        assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+    }
 }
