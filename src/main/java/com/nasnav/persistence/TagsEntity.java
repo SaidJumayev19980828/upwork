@@ -80,7 +80,6 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
         obj.setPname(getPname());
         obj.setMetadata(getMetadata());
         obj.setCategoryId(categoryId);
-        obj.setGraphId(getGraphId());
         
         return obj;
     }
