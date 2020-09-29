@@ -175,7 +175,7 @@ public class OrganizationService {
             orgRepObj.setBrands(repList);
         }
 
-        List <OrganizationImagesEntity> orgImgEntities = organizationImagesRepository.findByOrganizationEntityIdAndTypeNotIn(orgRepObj.getId(), asList(360, 400, 410));
+        List <OrganizationImagesEntity> orgImgEntities = organizationImagesRepository.findByOrganizationEntityIdAndShopsEntityNullAndTypeNotIn(orgRepObj.getId(), asList(360, 400, 410));
         if (!isNullOrEmpty(orgImgEntities)) {
             List<OrganizationImagesRepresentationObject> imagesList = orgImgEntities.stream().map(rep -> ((OrganizationImagesRepresentationObject) rep.getRepresentation())).collect(toList());
             orgRepObj.setImages(imagesList);
