@@ -20,6 +20,7 @@ import static java.util.Arrays.stream;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static org.bouncycastle.asn1.x509.X509ObjectIdentifiers.organization;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -233,51 +234,72 @@ public class OrganizationService {
     
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public OrganizationResponse createOrganization(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
-        validateOrganizationName(json);
 
-        OrganizationEntity organization = new OrganizationEntity();
+        OrganizationEntity organization;
         if (json.id != null) {
             organization = orgRepo.findOneById(json.id);
             if (organization == null)
                 throw new BusinessException(String.format("Provided id (%d) doesn't match any existing org!", json.id),
                         "INVALID_PARAM: id", NOT_ACCEPTABLE);
+            if (json.name != null) {
+                validateOrganizationName(json);
+                organization.setName(json.name);
+                organization.setPname(json.pname);
+            }
+        } else {
+            organization = createNewOrganization(json);
         }
 
-	    OrganizationEntity organizationEntity = organizationRepository.findByPname(json.pname);
-	    if (organizationEntity != null) {
-		    if (!organization.getId().equals(organizationEntity.getId())) {
-			    throw new BusinessException("INVALID_PARAM: p_name",
-					    "Provided p_name is already used by another organization (id: " + organizationEntity.getId() +
-							    ", name: " + organizationEntity.getName() + ")", NOT_ACCEPTABLE);
-		    }
-	    }
-
-	    organization.setName(json.name);
-        organization.setPname(json.pname);
-        if (json.id == null) {
-            organization.setThemeId(0);
-        }
-	    if (json.ecommerce != null) {
-		    organization.setEcommerce(json.ecommerce);
-	    }
-	    if (json.googleToken != null) {
-		    organization.setGoogleToken(json.googleToken);
-	    }
-
-        if (json.currencyIso != null) {
-            CountriesEntity country = countryRepo.findByIsoCode(json.currencyIso);
-            organization.setCountry(country);
-        }
+        updateAdditionalOrganizationData(json, organization);
 
 	    organizationRepository.save(organization);
         return new OrganizationResponse(organization.getId(), 0);
     }
 
 
-    private void validateOrganizationName(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
+    private OrganizationEntity createNewOrganization(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
+        validateOrganizationNameForCreate(json);
+        OrganizationEntity organization = organizationRepository.findByPname(json.pname);
+        if (organization != null) {
+            throw new BusinessException("INVALID_PARAM: p_name",
+                    "Provided p_name is already used by another organization (id: " + organization.getId() +
+                            ", name: " + organization.getName() + ")", NOT_ACCEPTABLE);
+        }
+        organization = new OrganizationEntity();
+        organization.setName(json.name);
+        organization.setPname(json.pname);
+        return organization;
+    }
+
+
+    private OrganizationEntity updateAdditionalOrganizationData(OrganizationDTO.OrganizationCreationDTO json,
+                                                                OrganizationEntity organization) {
+        if (json.id == null) {
+            organization.setThemeId(0);
+        }
+        if (json.ecommerce != null) {
+            organization.setEcommerce(json.ecommerce);
+        }
+        if (json.googleToken != null) {
+            organization.setGoogleToken(json.googleToken);
+        }
+
+        if (json.currencyIso != null) {
+            CountriesEntity country = countryRepo.findByIsoCode(json.currencyIso);
+            organization.setCountry(country);
+        }
+        return organization;
+    }
+
+    private void validateOrganizationNameForCreate(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
         if (json.name == null) {
-            throw new BusinessException("MISSING_PARAM: name","Required Organization name is empty", NOT_ACCEPTABLE);
-        } else if (!validateName(json.name)) {
+            throw new BusinessException("MISSING_PARAM: name", "Required Organization name is empty", NOT_ACCEPTABLE);
+        }
+        validateOrganizationName(json);
+    }
+
+    private void validateOrganizationName(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
+        if (!validateName(json.name)) {
             throw new BusinessException("INVALID_PARAM: name", "Required Organization name is invalid", NOT_ACCEPTABLE);
         }
         if (json.pname == null) {

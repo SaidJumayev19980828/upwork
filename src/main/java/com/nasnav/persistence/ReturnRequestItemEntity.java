@@ -1,5 +1,6 @@
 package com.nasnav.persistence;
 
+import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.response.ReturnRequestItemDTO;
@@ -84,13 +85,15 @@ public class ReturnRequestItemEntity implements BaseEntity {
             BasketsEntity basket = getBasket();
             OrdersEntity subOrder = basket.getOrdersEntity();
             StocksEntity stock = basket.getStocksEntity();
+            ShopsEntity shop = stock.getShopsEntity();
             ProductVariantsEntity variant = stock.getProductVariantsEntity();
             ProductEntity product = variant.getProductEntity();
             AddressRepObj address = (AddressRepObj)subOrder.getAddressEntity().getRepresentation();
             BigDecimal totalPrice = basket.getPrice().multiply( new BigDecimal(getReturnedQuantity()));
             dto.setAddress(address);
             dto.setBasketItem(getBasket().getId());
-            dto.setShopId(stock.getShopsEntity().getId());
+            dto.setShopId(shop.getId());
+            dto.setShopName(shop.getName());
             dto.setPrice(totalPrice);
             dto.setVariantId(variant.getId());
             dto.setFeatureSpec(variant.getFeatureSpec());
