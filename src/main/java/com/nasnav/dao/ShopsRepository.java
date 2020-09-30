@@ -29,14 +29,13 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
                                          @Param("minLat") Double minLat,
                                          @Param("maxLat") Double maxLat);
 
-    @Query(value = "select * from shops s where s.lng between :minLong and :maxLong and s.lat between :minLat and :maxLat " +
-            " and s.id in (select st.shop_id from stocks st join Product_Variants v " +
-            "on v.id = st.variant_id join Products p on p.id = v.product_id where p.name like %:name%) and s.removed = 0", nativeQuery = true)
-    List<ShopsEntity> getShopsByLocation(@Param("name") String name,
-                                         @Param("minLong") Double minLong,
-                                         @Param("maxLong") Double maxLong,
-                                         @Param("minLat") Double minLat,
-                                         @Param("maxLat") Double maxLat);
+    @Query(value = "select s from StocksEntity st" +
+            " left join st.shopsEntity s" +
+            " left join st.productVariantsEntity v " +
+            " left join v.productEntity p " +
+            " left join p.tags t " +
+            "where (p.name like %:name% or t.name like %:name% ) and s.removed = 0")
+    Set<ShopsEntity> getShopsByLocation(@Param("name") String name);
 
 	Optional<ShopsEntity> findByNameAndOrganizationEntity_IdAndRemoved(String shopName, Long orgId, Integer removed);
 

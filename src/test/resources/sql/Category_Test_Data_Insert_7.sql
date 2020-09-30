@@ -39,8 +39,8 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
 
 --inserting products
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1002, 'product_2',101, 201, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99002, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1002, 'product_2',101, 201, 99002, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1003, 'product_3',101, 202, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1004, 'product_4',102, 203, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1005, 'product_5',102, 204, 99001, now(), now());
@@ -58,17 +58,7 @@ insert into Tags(id, name, alias, category_id, organization_id, metadata, graph_
 insert into Tags(id, name, alias, category_id, organization_id, metadata, graph_id) values(5007,'tag_7', 'tag_7', 206, 99001, '', 99001);
 
 
-INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(50011,5001);
-INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(50012,5002);
-INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(50013,5003);
-INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(50014,5004);
-INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(50015,5005);
-INSERT INTO public.tag_graph_nodes (id, tag_id) VALUES(50016,5006);
-
-
-insert into tag_graph_edges(id, parent_id, child_id) values(60012, 50011, 50012);
-insert into tag_graph_edges(id, parent_id, child_id) values(60013, 50011, 50013);
-insert into tag_graph_edges(id, parent_id, child_id) values(60014, 50011, 50016);
-
 insert into product_tags(product_id, tag_id) values(1006, 5006);
+
+insert into tag_graph_nodes values(5003, 5003);
 

@@ -1,4 +1,8 @@
 --inserting organizations
+
+INSERT INTO public.countries values (100001, 'Egypt', 819, 'EGP');
+INSERT INTO public.countries values (100002, 'UK', 820, 'EGP');
+
 INSERT INTO public.organizations(id, name,  p_name) VALUES (99001, 'organization_1', 'org-number-one');
 INSERT INTO public.organizations(id, name,  p_name) VALUES (99002, 'organization_2', 'org-number-two');
 
@@ -16,8 +20,6 @@ INSERT INTO public.extra_attributes( id, key_name, attribute_type, organization_
     VALUES (702, 'filter', 'boolean', 99001, '/uploads/category/logo/logo1.jpg');
 
 
-INSERT INTO public.countries values (100001, 'Egypt');
-INSERT INTO public.countries values (100002, 'UK');
 
 INSERT INTO public.cities values(100001, 100001,'Cairo');
 INSERT INTO public.cities values(100002, 100001,'Giza');
