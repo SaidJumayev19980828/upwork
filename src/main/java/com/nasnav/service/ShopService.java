@@ -14,9 +14,9 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.cache.annotation.CacheResult;
 
@@ -212,22 +212,9 @@ public class ShopService {
     
     
     
-    public List<ShopRepresentationObject> getLocationShops(Long orgId, Double longitude, Double latitude, Double radius, String name) {
-        Double minLong, maxLong, minLat, maxLat;
-        double earthRadius = 6371;
-        radius -= 1; // for approximate calculations - not accurate
+    public List<ShopRepresentationObject> getLocationShops(Long orgId, String name) {
 
-        minLong = longitude - Math.toDegrees(radius/earthRadius/Math.cos(Math.toRadians(latitude)));
-        maxLong = longitude + Math.toDegrees(radius/earthRadius/Math.cos(Math.toRadians(latitude)));
-
-        minLat = latitude - Math.toDegrees(radius/earthRadius);
-        maxLat = latitude + Math.toDegrees(radius/earthRadius);
-
-        List<ShopsEntity> shops = new ArrayList<>();
-        if (orgId == null)
-            shops = shopsRepository.getShopsByLocation(name, minLong, maxLong, minLat, maxLat);
-        else
-            shops =  shopsRepository.getShopsByLocation(orgId, name, minLong, maxLong, minLat, maxLat);
+        Set<ShopsEntity> shops = shopsRepository.getShopsByLocation(name);
 
         return shops.stream().map(s -> (ShopRepresentationObject)s.getRepresentation()).collect(toList());
     }

@@ -18,11 +18,10 @@ import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static org.springframework.http.HttpStatus.OK;
 
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import javax.cache.annotation.CacheRemoveAll;
 import javax.cache.annotation.CacheResult;
@@ -36,7 +35,6 @@ import org.jgrapht.traverse.BreadthFirstIterator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,7 +68,7 @@ import com.nasnav.response.TagResponse;
 public class CategoryService {
 
 	Logger logger = LogManager.getLogger(getClass());
-	
+
     @Autowired
     private final BrandsRepository brandsRepository;
 
@@ -530,30 +528,56 @@ public class CategoryService {
         	return;
         }
         
-        Map<Long, TagsEntity> tagsCache = createTagsCache();        
-        
-        clearTagsTree();
-        buildNewTagGraph(tree, tagsCache);        
+        Map<Long, TagsEntity> tagsCache = createTagsCache();
+        Map<Long, TagGraphNodeEntity> tagsNodesCache = createTagsNodesCache();
+
+		clearTagsTreeEdges();
+        Set<Long> usedNodes = buildNewTagGraph(tree, tagsCache, tagsNodesCache);
+		clearUnusedTagsNodes(usedNodes);
     }
 
+    /*
+    private Set<Long> getTreeNodesId(TagsTreeNodeCreationDTO dto){
+		JSONObject j = new JSONObject(dto);
+		List<Long> i = j.getLong("node_id")
+    	if (dto.getChildren() != null && !dto.getChildren().isEmpty())
+    		return dto.getChildren().forEach(child -> getTreeNodesId(child));
+    	return dto.getNodeId();
+	}*/
+
+
+
+    private Map<Long, TagGraphNodeEntity> createTagsNodesCache() {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		return
+				tagNodesRepo
+						.findByTag_OrganizationEntity_Id(orgId)
+						.stream()
+						.collect(
+								toMap(TagGraphNodeEntity::getId, tag -> tag));
+	}
 
 
 
 
-
-
-	private void buildNewTagGraph(List<TagsTreeNodeCreationDTO> tree, Map<Long, TagsEntity> tagsMap)
-			throws BusinessException {
-		tree.forEach(node -> createTagSubTree(node, tagsMap));
+	private Set<Long> buildNewTagGraph(List<TagsTreeNodeCreationDTO> tree, Map<Long, TagsEntity> tagsMap,
+								  Map<Long, TagGraphNodeEntity> tagsNodesCache) {
+		return tree
+				.stream()
+				.map(node -> createTagSubTree(node, tagsMap, tagsNodesCache))
+				.map(TagGraphNodeEntity::getId)
+				.collect(toSet());
+				//forEach(node -> createTagSubTree(node, tagsMap, tagsNodesCache));
 	}
 
 
 
 	
 	
-	private TagGraphNodeEntity createTagSubTree(TagsTreeNodeCreationDTO node, Map<Long, TagsEntity> tagsMap) {
-		List<TagGraphNodeEntity> childrenNodes = createSubTreesForChildrenNodes(node, tagsMap);		
-		TagGraphNodeEntity	savedNode = persistTagTreeNode(node, tagsMap);
+	private TagGraphNodeEntity createTagSubTree(TagsTreeNodeCreationDTO node, Map<Long, TagsEntity> tagsMap,
+												Map<Long, TagGraphNodeEntity> tagsNodesCache) {
+		List<TagGraphNodeEntity> childrenNodes = createSubTreesForChildrenNodes(node, tagsMap, tagsNodesCache);
+		TagGraphNodeEntity	savedNode = createTagTreeNode(node, tagsMap, tagsNodesCache);
 		
 		childrenNodes
 		 .stream()
@@ -567,6 +591,15 @@ public class CategoryService {
 
 
 
+	private TagGraphNodeEntity createTagTreeNode(TagsTreeNodeCreationDTO node, Map<Long, TagsEntity> tagsMap,
+												  Map<Long, TagGraphNodeEntity> tagsNodesCache) {
+		return ofNullable(node)
+				.map(TagsTreeNodeCreationDTO::getNodeId)
+				.map(id -> tagsNodesCache.get(id))
+				.orElse(persistTagTreeNode(node, tagsMap));
+	}
+
+
 	private TagGraphNodeEntity persistTagTreeNode(TagsTreeNodeCreationDTO node, Map<Long, TagsEntity> tagsMap) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		return ofNullable(node)
@@ -575,11 +608,11 @@ public class CategoryService {
 				.map(this::verifyTagToBeAddedToTree)
 				.map(TagGraphNodeEntity::new)
 				.map(tagNodesRepo::save)
-				.orElseThrow(() -> 
-					new RuntimeBusinessException(
-							format("Failed to create Tree node for tag with id[%d]! Maybe it doesn't exists for organization[%d]!", node.getTagId(), orgId)
-							, "INVALID PARAM: nodes"
-							, NOT_ACCEPTABLE));
+				.orElseThrow(() ->
+						new RuntimeBusinessException(
+								format("Failed to create Tree node for tag with id[%d]! Maybe it doesn't exists for organization[%d]!", node.getTagId(), orgId)
+								, "INVALID PARAM: nodes"
+								, NOT_ACCEPTABLE));
 	}
 
 	
@@ -599,13 +632,13 @@ public class CategoryService {
 
 
 	private List<TagGraphNodeEntity> createSubTreesForChildrenNodes(TagsTreeNodeCreationDTO node,
-			Map<Long, TagsEntity> tagsMap) {
+											Map<Long, TagsEntity> tagsMap, Map<Long, TagGraphNodeEntity> tagsNodesCache) {
 		return ofNullable(node)
 				.map(TagsTreeNodeCreationDTO::getChildren)
 				.orElse(emptyList())
 				.stream()
 				.filter(child -> noneIsNull(child, child.getTagId()))
-				.map(child -> createTagSubTree(child, tagsMap))
+				.map(child -> createTagSubTree(child, tagsMap, tagsNodesCache))
 				.collect(toList());
 	}
 	
@@ -666,23 +699,24 @@ public class CategoryService {
     
     
     
-    private void clearTagsTree() {
+    private void clearTagsTreeEdges() {
     	Long orgId = securityService.getCurrentUserOrganizationId();
         
     	List<TagGraphEdgesEntity> tagsEdges = tagEdgesRepo.findByOrganizationId(orgId);
         tagEdgesRepo.deleteAll(tagsEdges);
-        
-        List<TagGraphNodeEntity> graphNodes = tagNodesRepo.findByTag_OrganizationEntity_Id(orgId);
-        tagNodesRepo.deleteAll(graphNodes);
-        
-        List<TagsEntity> tags = orgTagsRepo.findByOrganizationEntity_Id(orgId);
-        for(TagsEntity tag : tags) {
-            tag.setGraphId(null);
-            orgTagsRepo.save(tag);
-        }
     }
-    
-    
+
+
+    private void clearUnusedTagsNodes( Set<Long> usedNodes) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+
+    	Set<Long> allUsedNodes = tagNodesRepo.findUsedTagsNodes(orgId)
+				.stream()
+				.map(BigInteger::longValue)
+				.collect(toSet());
+    	allUsedNodes.addAll(usedNodes);
+        tagNodesRepo.deleteByIdNotIn(allUsedNodes, orgId);
+	}
     
     
     private TagsTreeNodeDTO toTagsTreeNodeDTO(TagGraphNodeEntity nodeEntity) {
