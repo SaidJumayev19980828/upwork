@@ -528,7 +528,32 @@ public class CategoryManagmentTest {
     }
 
 
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_7.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void createTagsTreeExistingNodeId() {
+        long countNodesBefore =  tagNodesRepo.count();
+        long countEdgesBefore =  tagEdgesRepo.count();
 
+        assertEquals("In this test, we assume that the nodes table is empty", 1L, countNodesBefore);
+
+        String body = json()
+                .put("nodes"
+                        , jsonArray()
+                                .put(createTagTreeNode(null, asList(createTagTreeNode(5004L, null, null)), 5003L))
+                                .put(createTagTreeNode(5005L, null, null))
+                    ).toString();
+
+        HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag/tree", json, String.class);
+
+        long countNodesAfter =  tagNodesRepo.count();
+        long countEdgesAfter =  tagEdgesRepo.count();
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(3L, countNodesAfter);
+        assertEquals(1L, countEdgesAfter);
+    }
 
 
 	private String createValidTagTreeRequestBody() {
@@ -537,8 +562,9 @@ public class CategoryManagmentTest {
         			, jsonArray()
         				 .put(createTagTreeNode(
         						 	5003L, 
-        						 	asList(createTagTreeNode(5004L, null))))
-        				 .put(createTagTreeNode(5005L, null))
+        						 	asList(createTagTreeNode(5004L, null, null)),
+                                 null))
+        				 .put(createTagTreeNode(5005L, null, null))
         					    )        		 		
         		 .toString();
 	}
@@ -568,7 +594,8 @@ public class CategoryManagmentTest {
         			, jsonArray()
         				 .put(createTagTreeNode(
         						 	5003L, 
-        						 	asList(createTagTreeNode(5008L, null))))
+        						 	asList(createTagTreeNode(5008L, null, null)),
+                                 null))
         					    )
         		 .toString();
 
@@ -591,7 +618,7 @@ public class CategoryManagmentTest {
         		json()
         		 .put("nodes"
         			, jsonArray()
-        				 .put(createTagTreeNode(5003L, null)))
+        				 .put(createTagTreeNode(5003L, null, null)))
         		 .toString();
 
         HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
@@ -625,12 +652,13 @@ public class CategoryManagmentTest {
     
     
     
-    private JSONObject createTagTreeNode(Long tagId, List<JSONObject> children) {
+    private JSONObject createTagTreeNode(Long tagId, List<JSONObject> children, Long nodeId) {
     	JSONArray childrenArr = new JSONArray();
     	ofNullable(children)
     	.orElse(emptyList())
     	.forEach(childrenArr::put);
     	return json()
+                .put("node_id", nodeId)
     			.put("tag_id", tagId)
 			    .put("children", childrenArr);
     }

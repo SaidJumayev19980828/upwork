@@ -536,16 +536,6 @@ public class CategoryService {
 		clearUnusedTagsNodes(usedNodes);
     }
 
-    /*
-    private Set<Long> getTreeNodesId(TagsTreeNodeCreationDTO dto){
-		JSONObject j = new JSONObject(dto);
-		List<Long> i = j.getLong("node_id")
-    	if (dto.getChildren() != null && !dto.getChildren().isEmpty())
-    		return dto.getChildren().forEach(child -> getTreeNodesId(child));
-    	return dto.getNodeId();
-	}*/
-
-
 
     private Map<Long, TagGraphNodeEntity> createTagsNodesCache() {
 		Long orgId = securityService.getCurrentUserOrganizationId();
@@ -567,7 +557,6 @@ public class CategoryService {
 				.map(node -> createTagSubTree(node, tagsMap, tagsNodesCache))
 				.map(TagGraphNodeEntity::getId)
 				.collect(toSet());
-				//forEach(node -> createTagSubTree(node, tagsMap, tagsNodesCache));
 	}
 
 
@@ -596,7 +585,7 @@ public class CategoryService {
 		return ofNullable(node)
 				.map(TagsTreeNodeCreationDTO::getNodeId)
 				.map(id -> tagsNodesCache.get(id))
-				.orElse(persistTagTreeNode(node, tagsMap));
+				.orElseGet(() -> persistTagTreeNode(node, tagsMap));
 	}
 
 
