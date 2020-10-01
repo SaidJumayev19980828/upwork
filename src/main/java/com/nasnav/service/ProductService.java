@@ -308,10 +308,9 @@ public class ProductService {
 
 	@Transactional
 	public ProductDetailsDTO getProduct(Long productId, Long shopId, boolean checkVariants) throws BusinessException{
-		Long orgId = securityService.getCurrentUserOrganizationId();
 		ProductEntity product =
 				productRepository
-					.findByIdAndOrganizationId( ofNullable(productId).orElse(-1L), orgId)
+					.findById( ofNullable(productId).orElse(-1L))
 					.orElseThrow(() ->
 						new BusinessException(
 								format(ERR_PRODUCT_NOT_EXISTS, productId)
