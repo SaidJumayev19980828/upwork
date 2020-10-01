@@ -20,6 +20,8 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
 
     List<ProductEntity> findByOrganizationId(Long organizationId);
 
+    List<ProductEntity> findByOrganizationIdAndProductType(Long orgId, Integer type);
+
     List<ProductEntity> findByIdIn(List<Long> ids);
     List<ProductEntity> findByIdInOrderByIdAsc(List<Long> ids);
     List<ProductEntity> findByIdInOrderByIdDesc(List<Long> ids);

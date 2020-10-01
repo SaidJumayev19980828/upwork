@@ -106,6 +106,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/user/logout"											, getAllRoles() ),
 						patternOf( "/user/logout_all"										, getAllRoles() ),
 						patternOf( "/product/**"						,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN)),
+						patternOf( "/product/**"						,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/product/**"						,HttpMethod.DELETE	, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/product/images"					,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN)),
 						patternOf( "/product/image/bulk/template"							, setOf(ORGANIZATION_ADMIN)),

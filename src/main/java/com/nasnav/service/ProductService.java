@@ -212,7 +212,7 @@ public class ProductService {
 	//	@Value("${products.default.count}")
 	private Integer defaultCount = 10;
 	//	@Value("${products.default.sort.attribute}")
-	private ProductSortOptions defaultSortAttribute = ProductSortOptions.UPDATE_DATE;
+	private ProductSortOptions defaultSortAttribute = ProductSortOptions.PRIORITY;
 	//	@Value("${products.default.order}")
 	private String defaultOrder = "desc";
 
@@ -307,17 +307,18 @@ public class ProductService {
 
 
 	@Transactional
-	public ProductDetailsDTO getProduct(Long productId, Long shopId) throws BusinessException{
+	public ProductDetailsDTO getProduct(Long productId, Long shopId, boolean checkVariants) throws BusinessException{
+		Long orgId = securityService.getCurrentUserOrganizationId();
 		ProductEntity product =
 				productRepository
-					.findById( ofNullable(productId).orElse(-1L) )
+					.findByIdAndOrganizationId( ofNullable(productId).orElse(-1L), orgId)
 					.orElseThrow(() ->
 						new BusinessException(
 								format(ERR_PRODUCT_NOT_EXISTS, productId)
 								, "INVALID PARAM: product_id"
 								, NOT_FOUND));
 
-		List<ProductVariantsEntity> productVariants = getProductVariants(product);
+		List<ProductVariantsEntity> productVariants = getProductVariants(product, checkVariants);
 
 		return createProductDetailsDTO(product, shopId, productVariants);
 	}
@@ -326,34 +327,31 @@ public class ProductService {
 
 
 
-	private ProductDetailsDTO createProductDetailsDTO(ProductEntity product, Long shopId, List<ProductVariantsEntity> productVariants) throws BusinessException {
+	private ProductDetailsDTO createProductDetailsDTO(ProductEntity product, Long shopId, List<ProductVariantsEntity> productVariants) {
+		List<ProductImageDTO> productsAndVariantsImages;
+		List<VariantDTO> variantsDTOList = new ArrayList<>();
+		if (!isNullOrEmpty(productVariants)) {
+			productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(product.getId()),
+					productVariants.stream()
+							.map(ProductVariantsEntity::getId)
+							.collect(toList()));
 
-		List<ProductImageDTO> productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(product.getId()),
-				productVariants.stream()
-						.map(ProductVariantsEntity::getId)
-						.collect(toList()));
-
-		List<VariantDTO> variantsDTOList = getVariantsList(productVariants, product.getId(), shopId, productsAndVariantsImages);
+			variantsDTOList = getVariantsList(productVariants, product.getId(), shopId, productsAndVariantsImages);
+		} else {
+			productsAndVariantsImages = imgService.getProductsAndVariantsImages(asList(product.getId()), null);
+		}
 		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(product.getId());
 		List<Long> product360Shops = product360ShopsRepo.findShopsByProductId(product.getId());
 		ProductDetailsDTO productDTO = null;
-		try {
-			productDTO = toProductDetailsDTO(product);
-			productDTO.setVariants(variantsDTOList);
-			productDTO.setShops(product360Shops);
-			if (variantsDTOList != null && variantsDTOList.size() > 1)
-				productDTO.setMultipleVariants(true);
-				productDTO.setVariantFeatures( getVariantFeatures(productVariants) );
-				productDTO.setBundleItems( getBundleItems(product));
-				productDTO.setImages( getProductImages(productsAndVariantsImages) );
-				productDTO.setTags(tagsDTOList);
-		} catch (IllegalAccessException | InvocationTargetException e) {
-			logger.error(e,e);
-			throw new BusinessException(
-					format(ERR_PRODUCT_READ_FAIL, product.getId())
-					,"INTERNAL SERVER ERROR"
-					, INTERNAL_SERVER_ERROR);
-		}
+		productDTO = toProductDetailsDTO(product);
+		productDTO.setShops(product360Shops);
+		productDTO.setImages(getProductImages(productsAndVariantsImages));
+		productDTO.setVariants(variantsDTOList);
+		if (variantsDTOList != null && variantsDTOList.size() > 1)
+			productDTO.setMultipleVariants(true);
+		productDTO.setVariantFeatures(getVariantFeatures(productVariants));
+		productDTO.setBundleItems(getBundleItems(product));
+		productDTO.setTags(tagsDTOList);
 
 		return productDTO;
 	}
@@ -422,9 +420,9 @@ public class ProductService {
 	
 	
 	
-	private List<ProductVariantsEntity> getProductVariants(ProductEntity product) throws BusinessException {
+	private List<ProductVariantsEntity> getProductVariants(ProductEntity product, boolean checkVariants) throws BusinessException {
 		List<ProductVariantsEntity> productVariants = productVariantsRepository.findByProductEntity_Id(product.getId());
-		if (productVariants == null || productVariants.isEmpty()) {
+		if ((productVariants == null || productVariants.isEmpty()) && checkVariants) {
 			throw new BusinessException(
 					String.format(ERR_PRODUCT_HAS_NO_VARIANTS, product.getId())
 					, "INVALID DATA"
@@ -449,7 +447,7 @@ public class ProductService {
 
 
 	private List<VariantDTO> getVariantsList(List<ProductVariantsEntity> productVariants, Long productId, Long shopId,
-											 List<ProductImageDTO> variantsImages) throws BusinessException{
+											 List<ProductImageDTO> variantsImages) {
 
 		return productVariants.stream()
 				.map(variant -> createVariantDto(shopId, variant, variantsImages))
@@ -2714,7 +2712,7 @@ public class ProductService {
 
 
 
-	private ProductDetailsDTO toProductDetailsDTO(ProductEntity product) throws IllegalAccessException, InvocationTargetException {
+	private ProductDetailsDTO toProductDetailsDTO(ProductEntity product) {
 		ProductDetailsDTO dto = new ProductDetailsDTO();
 		ProductRepresentationObject representationObj = getProductRepresentation(product);
 		copyProperties(representationObj, dto);
@@ -3075,7 +3073,8 @@ public class ProductService {
 	}
 
 
-	public List<ProductDetailsDTO> getCollections(Long orgId) {
+	public List<ProductDetailsDTO> getCollections() {
+		Long orgId = securityService.getCurrentUserOrganizationId();
 		List<ProductCollectionEntity> collectionsEntities = productCollectionRepo.findByOrganizationId(orgId);
 
 		List<ProductDetailsDTO> collections = collectionsEntities
@@ -3085,6 +3084,19 @@ public class ProductService {
 				.collect(toList());
 
 		return collections;
+	}
+
+
+	public List<ProductDetailsDTO> getProducts()  {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		List<ProductEntity> productsEntities = productRepository.findByOrganizationIdAndProductType(orgId, 0);
+
+			List<ProductDetailsDTO> products = productsEntities
+					.stream()
+					.filter(c -> c.getProductVariants().isEmpty())
+					.map(c -> createProductDetailsDTO(c, null, null))
+					.collect(toList());
+		return products;
 	}
 
 
