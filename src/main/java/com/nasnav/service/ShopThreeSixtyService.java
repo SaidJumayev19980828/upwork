@@ -221,7 +221,7 @@ public class ShopThreeSixtyService {
         }
         entity.setSceneName(shopName);
         shop360Repo.save(entity);
-        return new ShopResponse(entity.getId(), OK);
+        return new ShopResponse(entity.getId());
     }
 
 
@@ -243,7 +243,7 @@ public class ShopThreeSixtyService {
                     "INVALID_PARAM: type", NOT_ACCEPTABLE);
 
         shop360Repo.save(shopEntity);
-        return new ShopResponse(shopEntity.getId(), OK);
+        return new ShopResponse(shopEntity.getId());
     }
 
 
@@ -371,7 +371,7 @@ public class ShopThreeSixtyService {
         Map<String, List<String>> resizedImagesMap = generateImageUrls(org.getId(),jsonDTO);
         //clearOldShop360Date(org.getId(), shop.getId());
         createShop360Floor(org, shop.getId(), jsonDTO, resizedImagesMap);
-        return new ShopResponse(shopId, OK);
+        return new ShopResponse(shopId);
     }
 
 
@@ -720,7 +720,7 @@ public class ShopThreeSixtyService {
 
         shop360Repo.save(shop360);
 
-        return new ShopResponse(shopId, OK);
+        return new ShopResponse(shopId);
     }
 
 
