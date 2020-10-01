@@ -1,11 +1,14 @@
 package com.nasnav.dao;
 
+import com.nasnav.dto.Pair;
 import com.nasnav.persistence.ReturnRequestEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface ReturnRequestRepository extends JpaRepository<ReturnRequestEntity, Long> {
 
@@ -45,4 +48,9 @@ public interface ReturnRequestRepository extends JpaRepository<ReturnRequestEnti
             " and r.metaOrder.organization.id = :orgId")
     Optional<ReturnRequestEntity> findByIdAndOrganizationId(@Param("id") Long id,
                                                             @Param("orgId") Long orgId);
+
+    @Query(value = "SELECT NEW com.nasnav.dto.Pair(r.id, count(items))" +
+            " from ReturnRequestEntity r left join r.returnedItems items" +
+            " group by r.id having r.id in :ids ")
+    List<Pair> getReturnRequestsItemsCount(@Param("ids") Set<Long> ids);
 }
