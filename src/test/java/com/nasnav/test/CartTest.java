@@ -1,37 +1,22 @@
 package com.nasnav.test;
 
-import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
-import static com.nasnav.enumerations.OrderStatus.DISCARDED;
-import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
-import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
-import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.WAREHOUSE;
-import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
-import static com.nasnav.test.commons.TestCommons.getHttpEntity;
-import static com.nasnav.test.commons.TestCommons.json;
-import static java.math.BigDecimal.ZERO;
-import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.http.HttpMethod.DELETE;
-import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.http.HttpMethod.POST;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
-import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
-import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
-
-import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.nasnav.NavBox;
+import com.nasnav.dao.CartItemRepository;
+import com.nasnav.dao.MetaOrderRepository;
+import com.nasnav.dao.OrdersRepository;
+import com.nasnav.dao.OrganizationCartOptimizationRepository;
+import com.nasnav.dto.BasketItem;
+import com.nasnav.dto.response.OrderConfrimResponseDTO;
+import com.nasnav.dto.response.navbox.*;
+import com.nasnav.exceptions.BusinessException;
+import com.nasnav.persistence.MetaOrderEntity;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.OrganizationCartOptimizationEntity;
+import com.nasnav.persistence.ShipmentEntity;
+import com.nasnav.service.OrderService;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,29 +30,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.nasnav.NavBox;
-import com.nasnav.dao.CartItemRepository;
-import com.nasnav.dao.MetaOrderRepository;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.OrganizationCartOptimizationRepository;
-import com.nasnav.dto.BasketItem;
-import com.nasnav.dto.response.OrderConfrimResponseDTO;
-import com.nasnav.dto.response.navbox.Cart;
-import com.nasnav.dto.response.navbox.CartItem;
-import com.nasnav.dto.response.navbox.CartOptimizeResponseDTO;
-import com.nasnav.dto.response.navbox.Order;
-import com.nasnav.dto.response.navbox.Shipment;
-import com.nasnav.dto.response.navbox.SubOrder;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.MetaOrderEntity;
-import com.nasnav.persistence.OrdersEntity;
-import com.nasnav.persistence.OrganizationCartOptimizationEntity;
-import com.nasnav.persistence.ShipmentEntity;
-import com.nasnav.service.OrderService;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import net.jcip.annotations.NotThreadSafe;
+import static com.nasnav.enumerations.OrderStatus.*;
+import static com.nasnav.service.cart.optimizers.CartOptimizationStrategy.WAREHOUSE;
+import static com.nasnav.shipping.services.bosta.BostaLevisShippingService.SERVICE_ID;
+import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static com.nasnav.test.commons.TestCommons.json;
+import static java.math.BigDecimal.ZERO;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.*;
+import static org.springframework.http.HttpMethod.*;
+import static org.springframework.http.HttpStatus.*;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -324,7 +305,7 @@ public class CartTest {
 	public void checkoutCartWithDiscounts() {
 		JSONObject requestBody = createCartCheckoutBody();
 		
-		checkOutCart(requestBody, new BigDecimal("5891"), new BigDecimal("5900") ,new BigDecimal("51"));
+		checkOutCart(requestBody, new BigDecimal("5891"), new BigDecimal("5840") ,new BigDecimal("51"));
 	}
 	
 	
@@ -339,7 +320,7 @@ public class CartTest {
 		JSONObject requestBody = createCartCheckoutBody();
 		requestBody.put("promo_code", "GREEEEEED");
 		
-		Order order = checkOutCart(requestBody, new BigDecimal("5790.45"), new BigDecimal("5900") ,new BigDecimal("51"));
+		Order order = checkOutCart(requestBody, new BigDecimal("5790.45"), new BigDecimal("5840") ,new BigDecimal("51"));
 		
 		MetaOrderEntity entity = metaOrderRepo.findByMetaOrderId(order.getOrderId()).get();
 		Long promoId = 	entity.getPromotions().stream().findFirst().get().getId();
@@ -359,7 +340,7 @@ public class CartTest {
 		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
 		
-		assertEquals("if promocode was already used, checkout will faile", 406, res.getStatusCodeValue());
+		assertEquals("if promocode was already used, checkout will fail", 406, res.getStatusCodeValue());
 	}
 	
 	
@@ -372,7 +353,7 @@ public class CartTest {
 		JSONObject requestBody = createCartCheckoutBody();
 		requestBody.put("promo_code", "gReEeEeED");
 		
-		Order order = checkOutCart(requestBody, new BigDecimal("5790.45"), new BigDecimal("5900") ,new BigDecimal("51"));
+		Order order = checkOutCart(requestBody, new BigDecimal("5790.45"), new BigDecimal("5840") ,new BigDecimal("51"));
 		
 		MetaOrderEntity entity = metaOrderRepo.findByMetaOrderId(order.getOrderId()).get();
 		Long promoId = 	entity.getPromotions().stream().findFirst().get().getId();
@@ -392,12 +373,46 @@ public class CartTest {
 		JSONObject requestBody = createCartCheckoutBody();
 		requestBody.put("promo_code", "MORE_GREEEEEEED");
 		
-		Order order = checkOutCart(requestBody, new BigDecimal("5242.59"), new BigDecimal("5900") ,new BigDecimal("51"));
+		Order order = checkOutCart(requestBody, new BigDecimal("5249.18"), new BigDecimal("5840") ,new BigDecimal("51"));
 		
 		MetaOrderEntity entity = metaOrderRepo.findByMetaOrderId(order.getOrderId()).get();
 		Long promoId = 	entity.getPromotions().stream().findFirst().get().getId();
 				
 		assertEquals(630003L, promoId.longValue());
+	}
+
+
+
+
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithPromotionsWithPercentageButBelowMinCartValue() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "SCAM_GREEEEEEED");
+
+		HttpEntity<?> request = getHttpEntity(requestBody.toString(), "123");
+		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
+		assertEquals(NOT_ACCEPTABLE, res.getStatusCode());
+	}
+
+
+
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_9.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void checkoutCartWithPromotionsWithPercentageButWithTooHighDiscount() {
+		JSONObject requestBody = createCartCheckoutBody();
+		requestBody.put("promo_code", "kafa");
+
+		Order order = checkOutCart(requestBody, new BigDecimal("5881"), new BigDecimal("5840") ,new BigDecimal("51"));
+
+		MetaOrderEntity entity = metaOrderRepo.findByMetaOrderId(order.getOrderId()).get();
+		Long promoId = 	entity.getPromotions().stream().findFirst().get().getId();
+
+		assertEquals(630006L, promoId.longValue());
 	}
 
 	

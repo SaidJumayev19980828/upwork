@@ -25,11 +25,6 @@ public class ProductDetailsDTO extends ProductRepresentationObject {
 	private List<VariantDTO> variants;
 	private List<VariantFeatureDTO> variantFeatures;
 	private List<ProductRepresentationObject> bundleItems;
-	
-	@JsonIgnore
-	public  String getImageUrl() {
-		return null;
-	}
 
 	public ProductDetailsDTO() {
 		images = new ArrayList<>();

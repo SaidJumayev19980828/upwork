@@ -16,6 +16,7 @@ public class ShippingDetails {
 	private List<ShipmentItems> items;
 	private Long subOrderId;
 	private Long metaOrderId;
+	private Long returnRequestId;
 	private String callBackUrl;
 	private Long shopId;
 	private BigDecimal codValue;

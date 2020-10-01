@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.nasnav.model.querydsl.sql.*;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -22,10 +23,6 @@ import org.springframework.stereotype.Service;
 import com.nasnav.dao.ProductExtraAttributesEntityRepository;
 import com.nasnav.dao.ProductFeaturesRepository;
 import com.nasnav.dao.TagsRepository;
-import com.nasnav.model.querydsl.sql.QBrands;
-import com.nasnav.model.querydsl.sql.QProductVariants;
-import com.nasnav.model.querydsl.sql.QProducts;
-import com.nasnav.model.querydsl.sql.QStocks;
 import com.nasnav.persistence.ProductFeaturesEntity;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.persistence.dto.query.result.products.export.ProductExportedData;
@@ -194,6 +191,7 @@ public class DataExportServiceImpl implements DataExportService{
 		row.setVariantId(data.getVariantId());
 		row.setSku(data.getSku());
 		row.setProductCode(data.getProductCode());
+		row.setUnit(data.getUnitName());
 		return row;
 	}
 
@@ -232,12 +230,14 @@ public class DataExportServiceImpl implements DataExportService{
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
 		QBrands brand = QBrands.brands;
+		QUnits unit = QUnits.units;
 
 		SQLQuery<?> fromClause = getProductsBaseQuery(queryFactory, orgId, shopId);
 		SQLQuery<?> productsQuery = fromClause.select(
 											stock.quantity,
 											stock.price,
 											stock.discount,
+											unit.name.as("unit_name"),
 											product.organizationId.as("organization_id"),
 											variant.id.as("variant_id"),
 											variant.featureSpec,
@@ -275,11 +275,13 @@ public class DataExportServiceImpl implements DataExportService{
 		QProducts product = QProducts.products;
 		QProductVariants variant = QProductVariants.productVariants;
 		QBrands brand = QBrands.brands;
+		QUnits unit = QUnits.units;
 
 		return query.from(stock)
 				.innerJoin(variant).on(stock.variantId.eq(variant.id))
 				.innerJoin(product).on(variant.productId.eq(product.id))
 				.innerJoin(brand).on(product.brandId.eq(brand.id))
+				.leftJoin(unit).on(stock.unitId.eq(unit.id))
 				.where(product.organizationId.eq(orgId)
 						.and(stock.shopId.eq(shopId))
 						.and(product.removed.eq(0)));

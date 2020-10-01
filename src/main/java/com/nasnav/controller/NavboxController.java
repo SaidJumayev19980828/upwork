@@ -134,7 +134,7 @@ public class NavboxController {
 			@io.swagger.annotations.ApiResponse(code = 204, message = "Empty product list"),
 			@io.swagger.annotations.ApiResponse(code = 400, message = "Invalid query parameters"), })
 	@GetMapping("/products")
-	public ResponseEntity<?> getProducts(ProductSearchParam productSearchParam) throws BusinessException, InvocationTargetException, IllegalAccessException, SQLException {
+	public ResponseEntity<?> getProducts(ProductSearchParam productSearchParam) throws BusinessException, InvocationTargetException, IllegalAccessException {
 
 		ProductsResponse productsResponse = productService.getProducts(productSearchParam);
 
@@ -170,7 +170,7 @@ public class NavboxController {
 	public ProductDetailsDTO getProduct(@RequestParam(name = "product_id") Long productId,
 										@RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
 
-		return productService.getProduct(productId, shopId);
+		return productService.getProduct(productId, shopId, true);
 	}
 
 
@@ -280,12 +280,12 @@ public class NavboxController {
 			@io.swagger.annotations.ApiResponse(code = 406, message = "invalid search parameter")
 	})
 	@GetMapping(value="/location_shops",produces=MediaType.APPLICATION_JSON_VALUE)
-	public List<ShopRepresentationObject> getLocationShops(@RequestParam(name = "org_id", required = false) Long organizationId,
-											  @RequestParam(name = "long", required = false) Double longitude,
-											  @RequestParam(name = "lat", required = false) Double lattitude,
-											  @RequestParam(name = "radius", required = false) Double radius,
-											  @RequestParam(name = "name", required = false) String name) throws BusinessException {
-		return shopService.getLocationShops(organizationId, longitude, lattitude, radius, name);
+	public List<ShopRepresentationObject> getLocationShops(@RequestParam(name = "org_id", required = false) Long orgId,
+														   @RequestParam(name = "long", required = false) Double longitude,
+														   @RequestParam(name = "lat", required = false) Double lattitude,
+														   @RequestParam(name = "radius", required = false) Double radius,
+														   @RequestParam(name = "name", required = false) String name) {
+		return shopService.getLocationShops(orgId, name);
 	}
 
 

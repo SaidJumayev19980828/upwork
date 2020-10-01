@@ -8,9 +8,9 @@ DELETE FROM public.products_extra_attributes WHERE extra_attribute_id IN (SELECT
 DELETE FROM public.extra_attributes WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.role_employee_users WHERE employee_user_id IN (SELECT id FROM public.employee_users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.product_bundles WHERE product_id IN (SELECT id FROM public.products WHERE organization_id BETWEEN 99000 AND 99999);
-DELETE FROM public.shipment where id IN ( 
-	SELECT shp.id FROM public.shipment shp 
-	LEFT JOIN public.orders ord on shp.sub_order_id = ord.id 
+DELETE FROM public.shipment where id IN (
+	SELECT shp.id FROM public.shipment shp
+	LEFT JOIN public.orders ord on shp.sub_order_id = ord.id
 	WHERE ord.organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.organization_shipping_service WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.shipping_service;
@@ -26,14 +26,24 @@ DELETE FROM public.cart_items where id in (
 );
 DELETE FROM public.return_request_item WHERE return_request_id IN
      (SELECT Id from public.return_request where meta_order_id in
-         (select id from meta_orders where organization_id between 99000 and 99999));
+         (select id from public.meta_orders where organization_id between 99000 and 99999));
 DELETE FROM public.return_request where meta_order_id in
-     (select id from meta_orders where organization_id between 99000 and 99999);
+     (select id from public.meta_orders where organization_id between 99000 and 99999);
+DELETE FROM public.return_shipment where id in (
+    select return_shipment_id
+    from public.return_request_item it
+    left join public.return_request req
+    on it.return_request_id = req.id
+    inner join public.meta_orders meta
+    on req.meta_order_id = meta.id
+    and meta.organization_id between 99000 and 99999
+);
 DELETE FROM public.baskets WHERE stock_id IN (SELECT Id from public.stocks where organization_id between 99000 and 99999);
 DELETE FROM public.orders WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.payments WHERE user_id IN (SELECT Id from public.users where organization_id between 99000 and 99999);
 DELETE FROM public.meta_orders where organization_id between 99000 and 99999;
 DELETE FROM public.stocks WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.units;
 DELETE FROM public.product_tags WHERE product_id IN (SELECT id from public.products where organization_id between 99000 and 99999);
 DELETE FROM public.product_features where organization_id between 99000 and 99999;
 DELETE FROM public.product_images WHERE
@@ -45,9 +55,6 @@ DELETE FROM public.shop360_products where shop_id in (select id from public.shop
 DELETE FROM public.products WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.roles WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.user_addresses WHERE user_id in (select id from public.users WHERE organization_id BETWEEN 99000 AND 99999);
-DELETE FROM public.areas where id between 100001 and 100005;
-DELETE FROM public.cities where id in (100001, 100002, 100003);
-DELETE FROM public.countries where id in (100001, 100002);
 DELETE FROM public.user_tokens WHERE user_id in (select id from users WHERE organization_id BETWEEN 99000 AND 99999)
   or employee_user_id in (select id from employee_users WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.users WHERE organization_id BETWEEN 99000 AND 99999;
@@ -62,9 +69,6 @@ DELETE FROM public.shop_floors WHERE organization_id between 99000 and 99999;
 DELETE FROM public.shop360s WHERE shop_id in (select id from public.shops WHERE organization_id BETWEEN 99000 AND 99999);
 DELETE FROM public.shops WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.addresses where id between 12300001 and 12300100;
-DELETE FROM public.areas;
-DELETE FROM public.cities;
-DELETE FROM public.countries;
 DELETE FROM public.brands WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.tag_graph_edges 
 WHERE child_id IN (
@@ -81,6 +85,9 @@ DELETE FROM public.organization_domains WHERE organization_id BETWEEN 99000 AND 
 DELETE FROM public.settings  WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organiztion_cart_optimization  WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;
+DELETE FROM public.areas;
+DELETE FROM public.cities;
+DELETE FROM public.countries;
 DELETE FROM public.organization_image_types;
 DELETE FROM public.themes where id between 5001 and 5003;
 DELETE FROM public.theme_classes where id between 990011 and 990012;

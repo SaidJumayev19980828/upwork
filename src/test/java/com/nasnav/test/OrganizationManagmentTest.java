@@ -265,6 +265,44 @@ public class OrganizationManagmentTest {
     }
 
 
+    @Test
+    public void updateOrgEcommerceTest () {
+        JSONObject body = json().put("id", 99001)
+                .put("ecommerce", 1);
+        HttpEntity<Object> json = getHttpEntity(body.toString(),"abcdefg");
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization",
+                json, OrganizationResponse.class);
+        Assert.assertEquals(200, response.getStatusCode().value());
+        OrganizationEntity org = organizationRepository.findOneById(99001L);
+        Assert.assertEquals(1, org.getEcommerce().intValue());
+    }
+
+
+    @Test
+    public void updateOrgGoogleTokenTest () {
+        JSONObject body = json().put("id", 99001)
+                .put("google_token", "tokeee-eeee-eeeee-eeen");
+        HttpEntity<Object> json = getHttpEntity(body.toString(),"abcdefg");
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization",
+                json, OrganizationResponse.class);
+        Assert.assertEquals(200, response.getStatusCode().value());
+        OrganizationEntity org = organizationRepository.findOneById(99001L);
+        Assert.assertEquals("tokeee-eeee-eeeee-eeen", org.getGoogleToken());
+    }
+
+
+    @Test
+    public void updateOrgCurrencyIsoTest () {
+        JSONObject body = json().put("id", 99001)
+                .put("currency_iso", 818);
+        HttpEntity<Object> json = getHttpEntity(body.toString(),"abcdefg");
+        ResponseEntity<OrganizationResponse> response = template.postForEntity("/admin/organization",
+                json, OrganizationResponse.class);
+        Assert.assertEquals(200, response.getStatusCode().value());
+        OrganizationEntity org = organizationRepository.findOneById(99001L);
+        Assert.assertEquals(818, org.getCountry().getIsoCode().intValue());
+    }
+
 
     @Test
     public void deleteVariantExtraAttribute() {

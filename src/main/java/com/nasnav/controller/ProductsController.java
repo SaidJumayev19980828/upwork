@@ -2,8 +2,7 @@ package com.nasnav.controller;
 
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE;
-import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
+import static org.springframework.http.MediaType.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -408,20 +407,6 @@ public class ProductsController {
     }
 
 
-    @ApiOperation(value = "assign/unassign products with 360 shops", nickname = "Include/excludeProduct", code = 200)
-    @ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "Products Included/excluded successfully"),
-            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
-            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
-    })
-    @ResponseStatus(OK)
-    @PostMapping(value = "360_shops")
-    public void includeProductIn360Search(@RequestHeader(name = "User-Token", required = false) String token,
-                                          @RequestBody Product360ShopsDTO dto) {
-        productService.addProducts360Shops(dto);
-    }
-
-
     @ApiOperation(value = "add new collection", nickname = "addCollection", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Collection added successfully"),
@@ -453,7 +438,7 @@ public class ProductsController {
     }
 
 
-    @ApiOperation(value = "get collections by organization id", nickname = "getCollections", code = 201)
+    @ApiOperation(value = "get empty collections by organization id", nickname = "getCollections", code = 201)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "collections returned"),
             @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
@@ -461,9 +446,34 @@ public class ProductsController {
     })
     @GetMapping(value = "empty_collections", produces = APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public List<ProductDetailsDTO> getCollections(@RequestHeader(name = "User-Token", required = false) String token,
-                                                  @RequestParam("org_id") Long orgId) {
-        return productService.getCollections(orgId);
+    public List<ProductDetailsDTO> getCollections(@RequestHeader(name = "User-Token", required = false) String token) {
+        return productService.getCollections();
     }
 
+
+    @ApiOperation(value = "get empty products by organization id", nickname = "getProducts", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "products returned"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+    })
+    @GetMapping(value = "empty_products", produces = APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public List<ProductDetailsDTO> getProducts(@RequestHeader(name = "User-Token", required = false) String token) {
+        return productService.getProducts();
+    }
+
+
+    @ApiOperation(value = "Get information about a specific product", nickname = "productInfo")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
+            @io.swagger.annotations.ApiResponse(code = 404, message = "Product does not exist")
+    })
+    @GetMapping(produces=APPLICATION_JSON_VALUE)
+    public ProductDetailsDTO getProduct(@RequestHeader(name = "User-Token", required = false) String token,
+                                        @RequestParam(name = "product_id") Long productId,
+                                        @RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
+
+        return productService.getProduct(productId, shopId, false);
+    }
 }

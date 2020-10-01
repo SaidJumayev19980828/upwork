@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.EntityUtils;
 import static com.nasnav.commons.utils.StringUtils.*;
+import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
+import static com.nasnav.enumerations.Roles.STORE_MANAGER;
 import static java.util.stream.Collectors.*;
 
 import com.nasnav.constatnts.EmailConstants;
@@ -121,9 +123,9 @@ public class EmployeeUserServiceHelper {
 		List<Roles> rolesListNames = rolesList.stream().map( role -> Roles.valueOf(role.getName())).collect(toList());
 		if (rolesListNames.contains(Roles.NASNAV_ADMIN)) {
 			return 1;
-		} else if (rolesListNames.contains(Roles.ORGANIZATION_ADMIN)) {
+		} else if (rolesListNames.contains(ORGANIZATION_ADMIN)) {
 			return 2;
-		} else if (rolesListNames.contains(Roles.STORE_ADMIN)) {
+		} else if (rolesListNames.contains(STORE_MANAGER)) {
 			return 3;
 		}
 		return -1;
@@ -131,12 +133,12 @@ public class EmployeeUserServiceHelper {
 
 	// check if the current roles is an organization admin role
 	public boolean hasOrganizationRole(String[] rolesList) {
-		return Arrays.stream(rolesList).anyMatch(Roles.ORGANIZATION_ADMIN.getValue()::equals);
+		return Arrays.stream(rolesList).anyMatch(ORGANIZATION_ADMIN.getValue()::equals);
 	}
 
 	// check if the current roles is a store admin role
-	public boolean hasStoreRole(String[] rolesList) {
-		return Arrays.stream(rolesList).anyMatch(Roles.STORE_ADMIN.getValue()::equals);
+	public boolean aBoolean(String[] rolesList) {
+		return Arrays.stream(rolesList).anyMatch(Roles.STORE_MANAGER.getValue()::equals);
 	}
 
 	public EmployeeUserEntity createEmployeeUser(EmployeeUserCreationObject employeeUserJson) {

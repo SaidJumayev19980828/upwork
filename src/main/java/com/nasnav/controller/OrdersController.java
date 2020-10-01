@@ -5,6 +5,7 @@ import java.util.List;
 import com.nasnav.dto.ReturnRequestSearchParams;
 import com.nasnav.dto.response.ReturnRequestDTO;
 import com.nasnav.dto.request.ReturnRequestRejectDTO;
+import com.nasnav.response.ReturnRequestsResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -190,7 +191,7 @@ public class OrdersController {
 	
 	
 	
-	@ApiOperation(value = "Confirm an order", nickname = "orderConfirm")
+	@ApiOperation(value = "Reject an order", nickname = "orderReject")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Order Confirmed"),
             @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
@@ -230,7 +231,7 @@ public class OrdersController {
 	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
 			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
 	@GetMapping(value = "return/requests", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
-	public List<ReturnRequestDTO> getOrderReturnRequests(
+	public ReturnRequestsResponse getOrderReturnRequests(
 			@RequestHeader(name = "User-Token", required = false) String userToken,
 			ReturnRequestSearchParams params) {
 
@@ -258,7 +259,7 @@ public class OrdersController {
 	@PostMapping(value = "return/reject")
 	public void rejectReturnItems(@RequestHeader(name = "User-Token", required = false) String userToken,
 								  @RequestBody ReturnRequestRejectDTO dto) {
-		orderService.rejectReturnItems(dto);
+		orderService.rejectReturnRequest(dto);
 	}
 
 
@@ -288,5 +289,19 @@ public class OrdersController {
 	public Long createReturnRequest(@RequestHeader(name = "User-Token", required = false) String userToken,
 							 @RequestBody ReturnRequestItemsDTO itemsList) throws BusinessException {
 		return orderService.createReturnRequest(itemsList);
+	}
+
+
+
+	@ApiOperation(value = "confirm returned order request", nickname = "confirmReturnRequest")
+	@ApiResponses(value = {
+			@io.swagger.annotations.ApiResponse(code = 200, message = "Order return confirmed"),
+			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+	})
+	@PostMapping(value = "return/confirm")
+	public void confirmReturnRequest(@RequestHeader(name = "User-Token", required = false) String userToken,
+								  @RequestParam Long id) {
+		orderService.confirmReturnRequest(id);
 	}
 }

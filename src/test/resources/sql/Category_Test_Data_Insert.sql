@@ -1,7 +1,8 @@
 ----------------------------inserting dummy data----------------------------
+INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
 --inserting organizations
-INSERT INTO public.organizations(id, name) VALUES (99001, 'organization_1');
-INSERT INTO public.organizations(id, name) VALUES (99002, 'organization_2');
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99002);
@@ -38,8 +39,8 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
 
 --inserting products
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99002, now(), now());
-INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1002, 'product_2',101, 201, 99002, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1001, 'product_1',101, 201, 99001, now(), now());
+INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1002, 'product_2',101, 201, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1003, 'product_3',101, 202, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1004, 'product_4',102, 203, 99001, now(), now());
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1005, 'product_5',102, 204, 99001, now(), now());

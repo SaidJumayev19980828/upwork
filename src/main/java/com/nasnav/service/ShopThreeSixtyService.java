@@ -66,9 +66,6 @@ public class ShopThreeSixtyService {
     private ShopThreeSixtyRepository shop360Repo;
 
     @Autowired
-    private ProductPositionsRepository productPosRepo;
-
-    @Autowired
     private ShopFloorsRepository shopFloorsRepo;
 
     @Autowired
@@ -132,25 +129,6 @@ public class ShopThreeSixtyService {
             jsonDataString = jsonDataString.substring(jsonDataString.indexOf("'")+1,jsonDataString.lastIndexOf("'"));
 
         return jsonDataString.replaceAll("\n", "");
-    }
-
-    public String getProductPositions(Long shopId, Boolean publish) {
-        ShopThreeSixtyEntity shop = shop360Repo.getFirstByShopsEntity_Id(shopId);
-        if (shop == null)
-            return null;
-
-        ProductPositionEntity productPosition = productPosRepo.findByShopsThreeSixtyEntity_Id(shop.getId());
-        if (productPosition == null || productPosition.getPositionsJsonData() == null)
-            return null;
-
-        String positions;
-
-        if (publish)
-            positions = getJsonDataStringSerlizable(productPosition.getPositionsJsonData());
-        else
-            positions = getJsonDataStringSerlizable(productPosition.getPreviewJsonData());
-
-        return positions;
     }
 
 
@@ -243,7 +221,7 @@ public class ShopThreeSixtyService {
         }
         entity.setSceneName(shopName);
         shop360Repo.save(entity);
-        return new ShopResponse(entity.getId(), OK);
+        return new ShopResponse(entity.getId());
     }
 
 
@@ -265,7 +243,7 @@ public class ShopThreeSixtyService {
                     "INVALID_PARAM: type", NOT_ACCEPTABLE);
 
         shop360Repo.save(shopEntity);
-        return new ShopResponse(shopEntity.getId(), OK);
+        return new ShopResponse(shopEntity.getId());
     }
 
 
@@ -286,28 +264,6 @@ public class ShopThreeSixtyService {
             throw new BusinessException("Must provide type for JsonData (web or mobile)",
                     "MISSING_PARAM: type", NOT_ACCEPTABLE);
 
-    }
-
-
-    public ShopResponse updateThreeSixtyShopProductPositions(Long shopId,  String json) throws BusinessException, UnsupportedEncodingException {
-
-        validateProductPositionsUpdateDTO(shopId);
-
-        ShopThreeSixtyEntity shop = shop360Repo.getFirstByShopsEntity_Id(shopId);
-
-        ProductPositionEntity entity = productPosRepo.findByShopsThreeSixtyEntity_Id(shop.getId());
-
-        if (entity == null) {
-            entity = new ProductPositionEntity();
-            OrganizationEntity org = securitySvc.getCurrentUserOrganization();
-            entity.setOrganizationEntity(org);
-            entity.setShopsThreeSixtyEntity(shop);
-        }
-
-        entity.setPreviewJsonData(decodeUrl(json));
-
-        productPosRepo.save(entity);
-        return new ShopResponse(entity.getId(), OK);
     }
 
 
@@ -415,7 +371,7 @@ public class ShopThreeSixtyService {
         Map<String, List<String>> resizedImagesMap = generateImageUrls(org.getId(),jsonDTO);
         //clearOldShop360Date(org.getId(), shop.getId());
         createShop360Floor(org, shop.getId(), jsonDTO, resizedImagesMap);
-        return new ShopResponse(shopId, OK);
+        return new ShopResponse(shopId);
     }
 
 
@@ -747,10 +703,7 @@ public class ShopThreeSixtyService {
     public ShopResponse publishJsonData(Long shopId) throws BusinessException {
         ShopThreeSixtyEntity shop360 = shop360Repo.findByShopsEntity_Id(shopId);
         if (shop360 == null)
-            throw new BusinessException("missing shop data",
-                    "INVALID_PARAM: shop_id", NOT_ACCEPTABLE);
-
-        ProductPositionEntity productPosition = productPosRepo.findByShopsThreeSixtyEntity_Id(shop360.getId());
+            throw new BusinessException("missing shop data", "INVALID_PARAM: shop_id", NOT_ACCEPTABLE);
 
         product360ShopsRepo.deleteByShopId(shopId);
         List<Shop360ProductsEntity> existingProductsPositions = product360ShopsRepo.findProductsPositionsByShopId(shopId);
@@ -763,17 +716,11 @@ public class ShopThreeSixtyService {
         }
         product360ShopsRepo.saveAll(publishedProductsPositions);
 
-        if (productPosition == null)
-            throw new BusinessException("missing product positions data",
-                    "INVALID_PARAM: shop_id", NOT_ACCEPTABLE);
-
         shop360.setWebJsonData(shop360.getPreviewJsonData());
-        productPosition.setPositionsJsonData(productPosition.getPreviewJsonData());
 
         shop360Repo.save(shop360);
-        productPosRepo.save(productPosition);
 
-        return new ShopResponse(shopId, OK);
+        return new ShopResponse(shopId);
     }
 
 

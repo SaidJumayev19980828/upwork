@@ -54,11 +54,12 @@ public class BrandsEntity implements BaseEntity{
     private String description;
 
     private Integer removed;
-    
-    
+
+    private Integer priority;
     
     public BrandsEntity() {
     	this.removed = 0;
+    	this.priority = 0;
     }
 
     @Override
@@ -71,6 +72,7 @@ public class BrandsEntity implements BaseEntity{
         brandRepresentationObject.setPname(getPname());
         brandRepresentationObject.setBannerImage(getBannerImage());
         brandRepresentationObject.setCoverUrl(getCoverUrl());
+        brandRepresentationObject.setPriority(getPriority());
         return brandRepresentationObject;
     }
 }

@@ -3,20 +3,27 @@ package com.nasnav.test;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.ReturnRequestItemRepository;
 import com.nasnav.dao.ReturnRequestRepository;
+import com.nasnav.dao.ReturnShipmentRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dto.response.ReturnRequestDTO;
 import com.nasnav.persistence.BasketsEntity;
 import com.nasnav.persistence.ReturnRequestEntity;
 import com.nasnav.persistence.ReturnRequestItemEntity;
+import com.nasnav.response.ReturnRequestsResponse;
+import com.nasnav.persistence.ReturnShipmentEntity;
+import com.nasnav.service.MailService;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
@@ -24,14 +31,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.mail.MessagingException;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
+import static com.nasnav.commons.utils.EntityUtils.DEFAULT_TIMESTAMP_PATTERN;
+import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.enumerations.ReturnRequestStatus.*;
+import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
+import static com.nasnav.service.OrderService.*;
 import static com.nasnav.test.commons.TestCommons.*;
+import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -67,8 +83,15 @@ public class OrderReturnTest {
     @Autowired
     private ReturnRequestRepository returnRequestRepo;
 
+    @MockBean
+    private MailService mailService;
+
+
+    @Autowired
+    private ReturnShipmentRepository returnShipmentRepo;
+
     @Test
-    public void returnOrderItemUsingBasketItemsSuccess() {
+    public void receiveReturnOrderItemUsingBasketItemsSuccess() throws MessagingException {
         JSONObject basketItems = 
         		json()
                 .put("order_item_id", 330034)
@@ -90,11 +113,21 @@ public class OrderReturnTest {
         assertFalse(items.isEmpty());
         assertNotNull(items.get(0).getReturnRequest());
         assertEquals(items.get(0).getReturnRequest().getStatus(), RECEIVED.getValue());
+
+        Mockito
+            .verify(mailService)
+            .sendThymeleafTemplateMail(
+                    Mockito.eq("user2@nasnav.com")
+                    , Mockito.eq(ORDER_RETURN_RECEIVE_SUBJECT)
+                    , Mockito.anyString()
+                    , Mockito.anyMap());
     }
 
 
+
+
     @Test
-    public void returnOrderItemUsingRequestItemsSuccess() {
+    public void receiveReturnOrderItemUsingRequestItemsSuccess() throws MessagingException {
         JSONObject basketItems = 
         		json()
                 .put("return_request_item_id", 330031)
@@ -116,16 +149,22 @@ public class OrderReturnTest {
         assertFalse(items.isEmpty());
         assertNotNull(items.get(0).getReturnRequest());
         assertEquals(items.get(0).getReturnRequest().getStatus(), RECEIVED.getValue());
+
+        Mockito
+            .verify(mailService)
+            .sendThymeleafTemplateMail(
+                    Mockito.eq("user1@nasnav.com")
+                    , Mockito.eq(ORDER_RETURN_RECEIVE_SUBJECT)
+                    , Mockito.anyString()
+                    , Mockito.anyMap());
     }
 
 
+
     @Test
-    public void returnOrderUsingRequestItemsAndBasketItemsSuccess() {
+    public void returnOrderUsingRequestItemsAndBasketItems() {
         JSONArray basketItems = jsonArray().put(json().put("order_item_id", 330034).put("received_quantity", 1));
         JSONArray requestItems = jsonArray().put(json().put("return_request_item_id", 330033).put("received_quantity", 1));
-
-        Integer oldStockQuantity = stockRepository.findById(603L).get().getQuantity();
-        Integer oldStockQuantity2 = stockRepository.findById(604L).get().getQuantity();
 
         JSONObject body = 
         		json()
@@ -135,19 +174,15 @@ public class OrderReturnTest {
 
         ResponseEntity<String> response = template.postForEntity("/order/return/received_item", request, String.class);
 
-        assertEquals(200, response.getStatusCodeValue());
-
-
-        Integer newStockQuantity = stockRepository.findById(603L).get().getQuantity();
-        Integer newStockQuantity2 = stockRepository.findById(604L).get().getQuantity();
-
-        assertEquals(newStockQuantity.intValue(), oldStockQuantity.intValue() + 1);
-        assertEquals(newStockQuantity2.intValue(), oldStockQuantity2.intValue() + 1);
+        assertEquals("providing both basket items and returned items will throw an error"
+                ,406, response.getStatusCodeValue());
     }
 
 
+
+
     @Test
-    public void returnOrderInvalidAuthZ() {
+    public void receiveReturnOrderInvalidAuthZ() {
         HttpEntity<?> request = getHttpEntity("101112");
         ResponseEntity<String> response = template.postForEntity("/order/return/received_item", request, String.class);
         assertEquals(403, response.getStatusCodeValue());
@@ -155,15 +190,16 @@ public class OrderReturnTest {
 
 
     @Test
-    public void returnOrderInvalidAuthN() {
+    public void receiveReturnOrderInvalidAuthN() {
         HttpEntity<?> request = getHttpEntity("invalid token");
         ResponseEntity<String> response = template.postForEntity("/order/return/received_item", request, String.class);
         assertEquals(401, response.getStatusCodeValue());
     }
 
 
+
     @Test
-    public void returnOrderInvalidInput() {
+    public void receiveReturnOrderInvalidInput() {
         JSONObject basketItems = 
         		json()
                 .put("order_item_id", 330031);
@@ -177,8 +213,9 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
-    public void returnOrderInvalidReturnBasketItemsIds() {
+    public void receiveReturnOrderInvalidReturnBasketItemsIds() {
         JSONObject basketItems = 
         		json()
                 .put("order_item_id", 3300312)
@@ -193,8 +230,9 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
-    public void returnOrderInvalidReturnRequestItemsIds() {
+    public void receiveReturnOrderInvalidReturnRequestItemsIds() {
         JSONObject basketItems = 
         		json()
                 .put("return_request_item_id", 3300312)
@@ -209,8 +247,9 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
-    public void returnOrderItemDifferentBasketItemsMetaOrder() {
+    public void receiveReturnOrderItemDifferentBasketItemsMetaOrder() {
         JSONArray items = jsonArray().put(json()
                                         .put("order_item_id", 330035)
                                         .put("received_quantity", 1))
@@ -227,8 +266,9 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
-    public void returnOrderItemDifferentReturnItemsMetaOrder() {
+    public void receiveReturnOrderItemDifferentReturnItemsMetaOrder() {
         JSONArray basketItems = jsonArray().put(json().put("order_item_id", 330036).put("received_quantity", 1));
         JSONArray requestItems = jsonArray().put(json().put("return_request_item_id", 330031).put("received_quantity", 1));
 
@@ -244,8 +284,9 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
-    public void returnOrderItemDifferentReturnItemsReturnRequest() {
+    public void receiveReturnOrderItemDifferentReturnItemsReturnRequest() {
         JSONArray requestItems = 
         		jsonArray()
                 .put(json()
@@ -270,13 +311,9 @@ public class OrderReturnTest {
     @Test
     public void getReturnRequests() throws IOException {
         HttpEntity<?> request = getHttpEntity( "131415");
-        ResponseEntity<String> response = template.exchange("/order/return/requests", GET, request, String.class);
-        List<ReturnRequestDTO> body = mapper.readValue(response.getBody(), new TypeReference<List<ReturnRequestDTO>>(){});
-        List<Long> ids =
-                body
-                .stream()
-                .map(ReturnRequestDTO::getId)
-                .collect(toList());
+        ResponseEntity<ReturnRequestsResponse> response = template.exchange("/order/return/requests", GET, request, ReturnRequestsResponse.class);
+        Set<ReturnRequestDTO> body = response.getBody().getReturnRequests();
+        Set<Long> ids = getReturnedRequestsIds(body);
         assertEquals(200,response.getStatusCodeValue());
         assertEquals(3, body.size());
         assertTrue( asList(330032L, 330031L, 440034L).containsAll(ids));
@@ -286,7 +323,7 @@ public class OrderReturnTest {
     @Test
     public void getReturnRequestsDifferentFilters() throws IOException {
         //count filter
-        List<ReturnRequestDTO> body = getReturnRequests("131415", "count=1");
+        Set<ReturnRequestDTO> body = getReturnRequests("131415", "count=1");
         assertEquals(1, body.size());
         Set<Long> ids = getReturnedRequestsIds(body);
         assertTrue(setOf(440034L).containsAll(ids));
@@ -308,18 +345,38 @@ public class OrderReturnTest {
         assertEquals(1, body.size());
         ids = getReturnedRequestsIds(body);
         assertTrue(setOf(330031L).containsAll(ids));
+
+        //date to filter
+        String dateToStr =
+                DateTimeFormatter
+                        .ofPattern(DEFAULT_TIMESTAMP_PATTERN)
+                        .format(now().minusDays(50L));
+        body = getReturnRequests("131415", "date_to="+dateToStr);
+        assertEquals(1, body.size());
+        ids = getReturnedRequestsIds(body);
+        assertTrue(setOf(330032L).containsAll(ids));
+
+        //date from filter
+        String dateFromStr =
+                DateTimeFormatter
+                        .ofPattern(DEFAULT_TIMESTAMP_PATTERN)
+                        .format(now().minusDays(50L));
+        body = getReturnRequests("131415", "date_from="+dateFromStr);
+        assertEquals(2, body.size());
+        ids = getReturnedRequestsIds(body);
+        assertTrue(setOf(330031L, 440034L).containsAll(ids));
     }
 
 
-    private List<ReturnRequestDTO> getReturnRequests(String authToken, String params) throws IOException {
+    private Set<ReturnRequestDTO> getReturnRequests(String authToken, String params) throws IOException {
         HttpEntity<?> request = getHttpEntity( authToken);
-        ResponseEntity<String> response = template.exchange("/order/return/requests?"+params, GET, request, String.class);
+        ResponseEntity<ReturnRequestsResponse> response = template.exchange("/order/return/requests?"+params, GET, request, ReturnRequestsResponse.class);
         assertEquals(200, response.getStatusCodeValue());
-        return mapper.readValue(response.getBody(), new TypeReference<List<ReturnRequestDTO>>(){});
+        return response.getBody().getReturnRequests();
     }
 
 
-    private Set<Long> getReturnedRequestsIds(List<ReturnRequestDTO> returnedItems) {
+    private Set<Long> getReturnedRequestsIds(Set<ReturnRequestDTO> returnedItems) {
         return returnedItems
                     .stream()
                     .map(ReturnRequestDTO::getId)
@@ -404,8 +461,7 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330038)
                         .put("returned_quantity", 2));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
@@ -444,8 +500,7 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330035)
                         .put("returned_quantity", 1));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
@@ -472,8 +527,7 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330036)
                         .put("returned_quantity", 1));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
@@ -499,8 +553,7 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330033)
                         .put("returned_quantity", 1));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
@@ -527,8 +580,7 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330034)
                         .put("returned_quantity", 1));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
@@ -557,8 +609,7 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330033)
                         .put("returned_quantity", 1));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
@@ -586,8 +637,7 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330032)
                         .put("returned_quantity", 1));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
@@ -613,15 +663,14 @@ public class OrderReturnTest {
                 .put(json()
                         .put("order_item_id", 330036)
                         .put("returned_quantity", 1));
-    	JSONObject body = json().put("item_list", returnedItems);
-		return body;
+        return json().put("item_list", returnedItems);
 	}
     
     
     
     
     @Test
-    public void customerCreateReturnOrderTest() {
+    public void customerCreateReturnOrderTest() throws MessagingException, IOException {
     	JSONObject body = createReturnRequestBody();
 		
     	HttpEntity<?> request = getHttpEntity(body.toString(), "123");
@@ -633,6 +682,15 @@ public class OrderReturnTest {
 
         checkReturnRequestData(entity);
         assertReturnRequestItemsCreated(body, entity);
+
+        Mockito
+            .verify(mailService)
+            .sendThymeleafTemplateMail(
+                    Mockito.eq(asList("testuser2@nasnav.com"))
+                    , Mockito.eq(String.format(ORDER_RETURN_NOTIFY_SUBJECT,response.getBody()))
+                    , Mockito.anyList()
+                    , Mockito.anyString()
+                    , Mockito.anyMap());
     }
 
 
@@ -661,18 +719,18 @@ public class OrderReturnTest {
                         .stream()
                         .map(ReturnRequestItemEntity::getReturnedQuantity)
                         .collect(toList());
-        ;
         assertEquals(body.getJSONArray("item_list").length(), returnedItems.size());
         assertTrue("expected Returned quantities", asList(1,2).containsAll(quantities));
         assertTrue("expected Basket items ids", asList(330037L, 330038L).containsAll(ids));
     }
 
 
+
     @Test
     public void rejectReturnOrderRequest() {
         JSONObject body = json().put("return_request_id", 330031)
                 .put("rejection_reason", "damaged product");
-        HttpEntity request = getHttpEntity(body.toString(), "131415");
+        HttpEntity<?> request = getHttpEntity(body.toString(), "131415");
 
         ResponseEntity<String> res = template.postForEntity("/order/return/reject", request, String.class);
         assertEquals(200, res.getStatusCodeValue());
@@ -682,13 +740,183 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
     public void rejectReturnOrderRequestConfirmedRequest() {
-        JSONObject body = json().put("return_request_id", 330032)
+        Long id = 330032L;
+        Optional<ReturnRequestEntity> entity =
+                returnRequestRepo.findByIdAndOrganizationIdAndStatus(id, 99001L, CONFIRMED.getValue());
+        assertTrue(entity.isPresent());
+        //------------------
+        JSONObject body = json().put("return_request_id", id)
                 .put("rejection_reason", "damaged product");
-        HttpEntity request = getHttpEntity(body.toString(), "131415");
+        HttpEntity<?> request = getHttpEntity(body.toString(), "131415");
 
         ResponseEntity<String> res = template.postForEntity("/order/return/reject", request, String.class);
+        //------------------
+
+        assertEquals(200, res.getStatusCodeValue());
+
+        entity = returnRequestRepo.findByIdAndOrganizationIdAndStatus(id, 99001L, REJECTED.getValue());
+        assertTrue(entity.isPresent());
+    }
+
+
+
+
+    @Test
+    public void rejectReturnOrderRequestReceivedRequest() {
+        Long id = 440034L;
+        Optional<ReturnRequestEntity> entity =
+                returnRequestRepo.findByIdAndOrganizationIdAndStatus(id, 99001L, RECEIVED.getValue());
+        assertTrue(entity.isPresent());
+
+        //------------------
+        JSONObject body = json().put("return_request_id", id)
+                .put("rejection_reason", "damaged product");
+        HttpEntity<?> request = getHttpEntity(body.toString(), "131415");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/reject", request, String.class);
+        //------------------
+
         assertEquals(406, res.getStatusCodeValue());
+
+        entity = returnRequestRepo.findByIdAndOrganizationIdAndStatus(id, 99001L, RECEIVED.getValue());
+        assertTrue(entity.isPresent());
+    }
+
+
+
+
+    @Test
+    public void confirmReturnRequestAuthNTest(){
+        Long id= 450002L;
+        HttpEntity<?> request = getHttpEntity("INVALID");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
+        assertEquals(401, res.getStatusCodeValue());
+    }
+
+
+
+
+
+    @Test
+    public void confirmReturnRequestAuthZTest(){
+        Long id= 450001L;
+        HttpEntity<?> request = getHttpEntity("101112");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
+        assertEquals(403, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void confirmReturnRequestNonExistingRequestTest(){
+        Long id= -1L;
+        HttpEntity<?> request = getHttpEntity("131415");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void confirmReturnRequestFromAnotherOrgTest(){
+        Long id= -1L;
+        HttpEntity<?> request = getHttpEntity("131415");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_10.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void confirmReturnRequestWithInvalidStateTest(){
+        Long id= 450002L;
+        HttpEntity<?> request = getHttpEntity("131415");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
+        assertEquals(406, res.getStatusCodeValue());
+    }
+
+
+
+
+    @Test
+    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_10.sql"})
+    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+    public void confirmReturnRequestTest() throws MessagingException, InterruptedException {
+        Long id= 450001L;
+        ReturnRequestEntity entityBefore = returnRequestRepo.findById(id).get();
+        assertEquals(NEW.getValue(), entityBefore.getStatus());
+        //-----------------------------------------------
+
+        HttpEntity<?> request = getHttpEntity("131415");
+
+        ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
+        Thread.sleep(10000);
+        //-----------------------------------------------
+        assertEquals(OK, res.getStatusCode());
+        assertReturnShipmentsCreated(id, res);
+
+        Mockito
+                .verify(mailService)
+                .sendThymeleafTemplateMail(
+                        Mockito.eq("user1@nasnav.com")
+                        , Mockito.eq(ORDER_RETURN_CONFIRM_SUBJECT)
+                        , Mockito.anyString()
+                        , Mockito.anyMap()
+                        , Mockito.anyList());
+    }
+
+
+
+    private void assertReturnShipmentsCreated(Long id, ResponseEntity<String> res) {
+        assertEquals(200, res.getStatusCodeValue());
+
+        ReturnRequestEntity entity = returnRequestRepo.findById(id).get();
+        assertEquals(CONFIRMED.getValue(), entity.getStatus());
+
+        List<ReturnShipmentEntity> shipments = returnShipmentRepo.findByReturnRequest_Id(id);
+        assertEquals("each item was from different shop, so each will have " +
+                "separate shipment , the same as how they are shipped to customer"
+                ,2, shipments.size());
+
+        assertTrue("each item was from different shop, so each will have " +
+                        "separate shipment , the same as how they are shipped to customer"
+                ,isAllHasSingleItem(shipments));
+        assertTrue(isAllHasRequestedStatus(shipments));
+        assertTrue( isAllHasTrackingData(shipments));
+    }
+
+
+
+    private boolean isAllHasSingleItem(List<ReturnShipmentEntity> shipments) {
+        return shipments
+                .stream()
+                .map(ReturnShipmentEntity::getReturnRequestItems)
+                .allMatch(itms -> itms.size() == 1);
+    }
+
+
+
+    private boolean isAllHasRequestedStatus(List<ReturnShipmentEntity> shipments) {
+        return shipments
+                .stream()
+                .allMatch(shp -> REQUSTED.getValue().equals(shp.getStatus()));
+    }
+
+
+
+    private boolean isAllHasTrackingData(List<ReturnShipmentEntity> shipments) {
+        return shipments
+                .stream()
+                .allMatch(shp -> noneIsNull(shp.getExternalId(), shp.getTrackNumber(), shp.getShippingServiceId()));
     }
 }

@@ -1,8 +1,13 @@
 ----------------------------inserting dummy data----------------------------
-
+INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
+INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
+INSERT INTO public.cities(id,country_id, "name") VALUES(2,1, 'Alexandria');
+INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
+INSERT INTO public.areas(id, "name", city_id)VALUES(2, 'Mokatem', 1);
+INSERT INTO public.areas(id, "name", city_id)VALUES(3, 'Miami', 2);
 --inserting organizations
-INSERT INTO public.organizations(id, name) VALUES (99001, 'organization_1');
-INSERT INTO public.organizations(id, name) VALUES (99002, 'organization_2');
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99002);
@@ -17,12 +22,7 @@ INSERT INTO public.product_features(id, name, p_name, description, organization_
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(235,'Shoe color', 's-color', 'Color of the shoes', 99001);
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(236,'Shoe size', 's-size', 'Size of the shoes', 99002);
 
-INSERT INTO public.countries(id,"name")VALUES(1,'Egypt');
-INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
-INSERT INTO public.cities(id,country_id, "name") VALUES(2,1, 'Alexandria');
-INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
-INSERT INTO public.areas(id, "name", city_id)VALUES(2, 'Mokatem', 1);
-INSERT INTO public.areas(id, "name", city_id)VALUES(3, 'Miami', 2);
+
 
 INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300001, 'address line', 1, '01111234567');
 INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300002, 'address line', 2, '01111234567');

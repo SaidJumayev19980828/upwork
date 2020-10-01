@@ -9,12 +9,9 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @ApiModel(value = "Shops data")
-@JsonPropertyOrder({"org_id", "id", "name", "address", "brand_id", "logo", "banner", "photo"})
+@JsonPropertyOrder({"id", "name", "address", "brand_id", "logo", "banner", "photo"})
 @EqualsAndHashCode(callSuper=false)
 public class ShopJsonDTO extends BaseJsonDTO{
-
-    @JsonProperty("org_id")
-    private Long orgId;
 
     private Long id;
 
@@ -46,11 +43,6 @@ public class ShopJsonDTO extends BaseJsonDTO{
     void setLogo(String logo) {
         setPropertyAsUpdated("logo");
         this.logo = logo;
-    }
-
-    public void setOrgId(Long orgId) {
-        setPropertyAsUpdated("orgId");
-        this.orgId = orgId;
     }
 
     public void setName(String name) {

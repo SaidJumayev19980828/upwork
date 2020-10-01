@@ -31,8 +31,8 @@ public class ProductSearchParam {
     public Boolean show_free_products;
     public Boolean hide_empty_stocks;
 
-    public void setSort(String sort) {
-        this.sort = ProductSortOptions.valueOf(sort.toUpperCase());
+    public void setSort(ProductSortOptions sort) {
+        this.sort = sort;
     }
 
 

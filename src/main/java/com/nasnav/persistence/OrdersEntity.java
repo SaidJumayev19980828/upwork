@@ -1,11 +1,14 @@
 package com.nasnav.persistence;
 
 import static com.nasnav.enumerations.PaymentStatus.UNPAID;
+import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDateTime.now;
+import static java.util.Optional.ofNullable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -61,15 +64,15 @@ public class OrdersEntity implements BaseEntity{
 	public PaymentStatus getPaymentStatus() {
 		return PaymentStatus.getPaymentStatus(paymentStatus);
 	}
-	
+
 	public void setPaymentStatus(PaymentStatus paymentStatus) {
 		this.paymentStatus = paymentStatus.getValue();
 	}
-	
+
 	public void setOrderStatus(OrderStatus status) {
 		this.status = status.getValue();
 	}
-	
+
 	public OrderStatus getOrderStatus() {
 		return OrderStatus.findEnum(status);
 	}
@@ -110,7 +113,7 @@ public class OrdersEntity implements BaseEntity{
 	@OneToMany(mappedBy = "ordersEntity", cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
 	@Exclude
 	@ToString.Exclude
-    private Set<BasketsEntity> basketsEntity;
+	private Set<BasketsEntity> basketsEntity;
 
 	@ManyToOne(cascade = CascadeType.MERGE)
 	@JoinColumn(name = "payment_id", referencedColumnName = "id")
@@ -126,14 +129,14 @@ public class OrdersEntity implements BaseEntity{
 
 	@OneToOne(mappedBy="subOrder")
 	@Exclude
-    @ToString.Exclude
+	@ToString.Exclude
 	private ShipmentEntity shipment;
 
-	
+
 	private BigDecimal total;
-	
+
 	private BigDecimal discounts;
-	
+
 	@Override
 	public BaseRepresentationObject getRepresentation() {
 		OrderRepresentationObject orderRepresentationObject = new OrderRepresentationObject();
@@ -153,20 +156,25 @@ public class OrdersEntity implements BaseEntity{
 		this.creationDate = now();
 		basketsEntity = new HashSet<>();
 	}
-	
-	
-	
-	
-	
+
+
+
+
+
 	public void addBasketItem(BasketsEntity item) {
 		item.setOrdersEntity(this);
 		basketsEntity.add(item);
 	}
 
-	
-	
+
+
 	public void removeBasketItem(BasketsEntity item) {
 		item.setOrdersEntity(null);
 		basketsEntity.remove(item);
+	}
+
+
+	public BigDecimal getDiscounts(){
+		return ofNullable(this.discounts).orElse(ZERO);
 	}
 }

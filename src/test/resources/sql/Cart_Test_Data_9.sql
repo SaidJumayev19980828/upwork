@@ -1,8 +1,10 @@
 ----------------------------inserting dummy data----------------------------
-
+INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
+INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
+INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
 --inserting organizations
-INSERT INTO public.organizations(id, name) VALUES (99001, 'organization_1');
-INSERT INTO public.organizations(id, name) VALUES (99002, 'organization_2');
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
 
 --inserting brands
 INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (101, 202, 'brand_1', 99002);
@@ -17,9 +19,7 @@ INSERT INTO public.product_features(id, name, p_name, description, organization_
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(235,'Shoe color', 's-color', 'Color of the shoes', 99001);
 INSERT INTO public.product_features(id, name, p_name, description, organization_id)VALUES(236,'Shoe size', 's-size', 'Size of the shoes', 99002);
 
-INSERT INTO public.countries(id,"name")VALUES(1,'Egypt');
-INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
-INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
+
 
 INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300001, 'address line', 1, '01111234567');
 INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300002, 'address line', 1, '01111234567');
@@ -129,17 +129,23 @@ INSERT INTO public.User_addresses values(12300001, 88, 12300001, false);
 -- insert promotions
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630002, 'HI', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'GREEEEEED', '{"amount_min":0, "amount_max":20000}', '{"amount":100.55}', 69, now());
+VALUES(630002, 'HI', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'GREEEEEED', '{"cart_amount_min":0, "amount_max":20000}', '{"amount":100.55}', 69, now());
 
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630003, 'BYE', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'MORE_GREEEEEEED', '{"amount_min":0, "amount_max":20000}', '{"percentage":10.99}', 69, now());
-
+VALUES(630003, 'BYE', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'MORE_GREEEEEEED', '{"cart_amount_min":0, "amount_max":20000}', '{"percentage":10.99}', 69, now());
 
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
-VALUES(630004, 'BYE BYE', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'GREEEEEED_HEART', '{"amount_min":0, "amount_max":20000}', '{"amount":100.55}', 69, now());
+VALUES(630004, 'BYE BYE', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'GREEEEEED_HEART', '{"cart_amount_min":0, "amount_max":20000}', '{"amount":100.55}', 69, now());
 
+INSERT INTO public.promotions
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
+VALUES(630005, 'SCAM', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'SCAM_GREEEEEEED', '{"cart_amount_min":10000 }', '{"percentage":10.99}', 69, now());
+
+INSERT INTO public.promotions
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
+VALUES(630006, 'DISAPPOINTMENT', 99001, now() - INTERVAL '2 DAY', now() + INTERVAL '2 DAY', 1, 0, 'kafa', '{"cart_amount_min":0, "discount_value_max":10 }', '{"percentage":10.99}', 69, now());
 
 --used promos
 INSERT INTO public.promotions_codes_used(promotion_id, user_id, "time")VALUES(630004, 88, now());

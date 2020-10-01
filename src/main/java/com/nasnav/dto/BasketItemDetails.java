@@ -15,6 +15,7 @@ public class BasketItemDetails {
     private String productPname;
     private Long variantId;
     private Long stockId;
+    private String unit;
     private Long basketId;
     private BigDecimal quantity;
     private BigDecimal price;

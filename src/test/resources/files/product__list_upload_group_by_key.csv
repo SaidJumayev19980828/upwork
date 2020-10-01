@@ -1,4 +1,4 @@
-barcode,product_name,description,brand,tags,quantity,price,variant_id,external_id,product_group_key,discount,sku,product_code
-1354ABN,Squishy shoes,squishy,squish,squishy things,101,10.25,,,k1,,,
-111222A,Squishy shoes,Another,squish,squishy things,22,15.23,,,,,,
-87847777EW,hard shoes,too hard,hardy,mountain equipment,102,88.6,,,k1,,,
+barcode,product_name,description,brand,tags,quantity,price,variant_id,external_id,product_group_key,discount,sku,product_code,unit
+1354ABN,Squishy shoes,squishy,squish,squishy things,101,10.25,,,k1,,,,
+111222A,Squishy shoes,Another,squish,squishy things,22,15.23,,,,,,,
+87847777EW,hard shoes,too hard,hardy,mountain equipment,102,88.6,,,k1,,,,

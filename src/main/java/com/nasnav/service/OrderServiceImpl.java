@@ -27,9 +27,13 @@ import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.*;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.OrderResponse;
+import com.nasnav.response.ReturnRequestsResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
+import com.nasnav.service.model.mail.MailAttachment;
+import com.nasnav.shipping.model.ReturnShipmentTracker;
 import com.nasnav.shipping.model.ShipmentTracker;
+import com.nasnav.shipping.model.ShippingDetails;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +41,7 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,6 +62,7 @@ import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
 import static com.nasnav.commons.utils.MathUtils.calculatePercentage;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.*;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
@@ -68,8 +74,7 @@ import static com.nasnav.enumerations.ReturnRequestStatus.*;
 import static com.nasnav.enumerations.Roles.*;
 import static com.nasnav.enumerations.ShippingStatus.DRAFT;
 import static com.nasnav.enumerations.ShippingStatus.REQUSTED;
-import static com.nasnav.enumerations.TransactionCurrency.EGP;
-import static com.nasnav.enumerations.TransactionCurrency.UNSPECIFIED;
+import static com.nasnav.enumerations.TransactionCurrency.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.lang.String.format;
 import static java.math.BigDecimal.ZERO;
@@ -79,6 +84,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.*;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
+import static java.util.stream.IntStream.range;
 import static javax.persistence.criteria.JoinType.INNER;
 import static javax.persistence.criteria.JoinType.LEFT;
 import static org.springframework.http.HttpStatus.*;
@@ -239,7 +245,7 @@ public class OrderServiceImpl implements OrderService {
 		orderReturnStateMachine = new HashMap<>();
 		buildMap(orderReturnStateMachine)
 				.put(ReturnRequestStatus.NEW	, setOf(CONFIRMED, REJECTED))
-				.put(CONFIRMED			, setOf(RECEIVED));
+				.put(CONFIRMED					, setOf(RECEIVED, REJECTED));
 	}
 	
 
@@ -830,6 +836,15 @@ public class OrderServiceImpl implements OrderService {
 		String path = appConfig.dashBoardOrderPageUrl.replace("{order_id}", order.getId().toString());
 		return format("%s/%s", domain, path);
 	}
+
+
+
+	private String buildDashboardPageUrl(ReturnRequestEntity returnRequest) {
+		Long orgId = returnRequest.getMetaOrder().getOrganization().getId();
+		String domain = domainService.getOrganizationDomainOnly(orgId);
+		String path = "dashboard";
+		return format("%s/%s", domain, path);
+	}
 	
 	
 
@@ -918,7 +933,13 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private String getOrganizationLogo(OrganizationEntity org) {
-		return ofNullable(org)
+		return getOrganizationLogo(ofNullable(org));
+	}
+
+
+
+	private String getOrganizationLogo(Optional<OrganizationEntity> org) {
+		return org
 				.map(OrganizationEntity::getId)
 				.map(orgId -> orgImagesRepo.findByOrganizationEntityIdAndTypeOrderByIdDesc(orgId, 1))
 				.map(List::stream)
@@ -1064,6 +1085,18 @@ public class OrderServiceImpl implements OrderService {
 		}
 		metaOrderEntity.setStatus(newStatus.getValue());
 		return metaOrderRepo.save(metaOrderEntity);
+	}
+
+
+
+	private ReturnRequestEntity updateReturnRequestStatus(ReturnRequestEntity request, ReturnRequestStatus newStatus){
+		ReturnRequestStatus currentStatus = ReturnRequestStatus.findEnum(request.getStatus());
+
+		if(!canOrderReturnStatusChangeTo(currentStatus, newStatus)){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0018, currentStatus.name(), newStatus.name());
+		}
+		request.setStatus(newStatus.getValue());
+		return returnRequestRepo.save(request);
 	}
 	
 	
@@ -1392,7 +1425,7 @@ public class OrderServiceImpl implements OrderService {
 		BigDecimal discount = ofNullable(itemDetails.getDiscount()).orElse(ZERO);
 		BigDecimal totalPrice = price.subtract(discount).multiply(itemDetails.getQuantity());
 		BigDecimal discountPercentage = calculatePercentage(discount, price);
-		
+
 		BasketItem item = new BasketItem();
 		item.setProductId(itemDetails.getProductId());
 		item.setName(itemDetails.getProductName());
@@ -1403,8 +1436,8 @@ public class OrderServiceImpl implements OrderService {
 		item.setPrice(price);
 		item.setDiscount(discountPercentage);
 		item.setThumb( variantsCoverImages.get(itemDetails.getVariantId()).orElse(null));
-		item.setCurrency(ofNullable(TransactionCurrency.getTransactionCurrency(itemDetails.getCurrency())).orElse(EGP).name());
-		//TODO set item unit //
+		item.setCurrency(ofNullable(getTransactionCurrency(itemDetails.getCurrency())).orElse(EGP).name());
+		item.setUnit(itemDetails.getUnit());
 
 		return item;
 	}
@@ -1415,10 +1448,16 @@ public class OrderServiceImpl implements OrderService {
 		ProductEntity product = variant.getProductEntity();
 		BigDecimal price = entity.getPrice();
 		BigDecimal discount = ofNullable(entity.getDiscount()).orElse(ZERO);
-		BigDecimal totalPrice = price.subtract(discount).multiply(entity.getQuantity());
+		BigDecimal totalPrice = price.multiply(entity.getQuantity());
 		BigDecimal discountPercentage = calculatePercentage(discount, price);
 		String thumb = variantsCoverImages.get(variant.getId()).orElse(null);
-		String currency = ofNullable(TransactionCurrency.getTransactionCurrency(entity.getCurrency())).orElse(EGP).name();
+		String currency = ofNullable(getTransactionCurrency(entity.getCurrency())).orElse(EGP).name();
+		CountriesEntity country = entity.getOrdersEntity().getOrganizationEntity().getCountry();
+		String currencyValue = "";
+		if (country != null) {
+			currencyValue = country.getCurrency();
+		}
+		Boolean isReturnable = this.isReturnable(entity);
 
 		BasketItem item = new BasketItem();
 		item.setId(entity.getId());
@@ -1437,7 +1476,15 @@ public class OrderServiceImpl implements OrderService {
 		item.setProductType(product.getProductType());
 		item.setVariantId(variant.getId());
 		item.setVariantName(variant.getName());
-		//TODO set item unit //
+		item.setIsReturnable(isReturnable);
+		item.setCurrencyValue(currencyValue);
+		String unitName = ofNullable(entity)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getUnit)
+				.map(StockUnitEntity::getName)
+				.orElse("");
+
+		item.setUnit(unitName);
 
 		return item;
 	}
@@ -1604,8 +1651,9 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private CriteriaQuery<ReturnRequestEntity> getReturnRequestCriteriaQuery(ReturnRequestSearchParams params) {
-		CriteriaBuilder builder = em.getCriteriaBuilder();
+
+	private ReturnRequestsResponse getReturnRequestCriteriaQuery(ReturnRequestSearchParams params, CriteriaBuilder builder) {
+
 		CriteriaQuery<ReturnRequestEntity> query = builder.createQuery(ReturnRequestEntity.class);
 		Root<ReturnRequestEntity> root = query.from(ReturnRequestEntity.class);
 		root.fetch("metaOrder", LEFT);
@@ -1620,18 +1668,37 @@ public class OrderServiceImpl implements OrderService {
 
 		query.orderBy(order);
 
-		return query;
+		Set<ReturnRequestDTO> returnRequestDTOS = em.createQuery(query)
+				.setFirstResult(params.getStart())
+				.setMaxResults(params.getCount())
+				.getResultStream()
+				.map(request -> (ReturnRequestDTO)request.getRepresentation())
+				.collect(toSet());
+
+		Long count = getOrderReturnRequestsCount(builder, predicatesArr);
+
+		return new ReturnRequestsResponse(count, returnRequestDTOS);
 	}
+
+
 
 
 	private Predicate[] getReturnRequestQueryPredicates(ReturnRequestSearchParams params, CriteriaBuilder builder, Root<ReturnRequestEntity> root) {
 		List<Predicate> predicates = new ArrayList<>();
-		Path<Map<String, String>> returnedItems = root.join("returnedItems", INNER);
 		Long currentOrgId = securityService.getCurrentUserOrganizationId();
-
+		Path<Map<String, String>> returnedItems = root.join("returnedItems", INNER);
 
 		Predicate orgId = builder.equal(root.get("metaOrder").get("organization").get("id"), currentOrgId);
         predicates.add(orgId);
+
+        parseTimeString(params.getDate_from())
+			.map(from -> builder.greaterThanOrEqualTo(root.get("createdOn"), from))
+			.ifPresent(predicates::add);
+
+		parseTimeString(params.getDate_to())
+				.map(to -> builder.lessThanOrEqualTo(root.get("createdOn"), to))
+				.ifPresent(predicates::add);
+
 
 		if (params.getStatus() != null) {
 			Predicate status = builder.equal(root.get("status"), params.getStatus().getValue());
@@ -1643,7 +1710,7 @@ public class OrderServiceImpl implements OrderService {
 			predicates.add(metaOrderId);
 		}
 
-		if (securityService.currentUserHasRole(STORE_ADMIN) && !securityService.currentUserHasRole(ORGANIZATION_ADMIN)) {
+		if (securityService.currentUserHasRole(STORE_MANAGER) && !securityService.currentUserHasRole(ORGANIZATION_ADMIN)) {
 			Long shopId = ((EmployeeUserEntity)securityService.getCurrentUser()).getShopId();
 			params.setShop_id(shopId);
 		}
@@ -1652,6 +1719,7 @@ public class OrderServiceImpl implements OrderService {
 			Predicate shopId = builder.equal(returnedItems.get("basket").get("stocksEntity").get("shopsEntity").get("id"), params.getShop_id());
 			predicates.add(shopId);
 		}
+
 
 		return predicates.stream().toArray( Predicate[]::new) ;
 	}
@@ -2346,12 +2414,14 @@ public class OrderServiceImpl implements OrderService {
 		Order orderDto = setMetaOrderBasicData(order);
 
 		List<SubOrder> subOrders = 	createSubOrderDtoList(order, variantsCoverImages);
+		Boolean isCancelable = isCancelable(order);
 
 		orderDto.setSubOrders(subOrders);
 		orderDto.setSubtotal(order.getSubTotal());
 		orderDto.setShipping(order.getShippingTotal());
 		orderDto.setTotal(order.getGrandTotal());
 		orderDto.setDiscount(order.getDiscounts());
+		orderDto.setIsCancelable(isCancelable);
 		return orderDto;
 	}
 
@@ -2521,7 +2591,6 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setShopName(order.getShopsEntity().getName());
 		subOrder.setSubOrderId(order.getId());
 		subOrder.setCreationDate(order.getCreationDate());
-		subOrder.setSubtotal(order.getAmount());
 		subOrder.setStatus(status);
 		subOrder.setDeliveryAddress((AddressRepObj)order.getAddressEntity().getRepresentation());
 		subOrder.setItems(items);
@@ -2861,10 +2930,11 @@ public class OrderServiceImpl implements OrderService {
 		if(stock.getQuantity() < data.getQuantity()) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CRT$0003);
 		}
-		
+		BigDecimal discount = ofNullable(data.getDiscount()).orElse(ZERO);
+		BigDecimal totalPrice = data.getPrice().subtract(discount);
 		BasketsEntity basket = new BasketsEntity();
 		basket.setStocksEntity(stock);
-		basket.setPrice(data.getPrice());
+		basket.setPrice(totalPrice);
 		basket.setQuantity(new BigDecimal(data.getQuantity()));
 		basket.setCurrency(data.getCurrency());
 		basket.setDiscount(data.getDiscount());
@@ -2878,8 +2948,7 @@ public class OrderServiceImpl implements OrderService {
 										CartItemsForShop cartItems) {
 		UserEntity user = (UserEntity) securityService.getCurrentUser();
 		OrganizationEntity org = securityService.getCurrentUserOrganization();
-		BigDecimal discounts = calculateDiscounts(cartItems);
-		
+
 		OrdersEntity subOrder = new OrdersEntity();
 		subOrder.setName(user.getName());
 		subOrder.setUserId(user.getId());
@@ -2887,8 +2956,7 @@ public class OrderServiceImpl implements OrderService {
 		subOrder.setOrganizationEntity(org);
 		subOrder.setAddressEntity(shippingAddress);
 		subOrder.setStatus(CLIENT_CONFIRMED.getValue());
-		subOrder.setDiscounts(discounts);
-		
+		subOrder.setDiscounts(ZERO);
 		return subOrder;
 	}
 
@@ -3245,41 +3313,54 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private void validateOrderForCancellation(MetaOrderEntity order) {
-		List<OrderStatus> acceptedStatuses = asList(CLIENT_CONFIRMED, FINALIZED);
 		Long currentUser = securityService.getCurrentUser().getId();
 		if(!Objects.equals(order.getUser().getId(), currentUser)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$GNRL$0003, order.getId());
 		}
-		OrderStatus status =
-				ofNullable(order.getStatus())
-				.map(OrderStatus::findEnum)
-				.orElse(CLIENT_CONFIRMED);
-		boolean areAllSubOrdersFinalized = 
-				order
-				.getSubOrders()
-				.stream()
-				.map(OrdersEntity::getStatus)
-				.map(OrderStatus::findEnum)
-				.allMatch(acceptedStatuses::contains);
-		if(!(acceptedStatuses.contains(status) && areAllSubOrdersFinalized)) {
+		OrderStatus status = getCancelOrderStatus(order);
+		if(!isCancelable(order)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CNCL$0002, order.getId(), status.toString());
 		}
 	}
 
 
+	private Boolean isCancelable(MetaOrderEntity order) {
+		List<OrderStatus> acceptedStatuses = asList(CLIENT_CONFIRMED, FINALIZED);
+		OrderStatus status = getCancelOrderStatus(order);
+		boolean areAllSubOrdersFinalized =
+				order
+						.getSubOrders()
+						.stream()
+						.map(OrdersEntity::getStatus)
+						.map(OrderStatus::findEnum)
+						.allMatch(acceptedStatuses::contains);
+		return acceptedStatuses.contains(status) && areAllSubOrdersFinalized;
+	}
+
+
+	private OrderStatus getCancelOrderStatus(MetaOrderEntity order) {
+		return ofNullable(order.getStatus())
+						.map(OrderStatus::findEnum)
+						.orElse(CLIENT_CONFIRMED);
+	}
+
+
 	@Override
-	public void rejectReturnItems(ReturnRequestRejectDTO dto) {
+	@Transactional
+	public void rejectReturnRequest(ReturnRequestRejectDTO dto) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		ReturnRequestEntity returnRequest =
 				returnRequestRepo
-				.findByIdAndOrganizationIdAndStatus(dto.getReturnRequestId(), orgId, ReturnRequestStatus.NEW.getValue())
+				.findByIdAndOrganizationId(dto.getReturnRequestId(), orgId)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, dto.getReturnRequestId()));
 
-		returnRequest.setStatus(REJECTED.getValue());
-		returnRequestRepo.save(returnRequest);
+		updateReturnRequestStatus(returnRequest, REJECTED);
 
 		sendRejectionEmailToCustomer(returnRequest, dto.getRejectionReason(), orgId);
 	}
+
+
+
 
 	@Override
 	@Transactional
@@ -3307,11 +3388,69 @@ public class OrderServiceImpl implements OrderService {
             returnRequest.setStatus(RECEIVED.getValue());
             returnRequest = returnRequestRepo.save(returnRequest);
 			increaseReturnRequestStock(returnRequest);
-			
+
+			sendItemReceivedEmailToCustomer(returnRequest.getId());
 			//TODO refund ??
 		}
 	}
 
+
+
+	private void sendItemReceivedEmailToCustomer(Long returnRequestId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ReturnRequestEntity request =
+				returnRequestRepo
+						.findByReturnRequestId(returnRequestId, orgId)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, returnRequestId));
+		Optional<String> email =
+				ofNullable(request)
+						.map(ReturnRequestEntity::getMetaOrder)
+						.map(MetaOrderEntity::getUser)
+						.map(UserEntity::getEmail);
+		if(!email.isPresent()) {
+			return;
+		}
+		String subject = format(ORDER_RETURN_RECEIVE_SUBJECT);
+		Map<String,Object> parametersMap = createReturnItemsReceiptionEmailParams(request);
+		String template = ORDER_RETURN_RECEIVED_TEMPLATE;
+		try {
+			mailService.sendThymeleafTemplateMail(email.get(), subject,  template, parametersMap);
+		} catch (MessagingException e) {
+			logger.error(e, e);
+		}
+	}
+
+
+
+
+	private Map<String, Object> createReturnItemsReceiptionEmailParams(ReturnRequestEntity request) {
+		String userName = getCustomerName(request);
+		String creationDate =
+				DateTimeFormatter.ofPattern("dd/MM/YYYY hh:mm").format(request.getCreatedOn());
+
+		Optional<OrganizationEntity> org =
+				ofNullable(request)
+						.map(ReturnRequestEntity::getMetaOrder)
+						.map(MetaOrderEntity::getOrganization);
+		String orgLogo = getOrganizationLogo(org);
+		String orgDomain = domainService.getCurrentServerDomain();
+		String orgName = org.map(OrganizationEntity::getName).orElse("Nasnav");
+		String shippingService = getShippingService(request);
+		AddressRepObj pickupAddr = getPickupAddress(request);
+
+		List<ReturnShipment> returnShipmentsData = getReturnShipmentsData(request);
+
+		Map<String, Object> params = new HashMap<>();
+		params.put("orgDomain", orgDomain);
+		params.put("orgLogo", orgLogo);
+		params.put("userName", userName);
+		params.put("requestId", request.getId());
+		params.put("creationDate", creationDate);
+		params.put("pickupAddr", pickupAddr);
+		params.put("shippingService", shippingService);
+		params.put("returnShipments", returnShipmentsData);
+		return params;
+	}
 
 
 
@@ -3326,13 +3465,16 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private void validateReturnedItemsDTO(ReceivedItemsDTO returnedItemsDTO) {
-		if (isNullOrEmpty(returnedItemsDTO.getBasketItems()) && isNullOrEmpty(returnedItemsDTO.getReturnedItems())) {
+		boolean hasReturnItems = !isNullOrEmpty(returnedItemsDTO.getReturnedItems());
+		boolean hasBasketItems = !isNullOrEmpty(returnedItemsDTO.getBasketItems());
+		boolean hasEitherReturnItemsOrBasketItems =  hasReturnItems ^  hasBasketItems;
+		if (!hasEitherReturnItemsOrBasketItems) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0003);
 		}
-		if (!isNullOrEmpty(returnedItemsDTO.getReturnedItems())) {
+		if (hasReturnItems) {
 			validateReturnedItemsList(returnedItemsDTO.getReturnedItems());
 		}
-		if (!isNullOrEmpty(returnedItemsDTO.getBasketItems())) {
+		if (hasBasketItems) {
 			validateReturnedBasketItem(returnedItemsDTO.getBasketItems());
 		}
 	}
@@ -3455,8 +3597,15 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+
 	private boolean isOnlyReturnedBasketItemsProvided(List<ReceivedItem> returnRequestItems, List<ReceivedBasketItem> returnBasketItems) {
 		return isNullOrEmpty(returnRequestItems) && !isNullOrEmpty(returnBasketItems);
+	}
+
+
+
+	private boolean areBothReturnedItemsAndBasketItemsProvided(List<ReceivedItem> returnRequestItems, List<ReceivedBasketItem> returnBasketItems) {
+		return !isNullOrEmpty(returnRequestItems) && !isNullOrEmpty(returnBasketItems);
 	}
 
 	
@@ -3616,6 +3765,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+
 	private void setReturnRequestCreator(ReturnRequestEntity returnRequest) {
 		BaseUserEntity user = securityService.getCurrentUser();
 		if(user instanceof EmployeeUserEntity) {
@@ -3746,11 +3896,23 @@ public class OrderServiceImpl implements OrderService {
 				.collect(toList());
 		ReturnRequestEntity request = createReturnRequest(returnedItems);
 		request = returnRequestRepo.save(request);
+
+		sendOrderReturnNotificationEmail(request.getId());
 		return request.getId();
 	}
 
+
+
 	@Override
-	public List<ReturnRequestDTO> getOrderReturnRequests(ReturnRequestSearchParams params) {
+	public ReturnRequestsResponse getOrderReturnRequests(ReturnRequestSearchParams params) {
+		setOrderReturnDefaultParams(params);
+		CriteriaBuilder builder = em.getCriteriaBuilder();
+		return getReturnRequestCriteriaQuery(params, builder);
+	}
+
+
+
+	private void setOrderReturnDefaultParams(ReturnRequestSearchParams params) {
 		if(params.getStart() == null || params.getStart() < 0){
 			params.setStart(0);
 		}
@@ -3759,16 +3921,19 @@ public class OrderServiceImpl implements OrderService {
 		} else if (params.getCount() > 1000) {
 			params.setCount(1000);
 		}
+	}
 
-		Set<ReturnRequestEntity> entities = em.createQuery(getReturnRequestCriteriaQuery(params))
-				.setFirstResult(params.getStart())
-				.setMaxResults(params.getCount())
-				.getResultStream()
-				.collect(toSet());
 
-		return entities.stream()
-				.map(request -> (ReturnRequestDTO)request.getRepresentation())
-				.collect(toList());
+	private Long getOrderReturnRequestsCount(CriteriaBuilder builder, Predicate[] predicatesArr) {
+		CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
+		countQuery.select(  builder.count(
+										(Expression<?>) countQuery
+												.from(ReturnRequestEntity.class)
+												.join("returnedItems", INNER)
+												.alias("generatedAlias1")) )
+				  .where(predicatesArr);
+		Long count = em.createQuery(countQuery).getSingleResult();
+		return count;
 	}
 
 
@@ -3788,28 +3953,324 @@ public class OrderServiceImpl implements OrderService {
 				.map(i -> (ReturnRequestItemDTO)i.getRepresentation())
 				.collect(toSet());
 
-		requestItems = setReturnRequestItemVariantsCoverImage(requestItems);
+		requestItems = setReturnRequestItemVariantsAdditionalData(requestItems);
 		dto.setReturnedItems(requestItems);
 
 		return dto;
 	}
 
 
-	private Set<ReturnRequestItemDTO> setReturnRequestItemVariantsCoverImage(Set<ReturnRequestItemDTO> requestItems) {
+
+	private Set<ReturnRequestItemDTO> setReturnRequestItemVariantsAdditionalData(Set<ReturnRequestItemDTO> requestItems) {
 		List<Long> variantsIds = requestItems
 				.stream()
 				.map(ReturnRequestItemDTO::getVariantId)
 				.collect(toList());
 
-		Map<Long, Optional<String>> images = imgService.getVariantsCoverImages(variantsIds);
 
+		Map<Long, Optional<String>> images = imgService.getVariantsCoverImages(variantsIds);
 		for(ReturnRequestItemDTO dto : requestItems) {
+			Map<String, String> variantFeatures = parseVariantFeatures(dto.getFeatureSpec(), 0);
+			dto.setVariantFeatures(variantFeatures);
 			Optional<String> image = images.get(dto.getVariantId());
 			if(image.isPresent()){
 				dto.setCoverImage(image.get());
 			}
 		}
 		return requestItems;
+	}
+
+
+
+
+
+
+	@Override
+	@Transactional(rollbackFor = Throwable.class)
+	public void confirmReturnRequest(Long id) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ReturnRequestEntity request =
+				returnRequestRepo
+				.findByReturnRequestId(id, orgId)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, id));
+		updateReturnRequestStatus(request, CONFIRMED);
+		List<ReturnShipmentTracker> trackers =
+				shippingMgrService
+				.requestReturnShipments(request)
+				.collectList()
+				.blockOptional()
+				.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0004, request.getId()));
+		sendReturnRequestConfirmationEmail(request, trackers);
+	}
+
+
+
+	private void sendReturnRequestConfirmationEmail(ReturnRequestEntity request, List<ReturnShipmentTracker> trackers) {
+		Optional<String> email =
+				ofNullable(request)
+						.map(ReturnRequestEntity::getMetaOrder)
+						.map(MetaOrderEntity::getUser)
+						.map(UserEntity::getEmail);
+		if(!email.isPresent()) {
+			return;
+		}
+		String subject = format(ORDER_RETURN_CONFIRM_SUBJECT);
+		Map<String,Object> parametersMap = createReturnConfirmEmailParams(request, trackers);
+		List<MailAttachment> airwayBills = createReturnConfirmMailAttachments(trackers);
+		String template = ORDER_RETURN_CONFIRM_TEMPLATE;
+		try {
+			mailService.sendThymeleafTemplateMail(email.get(), subject,  template, parametersMap, airwayBills);
+		} catch (MessagingException e) {
+			logger.error(e, e);
+		}
+	}
+
+
+
+
+	private Map<String, Object> createReturnConfirmEmailParams(ReturnRequestEntity request, List<ReturnShipmentTracker> trackers) {
+		String userName = getCustomerName(request);
+		Optional<OrganizationEntity> org =
+				ofNullable(request)
+						.map(ReturnRequestEntity::getMetaOrder)
+						.map(MetaOrderEntity::getOrganization);
+		String orgLogo = getOrganizationLogo(org);
+		String orgDomain = domainService.getCurrentServerDomain();
+		String orgName = org.map(OrganizationEntity::getName).orElse("Nasnav");
+		String msg = getReturnConfirmationEmailMsg(trackers);
+		String shippingService = getShippingService(request);
+		AddressRepObj pickupAddr = getPickupAddress(request);
+
+		List<ReturnShipment> returnShipmentsData = getReturnShipmentsData(request);
+
+		Map<String, Object> params = new HashMap<>();
+		params.put("orgDomain", orgDomain);
+		params.put("orgLogo", orgLogo);
+		params.put("userName", userName);
+		params.put("requestId", request.getId());
+		params.put("msg", msg);
+		params.put("pickupAddr", pickupAddr);
+		params.put("shippingService", shippingService);
+		params.put("returnShipments", returnShipmentsData);
+		return params;
+	}
+
+
+
+	private void sendOrderReturnNotificationEmail(Long returnRequestId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		ReturnRequestEntity request =
+				returnRequestRepo
+						.findByReturnRequestId(returnRequestId, orgId)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, returnRequestId));
+		List<String> emails = empRoleRepo.findEmailOfEmployeeWithRoleAndOrganization(ORGANIZATION_MANAGER.getValue(), orgId);
+		if(emails.isEmpty()) {
+			return;
+		}
+		String subject = format(ORDER_RETURN_NOTIFY_SUBJECT, returnRequestId);
+		Map<String,Object> parametersMap = createOrderReturnNotificationEmailParams(request);
+		String template = ORDER_RETURN_NOTIFICATION_TEMPLATE;
+		try {
+			mailService.sendThymeleafTemplateMail(emails ,subject, emptyList(),  template, parametersMap);
+		} catch (MessagingException | IOException e) {
+			logger.error(e, e);
+		}
+	}
+
+
+
+
+	private Map<String, Object> createOrderReturnNotificationEmailParams(ReturnRequestEntity request) {
+		String userName = getCustomerName(request);
+		String creationDate =
+				DateTimeFormatter.ofPattern("dd/MM/YYYY hh:mm").format(request.getCreatedOn());
+
+		Optional<OrganizationEntity> org =
+				ofNullable(request)
+						.map(ReturnRequestEntity::getMetaOrder)
+						.map(MetaOrderEntity::getOrganization);
+		String orgLogo = getOrganizationLogo(org);
+		String orgDomain = domainService.getCurrentServerDomain();
+		String orgName = org.map(OrganizationEntity::getName).orElse("Nasnav");
+		String shippingService = getShippingService(request);
+		AddressRepObj pickupAddr = getPickupAddress(request);
+		String returnOrderPageUrl = buildDashboardPageUrl(request);
+
+		List<ReturnShipment> returnShipmentsData = getReturnShipmentsData(request);
+
+		Map<String, Object> params = new HashMap<>();
+		params.put("orgDomain", orgDomain);
+		params.put("orgLogo", orgLogo);
+		params.put("userName", userName);
+		params.put("requestId", request.getId());
+		params.put("creationDate", creationDate);
+		params.put("pickupAddr", pickupAddr);
+		params.put("shippingService", shippingService);
+		params.put("returnShipments", returnShipmentsData);
+		params.put("returnOrderPageUrl", returnOrderPageUrl);
+		return params;
+	}
+
+
+
+
+	private List<ReturnShipment> getReturnShipmentsData(ReturnRequestEntity request) {
+		Map<Long, Optional<String>> variantsCoverImages =
+				ofNullable(request)
+				.map(ReturnRequestEntity::getMetaOrder)
+				.map(this::getVariantsImagesList)
+				.orElse(emptyMap());
+
+		List<ReturnShipment> returnShipmentsData =
+				request
+				.getReturnedItems()
+				.stream()
+				.collect(
+						collectingAndThen(
+								groupingBy(this::getTrackNumber)
+								, itmsGroupedByShipment -> createReturnShipmentData(itmsGroupedByShipment, variantsCoverImages)));
+		return returnShipmentsData;
+	}
+
+
+
+
+	private  String getTrackNumber(ReturnRequestItemEntity itm) {
+		return ofNullable(itm)
+				.map(ReturnRequestItemEntity::getReturnShipment)
+				.map(ReturnShipmentEntity::getTrackNumber)
+				.orElse("N/A");
+	}
+
+
+
+
+
+	private AddressRepObj getPickupAddress(ReturnRequestEntity request) {
+		return ofNullable(request)
+				.map(ReturnRequestEntity::getMetaOrder)
+				.map(MetaOrderEntity::getSubOrders)
+				.map(Set::stream)
+				.flatMap(Stream::findFirst)
+				.map(OrdersEntity::getAddressEntity)
+				.map(AddressesEntity::getRepresentation)
+				.map(AddressRepObj.class::cast)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0018));
+	}
+
+
+
+
+	private String getShippingService(ReturnRequestEntity request) {
+		return request
+				.getReturnedItems()
+				.stream()
+				.findFirst()
+				.map(ReturnRequestItemEntity::getReturnShipment)
+				.map(ReturnShipmentEntity::getShippingServiceId)
+				.orElse("N/A");
+	}
+
+
+
+	private String getReturnConfirmationEmailMsg(List<ReturnShipmentTracker> trackers) {
+		return trackers
+				.stream()
+				.map(ReturnShipmentTracker::getEmailMessage)
+				.findFirst()
+				.orElse("Thanks for you patience!");
+	}
+
+
+
+
+	private String getCustomerName(ReturnRequestEntity request) {
+		return ofNullable(request)
+				.map(ReturnRequestEntity::getMetaOrder)
+				.map(MetaOrderEntity::getUser)
+				.map(UserEntity::getFirstName)
+				.orElse("Dear Customer");
+	}
+
+
+
+	private List<ReturnShipment> createReturnShipmentData(Map<String, List<ReturnRequestItemEntity>> groupedbByTrackNum
+					, Map<Long, Optional<String>> variantsCoverImages) {
+		return groupedbByTrackNum
+				.entrySet()
+				.stream()
+				.map(ent -> toReturnShipment(ent.getKey(), ent.getValue(), variantsCoverImages))
+				.collect(toList());
+	}
+
+
+
+	private ReturnShipment toReturnShipment(String trackNum, List<ReturnRequestItemEntity> itemEntities
+					, Map<Long, Optional<String>> variantsCoverImages) {
+		List<ReturnShipmentItem> items =
+				itemEntities
+				.stream()
+				.map(itm -> toReturnShipmentItem(itm, variantsCoverImages))
+				.collect(toList());
+		ReturnShipment shipment = new ReturnShipment();
+		shipment.setTrackNumber(trackNum);
+		shipment.setItems(items);
+		return shipment;
+	}
+
+
+
+
+	private ReturnShipmentItem toReturnShipmentItem(ReturnRequestItemEntity returnRequestItemEntity
+					, Map<Long, Optional<String>> variantsCoverImages) {
+		BasketsEntity orderItem = returnRequestItemEntity.getBasket();
+		ProductVariantsEntity variant = orderItem.getStocksEntity().getProductVariantsEntity();
+		ProductEntity product = variant.getProductEntity();
+		BigDecimal price = orderItem.getPrice();
+		String thumb = variantsCoverImages.get(variant.getId()).orElse("NA");
+		String currency = ofNullable(getTransactionCurrency(orderItem.getCurrency())).orElse(EGP).name();
+
+		ReturnShipmentItem item = new ReturnShipmentItem();
+		item.setName(product.getName());
+		item.setQuantity(returnRequestItemEntity.getReturnedQuantity());
+		item.setReceivedQuantity(returnRequestItemEntity.getReceivedQuantity());
+		item.setCurrency(currency);
+		item.setPrice(price);
+		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec(), 0));
+		item.setThumb(thumb);
+		return item;
+	}
+
+
+
+
+	private List<MailAttachment> createReturnConfirmMailAttachments(List<ReturnShipmentTracker> trackers) {
+		Optional<Long> returnRequestId =
+				trackers
+					.stream()
+					.map(ReturnShipmentTracker::getShippingDetails)
+					.map(ShippingDetails::getReturnRequestId)
+					.filter(Objects::nonNull)
+					.findFirst();
+		return range(0, trackers.size())
+				.mapToObj(i -> doCreateReturnConfirmAirwaybill(i, trackers.get(i), trackers.size()))
+				.filter(Optional::isPresent)
+				.map(Optional::get)
+				.collect(toList());
+	}
+
+
+
+	private Optional<MailAttachment> doCreateReturnConfirmAirwaybill(int i, ReturnShipmentTracker tracker, Integer shipmentsCount) {
+		String fileName =
+				ofNullable(tracker)
+				.map(ReturnShipmentTracker::getTracker)
+				.map(trackNum -> format("airwaybill-%s.pdf", trackNum))
+				.orElse("airwaybill.pdf");
+		return ofNullable(tracker)
+				.map(ReturnShipmentTracker::getAirwayBillFile)
+				.map(Base64.getDecoder()::decode)
+				.map(fileDecoded -> new MailAttachment(fileName, new ByteArrayResource(fileDecoded)));
 	}
 }
 
@@ -3849,5 +4310,24 @@ class SubOrderAndSubTotalPair{
 class ReturnRequestBasketItem{
 	private Long orderItemId;
 	private Integer returnedQuantity;
+	private Integer receivedQuantity;
+}
+
+
+@Data
+class ReturnShipment{
+	private String trackNumber;
+	private List<ReturnShipmentItem> items;
+}
+
+
+@Data
+class ReturnShipmentItem{
+	private String thumb;
+	private BigDecimal price;
+	private Map<String, String> variantFeatures;
+	private String name;
+	private String currency;
+	private Integer quantity;
 	private Integer receivedQuantity;
 }

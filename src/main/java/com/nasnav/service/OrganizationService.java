@@ -6,6 +6,7 @@ import static com.nasnav.cache.Caches.ORGANIZATIONS_BY_NAME;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_DOMAINS;
 import static com.nasnav.cache.Caches.ORGANIZATIONS_EXTRA_ATTRIBUTES;
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
+import static com.nasnav.commons.utils.EntityUtils.isNullOrEmpty;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.validateName;
@@ -14,10 +15,12 @@ import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
 import static com.nasnav.exceptions.ErrorCodes.G$PRAM$0001;
 import static com.nasnav.exceptions.ErrorCodes.ORG$EXTRATTR$0001;
 import static com.nasnav.exceptions.ErrorCodes.ORG$SETTING$0001;
+import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static org.bouncycastle.asn1.x509.X509ObjectIdentifiers.organization;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -164,14 +167,17 @@ public class OrganizationService {
         if (organizationThemeEntity != null)
             orgRepObj.setThemes((OrganizationThemesRepresentationObject) organizationThemeEntity.getRepresentation());
 
-        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemoved(orgRepObj.getId(), 0);
-        if (brandsEntityList != null && !brandsEntityList.isEmpty()) {
-            List<Organization_BrandRepresentationObject> repList = brandsEntityList.stream().map(rep -> ((Organization_BrandRepresentationObject) rep.getRepresentation())).collect(toList());
+        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(orgRepObj.getId(), 0);
+        if (!isNullOrEmpty(brandsEntityList)) {
+            List<Organization_BrandRepresentationObject> repList = brandsEntityList
+                    .stream()
+                    .map(rep -> ((Organization_BrandRepresentationObject) rep.getRepresentation()))
+                    .collect(toList());
             orgRepObj.setBrands(repList);
         }
 
-        List <OrganizationImagesEntity> orgImgEntities = organizationImagesRepository.findByOrganizationEntityId(orgRepObj.getId());
-        if (orgImgEntities != null && !orgImgEntities.isEmpty()) {
+        List <OrganizationImagesEntity> orgImgEntities = organizationImagesRepository.findByOrganizationEntityIdAndShopsEntityNullAndTypeNotIn(orgRepObj.getId(), asList(360, 400, 410));
+        if (!isNullOrEmpty(orgImgEntities)) {
             List<OrganizationImagesRepresentationObject> imagesList = orgImgEntities.stream().map(rep -> ((OrganizationImagesRepresentationObject) rep.getRepresentation())).collect(toList());
             orgRepObj.setImages(imagesList);
         }
@@ -228,51 +234,72 @@ public class OrganizationService {
     
     @CacheEvict(allEntries = true, cacheNames = { ORGANIZATIONS_BY_NAME, ORGANIZATIONS_BY_ID})
     public OrganizationResponse createOrganization(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
-        validateOrganizationName(json);
 
-        OrganizationEntity organization = new OrganizationEntity();
+        OrganizationEntity organization;
         if (json.id != null) {
             organization = orgRepo.findOneById(json.id);
             if (organization == null)
                 throw new BusinessException(String.format("Provided id (%d) doesn't match any existing org!", json.id),
                         "INVALID_PARAM: id", NOT_ACCEPTABLE);
+            if (json.name != null) {
+                validateOrganizationName(json);
+                organization.setName(json.name);
+                organization.setPname(json.pname);
+            }
+        } else {
+            organization = createNewOrganization(json);
         }
 
-	    OrganizationEntity organizationEntity = organizationRepository.findByPname(json.pname);
-	    if (organizationEntity != null) {
-		    if (!organization.getId().equals(organizationEntity.getId())) {
-			    throw new BusinessException("INVALID_PARAM: p_name",
-					    "Provided p_name is already used by another organization (id: " + organizationEntity.getId() +
-							    ", name: " + organizationEntity.getName() + ")", NOT_ACCEPTABLE);
-		    }
-	    }
-
-	    organization.setName(json.name);
-        organization.setPname(json.pname);
-        if (json.id == null) {
-            organization.setThemeId(0);
-        }
-	    if (json.ecommerce != null) {
-		    organization.setEcommerce(json.ecommerce);
-	    }
-	    if (json.googleToken != null) {
-		    organization.setGoogleToken(json.googleToken);
-	    }
-
-        if (json.currencyIso != null) {
-            CountriesEntity country = countryRepo.findByIsoCode(json.currencyIso);
-            organization.setCountry(country);
-        }
+        updateAdditionalOrganizationData(json, organization);
 
 	    organizationRepository.save(organization);
         return new OrganizationResponse(organization.getId(), 0);
     }
 
 
-    private void validateOrganizationName(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
+    private OrganizationEntity createNewOrganization(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
+        validateOrganizationNameForCreate(json);
+        OrganizationEntity organization = organizationRepository.findByPname(json.pname);
+        if (organization != null) {
+            throw new BusinessException("INVALID_PARAM: p_name",
+                    "Provided p_name is already used by another organization (id: " + organization.getId() +
+                            ", name: " + organization.getName() + ")", NOT_ACCEPTABLE);
+        }
+        organization = new OrganizationEntity();
+        organization.setName(json.name);
+        organization.setPname(json.pname);
+        return organization;
+    }
+
+
+    private OrganizationEntity updateAdditionalOrganizationData(OrganizationDTO.OrganizationCreationDTO json,
+                                                                OrganizationEntity organization) {
+        if (json.id == null) {
+            organization.setThemeId(0);
+        }
+        if (json.ecommerce != null) {
+            organization.setEcommerce(json.ecommerce);
+        }
+        if (json.googleToken != null) {
+            organization.setGoogleToken(json.googleToken);
+        }
+
+        if (json.currencyIso != null) {
+            CountriesEntity country = countryRepo.findByIsoCode(json.currencyIso);
+            organization.setCountry(country);
+        }
+        return organization;
+    }
+
+    private void validateOrganizationNameForCreate(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
         if (json.name == null) {
-            throw new BusinessException("MISSING_PARAM: name","Required Organization name is empty", NOT_ACCEPTABLE);
-        } else if (!validateName(json.name)) {
+            throw new BusinessException("MISSING_PARAM: name", "Required Organization name is empty", NOT_ACCEPTABLE);
+        }
+        validateOrganizationName(json);
+    }
+
+    private void validateOrganizationName(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
+        if (!validateName(json.name)) {
             throw new BusinessException("INVALID_PARAM: name", "Required Organization name is invalid", NOT_ACCEPTABLE);
         }
         if (json.pname == null) {
@@ -342,7 +369,7 @@ public class OrganizationService {
         List<Organization_BrandRepresentationObject> brands = null;
         if (orgId == null)
             return brands;
-        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemoved(orgId, 0);
+        List<BrandsEntity> brandsEntityList = brandsRepository.findByOrganizationEntity_IdAndRemovedOrderByPriorityDesc(orgId, 0);
         brands = brandsEntityList.stream().map(brand -> (Organization_BrandRepresentationObject) brand.getRepresentation())
                  .collect(toList());
         return brands;
@@ -363,6 +390,10 @@ public class OrganizationService {
             brand.setPname(json.pname);
         } else if (json.name != null) {
             brand.setPname(encodeUrl(json.name));
+        }
+
+        if (json.priority != null) {
+            entity.setPriority(json.getPriority());
         }
 
         Long orgId = securityService.getCurrentUserOrganizationId();
@@ -664,8 +695,7 @@ public class OrganizationService {
             throw new BusinessException("INVAILD PARAM: org_id","provided org_id doesn't have corresponding organization",
                     NOT_ACCEPTABLE);
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        BaseUserEntity user =  empRepo.getOneByEmail(auth.getName());
+        BaseUserEntity user =  securityService.getCurrentUser();
         if (!user.getOrganizationId().equals(imgMetaData.getOrganizationId()))
             throw new BusinessException("INSUFFICIENT RIGHTS","User doesn't belong to organization",
                     FORBIDDEN);

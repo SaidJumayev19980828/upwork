@@ -14,12 +14,13 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.cache.annotation.CacheResult;
 
+import com.nasnav.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -33,10 +34,6 @@ import com.nasnav.dto.OrganizationImagesRepresentationObject;
 import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.OrganizationImagesEntity;
-import com.nasnav.persistence.ShopsEntity;
 import com.nasnav.response.ShopResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import com.nasnav.service.helpers.ShopServiceHelper;
@@ -110,7 +107,7 @@ public class ShopService {
             throw new RuntimeBusinessException(NOT_FOUND, S$0003);
 
         ShopRepresentationObject shopRepObj = (ShopRepresentationObject)shopsEntityOptional.get().getRepresentation();
-        List<OrganizationImagesEntity> imageEntities = orgImgRepo.findByShopsEntityId(shopId);
+        List<OrganizationImagesEntity> imageEntities = orgImgRepo.findByShopsEntityIdAndTypeNot(shopId, 360);
         if(imageEntities != null && !imageEntities.isEmpty())
             shopRepObj.setImages(imageEntities.stream().map(entity -> (OrganizationImagesRepresentationObject) entity.getRepresentation())
                                                        .collect(toList()));
@@ -123,19 +120,13 @@ public class ShopService {
     
     @CacheEvict(allEntries = true, cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
     public ShopResponse shopModification(ShopJsonDTO shopJson) {
-        BaseUserEntity baseUser =  securityService.getCurrentUser();
-        if(!(baseUser instanceof EmployeeUserEntity)) {
-            throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001,"shops");
-        }
-        
-        EmployeeUserEntity user = (EmployeeUserEntity)baseUser;
+        EmployeeUserEntity user = (EmployeeUserEntity)securityService.getCurrentUser();
         List<String> userRoles = employeeUserServicehelper.getEmployeeUserRoles(user.getId());
-        Long orgId = user.getOrganizationId();
-        Long shopId = user.getShopId();
+        OrganizationEntity org = securityService.getCurrentUserOrganization();
         if (shopJson.getId() == null){
-            return createShop(shopJson, orgId, userRoles);
+            return createShop(shopJson, org, userRoles);
         } else {
-            return updateShop(shopJson, orgId, shopId, userRoles);
+            return updateShop(shopJson, org);
         }
     }
     
@@ -143,91 +134,42 @@ public class ShopService {
     
     
 
-    private ShopResponse createShop(ShopJsonDTO shopJson, Long employeeUserOrgId, List<String> userRoles) {
-        if (!userRoles.contains("ORGANIZATION_MANAGER") || !employeeUserOrgId.equals(shopJson.getOrgId())){
-        	throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001, "this shop");
+    private ShopResponse createShop(ShopJsonDTO shopJson, OrganizationEntity org, List<String> userRoles) {
+        if (!userRoles.contains("ORGANIZATION_MANAGER")) {
+            throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001, "this shop");
         }
-        
         ShopsEntity shopsEntity = new ShopsEntity();
 
         shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson);
+        shopsEntity.setOrganizationEntity(org);
         shopsEntity.setRemoved(0);
         shopsRepository.save(shopsEntity);
-        return new ShopResponse(shopsEntity.getId(), OK);
+        return new ShopResponse(shopsEntity.getId());
     }
     
-    
-    
-    
 
-    private ShopResponse updateShop(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId,
-                                    List<String> userRoles) {
-
-        validateShopUpdate(shopJson, employeeUserOrgId, employeeUserShopId, userRoles);
-        
-    	ShopsEntity shopsEntity = shopsRepository.findById(shopJson.getId()).get();
+    private ShopResponse updateShop(ShopJsonDTO shopJson, OrganizationEntity org) {
+    	ShopsEntity shopsEntity = validateAndReturnShop(shopJson, org);
         shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson);
-        
         shopsRepository.save(shopsEntity);
         
-        return new ShopResponse(shopsEntity.getId(), OK);
+        return new ShopResponse(shopsEntity.getId());
     }
 
 
-
-
-	private void validateShopUpdate(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId,
-			List<String> userRoles) {
-		
-		validateShop(shopJson);
-		validateUserToUpdateShop(shopJson, employeeUserOrgId, employeeUserShopId, userRoles);
-	}
-
-
-
-
-	private  void validateShop(ShopJsonDTO shopJson)  {
-		ShopsEntity shopsEntity = shopsRepository.findById(shopJson.getId()).get();
+	private  ShopsEntity validateAndReturnShop(ShopJsonDTO shopJson, OrganizationEntity org)  {
+		ShopsEntity shopsEntity = shopsRepository.findByIdAndOrganizationEntity_IdAndRemoved(shopJson.getId(), org.getId(), 0);
         if ( shopsEntity == null) {
             throw new RuntimeBusinessException(NOT_FOUND, S$0002, shopJson.getId());
         }
-	}
-
-
-
-
-	private void validateUserToUpdateShop(ShopJsonDTO shopJson, Long employeeUserOrgId, Long employeeUserShopId,
-			List<String> userRoles) {
-        Long orgId = securityService.getCurrentUserOrganizationId();
-		if (!userRoles.contains("ORGANIZATION_MANAGER") && !userRoles.contains("STORE_MANAGER")){
-        	throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001, "this shop");
-        }
-        if (userRoles.contains("ORGANIZATION_MANAGER") && !employeeUserOrgId.equals(orgId)){
-            throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001, "this shop");
-        }
-        if (userRoles.contains("STORE_MANAGER") && !employeeUserShopId.equals(shopJson.getId())){
-            throw new RuntimeBusinessException(FORBIDDEN, U$AUTH$0001, "this shop");
-        }
+        return shopsEntity;
 	}
     
     
     
-    public List<ShopRepresentationObject> getLocationShops(Long orgId, Double longitude, Double latitude, Double radius, String name) {
-        Double minLong, maxLong, minLat, maxLat;
-        double earthRadius = 6371;
-        radius -= 1; // for approximate calculations - not accurate
+    public List<ShopRepresentationObject> getLocationShops(Long orgId, String name) {
 
-        minLong = longitude - Math.toDegrees(radius/earthRadius/Math.cos(Math.toRadians(latitude)));
-        maxLong = longitude + Math.toDegrees(radius/earthRadius/Math.cos(Math.toRadians(latitude)));
-
-        minLat = latitude - Math.toDegrees(radius/earthRadius);
-        maxLat = latitude + Math.toDegrees(radius/earthRadius);
-
-        List<ShopsEntity> shops = new ArrayList<>();
-        if (orgId == null)
-            shops = shopsRepository.getShopsByLocation(name, minLong, maxLong, minLat, maxLat);
-        else
-            shops =  shopsRepository.getShopsByLocation(orgId, name, minLong, maxLong, minLat, maxLat);
+        Set<ShopsEntity> shops = shopsRepository.getShopsByLocation(name);
 
         return shops.stream().map(s -> (ShopRepresentationObject)s.getRepresentation()).collect(toList());
     }

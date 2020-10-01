@@ -72,7 +72,6 @@ public class ShopsUpdateTest {
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
         shopsRepository.deleteById(jsonResponse.getLong("store_id"));
 
-        Assert.assertEquals("", true, jsonResponse.getBoolean("success"));
         Assert.assertEquals(200, response.getStatusCode().value());
 
         // create shop using Store_Mananger role (test fail)
@@ -87,7 +86,6 @@ public class ShopsUpdateTest {
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
-        Assert.assertEquals("", false, jsonResponse.getBoolean("success"));
         Assert.assertEquals(403, response.getStatusCode().value());
 
         // create shop using Org_Admin role (test fail)
@@ -95,7 +93,6 @@ public class ShopsUpdateTest {
         response = template.postForEntity("/shop/update", json, String.class);
         jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
-        Assert.assertEquals("", false, jsonResponse.getBoolean("success"));
         Assert.assertEquals(403, response.getStatusCode().value());
     }
     
@@ -105,12 +102,12 @@ public class ShopsUpdateTest {
 
     @Test
     public void testCreateShopDifferentOrganization(){
-        String body = "{\"org_id\":99002,\"shop_name\":\"Test_shop\"}";
+        String body = "{\"shop_name\":\"Test_shop\"}";
         HttpEntity<Object> json = getHttpEntity(body,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
 
-        Assert.assertEquals(403, response.getStatusCode().value());
+        Assert.assertEquals(200, response.getStatusCode().value());
     }
     
     
@@ -119,8 +116,7 @@ public class ShopsUpdateTest {
 
     @Test
     public void testCreateShopDifferentData(){
-        String body = "{\"org_id\":99001,\n" +
-                "  \"address_country\": \"Egypt\",\n" +
+        String body = "{\"address_country\": \"Egypt\",\n" +
                 "  \"address_floor\": \"Second\",\n" +
                 "  \"address_lat\": 30.0595581,\n" +
                 "  \"address_lng\": 31.2234449,\n" +
@@ -135,8 +131,7 @@ public class ShopsUpdateTest {
         HttpEntity<Object> json = getHttpEntity(body,"161718");
         ResponseEntity<String> response = template.postForEntity("/shop/update", json, String.class);
         JSONObject jsonResponse = (JSONObject) JSONParser.parseJSON(response.getBody());
-        
-        assertEquals("", true, jsonResponse.getBoolean("success"));
+
         assertEquals(200, response.getStatusCode().value());
         
         Long id = jsonResponse.getLong("store_id");
@@ -161,8 +156,7 @@ public class ShopsUpdateTest {
                                 .put("longitude", 31.2234449)
                                 .put("address_line_1", "Omar Bin Khatab");
         //create a shop first
-        JSONObject body = json().put("org_id", 99001)
-                                .put("address", address)
+        JSONObject body = json().put("address", address)
                                 .put("banner", "/banners/banner_256.jpg")
                                 .put("brand_id", 101)
                                 .put("logo", "/brands/hugo_logo.jpg")
@@ -203,8 +197,7 @@ public class ShopsUpdateTest {
     public void updateShopAddressTest() throws BusinessException {
         JSONObject address = json().put("address_line_1", "address line");
 
-        JSONObject body = json().put("id", 501)
-                                .put("org_id", 99002)
+        JSONObject body = json().put("id", 502)
                                 .put("address", address);
 
 
@@ -215,13 +208,13 @@ public class ShopsUpdateTest {
 
         assertEquals(200, response.getStatusCodeValue());
 
-        ShopRepresentationObject shop = shopService.getShopById(501L);
+        ShopRepresentationObject shop = shopService.getShopById(502L);
 
         assertTrue(shop.getAddress() != null);
         assertEquals("address line", shop.getAddress().getAddressLine1());
 
         // setting address to null (delinking address from shop)
-        String json = "{\"id\": 501, \"org_id\": 99002, \"address\": null}";
+        String json = "{\"id\": 502, \"address\": null}";
         request = getHttpEntity(json, "161718");
         response = template.postForEntity("/shop/update", request, String.class);
 

@@ -2,8 +2,8 @@
 ----------------------------inserting dummy data----------------------------
 
 --inserting organizations
-INSERT INTO public.organizations(id, name) VALUES (99001, 'organization_1');
-INSERT INTO public.organizations(id, name) VALUES (99002, 'organization_2');
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
+INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
 INSERT INTO public.organizations(id, name) VALUES (99003, 'organization_2');
 
 --inserting brands
@@ -131,11 +131,11 @@ insert into public.orders(id,user_id,created_at, updated_at, organization_id,sta
 values(330037, 88, now(), now(), 99002, 1, 506, 310005, 12300001);
 
 INSERT INTO public.shipment
-(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status)
-VALUES(330031, 'TEST', '{"Shop Id":501}' , now(), now(), 0);
+(id, sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, track_number, external_id)
+VALUES(330031, 330031, 'TEST', '{"Shop Id":501}' , now(), now(), 0, 'abc44556', '88663');
 INSERT INTO public.shipment
-(sub_order_id, shipping_service_id, parameters, created_at, updated_at, status)
-VALUES(330032, 'TEST', '{"Shop Id":502}' , now(), now(), 0);
+(id, sub_order_id, shipping_service_id, parameters, created_at, updated_at, status, track_number, external_id)
+VALUES(330032, 330032, 'TEST', '{"Shop Id":502}' , now(), now(), 0, 'xyz13245', '1234');
 
 
 -- insert order items
@@ -170,9 +170,9 @@ INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity
 INSERT INTO public.return_request(id, created_on, created_by_employee, meta_order_id, status)
     VALUES(330031, now(), 69, 310001, 0);
 INSERT INTO public.return_request(id, created_on, created_by_employee, meta_order_id, status)
-    VALUES(330032, now(), 69, 310002, 3);
+    VALUES(330032, now() - interval '100 DAY', 69, 310002, 3);
 INSERT INTO public.return_request(id, created_on, created_by_employee, meta_order_id, status)
-    VALUES(330033, now(), 69, 310005, 0);
+    VALUES(330033, now() , 69, 310005, 0);
 
 INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
     VALUES(330031, 330031, 330031, 1, now());

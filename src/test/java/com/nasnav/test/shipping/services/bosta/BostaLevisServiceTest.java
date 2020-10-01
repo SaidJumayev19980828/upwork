@@ -49,7 +49,7 @@ import reactor.core.publisher.Mono;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-@PropertySource("classpath:database.properties")
+@PropertySource("classpath:test.database.properties")
 @DirtiesContext
 public class BostaLevisServiceTest {
 	

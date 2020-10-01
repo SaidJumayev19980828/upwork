@@ -135,7 +135,7 @@ INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value,
 INSERT INTO public.integration_mapping (mapping_type, local_value, remote_value, organization_id)
 	VALUES(67001, '310001', '5', 99001) ;
 
-
+INSERT INTO public.units VALUES(111001, 'm') ;
 
 -- insert products tags
 

@@ -1,16 +1,25 @@
 package com.nasnav.persistence;
 
+import com.nasnav.dto.AddressDTO;
+import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.response.ReturnRequestItemDTO;
 import lombok.Data;
-import org.hibernate.annotations.CreationTimestamp;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import static java.math.BigDecimal.ZERO;
+import static java.util.Optional.ofNullable;
 
 @Entity
 @Table(name="return_request_item")
 @Data
+@NoArgsConstructor
 public class ReturnRequestItemEntity implements BaseEntity {
 
     @Id
@@ -20,6 +29,12 @@ public class ReturnRequestItemEntity implements BaseEntity {
     @ManyToOne
     @JoinColumn(name="return_request_id")
     private ReturnRequestEntity returnRequest;
+
+    @ManyToOne
+    @JoinColumn(name="return_shipment_id", referencedColumnName = "id")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private ReturnShipmentEntity returnShipment;
 
     @ManyToOne
     @JoinColumn(name="order_item_id")
@@ -46,6 +61,12 @@ public class ReturnRequestItemEntity implements BaseEntity {
     @JoinColumn(name="created_by_employee")
     private EmployeeUserEntity createdByEmployee;
 
+
+    public ReturnRequestItemEntity(Long id){
+        this.id = id;
+    }
+
+
     @Override
     public BaseRepresentationObject getRepresentation() {
         ReturnRequestItemDTO dto = new ReturnRequestItemDTO();
@@ -61,11 +82,24 @@ public class ReturnRequestItemEntity implements BaseEntity {
             dto.setCreatedByEmployee(getCreatedByEmployee().getId());
         }
         if (getBasket() != null) {
-            ProductVariantsEntity variant = getBasket().getStocksEntity().getProductVariantsEntity();
-            String productName = variant.getProductEntity().getName();
+            BasketsEntity basket = getBasket();
+            OrdersEntity subOrder = basket.getOrdersEntity();
+            StocksEntity stock = basket.getStocksEntity();
+            ShopsEntity shop = stock.getShopsEntity();
+            ProductVariantsEntity variant = stock.getProductVariantsEntity();
+            ProductEntity product = variant.getProductEntity();
+            AddressRepObj address = (AddressRepObj)subOrder.getAddressEntity().getRepresentation();
+            BigDecimal totalPrice = basket.getPrice().multiply( new BigDecimal(getReturnedQuantity()));
+            dto.setAddress(address);
             dto.setBasketItem(getBasket().getId());
+            dto.setShopId(shop.getId());
+            dto.setShopName(shop.getName());
+            dto.setPrice(totalPrice);
             dto.setVariantId(variant.getId());
-            dto.setProductName(productName);
+            dto.setFeatureSpec(variant.getFeatureSpec());
+            dto.setProductName(product.getName());
+            dto.setProductId(product.getId());
+            dto.setSubOrderId(subOrder.getId());
         }
 
         dto.setReceivedQuantity(getReceivedQuantity());

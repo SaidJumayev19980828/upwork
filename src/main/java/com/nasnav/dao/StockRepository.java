@@ -37,6 +37,7 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 
 	@Query("SELECT stocks "
 			+ " FROM StocksEntity stocks "
+			+ " left join fetch stocks.unit unit "
 			+ " left join fetch stocks.shopsEntity shop "
 			+ " left join fetch stocks.productVariantsEntity variant "
 			+ " left join fetch variant.productEntity product "
@@ -159,4 +160,5 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 	Long countByShopsEntity_Id(long shopId);
 
 
+	List<StocksEntity> findByIdInOrderById(List<Long> ids);
 }

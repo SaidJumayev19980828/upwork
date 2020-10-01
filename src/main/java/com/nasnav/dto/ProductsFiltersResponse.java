@@ -14,6 +14,7 @@ public class ProductsFiltersResponse {
 
     private Prices prices;
     private List<Organization_BrandRepresentationObject> brands;
+    private List<TagsRepresentationObject> tags;
     @JsonProperty("variant_features")
     private Map<String, List<String>> variantFeatures;
 }
