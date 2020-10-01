@@ -170,7 +170,7 @@ public class NavboxController {
 	public ProductDetailsDTO getProduct(@RequestParam(name = "product_id") Long productId,
 										@RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
 
-		return productService.getProduct(productId, shopId);
+		return productService.getProduct(productId, shopId, true);
 	}
 
 
