@@ -25,6 +25,7 @@ import com.nasnav.shipping.model.ShippingServiceInfo;
 import com.nasnav.shipping.services.DummyShippingService;
 import com.nasnav.shipping.services.PickupFromShop;
 import com.nasnav.shipping.services.PickupPointsWithInternalLogistics;
+import com.nasnav.shipping.services.SallabShippingService;
 import com.nasnav.shipping.services.bosta.BostaLevisShippingService;
 
 import lombok.AllArgsConstructor;
@@ -46,7 +47,8 @@ public class ShippingServiceFactory {
 			asList( DummyShippingService.class
 					,BostaLevisShippingService.class
 					,PickupFromShop.class
-					,PickupPointsWithInternalLogistics.class);
+					,PickupPointsWithInternalLogistics.class
+					,SallabShippingService.class);
 	
 	
 	@Autowired

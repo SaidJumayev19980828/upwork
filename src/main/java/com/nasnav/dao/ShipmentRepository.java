@@ -20,4 +20,12 @@ public interface ShipmentRepository extends JpaRepository<ShipmentEntity, Long> 
                                                                          @Param("orgId") Long orgId);
 
     ShipmentEntity findBySubOrder_Id(Long subOrderId);
+
+    
+    @Query("SELECT COUNT(shipment) FROM ShipmentEntity shipment "
+    		+ " LEFT JOIN shipment.subOrder ord "
+    		+ " WHERE ord.userId = :userId "
+    		+ " AND shipment.shippingFee = 0 "
+    		+ " AND shipment.shippingServiceId = :serviceId ")
+	Integer countFreeShipments(@Param("userId")Long userId, @Param("serviceId") String serviceId);
 }
