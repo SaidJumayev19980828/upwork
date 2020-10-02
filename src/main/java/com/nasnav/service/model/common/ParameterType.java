@@ -1,6 +1,7 @@
 package com.nasnav.service.model.common;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -13,7 +14,8 @@ public enum ParameterType {
 	STRING("String", String.class)
 	, NUMBER("Number", Number.class)
 	, STRING_ARRAY("StringArray", JSONArray.class)
-	, LONG_ARRAY("LongArray", JSONArray.class);
+	, LONG_ARRAY("LongArray", JSONArray.class)
+	, JSON("Json", JSONObject.class);
 	
 	@JsonValue
     private final String value;

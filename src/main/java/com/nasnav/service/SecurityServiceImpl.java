@@ -385,11 +385,18 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Override
 	public BaseUserEntity getCurrentUser() {
+		return getCurrentUserOptional()
+					.orElseThrow(()-> new IllegalStateException("Could not retrieve current user!"));
+	}
+	
+	
+	
+	@Override
+	public Optional<BaseUserEntity> getCurrentUserOptional() {
 		return ofNullable( SecurityContextHolder.getContext() )
 					.map(c -> c.getAuthentication())
 					.map(Authentication::getDetails)
-					.map(BaseUserEntity.class::cast)
-					.orElseThrow(()-> new IllegalStateException("Could not retrieve current user!"));
+					.map(BaseUserEntity.class::cast);
 	}
 
 
