@@ -106,8 +106,8 @@ public class SallabShippingServiceTest {
         List<Shipment> shipments = offer.getShipments( );
         sort(shipments, comparing(Shipment::getShippingFee));
         assertEquals(2, shipments.size());
-        assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("40")));
-        assertEquals(0 , shipments.get(1).getShippingFee().compareTo(new BigDecimal("41")));
+        assertEquals(0 , shipments.get(0).getShippingFee().compareTo(new BigDecimal("41")));
+        assertEquals(0, shipments.get(1).getShippingFee().compareTo(new BigDecimal("50")));
         assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
         assertEquals(now().plusDays(3) , shipments.get(0).getEta().getTo());
     }
@@ -254,8 +254,8 @@ public class SallabShippingServiceTest {
         receiver.setLastName("Bob");
         receiver.setPhone("01000000000");
 
-        List<ShipmentItems> itemsOfShop1 = asList( createShipmentItems(601L, new BigDecimal("4000")));
-        List<ShipmentItems> itemsOfShop2 = asList( createShipmentItems(603L, new BigDecimal("4100")));
+        List<ShipmentItems> itemsOfShop1 = asList( createShipmentItems(601L, new BigDecimal("2500"), 2));
+        List<ShipmentItems> itemsOfShop2 = asList( createShipmentItems(603L, new BigDecimal("4100"), 1));
 
         ShippingDetails shippingDetails1 = new ShippingDetails();
         shippingDetails1.setDestination(customerAddr);
@@ -278,10 +278,11 @@ public class SallabShippingServiceTest {
     
     
     
-    private ShipmentItems createShipmentItems(Long stockId, BigDecimal price) {
+    private ShipmentItems createShipmentItems(Long stockId, BigDecimal price, Integer quantity) {
     	ShipmentItems item = new ShipmentItems();
     	item.setPrice(price);
     	item.setStockId(stockId);
+    	item.setQuantity(quantity);
     	return item;
     }
 
@@ -325,8 +326,8 @@ public class SallabShippingServiceTest {
         receiver.setLastName("Bob");
         receiver.setPhone("01000000000");
 
-        List<ShipmentItems> itemsOfShop1 = asList( createShipmentItems(601L, new BigDecimal("51000")));
-        List<ShipmentItems> itemsOfShop2 = asList( createShipmentItems(603L, new BigDecimal("110000")));
+        List<ShipmentItems> itemsOfShop1 = asList( createShipmentItems(601L, new BigDecimal("51000"), 2));
+        List<ShipmentItems> itemsOfShop2 = asList( createShipmentItems(603L, new BigDecimal("110000"), 1));
 
         ShippingDetails shippingDetails1 = new ShippingDetails();
         shippingDetails1.setDestination(customerAddr);

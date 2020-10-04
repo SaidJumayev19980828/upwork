@@ -195,7 +195,7 @@ public class SallabShippingService implements ShippingService{
 				shippingInfo
 				.getItems()
 				.stream()
-				.map(ShipmentItems::getPrice)
+				.map(this::getItemValue)
 				.reduce(ZERO, BigDecimal::add);
 		return doCalcFee(feePercentage, itemsValue);
 	}
@@ -246,9 +246,9 @@ public class SallabShippingService implements ShippingService{
 	
 	
 	private boolean isValueInTier(Tier tier, BigDecimal value) {
-		BigDecimal startInlusive = tier.getStartInclusive();
+		BigDecimal startInclusive = tier.getStartInclusive();
 		BigDecimal endExclusive = tier.getEndExclusive();
-		return value.compareTo(startInlusive) >= 0 
+		return value.compareTo(startInclusive) >= 0
 				&& value.compareTo(endExclusive) < 0 ;
 	}
 
@@ -259,10 +259,17 @@ public class SallabShippingService implements ShippingService{
 				.stream()
 				.map(ShippingDetails::getItems)
 				.flatMap(List::stream)
-				.map(ShipmentItems::getPrice)
-				.reduce(ZERO, BigDecimal::add);
+				.map(this::getItemValue)
+				.reduce(ZERO, BigDecimal::add)
+				.setScale(2, HALF_EVEN);
 	}
 
+
+
+	private BigDecimal getItemValue(ShipmentItems shipmentItems) {
+		BigDecimal price = shipmentItems.getPrice();
+		return price.multiply(BigDecimal.valueOf(shipmentItems.getQuantity()));
+	}
 
 
 
