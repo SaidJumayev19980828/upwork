@@ -673,7 +673,7 @@ public class ProductService {
 
 		BooleanBuilder predicate = getQueryPredicate(params, product, stock, shop, variant);
 
-		OrderSpecifier<?> order = getProductQueryOrder(params, product, stock);
+		List<OrderSpecifier> order = getProductQueryOrder(params, product, stock);
 
 		SQLQuery<?> fromProductsClause = productsCustomRepo.getProductsBaseQuery(predicate, params);
 
@@ -690,8 +690,12 @@ public class ProductService {
 						.from(subQuery.union(productsQuery,collectionsQuery).as("total_products"))
 						.where(Expressions.numberPath(Long.class, "row_num").eq(1L));
 
-		if (order != null && !count)
-			stocks.orderBy(order);
+		if (!order.isEmpty() && !count) {
+			stocks.orderBy(order.get(0));
+			if (order.size() > 1)
+				stocks.orderBy(order.get(1));
+		}
+
 
 		return stocks;
 	}
@@ -864,28 +868,31 @@ public class ProductService {
 	}
 
 
-	private OrderSpecifier<?> getProductQueryOrder(ProductSearchParam params, QProducts product, QStocks stock) {
+	private List<OrderSpecifier> getProductQueryOrder(ProductSearchParam params, QProducts product, QStocks stock) {
+		List<OrderSpecifier> orderBy = new ArrayList<>();
 		if (params.getOrder().equals(SortOrder.DESC))
 			switch (params.getSort()) {
-				case ID : return product.id.as("id").desc();
-				case NAME: return product.name.as("name").desc();
-				case P_NAME: return product.pName.as("pname").desc();
-				case CREATION_DATE: return product.createdAt.as("creation_date").desc();
-				case UPDATE_DATE: return product.updatedAt.as("update_date").desc();
-				case PRICE: return stock.price.as("price").desc();
-				case PRIORITY: return product.priority.as("priority").desc();
+				case ID : orderBy.add(product.id.as("id").desc());
+				case NAME: orderBy.add( product.name.as("name").desc());
+				case P_NAME: orderBy.add( product.pName.as("pname").desc());
+				case CREATION_DATE: orderBy.add( product.createdAt.as("creation_date").desc());
+				case UPDATE_DATE: orderBy.add( product.updatedAt.as("update_date").desc());
+				case PRICE: orderBy.add( stock.price.as("price").desc());
+				case PRIORITY: orderBy.add( product.priority.as("priority").desc());
+							   orderBy.add( product.updatedAt.as("update_date").desc());
 			}
 		else if (params.getOrder().equals(SortOrder.ASC))
 			switch (params.getSort()) {
-				case ID : return product.id.as("id").asc();
-				case NAME: return product.name.as("name").asc();
-				case P_NAME: return product.pName.as("pname").asc();
-				case CREATION_DATE: return product.createdAt.as("creation_date").asc();
-				case UPDATE_DATE: return product.updatedAt.as("update_date").asc();
-				case PRICE: return stock.price.as("price").asc();
-				case PRIORITY: return product.priority.as("priority").asc();
+				case ID : orderBy.add( product.id.as("id").asc());
+				case NAME: orderBy.add( product.name.as("name").asc());
+				case P_NAME: orderBy.add( product.pName.as("pname").asc());
+				case CREATION_DATE: orderBy.add( product.createdAt.as("creation_date").asc());
+				case UPDATE_DATE: orderBy.add( product.updatedAt.as("update_date").asc());
+				case PRICE: orderBy.add( stock.price.as("price").asc());
+				case PRIORITY: orderBy.add( product.priority.as("priority").asc());
+							   orderBy.add( product.updatedAt.as("update_date").desc());
 			}
-		return product.updatedAt.desc();
+		return orderBy;
 	}
 
 	
@@ -915,6 +922,7 @@ public class ProductService {
 
 		if(params.name != null)
 			predicate.and( product.name.likeIgnoreCase("%" + params.name + "%")
+						   .or(product.id.like("%" + params.name + "%"))
 						   .or(product.description.likeIgnoreCase("%" + params.name + "%") )
 						   .or(variant.productCode.likeIgnoreCase("%" + params.name + "%") )
 						   .or(variant.sku.likeIgnoreCase("%" + params.name + "%") ));

@@ -1653,7 +1653,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private ReturnRequestsResponse getReturnRequestCriteriaQuery(ReturnRequestSearchParams params, CriteriaBuilder builder) {
 
-		CriteriaQuery<ReturnRequestEntity> query = builder.createQuery(ReturnRequestEntity.class);
+		CriteriaQuery<ReturnRequestEntity> query = builder.createQuery(ReturnRequestEntity.class).distinct(true);
 		Root<ReturnRequestEntity> root = query.from(ReturnRequestEntity.class);
 		root.fetch("metaOrder", LEFT);
 		root.fetch("createdByUser", LEFT);
@@ -1674,7 +1674,9 @@ public class OrderServiceImpl implements OrderService {
 				.map(request -> (ReturnRequestDTO)request.getRepresentation())
 				.collect(toSet());
 
-		addItemsCount(returnRequestDTOS);
+		if (!returnRequestDTOS.isEmpty()) {
+			addItemsCount(returnRequestDTOS);
+		}
 		Long count = getOrderReturnRequestsCount(builder, predicatesArr);
 
 		return new ReturnRequestsResponse(count, returnRequestDTOS);
@@ -3946,7 +3948,6 @@ public class OrderServiceImpl implements OrderService {
 		Long count = em.createQuery(countQuery).getSingleResult();
 		return count;
 	}
-
 
 
 	public ReturnRequestDTO getOrderReturnRequest(Long id){
