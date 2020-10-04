@@ -49,6 +49,7 @@ import java.util.Optional;
 
 import javax.transaction.Transactional;
 
+import com.nasnav.commons.json.jackson.RawObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
@@ -368,8 +369,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 	public List<ServiceParameter> parseServiceParameters(OrganizationShippingServiceEntity orgShippingService) {
 		String serviceParamsString = ofNullable(orgShippingService.getServiceParameters()).orElse("{}");
 		
-		TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {};
-		Map<String, Object> paramMap = new HashMap<>();
+		TypeReference<HashMap<String, RawObject>> typeRef = new TypeReference<HashMap<String, RawObject>>() {};
+		Map<String, RawObject> paramMap = new HashMap<>();
 		try {
 			paramMap = jsonMapper.readValue(serviceParamsString, typeRef) ;
 		} catch (Exception e) {
@@ -378,7 +379,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		return paramMap
 				.entrySet()
 				.stream()
-				.map(e -> new ServiceParameter(e.getKey(), e.getValue().toString()))
+				.map(e -> new ServiceParameter(e.getKey(), e.getValue().getValue()))
 				.collect(toList());
 	}
 
