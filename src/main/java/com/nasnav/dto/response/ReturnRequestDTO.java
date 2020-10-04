@@ -30,5 +30,6 @@ public class ReturnRequestDTO extends BaseRepresentationObject {
 
     public ReturnRequestDTO() {
         returnedItems = new HashSet<>();
+        itemsCount = 0L;
     }
 }
