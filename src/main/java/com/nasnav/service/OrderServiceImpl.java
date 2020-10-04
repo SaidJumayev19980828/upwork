@@ -62,7 +62,6 @@ import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
 import static com.nasnav.commons.utils.MathUtils.calculatePercentage;
-import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.*;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
@@ -1654,7 +1653,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private ReturnRequestsResponse getReturnRequestCriteriaQuery(ReturnRequestSearchParams params, CriteriaBuilder builder) {
 
-		CriteriaQuery<ReturnRequestEntity> query = builder.createQuery(ReturnRequestEntity.class);
+		CriteriaQuery<ReturnRequestEntity> query = builder.createQuery(ReturnRequestEntity.class).distinct(true);
 		Root<ReturnRequestEntity> root = query.from(ReturnRequestEntity.class);
 		root.fetch("metaOrder", LEFT);
 		root.fetch("createdByUser", LEFT);
@@ -1675,11 +1674,25 @@ public class OrderServiceImpl implements OrderService {
 				.map(request -> (ReturnRequestDTO)request.getRepresentation())
 				.collect(toSet());
 
+		if (!returnRequestDTOS.isEmpty()) {
+			addItemsCount(returnRequestDTOS);
+		}
 		Long count = getOrderReturnRequestsCount(builder, predicatesArr);
 
 		return new ReturnRequestsResponse(count, returnRequestDTOS);
 	}
 
+
+	private void addItemsCount(Set<ReturnRequestDTO> returnRequestDTOS) {
+		Set<Long> returnRequestIds = returnRequestDTOS
+				.stream()
+				.map(ReturnRequestDTO::getId)
+				.collect(toSet());
+		Map<Long, Long> itemsCountMap = returnRequestRepo.getReturnRequestsItemsCount(returnRequestIds)
+				.stream()
+				.collect(toMap(p -> p.getFirst(), p -> p.getSecond()));
+		returnRequestDTOS.stream().forEach(r -> r.setItemsCount(itemsCountMap.get(r.getId())));
+	}
 
 
 
@@ -3937,7 +3950,6 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-
 	public ReturnRequestDTO getOrderReturnRequest(Long id){
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		ReturnRequestEntity returnRequestEntity =
@@ -3955,7 +3967,9 @@ public class OrderServiceImpl implements OrderService {
 
 		requestItems = setReturnRequestItemVariantsAdditionalData(requestItems);
 		dto.setReturnedItems(requestItems);
-
+		if (!requestItems.isEmpty()) {
+			dto.setAddress(requestItems.stream().findFirst().get().getAddress());
+		}
 		return dto;
 	}
 
@@ -3966,7 +3980,6 @@ public class OrderServiceImpl implements OrderService {
 				.stream()
 				.map(ReturnRequestItemDTO::getVariantId)
 				.collect(toList());
-
 
 		Map<Long, Optional<String>> images = imgService.getVariantsCoverImages(variantsIds);
 		for(ReturnRequestItemDTO dto : requestItems) {
