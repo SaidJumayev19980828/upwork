@@ -1,50 +1,42 @@
 package com.nasnav.test.shipping.services.tiered_percentage;
 
-import static com.nasnav.shipping.services.SallabShippingService.SERVICE_ID;
-import static com.nasnav.shipping.services.SallabShippingService.SUPPORTED_CITIES;
-import static com.nasnav.shipping.services.SallabShippingService.TIERES;
-import static com.nasnav.test.commons.TestCommons.json;
-import static com.nasnav.test.commons.TestCommons.jsonArray;
-import static java.math.BigDecimal.ZERO;
-import static java.time.LocalDate.now;
-import static java.util.Arrays.asList;
-import static java.util.Collections.sort;
-import static java.util.Comparator.comparing;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
-import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
-
-import java.math.BigDecimal;
-import java.util.List;
-
+import com.nasnav.NavBox;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.OrganizationShippingServiceEntity;
+import com.nasnav.service.ShippingManagementService;
+import com.nasnav.shipping.ShippingService;
+import com.nasnav.shipping.ShippingServiceFactory;
+import com.nasnav.shipping.model.*;
+import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.io.Resource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import com.nasnav.NavBox;
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.shipping.ShippingService;
-import com.nasnav.shipping.ShippingServiceFactory;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.Shipment;
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShipmentReceiver;
-import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingAddress;
-import com.nasnav.shipping.model.ShippingDetails;
-import com.nasnav.shipping.model.ShippingOffer;
-
-import net.jcip.annotations.NotThreadSafe;
 import reactor.core.publisher.Mono;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+import static com.nasnav.shipping.services.SallabShippingService.*;
+import static com.nasnav.test.commons.TestCommons.*;
+import static java.math.BigDecimal.ZERO;
+import static java.time.LocalDate.now;
+import static java.util.Arrays.asList;
+import static java.util.Collections.sort;
+import static java.util.Comparator.comparing;
+import static org.junit.Assert.*;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
+import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -58,10 +50,27 @@ public class SallabShippingServiceTest {
     @Autowired
     private ShippingServiceFactory shippingServiceFactory;
 
+    @Autowired
+    private ShippingManagementService shippingMgr;
 
 
-    //TODO: add test for using tier 5 
-    //TODO: add test for using tier 5 and having more than 3 free shipments
+    @Value("classpath:/files/sallab_shipping_service_tiers.json")
+    private Resource parametersJson;
+
+
+    @Test
+    public void testSetParameters() throws IOException {
+        String params = readResource(parametersJson);
+        OrganizationShippingServiceEntity orgShippingParams =
+                new OrganizationShippingServiceEntity();
+        orgShippingParams.setServiceId(SERVICE_ID);
+        orgShippingParams.setServiceParameters(params);
+
+
+        Optional<ShippingService> service = shippingMgr.getShippingService(orgShippingParams);
+        assertTrue(service.isPresent());
+    }
+
 
 
     @Test
@@ -162,7 +171,7 @@ public class SallabShippingServiceTest {
 
 
     private List<ServiceParameter> createServiceParams() {
-    	JSONObject tiersJson = 
+    	String tiersJson =
     			json()
     			.put("tiers", 
     					jsonArray()
@@ -170,10 +179,11 @@ public class SallabShippingServiceTest {
     						.put(createTierJson(10000, 25001, 3d, 0))
     						.put(createTierJson(25001, 50001, 1.5d, 0))
     						.put(createTierJson(50001, 100001, 1d, 0))
-    						.put(createTierJson(100001, Integer.MAX_VALUE, 1d, 3)));
+    						.put(createTierJson(100001, Integer.MAX_VALUE, 1d, 3)))
+                .toString();
     	JSONArray supportedCitiesJson = jsonArray().put(1L).put(3L); 
     			
-        return asList(new ServiceParameter(TIERES, tiersJson.toString())
+        return asList(new ServiceParameter(TIERES, tiersJson)
         		 , new ServiceParameter(SUPPORTED_CITIES, supportedCitiesJson.toString()));
     }
 
@@ -182,10 +192,10 @@ public class SallabShippingServiceTest {
 
 	private JSONObject createTierJson(Integer startInclusive, Integer endExclusive, Double percentage, Integer maxFreeShipments) {
 		return json()
-				.put("startInclusive", startInclusive)
-				.put("endExclusive", endExclusive)
+				.put("start_inclusive", startInclusive)
+				.put("end_exclusive", endExclusive)
 				.put("percentage", percentage)
-				.put("maxFreeShipments", maxFreeShipments);
+				.put("max_free_shipments", maxFreeShipments);
 	}
 
 

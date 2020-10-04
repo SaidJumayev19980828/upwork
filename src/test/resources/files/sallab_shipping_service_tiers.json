@@ -1,0 +1,39 @@
+{
+  "TIERS": {
+    "tiers": [
+      {
+        "start_inclusive": 0,
+        "end_exclusive": 10000,
+        "percentage": 1,
+        "max_free_shipments": 0
+      },
+      {
+        "start_inclusive": 10000,
+        "end_exclusive": 25000,
+        "percentage": 3,
+        "max_free_shipments": 0
+      },
+      {
+        "start_inclusive": 25000,
+        "end_exclusive": 50000,
+        "percentage": 1.5,
+        "maxFreeShipments": 0
+      },
+      {
+        "start_inclusive": 50000,
+        "end_exclusive": 100000,
+        "percentage": 1,
+        "max_free_shipments": 0
+      },
+      {
+        "start_inclusive": 100000,
+        "end_exclusive": 2147483647,
+        "percentage": 1,
+        "max_free_shipments": 3
+      }
+    ]
+  },
+  "SUPPORTED_CITIES": [
+    1
+  ]
+}
