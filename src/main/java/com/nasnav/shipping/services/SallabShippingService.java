@@ -23,6 +23,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -49,8 +53,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public class SallabShippingService implements ShippingService{
+
+	Logger logger = LogManager.getLogger();
 	
-	static final public String TIERES = "TIERES";
+	static final public String TIERES = "TIERS";
 	static final public String SERVICE_ID = "SALLAB_PRICE_PRECENTAGE";
 	static final public String SERVICE_NAME = "Special Shipping";
 	static final public String SUPPORTED_CITIES = "SUPPORTED_CITIES";
@@ -107,6 +113,7 @@ public class SallabShippingService implements ShippingService{
 			validateServiceParameters(tiers);
 			validateSupportedCities(supportedCities);
 		} catch (IOException e) {
+			logger.error(e,e);
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0002, SERVICE_ID);
 		}
 	}
@@ -188,7 +195,7 @@ public class SallabShippingService implements ShippingService{
 				shippingInfo
 				.getItems()
 				.stream()
-				.map(ShipmentItems::getPrice)
+				.map(this::getItemValue)
 				.reduce(ZERO, BigDecimal::add);
 		return doCalcFee(feePercentage, itemsValue);
 	}
@@ -239,9 +246,9 @@ public class SallabShippingService implements ShippingService{
 	
 	
 	private boolean isValueInTier(Tier tier, BigDecimal value) {
-		BigDecimal startInlusive = tier.getStartInclusive();
+		BigDecimal startInclusive = tier.getStartInclusive();
 		BigDecimal endExclusive = tier.getEndExclusive();
-		return value.compareTo(startInlusive) >= 0 
+		return value.compareTo(startInclusive) >= 0
 				&& value.compareTo(endExclusive) < 0 ;
 	}
 
@@ -252,10 +259,17 @@ public class SallabShippingService implements ShippingService{
 				.stream()
 				.map(ShippingDetails::getItems)
 				.flatMap(List::stream)
-				.map(ShipmentItems::getPrice)
-				.reduce(ZERO, BigDecimal::add);
+				.map(this::getItemValue)
+				.reduce(ZERO, BigDecimal::add)
+				.setScale(2, HALF_EVEN);
 	}
 
+
+
+	private BigDecimal getItemValue(ShipmentItems shipmentItems) {
+		BigDecimal price = shipmentItems.getPrice();
+		return price.multiply(BigDecimal.valueOf(shipmentItems.getQuantity()));
+	}
 
 
 
@@ -357,6 +371,7 @@ class ShippingTiers{
 
 
 @Data
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 class Tier{
 	private BigDecimal startInclusive;
 	private BigDecimal endExclusive;

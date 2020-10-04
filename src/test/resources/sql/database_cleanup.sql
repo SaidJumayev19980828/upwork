@@ -84,6 +84,7 @@ DELETE FROM public.organization_theme_classes where organization_id BETWEEN 9900
 DELETE FROM public.organization_domains WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.settings  WHERE organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organiztion_cart_optimization  WHERE organization_id BETWEEN 99000 AND 99999;
+DELETE FROM public.organization_payments where organization_id BETWEEN 99000 AND 99999;
 DELETE FROM public.organizations WHERE id BETWEEN 99000 AND 99999;
 DELETE FROM public.areas;
 DELETE FROM public.cities;

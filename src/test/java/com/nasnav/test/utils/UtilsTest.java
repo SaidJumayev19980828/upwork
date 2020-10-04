@@ -16,7 +16,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 public class UtilsTest {
-	
+
+
 	@Test
 	public void  testMapBuilder() {
 		String nullStr = null;
