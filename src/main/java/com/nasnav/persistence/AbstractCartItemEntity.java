@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.persistence.*;
 
+
 @Entity
 @Table(name = "CART_ITEMS")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)

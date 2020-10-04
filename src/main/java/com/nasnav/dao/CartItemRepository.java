@@ -80,7 +80,7 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 	Long countByUser_Id(Long userId);
 	
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartItemShippingData( "
-			+ " stock.id, shop.id, addr.id, stock.price, stock.discount)"
+			+ " stock.id, shop.id, addr.id, stock.price, stock.discount, item.quantity)"
 			+ " FROM CartItemEntity item "
 			+ " LEFT JOIN item.stock stock "
 			+ "	LEFT JOIN item.user user "

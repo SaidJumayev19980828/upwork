@@ -227,7 +227,8 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		Long shopAddressId = itemCheckoutData.getShopAddress().getId();
 		BigDecimal price = itemCheckoutData.getPrice();
 		BigDecimal discount = itemCheckoutData.getDiscount();
-		return new CartItemShippingData(stockId, shopId, shopAddressId, price, discount);
+		Integer quantity = itemCheckoutData.getQuantity();
+		return new CartItemShippingData(stockId, shopId, shopAddressId, price, discount, quantity);
 	}
 	
 	
@@ -499,6 +500,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 		BigDecimal discount = ofNullable(data.getDiscount()).orElse(ZERO);
 		ShipmentItems shippingItem = new ShipmentItems(data.getStockId());
 		shippingItem.setPrice(data.getPrice().subtract(discount));
+		shippingItem.setQuantity(data.getQuantity());
 		return shippingItem;
 	}
 	
