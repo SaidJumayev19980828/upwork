@@ -660,7 +660,7 @@ public class DataImportServiceImpl implements DataImportService {
 		return tagsRepo
 				.findByNameInAndOrganizationEntity_Id(tagsNames, orgId)
 				.stream()
-				.collect(toMap(TagsEntity::getName, t -> t));
+				.collect(toMap(t -> t.getName().toLowerCase(), t -> t));
 	}
 
 
