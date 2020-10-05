@@ -31,12 +31,10 @@ INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(1
 
 --inserting shops
 INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (501, 'shop_1', 102, 99001, 12300001);
-INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (502, 'shop_2', 101, 99001, 12300002);
-INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (503, 'shop_3', 101, 99001, 12300003);
-INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (504, 'shop_4', 101, 99001, 12300002);
-INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (505, 'shop_5', 101, 99001, 12300002);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (502, 'shop_2', 101, 99001, 12300001);
+INSERT INTO public.shops(id, name, brand_id,  organization_id, address_id) VALUES (503, 'shop_3', 101, 99001, 12300001);
 
---insering employees
+--inserting employees
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 VALUES (68, 'testuser1@nasnav.com', 99001, '101112',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
@@ -103,31 +101,10 @@ insert into public.product_variants(id, "name" , product_id ) values(310010, 'va
 --inserting stocks
 
 -- first shop has all items
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(601, 503, 6, 99001, 700.00, 310004, 1);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(602, 503, 8, 99001, 1200.0, 310002, 1);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(603, 503, 6, 99001, 800.00, 310009, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(601, 503, 6, 99001, 100.00, 310004, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(602, 502, 8, 99001, 50.0, 310002, 1);
+insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(603, 501, 6, 99001, 60.00, 310009, 1);
 
--- second shop
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(604, 501, 5, 99001, 700.00, 310004, 1);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(605, 501, 5, 99001, 1200.0, 310002, 1);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(606, 501, 5, 99001, 800.00, 310009, 1);
-
-
--- thrid shop has enough quantity of only two items
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(607, 502, 8, 99001, 700.00, 310004, 1);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(608, 502, 8, 99001, 1200.0, 310002, 1);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(609, 502, 1, 99001, 800.00, 310009, 1);
-
-
--- forth shop has only two items
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(610, 504, 7, 99001, 700.00, 310004, 1);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(611, 504, 6, 99001, 1200.0, 310002, 1);
-
-
--- fifth has all items but is not in the allowed shop list
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(612, 505, 5, 99001, 700.00, 310004, 1);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(613, 505, 5, 99001, 1200.0, 310002, 1);
-insert into public.stocks(id, shop_id, quantity,  organization_id, price, variant_id, currency) values(614, 505, 5, 99001, 800.00, 310009, 1);
 
 
 
@@ -137,6 +114,45 @@ VALUES(601, '99001/img2.jpg', '{"Color":"Blue"}', 3, 88);
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) 
 VALUES(602, '99001/cover_img.jpg', '{"Color":"Yellow"}', 3, 88);
 INSERT INTO public.cart_items (stock_id, cover_image, variant_features, quantity, user_id) 
-VALUES(606, '99001/cover_img.jpg', '{"Color":"Yellow"}', 3, 88);
+VALUES(603, '99001/cover_img.jpg', '{"Color":"Yellow"}', 3, 88);
 
-INSERT INTO public.organization_shipping_service values('PICKUP_POINTS', 99001, '{ "WAREHOUSE_ID":503 , "PICKUP_POINTS_ID_LIST":[501,502]}', 99001);
+INSERT INTO public.organization_shipping_service values('SALLAB_PRICE_PRECENTAGE', 99001, '{
+        "TIERS": {
+          "tiers": [
+            {
+              "start_inclusive": 0,
+              "end_exclusive": 10000,
+              "percentage": 1,
+              "max_free_shipments": 0
+            },
+            {
+              "start_inclusive": 10000,
+              "end_exclusive": 25000,
+              "percentage": 3,
+              "max_free_shipments": 0
+            },
+            {
+              "start_inclusive": 25000,
+              "end_exclusive": 50000,
+              "percentage": 1.5,
+              "maxFreeShipments": 0
+            },
+            {
+              "start_inclusive": 50000,
+              "end_exclusive": 100000,
+              "percentage": 1,
+              "max_free_shipments": 0
+            },
+            {
+              "start_inclusive": 100000,
+              "end_exclusive": 2147483647,
+              "percentage": 1,
+              "max_free_shipments": 3
+            }
+          ]
+        },
+        "SUPPORTED_CITIES": [
+          1
+        ],
+        "MIN_SHIPPING_FEE": 50
+      }', 99001);

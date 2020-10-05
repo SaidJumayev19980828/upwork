@@ -1,6 +1,10 @@
 package com.nasnav.test.shipping.services.tiered_percentage;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nasnav.NavBox;
+import com.nasnav.dto.request.shipping.ShipmentDTO;
+import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.OrganizationShippingServiceEntity;
 import com.nasnav.service.ShippingManagementService;
@@ -16,8 +20,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import reactor.core.publisher.Mono;
@@ -35,6 +42,8 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.sort;
 import static java.util.Comparator.comparing;
 import static org.junit.Assert.*;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 
@@ -53,6 +62,12 @@ public class SallabShippingServiceTest {
     @Autowired
     private ShippingManagementService shippingMgr;
 
+    @Autowired
+    private TestRestTemplate template;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
 
     @Value("classpath:/files/sallab_shipping_service_tiers.json")
     private Resource parametersJson;
@@ -70,6 +85,31 @@ public class SallabShippingServiceTest {
         Optional<ShippingService> service = shippingMgr.getShippingService(orgShippingParams);
         assertTrue(service.isPresent());
     }
+
+
+
+
+    @Test
+    public void testGetMinimumOffer() throws IOException {
+        HttpEntity<?> request =  getHttpEntity("123");
+        ResponseEntity<String> response =
+                template.exchange("/shipping/offers?customer_address=12300001", GET, request, String.class);
+
+        assertEquals(OK, response.getStatusCode());
+
+        List<ShippingOfferDTO> offers =
+                objectMapper.readValue(response.getBody(), new TypeReference<List<ShippingOfferDTO>>(){});
+        List<ShipmentDTO> shipments = offers.get(0).getShipments();
+
+        sort(shipments, comparing(ShipmentDTO::getShippingFee));
+        assertEquals(3, shipments.size());
+        assertEquals(0, shipments.get(0).getShippingFee().compareTo(new BigDecimal("16.66")));
+        assertEquals(0, shipments.get(1).getShippingFee().compareTo(new BigDecimal("16.66")));
+        assertEquals(0, shipments.get(2).getShippingFee().compareTo(new BigDecimal("16.68")));
+        assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
+        assertEquals(now().plusDays(3) , shipments.get(0).getEta().getTo());
+    }
+
 
 
 
@@ -183,7 +223,7 @@ public class SallabShippingServiceTest {
                 .toString();
     	JSONArray supportedCitiesJson = jsonArray().put(1L).put(3L); 
     			
-        return asList(new ServiceParameter(TIERES, tiersJson)
+        return asList(new ServiceParameter(TIERS, tiersJson)
         		 , new ServiceParameter(SUPPORTED_CITIES, supportedCitiesJson.toString()));
     }
 
