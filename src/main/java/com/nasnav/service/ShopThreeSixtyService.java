@@ -9,10 +9,7 @@ import static org.springframework.http.HttpStatus.*;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -581,12 +578,11 @@ public class ShopThreeSixtyService {
         g2d.dispose();
 
         String imageName = getResizedImageName(image.getUrl().substring(image.getUrl().lastIndexOf('/')+1), imageWidth);
-        File outputImageFile = new File(imageName);
+        ByteArrayOutputStream outputImageFile = new ByteArrayOutputStream();
         ImageIO.write(outputImage, "jpg", outputImageFile );
 
-        FileInputStream output = new FileInputStream(outputImageFile);
         MultipartFile multipartFile = new MockMultipartFile("fileItem",
-                outputImageFile.getName(), "image/jpg", IOUtils.toByteArray(output));
+                imageName, "image/jpg", outputImageFile.toByteArray() );
 
         return fileSvc.saveFile(multipartFile, orgId);
     }
