@@ -1,5 +1,29 @@
 package com.nasnav.shipping.services;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.dao.ShipmentRepository;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.BaseUserEntity;
+import com.nasnav.service.SecurityService;
+import com.nasnav.service.model.common.Parameter;
+import com.nasnav.shipping.ShippingService;
+import com.nasnav.shipping.model.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.enumerations.ShippingStatus.DELIVERED;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0002;
@@ -7,68 +31,36 @@ import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0010;
 import static com.nasnav.service.model.common.ParameterType.JSON;
 import static com.nasnav.service.model.common.ParameterType.LONG_ARRAY;
 import static java.math.BigDecimal.ZERO;
+import static java.math.RoundingMode.FLOOR;
 import static java.math.RoundingMode.HALF_EVEN;
 import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nasnav.dao.ShipmentRepository;
-import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.service.SecurityService;
-import com.nasnav.service.model.common.Parameter;
-import com.nasnav.shipping.ShippingService;
-import com.nasnav.shipping.model.ReturnShipmentTracker;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.Shipment;
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShipmentStatusData;
-import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingDetails;
-import com.nasnav.shipping.model.ShippingEta;
-import com.nasnav.shipping.model.ShippingOffer;
-import com.nasnav.shipping.model.ShippingServiceInfo;
-
-import lombok.Data;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 public class SallabShippingService implements ShippingService{
 
 	Logger logger = LogManager.getLogger();
 	
-	static final public String TIERES = "TIERS";
+	static final public String TIERS = "TIERS";
 	static final public String SERVICE_ID = "SALLAB_PRICE_PRECENTAGE";
 	static final public String SERVICE_NAME = "Special Shipping";
 	static final public String SUPPORTED_CITIES = "SUPPORTED_CITIES";
+	static final public String MIN_SHIPPING_FEE = "MIN_SHIPPING_FEE";
 	private static final String RETURN_SHIPMENT_EMAIL_MSG = "Please call customer service to arrange a return shipment, and sorry again for any inconvenience!";
 	
 	
-	private static List<Parameter> SERVICE_PARAM_DEFINITION = 
-			asList(new Parameter(TIERES, JSON), new Parameter(SUPPORTED_CITIES , LONG_ARRAY));
+	private static final List<Parameter> SERVICE_PARAM_DEFINITION =
+			asList(new Parameter(TIERS, JSON), new Parameter(SUPPORTED_CITIES , LONG_ARRAY));
 
 	private ShippingTiers tiers;
 	private List<Long> supportedCities;
-	
+	private Map<String,String> serviceParameters;
+	private BigDecimal minFee;
+
 	@Autowired
 	private ObjectMapper objectMapper;
 	
@@ -92,27 +84,30 @@ public class SallabShippingService implements ShippingService{
 
 	@Override
 	public void setServiceParameters(List<ServiceParameter> params) {
-		String tiersJsonString = 
+		serviceParameters =
 				params
 				.stream()
-				.filter(param -> Objects.equals(param.getParameter(), TIERES))
-				.map(ServiceParameter::getValue)
-				.findFirst()
-				.orElse("{}");
-		String supportedCitiesString = 
-				params
-				.stream()
-				.filter(param -> Objects.equals(param.getParameter(), SUPPORTED_CITIES))
-				.map(ServiceParameter::getValue)
-				.findFirst()
-				.orElse("[]");
-				
+				.collect(
+						toMap(ServiceParameter::getParameter, ServiceParameter::getValue));
+
+		String tiersJsonString =
+				ofNullable(serviceParameters.get(TIERS))
+						.orElse("{}");
+
+		String supportedCitiesString =
+				ofNullable(serviceParameters.get(SUPPORTED_CITIES))
+						.orElse("[]");
+
+		String minFeeString =
+				ofNullable(serviceParameters.get(MIN_SHIPPING_FEE))
+						.orElse("0");
 		try {
 			tiers = objectMapper.readValue(tiersJsonString, ShippingTiers.class);
 			supportedCities = objectMapper.readValue(supportedCitiesString, new TypeReference<List<Long>>(){});
+			minFee = new BigDecimal(minFeeString);
 			validateServiceParameters(tiers);
 			validateSupportedCities(supportedCities);
-		} catch (IOException e) {
+		} catch (Throwable e) {
 			logger.error(e,e);
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0002, SERVICE_ID);
 		}
@@ -155,27 +150,88 @@ public class SallabShippingService implements ShippingService{
 
 	@Override
 	public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> shippingInfo) {
-		BigDecimal itemTotalValue = calcItemsTotalValue(shippingInfo);
-		Optional<BigDecimal> shippingFeePercentage = getShippingFeePercentage(itemTotalValue);
+
+		Optional<Fee> fee = calcFeeData(shippingInfo);
 		
-		if(!shippingFeePercentage.isPresent() ||  !areCitiesSupported(shippingInfo)) {
+		if(!fee.isPresent() ||  !areCitiesSupported(shippingInfo)) {
 			return Mono.empty();
 		}
-		return shippingInfo
+
+		List<Shipment> shipments =
+				shippingInfo
 				.stream()
-				.map(subOrderInfo -> createShipmentOfferForSubOrder(subOrderInfo, shippingFeePercentage.get()))
-				.collect(
-						collectingAndThen(
-								toList()
-								, shipments -> Mono.just(new ShippingOffer(getServiceInfo(), shipments))));
+				.map(subOrderInfo -> createShipmentOfferForSubOrder(subOrderInfo, fee.get()))
+				.collect(toList());
+
+		correctCalculationError(fee, shipments);
+
+		return Mono.just(new ShippingOffer(getServiceInfo(), shipments));
 	}
-	
-	
-	
-	
-	private Shipment createShipmentOfferForSubOrder(ShippingDetails shippingInfo, BigDecimal feePercentage) {
-		
-		BigDecimal fee = calcFeeForOrder(shippingInfo, feePercentage);
+
+
+
+	private void correctCalculationError(Optional<Fee> fee, List<Shipment> shipments) {
+		BigDecimal accumlatedFeeTotal =
+				shipments
+				.stream()
+				.map(Shipment::getShippingFee)
+				.reduce(ZERO, BigDecimal::add);
+		BigDecimal error = fee.get().getTotalFee().subtract(accumlatedFeeTotal);
+		shipments
+			.stream()
+			.peek( shipment -> shipment.setShippingFee(shipment.getShippingFee().add(error)))
+			.findFirst();
+	}
+
+
+
+	private Optional<Fee> calcFeeData(List<ShippingDetails> shippingInfo) {
+		BigDecimal itemTotalValue = calcItemsTotalValue(shippingInfo);
+		Optional<BigDecimal> shippingFeePercentage = getShippingFeePercentage(itemTotalValue);
+		Optional<BigDecimal> totalFee =
+				shippingFeePercentage
+						.map(perc -> calcTotalFee(perc, itemTotalValue));
+
+		Optional<BigDecimal> minFeePerOrder =
+				totalFee
+					.filter(total -> isBelowMinShippngFee(total, minFee))
+					.map( total -> calcMinFeePerOrder(shippingInfo));
+
+		return totalFee
+				.map(total -> new Fee(total, minFeePerOrder, shippingFeePercentage));
+	}
+
+
+
+
+	BigDecimal calcTotalFee(BigDecimal percentage, BigDecimal itemsVal){
+		BigDecimal totalFee = doCalcFee(percentage, itemsVal);
+		if(isBelowMinShippngFee(totalFee, minFee)){
+			totalFee = minFee;
+		}
+		return totalFee;
+	}
+
+
+
+
+	private boolean isBelowMinShippngFee(BigDecimal totalFee, BigDecimal minFee) {
+		return totalFee.compareTo(minFee) <= 0;
+	}
+
+
+	private BigDecimal calcMinFeePerOrder(List<ShippingDetails> shippingInfo) {
+		BigDecimal shipmentsNum = BigDecimal.valueOf(shippingInfo.size());
+		return minFee.divide(shipmentsNum, 2, FLOOR);
+	}
+
+
+
+
+	private Shipment createShipmentOfferForSubOrder(ShippingDetails shippingInfo, Fee feeData) {
+		BigDecimal feePercentage = feeData.getShippingFeePercentage().get();
+		Optional<BigDecimal> minFeePerOrder = feeData.getMinFeePerOrder();
+		BigDecimal fee = calcFeeForOrder(shippingInfo, feePercentage, minFeePerOrder);
 		ShippingEta eta = new ShippingEta(now().plusDays(1L), now().plusDays(3L));
 		List<Long> stockIds = 
 				shippingInfo
@@ -190,14 +246,15 @@ public class SallabShippingService implements ShippingService{
 	
 	
 	
-	private BigDecimal calcFeeForOrder(ShippingDetails shippingInfo, BigDecimal feePercentage) {
+	private BigDecimal calcFeeForOrder(ShippingDetails shippingInfo, BigDecimal feePercentage, Optional<BigDecimal> minFeePerOrder) {
 		BigDecimal itemsValue  = 
 				shippingInfo
 				.getItems()
 				.stream()
 				.map(this::getItemValue)
 				.reduce(ZERO, BigDecimal::add);
-		return doCalcFee(feePercentage, itemsValue);
+		return minFeePerOrder
+				.orElseGet(() -> doCalcFee(feePercentage, itemsValue));
 	}
 
 
@@ -331,10 +388,10 @@ public class SallabShippingService implements ShippingService{
 
 	private boolean areCitiesSupported(List<ShippingDetails> details) {
 		return details
-		.stream()
-		.map(this::getCities)
-		.flatMap(List::stream)
-		.allMatch(supportedCities::contains);
+				.stream()
+				.map(this::getCities)
+				.flatMap(List::stream)
+				.allMatch(supportedCities::contains);
 	}
 
 	
@@ -377,4 +434,14 @@ class Tier{
 	private BigDecimal endExclusive;
 	private BigDecimal percentage;
 	private Integer maxFreeShipments;
+}
+
+
+
+@Data
+@AllArgsConstructor
+class Fee{
+	private BigDecimal totalFee;
+	private Optional<BigDecimal> minFeePerOrder;
+	private Optional<BigDecimal> shippingFeePercentage;
 }
