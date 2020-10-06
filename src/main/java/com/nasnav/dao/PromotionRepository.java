@@ -45,4 +45,5 @@ public interface PromotionRepository extends JpaRepository<PromotionsEntity, Lon
 			@Param("code")String code
 			,@Param("orgId") Long orgId);
 
+    Optional<PromotionsEntity> findByIdAndOrganization_Id(Long promotionId, Long orgId);
 }

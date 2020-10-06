@@ -41,10 +41,13 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 	VALUES (69, 'testuser2@nasnav.com', 99001, 'hijkllm',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (70, 'testuser3@nasnav.com', 99001, '123456',  501);
+INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+    VALUES (71, 'testuser4@nasnav.com', 99002, 'rtrtyy',  501);
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1, 'abcdefg', now(), 68, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (2, 'hijkllm', now(), 69, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (3, '123456', now(), 70, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (4, 'rtrtyy', now(), 71, null);
 
 --inserting Roles
 insert into roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
@@ -56,6 +59,7 @@ insert into roles(id, name,  organization_id) values(4, 'CUSTOMER', 99001);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 70, 3);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 71, 2);
 
 --inserting users
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id)
@@ -87,6 +91,9 @@ VALUES(630003, 'GIVE_US_MONEY', 99001, now() - INTERVAL '10 min' , now() + INTER
 INSERT INTO public.promotions
 (id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
 VALUES(630004, 'MORE_MONEY', 99001, now() - INTERVAL '100 DAY', now() - INTERVAL '50 DAY', 0, 0, 'MORE2020', '{"cart_amount_min":0}', '{"percentage":10}', 69, now());
+INSERT INTO public.promotions
+(id, identifier, organization_id, date_start, date_end, status, user_restricted, code, constrains, discount, created_by, created_on)
+VALUES(630005, 'NOT_SO_FAST', 99001, now() + INTERVAL '1 DAY', now() + INTERVAL '50 DAY', 0, 0, 'LESS2020', '{"cart_amount_min":0}', '{"percentage":10}', 69, now());
 
 
 

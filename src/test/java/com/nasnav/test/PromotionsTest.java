@@ -7,15 +7,14 @@ import static com.nasnav.test.commons.TestCommons.json;
 import static java.lang.String.format;
 import static java.time.LocalDateTime.now;
 import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.http.HttpMethod.POST;
+import static org.junit.Assert.*;
+import static org.springframework.http.HttpMethod.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.json.JSONObject;
@@ -27,6 +26,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -109,8 +109,8 @@ public class PromotionsTest {
         
         assertEquals(200, res.getStatusCodeValue());
         List<PromotionDTO> promotions = objectMapper.readValue(res.getBody(), new TypeReference<List<PromotionDTO>>() {});
-        assertEquals(1, promotions.size());
-        Set<Long> expectedIds = setOf(630004L);
+        assertEquals(2, promotions.size());
+        Set<Long> expectedIds = setOf(630004L, 630005L);
         Set<Long> ids = promotions.stream().map(PromotionDTO::getId).collect(toSet());
         assertEquals(expectedIds, ids);
 	} 
@@ -451,5 +451,109 @@ public class PromotionsTest {
 				.put("code", "GIVE-YOUR-MONEY-OR-ELSE-...")
 				.put("constrains", json().put("amount_max", 1000))
 				.put("discount", json().put("percentage", 20));
+	}
+
+
+
+	@Test
+	public void deletePromotionAuthZTest() {
+		HttpEntity<?> req = getHttpEntity("123456");
+		ResponseEntity<String> res =
+				template.exchange("/organization/promotion?id=630001", DELETE, req, String.class);
+		assertEquals(403, res.getStatusCodeValue());
+	}
+
+
+
+	@Test
+	public void deletePromotionAuthNTest() {
+		HttpEntity<?> req = getHttpEntity("NOT EXIST");
+		ResponseEntity<String> res =
+				template.exchange("/organization/promotion?id=630001", DELETE, req, String.class);
+		assertEquals(401, res.getStatusCodeValue());
+	}
+
+
+
+	@Test
+	public void deletePromotionOfOtherOrgAuthNTest() {
+		Long id = 630001L;
+		Optional<PromotionsEntity> promo = promoRepo.findById(id);
+		assertTrue(promo.isPresent());
+
+		//---------------------------------------
+		HttpEntity<?> req = getHttpEntity("rtrtyy");
+		ResponseEntity<String> res =
+				template.exchange("/organization/promotion?id="+id, DELETE, req, String.class);
+		assertEquals(406, res.getStatusCodeValue());
+
+		//---------------------------------------
+		promo = promoRepo.findById(id);
+		assertTrue(promo.isPresent());
+	}
+
+
+
+	@Test
+	public void deletePromotionNewTest() {
+		Long id = 630005L;
+		Optional<PromotionsEntity> promo = promoRepo.findById(id);
+		assertTrue(promo.isPresent());
+
+		//---------------------------------------
+		HttpEntity<?> req = getHttpEntity("hijkllm");
+		ResponseEntity<String> res =
+				template.exchange("/organization/promotion?id="+id, DELETE, req, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+
+		//---------------------------------------
+		promo = promoRepo.findById(id);
+		assertTrue(!promo.isPresent());
+	}
+
+
+
+	@Test
+	public void deletePromotionActivatedTest() {
+		Long id = 630001L;
+		Optional<PromotionsEntity> promo = promoRepo.findById(id);
+		assertTrue(promo.isPresent());
+		boolean isEndDateInFuture = promo.get().getDateEnd().isAfter(now());
+		assertTrue(isEndDateInFuture);
+		assertNotEquals(promo.get().getDateEnd(), promo.get().getDateStart());
+		//---------------------------------------
+		HttpEntity<?> req = getHttpEntity("hijkllm");
+		ResponseEntity<String> res =
+				template.exchange("/organization/promotion?id="+id, DELETE, req, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+
+		//---------------------------------------
+		promo = promoRepo.findById(id);
+		assertTrue(promo.isPresent());
+		assertEquals("if the promo start date in future, its end date will be set as the start date"
+				, promo.get().getDateEnd(), promo.get().getDateStart());
+	}
+
+
+
+	@Test
+	public void deletePromotionActivatedAndStartedTest() {
+		Long id = 630002L;
+		Optional<PromotionsEntity> promo = promoRepo.findById(id);
+		assertTrue(promo.isPresent());
+		boolean isEndDateInFuture = promo.get().getDateEnd().isAfter(now());
+		assertTrue(isEndDateInFuture);
+		assertNotEquals(promo.get().getDateEnd(), promo.get().getDateStart());
+		//---------------------------------------
+		HttpEntity<?> req = getHttpEntity("hijkllm");
+		ResponseEntity<String> res =
+				template.exchange("/organization/promotion?id="+id, DELETE, req, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+
+		//---------------------------------------
+		promo = promoRepo.findById(id);
+		assertTrue(promo.isPresent());
+		isEndDateInFuture = promo.get().getDateEnd().isAfter(now());
+		assertFalse("if the promo start date in past, its end date will be now",isEndDateInFuture);
 	}
 }

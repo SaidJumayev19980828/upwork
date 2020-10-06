@@ -256,6 +256,8 @@ public class OrganizationController {
     }
 
 
+
+
     @ApiOperation(value = "Create or update Organization tag", nickname = "orgTagModification", code = 200)
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
@@ -525,6 +527,22 @@ public class OrganizationController {
                                     @RequestBody PromotionDTO promotion) throws BusinessException {
     	return promotionsService.updatePromotion(promotion);
     }
+
+
+
+    @ApiOperation(value = "remove/deactivate promotions", nickname = "deletePromotion", code = 200)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "process completed successfully"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "User not authorized to do this action"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid or missing parameter"),
+    })
+    @DeleteMapping(value = "promotion")
+    @ResponseStatus(OK)
+    public void removePromotion(@RequestHeader (name = "User-Token", required = false) String userToken,
+                             @RequestParam("id") Long promotionId) throws BusinessException {
+        promotionsService.removePromotion(promotionId);
+    }
+
 
 
     @ApiOperation(value = "cancelling the registration of an organization into a certain shipping service", nickname = "unregisterShippingService", code = 200)

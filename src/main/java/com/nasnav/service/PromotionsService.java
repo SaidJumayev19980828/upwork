@@ -23,4 +23,6 @@ public interface PromotionsService {
 	 * set a used promo as un-used again
 	 * */
 	void redeemUsedPromotion(PromotionsEntity promotion, UserEntity user);
+
+    void removePromotion(Long promotionId);
 }

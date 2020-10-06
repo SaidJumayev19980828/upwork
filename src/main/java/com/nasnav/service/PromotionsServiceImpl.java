@@ -297,8 +297,7 @@ public class PromotionsServiceImpl implements PromotionsService {
 				.map(this::getExistingPromotion)
 				.orElseGet(PromotionsEntity::new);
 		
-		if(isUpdateOperation(promotion)
-				&& !Objects.equals(entity.getStatus(), INACTIVE.getValue())) {
+		if(isUpdateOperation(promotion)	&& !isInactivePromo(entity)) {
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE
 						, PROMO$PARAM$0005, promotion.getId());
 		}
@@ -531,6 +530,40 @@ public class PromotionsServiceImpl implements PromotionsService {
 	@Override
 	public void redeemUsedPromotion(PromotionsEntity promotion, UserEntity user) {
 		usedPromoRepo.deleteByPromotion_IdAndUser_Id(promotion.getId(), user.getId());
+	}
+
+
+
+
+	@Override
+	public void removePromotion(Long promotionId) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		PromotionsEntity promo =
+				promoRepo
+					.findByIdAndOrganization_Id(promotionId, orgId)
+						.orElseThrow(()-> new RuntimeBusinessException(NOT_ACCEPTABLE
+								, PROMO$PARAM$0007, promotionId));
+
+		if(isInactivePromo(promo)){
+			promoRepo.delete(promo);
+		}else{
+			if(isStartDateInFuture(promo)){
+				promo.setDateEnd(promo.getDateStart());
+			}else{
+				promo.setDateEnd(now());
+			}
+			promoRepo.save(promo);
+		}
+	}
+
+
+	private boolean isInactivePromo(PromotionsEntity promo) {
+		return Objects.equals(INACTIVE.getValue(), promo.getStatus());
+	}
+
+
+	private boolean isStartDateInFuture(PromotionsEntity promo) {
+		return promo.getDateStart().isAfter(now());
 	}
 
 }
