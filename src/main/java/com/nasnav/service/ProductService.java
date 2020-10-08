@@ -94,7 +94,10 @@ import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import com.nasnav.dao.*;
+import com.nasnav.dto.request.product.RelatedItemsDTO;
 import com.nasnav.model.querydsl.sql.*;
+import com.nasnav.persistence.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -119,23 +122,6 @@ import com.nasnav.commons.enums.SortOrder;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants.Operation;
-import com.nasnav.dao.BasketRepository;
-import com.nasnav.dao.BrandsRepository;
-import com.nasnav.dao.BundleRepository;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.ExtraAttributesRepository;
-import com.nasnav.dao.OrdersRepository;
-import com.nasnav.dao.Product360ShopsRepository;
-import com.nasnav.dao.ProductCollectionRepository;
-import com.nasnav.dao.ProductFeaturesRepository;
-import com.nasnav.dao.ProductImagesRepository;
-import com.nasnav.dao.ProductImgsCustomRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
-import com.nasnav.dao.ProductsCustomRepository;
-import com.nasnav.dao.ShopsRepository;
-import com.nasnav.dao.StockRepository;
-import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.BundleDTO;
 import com.nasnav.dto.BundleElementUpdateDTO;
 import com.nasnav.dto.ExtraAttributeDTO;
@@ -163,19 +149,6 @@ import com.nasnav.dto.response.navbox.VariantsResponse;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.BundleEntity;
-import com.nasnav.persistence.ExtraAttributesEntity;
-import com.nasnav.persistence.ProductCollectionEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ProductExtraAttributesEntity;
-import com.nasnav.persistence.ProductFeaturesEntity;
-import com.nasnav.persistence.ProductImagesEntity;
-import com.nasnav.persistence.ProductVariantsEntity;
-import com.nasnav.persistence.Shop360ProductsEntity;
-import com.nasnav.persistence.ShopsEntity;
-import com.nasnav.persistence.StocksEntity;
-import com.nasnav.persistence.TagsEntity;
 import com.nasnav.persistence.dto.query.result.products.BrandBasicData;
 import com.nasnav.persistence.dto.query.result.products.ProductTagsBasicData;
 import com.nasnav.request.BundleSearchParam;
@@ -286,6 +259,9 @@ public class ProductService {
 
 	@Autowired
 	private Product360ShopsRepository product360ShopsRepo;
+
+	@Autowired
+	private RelatedProductsRepository relatedProductsRepo;
 	
 	@Autowired
 	private OrganizationService orgService;
@@ -3172,6 +3148,52 @@ public class ProductService {
 				.map(v -> createVariantDto(null, v, productsAndVariantsImages))
 				.collect(toList());
 		return new VariantsResponse(total, variants);
+	}
+
+
+	public void updateRelatedItems(RelatedItemsDTO relatedItems) {
+		if (relatedItems.isAdd()) {
+			addRelatedItems(relatedItems);
+		} else {
+			removeRelatedItems(relatedItems);
+		}
+	}
+
+
+	private void removeRelatedItems(RelatedItemsDTO relatedItems) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		relatedProductsRepo.deleteByProductAndRelatedProductsIn(relatedItems.getProductId(),
+																relatedItems.getRelatedProductsIds());
+	}
+
+	private void addRelatedItems(RelatedItemsDTO relatedItems) {
+		Long orgId = securityService.getCurrentUserOrganizationId();
+
+		ProductEntity existingProduct = getProductEntity(relatedItems.getProductId(), orgId);
+		List<ProductEntity> existingProducts = productRepository
+				.findByIdInAndOrganizationId(relatedItems.getRelatedProductsIds(), orgId);
+
+		existingProducts
+				.stream()
+				.map( r -> new RelatedProductsEntity(existingProduct, r))
+				.forEach(r -> relatedProductsRepo.save(r));
+
+	}
+
+	private ProductEntity getProductEntity(Long productId, Long orgId) {
+		return productRepository
+				.findByIdAndOrganizationId(productId, orgId)
+				.orElseThrow( () -> new RuntimeBusinessException(NOT_ACCEPTABLE, P$PRO$0002, productId));
+
+	}
+
+	public List<ProductRepresentationObject> getRelatedProducts(Long productId) {
+		return relatedProductsRepo
+				.findByProduct_Id(productId)
+				.stream()
+				.map(RelatedProductsEntity::getRelatedProduct)
+				.map(this::getProductRepresentation)
+				.collect(toList());
 	}
 }
 

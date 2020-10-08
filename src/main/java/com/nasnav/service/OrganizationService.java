@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import javax.cache.annotation.CacheResult;
 
@@ -116,6 +117,8 @@ public class OrganizationService {
     private ExtraAttributesRepository extraAttrRepo;
     @Autowired
     private SettingRepository settingRepo;
+    @Autowired
+    private OrganizationImagesRepository orgImagesRepo;
     @Autowired
     private ShopService shopService;
 
@@ -986,5 +989,14 @@ public class OrganizationService {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		return shopService.getOrganizationShops(orgId, true);
 	}
+
+	public String getOrgLogo(Long orgId) {
+        return orgImagesRepo
+                .findByOrganizationEntityIdAndShopsEntityNullAndTypeOrderByIdDesc(orgId, 1)
+                .stream()
+                .findFirst()
+                .map(OrganizationImagesEntity::getUri)
+                .orElse("nasnav-logo.png");
+    }
 
 }

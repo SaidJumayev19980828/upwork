@@ -10,5 +10,5 @@ public interface OrganizationImagesRepository extends CrudRepository<Organizatio
     List<OrganizationImagesEntity> findByOrganizationEntityIdAndShopsEntityNullAndTypeNotIn(Long id, List<Integer> types);
     List<OrganizationImagesEntity> findByShopsEntityIdAndTypeNot(Long id, Integer type);
 
-    List<OrganizationImagesEntity> findByOrganizationEntityIdAndTypeOrderByIdDesc(Long id, Integer type);
+    List<OrganizationImagesEntity> findByOrganizationEntityIdAndShopsEntityNullAndTypeOrderByIdDesc(Long id, Integer type);
 }
