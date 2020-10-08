@@ -1,5 +1,6 @@
 package com.nasnav.dao;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,5 +11,5 @@ public interface OrganizationDomainsRepository extends JpaRepository<Organizatio
 
     OrganizationDomainsEntity findByDomain(String domain);
     OrganizationDomainsEntity findByDomainAndSubdir(String domain, String subdir);
-    Optional<OrganizationDomainsEntity> findByOrganizationEntity_Id(Long orgId);
+    List<OrganizationDomainsEntity> findByOrganizationEntity_IdOrderByIdDesc(Long orgId);
 }

@@ -9,12 +9,14 @@ import static java.lang.String.format;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.nasnav.service.DomainService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
@@ -44,7 +46,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 	@Autowired
 	private OAuth2Helper helper;
 
-	
+
+	@Autowired
+	private DomainService domainService;
+
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         
@@ -56,7 +62,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         							.map(this::getOrgIdAsLongVal)
 					                .orElseThrow(() -> getNoOrgProvidedException(user) );
         
-        String targetUrl = determineTargetUrl(request, token);
+        String targetUrl = determineTargetUrl(request, token, orgId);
         
         try {
         	String oAuth2Id = user.getId(); 
@@ -64,7 +70,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     					.map(usr -> {return saveTokenToDB(usr, token);} )
     				 	.orElseGet(() -> helper.registerNewOAuth2User(user, token, orgId));
         }catch(Throwable t) {
-        	targetUrl = getErrorTargetUrl(request, t);
+        	targetUrl = getErrorTargetUrl(request, t, orgId);
         }
         
         if (response.isCommitted()) {
@@ -81,8 +87,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
   
 
 
-	private String getErrorTargetUrl(HttpServletRequest request, Throwable t) {
-		UriComponents redirectUri = getRedirectParamFromRequest(request);
+	private String getErrorTargetUrl(HttpServletRequest request, Throwable t, Long orgId) {
+		UriComponents redirectUri = getRedirectParamFromRequest(request, orgId);
 		String encodedErrorMsg = "";
 		try {
 			encodedErrorMsg = URLEncoder.encode("\""+t.getMessage() +"\"", "UTF-8");
@@ -122,8 +128,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     
     
 
-    protected String determineTargetUrl(HttpServletRequest request, String token) {
-    	UriComponents redirectUri = getRedirectParamFromRequest(request);
+    protected String determineTargetUrl(HttpServletRequest request, String token, Long orgId) {
+    	UriComponents redirectUri = getRedirectParamFromRequest(request, orgId);
 
         return UriComponentsBuilder
         			.fromUriString(redirectUri.toUriString())
@@ -137,13 +143,14 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
 
 
-	private UriComponents getRedirectParamFromRequest(HttpServletRequest request) {
+	private UriComponents getRedirectParamFromRequest(HttpServletRequest request, Long orgId) {
 		UriComponents redirectUri = getCookie(request, REDIRECT_URI_PARAM_COOKIE_NAME)
 									.map(Cookie::getValue)
 									.map(UriComponentsBuilder::fromUriString)
 									.map(UriComponentsBuilder::build)
 									.orElseGet(this::getDefaultRedirectUri);
-        if(isInvalidRedirectUrl(redirectUri)) {
+		List<String> orgDomains = domainService.getOrganizationDomainOnly(orgId);
+		if(isInvalidRedirectUrl(redirectUri, orgDomains)) {
             throw new IllegalStateException("Invalid redirect URL : " + redirectUri);
         }
 		return redirectUri;

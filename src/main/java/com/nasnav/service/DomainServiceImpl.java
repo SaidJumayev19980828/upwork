@@ -6,10 +6,12 @@ import static com.nasnav.exceptions.ErrorCodes.G$ORG$0001;
 import static com.nasnav.exceptions.ErrorCodes.G$PRAM$0001;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
@@ -53,7 +55,9 @@ public class DomainServiceImpl implements DomainService{
 	@Override
 	public String getOrganizationDomainAndSubDir(Long orgId) {
 		return domainRepo
-				.findByOrganizationEntity_Id(orgId)
+				.findByOrganizationEntity_IdOrderByIdDesc(orgId)
+				.stream()
+				.findFirst()
 				.flatMap(this::getDomainAndSubDir)
 				.map(this::addProtocolIfNeeded)
 				.orElse("");
@@ -62,13 +66,17 @@ public class DomainServiceImpl implements DomainService{
 	
 	
 	@Override
-	public String getOrganizationDomainOnly(Long orgId) {
+	public List<String> getOrganizationDomainOnly(Long orgId) {
 		return domainRepo
-				.findByOrganizationEntity_Id(orgId)
+				.findByOrganizationEntity_IdOrderByIdDesc(orgId)
+				.stream()
 				.map(OrganizationDomainsEntity::getDomain)
 				.map(this::addProtocolIfNeeded)
-				.orElse("");
+				.collect(toList());
 	}
+
+
+
 	
 	
 	
@@ -126,7 +134,9 @@ public class DomainServiceImpl implements DomainService{
 		Long orgId = dto.getOrganizationId();
 		OrganizationDomainsEntity domainEntity = 
 				domainRepo
-				.findByOrganizationEntity_Id(orgId)
+				.findByOrganizationEntity_IdOrderByIdDesc(orgId)
+				.stream()
+				.findFirst()
 				.orElse(new OrganizationDomainsEntity());
 		
 		OrganizationEntity organizationEntity = 

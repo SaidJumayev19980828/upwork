@@ -787,6 +787,26 @@ public class UserRegisterTest {
 				, Mockito.anyString()
 				, Mockito.anyMap());
 	}
+
+
+
+
+	@Test
+	public void newUserRegisterWithOrganizationRedirectDomainTest() throws MessagingException, IOException {
+		String redirectUrl = "https://www.tooawsome.com/dummy_org/login?redirect=checkout";
+		String body = createUserRegisterV2Request(redirectUrl).toString();
+		HttpEntity<Object> userJson = getHttpEntity((Object)body);
+		ResponseEntity<String> response = template.postForEntity("/user/v2/register", userJson, String.class);
+
+		Assert.assertEquals( 201, response.getStatusCodeValue());
+		Mockito
+				.verify(mailService)
+				.send(
+						Mockito.eq("test@nasnav.com")
+						, Mockito.eq(ACTIVATION_ACCOUNT_EMAIL_SUBJECT)
+						, Mockito.anyString()
+						, Mockito.anyMap());
+	}
 	
 	
 	
@@ -949,7 +969,7 @@ public class UserRegisterTest {
 	}
 	
 	
-	
+	//TODO: activation email redirect is not in nasnav domain but in organization domains
 	
 	
 	@Test

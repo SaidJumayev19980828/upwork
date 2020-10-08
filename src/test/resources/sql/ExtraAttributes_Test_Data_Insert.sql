@@ -1,7 +1,7 @@
 --inserting organizations
 
-INSERT INTO public.countries values (100001, 'Egypt', 819, 'EGP');
-INSERT INTO public.countries values (100002, 'UK', 820, 'EGP');
+INSERT INTO public.countries(id,name,iso_code,currency) values (100001, 'Egypt', 819, 'EGP');
+INSERT INTO public.countries(id,name,iso_code,currency) values (100002, 'UK', 820, 'EGP');
 
 INSERT INTO public.organizations(id, name,  p_name) VALUES (99001, 'organization_1', 'org-number-one');
 INSERT INTO public.organizations(id, name,  p_name) VALUES (99002, 'organization_2', 'org-number-two');

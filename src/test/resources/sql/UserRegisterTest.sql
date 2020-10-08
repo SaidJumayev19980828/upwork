@@ -2,6 +2,9 @@
 INSERT INTO public.organizations(id, name,  p_name) VALUES (99001, 'organization_1', 'organization-1');
 INSERT INTO public.organizations(id, name,  p_name) VALUES (99002, 'organization_2', 'organization-2');
 
+--inserting organization domain
+
+
 -- dummy shop
 INSERT INTO public.shops (id,"name",  organization_id) VALUES(501 , 'Bundle Shop'  , 99002);
 INSERT INTO public.shops (id,"name",  organization_id) VALUES(502 , 'another Shop'  , 99001);
@@ -9,6 +12,7 @@ INSERT INTO public.shops (id,"name",  organization_id) VALUES(502 , 'another Sho
 --inserting organizations domains
 INSERT INTO public.organization_domains (id, "domain", subdir, organization_id) VALUES(55001, 'nasnav.com', 'organization_1', 99001);
 INSERT INTO public.organization_domains (id, "domain", subdir, organization_id) VALUES(55002, 'nasnav.com', 'organization_2', 99002);
+INSERT INTO public.organization_domains (id, "domain", organization_id) VALUES(55003, 'tooawsome.com', 99001);
 
 
 

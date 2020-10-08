@@ -3,13 +3,11 @@ package com.nasnav.test;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static com.nasnav.test.commons.TestCommons.jsonArray;
-import static org.json.JSONObject.NULL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.Map;
 
-import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +57,12 @@ public class AdminApiTest {
 		HttpEntity<?> json = getHttpEntity(requestBody,"abcdefg");
         ResponseEntity<Void> response = template.postForEntity("/admin/organization/domain", json, Void.class);
         
-        OrganizationDomainsEntity domainAfter = domainRepo.findByOrganizationEntity_Id(orgId).get();
+        OrganizationDomainsEntity domainAfter =
+				domainRepo
+						.findByOrganizationEntity_IdOrderByIdDesc(orgId)
+						.stream()
+						.findFirst()
+						.get();
         
         assertEquals(200, response.getStatusCode().value());
         assertEquals(newDomain, domainAfter.getDomain());

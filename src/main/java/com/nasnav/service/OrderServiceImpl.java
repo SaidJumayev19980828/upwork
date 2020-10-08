@@ -834,7 +834,11 @@ public class OrderServiceImpl implements OrderService {
 	
 	private String buildDashboardPageUrl(OrdersEntity order) {
 		Long orgId = order.getOrganizationEntity().getId();
-		String domain = domainService.getOrganizationDomainOnly(orgId);
+		String domain = domainService
+							.getOrganizationDomainOnly(orgId)
+							.stream()
+							.findFirst()
+							.orElse("");
 		String path = appConfig.dashBoardOrderPageUrl.replace("{order_id}", order.getId().toString());
 		return format("%s/%s", domain, path);
 	}
@@ -843,7 +847,10 @@ public class OrderServiceImpl implements OrderService {
 
 	private String buildDashboardPageUrl(ReturnRequestEntity returnRequest) {
 		Long orgId = returnRequest.getMetaOrder().getOrganization().getId();
-		String domain = domainService.getOrganizationDomainOnly(orgId);
+		String domain = domainService
+							.getOrganizationDomainOnly(orgId).stream()
+							.findFirst()
+							.orElse("");
 		String path = "dashboard";
 		return format("%s/%s", domain, path);
 	}

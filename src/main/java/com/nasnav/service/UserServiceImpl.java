@@ -113,6 +113,9 @@ public class UserServiceImpl implements UserService {
 	private AreaRepository areaRepo;
 
 	@Autowired
+	private DomainService domainService;
+
+	@Autowired
 	public UserServiceImpl(UserRepository userRepository, MailService mailService, PasswordEncoder passwordEncoder) {
 		this.userRepository = userRepository;
 		this.mailService = mailService;
@@ -150,32 +153,34 @@ public class UserServiceImpl implements UserService {
 
 		validateNewPassword(userJson.password);
 
-		if (userJson.getOrgId() == null) {
+		Long orgId = userJson.getOrgId();
+		if ( orgId == null) {
 			throw new BusinessException("Required org_id is  missing!", "MISSING_PARAM: org_id", NOT_ACCEPTABLE);
 		}
 
-		Optional<OrganizationEntity> org = orgRepo.findById(userJson.getOrgId());
+		Optional<OrganizationEntity> org = orgRepo.findById(orgId);
 		if (!org.isPresent()) {
 			throw new BusinessException(
-					String.format("Provided org_id %d doesn't match any existing organization", userJson.getOrgId()),
+					String.format("Provided org_id %d doesn't match any existing organization", orgId),
 					"INVALID_PARAM: org_id", NOT_ACCEPTABLE);
 		}
 
-		if (userRepository.existsByEmailIgnoreCaseAndOrganizationId(userJson.email, userJson.getOrgId())) {
+		if (userRepository.existsByEmailIgnoreCaseAndOrganizationId(userJson.email, orgId)) {
 			throw new EntityValidationException(
 					"Invalid User Entity: " + EMAIL_EXISTS,
 					createStatusApiResponse(singletonList(EMAIL_EXISTS)),
 					NOT_ACCEPTABLE);
 		}
 		
-		validateActivationRedirectUrl(userJson.getRedirectUrl());
+		validateActivationRedirectUrl(userJson.getRedirectUrl(), orgId);
 	}
 
 
 
 
-	private void validateActivationRedirectUrl(String redirectUrl) {
-		if(isNull(redirectUrl) || isInvalidRedirectUrl(redirectUrl)) {
+	private void validateActivationRedirectUrl(String redirectUrl, Long orgId) {
+		List<String> orgDomains = domainService.getOrganizationDomainOnly(orgId);
+		if(isNull(redirectUrl) || isInvalidRedirectUrl(redirectUrl, orgDomains)) {
 			throw new EntityValidationException(
 					"Invalid User Entity: " + INVALID_REDIRECT_URL,
 					createStatusApiResponse(singletonList(INVALID_REDIRECT_URL)),
@@ -582,7 +587,7 @@ public class UserServiceImpl implements UserService {
 		UserEntity user = userRepository.findByResetPasswordToken(token);
 
 		checkUserActivation(user);
-		validateActivationRedirectUrl(redirect);
+		validateActivationRedirectUrl(redirect, user.getOrganizationId());
 		
 		activateUserInDB(user);
 		return redirectUser(securityService.login(user, false).getToken(), redirect);

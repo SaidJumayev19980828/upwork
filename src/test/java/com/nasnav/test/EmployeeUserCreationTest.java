@@ -601,7 +601,7 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(1, response.getBody().size());
 
 		// role and store_id filter
-		response = template.exchange("/user/list?role=STORE_ADMIN&store_id=501", HttpMethod.GET,header, java.util.List.class);
+		response = template.exchange("/user/list?role=STORE_MANAGER&store_id=501", HttpMethod.GET,header, java.util.List.class);
 		System.out.println(response.getBody());
 		Assert.assertEquals(200, response.getStatusCodeValue());
 		Assert.assertEquals(1, response.getBody().size());
