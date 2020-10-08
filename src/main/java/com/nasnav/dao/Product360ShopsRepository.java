@@ -1,9 +1,7 @@
 package com.nasnav.dao;
 
 import com.nasnav.dto.request.ProductPositionDTO;
-import com.nasnav.persistence.Shop360ProductsEntity;
-import com.nasnav.persistence.ProductEntity;
-import com.nasnav.persistence.ShopsEntity;
+import com.nasnav.persistence.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -38,4 +36,21 @@ public interface Product360ShopsRepository extends JpaRepository<Shop360Products
     @Query(value = "delete from Shop360ProductsEntity sp where sp.shopEntity.id = :shopId and sp.published = 2")
     void deleteByShopId(@Param("shopId") Long shopId);
 
+    boolean existsByFloor(ShopFloorsEntity floor);
+
+    boolean existsBySection(ShopSectionsEntity section);
+
+    boolean existsByScene(ShopScenesEntity scene);
+
+    @Transactional
+    @Modifying
+    void deleteByFloor(ShopFloorsEntity floor);
+
+    @Transactional
+    @Modifying
+    void deleteBySection(ShopSectionsEntity section);
+
+    @Transactional
+    @Modifying
+    void deleteByScene(ShopScenesEntity scene);
 }

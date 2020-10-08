@@ -374,6 +374,7 @@ public class ShopThreeSixtyService {
 
 
     private void clearOldShop360Date(Long orgId, Long viewId) {
+        product360ShopsRepo.deleteByShopId(viewId);
         shopFloorsRepo.deleteByShopThreeSixtyEntity_IdAndOrganizationEntity_id(viewId, orgId);
     }
 
@@ -745,7 +746,8 @@ public class ShopThreeSixtyService {
     }
 
 
-    public void deleteShop360Floor(Long shopId, Long floorId) throws BusinessException {
+    @Transactional
+    public void deleteShop360Floor(Long shopId, Long floorId, boolean confirm) throws BusinessException {
         ShopThreeSixtyEntity shopThreeSixtyEntity = shop360Repo.getFirstByShopsEntity_Id(shopId);
 
         validateShop360Link(shopThreeSixtyEntity);
@@ -754,11 +756,19 @@ public class ShopThreeSixtyService {
         if (floor == null)
             throw new BusinessException("No floor found", "INVALID_PARAM: floor_id", NOT_ACCEPTABLE);
 
+        if (confirm) {
+            product360ShopsRepo.deleteByFloor(floor);
+        } else {
+            if (product360ShopsRepo.existsByFloor(floor)) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$360$PRO$POS$001, "Floor");
+            }
+        }
         shopFloorsRepo.delete(floor);
     }
 
 
-    public void deleteShop360Section(Long shopId, Long sectionId) throws BusinessException {
+    @Transactional
+    public void deleteShop360Section(Long shopId, Long sectionId, boolean confirm) throws BusinessException {
         Long orgId = securitySvc.getCurrentUserOrganizationId();
         ShopThreeSixtyEntity shopThreeSixtyEntity = shop360Repo.getFirstByShopsEntity_Id(shopId);
 
@@ -771,11 +781,19 @@ public class ShopThreeSixtyService {
         if(!section.getShopFloorsEntity().getShopThreeSixtyEntity().equals(shopThreeSixtyEntity))
             throw new BusinessException("Section doesn't belong to current org!", "INVALID_PARAM: section_id", NOT_ACCEPTABLE);
 
+        if (confirm) {
+            product360ShopsRepo.deleteBySection(section);
+        } else {
+            if (product360ShopsRepo.existsBySection(section)) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$360$PRO$POS$001, "Section");
+            }
+        }
         sectionsRepo.delete(section);
     }
 
 
-    public void deleteShop360Scene(Long shopId, Long sceneId) throws BusinessException {
+    @Transactional
+    public void deleteShop360Scene(Long shopId, Long sceneId, boolean confirm) throws BusinessException {
         Long orgId = securitySvc.getCurrentUserOrganizationId();
         ShopThreeSixtyEntity shopThreeSixtyEntity = shop360Repo.getFirstByShopsEntity_Id(shopId);
 
@@ -785,9 +803,18 @@ public class ShopThreeSixtyService {
         if (!scene.isPresent())
             throw new BusinessException("No scene found", "INVALID_PARAM: scene_id", NOT_ACCEPTABLE);
 
-        if(!scene.get().getOrganizationEntity().equals(shopThreeSixtyEntity.getShopsEntity().getOrganizationEntity()))
-            throw new BusinessException("Scene doesn't belong to current org!", "INVALID_PARAM: section_id", NOT_ACCEPTABLE);
+        ShopScenesEntity existingScene = scene.get();
 
+        if(!existingScene.getOrganizationEntity().equals(shopThreeSixtyEntity.getShopsEntity().getOrganizationEntity()))
+            throw new BusinessException("Scene doesn't belong to current org!", "INVALID_PARAM: scene_id", NOT_ACCEPTABLE);
+
+        if (confirm) {
+            product360ShopsRepo.deleteByScene(existingScene);
+        } else {
+            if (product360ShopsRepo.existsByScene(existingScene)) {
+                throw new RuntimeBusinessException(NOT_ACCEPTABLE, S$360$PRO$POS$001, "Scene");
+            }
+        }
 
         scenesRepo.delete(scene.get());
     }
