@@ -30,8 +30,6 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     List<ProductEntity> findByIdInOrderByPnameAsc(List<Long> ids);
     List<ProductEntity> findByIdInOrderByPnameDesc(List<Long> ids);
 
-    List<ProductEntity> findByIdInAndOrganizationId(List<Long> ids, Long orgId);
-
 	Optional<ProductEntity> findByIdAndOrganizationId(Long id, Long orgId);
 
 	Optional<ProductEntity> findByBarcodeAndOrganizationId(String barcode, Long orgId);

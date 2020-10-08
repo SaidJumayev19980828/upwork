@@ -99,12 +99,6 @@ public class UserServiceImpl implements UserService {
 	
 	@Autowired
 	private SecurityService securityService;
-
-	@Autowired
-	private DomainService domainService;
-
-	@Autowired
-	private OrganizationService orgService;
 	
 	@Autowired
 	private AddressRepository addressRepo;
@@ -211,18 +205,11 @@ public class UserServiceImpl implements UserService {
 
 
 	private Map<String, String> createActivationEmailParameters(UserEntity userEntity, String redirectUrl) {
-		String domain = domainService.getCurrentServerDomain();
-
-		String activationRedirectUrl = domain+"/"+buildActivationRedirectUrl(userEntity, redirectUrl);
-		String orgLogo = domain + "/files/"+orgService.getOrgLogo(userEntity.getOrganizationId());
-		String orgName = orgRepo.findById(userEntity.getOrganizationId()).get().getName();
-
+		String activationRedirectUrl = buildActivationRedirectUrl(userEntity, redirectUrl);
+		
 		Map<String, String> parametersMap = new HashMap<>();
 		parametersMap.put(USERNAME_PARAMETER, userEntity.getName());
-		parametersMap.put(ACTIVATION_ACCOUNT_URL_PARAMETER, activationRedirectUrl);
-		parametersMap.put("orgDomain", domain);
-		parametersMap.put("orgLogo", orgLogo);
-		parametersMap.put("orgName", orgName);
+		parametersMap.put(ACTIVATION_ACCOUNT_URL_PARAMETER, activationRedirectUrl);				
 		return parametersMap;
 	}
 

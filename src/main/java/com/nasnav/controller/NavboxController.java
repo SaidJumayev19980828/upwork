@@ -315,14 +315,4 @@ public class NavboxController {
 	public Map<String, CountriesRepObj> getCountries() {
 		return addressService.getCountries();
 	}
-
-
-	@ApiOperation(value = "Get related products", nickname = "relatedProducts")
-	@ApiResponses(value = {
-			@io.swagger.annotations.ApiResponse(code = 200, message = "OK")
-	})
-	@GetMapping(value="/related_products", produces=MediaType.APPLICATION_JSON_VALUE)
-	public List<ProductRepresentationObject> getRelatedProducts(@RequestParam("product_id") Long productId) {
-		return productService.getRelatedProducts(productId);
-	}
 }

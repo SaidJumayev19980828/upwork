@@ -943,7 +943,7 @@ public class OrderServiceImpl implements OrderService {
 	private String getOrganizationLogo(Optional<OrganizationEntity> org) {
 		return org
 				.map(OrganizationEntity::getId)
-				.map(orgId -> orgImagesRepo.findByOrganizationEntityIdAndShopsEntityNullAndTypeOrderByIdDesc(orgId, 1))
+				.map(orgId -> orgImagesRepo.findByOrganizationEntityIdAndTypeOrderByIdDesc(orgId, 1))
 				.map(List::stream)
 				.flatMap(Stream::findFirst)
 				.map(OrganizationImagesEntity::getUri)

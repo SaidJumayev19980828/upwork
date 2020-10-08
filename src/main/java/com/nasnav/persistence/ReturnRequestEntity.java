@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-import static java.util.Optional.ofNullable;
 import static javax.persistence.CascadeType.ALL;
 
 @Entity
@@ -72,21 +71,7 @@ public class ReturnRequestEntity implements BaseEntity{
         dto.setStatus(ReturnRequestStatus.findEnum(getStatus()));
 
         if (getMetaOrder() != null) {
-            MetaOrderEntity metaOrder = getMetaOrder();
-            String addressPhoneNumber = "";
-            OrdersEntity subOrder = metaOrder
-                    .getSubOrders()
-                    .stream()
-                    .findFirst()
-                    .get();
-            if (subOrder != null) {
-                addressPhoneNumber = ofNullable(subOrder
-                                                .getAddressEntity()
-                                                .getPhoneNumber())
-                                    .orElse("");
-            }
-            dto.setMetaOrderId(metaOrder.getId());
-            dto.setPhoneNumber(addressPhoneNumber);
+            dto.setMetaOrderId(getMetaOrder().getId());
         }
         if (getCreatedByEmployee() != null) {
             dto.setCreatedByEmployee(getCreatedByEmployee().getId());
@@ -94,6 +79,7 @@ public class ReturnRequestEntity implements BaseEntity{
         if (getCreatedByUser() != null) {
             dto.setCreatedByUser(getCreatedByUser().getId());
             dto.setUserName(getCreatedByUser().getName());
+            dto.setPhoneNumber(getCreatedByUser().getPhoneNumber());
         }
         return dto;
     }
