@@ -304,6 +304,45 @@ public class OrderReturnTest {
 
         assertEquals(406, response.getStatusCodeValue());
     }
+
+
+
+
+    @Test
+    public void receiveReturnOrderItemsAlreadyReceivedDoneByStoreManager() {
+        JSONArray requestItems =
+                jsonArray()
+                        .put(json()
+                                .put("return_request_item_id", 330035)
+                                .put("received_quantity", 1));
+
+        JSONObject body = json()
+                .put("returned_items", requestItems);
+        HttpEntity<?> request = getHttpEntity(body.toString(), "sdrf8s");
+
+        ResponseEntity<String> response = template.postForEntity("/order/return/received_item", request, String.class);
+
+        assertEquals(406, response.getStatusCodeValue());
+    }
+
+
+
+    @Test
+    public void receiveReturnOrderItemsAlreadyReceivedDoneByOrgManager() {
+        JSONArray requestItems =
+                jsonArray()
+                        .put(json()
+                                .put("return_request_item_id", 330035)
+                                .put("received_quantity", 1));
+
+        JSONObject body = json()
+                .put("returned_items", requestItems);
+        HttpEntity<?> request = getHttpEntity(body.toString(), "131415");
+
+        ResponseEntity<String> response = template.postForEntity("/order/return/received_item", request, String.class);
+
+        assertEquals(200, response.getStatusCodeValue());
+    }
 	
 	
 	
@@ -315,8 +354,8 @@ public class OrderReturnTest {
         Set<ReturnRequestDTO> body = response.getBody().getReturnRequests();
         Set<Long> ids = getReturnedRequestsIds(body);
         assertEquals(200,response.getStatusCodeValue());
-        assertEquals(3, body.size());
-        assertTrue( asList(330032L, 330031L, 440034L).containsAll(ids));
+        assertEquals(4, body.size());
+        assertTrue( asList(330032L, 330031L, 440034L, 330036L).containsAll(ids));
     }
 
 
@@ -330,9 +369,9 @@ public class OrderReturnTest {
 
         //status filter
         body = getReturnRequests("131415", "status=NEW");
-        assertEquals(1, body.size());
+        assertEquals(2, body.size());
         ids = getReturnedRequestsIds(body);
-        assertTrue(setOf(330031L).containsAll(ids));
+        assertTrue(setOf(330031L, 330036L).containsAll(ids));
 
         //meta order filter
         body = getReturnRequests("131415", "meta_order_id=310001");
@@ -362,10 +401,11 @@ public class OrderReturnTest {
                         .ofPattern(DEFAULT_TIMESTAMP_PATTERN)
                         .format(now().minusDays(50L));
         body = getReturnRequests("131415", "date_from="+dateFromStr);
-        assertEquals(2, body.size());
+        assertEquals(3, body.size());
         ids = getReturnedRequestsIds(body);
-        assertTrue(setOf(330031L, 440034L).containsAll(ids));
+        assertTrue(setOf(330031L, 440034L, 330036L).containsAll(ids));
     }
+
 
 
     private Set<ReturnRequestDTO> getReturnRequests(String authToken, String params) throws IOException {
@@ -376,12 +416,14 @@ public class OrderReturnTest {
     }
 
 
+
     private Set<Long> getReturnedRequestsIds(Set<ReturnRequestDTO> returnedItems) {
         return returnedItems
                     .stream()
                     .map(ReturnRequestDTO::getId)
                     .collect(toSet());
     }
+
 
 
     @Test
@@ -392,12 +434,14 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
     public void getReturnRequestsInvalidAuthN() {
         HttpEntity<?> request = getHttpEntity( "invalid token");
         ResponseEntity<String> response = template.exchange("/order/return/requests", GET, request, String.class);
         assertEquals(401,response.getStatusCodeValue());
     }
+
 
 
     @Test
@@ -413,6 +457,7 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
     public void getReturnRequestAnotherOrg() {
         HttpEntity<?> request = getHttpEntity( "131415");
@@ -422,12 +467,14 @@ public class OrderReturnTest {
     }
 
 
+
     @Test
     public void getReturnRequestInvalidAuthZ() {
         HttpEntity<?> request = getHttpEntity( "101112");
         ResponseEntity<String> response = template.exchange("/order/return/request?id=330031", GET, request, String.class);
         assertEquals(403,response.getStatusCodeValue());
     }
+
 
 
     @Test
@@ -439,7 +486,8 @@ public class OrderReturnTest {
     
     
     //TODO: POST/receive_items -> received quantity for basket item more than original order.
-    
+
+
     
     @Test
     public void customerCreateReturnRequestNoAuthZTest() {
@@ -450,6 +498,7 @@ public class OrderReturnTest {
     	
     	assertEquals(FORBIDDEN, response.getStatusCode());
     }
+
 
 
 	private JSONObject createReturnRequestBody() {
@@ -464,7 +513,8 @@ public class OrderReturnTest {
         return json().put("item_list", returnedItems);
 	}
     
-    
+
+
     
     
     @Test
@@ -665,6 +715,30 @@ public class OrderReturnTest {
                         .put("returned_quantity", 1));
         return json().put("item_list", returnedItems);
 	}
+
+
+
+    @Test
+    public void customerCreateReturnRequestWithNonFinalizedMetaOrderTest() {
+        JSONObject body = createReturnRequestWithNonFinalizedMetaOrderBody();
+
+        HttpEntity<?> request = getHttpEntity(body.toString(), "123");
+        ResponseEntity<String> response = template.postForEntity("/order/return", request, String.class);
+
+        assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+    }
+
+
+
+
+    private JSONObject createReturnRequestWithNonFinalizedMetaOrderBody() {
+        JSONArray returnedItems =
+                jsonArray()
+                        .put(json()
+                                .put("order_item_id", 330041)
+                                .put("returned_quantity", 1));
+        return json().put("item_list", returnedItems);
+    }
     
     
     
@@ -860,7 +934,7 @@ public class OrderReturnTest {
         HttpEntity<?> request = getHttpEntity("131415");
 
         ResponseEntity<String> res = template.postForEntity("/order/return/confirm?id="+id, request, String.class);
-        Thread.sleep(10000);
+        Thread.sleep(1000);
         //-----------------------------------------------
         assertEquals(OK, res.getStatusCode());
         assertReturnShipmentsCreated(id, res);

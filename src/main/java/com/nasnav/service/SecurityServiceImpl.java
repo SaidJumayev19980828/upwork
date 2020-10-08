@@ -435,7 +435,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	@Override
-	public Boolean userHasRole(BaseUserEntity user, Roles role) {
+	public Boolean userHasRole(Roles role) {
 		return ofNullable( SecurityContextHolder.getContext() )
 				.map(c -> c.getAuthentication())
 				.map(Authentication::getAuthorities)
@@ -452,8 +452,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 	@Override
 	public Boolean currentUserHasRole(Roles role) {
-		BaseUserEntity user = getCurrentUser();
-		return userHasRole(user, role);
+		return userHasRole(role);
 	}
 
 

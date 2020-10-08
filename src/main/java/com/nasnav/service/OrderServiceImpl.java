@@ -102,6 +102,9 @@ public class OrderServiceImpl implements OrderService {
 	private static final Long NON_EXISTING_ORDER_ID = -1L;
 	public static final int MAX_RETURN_TIME_WINDOW = 14;
 
+	private static final Set<OrderStatus> metaOrderAcceptableStatusForReturn =
+		setOf(DELIVERED, DISPATCHED, FINALIZED, STORE_PREPARED);
+
 	private final OrdersRepository ordersRepository;
 
 	private final BasketRepository basketRepository;
@@ -3674,13 +3677,26 @@ public class OrderServiceImpl implements OrderService {
 		List<ReturnRequestItemEntity> returnRequestItemEntities = returnRequestItemRepo.findByIdIn(returnItemsIds);
 		validateAllReturnItemsExisting(returnItemsIds, returnRequestItemEntities);
 		validateAllReturnItemsHasSameReturnRequest(returnRequestItemEntities);
+		validateAllReturnItemsAreNotReceivedBefore(returnRequestItemEntities);
 		return returnRequestItemEntities;
 	}
 
 
-	
-	
-	
+
+
+	private void validateAllReturnItemsAreNotReceivedBefore(List<ReturnRequestItemEntity> items) {
+		boolean someItemAlreadyReceived =
+				!items
+				.stream()
+				.allMatch(item -> allIsNull(item.getReceivedBy(), item.getReceivedOn()));
+		boolean isStoreManager = securityService.currentUserHasRole(STORE_MANAGER);
+		if(someItemAlreadyReceived && isStoreManager){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0020);
+		}
+	}
+
+
+
 	private void validateAllReturnItemsExisting(List<Long> ids, List<ReturnRequestItemEntity> returnRequestItemEntities) {
 		List<Long> existingIds = returnRequestItemEntities
 				.stream()
@@ -3728,6 +3744,7 @@ public class OrderServiceImpl implements OrderService {
 		Map<Long, BasketsEntity> basketsMap = getBasketsMap(returnBasketIds);
 
 		MetaOrderEntity metaOrder = getMetaOrderFromBasketItems(returnBasketIds, basketsMap);
+		validateMetaOrderForReturn(metaOrder);
 
 		List<ReturnRequestItemEntity> returnItemsEntities =
 				createAndValidateReturnItemEntities(returnedItems, basketsMap, metaOrder);
@@ -3742,6 +3759,16 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+
+	private void validateMetaOrderForReturn(MetaOrderEntity metaOrder) {
+		OrderStatus status = OrderStatus.findEnum(metaOrder.getStatus());
+		boolean hasProperStatus =
+				metaOrderAcceptableStatusForReturn
+				.contains(status);
+		if(!hasProperStatus){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0021, status.name());
+		}
+	}
 
 
 	private MetaOrderEntity getMetaOrderFromBasketItems(List<Long> returnBasketIds, Map<Long, BasketsEntity> basketsMap) {

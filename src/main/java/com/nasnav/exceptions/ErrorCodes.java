@@ -131,6 +131,8 @@ public enum ErrorCodes {
 	,O$RET$0017("No return request found with ID[%d]!")
 	,O$RET$0018("Cannot update return request status from [%s] to [%s]!")
 	,O$RET$0019("Failed to get customer address!")
+	,O$RET$0020("Store managers cannot update received items! Please contact the organization manager to do it!")
+	,O$RET$0021("Cannot return order with status[%s]!")
 
 	,O$0001("No order exists with ID[%d]!")
 
