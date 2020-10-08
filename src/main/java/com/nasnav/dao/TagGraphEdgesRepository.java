@@ -2,13 +2,13 @@ package com.nasnav.dao;
 
 import java.util.List;
 
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import com.nasnav.persistence.TagGraphEdgesEntity;
 
-public interface TagGraphEdgesRepository extends CrudRepository<TagGraphEdgesEntity, Long> {
+public interface TagGraphEdgesRepository extends JpaRepository<TagGraphEdgesEntity, Long> {
 
     @Query(value = "select edge from TagGraphEdgesEntity edge "
     		+ " left join edge.parent parentNode "
@@ -18,7 +18,7 @@ public interface TagGraphEdgesRepository extends CrudRepository<TagGraphEdgesEnt
     		+ " where parentTag.id in :ids or childTag.id in :ids")
     List<TagGraphEdgesEntity> getTagsLinks(@Param("ids") List<Long> ids);
 
-    
+
     @Query("select edge from TagGraphEdgesEntity edge "
     		+ " left join edge.parent parentNode "
     		+ " left join parentNode.tag parentTag "

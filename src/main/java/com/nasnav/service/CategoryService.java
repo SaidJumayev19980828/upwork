@@ -626,7 +626,7 @@ public class CategoryService {
 				.map(TagsTreeNodeCreationDTO::getChildren)
 				.orElse(emptyList())
 				.stream()
-				.filter(child -> noneIsNull(child, child.getTagId()))
+				.filter(child -> noneIsNull(child))
 				.map(child -> createTagSubTree(child, tagsMap, tagsNodesCache))
 				.collect(toList());
 	}
@@ -693,6 +693,7 @@ public class CategoryService {
         
     	List<TagGraphEdgesEntity> tagsEdges = tagEdgesRepo.findByOrganizationId(orgId);
         tagEdgesRepo.deleteAll(tagsEdges);
+        tagEdgesRepo.flush();
     }
 
 
@@ -704,7 +705,11 @@ public class CategoryService {
 				.map(BigInteger::longValue)
 				.collect(toSet());
     	allUsedNodes.addAll(usedNodes);
-        tagNodesRepo.deleteByIdNotIn(allUsedNodes, orgId);
+    	if (!allUsedNodes.isEmpty()) {
+			tagNodesRepo.deleteByIdNotIn(allUsedNodes, orgId);
+		} else {
+    		tagNodesRepo.deleteByOrgId(orgId);
+		}
 	}
     
     

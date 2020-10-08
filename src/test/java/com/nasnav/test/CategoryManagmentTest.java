@@ -527,6 +527,29 @@ public class CategoryManagmentTest {
         assertEquals(1L, countEdgesAfter);
     }
 
+    @Test
+    @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_7.sql"})
+    @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+    public void createTagsTreeDeletedEdgesRemainsAfterError() {
+        long countEdgesBefore =  tagEdgesRepo.count();
+
+        assertEquals(1L, countEdgesBefore);
+
+        String body = json()
+                .put("nodes"
+                        , jsonArray()
+                                .put(createTagTreeNode(null, asList(createTagTreeNode(null, null, null)), 5003L))
+                                .put(createTagTreeNode(5005L, null, null))
+                ).toString();
+
+        HttpEntity<Object> json = getHttpEntity(body,"hijkllm");
+        ResponseEntity<String> response = template.postForEntity("/organization/tag/tree", json, String.class);
+
+        long countEdgesAfter =  tagEdgesRepo.count();
+
+        assertEquals(406, response.getStatusCode().value());
+        assertEquals(1L, countEdgesAfter);
+    }
 
     @Test
     @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_7.sql"})
@@ -535,7 +558,7 @@ public class CategoryManagmentTest {
         long countNodesBefore =  tagNodesRepo.count();
         long countEdgesBefore =  tagEdgesRepo.count();
 
-        assertEquals("In this test, we assume that the nodes table is empty", 1L, countNodesBefore);
+        assertEquals( 2L, countNodesBefore);
 
         String body = json()
                 .put("nodes"

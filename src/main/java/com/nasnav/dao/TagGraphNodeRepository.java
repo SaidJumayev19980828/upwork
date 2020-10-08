@@ -39,4 +39,10 @@ public interface TagGraphNodeRepository extends CrudRepository<TagGraphNodeEntit
 	void deleteByIdNotIn(@Param("usedNodesIds") Set<Long> usedNodesIds,
 						 @Param("orgId") Long orgId);
 
+	@Transactional
+	@Modifying
+	@Query(value = "delete from TagGraphNodeEntity node where node.tag in " +
+			" (select tag from TagsEntity tag where tag.organizationEntity.id = :orgId)")
+	void deleteByOrgId(@Param("orgId") Long orgId);
+
 }
