@@ -29,6 +29,7 @@ import java.util.Optional;
 import javax.cache.annotation.CacheResult;
 import javax.servlet.http.Cookie;
 
+import com.nasnav.enumerations.UserStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
@@ -274,7 +275,7 @@ public class SecurityServiceImpl implements SecurityService {
 		
 		if (isAccountLocked(userEntity)) { // NOSONAR
 			UserApiResponse failedLoginResponse = createFailedLoginResponse(singletonList(ACCOUNT_SUSPENDED));
-			throw new EntityValidationException("ACCOUNT_SUSPENDED ", failedLoginResponse, LOCKED);
+			throw new EntityValidationException("ACCOUNT_SUSPENDED", failedLoginResponse, LOCKED);
 		}
 		
 		if (userService.isUserDeactivated(userEntity)) { // NOSONAR
@@ -315,7 +316,11 @@ public class SecurityServiceImpl implements SecurityService {
 	
 	
 	private boolean isAccountLocked(BaseUserEntity userEntity) {
-		// TODO : change implementation later
+		if (userEntity instanceof UserEntity) {
+			UserEntity user = (UserEntity) userEntity;
+			return user.getUserStatus().equals(UserStatus.ACCOUNT_SUSPENDED.getValue());
+		}
+		//TODO still need implementation for EmployeeUser account suspend check
 		return false;
 	}
 

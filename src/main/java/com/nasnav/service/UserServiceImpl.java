@@ -15,8 +15,7 @@ import static com.nasnav.constatnts.EntityConstants.PASSWORD_MAX_LENGTH;
 import static com.nasnav.constatnts.EntityConstants.PASSWORD_MIN_LENGTH;
 import static com.nasnav.constatnts.EntityConstants.TOKEN_VALIDITY;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
-import static com.nasnav.enumerations.UserStatus.ACTIVATED;
-import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
+import static com.nasnav.enumerations.UserStatus.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
 import static com.nasnav.response.ResponseStatus.EMAIL_EXISTS;
@@ -34,9 +33,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.*;
 
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
@@ -50,6 +47,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.nasnav.dao.*;
+import com.nasnav.enumerations.UserStatus;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -67,11 +66,6 @@ import org.springframework.web.servlet.view.RedirectView;
 import com.google.common.collect.ObjectArrays;
 import com.nasnav.AppConfig;
 import com.nasnav.constatnts.EmailConstants;
-import com.nasnav.dao.AddressRepository;
-import com.nasnav.dao.AreaRepository;
-import com.nasnav.dao.CommonUserRepository;
-import com.nasnav.dao.OrganizationRepository;
-import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.UserDTOs;
@@ -99,7 +93,10 @@ public class UserServiceImpl implements UserService {
 	
 	@Autowired
 	private SecurityService securityService;
-	
+
+	@Autowired
+	private UserTokenRepository userTokenRepo;
+
 	@Autowired
 	private AddressRepository addressRepo;
 
@@ -391,12 +388,6 @@ public class UserServiceImpl implements UserService {
 		userRepository.deleteById(userId);
 	}
 
-	@Override
-	public UserEntity findUserById(Long userId) {
-		Optional<UserEntity> optional = userRepository.findById(userId);
-		return optional.isPresent() ? optional.get() : null;
-
-	}
 
 	@Override
 	public UserEntity getUserById(Long userId) {
@@ -724,5 +715,27 @@ public class UserServiceImpl implements UserService {
 		
 		activateUserInDB(user);
 		return securityService.login(user, false);
+	}
+
+
+	@Override
+	public void suspendUserAccount(Long id, Boolean suspend) {
+		UserEntity user = getUserEntityById(id);
+		UserStatus status = UserStatus.getUserStatus(user.getUserStatus());
+		if (suspend) {
+			if (status.equals(ACCOUNT_SUSPENDED)) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$STATUS$0001);
+			}
+			user.setUserStatus(ACCOUNT_SUSPENDED.getValue());
+			userTokenRepo.deleteByUserEntity(user);
+		} else {
+			user.setUserStatus(ACTIVATED.getValue());
+		}
+		userRepository.save(user);
+	}
+
+	private UserEntity getUserEntityById(Long id) {
+		return userRepository.findById(id)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$0001, id));
 	}
 }

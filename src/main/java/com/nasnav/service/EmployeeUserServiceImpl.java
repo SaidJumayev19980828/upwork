@@ -183,11 +183,6 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		employeeUserRepository.deleteById(userId);
 	}
 
-	@Override
-	public BaseUserEntity findUserById(Long userId) {
-
-		return employeeUserRepository.findById(userId).orElse(null);
-	}
 
 	@Override
 	public BaseUserEntity getUserById(Long userId) {
