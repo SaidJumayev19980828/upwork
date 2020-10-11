@@ -70,6 +70,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     					.map(usr -> {return saveTokenToDB(usr, token);} )
     				 	.orElseGet(() -> helper.registerNewOAuth2User(user, token, orgId));
         }catch(Throwable t) {
+        	logger.error(t,t);
         	targetUrl = getErrorTargetUrl(request, t, orgId);
         }
         
