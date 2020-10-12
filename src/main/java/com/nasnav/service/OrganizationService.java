@@ -243,6 +243,10 @@ public class OrganizationService {
             if (json.name != null) {
                 validateOrganizationName(json);
                 organization.setName(json.name);
+
+            }
+            if (json.pname != null) {
+                validateOrganizationPname(json);
                 organization.setPname(json.pname);
             }
         } else {
@@ -295,17 +299,21 @@ public class OrganizationService {
             throw new BusinessException("MISSING_PARAM: name", "Required Organization name is empty", NOT_ACCEPTABLE);
         }
         validateOrganizationName(json);
+
+        if (json.pname == null) {
+            throw new BusinessException("MISSING_PARAM: p_name", "Required Organization p_name is empty", NOT_ACCEPTABLE);
+        }
+        validateOrganizationPname(json);
     }
 
     private void validateOrganizationName(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
-        if (!validateName(json.name)) {
+        if (!validateName(json.name))
             throw new BusinessException("INVALID_PARAM: name", "Required Organization name is invalid", NOT_ACCEPTABLE);
-        }
-        if (json.pname == null) {
-            throw new BusinessException("MISSING_PARAM: p_name", "Required Organization p_name is empty", NOT_ACCEPTABLE);
-        } else if (!json.pname.equals(encodeUrl(json.pname))) {
+    }
+
+    private void validateOrganizationPname(OrganizationDTO.OrganizationCreationDTO json) throws BusinessException {
+        if (!json.pname.equals(encodeUrl(json.pname)))
             throw new BusinessException("INVALID_PARAM: p_name", "Required Organization p_name is invalid", NOT_ACCEPTABLE);
-        }
     }
     
     

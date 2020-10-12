@@ -19,7 +19,7 @@ public interface TagGraphNodeRepository extends CrudRepository<TagGraphNodeEntit
 			+ " join fetch node.tag tag"
 			+ " join fetch tag.organizationEntity org "
 			+ " join fetch tag.categoriesEntity category "
-			+ " where org.id = :orgId" )
+			+ " where org.id = :orgId order by node.id" )
 	List<TagGraphNodeEntity> findByTag_OrganizationEntity_Id(@Param("orgId")Long orgId);
 
 	List<TagGraphNodeEntity> findByTag_Id(Long tagId);

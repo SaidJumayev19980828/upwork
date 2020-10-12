@@ -585,6 +585,7 @@ public class CategoryService {
 		return ofNullable(node)
 				.map(TagsTreeNodeCreationDTO::getNodeId)
 				.map(id -> tagsNodesCache.get(id))
+				.map(n -> checkNodeOriginalTag(n, node, tagsMap))
 				.orElseGet(() -> persistTagTreeNode(node, tagsMap));
 	}
 
@@ -604,7 +605,14 @@ public class CategoryService {
 								, NOT_ACCEPTABLE));
 	}
 
-	
+	private TagGraphNodeEntity checkNodeOriginalTag(TagGraphNodeEntity nodeEntity, TagsTreeNodeCreationDTO dto, Map<Long, TagsEntity> tagsMap) {
+    	if (!nodeEntity.getTag().getId().equals(dto.getTagId())) {
+    		TagsEntity tag = tagsMap.get(dto.getTagId());
+			verifyTagToBeAddedToTree(tag);
+    		nodeEntity.setTag(tag);
+		}
+    	return tagNodesRepo.save(nodeEntity);
+	}
 	
 	
 	private TagsEntity verifyTagToBeAddedToTree(TagsEntity tag) {
