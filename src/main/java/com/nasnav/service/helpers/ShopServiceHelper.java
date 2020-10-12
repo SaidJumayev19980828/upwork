@@ -35,12 +35,6 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 public class ShopServiceHelper extends BeanUtils{
 
     @Autowired
-    private OrganizationRepository orgRepo;
-
-    @Autowired
-    private SecurityService sercurityService;
-
-    @Autowired
     private BrandsRepository brandsRepo;
 
     @Autowired
@@ -48,27 +42,9 @@ public class ShopServiceHelper extends BeanUtils{
 
     @Autowired
     private AddressRepository addressRepo;
-
-
-    public String[] getNullProperties(ShopJsonDTO shopJson) {
-        final BeanWrapper src = new BeanWrapperImpl(shopJson);
-        List<String> nullProperties = new ArrayList<>();
-        java.beans.PropertyDescriptor[] pds = src.getPropertyDescriptors();
-        for(java.beans.PropertyDescriptor pd : pds) {
-            Object srcValue = src.getPropertyValue(pd.getName());
-            if (srcValue == null) nullProperties.add(pd.getName());
-        }
-        String[] result = new String[nullProperties.size()];
-        nullProperties.remove("banner");
-        nullProperties.remove("logo");
-        return nullProperties.toArray(result);
-    }
-    
-    
-    
     
 
-    public ShopsEntity setAdditionalShopProperties(ShopsEntity shopsEntity, ShopJsonDTO shopJson) {
+    public ShopsEntity setAdditionalShopProperties(ShopsEntity shopsEntity, ShopJsonDTO shopJson, OrganizationEntity org) {
         if (shopJson.isUpdated("name")) {
             shopsEntity.setName(shopJson.getName());
             shopsEntity.setPname(StringUtils.encodeUrl(shopJson.getName()));
@@ -111,10 +87,7 @@ public class ShopServiceHelper extends BeanUtils{
 
         if (shopJson.isUpdated("placeId"))
             shopsEntity.setPlaceId(shopJson.getPlaceId());
-
-        OrganizationEntity org = sercurityService.getCurrentUserOrganization();               
-        shopsEntity.setOrganizationEntity(org);        
-        
+        shopsEntity.setOrganizationEntity(org);
         return shopsEntity;
     }
 }

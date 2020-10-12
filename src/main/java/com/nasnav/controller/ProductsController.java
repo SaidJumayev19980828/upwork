@@ -13,6 +13,7 @@ import javax.validation.Valid;
 import com.nasnav.dto.*;
 import com.nasnav.dto.request.product.CollectionItemDTO;
 import com.nasnav.dto.request.product.Product360ShopsDTO;
+import com.nasnav.dto.request.product.RelatedItemsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -475,5 +476,20 @@ public class ProductsController {
                                         @RequestParam(name = "shop_id",required=false) Long shopId) throws BusinessException {
 
         return productService.getProduct(productId, shopId, false);
+    }
+
+
+    @ApiOperation(value = "Add or delete related items", nickname = "addRelatedItems", code = 201)
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "Related items added/removed"),
+            @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
+            @io.swagger.annotations.ApiResponse(code = 403, message = "Insuffucient Rights"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "related_products", consumes = APPLICATION_JSON_UTF8_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public void updateRelatedItems(@RequestHeader(name = "User-Token", required = false) String token,
+                                   @RequestBody RelatedItemsDTO relatedItems) {
+        productService.updateRelatedItems(relatedItems);
     }
 }

@@ -140,7 +140,7 @@ public class ShopService {
         }
         ShopsEntity shopsEntity = new ShopsEntity();
 
-        shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson);
+        shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson, org);
         shopsEntity.setOrganizationEntity(org);
         shopsEntity.setRemoved(0);
         shopsRepository.save(shopsEntity);
@@ -150,7 +150,8 @@ public class ShopService {
 
     private ShopResponse updateShop(ShopJsonDTO shopJson, OrganizationEntity org) {
     	ShopsEntity shopsEntity = validateAndReturnShop(shopJson, org);
-        shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson);
+        shopsEntity = shopServiceHelper.setAdditionalShopProperties(shopsEntity, shopJson, org);
+        shopsEntity.setOrganizationEntity(org);
         shopsRepository.save(shopsEntity);
         
         return new ShopResponse(shopsEntity.getId());
