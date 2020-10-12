@@ -96,4 +96,12 @@ public interface ProductVariantsRepository extends JpaRepository<ProductVariants
 				   " where s.id in :stocksIds")
 	List<Long> getVariantsIdsByStocksIds(@Param("stocksIds") List<Long> stocksIds);
 
+	@Query("SELECT count(variant.id) FROM ProductVariantsEntity variant " +
+			" INNER JOIN variant.productEntity prod " +
+			" where prod.organizationId = :orgId and " +
+			"(variant.barcode = :name or LOWER(variant.name) like %:name% or LOWER(variant.description) like %:name%)" +
+			"")
+	Long countByOrganizationId(@Param("orgId") Long orgId,
+													 @Param("name") String name);
+
 }

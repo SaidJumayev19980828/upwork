@@ -1,3 +1,5 @@
+
+INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
 --inserting organizations
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99001, 'organization_1', 818);
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
@@ -43,7 +45,7 @@ INSERT INTO public.employee_users(id, name,  email, organization_id, authenticat
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
 	VALUES (158, 'Walid', 'testuser3@nasnav.com', 99001, 'nopqrst',  502);
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password)
-	VALUES (159, 'Walid', 'user1@nasnav.com', 99001, 'nopqrst',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
+	VALUES (159, 'Walid', 'user1@nasnav.com', 99001, 'nopqrstt',  502, '$2a$10$/Nf8G202WWrAzmZjIKNR8.VvonJt7DB/cIciQ3S3ym1tD.IgaT1ru');
 
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1001, 'abcdefg', now(), 68, null);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (1002, 'hijkllm', now(), 69, null);

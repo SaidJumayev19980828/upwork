@@ -3159,10 +3159,10 @@ public class ProductService {
 			count = 10;
 		}
 
-		Long total = productVariantsRepository.countByProductEntity_organizationIdAndNameContainingIgnoreCase(orgId, name);
+		Long total = productVariantsRepository.countByOrganizationId(orgId, name);
 		name = ofNullable(name.toLowerCase()).orElse("");
 		List<ProductVariantsEntity> variantsEntities =
-				productVariantsRepository.findByOrganizationId(orgId, name, PageRequest.of(start, count));
+				productVariantsRepository.findByOrganizationId(orgId, name, PageRequest.of((int)Math.floor(start/count), count));
 
 		List<Long> variantsIds = getVariantsIds(variantsEntities);
 		List<ProductImageDTO> productsAndVariantsImages = variantsIds.isEmpty() ? new ArrayList<>() : imgService.getProductsAndVariantsImages(null,variantsIds) ;

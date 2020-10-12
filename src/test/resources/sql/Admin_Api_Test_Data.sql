@@ -1,3 +1,5 @@
+
+INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
 --inserting organizations
 INSERT INTO public.organizations(id, name,  p_name) VALUES (99001, 'organization_1', 'fortune');
 INSERT INTO public.organizations(id, name, currency_iso) VALUES (99002, 'organization_2', 818);
@@ -40,7 +42,6 @@ INSERT INTO public.products(id, name, brand_id, organization_id, created_at, upd
 
 
 
---INSERT countries 
-INSERT INTO public.countries(id,"name", iso_code, currency)VALUES(1,'Egypt', 818, 'EGP');
+--INSERT countries
 INSERT INTO public.cities(id,country_id, "name") VALUES(1,1, 'Cairo');
 INSERT INTO public.areas(id, "name", city_id)VALUES(1, 'New Cairo', 1);
