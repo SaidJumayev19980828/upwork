@@ -1146,6 +1146,51 @@ public class UserRegisterTest {
 		assertEquals(0 ,userTokensCountAfter.intValue());
 	}
 
+
+	@Test
+	public void suspendUserTest() {
+		HttpEntity req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.postForEntity("/user/suspend?user_id=88001&suspend=true", req, String.class);
+
+		assertEquals(200, res.getStatusCodeValue());
+		UserEntity user = userRepository.findById(88001L).get();
+		assertEquals(202, user.getUserStatus().intValue());
+
+		Long userTokensCountAfter = userTokenRepo.countByUserEntity_Id(88001L);
+		assertEquals(0 ,userTokensCountAfter.intValue());
+	}
+
+
+	@Test
+	public void unsuspendUserTest() {
+		HttpEntity req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.postForEntity("/user/suspend?user_id=88006&suspend=false", req, String.class);
+
+		assertEquals(200, res.getStatusCodeValue());
+		UserEntity user = userRepository.findById(88006L).get();
+		assertEquals(201, user.getUserStatus().intValue());
+	}
+
+
+	@Test
+	public void loginSuspendedUser(){
+		String email = "suspended.man@nasnav.com";
+		String password = "963";
+
+		String request = new JSONObject()
+				.put("password", password)
+				.put("email", email)
+				.put("org_id", 99001L)
+				.put("employee", false)
+				.toString();
+
+		HttpEntity<Object> userJson = getHttpEntity(request, null);
+		ResponseEntity<UserApiResponse> response =
+				template.postForEntity("/user/login", userJson,	UserApiResponse.class);
+		assertEquals(423, response.getStatusCodeValue());
+	}
+
+
 	private JSONObject createUserRegisterV2Request(String redirectUrl) {
 		return json()
 				.put("name", "Ahmad")

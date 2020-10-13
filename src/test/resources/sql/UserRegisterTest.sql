@@ -23,6 +23,8 @@ INSERT INTO public.users(id, email,  user_name, authentication_token, organizati
     VALUES (88004, 'not.activated@nasnav.com','not activated','951', 99001, '963', 200, 'sfdsdfd81');
 INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status, reset_password_token)
     VALUES (88005, 'no.token.man@nasnav.com','not activated but no token','77', 99001, '963', 200, null);
+INSERT INTO public.users(id, email,  user_name, authentication_token, organization_id, encrypted_password, user_status, reset_password_token)
+    VALUES (88006, 'suspended.man@nasnav.com','suspended','88', 99001, '963', 202, null);
    
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700001, '123', now(), null, 88001);
 INSERT INTO public.user_tokens(id, token, update_time, employee_user_id, user_id) VALUES (700002, '456', now(), null, 88002);
