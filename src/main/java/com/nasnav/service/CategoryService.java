@@ -643,7 +643,7 @@ public class CategoryService {
 				.map(TagsTreeNodeCreationDTO::getChildren)
 				.orElse(emptyList())
 				.stream()
-				.filter(child -> noneIsNull(child, child.getTagId()))
+				.filter(child -> noneIsNull(child))
 				.map(child -> createTagSubTree(child, tagsMap, tagsNodesCache))
 				.collect(toList());
 	}
