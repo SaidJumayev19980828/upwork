@@ -25,17 +25,15 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
+import java.io.*;
 import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.*;
 
 import javax.cache.annotation.CacheResult;
 
 import com.nasnav.dao.*;
 import com.nasnav.persistence.*;
+import com.nasnav.service.model.IdAndNamePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONObject;
 import org.springframework.beans.BeanUtils;
@@ -113,6 +111,12 @@ public class OrganizationService {
     @Autowired
     private ProductExtraAttributesEntityRepository productExtraAttrRepo;
     @Autowired
+    private ProductRepository productRepo;
+    @Autowired
+    private TagsRepository tagsRepo;
+    @Autowired
+    private TagGraphNodeRepository tagGraphNodeRepo;
+    @Autowired
     private ExtraAttributesRepository extraAttrRepo;
     @Autowired
     private SettingRepository settingRepo;
@@ -120,6 +124,8 @@ public class OrganizationService {
     private OrganizationImagesRepository orgImagesRepo;
     @Autowired
     private ShopService shopService;
+    @Autowired
+    private DomainService domainService;
 
     public List<OrganizationRepresentationObject> listOrganizations() {
         return organizationRepository.findAll()
@@ -1006,4 +1012,43 @@ public class OrganizationService {
                 .orElse("nasnav-logo.png");
     }
 
+
+    public ByteArrayOutputStream getOrgSiteMap(Long orgId, boolean includeProducts, boolean includeCollections,
+                                               boolean includeBrands, boolean includeTags, boolean includeTagsTree) throws IOException {
+        List<String> allUrls = new ArrayList<>();
+
+        String domain = domainService.getOrganizationDomainAndSubDir(orgId);
+
+        if(includeProducts) {
+            addPairsAsUrls(domain, productRepo.getProductIdAndNamePairs(orgId), "products", allUrls);
+        }
+        if (includeCollections) {
+            addPairsAsUrls(domain, productRepo.getCollectionIdAndNamePairs(orgId), "collections", allUrls);
+        }
+        if (includeBrands) {
+            addPairsAsUrls(domain, brandsRepository.getBrandIdAndNamePairs(orgId), "brands", allUrls);
+        }
+        if (includeTags) {
+            addPairsAsUrls(domain, tagsRepo.getTagIdAndNamePairs(orgId), "categories", allUrls);
+        }
+        if (includeTagsTree) {
+            addPairsAsUrls(domain, tagGraphNodeRepo.getTagNodeIdAndNamePairs(orgId), "categories", allUrls);
+        }
+
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        Writer outputWriter = new OutputStreamWriter(outStream);
+        for(String url : allUrls) {
+            outputWriter.write(url + '\n');
+        }
+        outputWriter.flush();
+        outputWriter.close();
+        return outStream;
+    }
+
+    private void addPairsAsUrls(String domain, List<IdAndNamePair> idAndNamePairs, String entityType, List<String> urlList) {
+        idAndNamePairs
+                .stream()
+                .map(p -> domain+"/"+entityType+"/"+p.getName()+"/"+p.getId())
+                .forEach(urlList::add);
+    }
 }

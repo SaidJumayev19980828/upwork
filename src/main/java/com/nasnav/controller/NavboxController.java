@@ -1,11 +1,14 @@
 package com.nasnav.controller;
 
+import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.List;
@@ -17,12 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.ProductSearchParam;
@@ -324,5 +322,25 @@ public class NavboxController {
 	@GetMapping(value="/related_products", produces=MediaType.APPLICATION_JSON_VALUE)
 	public List<ProductRepresentationObject> getRelatedProducts(@RequestParam("product_id") Long productId) {
 		return productService.getRelatedProducts(productId);
+	}
+
+
+
+
+	@ApiOperation(value = "Get organization domain", nickname = "getOrgDomain", code = 201)
+	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK")})
+	@GetMapping(value = "organization/sitemap", produces = MediaType.TEXT_PLAIN_VALUE)
+	public ResponseEntity<String> getOrgSiteMap(@RequestParam("org_id") Long orgId,
+									  @RequestParam(value = "include_products", required = false) boolean includeProducts,
+									  @RequestParam(value = "include_collections", required = false) boolean includeCollections,
+									  @RequestParam(value = "include_brands", required = false) boolean includeBrands,
+									  @RequestParam(value = "include_tags", required = false) boolean includeTags,
+									  @RequestParam(value = "include_tags_tree", required = false) boolean includeTagsTree) throws IOException {
+		ByteArrayOutputStream s =  organizationService.getOrgSiteMap(orgId, includeProducts, includeCollections, includeBrands,
+																	 includeTags, includeTagsTree);
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType("text/plain"))
+				.header(CONTENT_DISPOSITION, "attachment; filename=sitemap.txt")
+				.body(s.toString());
 	}
 }

@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.nasnav.dto.response.navbox.ThreeSixtyProductsDTO;
+import com.nasnav.service.model.IdAndNamePair;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -155,13 +156,13 @@ public interface ProductRepository extends CrudRepository<ProductEntity,Long> {
     @Query("SELECT product from ProductEntity product where product.id in :ids and product.organizationId = :orgId")
     List<ProductEntity> getExistingProducts(@Param("ids")Set<Long> productIds, @Param("orgId")Long orgId);
 
-    @Modifying
-    @Transactional
-    @Query(value = "update Products set search_360 = :include where organization_id = :orgId and id in :ids",
-            nativeQuery = true)
-    void includeProductsIn360Search(@Param("ids") List<Long> ids,
-                           @Param("include") Boolean include,
-                           @Param("orgId") Long orgId);
+    @Query(value = "select new com.nasnav.service.model.IdAndNamePair(p.id, p.pname) from ProductEntity p" +
+            "  where p.organizationId = :orgId and p.removed = 0 and p.productType = 0")
+    List<IdAndNamePair> getProductIdAndNamePairs(@Param("orgId") Long orgId);
+
+    @Query(value = "select new com.nasnav.service.model.IdAndNamePair(p.id, p.pname) from ProductEntity p" +
+            "  where p.organizationId = :orgId and p.removed = 0 and p.productType = 2")
+    List<IdAndNamePair> getCollectionIdAndNamePairs(@Param("orgId") Long orgId);
 }
 
 

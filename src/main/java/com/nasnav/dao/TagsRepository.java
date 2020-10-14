@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import com.nasnav.service.model.IdAndNamePair;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -64,4 +65,8 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
 
     @Query("select t.id from TagsEntity t where t.categoriesEntity.id  = :id")
     List<Long> findByCategoryId(@Param("id") Long id);
+
+    @Query(value = "select new com.nasnav.service.model.IdAndNamePair(t.id, t.pname) from TagsEntity t" +
+            "  where t.organizationEntity.id = :orgId ")
+    List<IdAndNamePair> getTagIdAndNamePairs(@Param("orgId") Long orgId);
 }

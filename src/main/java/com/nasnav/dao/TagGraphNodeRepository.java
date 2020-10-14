@@ -4,12 +4,12 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Set;
 
+import com.nasnav.service.model.IdAndNamePair;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
-import com.nasnav.persistence.TagGraphEdgesEntity;
 import com.nasnav.persistence.TagGraphNodeEntity;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,4 +45,8 @@ public interface TagGraphNodeRepository extends CrudRepository<TagGraphNodeEntit
 			" (select tag from TagsEntity tag where tag.organizationEntity.id = :orgId)")
 	void deleteByOrgId(@Param("orgId") Long orgId);
 
+	@Query(value = "select new com.nasnav.service.model.IdAndNamePair(node.id, t.pname) from TagGraphNodeEntity node " +
+			" inner join node.tag t" +
+			" where t.organizationEntity.id = :orgId")
+	List<IdAndNamePair> getTagNodeIdAndNamePairs(@Param("orgId") Long orgId);
 }
