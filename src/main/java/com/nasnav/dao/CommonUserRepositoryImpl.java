@@ -100,7 +100,7 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 		BaseUserEntity user = userRepo.getByEmailAndOrganizationId(email, org_id);
 		
 		if(user == null)
-			user = empRepo.getByEmailAndOrganizationId(email, org_id);
+			user = empRepo.getByEmailAndOrganizationId(email, org_id).orElse(null);
 		
 		return user;
 	}

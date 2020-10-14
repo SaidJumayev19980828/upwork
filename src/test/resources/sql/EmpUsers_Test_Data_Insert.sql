@@ -81,18 +81,18 @@ insert into roles(id, name,  organization_id) values(7, 'STORE_EMPLOYEE', 99001)
 insert into roles(id, name,  organization_id) values(8, 'CUSTOMER', 99001);
 
 --inserting Roles EmployeeUsers relations
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (20, 68, 1);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (21, 69, 2);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (22, 70, 3);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (23, 71, 4);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (24, 72, 5);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (25, 73, 6);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (26, 74, 7);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99920, 68, 1);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99921, 69, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99922, 70, 3);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99923, 71, 4);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99924, 72, 5);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99925, 73, 6);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99926, 74, 7);
 
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (27, 75, 1);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (28, 76, 2);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (29, 77, 3);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (30, 78, 4);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (31, 79, 5);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (32, 80, 6);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (33, 81, 7);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99927, 75, 1);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99928, 76, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99929, 77, 3);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99930, 78, 4);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99931, 79, 5);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99932, 80, 6);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99933, 81, 7);

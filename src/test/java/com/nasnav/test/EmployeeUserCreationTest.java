@@ -74,11 +74,7 @@ public class EmployeeUserCreationTest {
 	@Autowired
 	private AddressRepository addressRepo;
 
-	@Value("classpath:sql/EmpUsers_Test_Data_Insert.sql")
-	private Resource userDataInsert;
 
-	@Value("classpath:sql/database_cleanup.sql")
-	private Resource databaseCleanup;
 
 	@Before
 	public void setup() {
@@ -269,8 +265,10 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void createEmployeeUserNoOrgIdTest() {
@@ -283,6 +281,36 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_ORGANIZATION));
 	}
 
+
+
+
+	@Test
+	public void createStoreManagerByOrganizationManagerFail() {
+		// nasnav_admin role test
+		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 99001" + ", \"store_id\": 502, \"role\": \"STORE_MANAGER\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+		response.getBody().getEntityId();
+
+		Assert.assertEquals(403, response.getStatusCode().value());
+	}
+
+
+
+
+	@Test
+	public void createStoreManagerByOrganizationAdminSuccess() {
+		// nasnav_admin role test
+		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 99001" + ", \"store_id\": 502, \"role\": \"STORE_MANAGER\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+		response.getBody().getEntityId();
+
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+
+
+
 	@Test
 	public void updateSelfEmployeeUserAuthTestSuccess() {
 		// update self data test success
@@ -293,8 +321,10 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
 
+
+
 	@Test
-	public void updateOtherEmployeeUserAuthTestSuccess() {
+	public void updateOtherEmployeeUserAuthByNasNavAdminTestSuccess() {
 		// update user with id 158 success
 		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"name\":\"hussien\",\"email\":\"" + "hussien.Test@nasnav.com" + "\"," +
 				" \"org_id\": 99002" + ", \"role\": \"ORGANIZATION_MANAGER\"}";
@@ -304,6 +334,9 @@ public class EmployeeUserCreationTest {
 
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
+
+
+
 
 	@Test
 	public void updateOtherEmployeeUserAuthTestFail() {
@@ -315,6 +348,8 @@ public class EmployeeUserCreationTest {
 		
 		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void updateOtherEmployeeUserInvaildDataTestFail() {
@@ -403,7 +438,18 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<BaseResponse> response = template.postForEntity("/user/update", employeeUserJson, BaseResponse.class);
 
 		
-		Assert.assertEquals(406, response.getStatusCode().value());
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+
+
+	@Test
+	public void updateToStoreManagerByOrganizationAdminTest() {
+		String body = "{\"employee\":\"true\",\"updated_user_id\":\"158\",\"role\":\"STORE_MANAGER\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");
+		ResponseEntity<BaseResponse> response = template.postForEntity("/user/update", employeeUserJson, BaseResponse.class);
+
+
+		Assert.assertEquals(200, response.getStatusCode().value());
 	}
 	//finish ORGANIZATION_ADMIN role test
 
@@ -415,8 +461,10 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void updateToOrganizationAdminByOrganizationEmployeeTest() {
@@ -425,8 +473,10 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void updateToOrganizationEmployeeByOrganizationEmployeeTest() {
@@ -435,8 +485,10 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void updateToStoreEmployeeByOrganizationEmployeeTest() {
@@ -445,7 +497,7 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
 	//finish ORGANIZATION_EMPLOYEE role test
 
@@ -458,8 +510,10 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void updateToOrganizationAdminByStoreEmployeeTest() {
@@ -468,8 +522,10 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void updateToOrganizationEmployeeByStoreEmployeeTest() {
@@ -478,8 +534,10 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void updateToStoreEmployeeByStoreEmployeeTest() {
@@ -487,7 +545,7 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "456");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
 	
 	

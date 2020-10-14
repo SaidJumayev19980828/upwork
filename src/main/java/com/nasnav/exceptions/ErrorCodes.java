@@ -15,6 +15,8 @@ public enum ErrorCodes {
 	, U$LOG$0001("NO USER FOUND FOR A TOKEN!")
 
 	,U$AUTH$0001("User is not an authorized to modify %s!")
+
+	,U$EMP$0001("No Roles provided for employee user creation!")
 	
 	,P$EXP$0001("No column found in csv for writing additional field with name[%s]!")
 	,P$VAR$0001("No Variant found with id[%s]!")
