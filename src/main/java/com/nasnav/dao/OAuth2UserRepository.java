@@ -8,7 +8,7 @@ import com.nasnav.persistence.OAuth2UserEntity;
 
 public interface OAuth2UserRepository extends JpaRepository<OAuth2UserEntity, Long> {
 
-	Optional<OAuth2UserEntity> findByOAuth2IdAndOrganizationId(String oAuth2Id, Long orgId);
+	Optional<OAuth2UserEntity> findByoAuth2IdAndOrganizationId(String oAuth2Id, Long orgId);
 
 	boolean existsByLoginToken(String socialLoginToken);
 

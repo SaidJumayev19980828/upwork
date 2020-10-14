@@ -7,6 +7,7 @@ import static com.nasnav.commons.utils.EntityUtils.copyNonNullProperties;
 import static com.nasnav.commons.utils.EntityUtils.noneIsNull;
 import static com.nasnav.commons.utils.StringUtils.encodeUrl;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.exceptions.ErrorCodes.TAG$TREE$0001;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -26,6 +27,7 @@ import java.util.*;
 import javax.cache.annotation.CacheRemoveAll;
 import javax.cache.annotation.CacheResult;
 
+import com.nasnav.exceptions.ErrorCodes;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.jgrapht.Graph;
@@ -590,6 +592,7 @@ public class CategoryService {
 	}
 
 
+
 	private TagGraphNodeEntity persistTagTreeNode(TagsTreeNodeCreationDTO node, Map<Long, TagsEntity> tagsMap) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		return ofNullable(node)
@@ -605,15 +608,21 @@ public class CategoryService {
 								, NOT_ACCEPTABLE));
 	}
 
+
+
 	private TagGraphNodeEntity checkNodeOriginalTag(TagGraphNodeEntity nodeEntity, TagsTreeNodeCreationDTO dto, Map<Long, TagsEntity> tagsMap) {
-    	if (!nodeEntity.getTag().getId().equals(dto.getTagId())) {
-    		TagsEntity tag = tagsMap.get(dto.getTagId());
+    	Long tagId = dto.getTagId();
+    	if (!nodeEntity.getTag().getId().equals(tagId)) {
+    		TagsEntity tag =
+					ofNullable(tagsMap.get(tagId))
+					.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, TAG$TREE$0001,tagId));
 			verifyTagToBeAddedToTree(tag);
     		nodeEntity.setTag(tag);
 		}
     	return tagNodesRepo.save(nodeEntity);
 	}
-	
+
+
 	
 	private TagsEntity verifyTagToBeAddedToTree(TagsEntity tag) {
 		if(tag.getCategoriesEntity() == null) {
@@ -634,7 +643,7 @@ public class CategoryService {
 				.map(TagsTreeNodeCreationDTO::getChildren)
 				.orElse(emptyList())
 				.stream()
-				.filter(child -> noneIsNull(child))
+				.filter(child -> noneIsNull(child, child.getTagId()))
 				.map(child -> createTagSubTree(child, tagsMap, tagsNodesCache))
 				.collect(toList());
 	}

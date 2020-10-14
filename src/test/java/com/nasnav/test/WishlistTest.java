@@ -1,3 +1,5 @@
+package com.nasnav.test;
+
 import com.nasnav.NavBox;
 import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.dao.CartItemRepository;

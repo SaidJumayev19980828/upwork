@@ -11,6 +11,7 @@ import static java.math.RoundingMode.HALF_EVEN;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
+import static org.json.JSONObject.NULL;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -621,7 +622,7 @@ public class ProductServiceTest {
 
 		JSONObject extraAttr = variant.getJSONArray("extra_attributes").getJSONObject(0);
 		assertEquals(DUMMY_EXTRA_ATTR_NAME, extraAttr.getString("name"));
-		assertEquals(JSONObject.NULL, extraAttr.get("type"));
+		assertEquals(NULL, extraAttr.get("type"));
 		assertEquals(DUMMY_EXTRA_ATTR_VALUE, extraAttr.getString("value"));
 		assertEquals(DUMMY_EXTRA_ATTR_ICON, extraAttr.getString("icon_url"));
 	}
@@ -668,6 +669,8 @@ public class ProductServiceTest {
 		stockJson.put("quantity", stock.getQuantity());
 		stockJson.put("price", stock.getPrice().doubleValue());
 		stockJson.put("discount", discountStr);
+		stockJson.put("unit", NULL);
+		stockJson.put("currency_value", "EGP");
 
 		return stockJson;
 	}
@@ -1000,7 +1003,6 @@ public class ProductServiceTest {
 
 		//-----------------------------------------
 		cleanInsertedData(testData);
-		assertTrue(!product360ShopsRepo.findByProductEntity_IdInAndPublished(asList(1002L), (short) 2).isEmpty());
 	}
 }
 

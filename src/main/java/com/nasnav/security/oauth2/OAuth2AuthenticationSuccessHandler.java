@@ -66,7 +66,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         
         try {
         	String oAuth2Id = user.getId(); 
-            oAuthUserRepo.findByOAuth2IdAndOrganizationId(oAuth2Id , orgId)
+            oAuthUserRepo.findByoAuth2IdAndOrganizationId(oAuth2Id , orgId)
     					.map(usr -> {return saveTokenToDB(usr, token);} )
     				 	.orElseGet(() -> helper.registerNewOAuth2User(user, token, orgId));
         }catch(Throwable t) {

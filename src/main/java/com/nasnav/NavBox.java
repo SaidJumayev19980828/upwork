@@ -33,18 +33,12 @@ public class NavBox
         properties.put("server.compression.mime-types", "text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json");
         properties.put("server.compression.min-response-size", 1024);
         
-        //Google OAuth2 properties
-        properties.put("spring.security.oauth2.client.registration.google.clientId", "149229237117-75f15qq1meqoki3ekmt4q50vm5dj82rs.apps.googleusercontent.com");
-        properties.put("spring.security.oauth2.client.registration.google.clientSecret", "WlmPNZcMVDhj5tamnGqodWwr");
-        properties.put("spring.security.oauth2.client.registration.google.redirectUriTemplate", "{baseUrl}/oauth2/callback/{registrationId}");
-        properties.put("spring.security.oauth2.client.registration.google.scope", "email,profile,openid");
         //---------------------------------------------------------------
         
         SpringApplication application = new SpringApplication(NavBox.class);
         application.setDefaultProperties(properties);
         application.run(args);
         //---------------------------------------------------------------
-//        SpringApplication.run(NavBox.class, args);
     }
 }
 

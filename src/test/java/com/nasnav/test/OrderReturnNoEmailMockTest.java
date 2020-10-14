@@ -42,8 +42,6 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @PropertySource("classpath:test.database.properties")
-@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_11.sql"})
-@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class OrderReturnNoEmailMockTest {
 
     @Autowired
@@ -80,13 +78,16 @@ public class OrderReturnNoEmailMockTest {
 
 
 
+	@Test
+    public void dummy(){}
+
 
 	//this test data creates shipments with bosta shipping service and call bosta
     //staging server. so, we can only use it when running this test manually on local machine
     //to test creating a return shipment with bosta.
 //    @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_12.sql"})
 //    @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
-    @Test
+//    @Test
     public void orderReturnFullCycle() throws InterruptedException {
         Long returnRequestId = createReturnRequest();
         confirmReturnRequest(returnRequestId);

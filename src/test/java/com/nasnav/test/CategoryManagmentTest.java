@@ -527,6 +527,8 @@ public class CategoryManagmentTest {
         assertEquals(1L, countEdgesAfter);
     }
 
+
+
     @Test
     @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_7.sql"})
     @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
@@ -551,6 +553,8 @@ public class CategoryManagmentTest {
         assertEquals(1L, countEdgesAfter);
     }
 
+
+
     @Test
     @Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Category_Test_Data_Insert_7.sql"})
     @Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
@@ -563,7 +567,7 @@ public class CategoryManagmentTest {
         String body = json()
                 .put("nodes"
                         , jsonArray()
-                                .put(createTagTreeNode(null, asList(createTagTreeNode(5004L, null, null)), 5003L))
+                                .put(createTagTreeNode(5003L, asList(createTagTreeNode(5004L, null, null)), 5003L))
                                 .put(createTagTreeNode(5005L, null, null))
                     ).toString();
 
@@ -577,6 +581,7 @@ public class CategoryManagmentTest {
         assertEquals(3L, countNodesAfter);
         assertEquals(1L, countEdgesAfter);
     }
+
 
 
 	private String createValidTagTreeRequestBody() {

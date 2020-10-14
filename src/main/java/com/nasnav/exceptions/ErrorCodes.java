@@ -183,6 +183,8 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0010("Promo code[%s] was already used!")
 	
 	,ORG$SETTING$0001("No setting exists with name[%s]!")
+
+	,TAG$TREE$0001("No tag exists with id[%s]!")
 	;
 	
 	@Getter
