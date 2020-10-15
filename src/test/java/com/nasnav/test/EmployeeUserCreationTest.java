@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import com.nasnav.dao.AddressRepository;
 import com.nasnav.persistence.AddressesEntity;
+import com.nasnav.persistence.EmployeeUserEntity;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -74,11 +75,7 @@ public class EmployeeUserCreationTest {
 	@Autowired
 	private AddressRepository addressRepo;
 
-	@Value("classpath:sql/EmpUsers_Test_Data_Insert.sql")
-	private Resource userDataInsert;
 
-	@Value("classpath:sql/database_cleanup.sql")
-	private Resource databaseCleanup;
 
 	@Before
 	public void setup() {
@@ -269,8 +266,10 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void createEmployeeUserNoOrgIdTest() {
@@ -283,6 +282,36 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_ORGANIZATION));
 	}
 
+
+
+
+	@Test
+	public void createStoreManagerByOrganizationManagerFail() {
+		// nasnav_admin role test
+		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 99001" + ", \"store_id\": 502, \"role\": \"STORE_MANAGER\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "123");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+		response.getBody().getEntityId();
+
+		Assert.assertEquals(403, response.getStatusCode().value());
+	}
+
+
+
+
+	@Test
+	public void createStoreManagerByOrganizationAdminSuccess() {
+		// nasnav_admin role test
+		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser@nasnav.com" + "\", \"org_id\": 99001" + ", \"store_id\": 502, \"role\": \"STORE_MANAGER\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+		response.getBody().getEntityId();
+
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+
+
+
 	@Test
 	public void updateSelfEmployeeUserAuthTestSuccess() {
 		// update self data test success
@@ -293,8 +322,10 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
 
+
+
 	@Test
-	public void updateOtherEmployeeUserAuthTestSuccess() {
+	public void updateOtherEmployeeUserAuthByNasNavAdminTestSuccess() {
 		// update user with id 158 success
 		String body = "{\"employee\":true,\"updated_user_id\":\"158\",\"name\":\"hussien\",\"email\":\"" + "hussien.Test@nasnav.com" + "\"," +
 				" \"org_id\": 99002" + ", \"role\": \"ORGANIZATION_MANAGER\"}";
@@ -304,6 +335,9 @@ public class EmployeeUserCreationTest {
 
 		Assert.assertEquals(200, response.getStatusCode().value());
 	}
+
+
+
 
 	@Test
 	public void updateOtherEmployeeUserAuthTestFail() {
@@ -315,6 +349,8 @@ public class EmployeeUserCreationTest {
 		
 		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void updateOtherEmployeeUserInvaildDataTestFail() {
@@ -403,7 +439,18 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<BaseResponse> response = template.postForEntity("/user/update", employeeUserJson, BaseResponse.class);
 
 		
-		Assert.assertEquals(406, response.getStatusCode().value());
+		Assert.assertEquals(200, response.getStatusCode().value());
+	}
+
+
+	@Test
+	public void updateToStoreManagerByOrganizationAdminTest() {
+		String body = "{\"employee\":\"true\",\"updated_user_id\":\"158\",\"role\":\"STORE_MANAGER\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");
+		ResponseEntity<BaseResponse> response = template.postForEntity("/user/update", employeeUserJson, BaseResponse.class);
+
+
+		Assert.assertEquals(200, response.getStatusCode().value());
 	}
 	//finish ORGANIZATION_ADMIN role test
 
@@ -415,8 +462,10 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void updateToOrganizationAdminByOrganizationEmployeeTest() {
@@ -425,8 +474,10 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void updateToOrganizationEmployeeByOrganizationEmployeeTest() {
@@ -435,8 +486,10 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void updateToStoreEmployeeByOrganizationEmployeeTest() {
@@ -445,7 +498,7 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
 	//finish ORGANIZATION_EMPLOYEE role test
 
@@ -458,8 +511,10 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void updateToOrganizationAdminByStoreEmployeeTest() {
@@ -468,8 +523,10 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void updateToOrganizationEmployeeByStoreEmployeeTest() {
@@ -478,8 +535,10 @@ public class EmployeeUserCreationTest {
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
 		
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
+
+
 
 	@Test
 	public void updateToStoreEmployeeByStoreEmployeeTest() {
@@ -487,7 +546,7 @@ public class EmployeeUserCreationTest {
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "456");
 		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
 
-		Assert.assertEquals(401, response.getStatusCode().value());
+		Assert.assertEquals(406, response.getStatusCode().value());
 	}
 	
 	
@@ -592,36 +651,36 @@ public class EmployeeUserCreationTest {
 		response = template.exchange("/user/list?role=STORE_MANAGER", HttpMethod.GET,header, java.util.List.class);
 		System.out.println(response.getBody());
 		Assert.assertEquals(200, response.getStatusCodeValue());
-		Assert.assertEquals(2, response.getBody().size());
+		Assert.assertEquals(4, response.getBody().size());
 
 		// role and org_id filter
 		response = template.exchange("/user/list?role=STORE_MANAGER&org_id=99001", HttpMethod.GET,header, java.util.List.class);
 		System.out.println(response.getBody());
 		Assert.assertEquals(200, response.getStatusCodeValue());
-		Assert.assertEquals(1, response.getBody().size());
+		Assert.assertEquals(2, response.getBody().size());
 
 		// role and store_id filter
 		response = template.exchange("/user/list?role=STORE_MANAGER&store_id=501", HttpMethod.GET,header, java.util.List.class);
 		System.out.println(response.getBody());
 		Assert.assertEquals(200, response.getStatusCodeValue());
-		Assert.assertEquals(1, response.getBody().size());
+		Assert.assertEquals(2, response.getBody().size());
 
 		// org_id and store_id filter
 		response = template.exchange("/user/list?org_id=99001&store_id=502", HttpMethod.GET,header, java.util.List.class);
 		System.out.println(response.getBody());
 		Assert.assertEquals(200, response.getStatusCodeValue());
-		Assert.assertEquals(2, response.getBody().size());
+		Assert.assertEquals(9, response.getBody().size());
 
 		// org_id and store_id and role filter
 		response = template.exchange("/user/list?org_id=99001&store_id=502&role=STORE_MANAGER", HttpMethod.GET,header, java.util.List.class);
 		System.out.println(response.getBody());
 		Assert.assertEquals(200, response.getStatusCodeValue());
-		Assert.assertEquals(0, response.getBody().size());
+		Assert.assertEquals(2, response.getBody().size());
 
-		response = template.exchange("/user/list?org_id=99001&store_id=501&role=STORE_MANAGER", HttpMethod.GET,header, java.util.List.class);
+		response = template.exchange("/user/list?org_id=99002&store_id=501&role=STORE_MANAGER", HttpMethod.GET,header, java.util.List.class);
 		System.out.println(response.getBody());
 		Assert.assertEquals(200, response.getStatusCodeValue());
-		Assert.assertEquals(1, response.getBody().size());
+		Assert.assertEquals(2, response.getBody().size());
 	}
 
 
@@ -650,19 +709,19 @@ public class EmployeeUserCreationTest {
 		Assert.assertEquals(response.getBody().size(), 6);
 
 		// trying to filter with store_id not exits in the organization
-		response = template.exchange("/user/list?store_id=502", HttpMethod.GET, header, java.util.List.class);
+		response = template.exchange("/user/list?store_id=501", HttpMethod.GET, header, java.util.List.class);
 		//returning EmpUsers within the same organization only
 		System.out.println(response.getBody());
-		Assert.assertEquals(response.getStatusCodeValue(), 200);
-		Assert.assertEquals(response.getBody().size(), 0);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+		Assert.assertEquals(0, response.getBody().size());
 
 		// ORGANIZATION_MANAGER account
 		header = getHttpEntity("123");
 		response = template.exchange("/user/list", HttpMethod.GET, header, java.util.List.class);
 		//returning EmpUsers within the same organization and roles below ORGANIZATION_MANAGER
 		System.out.println(response.getBody());
-		Assert.assertEquals(response.getStatusCodeValue(), 200);
-		Assert.assertEquals(response.getBody().size(), 4);
+		Assert.assertEquals(200, response.getStatusCodeValue());
+		Assert.assertEquals(5, response.getBody().size());
 
 		// ORGANIZATION_EMPLOYEE account
 		header = getHttpEntity("456");
@@ -700,5 +759,168 @@ public class EmployeeUserCreationTest {
 		boolean employeeUserLoggedIn = empRepository.existsByAuthenticationToken( token);
 		assertTrue("the logged in user should be the employee user, "
 				+ "and its token should exists in EMPLOYEE_USER table", employeeUserLoggedIn );
+	}
+
+
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/EmpUsers_Test_Data_Insert.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void createOtherEmployeeUserWithMultipleHigherLevelFail() {
+		//admin has multiple roles including organization manager, but none of them can create organization employee
+		String body =
+				json()
+				.put("name", "Ahmed")
+				.put("email", "ahmed.mail@mail.com")
+				.put("org_id", 99001)
+				.put("store_id", 502)
+				.put("role", "ORGANIZATION_EMPLOYEE,STORE_EMPLOYEE")
+				.toString();
+
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "161718");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+		response.getBody().getEntityId();
+
+		Assert.assertEquals(406, response.getStatusCode().value());
+	}
+
+
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/EmpUsers_Test_Data_Insert.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void updateOtherEmployeeUserIntoMultipleHigherLevelFail() {
+		//admin has multiple roles including organization manager, but none of them can create organization employee
+		String body =
+				json()
+					.put("updated_user_id", 81)
+					.put("employee", true)
+					.put("role", "ORGANIZATION_ADMIN,STORE_EMPLOYEE")
+					.toString();
+
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "161718");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+		response.getBody().getEntityId();
+
+		Assert.assertEquals(406, response.getStatusCode().value());
+	}
+
+
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/EmpUsers_Test_Data_Insert.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void updateOtherEmployeeUserAlreadyWithMultipleHigherLevelFail() {
+		//admin has multiple roles including organization manager, but none of them can create organization employee
+		String body =
+				json()
+						.put("updated_user_id", 80)
+						.put("employee", true)
+						.put("role", "STORE_EMPLOYEE")
+						.put("org_id", 99001)
+						.toString();
+
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "161718");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+		response.getBody().getEntityId();
+
+		Assert.assertEquals(406, response.getStatusCode().value());
+	}
+
+
+
+
+	@Test
+	public void updateOtherEmployeeUserChangeOrgByOrgAdminFail() {
+		//admin tries to change aen employee organization
+		Long id = 74L;
+		Long orgBefore = empRepository.findById(id).get().getOrganizationId();
+		String body =
+				json()
+					.put("updated_user_id", id)
+					.put("employee", true)
+					.put("role", "STORE_EMPLOYEE")
+					.put("org_id", 99002)
+					.toString();
+
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+		response.getBody().getEntityId();
+
+		Assert.assertEquals(200, response.getStatusCode().value());
+		Long orgAfter = empRepository.findById(id).get().getOrganizationId();
+		assertEquals("organization parameter is used only by NASNAV_ADMIN users"
+				, orgBefore, orgAfter);
+ 	}
+
+
+	@Test
+	public void updateOtherEmployeeUserChangeStoreOfOtherOrgByOrgAdminFail() {
+		//admin tries to change aen employee into other org store
+		Long id = 74L;
+		Long shopBefore = empRepository.findById(id).get().getShopId();
+		String body =
+				json()
+					.put("updated_user_id", id)
+					.put("employee", true)
+					.put("store_id", 501)
+					.toString();
+
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+		response.getBody().getEntityId();
+
+		Assert.assertEquals(406, response.getStatusCode().value());
+		Long shopAfter = empRepository.findById(id).get().getShopId();
+		assertEquals( shopBefore, shopAfter);
+	}
+
+
+
+	@Test
+	public void updateOtherEmployeeUserChangeStoreByStoreManagerFail() {
+		//store manager tries to change aen employee into other org store
+		Long id = 74L;
+		Long shopBefore = empRepository.findById(id).get().getShopId();
+		String body =
+				json()
+					.put("updated_user_id", id)
+					.put("employee", true)
+					.put("store_id", 503)
+					.toString();
+
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "161718");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+		response.getBody().getEntityId();
+
+		Assert.assertEquals(200, response.getStatusCode().value());
+		Long shopAfter = empRepository.findById(id).get().getShopId();
+		assertEquals( shopBefore, shopAfter);
+	}
+
+
+
+
+	@Test
+	public void updateOtherEmployeeUserChangeStoreByOrganizationAdminSuccess() {
+		//organziation admin tries to change an employee into other org store
+		Long id = 74L;
+		Long newShop = 503L;
+		Long shopBefore = empRepository.findById(id).get().getShopId();
+		String body =
+				json()
+						.put("updated_user_id", id)
+						.put("employee", true)
+						.put("store_id", newShop)
+						.toString();
+
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "hijkllm");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/update", employeeUserJson, UserApiResponse.class);
+		response.getBody().getEntityId();
+
+		Assert.assertEquals(200, response.getStatusCode().value());
+		Long shopAfter = empRepository.findById(id).get().getShopId();
+		assertNotEquals( shopBefore, shopAfter);
+		assertEquals( newShop, shopAfter);
 	}
 }

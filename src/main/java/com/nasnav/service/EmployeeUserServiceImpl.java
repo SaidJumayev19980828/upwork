@@ -1,22 +1,16 @@
 package com.nasnav.service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.stream.Stream;
 
+import com.nasnav.commons.utils.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.google.common.base.Enums;
-import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.EmployeeUserRepository;
@@ -32,7 +26,17 @@ import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 
+import static com.nasnav.commons.utils.EntityUtils.createFailedLoginResponse;
+import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
+import static com.nasnav.enumerations.Roles.*;
+import static com.nasnav.response.ResponseStatus.*;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Service
 public class EmployeeUserServiceImpl implements EmployeeUserService {
@@ -60,128 +64,176 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		this.roleServiceImpl = roleServiceImpl;
 	}
 
+
+
+
 	@Override
 	public UserApiResponse createEmployeeUser(String userToken, UserDTOs.EmployeeUserCreationObject employeeUserJson) {
-		List<String> rolesList = Arrays.asList(employeeUserJson.role.split(","));
+		List<String> rolesList = extractRoles(employeeUserJson);
+
 		empUserSvcHelper.validateBusinessRules(employeeUserJson.name, employeeUserJson.email, employeeUserJson.orgId, rolesList);
-		// get current logged in user
-		EmployeeUserEntity currentUser = getCurrentUser();
-		
-		// check if email and organization id already exists
-		if (employeeUserRepository.getByEmailAndOrganizationId(employeeUserJson.email, employeeUserJson.orgId) == null) {
-			int userType = empUserSvcHelper.roleCanCreateUser(currentUser.getId());
-			if (userType != -1) { // can add employees
-				if (userType == 2) { // can add employees within the same organization
-					if (!currentUser.getOrganizationId().equals(employeeUserJson.orgId)) { //not the same organization
-						throw new EntityValidationException("Error Occurred during user creation:: " + ResponseStatus.INSUFFICIENT_RIGHTS,
-								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
-					}
-					if (empUserSvcHelper.checkOrganizationRolesRights(rolesList)) {
-						throw new EntityValidationException("Insufficient Rights ",
-								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
-					}
-				} else if (userType == 3) {
-					if (!currentUser.getShopId().equals(employeeUserJson.storeId)){ //not the same Store
-						throw new EntityValidationException("Error Occurred during user creation:: " + ResponseStatus.INSUFFICIENT_RIGHTS,
-								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
-					}
-					if (empUserSvcHelper.checkStoreRolesRights(rolesList)) {
-						throw new EntityValidationException("Insufficient Rights ",
-								EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
-					}
-				}
-				// parse Json to EmployeeUserEntity
-				EmployeeUserEntity employeeUserEntity = empUserSvcHelper.createEmployeeUser(employeeUserJson);
-				// create Role and RoleEmployeeUser entities from the roles array
-				empUserSvcHelper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.orgId);
-				employeeUserEntity = empUserSvcHelper.generateResetPasswordToken(employeeUserEntity);
-				empUserSvcHelper.sendRecoveryMail(employeeUserEntity);
-				return UserApiResponse.createStatusApiResponse(employeeUserEntity.getId(),
-						Arrays.asList(ResponseStatus.NEED_ACTIVATION, ResponseStatus.ACTIVATION_SENT));
-			}
-			throw new EntityValidationException("Insufficient Rights ",
-					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
-		}
-		throw new EntityValidationException(ResponseStatus.EMAIL_EXISTS.name(),
-				EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.EMAIL_EXISTS)),
-				HttpStatus.NOT_ACCEPTABLE);
+		validateEmpEmailAlreadyExists(employeeUserJson);
+		validateCurrentUserCanManageEmpAccount(employeeUserJson.orgId, employeeUserJson.storeId, rolesList);
+
+		EmployeeUserEntity employeeUserEntity = doCreateNewEmpAccount(employeeUserJson, rolesList);
+		return UserApiResponse
+				.createStatusApiResponse(
+						employeeUserEntity.getId(),
+						asList(NEED_ACTIVATION, ACTIVATION_SENT));
 	}
+
+
+
+
+	private void validateEmpEmailAlreadyExists(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
+		if (employeeUserRepository.getByEmailAndOrganizationId(employeeUserJson.email, employeeUserJson.orgId).isPresent()) {
+			throw new EntityValidationException(
+							EMAIL_EXISTS.name(),
+							createFailedLoginResponse(singletonList(EMAIL_EXISTS)),
+							NOT_ACCEPTABLE);
+		}
+	}
+
+
+
+	private EmployeeUserEntity doCreateNewEmpAccount(UserDTOs.EmployeeUserCreationObject employeeUserJson, List<String> rolesList) {
+		EmployeeUserEntity employeeUserEntity = empUserSvcHelper.createEmployeeUser(employeeUserJson);
+		empUserSvcHelper.createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.orgId);
+		employeeUserEntity = empUserSvcHelper.generateResetPasswordToken(employeeUserEntity);
+		empUserSvcHelper.sendRecoveryMail(employeeUserEntity);
+		return employeeUserEntity;
+	}
+
+
+
+
+	private void validateCurrentUserCanManageEmpAccount(Long otherEmpOrgId, Long otherEmpStoreId, List<String> rolesList) {
+		EmployeeUserEntity currentUser = getCurrentUser();
+
+		if (empUserSvcHelper.roleCannotManageUsers(currentUser.getId())
+				|| empUserSvcHelper.hasInsuffiecentLevel(currentUser.getId(), rolesList)) {
+			throw new EntityValidationException("Insufficient Rights ",
+					createFailedLoginResponse(singletonList(INSUFFICIENT_RIGHTS)), NOT_ACCEPTABLE);
+		}
+
+		if (!securityService.currentUserHasRole(NASNAV_ADMIN)) {
+			if (!currentUser.getOrganizationId().equals(otherEmpOrgId)) {
+				throw new EntityValidationException("Error Occurred during user creation:: " + INSUFFICIENT_RIGHTS,
+						createFailedLoginResponse(singletonList(INSUFFICIENT_RIGHTS)), NOT_ACCEPTABLE);
+			}
+		}
+
+		if (securityService.currentUserHasRole(STORE_MANAGER)) {
+			if (!currentUser.getShopId().equals(otherEmpStoreId)){
+				throw new EntityValidationException("Error Occurred during user creation:: " + INSUFFICIENT_RIGHTS,
+						createFailedLoginResponse(singletonList(INSUFFICIENT_RIGHTS)), NOT_ACCEPTABLE);
+			}
+		}
+	}
+
+
+
+	private List<String> extractRoles(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
+		return ofNullable(employeeUserJson)
+				.map(json -> json.role)
+				.map(roleStr -> roleStr.split(","))
+				.map(Arrays::asList)
+				.orElse(emptyList());
+	}
+
+
+
+	private List<String> extractRoles(UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+		return ofNullable(employeeUserJson)
+				.map(json -> json.getRole())
+				.map(roleStr -> roleStr.split(","))
+				.map(Arrays::asList)
+				.orElse(emptyList());
+	}
+
+
 
 	private EmployeeUserEntity getCurrentUser() {
 		BaseUserEntity baseCurrentUser = securityService.getCurrentUser();
 		
 		if(!(baseCurrentUser instanceof EmployeeUserEntity)) {
 			throw new EntityValidationException("Insufficient Rights ",
-					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
+					createFailedLoginResponse(singletonList(INSUFFICIENT_RIGHTS)), UNAUTHORIZED);
 		}
-		
 		EmployeeUserEntity currentUser = (EmployeeUserEntity)baseCurrentUser;
 		return currentUser;
 	}
 
+
+
+
 	@Override
 	public UserApiResponse updateEmployeeUser(String userToken, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) throws BusinessException {
-		EmployeeUserEntity updateUser,currentUser = getCurrentUser();
+		EmployeeUserEntity currentUser = getCurrentUser();
 
-		// check if same user doing the update
-		updateUser = StringUtils.isBlankOrNull(employeeUserJson.getUpdatedUserId()) ? currentUser : employeeUserRepository.getById(employeeUserJson.getUpdatedUserId());
+		Long updatedUserId = employeeUserJson.getUpdatedUserId();
+		EmployeeUserEntity updateUser =
+				ofNullable(updatedUserId)
+				.flatMap(employeeUserRepository::findById)
+				.orElse(currentUser);
 
-		int userType = empUserSvcHelper.roleCanCreateUser(currentUser.getId()); //check user privileges
+		List<String> updatedUserNewRoles = extractRoles(employeeUserJson);
+		List<String> updatedUserOldRoles = empUserSvcHelper.getEmployeeUserRoles(updatedUserId);
+		List<String> allRolesToCheck = CollectionUtils.concat(updatedUserNewRoles, updatedUserOldRoles);
+		validateCurrentUserCanManageEmpAccount(updateUser.getOrganizationId(), updateUser.getShopId(), allRolesToCheck);
 
-		if (updateUser.equals(currentUser))
-			return empUserSvcHelper.updateEmployeeUser(userType, updateUser, employeeUserJson);
-
-		if (userType == -1)  // can't update employees
-			throw new EntityValidationException(""+ResponseStatus.INSUFFICIENT_RIGHTS,
-					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.UNAUTHORIZED);
-
-			if ((userType == 2) && (!updateUser.getOrganizationId().equals(currentUser.getOrganizationId()))) {
-			// can update employees within the same organization and they are not in the same organization
-			throw new EntityValidationException("Not in the same Organization " + ResponseStatus.INSUFFICIENT_RIGHTS,
-					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
-		} else if ((userType == 3) && (!updateUser.getShopId().equals(currentUser.getShopId()))) {
-			// can update employees within the same Store and they are not in the same Store
-			throw new EntityValidationException("Not in the same Store " + ResponseStatus.INSUFFICIENT_RIGHTS,
-					EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INSUFFICIENT_RIGHTS)), HttpStatus.NOT_ACCEPTABLE);
-		}
-		return empUserSvcHelper.updateEmployeeUser(userType, updateUser, employeeUserJson);
+		return empUserSvcHelper.updateEmployeeUser(currentUser.getId(), updateUser, employeeUserJson);
 	}
+
+
+
 
 	public UserApiResponse login(UserDTOs.UserLoginObject body) {
-		EmployeeUserEntity employeeUserEntity = this.employeeUserRepository.getByEmailAndOrganizationId(body.email, body.getOrgId());
-		if (employeeUserEntity != null) {
-			// check if account needs activation
-			boolean accountNeedActivation = empUserSvcHelper.isEmployeeUserNeedActivation(employeeUserEntity);
-			if (accountNeedActivation) {
-				UserApiResponse failedLoginResponse = EntityUtils
-						.createFailedLoginResponse(Collections.singletonList(ResponseStatus.NEED_ACTIVATION));
-				throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, HttpStatus.LOCKED);
-			}
-			// ensure that password matched
-			boolean passwordMatched = passwordEncoder.matches(body.password, employeeUserEntity.getEncryptedPassword());
-			if (passwordMatched) {
-				// check if account is locked
-				if (empUserSvcHelper.isAccountLocked(employeeUserEntity)) { // TODO: so far there is no lockdown, so always
-																	// false
-					// //NOSONAR
-					UserApiResponse failedLoginResponse = EntityUtils
-							.createFailedLoginResponse(Collections.singletonList(ResponseStatus.ACCOUNT_SUSPENDED));
-					throw new EntityValidationException("ACCOUNT_SUSPENDED ", failedLoginResponse, HttpStatus.LOCKED);
-				}
-				// generate new AuthenticationToken and perform post login updates
-				empUserSvcHelper.updatePostLogin(employeeUserEntity);
-				return empUserSvcHelper.createSuccessLoginResponse(employeeUserEntity);
-			}
+		EmployeeUserEntity employeeUserEntity =
+				employeeUserRepository
+					.getByEmailAndOrganizationId(body.email, body.getOrgId())
+					.orElseThrow(this::createInvalidCredentialsException);
+
+		boolean accountNeedActivation = empUserSvcHelper.isEmployeeUserNeedActivation(employeeUserEntity);
+		if (accountNeedActivation) {
+			UserApiResponse failedLoginResponse = createFailedLoginResponse(singletonList(NEED_ACTIVATION));
+			throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, HttpStatus.LOCKED);
 		}
-		UserApiResponse failedLoginResponse = EntityUtils
-				.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_CREDENTIALS));
-		throw new EntityValidationException("INVALID_CREDENTIALS ", failedLoginResponse, HttpStatus.UNAUTHORIZED);
+
+		boolean passwordMatched = passwordEncoder.matches(body.password, employeeUserEntity.getEncryptedPassword());
+		if (!passwordMatched) {
+			throw createInvalidCredentialsException();
+		}
+
+		if (empUserSvcHelper.isAccountLocked(employeeUserEntity)) { // TODO: so far there is no lockdown, so always
+			UserApiResponse failedLoginResponse = createFailedLoginResponse(singletonList(ResponseStatus.ACCOUNT_SUSPENDED));
+			throw new EntityValidationException("ACCOUNT_SUSPENDED ", failedLoginResponse, HttpStatus.LOCKED);
+		}
+
+		empUserSvcHelper.updatePostLogin(employeeUserEntity);
+		return empUserSvcHelper.createSuccessLoginResponse(employeeUserEntity);
 	}
+
+
+
+
+	private RuntimeException  createInvalidCredentialsException() {
+		UserApiResponse failedLoginResponse =
+				createFailedLoginResponse(singletonList(INVALID_CREDENTIALS));
+		return new EntityValidationException("INVALID_CREDENTIALS ", failedLoginResponse, UNAUTHORIZED);
+	}
+
+
+
 
 	@Override
 	public void deleteUser(Long userId) {
 		employeeUserRepository.deleteById(userId);
 	}
+
+
+
+
 
 
 	@Override
@@ -215,18 +267,18 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 			employeeUserRepository.saveAndFlush(employeeUserEntity);
 		} else {
 			throw new EntityValidationException("INVALID_TOKEN  ",
-					UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.INVALID_TOKEN)),
-					HttpStatus.NOT_ACCEPTABLE);
+					UserApiResponse.createStatusApiResponse(singletonList(ResponseStatus.INVALID_TOKEN)),
+					NOT_ACCEPTABLE);
 		}
 		return UserApiResponse.createStatusApiResponse((long)employeeUserEntity.getId(), null);
 	}
 
 	private void validateNewPassword(String newPassword) {
-		if (StringUtils.isBlankOrNull(newPassword) || newPassword.length() > EntityConstants.PASSWORD_MAX_LENGTH
+		if (isBlankOrNull(newPassword) || newPassword.length() > EntityConstants.PASSWORD_MAX_LENGTH
 				|| newPassword.length() < EntityConstants.PASSWORD_MIN_LENGTH) {
 			throw new EntityValidationException("INVALID_PASSWORD  ",
-					UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.INVALID_PASSWORD)),
-					HttpStatus.NOT_ACCEPTABLE);
+					UserApiResponse.createStatusApiResponse(singletonList(ResponseStatus.INVALID_PASSWORD)),
+					NOT_ACCEPTABLE);
 		}
 	}
 
@@ -235,8 +287,8 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		LocalDateTime tokenExpiryDate = resetPasswordSentAt.plusHours(EntityConstants.TOKEN_VALIDITY);
 		if (LocalDateTime.now().isAfter(tokenExpiryDate)) {
 			throw new EntityValidationException("EXPIRED_TOKEN  ",
-					UserApiResponse.createStatusApiResponse(Collections.singletonList(ResponseStatus.EXPIRED_TOKEN)),
-					HttpStatus.NOT_ACCEPTABLE);
+					UserApiResponse.createStatusApiResponse(singletonList(ResponseStatus.EXPIRED_TOKEN)),
+					NOT_ACCEPTABLE);
 		}
 	}
 
@@ -245,28 +297,34 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		return employeeUserRepository.existsByIdAndAuthenticationToken(userId, authToken);
 	}
 
-	/**
-	 * Get employee user by passed email
-	 *
-	 * @param email user entity email
-	 * @return employee user entity
-	 */
+
+
+
 	private EmployeeUserEntity getEmployeeUserByEmail(String email, Long orgId) {
-		// first ensure that email is valid
 		if (!StringUtils.validateEmail(email)) {
-			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
-					Collections.singletonList(ResponseStatus.INVALID_EMAIL));
-			throw new EntityValidationException("INVALID_EMAIL :" + email, userApiResponse, HttpStatus.NOT_ACCEPTABLE);
+			UserApiResponse userApiResponse =
+					UserApiResponse
+							.createMessagesApiResponse(false, singletonList(INVALID_EMAIL));
+			throw new EntityValidationException("INVALID_EMAIL :" + email, userApiResponse, NOT_ACCEPTABLE);
 		}
-		// load user entity by email
-		EmployeeUserEntity employeeUserEntity = this.employeeUserRepository.getByEmailAndOrganizationId(email, orgId);
-		if (StringUtils.isBlankOrNull(employeeUserEntity)) {
-			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
-					Collections.singletonList(ResponseStatus.EMAIL_NOT_EXIST));
-			throw new EntityValidationException("EMAIL_NOT_EXIST", userApiResponse, HttpStatus.NOT_ACCEPTABLE);
-		}
-		return employeeUserEntity;
+
+		return	employeeUserRepository
+						.getByEmailAndOrganizationId(email, orgId)
+						.orElseThrow(this::createEmailNotExistException);
 	}
+
+
+
+
+	private RuntimeException  createEmailNotExistException() {
+		UserApiResponse userApiResponse =
+				UserApiResponse
+				.createMessagesApiResponse(false,singletonList(EMAIL_NOT_EXIST));
+		return new EntityValidationException("EMAIL_NOT_EXIST", userApiResponse, NOT_ACCEPTABLE);
+	}
+
+
+
 
 	public List<UserRepresentationObject> getUserList(String token, Long orgId, Long storeId, String role) throws BusinessException {
 		EmployeeUserEntity user = (EmployeeUserEntity)securityService.getCurrentUser();
@@ -277,7 +335,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		List<UserRepresentationObject> userRepObjs = new ArrayList<>();
 		if (role != null) {
 			if (!Enums.getIfPresent(Roles.class, role).isPresent())
-				throw new BusinessException("INVALID_PARAM: role","No roles matching the provided role",HttpStatus.NOT_ACCEPTABLE);
+				throw new BusinessException("INVALID_PARAM: role","No roles matching the provided role", NOT_ACCEPTABLE);
 			for (String userRole : userRoles)
 				if (roleServiceImpl.checkRoleOrder(userRole, role)) {
 					roles.add(role);

@@ -4,10 +4,13 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.nasnav.dao.AddressRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.exceptions.BusinessException;
-import com.nasnav.persistence.AddressesEntity;
+import com.nasnav.exceptions.ErrorCodes;
+import com.nasnav.exceptions.RuntimeBusinessException;
+import com.nasnav.persistence.*;
+import com.nasnav.service.SecurityService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,22 +19,18 @@ import org.springframework.stereotype.Service;
 import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.EntityUtils;
 import static com.nasnav.commons.utils.StringUtils.*;
-import static com.nasnav.enumerations.Roles.ORGANIZATION_ADMIN;
-import static com.nasnav.enumerations.Roles.STORE_MANAGER;
+import static com.nasnav.enumerations.Roles.*;
+import static com.nasnav.exceptions.ErrorCodes.S$0002;
+import static com.nasnav.exceptions.ErrorCodes.U$EMP$0001;
 import static java.util.stream.Collectors.*;
+import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.RoleEmployeeUserRepository;
-import com.nasnav.dao.RoleRepository;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserDTOs.EmployeeUserCreationObject;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.EntityValidationException;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.Role;
-import com.nasnav.persistence.RoleEmployeeUser;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
@@ -64,6 +63,10 @@ public class EmployeeUserServiceHelper {
 	@Autowired
 	AppConfig appConfig;
 
+	@Autowired
+	private ShopsRepository shopRepo;
+
+
 	public void createRoles(List<String> rolesList, Long employeeUserId, Long org_id) {
 		List<Role> existingRoles = roleRepository.findAll();
 		List<String> existingRolesListNames = existingRoles.stream().map( role -> role.getName()).collect(toList());
@@ -82,6 +85,8 @@ public class EmployeeUserServiceHelper {
 			createRoleEmployeeUser(employeeUserId, roleId);
 		}
 	}
+
+
 
 	private void createRoleEmployeeUser(Long employeeUserId, Integer roleId) {
 		RoleEmployeeUser roleEmployeeUser = new RoleEmployeeUser();
@@ -102,58 +107,91 @@ public class EmployeeUserServiceHelper {
 		return roleId;
 	}
 
-	public boolean isValidRolesList(List<String> rolesList){
+
+
+	public void isValidRolesList(List<String> rolesList){
+		if(rolesList.isEmpty()){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0001);
+		}
 		for (String role : rolesList) {
 			try {
 				Roles.valueOf(role);
 			} catch (IllegalArgumentException ex) {
 				throw new EntityValidationException(ResponseStatus.INVALID_ROLE.name(),
 						EntityUtils.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_ROLE)),
-						HttpStatus.NOT_ACCEPTABLE);
+						NOT_ACCEPTABLE);
 			}
 		}
-		return true;
 	}
 
-	// check if the current list of roles has a role authorized to create users or
-	// not
-	public Integer roleCanCreateUser(Long id) {
-		// get list of roles belong to current user
-		List<Role> rolesList = roleRepository.getRolesOfEmployeeUser(id);
-		List<Roles> rolesListNames = rolesList.stream().map( role -> Roles.valueOf(role.getName())).collect(toList());
-		if (rolesListNames.contains(Roles.NASNAV_ADMIN)) {
-			return 1;
-		} else if (rolesListNames.contains(ORGANIZATION_ADMIN)) {
-			return 2;
-		} else if (rolesListNames.contains(STORE_MANAGER)) {
-			return 3;
-		}
-		return -1;
+
+
+
+	public boolean roleCannotManageUsers(Long currentUserId) {
+		List<Role> rolesEntity = roleRepository.getRolesOfEmployeeUser(currentUserId);
+		return rolesEntity
+				.stream()
+				.map( role -> Roles.valueOf(role.getName()))
+				.noneMatch(Roles::isCanCreateUsers);
 	}
 
-	// check if the current roles is an organization admin role
-	public boolean hasOrganizationRole(String[] rolesList) {
-		return Arrays.stream(rolesList).anyMatch(ORGANIZATION_ADMIN.getValue()::equals);
+
+
+	public boolean hasInsuffiecentLevel(Long currentUserId, List<String> otherUserRolesNames) {
+		Set<Roles> currentUserRoles = getUserRoles(currentUserId);
+		List<Roles> newUserRoles =
+				otherUserRolesNames
+				.stream()
+				.map(Roles::valueOf)
+				.collect(toList());
+		return newUserRoles
+				.stream()
+				.anyMatch(newUserRole -> higherThanAllGivenRoles(newUserRole, currentUserRoles));
+
 	}
 
-	// check if the current roles is a store admin role
-	public boolean aBoolean(String[] rolesList) {
-		return Arrays.stream(rolesList).anyMatch(Roles.STORE_MANAGER.getValue()::equals);
+
+
+
+	private Set<Roles> getUserRoles(Long currentUserId) {
+		return roleRepository
+				.getRolesOfEmployeeUser(currentUserId)
+				.stream()
+				.map(role -> Roles.valueOf(role.getName()))
+				.collect(toSet());
 	}
+
+
+	private boolean higherThanAllGivenRoles(Roles role, Collection<Roles> otherRoles){
+		//lower level number gets higher privilege, nasnav has max privilege with
+		//negative level
+		return otherRoles
+				.stream()
+				.allMatch(otherRole -> role.getLevel() < otherRole.getLevel());
+	}
+
+
 
 	public EmployeeUserEntity createEmployeeUser(EmployeeUserCreationObject employeeUserJson) {
 		return employeeUserRepository.save(EmployeeUserEntity.createEmployeeUser(employeeUserJson));
 	}
 
+
+
 	public boolean checkOrganizationRolesRights(List<String> roles) {
 		return !Collections.disjoint(roles, nonOrgRolesList);
 	}
+
+
 
 	public boolean checkStoreRolesRights(List<String> roles) {
 		return !Collections.disjoint(roles, nonStoreRolesList);
 	}
 
-	public UserApiResponse updateEmployeeUser(Integer userType, EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+
+
+	public UserApiResponse updateEmployeeUser(Long currentUserId, EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+		Set<Roles> currentUserRoles = getUserRoles(currentUserId);
 		List<ResponseStatus> failResponseStatusList = new ArrayList<>();
 		List<ResponseStatus> successResponseStatusList = new ArrayList<>();
 		List<String> rolesList;
@@ -164,37 +202,35 @@ public class EmployeeUserServiceHelper {
 				failResponseStatusList.add(ResponseStatus.INVALID_NAME);
 			}
 		}
-		if (isNotBlankOrNull(employeeUserJson.getOrgId()) && userType == 1) {
+		if (isNotBlankOrNull(employeeUserJson.getOrgId())
+				&& currentUserRoles.contains(NASNAV_ADMIN)) {
 			if (employeeUserJson.getOrgId() >= 0) {
 				employeeUserEntity.setOrganizationId(employeeUserJson.getOrgId());
 			} else {
 				failResponseStatusList.add(ResponseStatus.INVALID_ORGANIZATION);
 			}
 		}
-		if (isNotBlankOrNull(employeeUserJson.getStoreId()) && (userType == 1 || userType == 2)) {
+		if (isStoreChangeApplicable(employeeUserJson, currentUserRoles)) {
 			if (employeeUserJson.getStoreId() >= 0) {
-				employeeUserEntity.setShopId(employeeUserJson.getStoreId());
+				Long storeId  = employeeUserJson.getStoreId();
+				Long currentUserOrg =
+						employeeUserRepository
+							.findById(currentUserId)
+							.map(EmployeeUserEntity::getOrganizationId)
+							.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE,ErrorCodes.U$EMP$0002, currentUserId));
+				boolean isValidStore =
+						shopRepo.existsByIdAndOrganizationEntity_IdAndRemoved(storeId, currentUserOrg, 0);
+				if(isValidStore){
+					employeeUserEntity.setShopId(employeeUserJson.getStoreId());
+				}else{
+					failResponseStatusList.add(ResponseStatus.INVALID_STORE);
+				}
 			} else {
 				failResponseStatusList.add(ResponseStatus.INVALID_STORE);
 			}
 		}
 		if (isNotBlankOrNull(employeeUserJson.getRole())){
 			rolesList = Arrays.asList(employeeUserJson.getRole().split(","));
-			// check if can update employees roles
-			if (userType != -1) { // can update employees roles
-				if (userType == 2) { // can update employees roles within the same organization
-					if (checkOrganizationRolesRights(rolesList)) { // check roles list to update
-						failResponseStatusList.add(ResponseStatus.INSUFFICIENT_RIGHTS);
-					}
-				} else if (userType == 3) { // can update employees roles within the same store
-					if (checkStoreRolesRights(rolesList)) { // check roles list to update
-						failResponseStatusList.add(ResponseStatus.INSUFFICIENT_RIGHTS);
-					}
-				}
-				if (!failResponseStatusList.contains(ResponseStatus.INSUFFICIENT_RIGHTS)) {
-					createRoles(rolesList, employeeUserEntity.getId(), employeeUserJson.getOrgId());
-				}
-			}
 		}
 		if (isNotBlankOrNull(employeeUserJson.getEmail())) {
 			if (validateEmail(employeeUserJson.getEmail())) {
@@ -206,14 +242,14 @@ public class EmployeeUserServiceHelper {
 					successResponseStatusList.add(ResponseStatus.ACTIVATION_SENT);
 				}
 			}
-			else
+			else{
 				failResponseStatusList.add(ResponseStatus.INVALID_EMAIL);
-
+			}
 		}
 
 		if (!failResponseStatusList.isEmpty())
 			throw new EntityValidationException("Invalid User Entity: " + failResponseStatusList,
-					UserApiResponse.createStatusApiResponse(failResponseStatusList), HttpStatus.NOT_ACCEPTABLE);
+					UserApiResponse.createStatusApiResponse(failResponseStatusList), NOT_ACCEPTABLE);
 
 		employeeUserEntity = updateRemainingEmployeeUserInfo(employeeUserEntity,employeeUserJson);
 
@@ -225,6 +261,17 @@ public class EmployeeUserServiceHelper {
 		return  UserApiResponse.createMessagesApiResponse(true, successResponseStatusList);
 	}
 
+
+
+
+
+	private boolean isStoreChangeApplicable(UserDTOs.EmployeeUserUpdatingObject employeeUserJson, Set<Roles> currentUserRoles) {
+		return isNotBlankOrNull(employeeUserJson.getStoreId())
+				&& (currentUserRoles.contains(ORGANIZATION_ADMIN)
+				|| currentUserRoles.contains(NASNAV_ADMIN));
+	}
+
+
 	EmployeeUserEntity updateRemainingEmployeeUserInfo(EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
 		if (employeeUserJson.getAvatar() != null)
 			employeeUserEntity.setAvatar(employeeUserJson.getAvatar());
@@ -234,6 +281,9 @@ public class EmployeeUserServiceHelper {
 
 		return employeeUserEntity;
 	}
+
+
+
 	/**
 	 * Generate new AuthenticationToken and perform post login updates.
 	 *
@@ -248,13 +298,9 @@ public class EmployeeUserServiceHelper {
 		return employeeUserRepository.saveAndFlush(employeeUserEntity);
 	}
 
-	/**
-	 * generate new AuthenticationToken and ensure that this AuthenticationToken is
-	 * never used before.
-	 *
-	 * @param tokenLength length of generated AuthenticationToken
-	 * @return unique generated AuthenticationToken.
-	 */
+
+
+
 	private String generateAuthenticationToken() {
 		String generatedToken = generateUUIDToken();
 		boolean existsByToken = employeeUserRepository.existsByAuthenticationToken(generatedToken);
@@ -264,13 +310,9 @@ public class EmployeeUserServiceHelper {
 		return generatedToken;
 	}
 
-	/**
-	 * regenerate AuthenticationToken and if token already exists, make recursive
-	 * call until generating new AuthenticationToken.
-	 *
-	 * @param tokenLength length of generated AuthenticationToken
-	 * @return unique generated AuthenticationToken.
-	 */
+
+
+
 	private String reGenerateAuthenticationToken() {
 		String generatedToken = generateUUIDToken();
 		boolean existsByToken = employeeUserRepository.existsByAuthenticationToken(generatedToken);
@@ -319,31 +361,33 @@ public class EmployeeUserServiceHelper {
 				.setStoreId(shopId != null ? shopId : 0L).build();
 	}
 
-	/**
-	 * Get list of roles for EmployeeUser entity
-	 *
-	 * @return Role list
-	 */
+
+
+
 	public List<String> getEmployeeUserRoles(Long integer) {
-		List<String> employeeUserRoles = new ArrayList<>();
-		List<Role> rolesOfEmployeeUser = roleService.getRolesOfEmployeeUser(integer);
-		if (isNotBlankOrNull(rolesOfEmployeeUser)) {
-			rolesOfEmployeeUser.forEach(role -> {
-				employeeUserRoles.add(role.getName());
-			});
-		}
-		return employeeUserRoles;
+		return roleService
+				.getRolesOfEmployeeUser(integer)
+				.stream()
+				.map(Role::getName)
+				.collect(toList());
 	}
+
+
 
 	public List<Long> getEmployeesIds(List<String> roles) { //returns list of employees ids that has roles in the roles list
 		List<Long> employeesIds = roleEmployeeUserRepository.findEmployeeUsersIds(roles);
 		return employeesIds;
 	}
 
+
+
+
 	public void validateBusinessRules(String name, String email, Long orgId, List<String> rolesList) {
 		validateNameAndEmail(name, email, orgId);
 		isValidRolesList(rolesList);
 	}
+
+
 
 	/**
 	 * Generate ResetPasswordToken and assign it to passed user entity
@@ -414,4 +458,8 @@ public class EmployeeUserServiceHelper {
 		}
 		return userApiResponse;
 	}
+
+
+
+
 }

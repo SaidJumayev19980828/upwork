@@ -11,38 +11,37 @@ INSERT INTO public.brands(id, category_id, name, organization_id) VALUES (102, 2
 --inserting shops
 INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (501, 'shop_1', 102, 99002, 0);
 INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (502, 'shop_2', 101, 99001, 0);
-INSERT INTO public.shops(id, name, brand_id,  organization_id, removed) VALUES (503, 'shop_3', 101, 99001, 0);
 
 --inserting Employee Users
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
-	VALUES (68, 'Ahmad', 'testuser1@nasnav.com', 99001, 'abcdefg',  502);
+	VALUES (68, 'Ahmad', 'testuser1@nasnav.com', 99001, 'abcdefg',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (69, 'testuser2@nasnav.com', 99001, 'hijkllm',  502);
+	VALUES (69, 'testuser2@nasnav.com', 99001, 'hijkllm',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (70, 'testuser4@nasnav.com', 99001, '123',  502);
+	VALUES (70, 'testuser4@nasnav.com', 99001, '123',  501);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (71, 'testuser5@nasnav.com', 99001, '456',  502);
+	VALUES (71, 'testuser5@nasnav.com', 99001, '456',  501);
 	INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
-	VALUES (72, 'Magdy', 'testuser6@nasnav.com', 99001, '131415',  502);
+	VALUES (72, 'Magdy', 'testuser6@nasnav.com', 99001, '131415',  501);
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
-	VALUES (73, 'Shafiq', 'testuser7@nasnav.com', 99001, '161718',  502);
+	VALUES (73, 'Shafiq', 'testuser7@nasnav.com', 99001, '161718',  501);
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
-	VALUES (74, 'Mohmyo', 'testuser8@nasnav.com', 99001, '192021',  502);
+	VALUES (74, 'Mohmyo', 'testuser8@nasnav.com', 99001, '192021',  501);
 
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
-	VALUES (75, 'Said', 'testuser11@nasnav.com', 99002, '222324',  501);
+	VALUES (75, 'Said', 'testuser11@nasnav.com', 99002, '222324',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (76, 'testuser21@nasnav.com', 99002, '252627',  501);
+	VALUES (76, 'testuser21@nasnav.com', 99002, '252627',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (77, 'testuser41@nasnav.com', 99002, '282930',  501);
+	VALUES (77, 'testuser41@nasnav.com', 99002, '282930',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
-	VALUES (78, 'testuser51@nasnav.com', 99002, '313233',  501);
+	VALUES (78, 'testuser51@nasnav.com', 99002, '313233',  502);
 	INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
-	VALUES (79, 'Kira', 'testuser61@nasnav.com', 99002, '343536',501);
+	VALUES (79, 'Kira', 'testuser61@nasnav.com', 99002, '343536',502);
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
-	VALUES (80, 'L', 'testuser71@nasnav.com', 99002, '373839',  501);
+	VALUES (80, 'L', 'testuser71@nasnav.com', 99002, '373839',  502);
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
-	VALUES (81, 'Hussien', 'testuser81@nasnav.com', 99002, '404142',  501);
+	VALUES (81, 'Hussien', 'testuser81@nasnav.com', 99002, '404142',  502);
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id)
 	VALUES (158, 'Walid', 'testuser3@nasnav.com', 99001, 'nopqrst',  502);
 INSERT INTO public.employee_users(id, name,  email, organization_id, authentication_token, shop_id, encrypted_password)
@@ -85,14 +84,18 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99921, 69, 2);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99922, 70, 3);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99923, 71, 4);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99924, 72, 6);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99925, 73, 6);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99926, 74, 7);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99926, 73, 7);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99927, 73, 3);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99928, 74, 7);
 
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99927, 75, 1);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99928, 76, 2);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99929, 77, 3);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99930, 78, 4);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99931, 79, 6);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99932, 80, 6);
-INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99933, 81, 7);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99929, 75, 1);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99930, 76, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99931, 77, 3);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99932, 78, 4);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99934, 80, 6);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99935, 80, 2);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99936, 80, 7);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99937, 81, 7);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99938, 81, 6);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (99939, 81, 3);

@@ -12,6 +12,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import reactor.core.publisher.Flux;
 
@@ -74,4 +76,12 @@ public class CollectionUtils {
 	public static <T> Set<T> setOf(T...elements){
 		return new HashSet<>( asList(elements));
 	}
+
+
+
+    public static <T> List<T> concat(Collection<T> collection1, Collection<T> collection2) {
+		return Stream
+				.concat(collection1.stream(), collection2.stream())
+				.collect(toList());
+    }
 }

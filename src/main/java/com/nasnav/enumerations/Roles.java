@@ -12,16 +12,23 @@ import java.util.*;
  * Hold User Roles
  */
 public enum Roles {
-	CUSTOMER("CUSTOMER"),
-    ORGANIZATION_MANAGER("ORGANIZATION_MANAGER"),
-    STORE_MANAGER("STORE_MANAGER"),
-    NASNAV_ADMIN("NASNAV_ADMIN"),
-    ORGANIZATION_ADMIN("ORGANIZATION_ADMIN"),	
-	ORGANIZATION_EMPLOYEE("ORGANIZATION_EMPLOYEE"),
-	STORE_EMPLOYEE("STORE_EMPLOYEE");
+	CUSTOMER("CUSTOMER", 100000, false ),
+    ORGANIZATION_MANAGER("ORGANIZATION_MANAGER", 2, false),
+    STORE_MANAGER("STORE_MANAGER", 4, true),
+    NASNAV_ADMIN("NASNAV_ADMIN", -100000, true),
+    ORGANIZATION_ADMIN("ORGANIZATION_ADMIN", 1, true),
+	ORGANIZATION_EMPLOYEE("ORGANIZATION_EMPLOYEE", 3, false),
+	STORE_EMPLOYEE("STORE_EMPLOYEE", 5, false);
 
     @Getter
     private final String value;
+
+    @Getter
+    private final int level;
+
+    @Getter
+    private final boolean canCreateUsers;
+
     @Getter
     private static final Set<String> nasnavAdminPrelivedge = new HashSet<String>(Arrays.asList("NASNAV_ADMIN", "ORGANIZATION_ADMIN", "ORGANIZATION_MANAGER", "ORGANIZATION_EMPLOYEE",
             "STORE_ADMIN", "STORE_MANAGER", "STORE_EMPLOYEE"));
@@ -39,8 +46,12 @@ public enum Roles {
     private static final Set<String> storeManagerPrelivedge = new HashSet<String>(Arrays.asList("STORE_MANAGER", "STORE_EMPLOYEE"));
     @Getter
     private static final Set<String> storeEmployeePrelivedge = new HashSet<String>(Arrays.asList("STORE_EMPLOYEE"));
-    Roles(String value) {
+
+
+    Roles(String value, int level, boolean canCreateUsers) {
         this.value = value;
+        this.level = level;
+        this.canCreateUsers = canCreateUsers;
     }
 
 

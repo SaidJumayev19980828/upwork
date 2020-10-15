@@ -17,6 +17,9 @@ public enum ErrorCodes {
 	, U$STATUS$0001("Account is already suspended!")
 
 	,U$AUTH$0001("User is not an authorized to modify %s!")
+
+	,U$EMP$0001("No Roles provided for employee user creation!")
+	,U$EMP$0002("No Employee exists with id[%d]!")
 	
 	,P$EXP$0001("No column found in csv for writing additional field with name[%s]!")
 	,P$VAR$0001("No Variant found with id[%s]!")
