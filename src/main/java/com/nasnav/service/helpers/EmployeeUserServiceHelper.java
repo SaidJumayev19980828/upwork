@@ -4,12 +4,12 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.nasnav.dao.AddressRepository;
+import com.nasnav.dao.*;
 import com.nasnav.dto.AddressDTO;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.ErrorCodes;
 import com.nasnav.exceptions.RuntimeBusinessException;
-import com.nasnav.persistence.AddressesEntity;
+import com.nasnav.persistence.*;
 import com.nasnav.service.SecurityService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,22 +20,17 @@ import com.nasnav.AppConfig;
 import com.nasnav.commons.utils.EntityUtils;
 import static com.nasnav.commons.utils.StringUtils.*;
 import static com.nasnav.enumerations.Roles.*;
+import static com.nasnav.exceptions.ErrorCodes.S$0002;
 import static com.nasnav.exceptions.ErrorCodes.U$EMP$0001;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import com.nasnav.constatnts.EmailConstants;
 import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.dao.EmployeeUserRepository;
-import com.nasnav.dao.RoleEmployeeUserRepository;
-import com.nasnav.dao.RoleRepository;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserDTOs.EmployeeUserCreationObject;
 import com.nasnav.enumerations.Roles;
 import com.nasnav.exceptions.EntityValidationException;
-import com.nasnav.persistence.EmployeeUserEntity;
-import com.nasnav.persistence.Role;
-import com.nasnav.persistence.RoleEmployeeUser;
 import com.nasnav.response.ApiResponseBuilder;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
@@ -68,6 +63,8 @@ public class EmployeeUserServiceHelper {
 	@Autowired
 	AppConfig appConfig;
 
+	@Autowired
+	private ShopsRepository shopRepo;
 
 
 	public void createRoles(List<String> rolesList, Long employeeUserId, Long org_id) {
@@ -213,11 +210,21 @@ public class EmployeeUserServiceHelper {
 				failResponseStatusList.add(ResponseStatus.INVALID_ORGANIZATION);
 			}
 		}
-		if (isNotBlankOrNull(employeeUserJson.getStoreId())
-				&& (currentUserRoles.contains(ORGANIZATION_ADMIN)
-						|| currentUserRoles.contains(NASNAV_ADMIN))) {
+		if (isStoreChangeApplicable(employeeUserJson, currentUserRoles)) {
 			if (employeeUserJson.getStoreId() >= 0) {
-				employeeUserEntity.setShopId(employeeUserJson.getStoreId());
+				Long storeId  = employeeUserJson.getStoreId();
+				Long currentUserOrg =
+						employeeUserRepository
+							.findById(currentUserId)
+							.map(EmployeeUserEntity::getOrganizationId)
+							.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE,ErrorCodes.U$EMP$0002, currentUserId));
+				boolean isValidStore =
+						shopRepo.existsByIdAndOrganizationEntity_IdAndRemoved(storeId, currentUserOrg, 0);
+				if(isValidStore){
+					employeeUserEntity.setShopId(employeeUserJson.getStoreId());
+				}else{
+					failResponseStatusList.add(ResponseStatus.INVALID_STORE);
+				}
 			} else {
 				failResponseStatusList.add(ResponseStatus.INVALID_STORE);
 			}
@@ -235,9 +242,9 @@ public class EmployeeUserServiceHelper {
 					successResponseStatusList.add(ResponseStatus.ACTIVATION_SENT);
 				}
 			}
-			else
+			else{
 				failResponseStatusList.add(ResponseStatus.INVALID_EMAIL);
-
+			}
 		}
 
 		if (!failResponseStatusList.isEmpty())
@@ -256,6 +263,13 @@ public class EmployeeUserServiceHelper {
 
 
 
+
+
+	private boolean isStoreChangeApplicable(UserDTOs.EmployeeUserUpdatingObject employeeUserJson, Set<Roles> currentUserRoles) {
+		return isNotBlankOrNull(employeeUserJson.getStoreId())
+				&& (currentUserRoles.contains(ORGANIZATION_ADMIN)
+				|| currentUserRoles.contains(NASNAV_ADMIN));
+	}
 
 
 	EmployeeUserEntity updateRemainingEmployeeUserInfo(EmployeeUserEntity employeeUserEntity, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {

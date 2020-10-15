@@ -177,10 +177,6 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 				.flatMap(employeeUserRepository::findById)
 				.orElse(currentUser);
 
-		if (updateUser.equals(currentUser)){
-			return empUserSvcHelper.updateEmployeeUser(currentUser.getId(), updateUser, employeeUserJson);
-		}
-
 		List<String> updatedUserNewRoles = extractRoles(employeeUserJson);
 		List<String> updatedUserOldRoles = empUserSvcHelper.getEmployeeUserRoles(updatedUserId);
 		List<String> allRolesToCheck = CollectionUtils.concat(updatedUserNewRoles, updatedUserOldRoles);
