@@ -112,28 +112,28 @@ insert into public.stocks(id, shop_id, quantity,  organization_id, price, varian
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status, grand_total) VALUES(310001 , now(),88, 99001, 8, 130.0);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310002 , now(),89, 99001, 5);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310003 , now() - INTERVAL '100 DAY' ,88, 99001, 5);
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310004 , now(),88, 99001, 4);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310004 , now(),88, 99001, 5);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310005 , now(),88, 99002, 5);
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310006 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310006 , now(),88, 99001, 5);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310007 , now(),88, 99001, 1);
 
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id )
-values(330031, 88, now(), now(), 99001, 8, 501, 310001, 12300001);
+values(330031, 88, now(), now(), 99001, 5, 501, 310001, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
-values(330032, 88, now(), now(), 99001, 8, 502, 310001, 12300001);
+values(330032, 88, now(), now(), 99001, 5, 502, 310001, 12300001);
 
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id )
-values(330033, 89, now(), now(), 99001, 8, 501, 310002, 12300001);
+values(330033, 89, now(), now(), 99001, 5, 501, 310002, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
-values(330034, 89, now(), now(), 99001, 8, 502, 310002, 12300001);
+values(330034, 89, now(), now(), 99001, 5, 502, 310002, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
 values(330035, 88, now() - INTERVAL '100 DAY', now() - INTERVAL '100 DAY', 99001, 1, 502, 310003, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
-values(330036, 88, now(), now(), 99001, 8, 502, 310004, 12300001);
+values(330036, 88, now(), now(), 99001, 5, 502, 310004, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
-values(330037, 88, now(), now(), 99002, 8, 506, 310005, 12300001);
+values(330037, 88, now(), now(), 99002, 5, 506, 310005, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
-values(330038, 88, now(), now(), 99001, 8, 502, 310006, 12300001);
+values(330038, 88, now(), now(), 99001, 5, 502, 310006, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
 values(330039, 88, now(), now(), 99001, 1, 502, 310007, 12300001);
 

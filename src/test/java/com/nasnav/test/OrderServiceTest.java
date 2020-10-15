@@ -40,6 +40,7 @@ import java.util.List;
 
 import javax.mail.MessagingException;
 
+import com.nasnav.dto.response.navbox.SubOrder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -1417,6 +1418,36 @@ public class OrderServiceTest {
 		assertEquals(OK, res.getStatusCode());
 		Order order = res.getBody();
 		assertEquals(2,order.getSubOrders().size());
+	}
+
+
+
+	@Test
+	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Orders_Test_Data_Insert_13.sql"})
+	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getMetaOrderWithIrreturnableItemsTest() {
+		HttpEntity<?> request = getHttpEntity("123");
+		ResponseEntity<Order> res =
+				template.exchange("/order/meta_order/info?id=310001", GET, request, Order.class);
+
+		//-------------------------------------------------
+		assertEquals(OK, res.getStatusCode());
+		Order order = res.getBody();
+		assertEquals(2,order.getSubOrders().size());
+		List<BasketItem> allItems =
+				order
+				.getSubOrders()
+				.stream()
+				.map(SubOrder::getItems)
+				.flatMap(List::stream)
+				.collect(toList());
+		long nonReturnableItemsNum =
+				allItems
+				.stream()
+				.filter(it -> !it.getIsReturnable())
+				.count();
+		assertEquals(2, allItems.size());
+		assertEquals("orders with status STORE_CONFIRMED are not returnable",1, nonReturnableItemsNum);
 	}
 	
 

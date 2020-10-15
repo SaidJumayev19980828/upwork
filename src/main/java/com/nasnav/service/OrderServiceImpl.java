@@ -103,7 +103,7 @@ public class OrderServiceImpl implements OrderService {
 	public static final int MAX_RETURN_TIME_WINDOW = 14;
 
 	private static final Set<OrderStatus> metaOrderAcceptableStatusForReturn =
-		setOf(DELIVERED, DISPATCHED, FINALIZED, STORE_PREPARED);
+		setOf(DELIVERED);
 
 	private final OrdersRepository ordersRepository;
 
@@ -986,7 +986,8 @@ public class OrderServiceImpl implements OrderService {
 		ShopsEntity shop = shopsRepo.findById(subOrder.getShopId()).get();
 
 		AddressRepObj shopAddress = (AddressRepObj) shop.getAddressesEntity().getRepresentation();
-		String shopAreaName = shop
+		String shopAreaName =
+				shop
 				.getAddressesEntity()
 				.getAreasEntity()
 				.getName();
@@ -1004,11 +1005,11 @@ public class OrderServiceImpl implements OrderService {
 
 	private BigDecimal getMetaOrderTotal(MetaOrderEntity order) {
 		return order
-		.getSubOrders()
-		.stream()
-		.map(OrdersEntity::getAmount)
-		.reduce(ZERO, BigDecimal::add)
-		.setScale(2, BigDecimal.ROUND_HALF_EVEN);
+				.getSubOrders()
+				.stream()
+				.map(OrdersEntity::getAmount)
+				.reduce(ZERO, BigDecimal::add)
+				.setScale(2, BigDecimal.ROUND_HALF_EVEN);
 	}
 
 
@@ -3604,7 +3605,7 @@ public class OrderServiceImpl implements OrderService {
 				.stream()
 				.allMatch(this::isReturnable);
 		if(!allReturnable){
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0016);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0022);
 		}
 	}
 
@@ -3612,6 +3613,13 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private boolean isReturnable(BasketsEntity basketsEntity) {
+		return  isWithinReturnTimeWindow(basketsEntity)
+					&& hasProperOrderStatusForReturn(basketsEntity);
+	}
+
+
+
+	private boolean isWithinReturnTimeWindow(BasketsEntity basketsEntity) {
 		LocalDateTime orderCreationTime =
 				ofNullable(basketsEntity)
 				.map(BasketsEntity::getOrdersEntity)
@@ -3623,6 +3631,15 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+
+	private Boolean hasProperOrderStatusForReturn(BasketsEntity basketsEntity) {
+		return ofNullable(basketsEntity)
+				.map(BasketsEntity::getOrdersEntity)
+				.map(OrdersEntity::getStatus)
+				.map(OrderStatus::findEnum)
+				.map(metaOrderAcceptableStatusForReturn::contains)
+				.orElse(false);
+	}
 
 
 	private void validateItemsBelongToCustomer(MetaOrderEntity metaOrder) {
