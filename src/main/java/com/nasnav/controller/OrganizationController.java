@@ -407,7 +407,7 @@ public class OrganizationController {
         for (OrganizationPaymentGatewaysEntity gateway: gateways) {
             if (deliveryService != null) {
                 // For now - hardcoded rule for not allowing CoD for Pickup service (to prevent misuse)
-                if (COD.getValue().equalsIgnoreCase(gateway.getGateway()) && PickupFromShop.SERVICE_ID.equalsIgnoreCase(deliveryService)) {
+                if (COD.getValue().equalsIgnoreCase(gateway.getGateway()) && !PaymentControllerCoD.isCodAvailableForService(deliveryService)) {
                     continue;
                 }
             }

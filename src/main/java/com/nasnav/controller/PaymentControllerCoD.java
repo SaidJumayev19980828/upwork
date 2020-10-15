@@ -7,6 +7,7 @@ import java.util.Optional;
 import com.nasnav.payments.misc.Commons;
 import com.nasnav.payments.misc.Gateway;
 import com.nasnav.shipping.services.PickupFromShop;
+import com.nasnav.shipping.services.PickupPointsWithInternalLogistics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +56,16 @@ public class PaymentControllerCoD {
 
 	}
 
+	public static boolean isCodAvailableForService(String ServiceId) {
+		if (PickupFromShop.SERVICE_ID.equalsIgnoreCase(ServiceId)) {
+			return false;
+		}
+		if (PickupPointsWithInternalLogistics.SERVICE_ID.equalsIgnoreCase(ServiceId)) {
+			return false;
+		}
+		return true;
+	}
+
 	@RequestMapping(value = "execute")
 	public ResponseEntity<?> payCoD(@RequestParam(name = "order_id") Long metaOrderId) throws BusinessException {
 		ArrayList<OrdersEntity> orders = orderService.getOrdersForMetaOrder(metaOrderId);
@@ -73,7 +84,7 @@ public class PaymentControllerCoD {
 			throw new BusinessException("CoD payment not available for order", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
 		}
 		for (OrdersEntity subOrder: ordersRepository.findByMetaOrderId(metaOrderId)) {
-			if (subOrder.getShipment() != null && PickupFromShop.SERVICE_ID.equalsIgnoreCase(subOrder.getShipment().getShippingServiceId())) {
+			if (subOrder.getShipment() != null && isCodAvailableForService(subOrder.getShipment().getShippingServiceId())) {
 				codLogger.warn("Sub-order ({}) marked for pickup, COD not allowed.", subOrder.getId());
 				throw new BusinessException("At least one of the sub-orders marked for pickup", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
 			}
