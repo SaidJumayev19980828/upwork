@@ -215,9 +215,7 @@
     <div class="main">
       <div class="Header">
         <div class="Header-logo">
-          <img
-                  th:src="${orgDomain} + '/files/' + ${orgLogo}"
-            alt="logo"
+          <img th:src="${orgLogo}" alt="logo"
           />
         </div>
         <p class="Header-orderSuccess">
@@ -240,7 +238,7 @@
                 <table>
                   <tbody>
                     <tr th:each="item : ${sub.items}">
-                      <img class="thumb" th:src="${orgDomain} + '/files/' + ${item.thumb}" alt="#"/>
+                      <img class="thumb" th:src="${domain} + '/files/' + ${item.thumb}" alt="#"/>
                       <h3 th:text="${item.name}"/>
                       <h3 class="shopName" th:text="${sub.shopName}"/>
                       <table class="variant-features">
@@ -282,7 +280,7 @@
         <h3>Customer Information</h3>
         <div class="container">
           <div style="width: 70%;" class="column">
-            <h3>Shipping Address</h3>
+            <h3 th:text="${data.subOrders[0].pickup} ? 'Shop Address' : 'Shipping Address'"/>
             <ul>
               <li id="address_Line_1" th:text="${data.subOrders[0].deliveryAddress.flatNumber} +', '+ ${data.subOrders[0].deliveryAddress.buildingNumber}+ ', ' + ${data.subOrders[0].deliveryAddress.addressLine1}"></li>
               <li id="area" th:text="${data.subOrders[0].deliveryAddress.area}"></li>
@@ -293,13 +291,15 @@
           <div style="width: 30%;" class="column">
             <h3>Shipping Method</h3>
             <ul>
-              <li>Shipping by <span id="shipping_service" th:text="${data.subOrders[0].shipment.serviceName}"></span></li>
+              <li><span id="shipping_service" th:text="${data.subOrders[0].shipment.serviceName}"></span></li>
             </ul>
           </div>
           <div class="column">
             <h3>Payment Method</h3>
             <div class="creditCard">
-              <span id="operator" th:text="${data.operator}"></span>
+              <ul>
+                <li><span id="operator" th:text="${data.operator}"></span></li>
+              </ul>
             </div>
           </div>
         </div>
@@ -316,11 +316,11 @@
           This email was sent to you as a registered member of
           <a target="_blank" th:href="${orgDomain}" th:text="${orgName}"></a>
           Use of the service and website is subject to our
-          <a target="_blank" th:href="${orgDomain}">
+          <a target="_blank" th:href="${orgDomain} + '/terms'">
             Terms of Use
           </a>
           and
-          <a target="_blank" th:href="${orgDomain}">
+          <a target="_blank" th:href="${orgDomain}+ '/privacy'">
             Privacy Statement.
           </a>
         </p>

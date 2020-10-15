@@ -265,9 +265,7 @@
 <div class="main">
 	<div class="Header">
 		<div class="Header-logo">
-			<img
-					th:src="${orgDomain} + '/files/' + ${orgLogo}"
-					alt="logo"
+			<img th:src="${orgLogo}" alt="logo"
 			/>
 		</div>
 		<p class="Header-orderConfirmation">
@@ -293,7 +291,7 @@
 			<table>
 				<tbody>
 				<tr th:each="item : ${sub.items}">
-					<img class="thumb" th:src="${orgDomain} + '/files/' + ${item.thumb}" alt="#"/>
+					<img class="thumb" th:src="${domain} + '/files/' + ${item.thumb}" alt="#"/>
 					<h3 th:text="${item.name}"/>
 					<table class="variant-features">
 						<tr th:each="feature : ${item.variantFeatures}">
@@ -331,7 +329,7 @@
 		<h3>Customer Information</h3>
 		<div class="container">
 			<div style="width: 70%;" class="column">
-				<h3>Shipping Address</h3>
+				<h3 th:text="${sub.pickup} ? 'Shop Address' : 'Shipping Address'"/>
 				<ul>
 					<li id="address_Line_1" th:text="${sub.deliveryAddress.flatNumber} +', '+ ${sub.deliveryAddress.buildingNumber}+ ', ' +${sub.deliveryAddress.addressLine1}"></li>
 					<li id="area" th:text="${sub.deliveryAddress.area}"></li>
@@ -342,13 +340,15 @@
 			<div style="width: 30%;" class="column">
 				<h3>Shipping Method</h3>
 				<ul>
-					<li>Shipping by <span id="shipping_service" th:text="${sub.shipment.serviceName}"></span></li>
+					<li><span id="shipping_service" th:text="${sub.shipment.serviceName}"></span></li>
 				</ul>
 			</div>
 			<div class="column">
 				<h3>Payment Method</h3>
 				<div class="creditCard">
-					<span id="operator" th:text="${operator}"></span>
+					<ul>
+						<li><span id="operator" th:text="${operator}"></span></li>
+					</ul>
 				</div>
 			</div>
 		</div>

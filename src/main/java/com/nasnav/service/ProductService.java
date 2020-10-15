@@ -1986,9 +1986,10 @@ public class ProductService {
 
 	private BundleDTO toBundleDTO(BundleEntity entity) {
 		BundleDTO dto = new BundleDTO();
-
 		dto.setId(entity.getId());
-		dto.setImageUrl( imgService.getProductCoverImage( entity.getId() ));
+		String coverImg = imgService.getProductCoverImage( entity.getId() );
+		if (coverImg != null)
+			dto.setImageUrl( coverImg );
 		dto.setName(entity.getName());
 		dto.setPname(entity.getPname());
 
@@ -2714,7 +2715,9 @@ public class ProductService {
 		copyProperties(representationObj, dto);
 		dto.setDescription( product.getDescription() );
 		dto.setProductType( product.getProductType() );
-		dto.setImageUrl(imgService.getProductCoverImage( product.getId() ));
+		String coverImg = imgService.getProductCoverImage( product.getId() );
+		if (coverImg != null)
+			dto.setImageUrl( coverImg );
 
 		return dto;
 	}
@@ -3103,7 +3106,9 @@ public class ProductService {
 		dto.setCreationDate(entity.getCreationDate().toString());
 		dto.setUpdateDate(entity.getUpdateDate().toString());
 		dto.setHas_360_view(entity.getSearch360());
-		dto.setImageUrl(imgService.getProductCoverImage(entity.getId()));
+		String coverImg = imgService.getProductCoverImage( entity.getId() );
+		if (coverImg != null)
+			dto.setImageUrl( coverImg );
 
 		List<TagsRepresentationObject> tagsDTOList = getProductTagsDTOList(entity.getId());
 		dto.setTags(tagsDTOList);

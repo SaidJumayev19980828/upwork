@@ -212,15 +212,16 @@ public class UserServiceImpl implements UserService {
 
 	private Map<String, String> createActivationEmailParameters(UserEntity userEntity, String redirectUrl) {
 		String domain = domainService.getCurrentServerDomain();
+		String orgDomain = domainService.getOrganizationDomainAndSubDir(userEntity.getOrganizationId());
 
-		String activationRedirectUrl = domain+"/"+buildActivationRedirectUrl(userEntity, redirectUrl);
-		String orgLogo = domain + "/files/"+orgService.getOrgLogo(userEntity.getOrganizationId());
+		String activationRedirectUrl = buildActivationRedirectUrl(userEntity, redirectUrl);
+		String orgLogo = domain + "/files/"+ orgService.getOrgLogo(userEntity.getOrganizationId());
 		String orgName = orgRepo.findById(userEntity.getOrganizationId()).get().getName();
 
 		Map<String, String> parametersMap = new HashMap<>();
 		parametersMap.put(USERNAME_PARAMETER, userEntity.getName());
 		parametersMap.put(ACTIVATION_ACCOUNT_URL_PARAMETER, activationRedirectUrl);
-		parametersMap.put("orgDomain", domain);
+		parametersMap.put("orgDomain", orgDomain);
 		parametersMap.put("orgLogo", orgLogo);
 		parametersMap.put("orgName", orgName);
 		return parametersMap;

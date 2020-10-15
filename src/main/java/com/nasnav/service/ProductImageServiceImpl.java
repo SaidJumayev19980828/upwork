@@ -1367,14 +1367,13 @@ public class ProductImageServiceImpl implements ProductImageService {
 	@Override
 	public String getProductCoverImage(Long productId) {
 		return productImagesRepository
-				.findByProductEntity_IdOrderByPriority(productId)
+				.findByProductEntity_IdAndPriorityOrderByPriority(productId, 0)
 				.stream()
 				.filter(Objects::nonNull)
-				.filter(this::isProductCoverImage)
 				.sorted( comparing(ProductImagesEntity::getId))
 				.findFirst()
 				.map(img-> img.getUri())
-				.orElse(ProductImageService.NO_IMG_FOUND_URL);
+				.orElse(null);
 	}
 	
 	

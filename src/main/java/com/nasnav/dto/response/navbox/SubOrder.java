@@ -1,5 +1,6 @@
 package com.nasnav.dto.response.navbox;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.nasnav.dto.AddressRepObj;
@@ -32,4 +33,6 @@ public class SubOrder {
     private AddressRepObj deliveryAddress;
     private List<BasketItem> items;
     private BigDecimal discount;
+    @JsonIgnore
+    private boolean pickup;
 }

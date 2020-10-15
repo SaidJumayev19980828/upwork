@@ -777,24 +777,26 @@ public class OrderServiceImpl implements OrderService {
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(order.getCreationDate());
 
-		String orgLogo = getOrganizationLogo(order.getOrganizationEntity());
+		String domain = domainService.getCurrentServerDomain();
+		String orgDomain = domainService.getOrganizationDomainAndSubDir(order.getOrganizationEntity().getId());
+		String orgLogo = domain + "/files/" + getOrganizationLogo(order.getOrganizationEntity());
 
 		List<BasketItemDetails> basketItemsDetails = 
 				getBasketItemsDetailsMap( setOf(order.getId()) )
 				.get(order.getId());
 		
 		SubOrder subOrder = getSubOrder(order, getVariantsImagesList(basketItemsDetails));
+		changeShippingServiceName(subOrder);
 
 		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(order.getMetaOrder().getId());
 		String operator = "";
 		if (payment.isPresent()) {
-			PaymentStatus paymentStatus = payment.map(PaymentEntity::getStatus).orElse(UNPAID);
 			operator = payment.get().getOperator();
+			operator = changeOperatorName(operator);
 		}
 
-		String domain = domainService.getCurrentServerDomain();
-
-		params.put("orgDomain", domain);
+		params.put("domain", domain);
+		params.put("orgDomain", orgDomain);
 		params.put("orgLogo", orgLogo);
 		params.put("creationTime", orderTime);
 		params.put("orderPageUrl", buildDashboardPageUrl(order));
@@ -923,20 +925,24 @@ public class OrderServiceImpl implements OrderService {
 				DateTimeFormatter
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(orderTime);
-		String total = getMetaOrderTotal(order).toPlainString();
-
-		String orgLogo = getOrganizationLogo(order.getOrganization());
 
 		String domain = domainService.getCurrentServerDomain();
+		String orgDomain = domainService.getOrganizationDomainAndSubDir(order.getOrganization().getId());
+
+		String orgLogo = domain + "/files/"+ getOrganizationLogo(order.getOrganization());
 
 		String orgName = order.getOrganization().getName();
 
+		Order orderResponse = this.getOrderResponse(order);
+		normalizeOrderForEmailTemplate(orderResponse);
+
 		Map<String, Object> params = new HashMap<>();
-		params.put("orgDomain", domain);
+		params.put("orgDomain", orgDomain);
+		params.put("domain", domain);
 		params.put("orgName", orgName);
 		params.put("creation_date", orderTimeStr);
 		params.put("org_logo", orgLogo);
-		params.put("data", this.getOrderResponse(order));
+		params.put("data", orderResponse);
 		return params;
 	}
 
@@ -955,6 +961,44 @@ public class OrderServiceImpl implements OrderService {
 				.flatMap(Stream::findFirst)
 				.map(OrganizationImagesEntity::getUri)
 				.orElse("nasnav-logo.png");
+	}
+
+
+	private void normalizeOrderForEmailTemplate(Order orderResponse) {
+		String operator = changeOperatorName(orderResponse.getOperator());
+		orderResponse.setOperator(operator);
+
+		orderResponse
+				.getSubOrders()
+				.stream()
+				.forEach(this::changeShippingServiceName);
+	}
+
+	private String changeOperatorName(String operator) {
+		if (operator.equals("COD")) {
+			return "Cash on delivery";
+		}
+		return operator;
+	}
+
+
+	private void changeShippingServiceName(SubOrder subOrder) {
+		ShopsEntity shop = shopsRepo.findById(subOrder.getShopId()).get();
+
+		AddressRepObj shopAddress = (AddressRepObj) shop.getAddressesEntity().getRepresentation();
+		String shopAreaName = shop
+				.getAddressesEntity()
+				.getAreasEntity()
+				.getName();
+		Shipment shipment = subOrder.getShipment();
+		if (shipment.getServiceName().equals("PICKUP_POINTS")) {
+			shipment.setServiceName("Pickup at " + subOrder.getShopName() + " - " + shopAreaName);
+			AddressRepObj address = subOrder.getDeliveryAddress();
+			BeanUtils.copyProperties(address, shopAddress);
+			subOrder.setDeliveryAddress(shopAddress);
+			subOrder.setPickup(true);
+		}
+		subOrder.setShipment(shipment);
 	}
 
 

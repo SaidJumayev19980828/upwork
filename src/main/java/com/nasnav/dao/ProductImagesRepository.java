@@ -29,7 +29,7 @@ public interface ProductImagesRepository extends CrudRepository<ProductImagesEnt
     @Modifying
 	void deleteByProductEntity_IdAndProductEntity_organizationId(Long productId, Long orgId);
 
-	List<ProductImagesEntity> findByProductEntity_IdOrderByPriority(Long productId);
+	List<ProductImagesEntity> findByProductEntity_IdAndPriorityOrderByPriority(Long productId, Integer priority);
 
 	Long countByUri(String uri);
 
