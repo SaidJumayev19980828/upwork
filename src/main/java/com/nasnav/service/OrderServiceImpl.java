@@ -103,7 +103,7 @@ public class OrderServiceImpl implements OrderService {
 	public static final int MAX_RETURN_TIME_WINDOW = 14;
 
 	private static final Set<OrderStatus> metaOrderAcceptableStatusForReturn =
-		setOf(DELIVERED);
+		setOf(DELIVERED,STORE_CONFIRMED,STORE_PREPARED,DISPATCHED,FINALIZED);
 
 	private final OrdersRepository ordersRepository;
 
