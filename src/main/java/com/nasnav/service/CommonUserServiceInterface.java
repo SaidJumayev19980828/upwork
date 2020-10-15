@@ -15,8 +15,6 @@ public interface CommonUserServiceInterface {
      */
     void deleteUser(Long userId);
 
-    BaseUserEntity findUserById(Long userId);
-
     /**
      * Load user by passed userId
      * @param userId

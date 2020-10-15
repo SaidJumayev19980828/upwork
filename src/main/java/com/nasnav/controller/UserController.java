@@ -323,4 +323,16 @@ public class UserController {
         userService.removeUserAddress(id);
     }
 
+
+    @ApiOperation(value = "suspend user account", nickname = "suspendUser")
+    @ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "account suspended"),
+            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
+    })
+    @PostMapping(value = "suspend")
+    public void suspendUserAccount(@RequestHeader (name = "User-Token", required = false) String token,
+                                   @RequestParam (value = "user_id")Long userId,
+                                   @RequestParam (defaultValue = "false") Boolean suspend) {
+        userService.suspendUserAccount(userId, suspend);
+    }
 }

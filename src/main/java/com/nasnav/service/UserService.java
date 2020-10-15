@@ -36,4 +36,6 @@ public interface UserService extends CommonUserServiceInterface{
     AddressDTO updateUserAddress(AddressDTO addressDTO);
 
     void removeUserAddress(Long id);
+
+    void suspendUserAccount(Long id, Boolean suspend);
 }

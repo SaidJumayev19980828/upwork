@@ -6,13 +6,15 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 public enum ErrorCodes {
-	
-	UXACTVX0001("User with email[%s] doesn't exists for organization[%d]!")
+	U$0001("No user found with ID [%d]!")
+	, UXACTVX0001("User with email[%s] doesn't exists for organization[%d]!")
 	, UXACTVX0002("Cannot send activation email to[%s], email is already activated!")
 	, UXACTVX0003("Cannot send activation email to[%s], need to wait[%s]!")
 	, UXACTVX0004("Invalid redirection url[%s]!")
 	
 	, U$LOG$0001("NO USER FOUND FOR A TOKEN!")
+
+	, U$STATUS$0001("Account is already suspended!")
 
 	,U$AUTH$0001("User is not an authorized to modify %s!")
 	
