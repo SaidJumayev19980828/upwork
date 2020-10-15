@@ -279,7 +279,7 @@ public class ShopThreeSixtyService {
 
         List<Long> updatedProductsPositions = createShop360ProductsEntity(productsMap, json, shop, orgId, missingProducts, missingScenes);
 
-        product360ShopsRepo.deleteByShopEntity_IdAndIdNotIn(shopId, updatedProductsPositions);
+        product360ShopsRepo.deleteByShopEntity_IdAndIdNotInAndPublished(shopId, updatedProductsPositions, (short) 1);
 
         return new PostProductPositionsResponse(missingProducts, missingScenes);
     }

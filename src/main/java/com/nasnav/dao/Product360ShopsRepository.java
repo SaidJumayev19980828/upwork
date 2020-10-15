@@ -56,5 +56,5 @@ public interface Product360ShopsRepository extends JpaRepository<Shop360Products
 
     @Transactional
     @Modifying
-    void deleteByShopEntity_IdAndIdNotIn(Long shopId, List<Long> ids);
+    void deleteByShopEntity_IdAndIdNotInAndPublished(Long shopId, List<Long> ids, Short published);
 }
