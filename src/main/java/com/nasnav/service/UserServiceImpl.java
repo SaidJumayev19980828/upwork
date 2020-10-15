@@ -589,7 +589,7 @@ public class UserServiceImpl implements UserService {
 		UserEntity user = userRepository.findByResetPasswordToken(token);
 
 		checkUserActivation(user);
-		validateActivationRedirectUrl(redirect);
+		validateActivationRedirectUrl(redirect, user.getOrganizationId());
 		
 		activateUserInDB(user);
 		return redirectUser(securityService.login(user, false).getToken(), redirect);
