@@ -992,7 +992,7 @@ public class OrderServiceImpl implements OrderService {
 				.getAreasEntity()
 				.getName();
 		Shipment shipment = subOrder.getShipment();
-		if (shipment.getServiceName().equals("PICKUP_POINTS")) {
+		if (shipment.getServiceName().equals("PICKUP_POINTS") || shipment.getServiceName().equals("PICKUP")) {
 			shipment.setServiceName("Pickup at " + subOrder.getShopName() + " - " + shopAreaName);
 			AddressRepObj address = subOrder.getDeliveryAddress();
 			BeanUtils.copyProperties(address, shopAddress);

@@ -277,14 +277,17 @@ public class ShopThreeSixtyService {
         List<Long> missingProducts = new ArrayList<>();
         List<Long> missingScenes = new ArrayList<>();
 
-        createShop360ProductsEntity(productsMap, json, shop, orgId, missingProducts, missingScenes);
+        List<Long> updatedProductsPositions = createShop360ProductsEntity(productsMap, json, shop, orgId, missingProducts, missingScenes);
+
+        product360ShopsRepo.deleteByShopEntity_IdAndIdNotIn(shopId, updatedProductsPositions);
 
         return new PostProductPositionsResponse(missingProducts, missingScenes);
     }
 
 
-    private void createShop360ProductsEntity(Map<Long, Shop360ProductsEntity> productsMap, List<ProductPositionDTO> json,
+    private List<Long> createShop360ProductsEntity(Map<Long, Shop360ProductsEntity> productsMap, List<ProductPositionDTO> json,
                                              ShopThreeSixtyEntity shop,Long orgId, List<Long> missingProducts, List<Long> missingScenes) {
+        List<Long> updatedProductsPositions = new ArrayList<>();
         for(ProductPositionDTO dto : json) {
             Shop360ProductsEntity product;
             if (productsMap.get(dto.getId()) != null) {
@@ -307,8 +310,9 @@ public class ShopThreeSixtyService {
                 continue;
             }
             product = addProductAdditionalData(product, optionalScene.get(), dto);
-            product360ShopsRepo.save(product);
+            updatedProductsPositions.add(product360ShopsRepo.save(product).getId());
         }
+        return updatedProductsPositions;
     }
 
 
