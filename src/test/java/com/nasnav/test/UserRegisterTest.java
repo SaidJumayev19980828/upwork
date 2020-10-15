@@ -1168,6 +1168,33 @@ public class UserRegisterTest {
 
 
 	@Test
+	public void suspendUserInvalidAuthZ() {
+		HttpEntity req = getHttpEntity("invalid token");
+		ResponseEntity<String> res = template.postForEntity("/user/suspend?user_id=88001&suspend=true", req, String.class);
+
+		assertEquals(401, res.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void suspendUserInvalidAuthN() {
+		HttpEntity req = getHttpEntity("192021");
+		ResponseEntity<String> res = template.postForEntity("/user/suspend?user_id=88001&suspend=true", req, String.class);
+
+		assertEquals(403, res.getStatusCodeValue());
+	}
+
+
+	@Test
+	public void suspendUserInAnotherOrg() {
+		HttpEntity req = getHttpEntity("101112");
+		ResponseEntity<String> res = template.postForEntity("/user/suspend?user_id=88002&suspend=true", req, String.class);
+
+		assertEquals(404, res.getStatusCodeValue());
+	}
+
+
+	@Test
 	public void suspendUserTest() {
 		HttpEntity req = getHttpEntity("101112");
 		ResponseEntity<String> res = template.postForEntity("/user/suspend?user_id=88001&suspend=true", req, String.class);

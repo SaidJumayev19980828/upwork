@@ -63,4 +63,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 	UserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
 
 	boolean existsByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
+
+	Optional<UserEntity> findByIdAndOrganizationId(Long id, Long orgId);
 }

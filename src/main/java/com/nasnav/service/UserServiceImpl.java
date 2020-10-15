@@ -751,7 +751,8 @@ public class UserServiceImpl implements UserService {
 	}
 
 	private UserEntity getUserEntityById(Long id) {
-		return userRepository.findById(id)
+		Long orgId = securityService.getCurrentUserOrganizationId();
+		return userRepository.findByIdAndOrganizationId(id, orgId)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, U$0001, id));
 	}
 }
