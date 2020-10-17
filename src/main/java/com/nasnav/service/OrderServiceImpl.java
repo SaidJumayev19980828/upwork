@@ -1362,8 +1362,9 @@ public class OrderServiceImpl implements OrderService {
 	private DetailedOrderRepObject getDetailedOrderInfo(OrdersEntity order, Integer detailsLevel) {
 	    Map<Long, List<BasketItemDetails>> basketItemsDetailsMap = getBasketItemsDetailsMap( setOf(order.getId()) );
 		Map<Long, BigDecimal> orderItemsQuantity = getOrderItemsQuantity( setOf(order.getId()) );
+		Map<Long, String> paymentOperator = getPaymentOperators(detailsLevel, setOf(order.getId()));
 		String phoneNumber = userRepo.findById(order.getUserId()).get().getPhoneNumber();
-	    return getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap, phoneNumber);
+	    return getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap, phoneNumber ,paymentOperator);
 	}
 	
 	
@@ -1372,7 +1373,8 @@ public class OrderServiceImpl implements OrderService {
 	private DetailedOrderRepObject getDetailedOrderInfo(OrdersEntity order, Integer detailsLevel,
 														Map<Long, BigDecimal> orderItemsQuantity,
 														Map<Long, List<BasketItemDetails>> basketItemsDetailsMap,
-														String phoneNumber) {
+														String phoneNumber,
+														Map<Long, String> paymentOperator) {
 		DetailedOrderRepObject representation = new DetailedOrderRepObject();
 
 		List<BasketItemDetails> basketItemsDetails = 
@@ -1382,18 +1384,20 @@ public class OrderServiceImpl implements OrderService {
 		Map<Long, Optional<String>> variantsImagesList = getVariantsImagesList(basketItemsDetails);
 		
 		BeanUtils.copyProperties(getOrderSummary(order), representation);
-		if (detailsLevel == null)
+		if (detailsLevel == null){
 			detailsLevel = 0;
+		}
 
+        if (detailsLevel >= 1){
+			BeanUtils.copyProperties(
+					getOrderDetails(order, phoneNumber, paymentOperator)
+					, representation
+					, new String[]{"orderId", "userId", "shopId", "createdAt", "status", "paymentStatus", "metaOrderId", "discount"});
+		}
 
-        if (detailsLevel >= 1)
-        	BeanUtils.copyProperties( 
-        			getOrderDetails(order, phoneNumber)
-        			, representation
-        			, new String[]{"orderId", "userId", "shopId", "createdAt", "status", "paymentStatus", "metaOrderId", "discount"});
-
-        if (detailsLevel == 2 && orderItemsQuantity.get(order.getId()) != null)
-        	representation.setTotalQuantity(orderItemsQuantity.get(order.getId()).intValue());
+        if (detailsLevel == 2 && orderItemsQuantity.get(order.getId()) != null){
+			representation.setTotalQuantity(orderItemsQuantity.get(order.getId()).intValue());
+		}
 
 		if (detailsLevel == 3) {
 			List<BasketItem> itemsList = getBasketItems(basketItemsDetails, variantsImagesList);
@@ -1436,7 +1440,8 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private DetailedOrderRepObject getOrderDetails(OrdersEntity entity, String phoneNumber) {
+
+	private DetailedOrderRepObject getOrderDetails(OrdersEntity entity, String phoneNumber, Map<Long, String> paymentOperator) {
 		DetailedOrderRepObject obj = new DetailedOrderRepObject();
 
 		obj.setUserName(entity.getName());
@@ -1447,9 +1452,12 @@ public class OrderServiceImpl implements OrderService {
 			String shippingStatus = ShippingStatus.getShippingStatusName(entity.getShipment().getStatus());
 			obj.setShipping(entity.getShipment().getShippingFee());
 			obj.setShippingStatus(shippingStatus);
+			obj.setShippingService(entity.getShipment().getShippingServiceId());
+			obj.setTrackNumber(entity.getShipment().getTrackNumber());
 		}
 			
 		obj.setTotal(entity.getTotal());
+		obj.setPaymentOperator(paymentOperator.get(entity.getId()));
 
 		if (entity.getAddressEntity() != null) {
 			AddressRepObj address = (AddressRepObj) entity.getAddressEntity().getRepresentation();
@@ -1492,6 +1500,8 @@ public class OrderServiceImpl implements OrderService {
 		item.setThumb( variantsCoverImages.get(itemDetails.getVariantId()).orElse(null));
 		item.setCurrency(ofNullable(getTransactionCurrency(itemDetails.getCurrency())).orElse(EGP).name());
 		item.setUnit(itemDetails.getUnit());
+		item.setProductCode(itemDetails.getProductCode());
+		item.setSku(itemDetails.getSku());
 
 		return item;
 	}
@@ -1567,21 +1577,39 @@ public class OrderServiceImpl implements OrderService {
 
 		Map<Long, BigDecimal> orderItemsQuantity = getOrderItemsQuantity(detailsLevel == 2 ? ordersIds : new HashSet<>());
 
-		Map<Long, String> orderPhones = !ordersIds.isEmpty() ? ordersRepository.findUsersPhoneNumber(ordersIds)
-																			  .stream()
-																			  .collect(toMap(OrderPhoneNumberPair::getOrderId, pair -> ofNullable(pair.getPhoneNumber()).orElse(""))):
-															  new LinkedHashMap<>();
-		
+		Map<Long, String> orderPhones = getCustomerPhones(ordersIds);
+		Map<Long, String> paymentOperator = getPaymentOperators(detailsLevel, ordersIds);
 		return ordersEntityList
 				.stream()
-				.map(order -> getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap, orderPhones.get(order.getId())))
+				.map(order -> getDetailedOrderInfo(order, detailsLevel, orderItemsQuantity, basketItemsDetailsMap, orderPhones.get(order.getId()), paymentOperator))
 				.collect(toList());
 	}
 
-	
-	
 
-	
+
+	private Map<Long, String> getPaymentOperators(Integer detailsLevel, Set<Long> ordersIds) {
+		if(detailsLevel < 2 || ordersIds.isEmpty()){
+			return emptyMap();
+		}
+		return ordersRepository
+				.findPaymentOperatorByOrderIdIn(ordersIds)
+				.stream()
+				.filter(payOpr -> noneIsNull(payOpr, payOpr.getOrderId(), payOpr.getOperator()))
+				.collect(toMap(OrderPaymentOperator::getOrderId, OrderPaymentOperator::getOperator));
+	}
+
+
+
+	private Map<Long, String> getCustomerPhones(Set<Long> ordersIds) {
+		return !ordersIds.isEmpty() ?
+					ordersRepository.findUsersPhoneNumber(ordersIds)
+					.stream()
+					.collect(toMap(OrderPhoneNumberPair::getOrderId, pair -> ofNullable(pair.getPhoneNumber()).orElse("")))
+				: new LinkedHashMap<>();
+	}
+
+
+
 
 	private Map<Long, List<BasketItemDetails>> getBasketItemsDetailsMap(Set<Long> ordersIds) {
 		Set<Long> nonEmptyOrdersIds = ofNullable(ordersIds)
@@ -1696,6 +1724,7 @@ public class OrderServiceImpl implements OrderService {
 		CriteriaQuery<OrdersEntity> query = builder.createQuery(OrdersEntity.class);
 		Root<OrdersEntity> root = query.from(OrdersEntity.class);
 		root.fetch("metaOrder", LEFT);
+		root.fetch("shipment", LEFT);
 		
 		Predicate[] predicatesArr = getOrderQueryPredicates(params, builder, root);
 

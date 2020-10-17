@@ -26,6 +26,9 @@ public class DetailedOrderRepObject extends BaseRepresentationObject{
     private long orderId;
     private BigDecimal subtotal;
     private BigDecimal shipping;
+    private String shippingService;
+    private String trackNumber;
+    private String paymentOperator;
     private BigDecimal total;
     private String currency;
     

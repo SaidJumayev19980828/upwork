@@ -1,15 +1,15 @@
 package com.nasnav.dao;
 
-import java.util.*;
-
 import com.nasnav.dto.OrderPhoneNumberPair;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.dto.query.result.OrderPaymentOperator;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nasnav.persistence.OrdersEntity;
+import java.util.*;
 
 
 public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
@@ -157,4 +157,12 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 
 	@Query("select new com.nasnav.dto.OrderPhoneNumberPair(o.id , u.phoneNumber) from OrdersEntity o join UserEntity u  on o.userId = u.id where o.id in :orderIdList")
 	List<OrderPhoneNumberPair> findUsersPhoneNumber(@Param("orderIdList") Set<Long> orderIdList);
+
+	@Query("SELECT new com.nasnav.persistence.dto.query.result.OrderPaymentOperator(ord.id, payment.operator) " +
+			" FROM OrdersEntity ord " +
+			" LEFT JOIN ord.metaOrder meta " +
+			" LEFT JOIN PaymentEntity payment " +
+			" on payment.metaOrderId = meta.id " +
+			" WHERE ord.id in :orderIds")
+    List<OrderPaymentOperator> findPaymentOperatorByOrderIdIn(@Param("orderIds") Set<Long> ordersIds);
 }
