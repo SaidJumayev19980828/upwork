@@ -21,4 +21,6 @@ public class BasketItemDetails {
     private BigDecimal price;
     private Integer currency;
     private BigDecimal discount;
+    private String sku;
+    private String productCode;
 }

@@ -241,6 +241,8 @@
                       <img class="thumb" th:src="${domain} + '/files/' + ${item.thumb}" alt="#"/>
                       <h3 th:text="${item.name}"/>
                       <h3 class="shopName" th:text="${sub.shopName}"/>
+                      <div class="quantity" th:if="${item.sku != null}" th:text="'sku: ' + ${item.sku}">12233</div>
+                      <div class="quantity" th:if="${item.productCode != null}" th:text="'Product Code: ' + ${item.productCode}">12233</div>
                       <table class="variant-features">
                         <tr th:each="feature : ${item.variantFeatures}">
                           <span th:text="${feature.key} + ': ' + ${feature.value}"></span> <br/>
@@ -282,6 +284,8 @@
           <div style="width: 70%;" class="column">
             <h3 th:text="${data.subOrders[0].pickup} ? 'Shop Address' : 'Shipping Address'"/>
             <ul>
+              <li id="name" th:text="${data.subOrders[0].deliveryAddress.firstName} + ' ' + ${data.subOrders[0].deliveryAddress.lastName}"></li>
+              <li id="phone" th:if="${data.subOrders[0].deliveryAddress.phoneNumber != null}" th:text="${data.subOrders[0].deliveryAddress.phoneNumber}"></li>
               <li id="address_Line_1" th:text="${data.subOrders[0].deliveryAddress.flatNumber} +', '+ ${data.subOrders[0].deliveryAddress.buildingNumber}+ ', ' + ${data.subOrders[0].deliveryAddress.addressLine1}"></li>
               <li id="area" th:text="${data.subOrders[0].deliveryAddress.area}"></li>
               <li id="city" th:text="${data.subOrders[0].deliveryAddress.city}"></li>

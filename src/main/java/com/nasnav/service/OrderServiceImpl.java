@@ -1532,6 +1532,8 @@ public class OrderServiceImpl implements OrderService {
 		item.setVariantName(variant.getName());
 		item.setIsReturnable(isReturnable);
 		item.setCurrencyValue(currencyValue);
+		item.setSku(variant.getSku());
+		item.setProductCode(variant.getProductCode());
 		String unitName = ofNullable(entity)
 				.map(BasketsEntity::getStocksEntity)
 				.map(StocksEntity::getUnit)

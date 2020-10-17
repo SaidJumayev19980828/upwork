@@ -28,6 +28,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+
 @Entity
 @Table(name="product_variants")
 @Data
@@ -38,12 +39,12 @@ import lombok.ToString;
 @Where(clause = "removed = 0")
 public class ProductVariantsEntity {
 
-	public ProductVariantsEntity() {
-		removed = 0;
-		extraAttributes = new HashSet<>();
-	}
-	
-	
+    public ProductVariantsEntity() {
+        removed = 0;
+        extraAttributes = new HashSet<>();
+    }
+
+
     @Id
     @GeneratedValue(strategy=IDENTITY)
     private Long id;
@@ -61,11 +62,11 @@ public class ProductVariantsEntity {
     private String description;
 
     @Column(name="barcode")
-    private String barcode;    
-    
+    private String barcode;
+
     @Column(name="removed")
     private Integer removed;
-    
+
     private String sku;
 
     @Column(name = "product_code")
@@ -77,41 +78,41 @@ public class ProductVariantsEntity {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private ProductEntity productEntity;
-    
-    
+
+
     @OneToMany(mappedBy = "productVariantsEntity")
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<StocksEntity> stocks;
-    
-    
+
+
     @OneToMany(mappedBy = "variant", fetch = FetchType.LAZY, cascade=CascadeType.ALL)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<ProductExtraAttributesEntity> extraAttributes;
-    
-    
-    
+
+
+
     public void addExtraAttribute(ProductExtraAttributesEntity extraAttribute) {
-    	ProductExtraAttributesEntity extraAttr = 
-    			extraAttributes
-    				.stream()
-    				.filter(attr -> Objects.equals(extraAttribute.getExtraAttribute(), attr.getExtraAttribute()))
-    				.findFirst()
-    				.orElse(extraAttribute);
-    	
-    	extraAttr.setValue(extraAttribute.getValue());
-    	extraAttr.setVariant(this);
-    	extraAttributes.add(extraAttr);
+        ProductExtraAttributesEntity extraAttr =
+                extraAttributes
+                        .stream()
+                        .filter(attr -> Objects.equals(extraAttribute.getExtraAttribute(), attr.getExtraAttribute()))
+                        .findFirst()
+                        .orElse(extraAttribute);
+
+        extraAttr.setValue(extraAttribute.getValue());
+        extraAttr.setVariant(this);
+        extraAttributes.add(extraAttr);
     }
-    
-    
-    
-    public void deleteExtraAttribute(ProductExtraAttributesEntity extraAttribute) {    	
-    	extraAttributes.remove(extraAttribute);
-    	extraAttribute.setVariant(null);
+
+
+
+    public void deleteExtraAttribute(ProductExtraAttributesEntity extraAttribute) {
+        extraAttributes.remove(extraAttribute);
+        extraAttribute.setVariant(null);
     }
 
 }

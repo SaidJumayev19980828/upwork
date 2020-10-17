@@ -84,7 +84,7 @@ public class PaymentControllerCoD {
 			throw new BusinessException("CoD payment not available for order", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
 		}
 		for (OrdersEntity subOrder: ordersRepository.findByMetaOrderId(metaOrderId)) {
-			if (subOrder.getShipment() != null && isCodAvailableForService(subOrder.getShipment().getShippingServiceId())) {
+			if (subOrder.getShipment() != null && !isCodAvailableForService(subOrder.getShipment().getShippingServiceId())) {
 				codLogger.warn("Sub-order ({}) marked for pickup, COD not allowed.", subOrder.getId());
 				throw new BusinessException("At least one of the sub-orders marked for pickup", "PAYMENT_FAILED", HttpStatus.NOT_ACCEPTABLE);
 			}

@@ -89,10 +89,10 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 -- variants for each product
 insert into public.product_variants(id, "name" , product_id, feature_spec ) values(310001, 'var' 	, 1001, '{"234":"66"
 }');
-insert into public.product_variants(id, "name" , product_id ) values(310002, 'var' 	, 1001);
+insert into public.product_variants(id, "name" , product_id, product_code, sku ) values(310002, 'var' 	, 1001, 'ABC123', '99999');
 insert into public.product_variants(id, "name" , product_id ) values(310003, 'var' 	, 1001);
-insert into public.product_variants(id, "name" , product_id, feature_spec ) values(310004, 'var' 	, 1004, '{"234":"45"
-}');
+insert into public.product_variants(id, "name" , product_id, feature_spec , product_code, sku) values(310004, 'var' 	, 1004, '{"234":"45"
+}', null, '122558');
 insert into public.product_variants(id, "name" , product_id ) values(310005, 'var' 	, 1005);
 insert into public.product_variants(id, "name" , product_id ) values(310006, 'var' 	, 1006);
 insert into public.product_variants(id, "name" , product_id ) values(310007, 'var' 	, 1007);

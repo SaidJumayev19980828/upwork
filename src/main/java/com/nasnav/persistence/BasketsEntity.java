@@ -26,7 +26,7 @@ import lombok.ToString;
 @NamedNativeQuery(
         name = "Basket",
         query ="select b.order_id, p.id as product_id, p.name as product_name, p.p_name as product_pname, v.id as variant_id, s.id as stock_id," +
-                " s.unit_id as unit, b.id as basket_id , b.quantity, b.price, b.currency, b.discount" +
+                " s.unit_id as unit, b.id as basket_id , b.quantity, b.price, b.currency, b.discount, v.sku, v.product_code" +
                 " from products p "+
                 " join product_variants v on p.id = v.product_id " + 
                 " join stocks s ON v.id = s.variant_id " +
@@ -52,7 +52,9 @@ import lombok.ToString;
                                 @ColumnResult(name="quantity", type = BigDecimal.class),
                                 @ColumnResult(name="price", type = BigDecimal.class),
                                 @ColumnResult(name="currency", type = Integer.class),
-                                @ColumnResult(name="discount", type = BigDecimal.class)
+                                @ColumnResult(name="discount", type = BigDecimal.class),
+                                @ColumnResult(name="sku", type = String.class),
+                                @ColumnResult(name="product_code", type = String.class)
                         }
                 )
         }
