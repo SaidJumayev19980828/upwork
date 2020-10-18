@@ -363,13 +363,7 @@ public class SallabShippingService implements ShippingService{
 	
 	
 	private ReturnShipmentTracker createReturnShipment(ShippingDetails shippingDetails) {
-		ReturnShipmentTracker tracker = new ReturnShipmentTracker();
-		tracker.setAirwayBillFile(null);
-		tracker.setShipmentExternalId(null);
-		tracker.setShippingDetails(shippingDetails);
-		tracker.setTracker(null);
-		tracker.setEmailMessage(RETURN_SHIPMENT_EMAIL_MSG);
-		return tracker;
+		return new ReturnShipmentTracker(new ShipmentTracker(shippingDetails), RETURN_SHIPMENT_EMAIL_MSG);
 	}
 	
 	

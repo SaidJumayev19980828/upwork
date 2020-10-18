@@ -1,10 +1,9 @@
 package com.nasnav.shipping.model;
 
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Data
-@NoArgsConstructor
 public class ReturnShipmentTracker extends ShipmentTracker{
     private String emailMessage;
 
@@ -14,17 +13,5 @@ public class ReturnShipmentTracker extends ShipmentTracker{
         this.setTracker(tracker.getTracker());
         this.setShippingDetails(tracker.getShippingDetails());
         this.setEmailMessage(emailMessage);
-    }
-
-
-
-    public ReturnShipmentTracker(String emailMessage){
-        this.setEmailMessage(emailMessage);
-    }
-
-
-    public ReturnShipmentTracker(ShippingDetails shippingDetails, String emailMessage){
-        this.setEmailMessage(emailMessage);
-        this.setShippingDetails(shippingDetails);
     }
 }

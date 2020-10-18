@@ -11,8 +11,7 @@ import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 import static org.springframework.context.i18n.LocaleContextHolder.getLocale;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
@@ -392,7 +391,16 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 
 	@Override
 	public Flux<ReturnShipmentTracker> requestReturnShipment(List<ShippingDetails> items) {
-		return Flux.fromIterable(asList(new ReturnShipmentTracker(RETURN_EMAIL_MSG)));
+    	return items
+				.stream()
+				.map(this::createReturnShipmentTracker)
+				.collect(collectingAndThen(toList(), Flux::fromIterable));
+	}
+
+
+
+	private ReturnShipmentTracker createReturnShipmentTracker(ShippingDetails item){
+		return new ReturnShipmentTracker(new ShipmentTracker(item), RETURN_EMAIL_MSG);
 	}
 }
 
