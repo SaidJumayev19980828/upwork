@@ -113,11 +113,28 @@ public class PromotionsTest {
         Set<Long> expectedIds = setOf(630004L, 630005L);
         Set<Long> ids = promotions.stream().map(PromotionDTO::getId).collect(toSet());
         assertEquals(expectedIds, ids);
-	} 
-	
-	
-	
-	
+	}
+
+
+	@Test
+	@Sql(executionPhase= Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts= {"/sql/Promotion_Test_Data_Insert_3.sql"})
+	@Sql(executionPhase= Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void getPromotionsWithInvalidDataTest() throws Exception{
+		HttpEntity<?> req = getHttpEntity("hijkllm");
+		String now = formatter.format(now());
+		String url = format("/organization/promotions",now, now);
+		ResponseEntity<String> res =
+				template.exchange(url, GET, req, String.class);
+
+		assertEquals(200, res.getStatusCodeValue());
+		List<PromotionDTO> promotions = objectMapper.readValue(res.getBody(), new TypeReference<List<PromotionDTO>>() {});
+		assertEquals(3, promotions.size());
+		Set<Long> expectedIds = setOf(630001L, 630002L, 630003L);
+		Set<Long> ids = promotions.stream().map(PromotionDTO::getId).collect(toSet());
+		assertEquals(expectedIds, ids);
+	}
+
+
 	@Test
 	public void getPromotionsWithGivenIdFilterTest() throws Exception{
 		HttpEntity<?> req = getHttpEntity("hijkllm");

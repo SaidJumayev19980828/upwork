@@ -941,7 +941,7 @@ public class OrderServiceImpl implements OrderService {
 		params.put("domain", domain);
 		params.put("orgName", orgName);
 		params.put("creation_date", orderTimeStr);
-		params.put("org_logo", orgLogo);
+		params.put("orgLogo", orgLogo);
 		params.put("data", orderResponse);
 		return params;
 	}

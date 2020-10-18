@@ -29,12 +29,8 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -149,8 +145,9 @@ public class PromotionsServiceImpl implements PromotionsService {
 	private Map<String,Object> readJsonStrAsMap(String jsonStr){
 		String rectified = ofNullable(jsonStr).orElse("{}");
 		try {
-			Map<String,Object> initialData =
-					objectMapper.readValue(rectified, new TypeReference<Map<String,Object>>(){});
+			Map<String,Object> initialData = objectMapper.readValue(rectified, new TypeReference<Map<String,Object>>(){});
+			if (initialData == null)
+				initialData = new LinkedHashMap<>();
 			return setNumbersAsBigDecimals(initialData);
 		} catch (Exception e) {
 			logger.error(e,e);
