@@ -871,8 +871,8 @@ public class OrderServiceImpl implements OrderService {
 							.getOrganizationDomainOnly(orgId).stream()
 							.findFirst()
 							.orElse("");
-		String path = "dashboard";
-		return format("%s/%s", domain, path);
+		String path = "dashboard/return-requests";
+		return format("%s/%s/%d", domain, path, returnRequest.getId());
 	}
 	
 	
@@ -3548,7 +3548,8 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private Map<String, Object> createReturnItemsReceiptionEmailParams(ReturnRequestEntity request) {
-		String userName = getCustomerName(request);
+		Optional<UserEntity> user =  getCustomerName(request);
+		String userName = user.map(UserEntity::getFirstName).orElse("Dear Customer");
 		String creationDate =
 				DateTimeFormatter.ofPattern("dd/MM/YYYY hh:mm").format(request.getCreatedOn());
 
@@ -3562,6 +3563,10 @@ public class OrderServiceImpl implements OrderService {
 		String orgName = org.map(OrganizationEntity::getName).orElse("Nasnav");
 		String shippingService = getShippingService(request);
 		AddressRepObj pickupAddr = getPickupAddress(request);
+		String phone =
+				ofNullable(pickupAddr)
+					.map(AddressRepObj::getPhoneNumber)
+						.orElseGet(() -> user.map(UserEntity::getPhoneNumber).orElse(""));
 
 		List<ReturnShipment> returnShipmentsData = getReturnShipmentsData(request);
 
@@ -3573,6 +3578,7 @@ public class OrderServiceImpl implements OrderService {
 		params.put("requestId", request.getId());
 		params.put("creationDate", creationDate);
 		params.put("pickupAddr", pickupAddr);
+		params.put("phone", phone);
 		params.put("shippingService", shippingService);
 		params.put("returnShipments", returnShipmentsData);
 		return params;
@@ -4195,7 +4201,8 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private Map<String, Object> createReturnConfirmEmailParams(ReturnRequestEntity request, List<ReturnShipmentTracker> trackers) {
-		String userName = getCustomerName(request);
+		Optional<UserEntity> user =  getCustomerName(request);
+		String userName = user.map(UserEntity::getFirstName).orElse("Dear Customer");
 		Optional<OrganizationEntity> org =
 				ofNullable(request)
 						.map(ReturnRequestEntity::getMetaOrder)
@@ -4207,7 +4214,10 @@ public class OrderServiceImpl implements OrderService {
 		String msg = getReturnConfirmationEmailMsg(trackers);
 		String shippingService = getShippingService(request);
 		AddressRepObj pickupAddr = getPickupAddress(request);
-
+		String phone =
+				ofNullable(pickupAddr)
+						.map(AddressRepObj::getPhoneNumber)
+						.orElseGet(() -> user.map(UserEntity::getPhoneNumber).orElse(""));
 		List<ReturnShipment> returnShipmentsData = getReturnShipmentsData(request);
 
 		Map<String, Object> params = new HashMap<>();
@@ -4218,6 +4228,7 @@ public class OrderServiceImpl implements OrderService {
 		params.put("userName", userName);
 		params.put("requestId", request.getId());
 		params.put("msg", msg);
+		params.put("phone", phone);
 		params.put("pickupAddr", pickupAddr);
 		params.put("shippingService", shippingService);
 		params.put("returnShipments", returnShipmentsData);
@@ -4250,7 +4261,8 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private Map<String, Object> createOrderReturnNotificationEmailParams(ReturnRequestEntity request) {
-		String userName = getCustomerName(request);
+		Optional<UserEntity> user =  getCustomerName(request);
+		String userName = user.map(UserEntity::getFirstName).orElse("Dear Customer");
 		String creationDate =
 				DateTimeFormatter.ofPattern("dd/MM/YYYY hh:mm").format(request.getCreatedOn());
 
@@ -4265,7 +4277,10 @@ public class OrderServiceImpl implements OrderService {
 		String shippingService = getShippingService(request);
 		AddressRepObj pickupAddr = getPickupAddress(request);
 		String returnOrderPageUrl = buildDashboardPageUrl(request);
-
+		String phone =
+				ofNullable(pickupAddr)
+						.map(AddressRepObj::getPhoneNumber)
+						.orElseGet(() -> user.map(UserEntity::getPhoneNumber).orElse(""));
 		List<ReturnShipment> returnShipmentsData = getReturnShipmentsData(request);
 
 		Map<String, Object> params = new HashMap<>();
@@ -4275,6 +4290,7 @@ public class OrderServiceImpl implements OrderService {
 		params.put("requestId", request.getId());
 		params.put("creationDate", creationDate);
 		params.put("pickupAddr", pickupAddr);
+		params.put("phone", phone);
 		params.put("shippingService", shippingService);
 		params.put("returnShipments", returnShipmentsData);
 		params.put("returnOrderPageUrl", returnOrderPageUrl);
@@ -4354,12 +4370,10 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private String getCustomerName(ReturnRequestEntity request) {
+	private Optional<UserEntity> getCustomerName(ReturnRequestEntity request) {
 		return ofNullable(request)
 				.map(ReturnRequestEntity::getMetaOrder)
-				.map(MetaOrderEntity::getUser)
-				.map(UserEntity::getFirstName)
-				.orElse("Dear Customer");
+				.map(MetaOrderEntity::getUser);
 	}
 
 
@@ -4408,6 +4422,8 @@ public class OrderServiceImpl implements OrderService {
 		item.setPrice(price);
 		item.setVariantFeatures(parseVariantFeatures(variant.getFeatureSpec(), 0));
 		item.setThumb(thumb);
+		item.setSku(variant.getSku());
+		item.setProductCode(variant.getProductCode());
 		return item;
 	}
 
@@ -4500,4 +4516,6 @@ class ReturnShipmentItem{
 	private String currency;
 	private Integer quantity;
 	private Integer receivedQuantity;
+	private String sku;
+	private String productCode;
 }
