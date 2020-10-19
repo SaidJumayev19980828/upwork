@@ -4159,20 +4159,25 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
-	public void confirmReturnRequest(Long id) {
+	public void confirmReturnRequest(Long requestId) {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		ReturnRequestEntity request =
-				returnRequestRepo
-				.findByReturnRequestId(id, orgId)
-						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, id));
-		updateReturnRequestStatus(request, CONFIRMED);
+				returnRequestRepo.findByIdAndOrganizationId(requestId, orgId)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, requestId));;
+		request = updateReturnRequestStatus(request, CONFIRMED);
 		List<ReturnShipmentTracker> trackers =
 				shippingMgrService
 				.requestReturnShipments(request)
 				.collectList()
 				.blockOptional()
-				.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0004, request.getId()));
-		sendReturnRequestConfirmationEmail(request, trackers);
+				.orElseThrow( () -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, O$SHP$0004, requestId));
+		em.flush();
+		em.refresh(request);
+		ReturnRequestEntity requestUpdated =
+				returnRequestRepo
+						.findByReturnRequestId(requestId, orgId)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, requestId));
+		sendReturnRequestConfirmationEmail(requestUpdated, trackers);
 	}
 
 
@@ -4282,6 +4287,9 @@ public class OrderServiceImpl implements OrderService {
 						.map(AddressRepObj::getPhoneNumber)
 						.orElseGet(() -> user.map(UserEntity::getPhoneNumber).orElse(""));
 		List<ReturnShipment> returnShipmentsData = getReturnShipmentsData(request);
+		Long metaOrderId = request.getMetaOrder().getId();
+		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(metaOrderId);
+		Optional<String> operator = payment.map(PaymentEntity::getOperator);
 
 		Map<String, Object> params = new HashMap<>();
 		params.put("orgLogo", orgLogo);
@@ -4294,6 +4302,7 @@ public class OrderServiceImpl implements OrderService {
 		params.put("shippingService", shippingService);
 		params.put("returnShipments", returnShipmentsData);
 		params.put("returnOrderPageUrl", returnOrderPageUrl);
+		params.put("paymentOperator", operator);
 		return params;
 	}
 
