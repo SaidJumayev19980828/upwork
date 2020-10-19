@@ -29,11 +29,11 @@ public final class EmailConstants {
     
     public static final String ORDER_BILL_TEMPLATE = "new_order_bill_template.html";
     
-    public static final String ORDER_REJECT_TEMPLATE = "order_reject_template.html";
+    public static final String ORDER_REJECT_TEMPLATE = "new_order_reject_template.html";
 
     public static final String ORDER_RETURN_REJECT_TEMPLATE = "order_return_reject_template.html";
     
-    public static final String ORDER_CANCEL_NOTIFICATION_TEMPLATE = "order_cancel_notification_template.html";
+    public static final String ORDER_CANCEL_NOTIFICATION_TEMPLATE = "new_order_cancel_notification_template.html";
 
     public static final String ORDER_RETURN_CONFIRM_TEMPLATE = "order_return_confirm_template.html";
 

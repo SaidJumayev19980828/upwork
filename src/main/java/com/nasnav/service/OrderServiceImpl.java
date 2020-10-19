@@ -813,9 +813,27 @@ public class OrderServiceImpl implements OrderService {
 		String message =
 				ofNullable(rejectionReason)
 				.orElse(DEFAULT_REJECTION_MESSAGE);
+
+		List<BasketItemDetails> basketItemsDetails =
+				getBasketItemsDetailsMap( setOf(order.getId()) )
+						.get(order.getId());
+
+		SubOrder subOrder = getSubOrder(order, getVariantsImagesList(basketItemsDetails));
+		changeShippingServiceName(subOrder);
+
+		String domain = domainService.getCurrentServerDomain();
+		String orgDomain = domainService.getOrganizationDomainAndSubDir(order.getOrganizationEntity().getId());
+		String orgLogo = domain + "/files/" + getOrganizationLogo(order.getOrganizationEntity());
+		String orgName = order.getMetaOrder().getOrganization().getName();
+
+		params.put("domain", domain);
+		params.put("orgDomain", orgDomain);
+		params.put("orgLogo", orgLogo);
 		params.put("id", order.getId().toString());
 		params.put("rejectionReason", message);
-		params.put("sub", order);
+		params.put("sub", subOrder);
+		params.put("userName", order.getMetaOrder().getUser().getName());
+		params.put("orgName", orgName);
 		return params;
 	}
 
@@ -3379,19 +3397,26 @@ public class OrderServiceImpl implements OrderService {
 	
 	private Map<String, Object> createCancellationNotificationEmailParams(OrdersEntity order) {
 		Map<String,Object> params = new HashMap<>();
-		String orderTime = 
-				DateTimeFormatter
-				.ofPattern("dd/MM/YYYY - hh:mm")
-				.format(order.getCreationDate());
 		String updateTime = 
 				DateTimeFormatter
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(order.getUpdateDate());
-		params.put("id", order.getId().toString());
-		params.put("creationTime", orderTime);
+
+		List<BasketItemDetails> basketItemsDetails =
+				getBasketItemsDetailsMap( setOf(order.getId()) )
+						.get(order.getId());
+
+		SubOrder subOrder = getSubOrder(order, getVariantsImagesList(basketItemsDetails));
+		changeShippingServiceName(subOrder);
+
+		String domain = domainService.getCurrentServerDomain();
+		String orgLogo = domain + "/files/" + getOrganizationLogo(order.getOrganizationEntity());
+
+		params.put("domain", domain);
+		params.put("orgLogo", orgLogo);
 		params.put("updateTime", updateTime);
 		params.put("orderPageUrl", buildDashboardPageUrl(order));
-		params.put("sub", order);
+		params.put("sub", subOrder);
 		return params;
 	}
 

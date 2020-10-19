@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import com.nasnav.commons.utils.CollectionUtils;
+import com.nasnav.exceptions.RuntimeBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,6 +30,7 @@ import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import static com.nasnav.commons.utils.EntityUtils.createFailedLoginResponse;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.enumerations.Roles.*;
+import static com.nasnav.exceptions.ErrorCodes.UXACTVX0005;
 import static com.nasnav.response.ResponseStatus.*;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -256,6 +258,9 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	@Override
 	public UserApiResponse recoverUser(PasswordResetObject data) {
 		validateNewPassword(data.password);
+		if(isBlankOrNull(data.token)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0005);
+		}
 		EmployeeUserEntity employeeUserEntity = employeeUserRepository.getByResetPasswordToken(data.token);
 		if (StringUtils.isNotBlankOrNull(employeeUserEntity)) {
 			// if resetPasswordToken is not active, throw exception for invalid
