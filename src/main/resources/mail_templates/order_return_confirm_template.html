@@ -215,10 +215,7 @@
     <div class="main">
       <div class="Header">
         <div class="Header-logo">
-          <img
-                  th:src="${orgDomain} + '/files/' + ${orgLogo}"
-            alt="logo"
-          />
+          <img th:src="${orgLogo}" alt="logo"/>
         </div>
         <p class="Header-orderSuccess">
           Hi <span id="user_name" th:text="${userName}"/> ! <br />
@@ -244,7 +241,7 @@
                     </h3>
                   </tr>
                     <tr th:each="item : ${shp.items}">
-                      <img class="thumb" th:src="${orgDomain} + '/files/' + ${item.thumb}" alt="#"/>
+                      <img class="thumb" th:src="${domain} + '/files/' + ${item.thumb}" alt="#"/>
                       <h3 th:text="${item.name}"/>
                       <table class="variant-features">
                         <tr th:each="feature : ${item.variantFeatures}">
@@ -306,6 +303,7 @@
         <p class="copyright">&copy; 2020 NasNav. All rights reserved.</p>
       </div>
       <div id="balanceText"></div>
+    </div>
     </div>
   </body>
 </html>

@@ -777,7 +777,7 @@ public class OrderServiceImpl implements OrderService {
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(order.getCreationDate());
 
-		String domain = domainService.getCurrentServerDomain();
+		String domain = appConfig.environmentHostName;
 		String orgDomain = domainService.getOrganizationDomainAndSubDir(order.getOrganizationEntity().getId());
 		String orgLogo = domain + "/files/" + getOrganizationLogo(order.getOrganizationEntity());
 
@@ -926,7 +926,7 @@ public class OrderServiceImpl implements OrderService {
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(orderTime);
 
-		String domain = domainService.getCurrentServerDomain();
+		String domain = appConfig.environmentHostName;
 		String orgDomain = domainService.getOrganizationDomainAndSubDir(order.getOrganization().getId());
 
 		String orgLogo = domain + "/files/"+ getOrganizationLogo(order.getOrganization());
@@ -3531,8 +3531,9 @@ public class OrderServiceImpl implements OrderService {
 				ofNullable(request)
 						.map(ReturnRequestEntity::getMetaOrder)
 						.map(MetaOrderEntity::getOrganization);
-		String orgLogo = getOrganizationLogo(org);
-		String orgDomain = domainService.getCurrentServerDomain();
+		String domain = appConfig.environmentHostName;
+		String orgLogo = domain + "/files/" + getOrganizationLogo(org);
+		String orgDomain = domainService.getOrganizationDomainAndSubDir(org.get().getId());
 		String orgName = org.map(OrganizationEntity::getName).orElse("Nasnav");
 		String shippingService = getShippingService(request);
 		AddressRepObj pickupAddr = getPickupAddress(request);
@@ -3542,6 +3543,7 @@ public class OrderServiceImpl implements OrderService {
 		Map<String, Object> params = new HashMap<>();
 		params.put("orgDomain", orgDomain);
 		params.put("orgLogo", orgLogo);
+		params.put("orgName", orgName);
 		params.put("userName", userName);
 		params.put("requestId", request.getId());
 		params.put("creationDate", creationDate);
@@ -4173,8 +4175,9 @@ public class OrderServiceImpl implements OrderService {
 				ofNullable(request)
 						.map(ReturnRequestEntity::getMetaOrder)
 						.map(MetaOrderEntity::getOrganization);
-		String orgLogo = getOrganizationLogo(org);
-		String orgDomain = domainService.getCurrentServerDomain();
+		String domain = appConfig.environmentHostName;
+		String orgLogo = domain + "/files/" + getOrganizationLogo(org);
+		String orgDomain = domainService.getOrganizationDomainAndSubDir(org.get().getId());
 		String orgName = org.map(OrganizationEntity::getName).orElse("Nasnav");
 		String msg = getReturnConfirmationEmailMsg(trackers);
 		String shippingService = getShippingService(request);
@@ -4183,8 +4186,10 @@ public class OrderServiceImpl implements OrderService {
 		List<ReturnShipment> returnShipmentsData = getReturnShipmentsData(request);
 
 		Map<String, Object> params = new HashMap<>();
+		params.put("domain", domain);
 		params.put("orgDomain", orgDomain);
 		params.put("orgLogo", orgLogo);
+		params.put("orgName", orgName);
 		params.put("userName", userName);
 		params.put("requestId", request.getId());
 		params.put("msg", msg);
@@ -4228,8 +4233,9 @@ public class OrderServiceImpl implements OrderService {
 				ofNullable(request)
 						.map(ReturnRequestEntity::getMetaOrder)
 						.map(MetaOrderEntity::getOrganization);
-		String orgLogo = getOrganizationLogo(org);
-		String orgDomain = domainService.getCurrentServerDomain();
+
+		String domain = appConfig.environmentHostName;
+		String orgLogo = domain + "/files/" + getOrganizationLogo(org);
 		String orgName = org.map(OrganizationEntity::getName).orElse("Nasnav");
 		String shippingService = getShippingService(request);
 		AddressRepObj pickupAddr = getPickupAddress(request);
@@ -4238,8 +4244,8 @@ public class OrderServiceImpl implements OrderService {
 		List<ReturnShipment> returnShipmentsData = getReturnShipmentsData(request);
 
 		Map<String, Object> params = new HashMap<>();
-		params.put("orgDomain", orgDomain);
 		params.put("orgLogo", orgLogo);
+		params.put("orgName", orgName);
 		params.put("userName", userName);
 		params.put("requestId", request.getId());
 		params.put("creationDate", creationDate);

@@ -49,6 +49,7 @@ import java.util.Optional;
 
 import javax.transaction.Transactional;
 
+import com.nasnav.AppConfig;
 import com.nasnav.commons.json.jackson.RawObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -138,7 +139,10 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
 			.put(EN_ROUTE.getValue(), DISPATCHED)
 			.put(ShippingStatus.DELIVERED.getValue(), OrderStatus.DELIVERED)
 			.getMap();
-	
+
+	@Autowired
+	private AppConfig config;
+
 	@Autowired
 	private OrganizationShippingServiceRepository orgShippingServiceRepo;
 	
@@ -694,7 +698,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
     			.orElse("INVALID");
     	Long orgId = securityService.getCurrentUserOrganizationId();
     	String callBackUrl = format(SHIPPING_SERVICE_CALLBACK_TEMPLATE, serviceId, orgId);
-    	String domain = domainService.getCurrentServerDomain();
+    	String domain = config.environmentHostName;
     	return format("%s/%s", domain, callBackUrl);
 	}
 

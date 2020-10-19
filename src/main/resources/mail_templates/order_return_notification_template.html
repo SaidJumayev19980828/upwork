@@ -216,7 +216,7 @@
       <div class="Header">
         <div class="Header-logo">
           <img
-                  th:src="${orgDomain} + '/files/' + ${orgLogo}"
+                  th:src="${orgLogo}"
             alt="logo"
           />
         </div>
@@ -253,7 +253,7 @@
                     </h3>
                   </tr>
                     <tr th:each="item : ${shp.items}">
-                      <img class="thumb" th:src="${orgDomain} + '/files/' + ${item.thumb}" alt="#"/>
+                      <img class="thumb" th:src="${domain} + '/files/' + ${item.thumb}" alt="#"/>
                       <h3 th:text="${item.name}"> Bazengar</h3>
                       <table class="variant-features">
                         <tr th:each="feature : ${item.variantFeatures}">
@@ -291,30 +291,9 @@
             </ul>
           </div>
         </div>
-        <p class="help">
-          Any further questions or concerns, please look at our FAQ page where
-          we have answered the most common question regarding this topic or
-          write us at
-          <a target="_blank" th:href="${orgDomain}" th:text="${orgName}"></a>
-        </p>
-      </div>
-
-      <div class="footer">
-        <p>
-          This email was sent to you as a registered member of
-          <a target="_blank" th:href="${orgDomain}" th:text="${orgName}"></a>
-          Use of the service and website is subject to our
-          <a target="_blank" th:href="${orgDomain}">
-            Terms of Use
-          </a>
-          and
-          <a target="_blank" th:href="${orgDomain}">
-            Privacy Statement.
-          </a>
-        </p>
-        <p class="copyright">&copy; 2020 NasNav. All rights reserved.</p>
       </div>
       <div id="balanceText"></div>
+    </div>
     </div>
   </body>
 </html>

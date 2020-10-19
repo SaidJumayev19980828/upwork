@@ -25,7 +25,7 @@ public class AppConfig {
     @Value("${cookies.secureToken}")    public boolean secureTokens;
     @Value("${dashbaord.order.page}")  	public String dashBoardOrderPageUrl;
     @Value("${environment.development}") public boolean develEnvironment = false;
-
+    @Value("${environment.hostname}")   public String environmentHostName;
     
     
     @Bean
