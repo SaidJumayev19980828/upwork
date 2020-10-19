@@ -11,6 +11,7 @@ public enum ErrorCodes {
 	, UXACTVX0002("Cannot send activation email to[%s], email is already activated!")
 	, UXACTVX0003("Cannot send activation email to[%s], need to wait[%s]!")
 	, UXACTVX0004("Invalid redirection url[%s]!")
+	, UXACTVX0005("Missing recovery token!")
 	
 	, U$LOG$0001("NO USER FOUND FOR A TOKEN!")
 

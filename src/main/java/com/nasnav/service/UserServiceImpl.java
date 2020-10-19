@@ -514,6 +514,9 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public UserApiResponse recoverUser(UserDTOs.PasswordResetObject data) {
 		validateNewPassword(data.password);
+		if(isBlankOrNull(data.token)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0005);
+		}
 		UserEntity userEntity = userRepository.getByResetPasswordToken(data.token);
 		if (isNotBlankOrNull(userEntity)) {
 			// if resetPasswordToken is not active, throw exception for invalid
@@ -524,7 +527,7 @@ public class UserServiceImpl implements UserService {
 			userEntity.setEncryptedPassword(passwordEncoder.encode(data.password));
 			userRepository.saveAndFlush(userEntity);
 		} else {
-			throw new EntityValidationException("INVALID_TOKEN  ",
+			throw new EntityValidationException("INVALID_TOKEN",
 					UserApiResponse.createStatusApiResponse(singletonList(INVALID_TOKEN)),
 					HttpStatus.NOT_ACCEPTABLE);
 		}
