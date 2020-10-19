@@ -446,7 +446,7 @@ public class EmployeeUserServiceHelper {
 			Map<String, String> parametersMap = new HashMap<>();
 			parametersMap.put(EmailConstants.USERNAME_PARAMETER, employeeUserEntity.getName());
 			parametersMap.put(EmailConstants.CHANGE_PASSWORD_URL_PARAMETER,
-					appConfig.empMailRecoveryUrl.concat(employeeUserEntity.getResetPasswordToken()));
+					appConfig.mailRecoveryUrl.concat(employeeUserEntity.getResetPasswordToken()));
 			// send Recovery mail to user
 			this.mailService.send(employeeUserEntity.getEmail(), EmailConstants.CHANGE_PASSWORD_EMAIL_SUBJECT,
 					EmailConstants.CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap);
