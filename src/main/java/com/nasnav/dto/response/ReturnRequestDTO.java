@@ -25,6 +25,9 @@ public class ReturnRequestDTO extends BaseRepresentationObject {
     private String phoneNumber;
     private AddressRepObj address;
     private Long itemsCount;
+    private String operator;
+    private String paymentUid;
+    private String shippingServiceId;
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     Set<ReturnRequestItemDTO> returnedItems;
 

@@ -27,6 +27,8 @@ public class ReturnRequestItemDTO extends BaseRepresentationObject {
     private Long productId;
     private Long subOrderId;
     private String productName;
+    private String productCode;
+    private String sku;
     private Long variantId;
     @JsonIgnore
     private String featureSpec;

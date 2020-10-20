@@ -99,6 +99,8 @@ public class ReturnRequestItemEntity implements BaseEntity {
             dto.setFeatureSpec(variant.getFeatureSpec());
             dto.setProductName(product.getName());
             dto.setProductId(product.getId());
+            dto.setProductCode(variant.getProductCode());
+            dto.setSku(variant.getSku());
             dto.setSubOrderId(subOrder.getId());
         }
 

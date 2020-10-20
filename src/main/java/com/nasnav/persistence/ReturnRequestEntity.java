@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nasnav.dto.BaseRepresentationObject;
 import com.nasnav.dto.response.ReturnRequestDTO;
 import com.nasnav.enumerations.ReturnRequestStatus;
+import com.nasnav.shipping.model.Shipment;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -79,6 +80,15 @@ public class ReturnRequestEntity implements BaseEntity{
                     .stream()
                     .findFirst()
                     .get();
+            PaymentEntity payment = subOrder.getPaymentEntity();
+            ShipmentEntity shipment = subOrder.getShipment();
+            if (shipment != null) {
+                dto.setShippingServiceId(shipment.getShippingServiceId());
+            }
+            if (payment != null) {
+                dto.setOperator(payment.getOperator());
+                dto.setPaymentUid(payment.getUid());
+            }
             if (subOrder != null) {
                 addressPhoneNumber = ofNullable(subOrder
                                                 .getAddressEntity()
@@ -95,6 +105,7 @@ public class ReturnRequestEntity implements BaseEntity{
             dto.setCreatedByUser(getCreatedByUser().getId());
             dto.setUserName(getCreatedByUser().getName());
         }
+        dto.setItemsCount(new Long(returnedItems.size()));
         return dto;
     }
 }
