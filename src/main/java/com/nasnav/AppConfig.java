@@ -26,6 +26,7 @@ public class AppConfig {
     @Value("${dashbaord.order.page}")  	public String dashBoardOrderPageUrl;
     @Value("${environment.development}") public boolean develEnvironment = false;
     @Value("${environment.hostname}")   public String environmentHostName;
+    @Value("${email.url.emp_recover}")  public String empMailRecoveryUrl = "";
     
     
     @Bean
