@@ -209,6 +209,23 @@ public class EmployeeUserCreationTest {
 
 
 	@Test
+	public void createEmployeeUserEmailExistsDifferentCaseTest() {
+		// create employee user with an email
+		String body = "{\"name\":\"Ahmed\", \"email\":\"" + TestUserEmail.toUpperCase() + "\", \"org_id\": 99001, \"store_id\": 502, \"role\": \"NASNAV_ADMIN\"}";
+		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
+		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+
+		response.getBody().getEntityId();
+		// try to create another employee user with the same email
+		response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+
+
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
+		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.EMAIL_EXISTS));
+	}
+
+
+	@Test
 	public void employeeUserLoginNeedsActivationTest() {
 		// create employee user with an email
 		String userBody = "{\"name\":\"Ahmed\", \"email\":\"" + TestUserEmail + "\", \"org_id\": 99001, \"store_id\": 502, \"role\": \"ORGANIZATION_EMPLOYEE\"}";

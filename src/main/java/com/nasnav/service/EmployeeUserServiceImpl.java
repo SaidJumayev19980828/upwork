@@ -88,7 +88,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 
 
 	private void validateEmpEmailAlreadyExists(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
-		if (employeeUserRepository.getByEmailAndOrganizationId(employeeUserJson.email, employeeUserJson.orgId).isPresent()) {
+		if (employeeUserRepository.findByEmailIgnoreCaseAndOrganizationId(employeeUserJson.email, employeeUserJson.orgId).isPresent()) {
 			throw new EntityValidationException(
 							EMAIL_EXISTS.name(),
 							createFailedLoginResponse(singletonList(EMAIL_EXISTS)),
@@ -193,7 +193,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	public UserApiResponse login(UserDTOs.UserLoginObject body) {
 		EmployeeUserEntity employeeUserEntity =
 				employeeUserRepository
-					.getByEmailAndOrganizationId(body.email, body.getOrgId())
+					.findByEmailIgnoreCaseAndOrganizationId(body.email, body.getOrgId())
 					.orElseThrow(this::createInvalidCredentialsException);
 
 		boolean accountNeedActivation = empUserSvcHelper.isEmployeeUserNeedActivation(employeeUserEntity);
@@ -314,7 +314,7 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		}
 
 		return	employeeUserRepository
-						.getByEmailAndOrganizationId(email, orgId)
+						.findByEmailIgnoreCaseAndOrganizationId(email, orgId)
 						.orElseThrow(this::createEmailNotExistException);
 	}
 

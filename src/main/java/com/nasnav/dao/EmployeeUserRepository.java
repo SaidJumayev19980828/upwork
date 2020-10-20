@@ -19,8 +19,8 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
      */
     boolean existsByAuthenticationToken(String authenticationToken);
     
-    Optional<EmployeeUserEntity> getByEmailAndOrganizationId(String email, Long orgId);
-    
+    Optional<EmployeeUserEntity> findByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
+
     EmployeeUserEntity getOneByEmail(String email);
     
     
