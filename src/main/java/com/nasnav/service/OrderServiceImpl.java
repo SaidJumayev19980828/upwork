@@ -1596,7 +1596,8 @@ public class OrderServiceImpl implements OrderService {
 
 	private Map<Long, String> getCustomerPhones(Set<Long> ordersIds) {
 		return !ordersIds.isEmpty() ?
-					ordersRepository.findUsersPhoneNumber(ordersIds)
+					ordersRepository
+					.findUsersPhoneNumber(ordersIds)
 					.stream()
 					.collect(toMap(OrderPhoneNumberPair::getOrderId, pair -> ofNullable(pair.getPhoneNumber()).orElse("")))
 				: new LinkedHashMap<>();
@@ -1684,6 +1685,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+
 	private void setOrderSearchStartAndCount(OrderSearchParam params, OrderSearchParam newParams) {
 		if (params.getStart() == null || params.getStart() <= 0)
 			newParams.setStart(0);
@@ -1695,6 +1697,7 @@ public class OrderServiceImpl implements OrderService {
 		else
 			newParams.setCount(params.getCount());
 	}
+
 
 
 	private Integer getOrderStatusId(String status) throws BusinessException {
@@ -1731,11 +1734,16 @@ public class OrderServiceImpl implements OrderService {
 
 
 
+
 	private ReturnRequestsResponse getReturnRequestCriteriaQuery(ReturnRequestSearchParams params, CriteriaBuilder builder) {
 
 		CriteriaQuery<ReturnRequestEntity> query = builder.createQuery(ReturnRequestEntity.class).distinct(true);
 		Root<ReturnRequestEntity> root = query.from(ReturnRequestEntity.class);
-		root.fetch("metaOrder", LEFT);
+		root.fetch("metaOrder", LEFT)
+				.fetch("subOrders", LEFT)
+				.fetch("addressEntity", LEFT);
+		root.fetch("returnedItems", LEFT)
+				.fetch("returnShipment", LEFT);
 		root.fetch("createdByUser", LEFT);
 		root.fetch("createdByEmployee", LEFT);
 
@@ -1747,11 +1755,14 @@ public class OrderServiceImpl implements OrderService {
 
 		query.orderBy(order);
 
-		Set<ReturnRequestDTO> returnRequestDTOS = em.createQuery(query)
+		Set<ReturnRequestDTO> returnRequestDTOS =
+				em
+				.createQuery(query)
 				.setFirstResult(params.getStart())
 				.setMaxResults(params.getCount())
-				.getResultStream()
-				.map(request -> (ReturnRequestDTO)request.getRepresentation())
+				.getResultList()
+				.stream()
+				.map(this::createReturnRequestDto)
 				.collect(toSet());
 
 		if (!returnRequestDTOS.isEmpty()) {
@@ -1763,12 +1774,16 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+
+
 	private void addItemsCount(Set<ReturnRequestDTO> returnRequestDTOS) {
 		Set<Long> returnRequestIds = returnRequestDTOS
 				.stream()
 				.map(ReturnRequestDTO::getId)
 				.collect(toSet());
-		Map<Long, Long> itemsCountMap = returnRequestRepo.getReturnRequestsItemsCount(returnRequestIds)
+		Map<Long, Long> itemsCountMap =
+				returnRequestRepo
+				.getReturnRequestsItemsCount(returnRequestIds)
 				.stream()
 				.collect(toMap(p -> p.getFirst(), p -> p.getSecond()));
 		returnRequestDTOS.stream().forEach(r -> r.setItemsCount(itemsCountMap.get(r.getId())));
@@ -1792,30 +1807,26 @@ public class OrderServiceImpl implements OrderService {
 				.map(to -> builder.lessThanOrEqualTo(root.get("createdOn"), to))
 				.ifPresent(predicates::add);
 
-
 		if (params.getStatus() != null) {
 			Predicate status = builder.equal(root.get("status"), params.getStatus().getValue());
 			predicates.add(status);
 		}
-
 		if (params.getMeta_order_id() != null) {
 			Predicate metaOrderId = builder.equal(root.get("metaOrder").get("id"), params.getMeta_order_id());
 			predicates.add(metaOrderId);
 		}
-
 		if (securityService.currentUserHasRole(STORE_MANAGER) && !securityService.currentUserHasRole(ORGANIZATION_ADMIN)) {
 			Long shopId = ((EmployeeUserEntity)securityService.getCurrentUser()).getShopId();
 			params.setShop_id(shopId);
 		}
-
 		if(params.getShop_id() != null) {
 			Predicate shopId = builder.equal(returnedItems.get("basket").get("stocksEntity").get("shopsEntity").get("id"), params.getShop_id());
 			predicates.add(shopId);
 		}
-
-
 		return predicates.stream().toArray( Predicate[]::new) ;
 	}
+
+
 
 
 	private Predicate[] getOrderQueryPredicates(OrderSearchParam params, CriteriaBuilder builder, Root<OrdersEntity> root) {
@@ -4069,6 +4080,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+
 	private Long getOrderReturnRequestsCount(CriteriaBuilder builder, Predicate[] predicatesArr) {
 		CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
 		countQuery.select(  builder.count(
@@ -4082,6 +4094,8 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+
+	@Override
 	public ReturnRequestDTO getOrderReturnRequest(Long id){
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		ReturnRequestEntity returnRequestEntity =
@@ -4089,22 +4103,44 @@ public class OrderServiceImpl implements OrderService {
 				.findByReturnRequestId(id, orgId)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, id));
 
-		ReturnRequestDTO dto = (ReturnRequestDTO)returnRequestEntity.getRepresentation();
+		return createReturnRequestDto(returnRequestEntity);
+	}
 
-		Set<ReturnRequestItemDTO> requestItems = returnRequestEntity
-				.getReturnedItems()
-				.stream()
-				.map(i -> (ReturnRequestItemDTO)i.getRepresentation())
-				.collect(toSet());
 
-		requestItems = setReturnRequestItemVariantsAdditionalData(requestItems);
+
+
+	private ReturnRequestDTO createReturnRequestDto(ReturnRequestEntity returnRequestEntity) {
+		Long metaOrderId = returnRequestEntity.getMetaOrder().getId();
+
+		//TODO: this is ineffecient and will cause N+1 problem when this method is being called
+		//by getReturnRequests
+		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(metaOrderId);
+		String operator = payment.map(PaymentEntity::getOperator).orElse(null);
+		String uid = payment.map(PaymentEntity::getUid).orElse(null);
+
+		Set<ReturnRequestItemDTO> requestItems = getRequestItemsDto(returnRequestEntity);
+
+		ReturnRequestDTO dto = (ReturnRequestDTO) returnRequestEntity.getRepresentation();
+		dto.setOperator(operator);
+		dto.setPaymentUid(uid);
 		dto.setReturnedItems(requestItems);
 		if (!requestItems.isEmpty()) {
-			dto.setAddress(requestItems.stream().findFirst().get().getAddress());
+			AddressRepObj address = requestItems.stream().findFirst().get().getAddress();
+			dto.setAddress(address);
 		}
 		return dto;
 	}
 
+
+	private Set<ReturnRequestItemDTO> getRequestItemsDto(ReturnRequestEntity returnRequestEntity) {
+		Set<ReturnRequestItemDTO> requestItems =
+				returnRequestEntity
+				.getReturnedItems()
+				.stream()
+				.map(i -> (ReturnRequestItemDTO) i.getRepresentation())
+				.collect(toSet());
+		return setReturnRequestItemVariantsAdditionalData(requestItems);
+	}
 
 
 	private Set<ReturnRequestItemDTO> setReturnRequestItemVariantsAdditionalData(Set<ReturnRequestItemDTO> requestItems) {

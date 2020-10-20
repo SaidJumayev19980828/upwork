@@ -75,20 +75,8 @@ public class ReturnRequestEntity implements BaseEntity{
         if (getMetaOrder() != null) {
             MetaOrderEntity metaOrder = getMetaOrder();
             String addressPhoneNumber = "";
-            OrdersEntity subOrder = metaOrder
-                    .getSubOrders()
-                    .stream()
-                    .findFirst()
-                    .get();
-            PaymentEntity payment = subOrder.getPaymentEntity();
-            ShipmentEntity shipment = subOrder.getShipment();
-            if (shipment != null) {
-                dto.setShippingServiceId(shipment.getShippingServiceId());
-            }
-            if (payment != null) {
-                dto.setOperator(payment.getOperator());
-                dto.setPaymentUid(payment.getUid());
-            }
+            OrdersEntity subOrder = getFirstSubOrder(metaOrder);
+            String shippingServiceId = getFirstReturnShipmentShippingServiceId();
             if (subOrder != null) {
                 addressPhoneNumber = ofNullable(subOrder
                                                 .getAddressEntity()
@@ -97,6 +85,7 @@ public class ReturnRequestEntity implements BaseEntity{
             }
             dto.setMetaOrderId(metaOrder.getId());
             dto.setPhoneNumber(addressPhoneNumber);
+            dto.setShippingServiceId(shippingServiceId);
         }
         if (getCreatedByEmployee() != null) {
             dto.setCreatedByEmployee(getCreatedByEmployee().getId());
@@ -107,5 +96,27 @@ public class ReturnRequestEntity implements BaseEntity{
         }
         dto.setItemsCount(new Long(returnedItems.size()));
         return dto;
+    }
+
+
+
+
+    private String getFirstReturnShipmentShippingServiceId() {
+        return returnedItems
+                .stream()
+                .findFirst()
+                .map(ReturnRequestItemEntity::getReturnShipment)
+                .map(ReturnShipmentEntity::getShippingServiceId)
+                .orElse(null);
+    }
+
+
+
+    private OrdersEntity getFirstSubOrder(MetaOrderEntity metaOrder) {
+        return metaOrder
+                .getSubOrders()
+                .stream()
+                .findFirst()
+                .get();
     }
 }

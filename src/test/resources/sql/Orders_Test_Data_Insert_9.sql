@@ -145,6 +145,31 @@ INSERT INTO public.shipment
 VALUES(330032, 330032, 'TEST', '{"Shop Id":502}' , now(), now(), 0, 'xyz13245', '1234');
 
 
+--insert payments
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(null, 'COD', 'wqww', 2, now(), 3151, 2, 'dfdfdd', 88, 310001);
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(null, 'COD', 'bbbb', 2, now(), 3151, 2, 'erewr', 88, 310002);
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(null, 'COD', 'sssfffs', 2, now(), 3151, 2, 'aveafd', 88, 310003);
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(null, 'COD', 'ttt', 2, now(), 3151, 2, 'zdxf', 88, 310004);
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(null, 'COD', 'ccc', 2, now(), 3151, 2, 'vsasdsf', 88, 310005);
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(null, 'COD', 'zzz', 2, now(), 3151, 2, 'zsvzxf', 88, 310006);
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(null, 'COD', 'www', 2, now(), 3151, 2, 'qwe33', 88, 310007);
+
+
+
 -- insert order items
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330031, 330031, 601, 14, 60.0, 1);
 INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VALUES(330032, 330032, 602, 2, 70.0, 1);
