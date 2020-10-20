@@ -698,7 +698,7 @@ public class ShippingManagementServiceImpl implements ShippingManagementService 
     			.orElse("INVALID");
     	Long orgId = securityService.getCurrentUserOrganizationId();
     	String callBackUrl = format(SHIPPING_SERVICE_CALLBACK_TEMPLATE, serviceId, orgId);
-    	String domain = config.environmentHostName;
+    	String domain = domainService.getBackendUrl();
     	return format("%s/%s", domain, callBackUrl);
 	}
 

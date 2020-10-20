@@ -771,15 +771,11 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	private Map<String, Object> createNotificationEmailParams(OrdersEntity order) {
-		Map<String,Object> params = new HashMap<>();
+		Map<String,Object> params = createOrgPropertiesParams(order.getOrganizationEntity());
 		String orderTime = 
 				DateTimeFormatter
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(order.getCreationDate());
-
-		String domain = appConfig.environmentHostName;
-		String orgDomain = domainService.getOrganizationDomainAndSubDir(order.getOrganizationEntity().getId());
-		String orgLogo = domain + "/files/" + getOrganizationLogo(order.getOrganizationEntity());
 
 		List<BasketItemDetails> basketItemsDetails = 
 				getBasketItemsDetailsMap( setOf(order.getId()) )
@@ -795,11 +791,12 @@ public class OrderServiceImpl implements OrderService {
 			operator = changeOperatorName(operator);
 		}
 
-		params.put("domain", domain);
-		params.put("orgDomain", orgDomain);
-		params.put("orgLogo", orgLogo);
+		String orderPageUrl =
+				domainService
+				.buildDashboardOrderPageUrl(order.getId(), order.getOrganizationEntity().getId());
+
 		params.put("creationTime", orderTime);
-		params.put("orderPageUrl", buildDashboardPageUrl(order));
+		params.put("orderPageUrl", orderPageUrl);
 		params.put("sub", subOrder);
 		params.put("operator", operator);
 		return params;
@@ -809,7 +806,6 @@ public class OrderServiceImpl implements OrderService {
 	
 	
 	private Map<String, Object> createRejectionEmailParams(OrdersEntity order, String rejectionReason) {
-		Map<String,Object> params = new HashMap<>();
 		String message =
 				ofNullable(rejectionReason)
 				.orElse(DEFAULT_REJECTION_MESSAGE);
@@ -821,19 +817,11 @@ public class OrderServiceImpl implements OrderService {
 		SubOrder subOrder = getSubOrder(order, getVariantsImagesList(basketItemsDetails));
 		changeShippingServiceName(subOrder);
 
-		String domain = domainService.getCurrentServerDomain();
-		String orgDomain = domainService.getOrganizationDomainAndSubDir(order.getOrganizationEntity().getId());
-		String orgLogo = domain + "/files/" + getOrganizationLogo(order.getOrganizationEntity());
-		String orgName = order.getMetaOrder().getOrganization().getName();
-
-		params.put("domain", domain);
-		params.put("orgDomain", orgDomain);
-		params.put("orgLogo", orgLogo);
+		Map<String,Object> params = createOrgPropertiesParams(order.getOrganizationEntity());
 		params.put("id", order.getId().toString());
 		params.put("rejectionReason", message);
 		params.put("sub", subOrder);
 		params.put("userName", order.getMetaOrder().getUser().getName());
-		params.put("orgName", orgName);
 		return params;
 	}
 
@@ -852,28 +840,11 @@ public class OrderServiceImpl implements OrderService {
 
 	
 	
-	private String buildDashboardPageUrl(OrdersEntity order) {
-		Long orgId = order.getOrganizationEntity().getId();
-		String domain = domainService
-							.getOrganizationDomainOnly(orgId)
-							.stream()
-							.findFirst()
-							.orElse("");
-		String path = appConfig.dashBoardOrderPageUrl.replace("{order_id}", order.getId().toString());
-		return format("%s/%s", domain, path);
-	}
 
 
 
-	private String buildDashboardPageUrl(ReturnRequestEntity returnRequest) {
-		Long orgId = returnRequest.getMetaOrder().getOrganization().getId();
-		String domain = domainService
-							.getOrganizationDomainOnly(orgId).stream()
-							.findFirst()
-							.orElse("");
-		String path = "dashboard/return-requests";
-		return format("%s/%s/%d", domain, path, returnRequest.getId());
-	}
+
+
 	
 	
 
@@ -927,6 +898,20 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
+	private Map<String, Object> createOrgPropertiesParams(OrganizationEntity org) {
+		String domain = domainService.getBackendUrl();
+		String orgDomain = domainService.getOrganizationDomainAndSubDir(org.getId());
+		String orgLogo = domain + "/files/"+ getOrganizationLogo(org);
+		String orgName = org.getName();
+
+		Map<String, Object> params = new HashMap<>();
+		params.put("orgDomain", orgDomain);
+		params.put("domain", domain);
+		params.put("orgName", orgName);
+		params.put("orgLogo", orgLogo);
+
+		return params;
+	}
 
 
 
@@ -944,22 +929,11 @@ public class OrderServiceImpl implements OrderService {
 				.ofPattern("dd/MM/YYYY - hh:mm")
 				.format(orderTime);
 
-		String domain = appConfig.environmentHostName;
-		String orgDomain = domainService.getOrganizationDomainAndSubDir(order.getOrganization().getId());
-
-		String orgLogo = domain + "/files/"+ getOrganizationLogo(order.getOrganization());
-
-		String orgName = order.getOrganization().getName();
-
 		Order orderResponse = this.getOrderResponse(order);
 		normalizeOrderForEmailTemplate(orderResponse);
 
-		Map<String, Object> params = new HashMap<>();
-		params.put("orgDomain", orgDomain);
-		params.put("domain", domain);
-		params.put("orgName", orgName);
+		Map<String, Object> params = createOrgPropertiesParams(order.getOrganization());
 		params.put("creation_date", orderTimeStr);
-		params.put("orgLogo", orgLogo);
 		params.put("data", orderResponse);
 		return params;
 	}
@@ -1004,14 +978,16 @@ public class OrderServiceImpl implements OrderService {
 		ShopsEntity shop = shopsRepo.findById(subOrder.getShopId()).get();
 
 		AddressRepObj shopAddress = (AddressRepObj) shop.getAddressesEntity().getRepresentation();
-		String shopAreaName =
-				shop
-				.getAddressesEntity()
-				.getAreasEntity()
-				.getName();
+		String shopAreaNameString =
+				ofNullable(shop)
+				.map(ShopsEntity::getAddressesEntity)
+				.map(AddressesEntity::getAreasEntity)
+				.map(AreasEntity::getName)
+				.map(areaName -> " - " + areaName)
+				.orElse("");
 		Shipment shipment = subOrder.getShipment();
 		if (shipment.getServiceName().equals("PICKUP_POINTS") || shipment.getServiceName().equals("PICKUP")) {
-			shipment.setServiceName("Pickup at " + subOrder.getShopName() + " - " + shopAreaName);
+			shipment.setServiceName("Pickup at " + subOrder.getShopName() + shopAreaNameString);
 			AddressRepObj address = subOrder.getDeliveryAddress();
 			BeanUtils.copyProperties(address, shopAddress);
 			subOrder.setDeliveryAddress(shopAddress);
@@ -3412,10 +3388,14 @@ public class OrderServiceImpl implements OrderService {
 		String domain = domainService.getCurrentServerDomain();
 		String orgLogo = domain + "/files/" + getOrganizationLogo(order.getOrganizationEntity());
 
+		String orderPageUrl =
+				domainService
+				.buildDashboardOrderPageUrl(order.getId(), order.getOrganizationEntity().getId());
+
 		params.put("domain", domain);
 		params.put("orgLogo", orgLogo);
 		params.put("updateTime", updateTime);
-		params.put("orderPageUrl", buildDashboardPageUrl(order));
+		params.put("orderPageUrl", orderPageUrl);
 		params.put("sub", subOrder);
 		return params;
 	}
@@ -3557,10 +3537,6 @@ public class OrderServiceImpl implements OrderService {
 				ofNullable(request)
 						.map(ReturnRequestEntity::getMetaOrder)
 						.map(MetaOrderEntity::getOrganization);
-		String domain = appConfig.environmentHostName;
-		String orgLogo = domain + "/files/" + getOrganizationLogo(org);
-		String orgDomain = domainService.getOrganizationDomainAndSubDir(org.get().getId());
-		String orgName = org.map(OrganizationEntity::getName).orElse("Nasnav");
 		String shippingService = getShippingService(request);
 		AddressRepObj pickupAddr = getPickupAddress(request);
 		String phone =
@@ -3570,10 +3546,7 @@ public class OrderServiceImpl implements OrderService {
 
 		List<ReturnShipment> returnShipmentsData = getReturnShipmentsData(request);
 
-		Map<String, Object> params = new HashMap<>();
-		params.put("orgDomain", orgDomain);
-		params.put("orgLogo", orgLogo);
-		params.put("orgName", orgName);
+		Map<String, Object> params = createOrgPropertiesParams(org.get());
 		params.put("userName", userName);
 		params.put("requestId", request.getId());
 		params.put("creationDate", creationDate);
@@ -4212,10 +4185,7 @@ public class OrderServiceImpl implements OrderService {
 				ofNullable(request)
 						.map(ReturnRequestEntity::getMetaOrder)
 						.map(MetaOrderEntity::getOrganization);
-		String domain = appConfig.environmentHostName;
-		String orgLogo = domain + "/files/" + getOrganizationLogo(org);
-		String orgDomain = domainService.getOrganizationDomainAndSubDir(org.get().getId());
-		String orgName = org.map(OrganizationEntity::getName).orElse("Nasnav");
+
 		String msg = getReturnConfirmationEmailMsg(trackers);
 		String shippingService = getShippingService(request);
 		AddressRepObj pickupAddr = getPickupAddress(request);
@@ -4225,11 +4195,7 @@ public class OrderServiceImpl implements OrderService {
 						.orElseGet(() -> user.map(UserEntity::getPhoneNumber).orElse(""));
 		List<ReturnShipment> returnShipmentsData = getReturnShipmentsData(request);
 
-		Map<String, Object> params = new HashMap<>();
-		params.put("domain", domain);
-		params.put("orgDomain", orgDomain);
-		params.put("orgLogo", orgLogo);
-		params.put("orgName", orgName);
+		Map<String, Object> params = createOrgPropertiesParams(org.get());
 		params.put("userName", userName);
 		params.put("requestId", request.getId());
 		params.put("msg", msg);
@@ -4276,12 +4242,10 @@ public class OrderServiceImpl implements OrderService {
 						.map(ReturnRequestEntity::getMetaOrder)
 						.map(MetaOrderEntity::getOrganization);
 
-		String domain = appConfig.environmentHostName;
-		String orgLogo = domain + "/files/" + getOrganizationLogo(org);
-		String orgName = org.map(OrganizationEntity::getName).orElse("Nasnav");
+		Long orgId = org.map(OrganizationEntity::getId).orElse(-1L);
 		String shippingService = getShippingService(request);
 		AddressRepObj pickupAddr = getPickupAddress(request);
-		String returnOrderPageUrl = buildDashboardPageUrl(request);
+		String returnOrderPageUrl = domainService.buildDashboardReturnRequestPageUrl(request.getId(), orgId);
 		String phone =
 				ofNullable(pickupAddr)
 						.map(AddressRepObj::getPhoneNumber)
@@ -4291,9 +4255,7 @@ public class OrderServiceImpl implements OrderService {
 		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(metaOrderId);
 		Optional<String> operator = payment.map(PaymentEntity::getOperator);
 
-		Map<String, Object> params = new HashMap<>();
-		params.put("orgLogo", orgLogo);
-		params.put("orgName", orgName);
+		Map<String, Object> params = createOrgPropertiesParams(org.get());
 		params.put("userName", userName);
 		params.put("requestId", request.getId());
 		params.put("creationDate", creationDate);

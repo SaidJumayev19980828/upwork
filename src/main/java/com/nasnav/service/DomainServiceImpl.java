@@ -14,6 +14,9 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Optional;
 
+import com.nasnav.AppConfig;
+import com.nasnav.persistence.OrdersEntity;
+import com.nasnav.persistence.ReturnRequestEntity;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +45,9 @@ public class DomainServiceImpl implements DomainService{
 	
 	@Autowired
 	private OrganizationRepository orgRepo;
+
+	@Autowired
+	private AppConfig appConfig;
 	
 	
 	@Override
@@ -121,7 +127,7 @@ public class DomainServiceImpl implements DomainService{
 	
 	
 	private String addProtocolIfNeeded(String domain) {
-		return domain.startsWith("http:") ? domain : "https://"+domain;
+		return domain.startsWith("http://") || domain.startsWith("https://") ? domain : "https://"+domain;
 	}
 
 
@@ -149,6 +155,43 @@ public class DomainServiceImpl implements DomainService{
 		domainEntity.setOrganizationEntity(organizationEntity);
 		
 		domainRepo.save(domainEntity);
+	}
+
+
+	@Override
+	public String getBackendUrl() {
+		String backendUrl = ofNullable(appConfig.environmentHostName)
+							.orElse(getCurrentServerDomain());
+		return addProtocolIfNeeded(backendUrl);
+	}
+
+
+
+	@Override
+	public String buildDashboardOrderPageUrl(Long orderId, Long orgId) {
+		String domain =
+				getOrganizationDomainOnly(orgId)
+				.stream()
+				.findFirst()
+				.orElse("");
+		String orderIdString =
+				ofNullable(orderId)
+				.map(id -> id.toString())
+				.orElse("null");
+		String path = appConfig.dashBoardOrderPageUrl.replace("{order_id}", orderIdString);
+		return format("%s/%s", domain, path);
+	}
+
+
+
+	@Override
+	public String buildDashboardReturnRequestPageUrl(Long returnRequestId, Long orgId) {
+		String domain =
+				getOrganizationDomainOnly(orgId).stream()
+				.findFirst()
+				.orElse("");
+		String path = "dashboard/return-requests";
+		return format("%s/%s/%d", domain, path, returnRequestId);
 	}
 
 

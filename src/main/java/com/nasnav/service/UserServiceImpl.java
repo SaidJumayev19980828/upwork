@@ -211,7 +211,7 @@ public class UserServiceImpl implements UserService {
 
 
 	private Map<String, String> createActivationEmailParameters(UserEntity userEntity, String redirectUrl) {
-		String domain = appConfig.environmentHostName;
+		String domain = domainService.getBackendUrl();
 		String orgDomain = domainService.getOrganizationDomainAndSubDir(userEntity.getOrganizationId());
 
 		String activationRedirectUrl = buildActivationRedirectUrl(userEntity, redirectUrl);
