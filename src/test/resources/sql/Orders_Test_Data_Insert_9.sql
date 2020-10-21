@@ -94,10 +94,10 @@ INSERT INTO public.products(id, name, brand_id, category_id, organization_id, cr
 INSERT INTO public.products(id, name, brand_id, category_id, organization_id, created_at, updated_at) VALUES (1004, 'product_4',101, 201, 99001, now(), now());
 
 -- variants for each product
-insert into public.product_variants(id, "name" , product_id ) values(310001, 'var' 	, 1001);
-insert into public.product_variants(id, "name" , product_id ) values(310002, 'var' 	, 1002);
-insert into public.product_variants(id, "name" , product_id ) values(310003, 'var' 	, 1003);
-insert into public.product_variants(id, "name" , product_id ) values(310004, 'var' 	, 1004);
+insert into public.product_variants(id, "name" , product_id, product_code, sku ) values(310001, 'var' 	, 1001, 'ABC', '123');
+insert into public.product_variants(id, "name" , product_id, product_code, sku ) values(310002, 'var' 	, 1002, 'ETR', '456');
+insert into public.product_variants(id, "name" , product_id, product_code, sku ) values(310003, 'var' 	, 1003, 'SDF', '789');
+insert into public.product_variants(id, "name" , product_id, product_code, sku ) values(310004, 'var' 	, 1004, 'WER', '735');
 
 
 -- inserting stocks
@@ -185,6 +185,21 @@ INSERT INTO public.baskets(id, order_id, stock_id, quantity, price, currency)VAL
 
 
 
+
+--insert return shipments
+INSERT INTO public.return_shipment(id, created_at, updated_at, external_id, shipping_service_id, status, track_number)
+values(360001, now(), now(), 'reafd', 'TEST', 1, '1234');
+INSERT INTO public.return_shipment(id, created_at, updated_at, external_id, shipping_service_id, status, track_number)
+values(360002, now(), now(), 'cxvzv', 'TEST', 1, '56578');
+INSERT INTO public.return_shipment(id, created_at, updated_at, external_id, shipping_service_id, status, track_number)
+values(360003, now(), now(), 'qeqqwe', 'TEST', 1, '234213');
+INSERT INTO public.return_shipment(id, created_at, updated_at, external_id, shipping_service_id, status, track_number)
+values(360004, now(), now(), 'vxfgg', 'TEST', 1, '565464');
+INSERT INTO public.return_shipment(id, created_at, updated_at, external_id, shipping_service_id, status, track_number)
+values(360005, now(), now(), 'ufyfu', 'TEST', 1, '1234423');
+INSERT INTO public.return_shipment(id, created_at, updated_at, external_id, shipping_service_id, status, track_number)
+values(360006, now(), now(), 'uio', 'TEST', 1, '15435');
+
 -- insert return request
 INSERT INTO public.return_request
 (id , created_on, created_by_user, created_by_employee, meta_order_id, status)
@@ -210,13 +225,13 @@ INSERT INTO public.return_request(id, created_on, created_by_employee, meta_orde
 INSERT INTO public.return_request(id, created_on, created_by_employee, meta_order_id, status)
     VALUES(330036, now() , 69, 310006, 0);
 
-INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
-    VALUES(330031, 330031, 330031, 1, null);
-INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
-    VALUES(330032, 330031, 330032, 1, null);
-INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
-    VALUES(330033, 330032, 330033, 1, null);
-INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
-    VALUES(330034, 330033, 330039, 1, null);
-INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on)
-    VALUES(330035, 330036, 330040, 1, now());
+INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on, return_shipment_id)
+    VALUES(330031, 330031, 330031, 1, null, 360001);
+INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on, return_shipment_id)
+    VALUES(330032, 330031, 330032, 1, null, 360001);
+INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on, return_shipment_id)
+    VALUES(330033, 330032, 330033, 1, null, 360002);
+INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on, return_shipment_id)
+    VALUES(330034, 330033, 330039, 1, null, 360003);
+INSERT INTO public.return_request_item(id, return_request_id, order_item_id, returned_quantity, received_on, return_shipment_id)
+    VALUES(330035, 330036, 330040, 1, now(), 360006);

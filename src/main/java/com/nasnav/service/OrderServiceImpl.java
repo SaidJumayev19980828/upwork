@@ -1735,17 +1735,36 @@ public class OrderServiceImpl implements OrderService {
 
 
 
-	private ReturnRequestsResponse getReturnRequestCriteriaQuery(ReturnRequestSearchParams params, CriteriaBuilder builder) {
+	private ReturnRequestsResponse getReturnRequests(ReturnRequestSearchParams params, CriteriaBuilder builder) {
 
 		CriteriaQuery<ReturnRequestEntity> query = builder.createQuery(ReturnRequestEntity.class).distinct(true);
 		Root<ReturnRequestEntity> root = query.from(ReturnRequestEntity.class);
-		root.fetch("metaOrder", LEFT)
-				.fetch("subOrders", LEFT)
-				.fetch("addressEntity", LEFT);
-		root.fetch("returnedItems", LEFT)
-				.fetch("returnShipment", LEFT);
 		root.fetch("createdByUser", LEFT);
 		root.fetch("createdByEmployee", LEFT);
+		Fetch metaOrderFetch = root.fetch("metaOrder", LEFT);
+		//TODO: while there is no need for pormotions here, for some reason hibernate fetch it for
+		//each meta-order when running the query, although this is a lazy fetched entity.
+		metaOrderFetch.fetch("promotions", LEFT);
+		metaOrderFetch.fetch("user", LEFT);
+		Fetch subOrderFetch = metaOrderFetch.fetch("subOrders", LEFT);
+		subOrderFetch.fetch("addressEntity", LEFT);
+		subOrderFetch.fetch("shipment", LEFT);
+		Fetch returnItemsFtech = root.fetch("returnedItems", LEFT);
+		returnItemsFtech.fetch("returnShipment", LEFT);
+		Fetch basketFetch = returnItemsFtech.fetch("basket", LEFT);
+		Fetch basketSubOrderFetch = basketFetch.fetch("ordersEntity", LEFT);
+		basketSubOrderFetch
+					.fetch("addressEntity", LEFT)
+					.fetch("areasEntity", LEFT)
+					.fetch("citiesEntity", LEFT)
+					.fetch("countriesEntity", LEFT);
+		basketSubOrderFetch.fetch("shipment", LEFT);
+
+		Fetch stockFetch = basketFetch.fetch("stocksEntity", LEFT);
+		stockFetch.fetch("shopsEntity", LEFT);
+		stockFetch.fetch("productVariantsEntity", LEFT)
+					.fetch("productEntity", LEFT);
+
 
 		Predicate[] predicatesArr = getReturnRequestQueryPredicates(params, builder, root);
 
@@ -1755,24 +1774,42 @@ public class OrderServiceImpl implements OrderService {
 
 		query.orderBy(order);
 
-		Set<ReturnRequestDTO> returnRequestDTOS =
+		List<ReturnRequestEntity> returnRequests =
 				em
 				.createQuery(query)
 				.setFirstResult(params.getStart())
 				.setMaxResults(params.getCount())
-				.getResultList()
-				.stream()
-				.map(this::createReturnRequestDto)
-				.collect(toSet());
+				.getResultList();
 
-		if (!returnRequestDTOS.isEmpty()) {
-			addItemsCount(returnRequestDTOS);
-		}
+		Set<ReturnRequestDTO> returnRequestDTOS = getReturnRequestDTOS(returnRequests);
 		Long count = getOrderReturnRequestsCount(builder, predicatesArr);
 
 		return new ReturnRequestsResponse(count, returnRequestDTOS);
 	}
 
+
+
+
+	private Set<ReturnRequestDTO> getReturnRequestDTOS(List<ReturnRequestEntity> returnRequests) {
+		List<Long> metaOrderIds =
+				returnRequests
+				.stream()
+				.map(ReturnRequestEntity::getMetaOrder)
+				.map(MetaOrderEntity::getId)
+				.collect(toList());
+
+		Map<Long, PaymentEntity> paymentsCache = createPaymentCache(metaOrderIds);
+		Map<Long, Optional<String>> variantCoverImgs = getReturnRequestItemsCoverImgs(returnRequests);
+		Set<ReturnRequestDTO> returnRequestDTOS =
+				returnRequests
+				.stream()
+				.map(request -> createReturnRequestDto(request, paymentsCache, variantCoverImgs))
+				.collect(toSet());
+		if (!returnRequestDTOS.isEmpty()) {
+			addItemsCount(returnRequestDTOS);
+		}
+		return returnRequestDTOS;
+	}
 
 
 
@@ -4063,7 +4100,7 @@ public class OrderServiceImpl implements OrderService {
 	public ReturnRequestsResponse getOrderReturnRequests(ReturnRequestSearchParams params) {
 		setOrderReturnDefaultParams(params);
 		CriteriaBuilder builder = em.getCriteriaBuilder();
-		return getReturnRequestCriteriaQuery(params, builder);
+		return getReturnRequests(params, builder);
 	}
 
 
@@ -4102,23 +4139,46 @@ public class OrderServiceImpl implements OrderService {
 				returnRequestRepo
 				.findByReturnRequestId(id, orgId)
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$RET$0017, id));
-
-		return createReturnRequestDto(returnRequestEntity);
+		Long metaOrderId = returnRequestEntity.getMetaOrder().getId();
+		Map<Long, PaymentEntity> paymentsCache = createPaymentCache(asList(metaOrderId));
+		Map<Long, Optional<String>> variantCoverImgs = getReturnRequestItemsCoverImgs(asList(returnRequestEntity));
+		return createReturnRequestDto(returnRequestEntity, paymentsCache, variantCoverImgs);
 	}
 
 
 
+	private Map<Long, Optional<String>> getReturnRequestItemsCoverImgs(List<ReturnRequestEntity> returnRequests) {
+		return returnRequests
+				.stream()
+				.map(ReturnRequestEntity::getReturnedItems)
+				.flatMap(Set::stream)
+				.map(ReturnRequestItemEntity::getBasket)
+				.map(BasketsEntity::getStocksEntity)
+				.map(StocksEntity::getProductVariantsEntity)
+				.map(ProductVariantsEntity::getId)
+				.collect(collectingAndThen(toList(), imgService::getVariantsCoverImages));
+	}
 
-	private ReturnRequestDTO createReturnRequestDto(ReturnRequestEntity returnRequestEntity) {
+
+
+	private Map<Long, PaymentEntity> createPaymentCache(List<Long> metaOrderIds) {
+		return paymentsRepo
+				.findByMetaOrderIdIn(metaOrderIds)
+				.stream()
+				.collect(toMap(PaymentEntity::getMetaOrderId, pay -> pay));
+	}
+
+
+
+	private ReturnRequestDTO createReturnRequestDto(ReturnRequestEntity returnRequestEntity, Map<Long,PaymentEntity> payments
+						, Map<Long, Optional<String>> variantCoverImgs) {
 		Long metaOrderId = returnRequestEntity.getMetaOrder().getId();
 
-		//TODO: this is ineffecient and will cause N+1 problem when this method is being called
-		//by getReturnRequests
-		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(metaOrderId);
+		Optional<PaymentEntity> payment = ofNullable(payments.get(metaOrderId));
 		String operator = payment.map(PaymentEntity::getOperator).orElse(null);
 		String uid = payment.map(PaymentEntity::getUid).orElse(null);
 
-		Set<ReturnRequestItemDTO> requestItems = getRequestItemsDto(returnRequestEntity);
+		Set<ReturnRequestItemDTO> requestItems = getRequestItemsDto(returnRequestEntity, variantCoverImgs);
 
 		ReturnRequestDTO dto = (ReturnRequestDTO) returnRequestEntity.getRepresentation();
 		dto.setOperator(operator);
@@ -4132,28 +4192,26 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 
-	private Set<ReturnRequestItemDTO> getRequestItemsDto(ReturnRequestEntity returnRequestEntity) {
+
+	private Set<ReturnRequestItemDTO> getRequestItemsDto(ReturnRequestEntity returnRequestEntity
+								, Map<Long, Optional<String>> variantCoverImgs) {
 		Set<ReturnRequestItemDTO> requestItems =
 				returnRequestEntity
 				.getReturnedItems()
 				.stream()
 				.map(i -> (ReturnRequestItemDTO) i.getRepresentation())
 				.collect(toSet());
-		return setReturnRequestItemVariantsAdditionalData(requestItems);
+		return setReturnRequestItemVariantsAdditionalData(requestItems, variantCoverImgs);
 	}
 
 
-	private Set<ReturnRequestItemDTO> setReturnRequestItemVariantsAdditionalData(Set<ReturnRequestItemDTO> requestItems) {
-		List<Long> variantsIds = requestItems
-				.stream()
-				.map(ReturnRequestItemDTO::getVariantId)
-				.collect(toList());
 
-		Map<Long, Optional<String>> images = imgService.getVariantsCoverImages(variantsIds);
+	private Set<ReturnRequestItemDTO> setReturnRequestItemVariantsAdditionalData(Set<ReturnRequestItemDTO> requestItems
+						, Map<Long, Optional<String>> variantCoverImgs) {
 		for(ReturnRequestItemDTO dto : requestItems) {
 			Map<String, String> variantFeatures = parseVariantFeatures(dto.getFeatureSpec(), 0);
 			dto.setVariantFeatures(variantFeatures);
-			Optional<String> image = images.get(dto.getVariantId());
+			Optional<String> image = variantCoverImgs.get(dto.getVariantId());
 			if(image.isPresent()){
 				dto.setCoverImage(image.get());
 			}
@@ -4290,6 +4348,7 @@ public class OrderServiceImpl implements OrderService {
 		Long metaOrderId = request.getMetaOrder().getId();
 		Optional<PaymentEntity> payment = paymentsRepo.findByMetaOrderId(metaOrderId);
 		Optional<String> operator = payment.map(PaymentEntity::getOperator);
+		Optional<String> payUid = payment.map(PaymentEntity::getUid);
 
 		Map<String, Object> params = createOrgPropertiesParams(org.get());
 		params.put("userName", userName);
@@ -4301,6 +4360,7 @@ public class OrderServiceImpl implements OrderService {
 		params.put("returnShipments", returnShipmentsData);
 		params.put("returnOrderPageUrl", returnOrderPageUrl);
 		params.put("paymentOperator", operator);
+		params.put("paymentUid", payUid);
 		return params;
 	}
 

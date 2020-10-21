@@ -1,6 +1,7 @@
 package com.nasnav.dao;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,4 +22,6 @@ public interface PaymentsRepository extends JpaRepository<PaymentEntity, Long> {
     Optional<PaymentEntity> findByMetaOrderId(Long orderId);
 
     List<PaymentEntity> findBySessionId(String sessionId);
+
+    List<PaymentEntity> findByMetaOrderIdIn(List<Long> metaOrderIds);
 }

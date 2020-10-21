@@ -243,6 +243,9 @@
         <h3 class="shopName" th:if="${paymentOperator.isPresent()}" > Payment Operator :
           <span  th:text="${paymentOperator.get()}" >3m Dahab</span>
         </h3>
+        <h3 class="shopName" th:if="${paymentUid.isPresent()}" > Payment Order Reference :
+          <span  th:text="${paymentUid.get()}" >Alo_Alo_123</span>
+        </h3>
 
         <div class="orders">
           <table>

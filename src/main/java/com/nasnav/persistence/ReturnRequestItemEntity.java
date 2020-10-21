@@ -28,6 +28,8 @@ public class ReturnRequestItemEntity implements BaseEntity {
 
     @ManyToOne
     @JoinColumn(name="return_request_id")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private ReturnRequestEntity returnRequest;
 
     @ManyToOne
@@ -48,6 +50,8 @@ public class ReturnRequestItemEntity implements BaseEntity {
 
     @ManyToOne
     @JoinColumn(name="received_by")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private EmployeeUserEntity receivedBy;
 
     @Column(name="received_on")
@@ -55,10 +59,14 @@ public class ReturnRequestItemEntity implements BaseEntity {
 
     @ManyToOne
     @JoinColumn(name="created_by_user")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private UserEntity createdByUser;
 
     @ManyToOne
     @JoinColumn(name="created_by_employee")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private EmployeeUserEntity createdByEmployee;
 
 

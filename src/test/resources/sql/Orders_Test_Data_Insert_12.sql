@@ -153,6 +153,23 @@ values(330036, 88, now(), now(), 99001, 8, 502, 310004, 12300001);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id, address_id)
 values(330037, 88, now(), now(), 99001, 8, 505, 310004, 12300001);
 
+
+--insert payments
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(null, 'COD', 'wqww', 2, now(), 3151, 2, 'dfdfdd', 88, 310001);
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(null, 'COD', 'bbbb', 2, now(), 3151, 2, 'erewr', 88, 310002);
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(null, 'COD', 'sssfffs', 2, now(), 3151, 2, 'aveafd', 88, 310003);
+INSERT INTO public.payments
+(order_id, "operator", uid, status, executed, amount, currency, "object", user_id, meta_order_id)
+VALUES(null, 'COD', 'ttt', 2, now(), 3151, 2, 'zdxf', 88, 310004);
+
+
+
 INSERT INTO public.shipment
 (sub_order_id, shipping_service_id, parameters, created_at, updated_at, status)
 VALUES(330031, 'TEST', '{"Shop Id":501}' , now(), now(), 0);

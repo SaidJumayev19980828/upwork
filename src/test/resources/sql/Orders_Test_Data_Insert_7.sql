@@ -26,7 +26,7 @@ INSERT INTO public.organization_shipping_service(shipping_service_id, organizati
 
 
 
-INSERT INTO public.addresses(id, address_line_1) values(12300002, 'Ali papa cave');
+INSERT INTO public.addresses(id, address_line_1, area_id, phone_number) values(12300002, 'Ali papa cave', 1, '+1111234567');
 
 
 --inserting shops
