@@ -28,7 +28,6 @@ public class BasketItem {
     private String unit;
     private String thumb;
     private BigDecimal price;
-    private BigDecimal discount;
     private Long variantId;
     private String variantName;
     private Boolean isReturnable;

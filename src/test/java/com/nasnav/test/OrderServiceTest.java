@@ -1009,7 +1009,6 @@ public class OrderServiceTest {
 		item.setTotalPrice( price.subtract(discountAmount).multiply(new BigDecimal(quantity)) );
 		item.setThumb(EXPECTED_COVER_IMG_URL);
 		item.setPrice(price);
-		item.setDiscount(discount);
 		return Arrays.asList(item);
 	}
 	
