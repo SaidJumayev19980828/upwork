@@ -26,7 +26,6 @@ import com.nasnav.persistence.OrdersEntity;
 import com.nasnav.persistence.PaymentEntity;
 import com.nasnav.persistence.dto.query.result.CartCheckoutData;
 import com.nasnav.request.OrderSearchParam;
-import com.nasnav.response.OrderResponse;
 import com.nasnav.response.ReturnRequestsResponse;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 
@@ -55,10 +54,7 @@ public interface OrderService {
 	String ORDER_RETURN_RECEIVE_SUBJECT = "Your returned items has been received by the store!";
 	String ORDER_RETURN_NOTIFY_SUBJECT = "New Order return request [%d] has been created!";
 
-
-	public OrderResponse createNewOrder(OrderJsonDto orderJson) throws BusinessException;
-
-	public OrderResponse updateExistingOrder(OrderJsonDto orderJson) throws BusinessException;
+	void updateExistingOrder(OrderJsonDto orderJson);
 
 	public DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
 

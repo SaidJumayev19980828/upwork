@@ -27,7 +27,6 @@ import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.request.OrderSearchParam;
-import com.nasnav.response.OrderResponse;
 import com.nasnav.service.OrderService;
 
 import io.swagger.annotations.Api;
@@ -41,40 +40,20 @@ public class OrdersController {
 
     @Autowired
     private OrderService orderService;
-
-
-	@ApiOperation(value = "Create an order", nickname = "orderCreation", code = 201)
-	@ApiResponses(value = {
-			@io.swagger.annotations.ApiResponse(code = 200, message = "Order created"),
-			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
-			@io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
-	})
-	@PostMapping(value = "create",
-			produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-			consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	public OrderResponse createOrder(@RequestHeader(name = "User-Token", required = false) String userToken,
-									 @RequestBody OrderJsonDto orderJson) throws BusinessException {
-
-		return orderService.createNewOrder(orderJson);
-	}
     
 	
-    @ApiOperation(value = "Update an order", nickname = "orderUpdate")
+    @ApiOperation(value = "Update an order status", nickname = "orderStatusUpdate")
     @ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "Order updated"),
             @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)"),
             @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
     })
-    @PostMapping(value = "update",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
+    @PostMapping(value = "status/update",
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public OrderResponse updateOrder(
-            
+    public void updateOrder(
             @RequestHeader(name = "User-Token", required = false) String userToken,
-            @RequestBody OrderJsonDto orderJson)
-            		throws BusinessException {
-    	
-    	return orderService.updateExistingOrder(orderJson);
+            @RequestBody OrderJsonDto orderJson) {
+    	orderService.updateExistingOrder(orderJson);
     }
     
     

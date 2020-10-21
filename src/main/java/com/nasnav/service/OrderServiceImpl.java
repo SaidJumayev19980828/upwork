@@ -26,7 +26,6 @@ import com.nasnav.integration.exceptions.InvalidIntegrationEventException;
 import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.*;
 import com.nasnav.request.OrderSearchParam;
-import com.nasnav.response.OrderResponse;
 import com.nasnav.response.ReturnRequestsResponse;
 import com.nasnav.service.helpers.EmployeeUserServiceHelper;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
@@ -271,306 +270,26 @@ public class OrderServiceImpl implements OrderService {
 		return value;
 	}
 	
-	
-	public OrderResponse createNewOrder(OrderJsonDto orderJson) throws BusinessException {
 
-		validateOrderCreation(orderJson);
-
-		Map<Long, List<BasketItemDTO>> groupedBaskets = groupBasketsByShops(orderJson.getBasket());
-
-		List<OrderRepresentationObject> ordersList = new ArrayList<>();
-		for(Long shopId : groupedBaskets.keySet())
-			ordersList.add(createNewOrderAndBasketItems(orderJson, groupedBaskets.get(shopId), shopId));
-		return new OrderResponse(ordersList, (ordersList.stream()
-													   .map(order -> order.getPrice())
-													   .reduce(ZERO, BigDecimal::add)));
-	}
-	
-	
-	
-	
-	
-	@Transactional(rollbackFor = Throwable.class)
-	public OrderResponse updateExistingOrder(OrderJsonDto orderJson) throws BusinessException {
-
-		validateOrderUpdate(orderJson);
-
-		return updateOrder(orderJson);
-	}
-
-	
-	
-
-	private void validateOrderUpdate(OrderJsonDto order) throws BusinessException {
-
-		List<String> possibleStatusList = getPossibleOrderStatus();
-		if(!possibleStatusList.contains( order.getStatus() ))
-			throwInvalidOrderException(ERR_INVALID_ORDER_STATUS);
-
-		if( !isNewOrder(order) && isNullOrZero(order.getId()) )
-			throwInvalidOrderException(ERR_UPDATED_ORDER_WITH_NO_ID);
-
-		if(isNewOrder(order)){
-			if (order.getBasket() != null)
-				validateBasketItems(order);
-		}
-
-		if(isCustomerUser()) {
-			validateOrderUpdateForUser(order);
-		}else {
-			validateOrderUpdateForManager(order.getId());
-		}
-	}
-
-
-
-
-
-	private void validateOrderUpdateForUser(OrderJsonDto order)
-			throws BusinessException {
-		Long userId = securityService.getCurrentUser().getId();
-		Long orderId = order.getId();
-		OrdersEntity orderEntity = ordersRepository.findById(orderId)
-											.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS, orderId));		
-		
-		if( !Objects.equals(userId, orderEntity.getUserId()) ) {
-			throwInvalidOrderException(ERR_ORDER_NOT_OWNED_BY_USER, userId, orderId);
-		}
-		
-		if( isCheckedOutOrder(order)) {
-			validateConfirmedOrder(orderId);
-		}
-	}
-
-
-
-
-
-	private void validateOrderUpdateForManager(Long orderId) throws BusinessException {
-		BaseUserEntity user = securityService.getCurrentUser();
-		OrdersEntity orderEntity = ordersRepository.findById(orderId)
-												.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS));	
-		
-		if( !isSameOrgForOrderAndManager(orderEntity) ){
-			throwForbiddenOrderException(ERR_ORDER_NOT_OWNED_BY_ADMIN, orderId, user.getId());
-		}
-		
-		
-		if(isStoreManager() && !isOrgManager()) {
-			if( !isSameShopForOrderAndManager(orderEntity) ){
-				throwForbiddenOrderException(ERR_ORDER_NOT_OWNED_BY_SHOP_MANAGER, orderId, user.getId());
+	public void updateExistingOrder(OrderJsonDto orderJson) {
+		EmployeeUserEntity empUser = (EmployeeUserEntity)securityService.getCurrentUser();
+		List<String> employeeUserRoles = employeeUserServiceHelper.getEmployeeUserRoles(empUser.getId());
+		Optional<OrdersEntity> order = Optional.empty();
+		if ( collectionContainsAnyOf(employeeUserRoles, "ORGANIZATION_ADMIN", "ORGANIZATION_MANAGER") )  {
+			Long orgId = empUser.getOrganizationId();
+			order = ordersRepository.findByIdAndOrganizationEntity_Id(orderJson.getId(), orgId);
+			if (!order.isPresent()) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0004, orgId, orderJson.getId());
+			}
+		} else if ( employeeUserRoles.contains("STORE_MANAGER")) {
+			Long shopId = empUser.getShopId();
+			order = ordersRepository.findByIdAndShopsEntity_Id(orderJson.getId(), shopId);
+			if (!order.isPresent()) {
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0001, shopId, orderJson.getId());
 			}
 		}
+		updateOrderStatus(order.get(), orderJson.getStatus());
 	}
-
-
-
-
-
-	private boolean isSameOrgForOrderAndManager(OrdersEntity orderEntity) {
-		Long userOrgId = securityService.getCurrentUserOrganizationId();
-		return Objects.equals(userOrgId, getOrderOrgId(orderEntity));
-	}
-
-
-
-
-
-	private boolean isSameShopForOrderAndManager(OrdersEntity orderEntity) throws BusinessException {
-		BaseUserEntity user = securityService.getCurrentUser();
-		
-		if(!(user instanceof EmployeeUserEntity)) {
-			throwForbiddenOrderException(ERR_NOT_EMP_ACCOUNT, user.getId());
-		}
-		
-		EmployeeUserEntity manager = (EmployeeUserEntity)user;
-		return Objects.equals(manager.getShopId(), getOrderShopId(orderEntity));
-	}
-
-
-
-
-
-	private Object getOrderShopId(OrdersEntity orderEntity) {
-		return ofNullable(orderEntity)
-					.map(OrdersEntity::getShopsEntity)
-					.map(ShopsEntity::getId)
-					.orElse(-1L);
-	}
-
-
-
-
-
-	private Long getOrderOrgId(OrdersEntity orderEntity) {
-		return ofNullable(orderEntity)
-						.map(OrdersEntity::getOrganizationEntity)
-						.map(OrganizationEntity::getId)
-						.orElse(-1L);
-	}
-
-
-
-
-
-	private Boolean isStoreManager() {
-		return securityService.currentUserHasRole(STORE_MANAGER);
-	}
-	
-	
-	
-	private Boolean isOrgManager() {
-		return securityService.currentUserHasRole(ORGANIZATION_MANAGER);
-	}
-
-
-
-
-
-	private void validateConfirmedOrder(Long orderId) throws BusinessException {
-		Integer basketCount = basketRepository.findByOrdersEntity_Id( orderId ).size();
-		if(Objects.equals(basketCount, 0)) {
-			throwInvalidOrderException(ERR_ORDER_CONFIRMED_WITH_EMPTY_BASKET, orderId);
-		}
-	}
-
-
-
-
-
-	private boolean isCheckedOutOrder(OrderJsonDto order) {
-		return Objects.equals( CLIENT_CONFIRMED.toString(), order.getStatus());
-	}
-
-
-
-
-
-	private Boolean isCustomerUser() {
-		return securityService.currentUserHasRole(CUSTOMER);
-	}
-
-
-
-
-
-	private void validateOrderCreation(OrderJsonDto order) throws BusinessException {
-		if( !isCustomerUser()) {
-			BaseUserEntity user = securityService.getCurrentUser();
-			throwForbiddenOrderException(ERR_MANAGER_CANNOT_CREATE_ORDERS, user.getId());
-		}
-		
-		//TODO: can be removed, there is no reason for not-accepting empty baskets at the first place
-		//it can be handled at confirmation
-		if ( isNullOrEmpty(order.getBasket()) ) {
-			throwInvalidOrderException(ERR_NEW_ORDER_WITH_EMPTY_BASKET);
-		}
-
-		validateBasketItems(order);
-	}
-
-
-
-
-
-	private boolean isNewOrder(OrderJsonDto order) {
-		return Objects.equals(order.getStatus(), NEW.toString() );
-	}
-	
-	
-	
-	
-	
-
-	private List<String> getPossibleOrderStatus() {
-		List<String> possibleStatusList = Arrays.asList( OrderStatus.values() )
-												.stream()
-												.map(OrderStatus::toString)
-												.collect(toList());
-		return possibleStatusList;
-	}
-	
-	
-	
-	
-
-	private void validateBasketItems(OrderJsonDto order) throws BusinessException {	
-		List<BasketItemDTO> basket = order.getBasket();
-		
-		for(BasketItemDTO item: basket) {
-			validateBasketItem(item);
-		}
-	}
-	
-
-
-	private Map<Long, List<BasketItemDTO>> groupBasketsByShops(List<BasketItemDTO> baskets) {
-
-		Map<Long,List<StocksEntity>> shopStocksMap = baskets.stream()
-				.map(basket -> stockRepository.getOne(basket.getStockId()))
-				.collect(groupingBy(stock -> stock.getShopsEntity().getId()));
-
-		Map<Long, List<BasketItemDTO>> groupedBaskets = new HashMap<>();
-
-		for(Long shopId : shopStocksMap.keySet()) {
-			List<Long> stocks = shopStocksMap.get(shopId).stream().map(StocksEntity::getId).collect(toList());
-
-			List<BasketItemDTO> shopBaskets= baskets.stream()
-													.filter(basket -> stocks.contains(basket.getStockId()))
-												    .collect(toList());
-
-			groupedBaskets.put(shopId, shopBaskets);
-		}
-
-		return groupedBaskets;
-	}
-	
-	
-	
-
-	private List<StocksEntity> getBasketStocks(List<BasketItemDTO> basket) {
-		if(basket == null) {
-			return new ArrayList<>();
-		}
-		
-		List<Long> itemStockIds = basket.stream()
-										.map(BasketItemDTO::getStockId)
-										.collect(toList());
-		
-		List<StocksEntity> stocks =  (List<StocksEntity>) stockRepository.findAllById(itemStockIds);
-		return stocks;
-	}
-	
-	
-	
-	
-	
-	private void validateBasketItem(BasketItemDTO item) throws BusinessException {
-		if(item == null) {
-			throwInvalidOrderException(ERR_NULL_ITEM);
-		}
-		
-		if(item.getQuantity() == null || item.getQuantity() <= 0) {
-			throwInvalidOrderException(ERR_INVALID_ITEM_QUANTITY);
-		}		
-		
-		if(item.getStockId() == null) {
-			throwInvalidOrderException(ERR_NON_EXISTING_STOCK_ID);
-		}
-		
-		Optional<StocksEntity> stocks = stockRepository.findById(item.getStockId());
-		
-		if(!stocks.isPresent()) {
-			throwInvalidOrderException(ERR_NON_EXISTING_STOCK_ID);
-		}
-		
-		if(item.getQuantity() > stockService.getStockQuantity( stocks.get() )) {
-			throwInvalidOrderException(ERR_NO_ENOUGH_STOCK);
-		}		
-	}
-	
-	
-	
 	
 	
 	
@@ -598,118 +317,7 @@ public class OrderServiceImpl implements OrderService {
 		String error = INVALID_ORDER.toString();
 		return new StockValidationException( format(msg, msgParams), error, NOT_ACCEPTABLE);
 	}
-	
-	
-	
-	
-	
-	private void throwForbiddenOrderException(String msg, Object... msgParams) throws BusinessException {
-		throw getForbiddenOrderException(msg, msgParams);
-	}
-	
-	
-	
-	private BusinessException getForbiddenOrderException(String msg, Object... msgParams) {
-		String error = OrderFailedStatus.INVALID_ORDER.toString();
-		return new BusinessException( format(msg, msgParams), error, HttpStatus.FORBIDDEN);
-	}
-	
-	
-	
-	
 
-	private OrderRepresentationObject createNewOrderAndBasketItems(OrderJsonDto order, List<BasketItemDTO> basketItems, Long shopId) throws BusinessException {
-		
-		OrdersEntity orderEntity = createNewOrderEntity(order, basketItems, shopId);
-		orderEntity = ordersRepository.save(orderEntity);
-
-
-		addItemsToBasket(basketItems, orderEntity);
-
-		OrderRepresentationObject orderRepObj = new OrderRepresentationObject(orderEntity.getId(), orderEntity.getShopsEntity().getId(),
-																				orderEntity.getAmount(), basketItems, HttpStatus.CREATED);
-		orderRepObj.setItems(basketItems);
-		return orderRepObj;
-	}
-	
-	
-	
-	
-
-	private OrdersEntity createNewOrderEntity(OrderJsonDto order, List<BasketItemDTO> basketItems, Long shopId) throws BusinessException {
-		BaseUserEntity user = securityService.getCurrentUser();
-		OrganizationEntity org = securityService.getCurrentUserOrganization();
-		ShopsEntity shop = shopsRepo.findById(shopId).get();
-
-		OrdersEntity orderEntity = new OrdersEntity();
-
-		if (order.getAddressId() != null) {
-			orderEntity.setAddressEntity(getOrderDeliveryAddress(order));
-		}
-		orderEntity.setAmount( calculateBasketTotalValue(basketItems) );
-		// TODO ordersEntity.setPayment_type(payment_type);
-		orderEntity.setShopsEntity(shop);
-		orderEntity.setStatus( NEW.getValue() );
-		orderEntity.setUserId( user.getId() );
-		orderEntity.setName(user.getName());
-		orderEntity.setOrganizationEntity( org );
-		return orderEntity;
-	}
-
-	AddressesEntity getOrderDeliveryAddress(OrderJsonDto order) throws BusinessException {
-		AddressesEntity address = null;
-		Long userId = securityService.getCurrentUser().getId();
-		if (order.getAddressId() != null) {
-			address = addressRepo
-						.findByIdAndUserId(order.getAddressId(), userId)
-						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ADDR$ADDR$0002, order.getAddressId()));
-		}
-		return address;
-	}
-	
-
-	private ShopsEntity getOrderShop(OrderJsonDto order) {
-		List<StocksEntity> stocksEntites = getBasketStocks( order.getBasket() );
-		
-		ShopsEntity shop = stocksEntites.stream()
-										.map(StocksEntity::getShopsEntity)
-										.findFirst()
-										.orElse(null);
-		return shop;
-	}
-	
-
-	
-
-
-	private OrderResponse updateOrder(OrderJsonDto orderJsonDto) throws BusinessException {
-
-		OrderStatus newStatus = ofNullable(orderJsonDto.getStatus())
-										.map(OrderStatus::findEnum)
-										.orElse(NEW);
-		OrdersEntity orderEntity =  
-				ordersRepository
-				.findById( orderJsonDto.getId() )
-				.orElseThrow(() -> getInvalidOrderException(ERR_ORDER_NOT_EXISTS));
-		OrderStatus oldStatus = orderEntity.getOrderStatus();
-		OrderResponse orderResponse = updateCurrentOrderStatus(orderJsonDto, orderEntity, newStatus);
-		
-		if ( newStatus.equals(NEW)) {
-			if (orderJsonDto.getAddressId() != null) {
-				orderEntity.setAddressEntity(getOrderDeliveryAddress(orderJsonDto));
-			}
-			orderResponse = updateOrderBasket(orderJsonDto, orderEntity);
-
-		}else if(newStatus.equals(CLIENT_CONFIRMED) 
-					&& Objects.equals(oldStatus, NEW)) {
-			reduceStocks(orderEntity);
-		}
-		
-		return orderResponse;
-	}
-	
-	
-	
 	
 	@Override
 	@Transactional(rollbackFor = Throwable.class)
@@ -1050,64 +658,6 @@ public class OrderServiceImpl implements OrderService {
 				.orElse(0);
 		stockService.reduceStockBy(item.getStocksEntity(), quantity);
 	}
-
-
-
-
-	private OrderResponse updateOrderBasket(OrderJsonDto order, OrdersEntity orderEntity) throws BusinessException {
-
-		basketRepository.deleteByOrderIdIn(asList(order.getId()));
-		
-		orderEntity.setAmount( calculateOrderTotalValue(order) );
-		orderEntity.setShopsEntity( getOrderShop( order) );
-		if (order.getAddressId() != null) {
-			if (orderEntity.getOrderStatus().equals(NEW))
-				orderEntity.setAddressEntity(addressRepo.findById(order.getAddressId()).get());
-		}
-		orderEntity = ordersRepository.save(orderEntity);
-
-		addItemsToBasket(order, orderEntity);
-
-		return new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
-	}
-	
-	
-
-	
-	private OrderResponse updateCurrentOrderStatus(OrderJsonDto orderJsonDto, OrdersEntity orderEntity,
-												   OrderStatus newStatus) throws BusinessException {
-
-		OrderStatus currentOrderStatus = findEnum(orderEntity.getStatus());
-		validateNewOrderStatus(newStatus, currentOrderStatus);
-		
-		if (newStatus == OrderStatus.CLIENT_CONFIRMED) {
-			//TODO: WHY ???
-			orderEntity.setCreationDate( now() );
-		}
-		orderEntity.setStatus(newStatus.getValue());
-		orderEntity = ordersRepository.save(orderEntity);
-		
-		return new OrderResponse(orderEntity.getId(), orderEntity.getAmount());
-	}
-
-
-
-
-
-	private void validateNewOrderStatus(OrderStatus newStatus, OrderStatus currentStatus) throws BusinessException {	
-		
-		if(newStatus == null || !canOrderStatusChangeTo(currentStatus, newStatus)) {
-			throwInvalidOrderException(ERR_INVALID_ORDER_STATUS_UPDATE, currentStatus.name(), newStatus.name());
-		};		
-		
-		boolean isCustomer = securityService.currentUserHasRole(Roles.CUSTOMER);
-		if(!isCustomer) {
-			validateManagerCanSetStatus(newStatus); 
-		}else {
-			validateCustomerCanSetStatus(newStatus);
-		}
-	}
-	
 	
 	
 	
@@ -1166,12 +716,12 @@ public class OrderServiceImpl implements OrderService {
 				.orElse(0);
 		stockService.incrementStockBy(item.getStocksEntity(), quantity);
 	}
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
 	private boolean canOrderStatusChangeTo(OrderStatus currentStatus, OrderStatus newStatus) {
 		return ofNullable(currentStatus)
 				.map(orderStateMachine::get)
@@ -1186,137 +736,6 @@ public class OrderServiceImpl implements OrderService {
 				.orElse(emptySet())
 				.contains(newStatus);
 	}
-	
-
-	private void validateManagerCanSetStatus(OrderStatus newStatus) throws BusinessException {
-		if( !canManagerSetOrderStatusTo(newStatus)) {
-			throw new BusinessException(
-					format(ERR_ORDER_STATUS_NOT_ALLOWED_FOR_ROLE, newStatus.name(), "*MANAGER")
-					,"INVALID_PARAM: status"
-					, NOT_ACCEPTABLE);
-		}
-	}
-
-
-
-
-
-	private boolean canManagerSetOrderStatusTo(OrderStatus newStatus) {
-		return orderStatusForManagers.contains(newStatus);
-	}
-
-
-
-
-
-	private void validateCustomerCanSetStatus(OrderStatus newStatus) throws BusinessException {
-		if( !canCustomerSetOrderStatusTo(newStatus)) {
-			throw new BusinessException(
-					format(ERR_ORDER_STATUS_NOT_ALLOWED_FOR_ROLE, newStatus.name(), Roles.CUSTOMER.name())
-					,"INVALID_PARAM: status"
-					, HttpStatus.NOT_ACCEPTABLE);
-		}
-	}
-
-
-
-
-
-	private boolean canCustomerSetOrderStatusTo(OrderStatus newStatus) {
-		return orderStatusForCustomers.contains(newStatus);
-	}
-
-
-	private void addItemsToBasket(List<BasketItemDTO> basketItems, OrdersEntity orderEntity) throws BusinessException {
-		if(basketItems == null) {
-			return;
-		}
-
-		for (BasketItemDTO basketItem : basketItems) {
-			BasketsEntity itemEntity = toBasketEntity(basketItem, orderEntity);
-			basketRepository.save(itemEntity);
-		}
-	}
-
-
-	private void addItemsToBasket(OrderJsonDto orderJsonDto, OrdersEntity orderEntity) throws BusinessException {
-		List<BasketItemDTO> basketItems = orderJsonDto.getBasket();
-		if(basketItems == null) {
-			return;
-		}
-		
-		for (BasketItemDTO basketItem : basketItems) {
-			BasketsEntity itemEntity = toBasketEntity(basketItem, orderEntity);
-			basketRepository.save(itemEntity);
-		}
-	}
-	
-	
-	
-	
-	private BasketsEntity toBasketEntity(BasketItemDTO item, OrdersEntity order) throws BusinessException {
-		StocksEntity stock = Optional.ofNullable(item)
-									.map(BasketItemDTO::getStockId)
-									.flatMap(stockRepository::findById)
-									.orElseThrow(() ->  getInvalidOrderException(ERR_NON_EXISTING_STOCK_ID));
-		
-		BasketsEntity basketsEntity = new BasketsEntity();
-		basketsEntity.setStocksEntity(stock);
-		basketsEntity.setOrdersEntity(order);
-		// TODO make sure price here means item price multiplied by quantity
-		basketsEntity.setPrice(new BigDecimal(item.getQuantity()).multiply(stock.getPrice()));
-		basketsEntity.setQuantity(new BigDecimal(item.getQuantity()));
-
-		// TODO how currency determined for specific order
-		basketsEntity.setCurrency(EGP.getValue());
-
-		return basketsEntity;
-	}
-	
-	
-	
-
-	private BigDecimal calculateOrderTotalValue(OrderJsonDto order) {
-		List<BasketItemDTO> basket = order.getBasket();
-		if(basket == null) {
-			return BigDecimal.ZERO;
-		}
-		
-		return basket.stream()
-					.map(this::getBasketItemValue)
-					.reduce(BigDecimal.ZERO, BigDecimal::add);
-	}
-
-
-	private BigDecimal calculateBasketTotalValue(List<BasketItemDTO> basket) {
-		if(basket == null) {
-			return BigDecimal.ZERO;
-		}
-
-		return basket.stream()
-				.map(this::getBasketItemValue)
-				.reduce(BigDecimal.ZERO, BigDecimal::add);
-	}
-	
-	
-	
-	private BigDecimal getBasketItemValue(BasketItemDTO item) {
-		BigDecimal quantity = ofNullable( item.getQuantity() )
-								.map(q -> q.toString())	//it is preferred to create Bigdecimals from strings
-								.map(BigDecimal::new)
-								.orElse(ZERO);
-		
-		return ofNullable(item)
-				.map(BasketItemDTO::getStockId)
-				.flatMap(stockRepository::findById)
-				.map(StocksEntity::getPrice)
-				.filter(Objects::nonNull)
-				.map(price -> price.multiply(quantity))
-				.orElseThrow( () ->  new RuntimeException(ERR_CALC_ORDER_FAILED));
-	}
-	
-	
-
 
 
 	@Override

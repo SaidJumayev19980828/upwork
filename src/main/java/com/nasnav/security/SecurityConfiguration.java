@@ -94,6 +94,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 						patternOf( "/order/return"						,HttpMethod.POST	, setOf(CUSTOMER)),
 						patternOf( "/order/return/requests"			,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN, STORE_MANAGER)),
 						patternOf( "/order/return/request"				,HttpMethod.GET		, setOf(ORGANIZATION_ADMIN, STORE_MANAGER)),
+						patternOf( "/order/status/update"				,HttpMethod.POST	, setOf(ORGANIZATION_ADMIN, ORGANIZATION_MANAGER, STORE_MANAGER)),
 						patternOf( "/order/**"),
 						patternOf( "/stock/**"	 											, getNonCustomersRoles() ),
 						patternOf( "/shop/**"												, setOf(ORGANIZATION_MANAGER, STORE_MANAGER) ),
@@ -172,8 +173,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         , patternOf("/webjars/**")		//for development only
                         , patternOf("/v2/**")		//for development only
                         , patternOf("/csrf/**")		//for development only
-                        , patternOf("/dirty_dashboard/login_page")		//for development only
-                        , patternOf("/dirty_dashboard/login")		//for development only
                         , patternOf("/upload/productlist/login")
                         , patternOf("/favicon.ico")
                         , patternOf("/static/**")

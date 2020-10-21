@@ -1,6 +1,5 @@
 package com.nasnav.test.integration.msdynamics;
 
-import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.enumerations.PaymentStatus.PAID;
 import static com.nasnav.enumerations.TransactionCurrency.EGP;
 import static com.nasnav.integration.enums.MappingType.ORDER;
@@ -10,8 +9,6 @@ import static com.nasnav.test.commons.TestCommons.json;
 import static com.nasnav.test.commons.TestCommons.jsonArray;
 import static com.nasnav.test.commons.TestCommons.readResource;
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.*;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -30,7 +27,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import com.nasnav.dao.*;
@@ -67,16 +63,12 @@ import com.nasnav.dao.ProductRepository;
 import com.nasnav.dao.TagsRepository;
 import com.nasnav.dto.OrganizationIntegrationInfoDTO;
 import com.nasnav.dto.UserDTOs.UserRegistrationObject;
-import com.nasnav.dto.request.cart.CartCheckoutDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.dto.response.navbox.SubOrder;
-import com.nasnav.enumerations.OrderStatus;
 import com.nasnav.exceptions.BusinessException;
 import com.nasnav.integration.IntegrationService;
-import com.nasnav.response.OrderResponse;
 import com.nasnav.service.MailService;
 import com.nasnav.service.OrderService;
-import com.nasnav.test.model.Item;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NavBox.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
