@@ -21,13 +21,6 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
     @Query("update OrdersEntity set payment_status = :paymentStatus, updated_at = :updateTimestamp where id = :orderId")
     void setPaymentStatusForOrder(@Param("orderId") Long orderId, @Param("paymentStatus") Integer paymentStatus, @Param("updateTimestamp") Date updateTimestamp);
 
-    
-    @Transactional
-    @Modifying
-	@Query("delete from OrdersEntity o where o.status = :status and o.userId = :userId")
-	void deleteByStatusAndUserId(@Param("status") Integer status, @Param("userId") Long userId);
-
-    List<OrdersEntity> findByUserIdAndStatus(Long userId, Integer status);
 
     List<OrdersEntity> findByShopsEntityId(Long shopId);
     List<OrdersEntity> findByOrganizationEntityId(Long orgId);
@@ -35,8 +28,6 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	List<OrdersEntity> findByMetaOrderId(Long metaOrderId);
 
     List<OrdersEntity> findByStatus(Integer status);    
-
-	Optional<OrdersEntity> findFirstByUserIdAndStatusOrderByUpdateDateDesc(Long id, Integer value);
 
 	Long countByStatusAndUserId(Integer value, long l);
 
@@ -49,13 +40,7 @@ public interface OrdersRepository extends JpaRepository<OrdersEntity, Long> {
 	@Query(value = "select o from OrdersEntity o join OrganizationEntity org on o.organizationEntity = org where o.id in :orderIds ")
 	List<OrdersEntity> getOrdersIn(@Param("orderIds") List<Long> orderIds);
 
-    @Transactional
-    @Modifying
-    @Query("delete from OrdersEntity o where o.status = :status and o.id in :orderIds and o.organizationEntity.id = :orgId")
-    void deleteByStatusAndIdInAndOrgId(@Param("status") Integer status,
-                                       @Param("orderIds") List<Long> orderIds,
-                                       @Param("orgId") Long orgId);
-    
+
     @Transactional
     @Modifying
     @Query("delete from OrdersEntity o where o.status = :status and o.organizationEntity.id = :orgId")

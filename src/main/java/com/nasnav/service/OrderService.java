@@ -58,16 +58,8 @@ public interface OrderService {
 
 	public DetailedOrderRepObject getOrderInfo(Long orderId, Integer detailsLevel)  throws BusinessException;
 
-	public OrderValue getOrderValue(OrdersEntity orderEntity);
-
 	public List<DetailedOrderRepObject> getOrdersList(OrderSearchParam params) throws BusinessException;
 
-	public DetailedOrderRepObject getCurrentOrder(Integer detailsLevel) throws BusinessException;
-
-	public void deleteOrders(List<Long> orderIds) throws BusinessException;
-
-	public void deleteCurrentOrders();
-	
 	void finalizeOrder(Long orderId) throws BusinessException;
 
 	public void setOrderAsPaid(PaymentEntity payment, OrdersEntity order);

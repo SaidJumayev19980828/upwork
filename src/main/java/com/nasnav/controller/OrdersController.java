@@ -110,45 +110,7 @@ public class OrdersController {
 	}
 
 	
-	
-	@ApiOperation(value = "Get the current new order", nickname = "currentOrder", code = 201)
-	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
-						   @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
-    @GetMapping(value = "/current", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
-    public DetailedOrderRepObject getCurrentNewOrder(
-            @RequestHeader(name = "User-Token", required = false) String userToken,
-			@RequestParam(name = "details_level", required = false) Integer detailsLevel) throws BusinessException {
-		
-    	return this.orderService.getCurrentOrder(detailsLevel);
-    }
-	
-	
-	
-	
-	
-	
-	@ApiOperation(value = "delete current order", nickname = "deleteCurrentOrder", code = 201)
-	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
-						   @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
-    @DeleteMapping(value = "/current", produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
-    public void deleteNewOrder(
-            @RequestHeader(name = "User-Token", required = false) String userToken) {
-		
-    	 this.orderService.deleteCurrentOrders();    	
-    }
 
-
-	@ApiOperation(value = "delete list of orders", nickname = "deleteOrders", code = 200)
-	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
-			@io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized (invalid User-Token)")})
-	@DeleteMapping( produces = MediaType.APPLICATION_JSON_UTF8_VALUE )
-	public void deleteOrders(@RequestHeader(name = "User-Token", required = false) String userToken,
-							 @RequestParam("order_ids") List<Long> orderIds) throws BusinessException {
-
-		this.orderService.deleteOrders(orderIds);
-	}
-	
-	
 	
 	
 	@ApiOperation(value = "Confirm an order", nickname = "orderConfirm")

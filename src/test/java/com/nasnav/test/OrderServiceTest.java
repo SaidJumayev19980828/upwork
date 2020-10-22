@@ -1,9 +1,7 @@
 package com.nasnav.test;
 import static com.nasnav.constatnts.EmailConstants.ORDER_REJECT_TEMPLATE;
-import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.CLIENT_CONFIRMED;
-import static com.nasnav.enumerations.OrderStatus.DELIVERED;
 import static com.nasnav.enumerations.OrderStatus.FINALIZED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CANCELLED;
 import static com.nasnav.enumerations.OrderStatus.STORE_CONFIRMED;
@@ -34,7 +32,6 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -76,10 +73,8 @@ import com.nasnav.dao.PromotionsCodesUsedRepository;
 import com.nasnav.dao.StockRepository;
 import com.nasnav.dao.UserRepository;
 import com.nasnav.dto.BasketItem;
-import com.nasnav.dto.BasketItemDTO;
 import com.nasnav.dto.DetailedOrderRepObject;
 import com.nasnav.dto.MetaOrderBasicInfo;
-import com.nasnav.dto.OrderRepresentationObject;
 import com.nasnav.dto.response.OrderConfrimResponseDTO;
 import com.nasnav.dto.response.navbox.Order;
 import com.nasnav.enumerations.OrderStatus;
@@ -156,7 +151,7 @@ public class OrderServiceTest {
 	@Test
 	public void updateOrderNonExistingOrderIdTest() {
 		// try updating with a non-existing order number
-		JSONObject updateRequest = createOrderRequestWithBasketItems(OrderStatus.CLIENT_CONFIRMED);
+		JSONObject updateRequest = createOrderStatusUpdateRequest(OrderStatus.CLIENT_CONFIRMED);
 		updateRequest.put("order_id", 9584875);
 		
 		ResponseEntity<String> response =
@@ -230,7 +225,7 @@ public class OrderServiceTest {
 		count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("7 orders with org_id = 99001",7,count);
+		assertEquals("8 orders with org_id = 99001",8,count);
 
 		//---------------------------------------------------------------------
 		// by shop_id
@@ -242,7 +237,7 @@ public class OrderServiceTest {
 		count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("4 orders with shop_id = 501",4,count);
+		assertEquals("3 orders with shop_id = 501",3,count);
 
 		//---------------------------------------------------------------------
 		// by user_id
@@ -266,7 +261,7 @@ public class OrderServiceTest {
 		count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("8 orders with status = NEW", 6,count);
+		assertEquals("4 orders with status = NEW", 4,count);
 
 		//---------------------------------------------------------------------
 		// by org_id and status
@@ -278,7 +273,7 @@ public class OrderServiceTest {
 		count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("3 orders with org_id = 99001 and status = NEW",2 ,count);
+		assertEquals("1 orders with org_id = 99001 and status = NEW",1 ,count);
 
 		//---------------------------------------------------------------------
 		// by org_id and shop_id
@@ -311,25 +306,12 @@ public class OrderServiceTest {
 		count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("2 orders with shop_id = 501 and status = NEW",2,count);
-
-
-		//---------------------------------------------------------------------
-		// by user_id and status
-		response = template.exchange("/order/list?user_id=88&status=NEW&details_level=3"
-										, GET
-										, httpEntity
-										, String.class);
-		body = new JSONArray(response.getBody());
-		count = body.length();
-
-		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("2 orders with user_id = 88 and status = NEW", 2,count);
+		assertEquals("1 orders with shop_id = 501 and status = NEW",1,count);
 
 
 		//---------------------------------------------------------------------
 		// by user_id, shop_id and status
-		response = template.exchange("/order/list?user_id=88&shop_id=501&status=NEW&details_level=3"
+		response = template.exchange("/order/list?user_id=88&shop_id=501&status=STORE_PREPARED&details_level=3"
 										, GET
 										, httpEntity
 										, String.class);
@@ -355,7 +337,7 @@ public class OrderServiceTest {
 		long count = body.length();
 
 		assertTrue(200 == response.getStatusCode().value());
-		assertEquals("user#70 is Organization employee in org#99001 so he can view all orderes within org#99001", 7, count);
+		assertEquals("user#70 is Organization employee in org#99001 so he can view all orderes within org#99001", 8, count);
 		//-------------------------------------------------------------------------
 		
 		response = template.exchange("/order/list?details_level=3"
@@ -532,6 +514,9 @@ public class OrderServiceTest {
 	}
 
 
+
+
+
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
@@ -578,21 +563,7 @@ public class OrderServiceTest {
 	
 	
 	
-	
-	@Test
-	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
-	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
-	public void getCurrentOrderNoAuthTest() throws JsonParseException, JsonMappingException, IOException {
-			
-		ResponseEntity<String> response = template.getForEntity("/order/current", String.class);
-				
-		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-	}
-	
-	
 
-	
-	
 	
 	
 	
@@ -633,53 +604,31 @@ public class OrderServiceTest {
 	}
 	
 	
-	
-	
-	
 
-	
-	
-	
-	
+
+
+
+
+
+
+
 	@Test
 	@Sql(executionPhase=ExecutionPhase.BEFORE_TEST_METHOD,  scripts={"/sql/Order_Info_Test.sql"})
 	@Sql(executionPhase=ExecutionPhase.AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
 	public void deleteCurrentOrderNoAuthTest() throws JsonParseException, JsonMappingException, IOException {
-			
+
 		ResponseEntity<String> response = template.exchange("/order/current"
 															, HttpMethod.DELETE
 															, new HttpEntity<>(getHeaders("NON_EXISTING_TOKEN"))
 															, String.class);
-				
+
 		assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	private JSONObject createOrderUpdateRequestWithInvalidQuantity() {
-		Integer qunantity = Integer.MAX_VALUE/100;		
-		return createOrderRequestWithBasketItems(OrderStatus.NEW, item(601L, qunantity));
-	}
-	
-	
-	
-	
 
-	private JSONObject createOrderUpdateRequestWithNonExistingStock() {
-		Long nonExistingId = Long.MAX_VALUE/100;		
-		return createOrderRequestWithBasketItems(OrderStatus.NEW, item(nonExistingId, 333));
-	}
+
 	
 	
-	
-	
-	
-	private JSONObject createOrderRequestWithBasketItems(OrderStatus status, Item... items) {
+	private JSONObject createOrderStatusUpdateRequest(OrderStatus status) {
 		JSONObject request = new JSONObject();
 		request.put("status", status.name());
 		return request;
@@ -688,34 +637,7 @@ public class OrderServiceTest {
 	
 	
 	
-	
-	private Item item(Long stockId, Integer quantity) {
-		return new Item(stockId, quantity);
-	}
-	
-	
-	
-	
-	private JSONArray createBasket(Item...items) {
-		return new JSONArray( 
-				Arrays.asList(items)
-						.stream()
-						.map(this::toJsonObject)				
-						.collect(toList())
-				);
-	}
-	
-	
-	
-	
-	
-	private JSONObject toJsonObject(Item item) {
-		JSONObject basketItem = new JSONObject();		
-		basketItem.put("stock_id", item.getStockId());
-		basketItem.put("quantity", item.getQuantity());		
-		return basketItem;
-	}
-	
+
 	
 
 	private DetailedOrderRepObject createExpectedOrderInfo(Long orderId, BigDecimal price, Integer quantity
@@ -772,7 +694,7 @@ public class OrderServiceTest {
 		
 		//---------------------------------------------------------------
 
-		JSONObject updateRequest = createOrderRequestWithBasketItems(STORE_CANCELLED);
+		JSONObject updateRequest = createOrderStatusUpdateRequest(STORE_CANCELLED);
 		updateRequest.put("order_id", orderId);
 		
 		ResponseEntity<String> updateResponse = 
@@ -794,7 +716,7 @@ public class OrderServiceTest {
 		
 		//---------------------------------------------------------------
 
-		JSONObject updateRequest = createOrderRequestWithBasketItems(STORE_CANCELLED);
+		JSONObject updateRequest = createOrderStatusUpdateRequest(STORE_CANCELLED);
 		updateRequest.put("order_id", orderId);
 		
 		ResponseEntity<String> updateResponse = 
@@ -818,7 +740,7 @@ public class OrderServiceTest {
 		
 		//---------------------------------------------------------------
 
-		JSONObject updateRequest = createOrderRequestWithBasketItems(STORE_CANCELLED);
+		JSONObject updateRequest = createOrderStatusUpdateRequest(STORE_CANCELLED);
 		updateRequest.put("order_id", orderId);
 		
 		ResponseEntity<String> updateResponse = 
@@ -831,57 +753,58 @@ public class OrderServiceTest {
 		assertEquals(NOT_ACCEPTABLE, updateResponse.getStatusCode());
 	}
 	
-	
 
-	@Test
-	public void testOrderListDeletion() {
-		ResponseEntity<String> response = template.exchange("/order?order_ids=330035&order_ids=330037",
-				DELETE,
-				new HttpEntity<>(getHeaders("131415")),
-				String.class);
-		assertEquals(200, response.getStatusCodeValue());
-		assertEquals(15, orderRepository.findAll().size());
-	}
-
-	@Test
-	public void testOrderListDeletionUnAuthorized() {
-		ResponseEntity<String> response = template.exchange("/order?order_ids=330035&order_ids=330037",
-				DELETE,
-				new HttpEntity<>(getHeaders("sdrf8s")),
-				String.class);
-		assertEquals(403, response.getStatusCodeValue());
-	}
-
-	@Test
-	public void testOrderListDeletionUnAuthenticated() {
-		ResponseEntity<String> response = template.exchange("/order?order_ids=330035&order_ids=330037",
-				DELETE,
-				new HttpEntity<>(getHeaders("13141")),
-				String.class);
-		assertEquals(401, response.getStatusCodeValue());
-	}
-
-	@Test
-	public void testOrderListDeletionOrderInDifferentOrg() {
-		ResponseEntity<String> response = template.exchange("/order?order_ids=330033&order_ids=330037",
-				DELETE,
-				new HttpEntity<>(getHeaders("131415")),
-				String.class);
-		assertEquals(406, response.getStatusCodeValue());
-	}
 
 
 	@Test
-	public void testOrderListDeletionNotNewOrder() {
-		ResponseEntity<String> response = template.exchange("/order?order_ids=330038&order_ids=330037",
-				DELETE,
-				new HttpEntity<>(getHeaders("131415")),
-				String.class);
-		assertEquals(406, response.getStatusCodeValue());
+	public void orderStatusUpdateTest(){
+		Long orderId = 330033L;
+		String userToken = "252627";
+		OrderStatus requiredStatus = OrderStatus.DELIVERED;
+
+		checkOrderStatusBeforeUpdate(orderId, requiredStatus);
+		//---------------------------------------------------------------
+		JSONObject updateRequest = createOrderStatusUpdateRequest(requiredStatus);
+		updateRequest.put("order_id", orderId);
+
+		ResponseEntity<String> updateResponse =
+				template.postForEntity("/order/status/update"
+						, getHttpEntity(updateRequest.toString(), userToken)
+						, String.class);
+		//---------------------------------------------------------------
+		assertEquals(OK, updateResponse.getStatusCode());
+		checkOrderStatusAfterUpdate(orderId, requiredStatus);
 	}
 
-	
-	
+
+
+	private void checkOrderStatusAfterUpdate(Long orderId, OrderStatus requiredStatus) {
+		OrdersEntity subOrderAfter = orderRepository.findByIdAndOrganizationEntity_Id(orderId, 99001L).get();
+		OrderStatus subOrderStatusAfter = subOrderAfter.getOrderStatus();
+		Integer metaOrderStatusAfterVal = subOrderAfter.getMetaOrder().getStatus();
+		OrderStatus metaOrderStatusAfter = OrderStatus.findEnum(metaOrderStatusAfterVal);
+
+		assertEquals(requiredStatus, subOrderStatusAfter);
+		assertEquals("if all suborders of the meta-order became of the same status, the meta-order should have this status now"
+				, requiredStatus, metaOrderStatusAfter);
+	}
+
+
+
+
+	private void checkOrderStatusBeforeUpdate(Long orderId, OrderStatus requiredStatus) {
+		OrdersEntity subOrderBefore = orderRepository.findByIdAndOrganizationEntity_Id(orderId, 99001L).get();
+		OrderStatus subOrderStatusBefore = subOrderBefore.getOrderStatus();
+		Integer metaOrderStatusBeforeVal = subOrderBefore.getMetaOrder().getStatus();
+		OrderStatus metaOrderStatusBefore = OrderStatus.findEnum(metaOrderStatusBeforeVal);
+
+		assertNotEquals(requiredStatus, subOrderStatusBefore);
+		assertNotEquals(requiredStatus, metaOrderStatusBefore);
+	}
+
+
+
+
 	
 	
 	@Test

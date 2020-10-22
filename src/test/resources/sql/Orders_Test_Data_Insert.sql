@@ -47,16 +47,19 @@ INSERT INTO public.employee_users(id,  email, organization_id, authentication_to
 	VALUES (72, 'testuser6@nasnav.com', 99003, 'sdrf8s',  504);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (73, 'testuser7@nasnav.com', 99003, 'sdfe47',  505);
+	INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
+	VALUES (74, 'testuser8@nasnav.com', 99001, '252627',  502);
 INSERT INTO public.employee_users(id,  email, organization_id, authentication_token, shop_id)
 	VALUES (158, 'testuser3@nasnav.com', 99002, '222324',  506);
 
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (103, '101112', now(), 68, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (104, '131415', now(), 69, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (105, '161718', now(), 70, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (106, '192021', now(), 71, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (107, 'sdrf8s', now(), 72, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (108, 'sdfe47', now(), 73, null);
-INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (109, '222324', now(), 158, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (111103, '101112', now(), 68, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (111104, '131415', now(), 69, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (111105, '161718', now(), 70, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (111106, '192021', now(), 71, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (111107, 'sdrf8s', now(), 72, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (111108, 'sdfe47', now(), 73, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (111109, '252627', now(), 74, null);
+INSERT INTO public.user_tokens(id, token, update_time, employee_user_id ,user_id) VALUES (111110, '222324', now(), 158, null);
 --inserting Roles
 insert into public.roles(id, name,  organization_id) values(1, 'NASNAV_ADMIN', 99001);
 insert into public.roles(id, name,  organization_id) values(2, 'ORGANIZATION_ADMIN', 99001);
@@ -76,11 +79,12 @@ INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (24
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (25, 71, 5);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (26, 72, 6);
 INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (27, 73, 6);
+INSERT INTO public.role_employee_users(id, employee_user_id, role_id) VALUES (28, 74, 2);
 
 
 
 --inserting meta orders
-INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310033 , now(),88, 99001, 8);
+INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310033 , now(),88, 99001, 2);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310037 , now(),88, 99001, 8);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310038 , now(),88, 99001, 8);
 INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status) VALUES(310039 , now(),88, 99001, 8);
@@ -101,8 +105,8 @@ INSERT INTO public.meta_orders(id, created_at, user_id, organization_id, status)
 
 
 --inserting orders
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330033, 88, now(), now(), 99001, 0, 502, 310033);
-insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330037, 88, now(), now(), 99002, 0, 501, 310037);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330033, 88, now(), now(), 99001, 2, 502, 310033);
+insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330037, 88, now(), now(), 99001, 5, 502, 310033);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330038, 90, now(), now(), 99002, 1, 501, 310038);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330039, 88, now(), now(), 99001, 3, 501, 310039);
 insert into public.orders(id,user_id,created_at, updated_at, organization_id,status,shop_id, meta_order_id) values(330040, 88, now(), now(), 99001, 1, 503, 310040);

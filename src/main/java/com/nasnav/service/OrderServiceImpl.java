@@ -248,51 +248,55 @@ public class OrderServiceImpl implements OrderService {
 				.put(ReturnRequestStatus.NEW	, setOf(CONFIRMED, REJECTED))
 				.put(CONFIRMED					, setOf(RECEIVED, REJECTED));
 	}
-	
 
-	public OrderValue getOrderValue(OrdersEntity order) {
-		TransactionCurrency currency = null;
-		BigDecimal amount = new BigDecimal(0);
 
-		List<BasketsEntity> basketsEntity = basketRepository.findByOrdersEntity_Id(order.getId());
-		for (BasketsEntity basketEntity : basketsEntity) {
-			// basket item holds a sum for all items
-			amount = amount.add(basketEntity.getPrice());
-			if (currency == null) {
-				currency = basketEntity.getStocksEntity().getCurrency();
-			} else if (currency != basketEntity.getStocksEntity().getCurrency()) {
-				currency = UNSPECIFIED;
-			}
-		}
-		OrderValue value = new OrderValue();
-		value.amount = amount;
-		value.currency = currency;
-		return value;
-	}
-	
 
+
+
+	@Override
 	public void updateExistingOrder(OrderJsonDto orderJson) {
 		EmployeeUserEntity empUser = (EmployeeUserEntity)securityService.getCurrentUser();
 		List<String> employeeUserRoles = employeeUserServiceHelper.getEmployeeUserRoles(empUser.getId());
+		OrdersEntity order = getAndValidateOrdersEntityForStatusUpdate(orderJson, empUser, employeeUserRoles);
+
+		updateOrderStatusAndMetaOrderIfNeeded(order, orderJson.getStatus());
+	}
+
+
+
+	private void updateOrderStatusAndMetaOrderIfNeeded(OrdersEntity order, OrderStatus orderStatus) {
+		updateOrderStatus(order, orderStatus);
+		MetaOrderEntity metaOrder = order.getMetaOrder();
+		if(isAllOtherOrdersHaveStatus(order.getId(), metaOrder, orderStatus)) {
+			metaOrder.setStatus(orderStatus.getValue());
+			metaOrderRepo.save(metaOrder);
+		}
+	}
+
+
+
+	private OrdersEntity getAndValidateOrdersEntityForStatusUpdate(OrderJsonDto orderJson, EmployeeUserEntity empUser, List<String> employeeUserRoles) {
 		Optional<OrdersEntity> order = Optional.empty();
-		if ( collectionContainsAnyOf(employeeUserRoles, "ORGANIZATION_ADMIN", "ORGANIZATION_MANAGER") )  {
+		Long orderId = orderJson.getId();
+		if ( collectionContainsAnyOf(employeeUserRoles, ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name()) )  {
 			Long orgId = empUser.getOrganizationId();
-			order = ordersRepository.findByIdAndOrganizationEntity_Id(orderJson.getId(), orgId);
+			order = ordersRepository.findByIdAndOrganizationEntity_Id(orderId, orgId);
 			if (!order.isPresent()) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0004, orgId, orderJson.getId());
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0004, orgId, orderId);
 			}
-		} else if ( employeeUserRoles.contains("STORE_MANAGER")) {
+		} else if ( employeeUserRoles.contains(STORE_MANAGER.name())) {
 			Long shopId = empUser.getShopId();
-			order = ordersRepository.findByIdAndShopsEntity_Id(orderJson.getId(), shopId);
+			order = ordersRepository.findByIdAndShopsEntity_Id(orderId, shopId);
 			if (!order.isPresent()) {
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0001, shopId, orderJson.getId());
+				throw new RuntimeBusinessException(NOT_ACCEPTABLE, O$CFRM$0001, shopId, orderId);
 			}
 		}
-		updateOrderStatus(order.get(), orderJson.getStatus());
+		return order
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, O$0001,  orderId));
 	}
-	
-	
-	
+
+
+
 	private void throwInvalidOrderException(String msg, Object... msgParams) throws BusinessException {
 		throw getInvalidOrderException(msg, msgParams);
 	}
@@ -1317,21 +1321,6 @@ public class OrderServiceImpl implements OrderService {
 	private LocalDateTime readDate(String dateStr) {
 		return LocalDateTime.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd:HH:mm:ss"));
 	}
-	
-	
-	
-	
-
-	@Override
-	public DetailedOrderRepObject getCurrentOrder(Integer detailsLevel) throws BusinessException {
-		BaseUserEntity user = securityService.getCurrentUser();
-		
-		OrdersEntity entity = ordersRepository.findFirstByUserIdAndStatusOrderByUpdateDateDesc( user.getId(), NEW.getValue() )
-											 .orElseThrow(() -> getNoCurrentOrderFoundException() );
-		
-		return getDetailedOrderInfo(entity, ORDER_FULL_DETAILS_LEVEL);
-	}
-
 
 	
 	
@@ -1339,50 +1328,6 @@ public class OrderServiceImpl implements OrderService {
 	private BusinessException getNoCurrentOrderFoundException() {
 		return new BusinessException("User have no new orders!", "NOT FOUND", HttpStatus.NOT_FOUND);
 	}
-
-
-
-	@Override
-	@Transactional
-	public void deleteCurrentOrders() {
-		BaseUserEntity user = securityService.getCurrentUser();
-		
-		List<Long> userNewOrders = 
-				ordersRepository.findByUserIdAndStatus(user.getId(), NEW.getValue())
-								.stream()
-								.map(OrdersEntity::getId)
-								.collect(toList());
-		
-		basketRepository.deleteByOrderIdIn(userNewOrders);		
-		ordersRepository.deleteByStatusAndUserId( NEW.getValue(), user.getId());
-	}
-
-
-	@Override
-	@Transactional
-	public void deleteOrders(List<Long> orderIds) throws BusinessException {
-		Long orgId = securityService.getCurrentUserOrganizationId();
-
-		validateOrdersDeletionIds(orderIds, orgId);
-
-		basketRepository.deleteByOrderIdInAndOrganizationIdAndStatus(orderIds, orgId, NEW.getValue());
-		ordersRepository.deleteByStatusAndIdInAndOrgId( NEW.getValue(), orderIds, orgId);
-	}
-
-	private void validateOrdersDeletionIds(List<Long> orderIds, Long orgId) throws BusinessException {
-		List<OrdersEntity> orders = ordersRepository.getOrdersIn(orderIds);
-
-		for(OrdersEntity order : orders) {
-			if (!order.getOrganizationEntity().getId().equals(orgId))
-				throw new BusinessException("Provided order ("+order.getId()+") doesn't belong to current organization",
-						"INVALID_PARAM: order_id", NOT_ACCEPTABLE);
-			if (order.getStatus() != 0)
-				throw new BusinessException("Provided order ("+order.getId()+") is not a new order and can't be deleted",
-						"INVALID_PARAM: order_id", NOT_ACCEPTABLE);
-		}
-
-	}
-
 
 
 
