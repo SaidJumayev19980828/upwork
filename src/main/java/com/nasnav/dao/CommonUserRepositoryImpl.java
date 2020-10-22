@@ -4,20 +4,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
+import com.nasnav.exceptions.RuntimeBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 
 import com.nasnav.enumerations.Roles;
-import com.nasnav.exceptions.BusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.Role;
 import com.nasnav.persistence.UserEntity;
 
+import static com.nasnav.exceptions.ErrorCodes.GEN$0004;
 import static java.util.stream.Collectors.*;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 
 @Repository
@@ -32,20 +32,7 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 	
 	@Autowired
 	private RoleRepository roleRepo; 
-	
-	
-	
-	@Override
-	public Optional<? extends BaseUserEntity> findByAuthenticationToken(String authToken) {
-		Optional<? extends BaseUserEntity>  user = empRepo.findByAuthenticationToken(authToken);
-		if(user.isPresent())
-			return user;
-		else
-            return userRepo.findByAuthenticationToken(authToken);
-	}
-	
-	
-	
+
 	
 	@Override
 	public List<String> getUserRoles(BaseUserEntity user) {
@@ -75,17 +62,14 @@ public class CommonUserRepositoryImpl implements CommonUserRepository {
 
 
 	@Override
-	public BaseUserEntity saveAndFlush(BaseUserEntity userEntity) throws BusinessException {
-		BaseUserEntity savedEntity = null;
+	public BaseUserEntity saveAndFlush(BaseUserEntity userEntity)  {
 		if(userEntity instanceof EmployeeUserEntity)
-			savedEntity =  empRepo.saveAndFlush((EmployeeUserEntity)userEntity);
+			return empRepo.saveAndFlush((EmployeeUserEntity)userEntity);
 		else if(userEntity instanceof UserEntity)
-			savedEntity =  userRepo.saveAndFlush((UserEntity)userEntity);
+			return userRepo.saveAndFlush((UserEntity)userEntity);
 		else
 			//TODO : need error code for that  
-			throw new BusinessException("Unknown User Entity Type", "?", HttpStatus.INTERNAL_SERVER_ERROR);
-		
-		return savedEntity;
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0004);
 	}
 
 

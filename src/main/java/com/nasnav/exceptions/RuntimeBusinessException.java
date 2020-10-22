@@ -2,6 +2,7 @@ package com.nasnav.exceptions;
 
 import static java.lang.String.format;
 
+import lombok.NoArgsConstructor;
 import org.springframework.http.HttpStatus;
 
 import lombok.Data;
@@ -9,6 +10,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
+@NoArgsConstructor
 public class RuntimeBusinessException extends RuntimeException implements BusinessExceptionInterface{
 	/**
 	 * 

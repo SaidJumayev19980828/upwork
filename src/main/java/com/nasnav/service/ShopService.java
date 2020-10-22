@@ -12,7 +12,6 @@ import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.OK;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +34,7 @@ import com.nasnav.dto.ShopJsonDTO;
 import com.nasnav.dto.ShopRepresentationObject;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.response.ShopResponse;
-import com.nasnav.service.helpers.EmployeeUserServiceHelper;
+import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.service.helpers.ShopServiceHelper;
 
 @Service
@@ -45,7 +44,7 @@ public class ShopService {
 	private SecurityService securityService;
 
     private final ShopsRepository shopsRepository;
-    private final EmployeeUserServiceHelper employeeUserServicehelper;
+    private final UserServicesHelper userServicehelper;
     private final ShopServiceHelper shopServiceHelper;
     private final OrganizationImagesRepository orgImgRepo;
 
@@ -56,10 +55,10 @@ public class ShopService {
     private EmployeeUserRepository empUserRepo;
     
     @Autowired
-    public ShopService(ShopsRepository shopsRepository, EmployeeUserServiceHelper employeeUserServicehelper,
-                       ShopServiceHelper shopServiceHelper,OrganizationImagesRepository orgImgRepo){
+    public ShopService(ShopsRepository shopsRepository, UserServicesHelper userServicehelper,
+                       ShopServiceHelper shopServiceHelper, OrganizationImagesRepository orgImgRepo){
         this.shopsRepository = shopsRepository;
-        this.employeeUserServicehelper = employeeUserServicehelper;
+        this.userServicehelper = userServicehelper;
         this.shopServiceHelper = shopServiceHelper;
         this.orgImgRepo = orgImgRepo;
     }
@@ -121,7 +120,7 @@ public class ShopService {
     @CacheEvict(allEntries = true, cacheNames = {ORGANIZATIONS_SHOPS, SHOPS_BY_ID})
     public ShopResponse shopModification(ShopJsonDTO shopJson) {
         EmployeeUserEntity user = (EmployeeUserEntity)securityService.getCurrentUser();
-        List<String> userRoles = employeeUserServicehelper.getEmployeeUserRoles(user.getId());
+        List<String> userRoles = userServicehelper.getEmployeeUserRoles(user.getId());
         OrganizationEntity org = securityService.getCurrentUserOrganization();
         if (shopJson.getId() == null){
             return createShop(shopJson, org, userRoles);

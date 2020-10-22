@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
 
 
@@ -18,7 +17,8 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
      * @return true if authenticationToken already exists
      */
     boolean existsByAuthenticationToken(String authenticationToken);
-    
+	boolean existsByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
+
     Optional<EmployeeUserEntity> findByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
 
     EmployeeUserEntity getOneByEmail(String email);
@@ -27,18 +27,9 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	boolean existsByResetPasswordToken(String resetPasswordToken);
 
 	
-	EmployeeUserEntity getByResetPasswordToken(String resetPasswordToken);
-
-	
-	EmployeeUserEntity getByAuthenticationToken(String authToken);
-
-	Optional<EmployeeUserEntity> findByAuthenticationToken(String authToken);
+	Optional<EmployeeUserEntity> getByResetPasswordToken(String resetPasswordToken);
 
 	EmployeeUserEntity getById(Long id);
-
-	boolean existsByIdAndAuthenticationToken(Long userId, String authenticationToken);
-
-	EmployeeUserEntity getByIdAndAuthenticationToken(Long userId, String authToken);
 
 	List<EmployeeUserEntity> findByOrganizationId(Long orgId);
 	List<EmployeeUserEntity> findByShopId(Long shopId);
@@ -51,10 +42,6 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	List<EmployeeUserEntity> findByOrganizationIdAndShopIdAndIdIn(Long orgId, Long shopId, List<Long> employeesIds);
 
 	EmployeeUserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
-
-	EmployeeUserEntity getByEmailIgnoreCase(String email);
-
-	EmployeeUserEntity getOneByEmailIgnoreCase(String email);
 }
 
 

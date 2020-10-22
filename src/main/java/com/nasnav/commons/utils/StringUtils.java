@@ -3,18 +3,11 @@ package com.nasnav.commons.utils;
 import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import org.springframework.http.HttpStatus;
-
 import com.nasnav.constatnts.EntityConstants;
-import com.nasnav.exceptions.EntityValidationException;
-import com.nasnav.response.ResponseStatus;
-import com.nasnav.response.UserApiResponse;
 
 
 public class StringUtils extends org.springframework.util.StringUtils{
@@ -68,29 +61,14 @@ public class StringUtils extends org.springframework.util.StringUtils{
 		return UUID.randomUUID().toString();
 	}
 
-	
-	
-	
-
-	
-	
-	
 	public static void validateNameAndEmail(String name, String email, Long orgId) {
-		List<ResponseStatus> responseStatusList = new ArrayList<>();
-		if (!StringUtils.validateName(name)) {
-			responseStatusList.add(ResponseStatus.INVALID_NAME);
-		}
-		if (!StringUtils.validateEmail(email)) {
-			responseStatusList.add(ResponseStatus.INVALID_EMAIL);
-		}
-		if (StringUtils.isBlankOrNull(orgId) || orgId <= 0){
-			responseStatusList.add(ResponseStatus.INVALID_ORGANIZATION);
-		}
-		if (!responseStatusList.isEmpty()) {
-			throw new EntityValidationException("Invalid User Entity: " + responseStatusList,
-					UserApiResponse.createStatusApiResponse(responseStatusList), HttpStatus.NOT_ACCEPTABLE);
-		}
+
+
+
 	}
+
+
+
 	
 	
 

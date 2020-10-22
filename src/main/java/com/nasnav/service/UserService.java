@@ -11,25 +11,15 @@ import com.nasnav.response.UserApiResponse;
 
 public interface UserService extends CommonUserServiceInterface{
 
-
-    /**
-     * Register the passed User entity
-     * by saving it to DB
-     *
-     * @param userJson UserJson string
-     * @return User entity after saving to DB
-     */
-    UserApiResponse registerUser(UserDTOs.UserRegistrationObject userJson);
-
     UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException;
 
     RedirectView activateUserAccount(String token, String redirect) throws BusinessException;
 
-    public UserApiResponse updateUser(String userToken, UserDTOs.EmployeeUserUpdatingObject userJson) throws BusinessException;
+    UserApiResponse updateUser(UserDTOs.EmployeeUserUpdatingObject userJson) ;
 
-    public UserRepresentationObject getUserData(Long id, Boolean isEmployee) throws BusinessException;
+    UserRepresentationObject getUserData(Long id, Boolean isEmployee) throws BusinessException;
 
-	public void resendActivationEmail(ActivationEmailResendDTO accountInfo) throws BusinessException;
+	void resendActivationEmail(ActivationEmailResendDTO accountInfo) throws BusinessException;
 
 	UserApiResponse activateUserAccount(String token) throws BusinessException;
 

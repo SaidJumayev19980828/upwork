@@ -15,7 +15,7 @@ public interface SecurityService {
 	
 	Optional<UserAuthenticationData> findUserDetailsByAuthToken(String token);
 
-    UserApiResponse login(UserDTOs.UserLoginObject body) throws BusinessException;
+    UserApiResponse login(UserDTOs.UserLoginObject body) ;
 
     UserApiResponse logout(String token);
 
@@ -31,7 +31,7 @@ public interface SecurityService {
 
 	UserApiResponse socialLogin(String socialLoginToken) throws BusinessException;
 
-	UserApiResponse login(BaseUserEntity userEntity, boolean rememberMe) throws BusinessException;
+	UserApiResponse login(BaseUserEntity userEntity, boolean rememberMe) ;
 	
 	UserTokensEntity extendUserExpirationTokenIfNeeded(UserTokensEntity token);
 

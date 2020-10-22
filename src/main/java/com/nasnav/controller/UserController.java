@@ -48,35 +48,20 @@ public class UserController {
         this.userService = userService;
         this.employeeUserService = employeeUserService;
     }
+
     
-    @ApiOperation(value = "Create a new employee user", nickname = "employeeUserCreation", code = 200)
-    @ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "account needs activation"),
-            @io.swagger.annotations.ApiResponse(code = 406, message = "the email is already registered in the database"),
-    })
+    @ApiOperation(value = "Create a new employee user", nickname = "employeeUserCreation")
+    @ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "account needs activation"),
+                           @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data")})
     @PostMapping(value = "create",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public UserApiResponse createEmployeeUser(@RequestHeader (name = "User-Token", required = false) String userToken,
                                               @RequestBody UserDTOs.EmployeeUserCreationObject employeeUserJson) {
-        return this.employeeUserService.createEmployeeUser(userToken, employeeUserJson);
+        return this.employeeUserService.createEmployeeUser(employeeUserJson);
     }
 
-
-    @ApiOperation(value = "Register a new user", nickname = "userRegister", code = 201)
-    @ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 201, message = "User registered"),
-            @io.swagger.annotations.ApiResponse(code = 406, message = "Invalid data"),
-    })
-    @PostMapping(value = "register",
-            produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
-            consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ResponseStatus(HttpStatus.CREATED)
-    public UserApiResponse registerUser(
-                                        @RequestBody UserDTOs.UserRegistrationObject userJson) {
-        return this.userService.registerUser(userJson);
-    }
 
     @ApiOperation(value = "Send password recovery email to the user", nickname = "userPasswordToken")
     @ApiResponses(value = {
@@ -85,14 +70,15 @@ public class UserController {
     })
     @GetMapping(value = "recover",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public UserApiResponse sendEmailRecovery(@RequestParam(value = "email") String email,
-                                             @RequestParam(value = "org_id") Long orgId,
-                                             @RequestParam(value = "employee") boolean employee) {
-        if (employee){
-            return this.employeeUserService.sendEmailRecovery(email, orgId);
+    public void sendEmailRecovery(@RequestParam(value = "email") String email,
+                                  @RequestParam(value = "org_id") Long orgId,
+                                  @RequestParam(value = "employee") boolean employee) {
+        if (employee) {
+            employeeUserService.sendEmailRecovery(email, orgId);
         }
-        return this.userService.sendEmailRecovery(email, orgId);
+        userService.sendEmailRecovery(email, orgId);
     }
+
 
     @ApiOperation(value = "Change user's password ", nickname = "userPasswordReset")
     @ApiResponses(value = {
@@ -104,9 +90,9 @@ public class UserController {
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public UserApiResponse recoverUser(@RequestBody UserDTOs.PasswordResetObject json) {
         if (json.employee){
-            return this.employeeUserService.recoverUser(json);
+            return employeeUserService.recoverUser(json);
         }
-        return this.userService.recoverUser(json);
+        return userService.recoverUser(json);
     }
 
 
@@ -119,11 +105,12 @@ public class UserController {
     @PostMapping(value = "login",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public UserApiResponse login(@RequestBody UserDTOs.UserLoginObject login, HttpServletResponse response) throws BusinessException {
+    public UserApiResponse login(@RequestBody UserDTOs.UserLoginObject login, HttpServletResponse response) {
         UserApiResponse userApiResponse = securityService.login(login);
         response.addCookie(userApiResponse.getCookie());
     	return userApiResponse;
     }
+
 
     @ApiOperation(value = "logout user", nickname = "userLogout")
     @ApiResponses(value = {
@@ -168,19 +155,14 @@ public class UserController {
             consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public UserApiResponse updateEmployeeUser(@RequestHeader (name = "User-Token", required = false) String userToken,
-                                              @RequestBody UserDTOs.EmployeeUserUpdatingObject json) throws BusinessException {
+                                              @RequestBody UserDTOs.EmployeeUserUpdatingObject json) {
         if (json.employee) {
-            return this.employeeUserService.updateEmployeeUser(userToken, json);
+            return this.employeeUserService.updateEmployeeUser(json);
         }
-        return this.userService.updateUser(userToken, json);
+        return this.userService.updateUser(json);
     }
-    
-    
-    
-    
 
-    
-    
+
     
     @ApiOperation(value = "Get user info", nickname = "userInfo")
     @ApiResponses(value = {
@@ -194,12 +176,7 @@ public class UserController {
 
         return userService.getUserData(id, isEmployee);
     }
-    
-    
-    
-    
 
-    
     
     
     @ApiOperation(value = "Get employee users list", nickname = "employeesInfo")
@@ -212,7 +189,7 @@ public class UserController {
     public List<UserRepresentationObject> getUserList(@RequestHeader (name = "User-Token", required = false) String userToken,
                                       @RequestParam (value = "org_id", required = false) Long orgId,
                                       @RequestParam (value = "store_id", required = false) Long storeId,
-                                      @RequestParam (value = "role", required = false) String role) throws BusinessException{
+                                      @RequestParam (value = "role", required = false) String role) {
         return employeeUserService.getUserList(userToken, orgId, storeId, role);
     }
     

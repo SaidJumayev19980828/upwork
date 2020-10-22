@@ -36,7 +36,7 @@ public interface CommonUserServiceInterface {
      * @param orgId user organization id
      * @return UserApiResponse object holding the status
      */
-    UserApiResponse sendEmailRecovery(String email, Long orgId);
+    void sendEmailRecovery(String email, Long orgId);
 
 
     /**
@@ -47,16 +47,6 @@ public interface CommonUserServiceInterface {
      */
     UserApiResponse recoverUser(UserDTOs.PasswordResetObject  body);
 
-   
-
-    /**
-     * login user to system
-     *
-     * @param userId user's ID
-     * @param authToken token generated on log-in
-     * @return true if user is authenticated (token is valid)
-     */
-    boolean checkAuthToken(Long userId, String authToken);
 
 	Boolean isUserDeactivated(BaseUserEntity user);
 }

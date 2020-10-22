@@ -359,8 +359,7 @@ public class ErrorResponseHandler extends ResponseEntityExceptionHandler {
 			List<ResponseStatus> respStatuses = new ArrayList<ResponseStatus>(1);
 			respStatuses.add(ResponseStatus.INVALID_PARAMETERS);
 
-			return new ResponseEntity<>(UserApiResponse.createStatusApiResponse(respStatuses),
-					HttpStatus.NOT_ACCEPTABLE);
+			return new ResponseEntity<>(new UserApiResponse(respStatuses), HttpStatus.NOT_ACCEPTABLE);
 		}
 		ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.name(),
 				HttpStatus.BAD_REQUEST.name());

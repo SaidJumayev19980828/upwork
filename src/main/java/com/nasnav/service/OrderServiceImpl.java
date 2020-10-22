@@ -27,7 +27,7 @@ import com.nasnav.persistence.*;
 import com.nasnav.persistence.dto.query.result.*;
 import com.nasnav.request.OrderSearchParam;
 import com.nasnav.response.ReturnRequestsResponse;
-import com.nasnav.service.helpers.EmployeeUserServiceHelper;
+import com.nasnav.service.helpers.UserServicesHelper;
 import com.nasnav.service.model.cart.ShopFulfillingCart;
 import com.nasnav.service.model.mail.MailAttachment;
 import com.nasnav.shipping.model.ReturnShipmentTracker;
@@ -60,7 +60,6 @@ import java.util.stream.Stream;
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.*;
 import static com.nasnav.commons.utils.MapBuilder.buildMap;
-import static com.nasnav.commons.utils.MathUtils.calculatePercentage;
 import static com.nasnav.constatnts.EmailConstants.*;
 import static com.nasnav.constatnts.error.orders.OrderServiceErrorMessages.*;
 import static com.nasnav.enumerations.OrderFailedStatus.INVALID_ORDER;
@@ -112,7 +111,7 @@ public class OrderServiceImpl implements OrderService {
 
 	private final StockService stockService;
 
-	private final EmployeeUserServiceHelper employeeUserServiceHelper;
+	private final UserServicesHelper userServicesHelper;
 	
 	private Logger logger = LogManager.getLogger();
 	
@@ -192,14 +191,14 @@ public class OrderServiceImpl implements OrderService {
 
 	@Autowired
 	public OrderServiceImpl(OrdersRepository ordersRepository, BasketRepository basketRepository,
-							StockRepository stockRepository ,StockService stockService, UserRepository userRepository,
-	                        EmployeeUserServiceHelper employeeUserServiceHelper, EmployeeUserRepository employeeUserRepository,
+							StockRepository stockRepository , StockService stockService, UserRepository userRepository,
+							UserServicesHelper userServicesHelper, EmployeeUserRepository employeeUserRepository,
 							ProductRepository productRepository) {
 		this.ordersRepository = ordersRepository;
 		this.stockRepository = stockRepository;
 		this.basketRepository = basketRepository;
 		this.stockService = stockService;
-		this.employeeUserServiceHelper = employeeUserServiceHelper;
+		this.userServicesHelper = userServicesHelper;
 		setOrderStatusPermissions();
 		
 		buildOrderStatusTransitionMap();
@@ -1092,11 +1091,11 @@ public class OrderServiceImpl implements OrderService {
 
 	private void limitSearchParamByUserRole(OrderSearchParam params, OrderSearchParam newParams, BaseUserEntity user) {
 		EmployeeUserEntity empUser = (EmployeeUserEntity)user;
-		List<String> employeeUserRoles = employeeUserServiceHelper.getEmployeeUserRoles(empUser.getId());
+		List<String> employeeUserRoles = userServicesHelper.getEmployeeUserRoles(empUser.getId());
 		
 		if ( collectionContainsAnyOf(employeeUserRoles, "ORGANIZATION_ADMIN", "ORGANIZATION_MANAGER", "ORGANIZATION_EMPLOYEE") )  {
 			newParams.setOrg_id(empUser.getOrganizationId());
-		} else if ( collectionContainsAnyOf(employeeUserRoles, "STORE_ADMIN", "STORE_MANAGER", "STORE_EMPLOYEE")) {
+		} else if ( collectionContainsAnyOf(employeeUserRoles, "STORE_MANAGER", "STORE_EMPLOYEE")) {
 			newParams.setShop_id(empUser.getShopId());
 		} else {
 			newParams.setOrg_id(params.getOrg_id());

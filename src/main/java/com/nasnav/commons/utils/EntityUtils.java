@@ -19,22 +19,10 @@ import java.util.stream.Stream;
 
 import org.apache.commons.beanutils.PropertyUtils;
 
-import com.nasnav.response.ApiResponseBuilder;
-import com.nasnav.response.ResponseStatus;
-import com.nasnav.response.UserApiResponse;
-
 public class EntityUtils {
 	
-	
 	public static final String DEFAULT_TIMESTAMP_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'"; 
-	
-	
-	public static UserApiResponse createFailedLoginResponse(List<ResponseStatus> responseStatuses) {
-		return new ApiResponseBuilder().setSuccess(false).setResponseStatuses(responseStatuses).build();
 
-	}
-	
-	
 	public static void copyNonNullProperties( Object source, Object destination) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
 		Map<String,Object> sourceProperties = PropertyUtils.describe(source);
 		Map<String,Object> destProperties = PropertyUtils.describe(destination);

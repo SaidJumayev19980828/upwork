@@ -1,17 +1,14 @@
 package com.nasnav.service;
 
 import static com.nasnav.cache.Caches.USERS_BY_TOKENS;
-import static com.nasnav.commons.utils.EntityUtils.createFailedLoginResponse;
 import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.constatnts.EntityConstants.AUTH_TOKEN_VALIDITY;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
-import static com.nasnav.exceptions.ErrorCodes.U$LOG$0001;
-import static com.nasnav.response.ResponseStatus.ACCOUNT_SUSPENDED;
-import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
-import static java.lang.String.format;
+import static com.nasnav.enumerations.UserStatus.NOT_ACTIVATED;
+import static com.nasnav.exceptions.ErrorCodes.*;
+import static com.nasnav.service.CommonUserServiceInterface.DEACTIVATION_CODE;
 import static java.time.LocalDateTime.now;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -21,7 +18,6 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -32,7 +28,6 @@ import javax.servlet.http.Cookie;
 import com.nasnav.enumerations.UserStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -43,7 +38,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nasnav.AppConfig;
-import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.constatnts.EntityConstants;
 import com.nasnav.dao.CommonUserRepository;
@@ -52,8 +46,6 @@ import com.nasnav.dao.OrganizationRepository;
 import com.nasnav.dao.UserTokenRepository;
 import com.nasnav.dto.UserDTOs.UserLoginObject;
 import com.nasnav.enumerations.Roles;
-import com.nasnav.exceptions.BusinessException;
-import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
 import com.nasnav.persistence.EmployeeUserEntity;
@@ -61,8 +53,6 @@ import com.nasnav.persistence.OAuth2UserEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.persistence.UserTokensEntity;
-import com.nasnav.response.ApiResponseBuilder;
-import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.security.oauth2.exceptions.InCompleteOAuthRegisteration;
 import com.nasnav.service.model.security.UserAuthenticationData;
@@ -158,7 +148,7 @@ public class SecurityServiceImpl implements SecurityService {
 		userTokenRepo.deleteByToken(token);
 		Cookie c = createCookie(null, true);
 
-		return new ApiResponseBuilder().setCookie(c).setSuccess(true).build();
+		return new UserApiResponse(c);
 	}
 
 	@Override
@@ -174,7 +164,7 @@ public class SecurityServiceImpl implements SecurityService {
 		}
 		Cookie c = createCookie(null, true);
 
-		return new ApiResponseBuilder().setCookie(c).setSuccess(true).build();
+		return new UserApiResponse(c);
 	}
 
 
@@ -193,15 +183,15 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	@Override
-	public UserApiResponse login(UserLoginObject loginData) throws BusinessException {
-		
+	public UserApiResponse login(UserLoginObject loginData) {
+
 		if(invalidLoginData(loginData)) {
 			throwInvalidCredentialsException();
 		}
-		
-		BaseUserEntity userEntity = userRepo.getByEmailIgnoreCaseAndOrganizationId(loginData.email, loginData.orgId, loginData.employee);
-		
-		validateLoginUser(userEntity);			
+
+		BaseUserEntity userEntity = userRepo.getByEmailIgnoreCaseAndOrganizationId(loginData.getEmail(), loginData.getOrgId(), loginData.isEmployee());
+
+		validateLoginUser(userEntity);
 		validateUserPassword(loginData, userEntity);
 
 		return login(userEntity, loginData.rememberMe);
@@ -215,9 +205,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 		boolean accountNeedActivation = isEmployeeUserNeedActivation(userEntity);
 		if (accountNeedActivation) {
-			UserApiResponse failedLoginResponse = 
-					createFailedLoginResponse(singletonList(NEED_ACTIVATION));
-			throw new EntityValidationException("NEED_ACTIVATION ", failedLoginResponse, LOCKED);
+			throw new RuntimeBusinessException(LOCKED,  U$LOG$0003);
 		}
 		
 		boolean passwordMatched = passwordEncoder.matches(loginData.password, userEntity.getEncryptedPassword());		
@@ -230,7 +218,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	@Override
-	public UserApiResponse login(BaseUserEntity userEntity, boolean rememberMe) throws BusinessException {
+	public UserApiResponse login(BaseUserEntity userEntity, boolean rememberMe) {
 		UserPostLoginData userData = updatePostLogin(userEntity);
 
 		Cookie cookie = createCookie(userData.getToken(), rememberMe);
@@ -274,18 +262,25 @@ public class SecurityServiceImpl implements SecurityService {
 		}
 		
 		if (isAccountLocked(userEntity)) { // NOSONAR
-			UserApiResponse failedLoginResponse = createFailedLoginResponse(singletonList(ACCOUNT_SUSPENDED));
-			throw new EntityValidationException("ACCOUNT_SUSPENDED", failedLoginResponse, LOCKED);
+			throw new RuntimeBusinessException(LOCKED,  U$LOG$0004);
 		}
 		
-		if (userService.isUserDeactivated(userEntity)) { // NOSONAR
-			UserApiResponse failedLoginResponse = createFailedLoginResponse(singletonList(NEED_ACTIVATION));
-			throw new EntityValidationException("ACCOUNT_INACTIVE", failedLoginResponse, LOCKED);
+		if (isUserDeactivated(userEntity)) { // NOSONAR
+			throw new RuntimeBusinessException(LOCKED,  U$LOG$0003);
 		}
 	}
 
 
-
+	private boolean isUserDeactivated(BaseUserEntity user) {
+		if(user instanceof EmployeeUserEntity) {
+			return Objects.equals(user.getAuthenticationToken(), DEACTIVATION_CODE);
+		}else if(user instanceof UserEntity){
+			UserEntity userEntity =  (UserEntity)user;
+			return userEntity.getUserStatus().equals(NOT_ACTIVATED.getValue());
+		}else {
+			return false;
+		}
+	}
 
 
 
@@ -298,9 +293,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	private void throwInvalidCredentialsException() {
-		UserApiResponse failedLoginResponse = EntityUtils
-				.createFailedLoginResponse(Collections.singletonList(ResponseStatus.INVALID_CREDENTIALS));
-		throw new EntityValidationException("INVALID_CREDENTIALS ", failedLoginResponse, HttpStatus.UNAUTHORIZED);
+		throw new RuntimeBusinessException(UNAUTHORIZED, U$LOG$0002);
 	}
 	
 	
@@ -327,7 +320,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 
-	public UserPostLoginData updatePostLogin(BaseUserEntity userEntity) throws BusinessException {
+	public UserPostLoginData updatePostLogin(BaseUserEntity userEntity) {
 		LocalDateTime currentSignInDate = userEntity.getCurrentSignInDate();
 
 		String authToken = generateUserToken(userEntity);
@@ -366,22 +359,14 @@ public class SecurityServiceImpl implements SecurityService {
 		Long shopId = 0L;
 		BaseUserEntity userEntity = userData.getUserEntity();
 		if(userEntity instanceof EmployeeUserEntity) {
-			shopId = EmployeeUserEntity.class.cast(userEntity).getShopId();
+			shopId = ofNullable(EmployeeUserEntity.class.cast(userEntity).getShopId()).orElse(0L);
 		}
 		
-		Long organizationId = userEntity.getOrganizationId();
-		
-		return new ApiResponseBuilder()
-					.setSuccess(true)
-					.setEntityId( userEntity.getId() )
-					.setName(userEntity.getName())
-					.setEmail(userEntity.getEmail())
-					.setToken( cookie.getValue())
-					.setRoles( userRepo.getUserRoles(userEntity) )
-					.setOrganizationId( organizationId != null ? organizationId : 0L)
-					.setStoreId(shopId != null ? shopId : 0L)
-					.setCookie(cookie)
-					.build();
+		Long orgId = ofNullable(userEntity.getOrganizationId()).orElse(0L);
+		List<String> userRoles = userRepo.getUserRoles(userEntity);
+
+		return new UserApiResponse(userEntity.getId(), cookie.getValue(), userRoles, orgId, shopId,
+								   userEntity.getName(), userEntity.getEmail(), cookie);
 	}
 
 
@@ -470,7 +455,7 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 	@Override
-	public UserApiResponse socialLogin(String socialLoginToken) throws BusinessException {
+	public UserApiResponse socialLogin(String socialLoginToken) {
 		BaseUserEntity userEntity = getUserBySocialLoginToken(socialLoginToken);
 		
 		validateLoginUser(userEntity);			
@@ -482,12 +467,9 @@ public class SecurityServiceImpl implements SecurityService {
 
 
 
-	private BaseUserEntity getUserBySocialLoginToken(String socialLoginToken) throws BusinessException {
+	private BaseUserEntity getUserBySocialLoginToken(String socialLoginToken) {
 		if( !oAuthUserRepo.existsByLoginToken(socialLoginToken)) {
-			throw new BusinessException(
-			               format("No User did OAuth2 login with token[%s]", socialLoginToken) 
-			               , "INVALID_TOKEN"
-			               , UNAUTHORIZED);
+			throw new RuntimeBusinessException(UNAUTHORIZED, UXACTVX0006, socialLoginToken);
 		}
 		return oAuthUserRepo
 				.findByLoginToken(socialLoginToken)

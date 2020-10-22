@@ -1,55 +1,34 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.StringUtils.generateUUIDToken;
-import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.isNotBlankOrNull;
-import static com.nasnav.commons.utils.StringUtils.validateEmail;
-import static com.nasnav.commons.utils.StringUtils.validateName;
-import static com.nasnav.commons.utils.StringUtils.validateNameAndEmail;
-import static com.nasnav.constatnts.EmailConstants.ACCOUNT_EMAIL_PARAMETER;
 import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_EMAIL_SUBJECT;
 import static com.nasnav.constatnts.EmailConstants.ACTIVATION_ACCOUNT_URL_PARAMETER;
 import static com.nasnav.constatnts.EmailConstants.NEW_EMAIL_ACTIVATION_TEMPLATE;
 import static com.nasnav.constatnts.EmailConstants.USERNAME_PARAMETER;
-import static com.nasnav.constatnts.EntityConstants.PASSWORD_MAX_LENGTH;
-import static com.nasnav.constatnts.EntityConstants.PASSWORD_MIN_LENGTH;
-import static com.nasnav.constatnts.EntityConstants.TOKEN_VALIDITY;
 import static com.nasnav.enumerations.Roles.NASNAV_ADMIN;
 import static com.nasnav.enumerations.UserStatus.*;
 import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.response.ResponseStatus.ACTIVATION_SENT;
-import static com.nasnav.response.ResponseStatus.EMAIL_EXISTS;
-import static com.nasnav.response.ResponseStatus.EXPIRED_TOKEN;
-import static com.nasnav.response.ResponseStatus.INVALID_PASSWORD;
-import static com.nasnav.response.ResponseStatus.INVALID_REDIRECT_URL;
-import static com.nasnav.response.ResponseStatus.INVALID_TOKEN;
 import static com.nasnav.response.ResponseStatus.NEED_ACTIVATION;
-import static com.nasnav.response.UserApiResponse.createStatusApiResponse;
 import static com.nasnav.service.helpers.LoginHelper.isInvalidRedirectUrl;
-import static java.lang.String.format;
 import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.*;
 
 import java.net.URISyntaxException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 
+import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.enumerations.UserStatus;
 import com.nasnav.dao.*;
-import com.nasnav.enumerations.UserStatus;
+import com.nasnav.service.helpers.UserServicesHelper;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -72,12 +51,10 @@ import com.nasnav.dto.AddressRepObj;
 import com.nasnav.dto.UserDTOs;
 import com.nasnav.dto.UserRepresentationObject;
 import com.nasnav.dto.request.user.ActivationEmailResendDTO;
-import com.nasnav.exceptions.BusinessException;
 import com.nasnav.exceptions.EntityValidationException;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.AddressesEntity;
 import com.nasnav.persistence.BaseUserEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
 import com.nasnav.persistence.OrganizationEntity;
 import com.nasnav.persistence.UserEntity;
 import com.nasnav.response.ResponseStatus;
@@ -87,47 +64,40 @@ import com.nasnav.response.UserApiResponse;
 public class UserServiceImpl implements UserService {
 
 	private Logger logger = LogManager.getLogger();
-	private UserRepository userRepository;
-	private MailService mailService;
+
+	@Autowired
 	private PasswordEncoder passwordEncoder;
 
-	
+	@Autowired
+	private UserServicesHelper userServicesHelper;
 	@Autowired
 	private SecurityService securityService;
-
 	@Autowired
 	private DomainService domainService;
-
 	@Autowired
 	private OrganizationService orgService;
+	@Autowired
+	private MailService mailService;
 
 	@Autowired
 	private UserTokenRepository userTokenRepo;
-
 	@Autowired
 	private AddressRepository addressRepo;
-
 	@Autowired
 	private CommonUserRepository commonUserRepo;
-	
 	@Autowired
 	private OrganizationRepository orgRepo;
-
 	@Autowired
 	private AreaRepository areaRepo;
-
 	@Autowired
-	public UserServiceImpl(UserRepository userRepository, MailService mailService, PasswordEncoder passwordEncoder) {
-		this.userRepository = userRepository;
-		this.mailService = mailService;
-		this.passwordEncoder = passwordEncoder;
-	}
+	private UserRepository userRepository;
 
 	@Autowired
 	AppConfig appConfig;
 
+
 	@Override
-	public UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException {
+	public UserApiResponse registerUserV2(UserDTOs.UserRegistrationObjectV2 userJson) {
 		validateNewUserRegistration(userJson);
 
 		UserEntity user = createNewUserEntity(userJson);		
@@ -137,40 +107,27 @@ public class UserServiceImpl implements UserService {
 		
 		sendActivationMail(user, userJson.getRedirectUrl());
 
-		UserApiResponse api = createStatusApiResponse(user.getId(),	asList(NEED_ACTIVATION, ACTIVATION_SENT));
-		api.setMessages(new ArrayList<>());
-		return api;
+		return new UserApiResponse(user.getId(), asList(NEED_ACTIVATION, ACTIVATION_SENT));
 	}
 
 	
 	
 	
-	private void validateNewUserRegistration(UserDTOs.UserRegistrationObjectV2 userJson) throws BusinessException {
+	private void validateNewUserRegistration(UserDTOs.UserRegistrationObjectV2 userJson) {
 		if (!userJson.confirmationFlag) {
 			throw new EntityValidationException("Registration not confirmed by user!", null, NOT_ACCEPTABLE);
 		}
 
-		validateNameAndEmail(userJson.name, userJson.email, userJson.getOrgId());
-
-		validateNewPassword(userJson.password);
+		userServicesHelper.validateBusinessRules(userJson.getName(), userJson.getEmail(), userJson.getOrgId());
+		userServicesHelper.validateNewPassword(userJson.password);
 
 		Long orgId = userJson.getOrgId();
-		if ( orgId == null) {
-			throw new BusinessException("Required org_id is  missing!", "MISSING_PARAM: org_id", NOT_ACCEPTABLE);
-		}
 
-		Optional<OrganizationEntity> org = orgRepo.findById(orgId);
-		if (!org.isPresent()) {
-			throw new BusinessException(
-					String.format("Provided org_id %d doesn't match any existing organization", orgId),
-					"INVALID_PARAM: org_id", NOT_ACCEPTABLE);
-		}
+		OrganizationEntity org = orgRepo.findById(orgId)
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, ORG$0001));
 
 		if (userRepository.existsByEmailIgnoreCaseAndOrganizationId(userJson.email, orgId)) {
-			throw new EntityValidationException(
-					"Invalid User Entity: " + EMAIL_EXISTS,
-					createStatusApiResponse(singletonList(EMAIL_EXISTS)),
-					NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0007, userJson.getEmail(), userJson.getOrgId());
 		}
 		
 		validateActivationRedirectUrl(userJson.getRedirectUrl(), orgId);
@@ -182,29 +139,22 @@ public class UserServiceImpl implements UserService {
 	private void validateActivationRedirectUrl(String redirectUrl, Long orgId) {
 		List<String> orgDomains = domainService.getOrganizationDomainOnly(orgId);
 		if(isNull(redirectUrl) || isInvalidRedirectUrl(redirectUrl, orgDomains)) {
-			throw new EntityValidationException(
-					"Invalid User Entity: " + INVALID_REDIRECT_URL,
-					createStatusApiResponse(singletonList(INVALID_REDIRECT_URL)),
-					NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0004, redirectUrl);
 		}
 	}
 	
 
 
 
-	private UserApiResponse sendActivationMail(UserEntity userEntity, String redirectUrl) {
-		UserApiResponse userApiResponse = new UserApiResponse();
+	private void sendActivationMail(UserEntity userEntity, String redirectUrl) {
 		try {
 			Map<String, String> parametersMap = createActivationEmailParameters(userEntity, redirectUrl);
 			mailService.send(userEntity.getEmail(), ACTIVATION_ACCOUNT_EMAIL_SUBJECT,
 					NEW_EMAIL_ACTIVATION_TEMPLATE, parametersMap);
 		} catch (Exception e) {
 			logger.error(e, e);
-			userApiResponse.setMessages(singletonList(e.getMessage()));
-			throw new EntityValidationException("Could not send Email ", userApiResponse,
-					INTERNAL_SERVER_ERROR);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR,  GEN$0003, e.getMessage());
 		}
-		return userApiResponse;
 	}
 
 
@@ -264,84 +214,38 @@ public class UserServiceImpl implements UserService {
 	
 	@Override
 	public Boolean isUserDeactivated(BaseUserEntity user) {
-		if(user instanceof EmployeeUserEntity) {
-			return Objects.equals(user.getAuthenticationToken(), DEACTIVATION_CODE);
-		}else if(user instanceof UserEntity){
-			UserEntity userEntity =  (UserEntity)user;
-			return userEntity.getUserStatus().equals(NOT_ACTIVATED.getValue());
-		}else {
-			return false;
-		}
-		
-	}
-
-
-	@Override
-	public UserApiResponse registerUser(UserDTOs.UserRegistrationObject userJson) {
-		this.validateBusinessRules(userJson);
-
-		if(!userRepository.existsByEmailIgnoreCaseAndOrganizationId(userJson.email, userJson.getOrgId())) {
-			UserEntity userEntity = createUserEntity(userJson);
-			generateResetPasswordToken(userEntity);
-			userEntity = userRepository.saveAndFlush(userEntity);
-			sendRecoveryMail(userEntity);
-			UserApiResponse api = UserApiResponse.createStatusApiResponse(userEntity.getId(),
-					Arrays.asList(NEED_ACTIVATION, ACTIVATION_SENT));
-			api.setMessages(new ArrayList<>());
-			return api;
-		}
-		throw new EntityValidationException(
-				"Invalid User Entity: " + EMAIL_EXISTS,
-				UserApiResponse.createStatusApiResponse(singletonList(EMAIL_EXISTS)),
-				NOT_ACCEPTABLE);
-	}
-	
-	
-	
-	
-
-	private UserEntity createUserEntity(UserDTOs.UserRegistrationObject userJson) {
-		UserEntity user = UserEntity.registerUser(userJson);
-		return userRepository.save(user);
+		UserEntity userEntity = (UserEntity)user;
+		return userEntity.getUserStatus().equals(NOT_ACTIVATED.getValue());
 	}
 
 
 	@Transactional
 	@Override
-	public UserApiResponse updateUser(String userToken, UserDTOs.EmployeeUserUpdatingObject userJson) throws BusinessException {
+	public UserApiResponse updateUser(UserDTOs.EmployeeUserUpdatingObject userJson) {
 		UserEntity userEntity = (UserEntity) securityService.getCurrentUser();
-		List<ResponseStatus> failResponseStatusList = new ArrayList<>();
 		List<ResponseStatus> successResponseStatusList = new ArrayList<>();
-		if (isNotBlankOrNull(userJson.getName()))
-			if (validateName(userJson.getName())) {
-				userEntity.setName(userJson.getName());
-			} else {
-				failResponseStatusList.add(ResponseStatus.INVALID_NAME);
-			}
+		if (isNotBlankOrNull(userJson.getName())) {
+			userServicesHelper.validateName(userJson.getName());
+			userEntity.setName(userJson.getName());
+		}
 		if (isNotBlankOrNull(userJson.email)){
-			if (validateEmail(userJson.email)) {
-				userEntity.setEmail(userJson.email);
-				generateResetPasswordToken(userEntity);
-				userEntity = userRepository.saveAndFlush(userEntity);
-				sendRecoveryMail(userEntity);
-				successResponseStatusList.add(ResponseStatus.NEED_ACTIVATION);
-				successResponseStatusList.add(ResponseStatus.ACTIVATION_SENT);
-			} else {
-				failResponseStatusList.add(ResponseStatus.INVALID_EMAIL);
-			}
+			userServicesHelper.validateEmail(userJson.getEmail());
+			userEntity.setEmail(userJson.email);
+			generateResetPasswordToken(userEntity);
+			userEntity = userRepository.saveAndFlush(userEntity);
+			sendRecoveryMail(userEntity);
+			successResponseStatusList.addAll(asList(NEED_ACTIVATION, ACTIVATION_SENT));
 		}
 		String [] defaultIgnoredProperties = new String[]{"name", "email", "org_id", "store_id", "role"};
 		String [] allIgnoredProperties = new HashSet<String>(
-				  Arrays.asList(ObjectArrays.concat(getNullProperties(userJson), defaultIgnoredProperties, String.class))).toArray(new String[0]);
-		if (failResponseStatusList.isEmpty()) {
-			BeanUtils.copyProperties(userJson, userEntity, allIgnoredProperties);
-			userRepository.saveAndFlush(userEntity);
-			if (successResponseStatusList.isEmpty()) {
-				successResponseStatusList.add(ResponseStatus.ACTIVATED);
-			}
-			return UserApiResponse.createMessagesApiResponse(true, successResponseStatusList);
+				  asList(ObjectArrays.concat(getNullProperties(userJson), defaultIgnoredProperties, String.class))).toArray(new String[0]);
+
+		BeanUtils.copyProperties(userJson, userEntity, allIgnoredProperties);
+		Long userId = userRepository.saveAndFlush(userEntity).getId();
+		if (successResponseStatusList.isEmpty()) {
+			successResponseStatusList.add(ResponseStatus.ACTIVATED);
 		}
-		throw new BusinessException(""+failResponseStatusList, "INVALID_PARAMS", HttpStatus.NOT_ACCEPTABLE);
+		return new UserApiResponse(userId, successResponseStatusList);
 	}
 
 
@@ -391,14 +295,18 @@ public class UserServiceImpl implements UserService {
 		return addressDTO;
 	}
 
-	/**
-	 * validateBusinessRules passed user entity against business rules
-	 *
-	 * @param userJson User entity to be validated
-	 */
-	private void validateBusinessRules(UserDTOs.UserRegistrationObject userJson) {
-		validateNameAndEmail(userJson.name, userJson.email, userJson.getOrgId());
+	private void validateName(String name) {
+		if (!StringUtils.validateName(name)) {
+			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0003, name );
+		}
 	}
+
+	private void validateEmail(String email) {
+		if (!StringUtils.validateEmail(email)) {
+			throw new RuntimeBusinessException(HttpStatus.NOT_ACCEPTABLE, U$EMP$0004, email);
+		}
+	}
+
 
 	@Override
 	public void deleteUser(Long userId) {
@@ -417,35 +325,20 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserApiResponse sendEmailRecovery(String email, Long orgId) {
+	public void sendEmailRecovery(String email, Long orgId) {
 		UserEntity userEntity = getUserEntityByEmailAndOrgId(email, orgId);
 		generateResetPasswordToken(userEntity);
 		userEntity = userRepository.saveAndFlush(userEntity);
-		return sendRecoveryMail(userEntity);
+		sendRecoveryMail(userEntity);
 	}
 
-	/**
-	 * Get user by passed email and organization id
-	 *
-	 * @param email user entity email
-	 * @param orgId user organization id
-	 * @return user entity
-	 */
+
 	private UserEntity getUserEntityByEmailAndOrgId(String email, Long orgId) {
-		// first ensure that email is valid
-		if (!validateEmail(email)) {
-			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
-					Collections.singletonList(ResponseStatus.INVALID_EMAIL));
-			throw new EntityValidationException("INVALID_EMAIL :" + email, userApiResponse, HttpStatus.NOT_ACCEPTABLE);
-		}
-		// load user entity by email
-		UserEntity userEntity = this.userRepository.getByEmailAndOrganizationId(email, orgId);
-		if (isBlankOrNull(userEntity)) {
-			UserApiResponse userApiResponse = UserApiResponse.createMessagesApiResponse(false,
-					Collections.singletonList(ResponseStatus.EMAIL_NOT_EXIST));
-			throw new EntityValidationException("EMAIL_NOT_EXIST", userApiResponse, HttpStatus.NOT_ACCEPTABLE);
-		}
-		return userEntity;
+		userServicesHelper.validateEmail(email);
+		userServicesHelper.validateOrgId(orgId);
+
+		return ofNullable(userRepository.getByEmailIgnoreCaseAndOrganizationId(email, orgId))
+				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0001, email, orgId));
 	}
 
 
@@ -461,24 +354,20 @@ public class UserServiceImpl implements UserService {
 	
 	
 	
-	private UserApiResponse sendRecoveryMail(UserEntity userEntity) {
-		UserApiResponse userApiResponse = new UserApiResponse();
+	private void sendRecoveryMail(UserEntity userEntity) {
+		String userName = ofNullable(userEntity.getName()).orElse("User");
 		try {
 			// create parameter map to replace parameter by actual UserEntity data.
 			Map<String, String> parametersMap = new HashMap<>();
-			parametersMap.put(EmailConstants.USERNAME_PARAMETER, userEntity.getName());
+			parametersMap.put(EmailConstants.USERNAME_PARAMETER, userName);
 			parametersMap.put(EmailConstants.CHANGE_PASSWORD_URL_PARAMETER,
 					appConfig.mailRecoveryUrl.concat(userEntity.getResetPasswordToken()));
 			// send Recovery mail to user
 			this.mailService.send(userEntity.getEmail(), EmailConstants.CHANGE_PASSWORD_EMAIL_SUBJECT,
 					EmailConstants.CHANGE_PASSWORD_EMAIL_TEMPLATE, parametersMap);
-			// set success to true after sending mail.
 		} catch (Exception e) {
-			userApiResponse.setMessages(Collections.singletonList(e.getMessage()));
-			throw new EntityValidationException("Could not send Email ", userApiResponse,
-					HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, GEN$0003, e.getMessage());
 		}
-		return userApiResponse;
 	}
 
 	/**
@@ -513,63 +402,24 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public UserApiResponse recoverUser(UserDTOs.PasswordResetObject data) {
-		validateNewPassword(data.password);
-		if(isBlankOrNull(data.token)) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0005);
-		}
-		UserEntity userEntity = userRepository.getByResetPasswordToken(data.token);
-		if (isNotBlankOrNull(userEntity)) {
-			// if resetPasswordToken is not active, throw exception for invalid
-			// resetPasswordToken
-			checkResetPasswordTokenExpiry(userEntity);
-			userEntity.setResetPasswordToken(null);
-			userEntity.setResetPasswordSentAt(null);
-			userEntity.setEncryptedPassword(passwordEncoder.encode(data.password));
-			userRepository.saveAndFlush(userEntity);
-		} else {
-			throw new EntityValidationException("INVALID_TOKEN",
-					UserApiResponse.createStatusApiResponse(singletonList(INVALID_TOKEN)),
-					HttpStatus.NOT_ACCEPTABLE);
-		}
+		userServicesHelper.validateNewPassword(data.password);
+		userServicesHelper.validateToken(data.token);
+		UserEntity userEntity = userRepository.getByResetPasswordToken(data.token)
+								.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0001));;
 
-		return UserApiResponse.createStatusApiResponse(userEntity.getId(), null);
+		userServicesHelper.checkResetPasswordTokenExpiry(userEntity.getResetPasswordSentAt());
+		userEntity.setResetPasswordToken(null);
+		userEntity.setResetPasswordSentAt(null);
+		userEntity.setEncryptedPassword(passwordEncoder.encode(data.password));
+		userEntity = userRepository.saveAndFlush(userEntity);
+
+		return new UserApiResponse(userEntity.getId());
 	}
 
-	private void validateNewPassword(String newPassword) {
-		if (isBlankOrNull(newPassword) || newPassword.length() > PASSWORD_MAX_LENGTH
-				|| newPassword.length() < PASSWORD_MIN_LENGTH) {
-			throw new EntityValidationException("INVALID_PASSWORD  ",
-					UserApiResponse.createStatusApiResponse(singletonList(INVALID_PASSWORD)),
-					NOT_ACCEPTABLE);
-		}
-	}
-
-	
-
-	
-	private void checkResetPasswordTokenExpiry(UserEntity userEntity) {
-		LocalDateTime resetPasswordSentAt = userEntity.getResetPasswordSentAt();
-		LocalDateTime tokenExpiryDate = resetPasswordSentAt.plusHours(TOKEN_VALIDITY);
-		if (now().isAfter(tokenExpiryDate)) {
-			throw new EntityValidationException("EXPIRED_TOKEN  ",
-					createStatusApiResponse(singletonList(EXPIRED_TOKEN)),
-					NOT_ACCEPTABLE);
-		}
-	}
-
-
-	
-	
-	@Override
-	public boolean checkAuthToken(Long userId, String authToken) {
-		return userRepository.existsByIdAndAuthenticationToken(userId, authToken);
-	}
-	
-	
 	
 
 	@Override
-	public UserRepresentationObject getUserData(Long userId, Boolean isEmployee) throws BusinessException {
+	public UserRepresentationObject getUserData(Long userId, Boolean isEmployee) {
 		BaseUserEntity currentUser = securityService.getCurrentUser();
 		
 		if(!securityService.currentUserHasRole(NASNAV_ADMIN)) {
@@ -581,7 +431,7 @@ public class UserServiceImpl implements UserService {
 				
 		BaseUserEntity user = 
 				commonUserRepo.findById(requiredUserId, isEmp)
-							.orElseThrow(() -> getNoUserHaveThisIdException(requiredUserId));			
+							.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$0001, userId));
 		
 		return getUserRepresentationWithUserRoles(user);
 	}
@@ -589,7 +439,7 @@ public class UserServiceImpl implements UserService {
 
 
 	@Override
-	public RedirectView activateUserAccount(String token, String redirect) throws BusinessException {
+	public RedirectView activateUserAccount(String token, String redirect)  {
 		UserEntity user = userRepository.findByResetPasswordToken(token);
 
 		checkUserActivation(user);
@@ -627,14 +477,14 @@ public class UserServiceImpl implements UserService {
 
 
 
-	private void checkUserActivation(UserEntity user) throws BusinessException {
+	private void checkUserActivation(UserEntity user) {
 		if (user == null)
-			throw new BusinessException("Provided token is invalid", "INVALID_PARAM: token", UNAUTHORIZED);
+			throw new RuntimeBusinessException(UNAUTHORIZED, UXACTVX0006);
 
-		checkResetPasswordTokenExpiry(user);
+		userServicesHelper.checkResetPasswordTokenExpiry(user.getResetPasswordSentAt());
 
 		if (!isUserDeactivated(user))
-			throw new BusinessException("Account is already activated!", "INVALID_OPERATION: token", NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0008);
 	}
 	
 	
@@ -653,13 +503,6 @@ public class UserServiceImpl implements UserService {
 	}
 
 	
-	private BusinessException getNoUserHaveThisIdException(Long id) {
-		return new BusinessException("Provided id doesn't match any existing user with id: "+id, "INVALID PARAM: id", HttpStatus.NOT_ACCEPTABLE);
-	}
-
-
-	
-	
 	
 	private String[] getNullProperties(UserDTOs.EmployeeUserUpdatingObject userJson) {
 		final BeanWrapper src = new BeanWrapperImpl(userJson);
@@ -677,7 +520,7 @@ public class UserServiceImpl implements UserService {
 
 
 	@Override
-	public void resendActivationEmail(ActivationEmailResendDTO accountInfo) throws BusinessException {		
+	public void resendActivationEmail(ActivationEmailResendDTO accountInfo) {
 		String email = accountInfo.getEmail();
 		Long orgId = accountInfo.getOrgId();
 		BaseUserEntity baseUser = commonUserRepo.getByEmailAndOrganizationId(email, orgId);
@@ -695,24 +538,15 @@ public class UserServiceImpl implements UserService {
 
 
 
-	private void validateActivationEmailResend(ActivationEmailResendDTO accountInfo, BaseUserEntity user) throws BusinessException {
+	private void validateActivationEmailResend(ActivationEmailResendDTO accountInfo, BaseUserEntity user) {
 		String email = accountInfo.getEmail();
 		Long orgId = accountInfo.getOrgId();
 		if(user == null || !(user instanceof UserEntity)) {
-			throw new BusinessException(
-					format(UXACTVX0001.getValue(), email, orgId)
-					, UXACTVX0001
-					, NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0001, email, orgId);
 		}else if(!isUserDeactivated(user)){
-			throw new BusinessException(
-					format(UXACTVX0002.getValue(), email)
-					, UXACTVX0002
-					, NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0002, email);
 		}else if(resendRequestedTooSoon(accountInfo)) {
-			throw new BusinessException(
-					format(UXACTVX0003.getValue(), email)
-					, UXACTVX0003
-					, NOT_ACCEPTABLE);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, UXACTVX0003, email);
 		}			 		
 	}
 
@@ -728,7 +562,7 @@ public class UserServiceImpl implements UserService {
 
 
 	@Override
-	public UserApiResponse activateUserAccount(String token) throws BusinessException {
+	public UserApiResponse activateUserAccount(String token) {
 		UserEntity user = userRepository.findByResetPasswordToken(token);
 
 		checkUserActivation(user);

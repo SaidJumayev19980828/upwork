@@ -12,16 +12,35 @@ public enum ErrorCodes {
 	, UXACTVX0003("Cannot send activation email to[%s], need to wait[%s]!")
 	, UXACTVX0004("Invalid redirection url[%s]!")
 	, UXACTVX0005("Missing recovery token!")
+	, UXACTVX0006("Invalid token! %s")
 	
 	, U$LOG$0001("NO USER FOUND FOR A TOKEN!")
+	, U$LOG$0002("Invalid credentials!")
+	, U$LOG$0003("Need activation!")
+	, U$LOG$0004("Account is suspended!")
+	, U$LOG$0005("Invalid password[%s]!")
+	, U$LOG$0006("Expired token!")
+	, U$LOG$0007("User with email[%s] already exists for organization[%d]!")
+	, U$LOG$0008("Account is already activated!")
+
 
 	, U$STATUS$0001("Account is already suspended!")
 
 	,U$AUTH$0001("User is not an authorized to modify %s!")
 
-	,U$EMP$0001("No Roles provided for employee user creation!")
+	,U$EMP$0001("No Roles provided for user creation!")
 	,U$EMP$0002("No Employee exists with id[%d]!")
-	
+	,U$EMP$0003("Invalid Name [%s]!")
+	,U$EMP$0004("Invalid e-mail [%s]!")
+	,U$EMP$0005("Invalid org_id [%d]!")
+	,U$EMP$0006("Employee with email[%s] already exists for organization[%d]!")
+	,U$EMP$0007("Invalid role [%s]!")
+	,U$EMP$0008("Employee can't create employees")
+	,U$EMP$0009("Employee can't create employees with requested roles!")
+	,U$EMP$0010("Created employee must be in the same organization as the manager!")
+	,U$EMP$0011("Created employee must be in the same store as the manager!")
+	,U$EMP$0012("Invalid store_id [%d]!")
+
 	,P$EXP$0001("No column found in csv for writing additional field with name[%s]!")
 	,P$VAR$0001("No Variant found with id[%s]!")
 	,P$VAR$0002("No Extra Attribute exists with name[%s] for organization[%id]")
@@ -43,6 +62,8 @@ public enum ErrorCodes {
 
 	,GEN$0001("NO %s exists with ID:[%d]!")
 	,GEN$0002("Missing or invalid %s, available values are [true, false]!")
+	,GEN$0003("Couldn't send mail, reason[$s]")
+	,GEN$0004("Unknown User Entity Type]")
 
 	,S$0001("Shop is linked to %s !")
 	,S$0002( "No Shop exists with ID: [%d]!")
@@ -59,6 +80,8 @@ public enum ErrorCodes {
 	,TYP$0001("Missing or invalid type, available types are [%s]!")
 
 	,ORG$EXTRATTR$0001("No extra attribute exists with ID:[%d]!")
+
+	,ORG$0001("No organization found with ID[%d]!")
 
 	,ORG$SHIP$0001("Organization is not registered with shipping service[%s]!")
 

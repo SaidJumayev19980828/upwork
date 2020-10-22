@@ -4,11 +4,8 @@ import static org.junit.Assert.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.util.List;
-import java.util.Optional;
 
 import com.nasnav.dao.AddressRepository;
-import com.nasnav.persistence.AddressesEntity;
-import com.nasnav.persistence.EmployeeUserEntity;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -16,17 +13,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
@@ -44,7 +37,6 @@ import com.nasnav.response.BaseResponse;
 import com.nasnav.response.ResponseStatus;
 import com.nasnav.response.UserApiResponse;
 import com.nasnav.service.EmployeeUserService;
-import com.nasnav.test.commons.TestCommons;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -71,10 +63,6 @@ public class EmployeeUserCreationTest {
 	
 	@Autowired
 	EmployeeUserRepository empRepository;
-
-	@Autowired
-	private AddressRepository addressRepo;
-
 
 
 	@Before
@@ -136,12 +124,12 @@ public class EmployeeUserCreationTest {
 		// make an invalid employee user json without a name param
 		String body = "{\"name\":\"Ahmed#&*\", \"email\":\"" + TestUserEmail + "\", \"org_id\": 99001, \"store_id\": 100, \"role\": \"NASNAV_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+		ResponseEntity<String> response = template.postForEntity("/user/create", employeeUserJson, String.class);
 
 		
 		
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_NAME));
+		Assert.assertEquals(true, response.getBody().contains("U$EMP$0003"));
 		//delete created organization
 	}
 
@@ -150,11 +138,11 @@ public class EmployeeUserCreationTest {
 		// make an invalid employee user json without a name param
 		String body = "{\"name\":\"Ahmed#&*\", \"email\":\"invalid_email\", \"org_id\": 99001, \"store_id\": 100, \"role\": \"NASNAV_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+		ResponseEntity<String> response = template.postForEntity("/user/create", employeeUserJson, String.class);
 
 		
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_EMAIL));
+		Assert.assertEquals(true, response.getBody().contains("U$EMP$0003"));
 	}
 
 	@Test
@@ -162,21 +150,21 @@ public class EmployeeUserCreationTest {
 		// make an invalid employee user json without a name param
 		String body = "{\"name\":\"Ahmed\", \"email\":\"" + TestUserEmail + "\", \"org_id\": 99001, \"store_id\": 100, \"role\": \"NASNAV_ADMIN, UNKNOWN_ROLE\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+		ResponseEntity<String> response = template.postForEntity("/user/create", employeeUserJson, String.class);
 
 		
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_ROLE));
+		Assert.assertEquals(true, response.getBody().contains("U$EMP$0007"));
 	}
 
 	@Test
 	public void createEmployeeUserOrganizationNoIdTest() {
 		HttpEntity<Object> employeeUserJson = getHttpEntity(
                 "{\"name\":\"Ahmed\",\"email\":\"" + TestUserEmail + "\", \"org_id\": 0, \"store_id\": 100, \"role\": \"ORGANIZATION_ADMIN\"}", "abcdefg");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+		ResponseEntity<String> response = template.postForEntity("/user/create", employeeUserJson, String.class);
 		
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_ORGANIZATION));
+		Assert.assertEquals(true, response.getBody().contains("U$EMP$0005"));
 	}
 
 	// @Test - Unclear whether store_id can be 0
@@ -188,7 +176,7 @@ public class EmployeeUserCreationTest {
 
 		
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_STORE));
+		Assert.assertEquals(true, response.getBody().getStatus().contains(ResponseStatus.INVALID_STORE));
 	}
 
 	@Test
@@ -200,11 +188,11 @@ public class EmployeeUserCreationTest {
 
 		response.getBody().getEntityId();
 		// try to create another employee user with the same email
-		response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+		ResponseEntity<String> anotherResponse = template.postForEntity("/user/create", employeeUserJson, String.class);
 
 		
-		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.EMAIL_EXISTS));
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), anotherResponse.getStatusCode().value());
+		Assert.assertEquals(true, anotherResponse.getBody().contains("U$EMP$0006"));
 	}
 
 
@@ -217,11 +205,11 @@ public class EmployeeUserCreationTest {
 
 		response.getBody().getEntityId();
 		// try to create another employee user with the same email
-		response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
+		ResponseEntity<String> anotherResponse = template.postForEntity("/user/create", employeeUserJson, String.class);
 
 
-		Assert.assertEquals(NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.EMAIL_EXISTS));
+		Assert.assertEquals(NOT_ACCEPTABLE.value(), anotherResponse.getStatusCode().value());
+		Assert.assertEquals(true, anotherResponse.getBody().contains("U$EMP$0006"));
 	}
 
 
@@ -237,11 +225,11 @@ public class EmployeeUserCreationTest {
 		response.getBody().getEntityId();
 
 		// try to login with this user email before activation
-		ResponseEntity<UserApiResponse> loginResponse = template.postForEntity(
-				"/user/login", employeeUserLoginJson, UserApiResponse.class);
+		ResponseEntity<String> loginResponse = template.postForEntity(
+				"/user/login", employeeUserLoginJson, String.class);
 
 		Assert.assertEquals(HttpStatus.LOCKED.value(), loginResponse.getStatusCode().value());
-		Assert.assertEquals(true, loginResponse.getBody().getResponseStatuses().contains(ResponseStatus.NEED_ACTIVATION));
+		Assert.assertEquals(true, loginResponse.getBody().contains("U$LOG$0003"));
 	}
 
 	@Test
@@ -292,11 +280,10 @@ public class EmployeeUserCreationTest {
 	public void createEmployeeUserNoOrgIdTest() {
 		String body = "{\"name\":\"Ahmed\",\"email\":\"" + "Adminuser5@nasnav.com" + "\" , \"role\": \"NASNAV_ADMIN\"}";
 		HttpEntity<Object> employeeUserJson = getHttpEntity(body, "abcdefg");
-		ResponseEntity<UserApiResponse> response = template.postForEntity("/user/create", employeeUserJson, UserApiResponse.class);
-		response.getBody().getEntityId();
+		ResponseEntity<String> response = template.postForEntity("/user/create", employeeUserJson, String.class);
 
 		Assert.assertEquals(HttpStatus.NOT_ACCEPTABLE.value(), response.getStatusCode().value());
-		Assert.assertEquals(true, response.getBody().getResponseStatuses().contains(ResponseStatus.INVALID_ORGANIZATION));
+		Assert.assertEquals(true, response.getBody().contains("U$EMP$0005"));
 	}
 
 
