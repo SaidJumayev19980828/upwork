@@ -322,8 +322,9 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 		String brandName = ofNullable(product.getEnglishFactory()).orElse("Other Brands");
 		
 		dto.setBarcode(product.getItemNoC());
-		dto.setBrand(brandName);
+		dto.setProductGroupKey(product.getItemNoC());
 		dto.setExternalId(product.getItemNoC());
+		dto.setBrand(brandName);
 		dto.setName(productName);
 		dto.setPrice(price);
 		dto.setQuantity(quantity);
@@ -331,7 +332,7 @@ public class ProductImportEventListener extends AbstractElSallabEventListener<Pr
 		dto.setFeatures(variantFeatures);
 		dto.setTags(tags);
 		dto.setExtraAttributes(extraAttributes);
-		
+
 		return dto;
 	}
 
