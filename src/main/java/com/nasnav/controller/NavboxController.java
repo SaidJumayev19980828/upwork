@@ -330,13 +330,13 @@ public class NavboxController {
 	@ApiOperation(value = "Get organization domain", nickname = "getOrgDomain", code = 201)
 	@ApiResponses(value = {@io.swagger.annotations.ApiResponse(code = 200, message = "OK")})
 	@GetMapping(value = "organization/sitemap", produces = MediaType.TEXT_PLAIN_VALUE)
-	public ResponseEntity<String> getOrgSiteMap(@RequestParam("org_id") Long orgId,
+	public ResponseEntity<String> getOrgSiteMap(@RequestParam String url,
 									  @RequestParam(value = "include_products", required = false) boolean includeProducts,
 									  @RequestParam(value = "include_collections", required = false) boolean includeCollections,
 									  @RequestParam(value = "include_brands", required = false) boolean includeBrands,
 									  @RequestParam(value = "include_tags", required = false) boolean includeTags,
 									  @RequestParam(value = "include_tags_tree", required = false) boolean includeTagsTree) throws IOException {
-		ByteArrayOutputStream s =  organizationService.getOrgSiteMap(orgId, includeProducts, includeCollections, includeBrands,
+		ByteArrayOutputStream s =  organizationService.getOrgSiteMap(url, includeProducts, includeCollections, includeBrands,
 																	 includeTags, includeTagsTree);
 		return ResponseEntity.ok()
 				.contentType(MediaType.parseMediaType("text/plain"))

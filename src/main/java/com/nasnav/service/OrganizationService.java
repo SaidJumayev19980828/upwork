@@ -12,9 +12,7 @@ import static com.nasnav.commons.utils.StringUtils.isBlankOrNull;
 import static com.nasnav.commons.utils.StringUtils.validateName;
 import static com.nasnav.constatnts.EntityConstants.NASNAV_DOMAIN;
 import static com.nasnav.constatnts.EntityConstants.NASORG_DOMAIN;
-import static com.nasnav.exceptions.ErrorCodes.G$PRAM$0001;
-import static com.nasnav.exceptions.ErrorCodes.ORG$EXTRATTR$0001;
-import static com.nasnav.exceptions.ErrorCodes.ORG$SETTING$0001;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Optional.ofNullable;
@@ -151,11 +149,9 @@ public class OrganizationService {
     
     
     @CacheResult(cacheName = ORGANIZATIONS_BY_ID)
-    public OrganizationRepresentationObject getOrganizationById(Long organizationId) throws BusinessException {
-        OrganizationEntity organizationEntity = organizationRepository.findOneById(organizationId);
-
-        if (organizationEntity == null)
-            throw new BusinessException("Organization not found", "", NOT_FOUND);
+    public OrganizationRepresentationObject getOrganizationById(Long organizationId) {
+        OrganizationEntity organizationEntity = organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, ORG$0001, organizationId));
 
         return getOrganizationAdditionalData(organizationEntity);
     }
@@ -857,14 +853,14 @@ public class OrganizationService {
     
     
     @CacheResult(cacheName = ORGANIZATIONS_DOMAINS)
-    public Pair getOrganizationAndSubdirsByUrl(String urlString) throws BusinessException {
+    public Pair getOrganizationAndSubdirsByUrl(String urlString) {
         URIBuilder url = null;
 
         try {
             urlString = urlString.startsWith("http") ? urlString: "http://"+urlString;
             url = new URIBuilder(urlString);
         } catch (URISyntaxException e) {
-            throw new BusinessException("the provided url is mailformed","INVALID_PARAM: url", NOT_ACCEPTABLE);
+            throw new RuntimeBusinessException(NOT_ACCEPTABLE, GEN$0005);
         }
 
         String domain = ofNullable(url.getHost()).orElse("");
@@ -1013,32 +1009,35 @@ public class OrganizationService {
     }
 
 
-    public ByteArrayOutputStream getOrgSiteMap(Long orgId, boolean includeProducts, boolean includeCollections,
+    public ByteArrayOutputStream getOrgSiteMap(String url, boolean includeProducts, boolean includeCollections,
                                                boolean includeBrands, boolean includeTags, boolean includeTagsTree) throws IOException {
         List<String> allUrls = new ArrayList<>();
+        Pair domain = getOrganizationAndSubdirsByUrl(url);
 
-        String domain = domainService.getOrganizationDomainAndSubDir(orgId);
+        Long orgId = orgRepo.findById(domain.getFirst())
+                .map(OrganizationEntity::getId)
+                .orElseThrow(() -> new RuntimeBusinessException(NOT_FOUND, GEN$0005, url));
 
         if(includeProducts) {
-            addPairsAsUrls(domain, productRepo.getProductIdAndNamePairs(orgId), "products", allUrls);
+            addPairsAsUrls(url, productRepo.getProductIdAndNamePairs(orgId), "products", allUrls);
         }
         if (includeCollections) {
-            addPairsAsUrls(domain, productRepo.getCollectionIdAndNamePairs(orgId), "collections", allUrls);
+            addPairsAsUrls(url, productRepo.getCollectionIdAndNamePairs(orgId), "collections", allUrls);
         }
         if (includeBrands) {
-            addPairsAsUrls(domain, brandsRepository.getBrandIdAndNamePairs(orgId), "brands", allUrls);
+            addPairsAsUrls(url, brandsRepository.getBrandIdAndNamePairs(orgId), "brands", allUrls);
         }
         if (includeTags) {
-            addPairsAsUrls(domain, tagsRepo.getTagIdAndNamePairs(orgId), "categories", allUrls);
+            addPairsAsUrls(url, tagsRepo.getTagIdAndNamePairs(orgId), "categories", allUrls);
         }
         if (includeTagsTree) {
-            addPairsAsUrls(domain, tagGraphNodeRepo.getTagNodeIdAndNamePairs(orgId), "categories", allUrls);
+            addPairsAsUrls(url, tagGraphNodeRepo.getTagNodeIdAndNamePairs(orgId), "categories", allUrls);
         }
 
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         Writer outputWriter = new OutputStreamWriter(outStream);
-        for(String url : allUrls) {
-            outputWriter.write(url + '\n');
+        for(String u : allUrls) {
+            outputWriter.write(u + '\n');
         }
         outputWriter.flush();
         outputWriter.close();

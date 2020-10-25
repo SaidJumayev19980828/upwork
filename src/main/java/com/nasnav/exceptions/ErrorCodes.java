@@ -64,6 +64,7 @@ public enum ErrorCodes {
 	,GEN$0002("Missing or invalid %s, available values are [true, false]!")
 	,GEN$0003("Couldn't send mail, reason[$s]")
 	,GEN$0004("Unknown User Entity Type]")
+	,GEN$0005("the provided url is malformed!")
 
 	,S$0001("Shop is linked to %s !")
 	,S$0002( "No Shop exists with ID: [%d]!")
