@@ -91,7 +91,7 @@ public class AdminApiTest {
         
         assertEquals(200, response.getStatusCode().value());
         
-        Map<String, CountriesRepObj> countries =  addressService.getCountries();
+        Map<String, CountriesRepObj> countries =  addressService.getCountries(false);
         CountriesRepObj egypt = countries.get("Egypt");
         
         assertEquals(1, countries.size());

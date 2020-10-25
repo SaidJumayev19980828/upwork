@@ -310,8 +310,10 @@ public class NavboxController {
 			@io.swagger.annotations.ApiResponse(code = 200, message = "OK")
 	})
 	@GetMapping(value="/countries", produces=MediaType.APPLICATION_JSON_VALUE)
-	public Map<String, CountriesRepObj> getCountries() {
-		return addressService.getCountries();
+	public Map<String, CountriesRepObj> getCountries(
+			@RequestParam(value = "hide_empty_cities", required = false, defaultValue = "false") Boolean hideEmptyCities) {
+
+		return addressService.getCountries(hideEmptyCities);
 	}
 
 

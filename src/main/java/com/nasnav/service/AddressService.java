@@ -54,18 +54,22 @@ public class AddressService {
     private AreaRepository areaRepo;
 
 
-    public Map<String, CountriesRepObj> getCountries() {
+    public Map<String, CountriesRepObj> getCountries(Boolean hideEmptyCities) {
 
         Map<String, CountriesRepObj> countries = addressRepo.getCountries()
                                 .stream()
-                                .collect( toMap(CountriesEntity::getName, this::getCountriesRepObj));
+                                .collect( toMap(CountriesEntity::getName, country -> getCountriesRepObj(country, hideEmptyCities)));
         return countries;
     }
 
 
-    private CountriesRepObj getCountriesRepObj(CountriesEntity countriesEntity) {
-        Map<String, CitiesRepObj> citiesRepObjMap = countriesEntity.getCities().stream()
-                .collect( toMap(CitiesEntity::getName, this::getCitiesRepObj));
+    private CountriesRepObj getCountriesRepObj(CountriesEntity countriesEntity, Boolean hideEmptyCities) {
+        Map<String, CitiesRepObj> citiesRepObjMap =
+                countriesEntity
+                        .getCities()
+                        .stream()
+                        .filter(city -> !(city.getAreas().isEmpty() && hideEmptyCities))
+                        .collect( toMap(CitiesEntity::getName, this::getCitiesRepObj));
 
         TreeMap<String, CitiesRepObj> sorted = new TreeMap<>(citiesRepObjMap);
 
