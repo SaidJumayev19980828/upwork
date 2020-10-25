@@ -255,7 +255,7 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	public void updateExistingOrder(OrderJsonDto orderJson) {
 		EmployeeUserEntity empUser = (EmployeeUserEntity)securityService.getCurrentUser();
-		List<String> employeeUserRoles = employeeUserServiceHelper.getEmployeeUserRoles(empUser.getId());
+		List<String> employeeUserRoles = userServicesHelper.getEmployeeUserRoles(empUser.getId());
 		OrdersEntity order = getAndValidateOrdersEntityForStatusUpdate(orderJson, empUser, employeeUserRoles);
 
 		updateOrderStatusAndMetaOrderIfNeeded(order, orderJson.getStatus());
