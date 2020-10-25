@@ -2,9 +2,13 @@ package com.nasnav.enumerations;
 
 import java.util.stream.Stream;
 
+import com.nasnav.commons.utils.CollectionUtils;
 import lombok.Getter;
 
 import java.util.*;
+
+import static com.nasnav.commons.utils.CollectionUtils.setOf;
+import static java.util.Arrays.asList;
 
 /**
  * Hold User Roles
@@ -29,22 +33,22 @@ public enum Roles {
 
     @Getter
     private static final Set<String> nasnavAdminPrelivedge =
-            new HashSet<>(Arrays.asList("NASNAV_ADMIN", "ORGANIZATION_ADMIN", "ORGANIZATION_MANAGER",
-                    "ORGANIZATION_EMPLOYEE", "STORE_MANAGER", "STORE_EMPLOYEE"));
+            setOf(NASNAV_ADMIN.name(), ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name(),
+                    ORGANIZATION_EMPLOYEE.name(), STORE_MANAGER.name(), STORE_EMPLOYEE.name());
     @Getter
     private static final Set<String> organizationAdminPrelivedge =
-            new HashSet<>(Arrays.asList("ORGANIZATION_ADMIN", "ORGANIZATION_MANAGER", "ORGANIZATION_EMPLOYEE",
-                    "STORE_MANAGER", "STORE_EMPLOYEE"));
+            setOf(ORGANIZATION_ADMIN.name(), ORGANIZATION_MANAGER.name(), ORGANIZATION_EMPLOYEE.name(),
+                    STORE_MANAGER.name(), STORE_EMPLOYEE.name());
     @Getter
     private static final Set<String> organizationManagerPrelivedge =
-            new HashSet<>(Arrays.asList("ORGANIZATION_MANAGER", "ORGANIZATION_EMPLOYEE",
-                    "STORE_MANAGER", "STORE_EMPLOYEE"));
+            setOf(ORGANIZATION_MANAGER.name(), ORGANIZATION_EMPLOYEE.name(),
+                    STORE_MANAGER.name(), STORE_EMPLOYEE.name());
     @Getter
-    private static final Set<String> organizationEmployeePrelivedge = new HashSet<String>(Arrays.asList("ORGANIZATION_EMPLOYEE", "STORE_EMPLOYEE"));
+    private static final Set<String> organizationEmployeePrelivedge = setOf(ORGANIZATION_EMPLOYEE.name(), STORE_EMPLOYEE.name());
     @Getter
-    private static final Set<String> storeManagerPrelivedge = new HashSet<String>(Arrays.asList("STORE_MANAGER", "STORE_EMPLOYEE"));
+    private static final Set<String> storeManagerPrelivedge = setOf(STORE_MANAGER.name(), STORE_EMPLOYEE.name());
     @Getter
-    private static final Set<String> storeEmployeePrelivedge = new HashSet<String>(Arrays.asList("STORE_EMPLOYEE"));
+    private static final Set<String> storeEmployeePrelivedge = setOf(STORE_EMPLOYEE.name());
 
 
     Roles(String value, int level, boolean canCreateUsers) {
@@ -62,14 +66,17 @@ public enum Roles {
 
     }
 
-    public static Map getAllPrevliges(){
+
+
+
+    public static Map<String, Set<String>> getAllPrevliges(){
         Map<String, Set<String>> result = new HashMap<>();
-        result.put("NASNAV_ADMIN",nasnavAdminPrelivedge);
-        result.put("ORGANIZATION_ADMIN", organizationAdminPrelivedge);
-        result.put("ORGANIZATION_MANAGER",organizationManagerPrelivedge);
-        result.put("ORGANIZATION_EMPLOYEE",organizationEmployeePrelivedge);
-        result.put("STORE_MANAGER",storeManagerPrelivedge);
-        result.put("STORE_EMPLOYEE",storeEmployeePrelivedge);
+        result.put(NASNAV_ADMIN.name(), nasnavAdminPrelivedge);
+        result.put(ORGANIZATION_ADMIN.name(), organizationAdminPrelivedge);
+        result.put(ORGANIZATION_MANAGER.name(), organizationManagerPrelivedge);
+        result.put(STORE_EMPLOYEE.name(), organizationEmployeePrelivedge);
+        result.put(STORE_MANAGER.name(), storeManagerPrelivedge);
+        result.put(STORE_EMPLOYEE.name(), storeEmployeePrelivedge);
         return result;
     }
 }

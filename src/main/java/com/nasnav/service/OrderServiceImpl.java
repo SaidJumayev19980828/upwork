@@ -1093,9 +1093,9 @@ public class OrderServiceImpl implements OrderService {
 		EmployeeUserEntity empUser = (EmployeeUserEntity)user;
 		List<String> employeeUserRoles = userServicesHelper.getEmployeeUserRoles(empUser.getId());
 		
-		if ( collectionContainsAnyOf(employeeUserRoles, "ORGANIZATION_ADMIN", "ORGANIZATION_MANAGER", "ORGANIZATION_EMPLOYEE") )  {
+		if ( collectionContainsAnyOf(employeeUserRoles, ORGANIZATION_ADMIN.name() ,ORGANIZATION_MANAGER.name(), ORGANIZATION_EMPLOYEE.name()) )  {
 			newParams.setOrg_id(empUser.getOrganizationId());
-		} else if ( collectionContainsAnyOf(employeeUserRoles, "STORE_MANAGER", "STORE_EMPLOYEE")) {
+		} else if ( collectionContainsAnyOf(employeeUserRoles, STORE_MANAGER.name(), STORE_EMPLOYEE.name())) {
 			newParams.setShop_id(empUser.getShopId());
 		} else {
 			newParams.setOrg_id(params.getOrg_id());
@@ -1106,15 +1106,17 @@ public class OrderServiceImpl implements OrderService {
 
 
 	private void setOrderSearchStartAndCount(OrderSearchParam params, OrderSearchParam newParams) {
-		if (params.getStart() == null || params.getStart() <= 0)
+		if (params.getStart() == null || params.getStart() <= 0){
 			newParams.setStart(0);
-		else
+		}else{
 			newParams.setStart(params.getStart());
+		}
 
-		if (params.getCount() == null || params.getCount() <= 0 || params.getCount() >= ORDER_DEFAULT_COUNT)
+		if (params.getCount() == null || params.getCount() <= 0 || params.getCount() >= ORDER_DEFAULT_COUNT){
 			newParams.setCount(ORDER_DEFAULT_COUNT);
-		else
+		}else{
 			newParams.setCount(params.getCount());
+		}
 	}
 
 
