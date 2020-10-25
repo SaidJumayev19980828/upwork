@@ -63,4 +63,7 @@ public interface ShopsRepository extends CrudRepository<ShopsEntity,Long> {
 			+ " LEFT JOIN FETCH city.countriesEntity country "
 			+ " WHERE shop.id = :id")
 	Optional<ShopsEntity> findShopFullData(@Param("id")Long id);
+
+
+    boolean existsByIdAndOrganizationEntity_Id(Long storeId, Long orgId);
 }

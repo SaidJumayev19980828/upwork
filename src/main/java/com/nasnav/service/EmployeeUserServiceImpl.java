@@ -5,6 +5,7 @@ import java.util.*;
 import com.nasnav.commons.utils.CollectionUtils;
 import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.commons.utils.StringUtils;
+import com.nasnav.dao.ShopsRepository;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,7 +46,8 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 	private SecurityService securityService;
 	@Autowired
 	private UserServicesHelper empUserSvcHelper;
-
+	@Autowired
+	private ShopsRepository shopRepo;
 
 	@Override
 	@Transactional
@@ -56,15 +58,30 @@ public class EmployeeUserServiceImpl implements EmployeeUserService {
 		empUserSvcHelper.isValidRolesList(rolesList);
 		validateEmpEmailAlreadyExists(employeeUserJson);
 		validateCurrentUserCanManageEmpAccount(employeeUserJson.orgId, employeeUserJson.storeId, rolesList);
+		validateStoreForEmployeeCreation(employeeUserJson);
 
 		EmployeeUserEntity employeeUserEntity = doCreateNewEmpAccount(employeeUserJson, rolesList);
 		return new UserApiResponse(employeeUserEntity.getId(), asList(NEED_ACTIVATION, ACTIVATION_SENT));
 	}
 
 
+
+
+	private void validateStoreForEmployeeCreation(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
+		Long orgId = employeeUserJson.orgId;
+		Long storeId = employeeUserJson.storeId;
+
+		if(!shopRepo.existsByIdAndOrganizationEntity_Id(storeId, orgId)){
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0012, storeId);
+		}
+	}
+
+
+
+
 	private void validateEmpEmailAlreadyExists(UserDTOs.EmployeeUserCreationObject employeeUserJson) {
-		if (employeeUserRepository.existsByEmailIgnoreCaseAndOrganizationId(employeeUserJson.email, employeeUserJson.orgId)) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0006, employeeUserJson.getEmail(), employeeUserJson.getOrgId());
+		if (employeeUserRepository.existsByEmailIgnoreCase(employeeUserJson.email)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0006, employeeUserJson.getEmail());
 		}
 	}
 

@@ -33,7 +33,7 @@ public enum ErrorCodes {
 	,U$EMP$0003("Invalid Name [%s]!")
 	,U$EMP$0004("Invalid e-mail [%s]!")
 	,U$EMP$0005("Invalid org_id [%d]!")
-	,U$EMP$0006("Employee with email[%s] already exists for organization[%d]!")
+	,U$EMP$0006("An Employee with email[%s] already exists!")
 	,U$EMP$0007("Invalid role [%s]!")
 	,U$EMP$0008("Employee can't create employees")
 	,U$EMP$0009("Employee can't create employees with requested roles!")

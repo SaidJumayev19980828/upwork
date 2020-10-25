@@ -164,7 +164,7 @@ public class UserServicesHelper {
 	public EmployeeUserEntity createEmployeeUser(EmployeeUserCreationObject employeeUserJson) {
 		EmployeeUserEntity employeeUser = new EmployeeUserEntity();
 		employeeUser.setName(employeeUserJson.name);
-		employeeUser.setEmail(employeeUserJson.email);
+		employeeUser.setEmail(employeeUserJson.email.toLowerCase());
 		employeeUser.setEncryptedPassword(EntityConstants.INITIAL_PASSWORD);
 		employeeUser.setOrganizationId(employeeUserJson.orgId);
 		employeeUser.setShopId(employeeUserJson.storeId);
@@ -187,7 +187,7 @@ public class UserServicesHelper {
 			employeeUserEntity.setOrganizationId(employeeUserJson.getOrgId());
 		}
 		if (isStoreChangeApplicable(employeeUserJson, currentUserRoles)) {
-			validateStoreId(currentUserId, employeeUserJson);
+			validateStoreIdUpdate(currentUserId, employeeUserJson);
 			employeeUserEntity.setShopId(employeeUserJson.getStoreId());
 		}
 		if (isNotBlankOrNull(employeeUserJson.getEmail())) {
@@ -211,20 +211,19 @@ public class UserServicesHelper {
 	}
 
 
-	private void validateStoreId(Long currentUserId, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
-		if (employeeUserJson.getStoreId() >= 0) {
-			Long storeId  = employeeUserJson.getStoreId();
-			Long currentUserOrg =
-					employeeUserRepository
-							.findById(currentUserId)
-							.map(EmployeeUserEntity::getOrganizationId)
-							.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0002, currentUserId));
-			boolean isValidStore =
-					shopRepo.existsByIdAndOrganizationEntity_IdAndRemoved(storeId, currentUserOrg, 0);
-			if(!isValidStore){
-				throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0012, employeeUserJson.getStoreId());
-			}
-		} else {
+	private void validateStoreIdUpdate(Long currentUserId, UserDTOs.EmployeeUserUpdatingObject employeeUserJson) {
+		Long storeId = ofNullable(employeeUserJson.getStoreId()).orElse(-1L);
+		if ( storeId < 0) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0012, storeId);
+		}
+		Long currentUserOrg =
+				employeeUserRepository
+						.findById(currentUserId)
+						.map(EmployeeUserEntity::getOrganizationId)
+						.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0002, currentUserId));
+		boolean isValidStore =
+				shopRepo.existsByIdAndOrganizationEntity_IdAndRemoved(storeId, currentUserOrg, 0);
+		if(!isValidStore){
 			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$EMP$0012, employeeUserJson.getStoreId());
 		}
 	}

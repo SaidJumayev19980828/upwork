@@ -18,6 +18,7 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
      */
     boolean existsByAuthenticationToken(String authenticationToken);
 	boolean existsByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
+	boolean existsByEmailIgnoreCase(String email);
 
     Optional<EmployeeUserEntity> findByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
 
@@ -42,6 +43,8 @@ public interface EmployeeUserRepository extends JpaRepository<EmployeeUserEntity
 	List<EmployeeUserEntity> findByOrganizationIdAndShopIdAndIdIn(Long orgId, Long shopId, List<Long> employeesIds);
 
 	EmployeeUserEntity getByEmailIgnoreCaseAndOrganizationId(String email, Long orgId);
+
+
 }
 
 
