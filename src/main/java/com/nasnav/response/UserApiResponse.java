@@ -31,6 +31,8 @@ public class UserApiResponse {
     private Long organizationId;
     @JsonProperty(value = "store_id")
     private Long storeId;
+    @JsonProperty(value = "org_url")
+    private String orgUrl;
 
     @JsonIgnore
     private Cookie cookie;
@@ -50,6 +52,11 @@ public class UserApiResponse {
     public UserApiResponse(Long entityId, List<ResponseStatus> statuses) {
         this.entityId = entityId;
         this.status = statuses;
+    }
+
+    public UserApiResponse(Long entityId, String orgUrl) {
+        this.entityId = entityId;
+        this.orgUrl = orgUrl;
     }
 
     public UserApiResponse(List<ResponseStatus> statuses) {

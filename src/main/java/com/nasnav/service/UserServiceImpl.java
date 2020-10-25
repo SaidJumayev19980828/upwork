@@ -413,7 +413,9 @@ public class UserServiceImpl implements UserService {
 		userEntity.setEncryptedPassword(passwordEncoder.encode(data.password));
 		userEntity = userRepository.saveAndFlush(userEntity);
 
-		return new UserApiResponse(userEntity.getId());
+		String orgDomain = domainService.getOrganizationDomainAndSubDir(userEntity.getOrganizationId());
+
+		return new UserApiResponse(userEntity.getId(), orgDomain);
 	}
 
 	
