@@ -7,17 +7,17 @@ import static java.lang.Long.MIN_VALUE;
 import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.*;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import com.nasnav.service.model.common.ParameterType;
 import com.nasnav.shipping.model.*;
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,15 +42,23 @@ public class PickupFromShop implements ShippingService{
 	public static final String RETURN_EMAIL_MSG =
 			"Thanks for you patience! To complete the return process, please return " +
 			" the items back to shop and provide the sellers with this email!";
+	public static final String ETA_DAYS_MIN = "ETA_DAYS_MIN";
+	public static final String ETA_DAYS_MAX = "ETA_DAYS_MAX";
+
+	private static final Integer ETA_DAYS_MIN_DEFAULT = 1;
+	private static final Integer ETA_DAYS_MAX_DEFAULT = 7;
 
 	private static List<Parameter> SERVICE_PARAM_DEFINITION = 
-			asList(new Parameter(ALLOWED_SHOP_ID_LIST, LONG_ARRAY));
+			asList(new Parameter(ALLOWED_SHOP_ID_LIST, LONG_ARRAY)
+					, new Parameter(ETA_DAYS_MIN, NUMBER, false)
+					, new Parameter(ETA_DAYS_MAX, NUMBER, false));
 	
 	private static List<Parameter> ADDITIONAL_PARAM_DEFINITION = 
 			asList(new Parameter(SHOP_ID, NUMBER));
 	
 	private Set<Long> allowedShops;
-
+	private Integer etaDaysMin;
+	private Integer etaDaysMax;
 	
 	
 	
@@ -61,6 +69,8 @@ public class PickupFromShop implements ShippingService{
 	
 	public PickupFromShop() {
 		allowedShops = emptySet();
+		etaDaysMin = ETA_DAYS_MIN_DEFAULT;
+		etaDaysMax = ETA_DAYS_MAX_DEFAULT;
 	}
 	
 	
@@ -76,21 +86,55 @@ public class PickupFromShop implements ShippingService{
 	
 	@Override
 	public void setServiceParameters(List<ServiceParameter> params) {
-		allowedShops = 
+		Map<String, String> serviceParams =
 				params
 				.stream()
-				.filter(param -> Objects.equals(param.getParameter(), ALLOWED_SHOP_ID_LIST))
-				.map(ServiceParameter::getValue)
-				.map(JSONArray::new)
-				.map(JSONArray::spliterator)
-				.flatMap(iterator -> StreamSupport.stream(iterator, false))
+				.collect(toMap(ServiceParameter::getParameter, ServiceParameter::getValue, (v1, v2) -> v1));
+		setAllowedShops(serviceParams);
+		setEtaDaysMin(serviceParams);
+		setEtaDaysMax(serviceParams);
+	}
+
+
+
+	private void setAllowedShops(Map<String, String> serviceParams) {
+		String allowedShopsJson = ofNullable(serviceParams.get(ALLOWED_SHOP_ID_LIST)).orElse("[]");
+		allowedShops =
+				streamJsonArrayElements(allowedShopsJson)
 				.map(Object::toString)
 				.map(EntityUtils::parseLongSafely)
 				.filter(Optional::isPresent)
 				.map(Optional::get)
 				.collect(toSet());
 	}
-	
+
+
+
+	private void setEtaDaysMax(Map<String, String> serviceParams) {
+		ofNullable(serviceParams.get(ETA_DAYS_MAX))
+				.flatMap(EntityUtils::parseLongSafely)
+				.map(Long::intValue)
+				.ifPresent(val -> etaDaysMax = val);
+	}
+
+
+
+	private void setEtaDaysMin(Map<String, String> serviceParams) {
+		ofNullable(serviceParams.get(ETA_DAYS_MIN))
+				.flatMap(EntityUtils::parseLongSafely)
+				.map(Long::intValue)
+				.ifPresent(val -> etaDaysMin = val);
+	}
+
+
+
+	Stream<Object> streamJsonArrayElements(String jsonString){
+		return ofNullable(jsonString)
+				.map(JSONArray::new)
+				.map(JSONArray::spliterator)
+				.map(iterator -> StreamSupport.stream(iterator, false))
+				.orElse(Stream.empty());
+	}
 	
 	
 	
@@ -118,7 +162,7 @@ public class PickupFromShop implements ShippingService{
 	
 	private Shipment createShipment(ShippingDetails shippingDetails) {
 		BigDecimal fee = BigDecimal.ZERO;
-		ShippingEta eta = new ShippingEta(now().plusDays(1), now().plusDays(7));
+		ShippingEta eta = new ShippingEta(now().plusDays(etaDaysMin), now().plusDays(etaDaysMax));
 		List<Long> stocks = 
 				shippingDetails
 				.getItems()

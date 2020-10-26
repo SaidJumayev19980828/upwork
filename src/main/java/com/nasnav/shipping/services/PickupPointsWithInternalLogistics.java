@@ -1,7 +1,6 @@
 package com.nasnav.shipping.services;
 
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0010;
-import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0011;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.service.model.common.ParameterType.LONG_ARRAY;
 import static com.nasnav.service.model.common.ParameterType.NUMBER;
 import static java.lang.Long.MIN_VALUE;
@@ -13,6 +12,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.*;
 import static org.springframework.context.i18n.LocaleContextHolder.getLocale;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.math.BigDecimal;
@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.annotation.PostConstruct;
@@ -62,11 +63,17 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 	public static final String RETURN_EMAIL_MSG =
 			"Thanks for you patience! To complete the return process, please return " +
 					" the items back to shop and provide the sellers with this email!";
+	public static final String ETA_DAYS_MIN = "ETA_DAYS_MIN";
+	public static final String ETA_DAYS_MAX = "ETA_DAYS_MAX";
 
+	private static final Integer ETA_DAYS_MIN_DEFAULT = 1;
+	private static final Integer ETA_DAYS_MAX_DEFAULT = 7;
 
 	private static List<Parameter> SERVICE_PARAM_DEFINITION = 
 			asList(new Parameter(WAREHOUSE_ID, NUMBER)
-					, new Parameter(PICKUP_POINTS_ID_LIST, LONG_ARRAY));
+					, new Parameter(PICKUP_POINTS_ID_LIST, LONG_ARRAY)
+					, new Parameter(ETA_DAYS_MIN, NUMBER, false)
+					, new Parameter(ETA_DAYS_MAX, NUMBER, false));
 	
 	private static List<Parameter> ADDITIONAL_PARAM_DEFINITION = 
 			asList(new Parameter(SHOP_ID, NUMBER));
@@ -75,6 +82,8 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 	
 	private Long warehouseId;
 	private Set<Long> allowedShops;
+	private Integer etaDaysMin;
+	private Integer etaDaysMax;
 	
 	
 	@Autowired
@@ -93,7 +102,9 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
     }
 	
 	public PickupPointsWithInternalLogistics() {
-		allowedShops = emptySet();
+    	allowedShops = emptySet();
+		etaDaysMin = ETA_DAYS_MIN_DEFAULT;
+		etaDaysMax = ETA_DAYS_MAX_DEFAULT;
 	}
 	
 	
@@ -132,30 +143,67 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 	
 	@Override
 	public void setServiceParameters(List<ServiceParameter> params) {
-		allowedShops = 
+		Map<String, String> serviceParams =
 				params
 				.stream()
-				.filter(param -> Objects.equals(param.getParameter(), PICKUP_POINTS_ID_LIST))
-				.map(ServiceParameter::getValue)
-				.map(JSONArray::new)
-				.map(JSONArray::spliterator)
-				.flatMap(iterator -> StreamSupport.stream(iterator, false))
+				.collect(toMap(ServiceParameter::getParameter, ServiceParameter::getValue, (v1, v2) -> v1));
+		setAllowedShops(serviceParams);
+		setWarehouseId(serviceParams);
+		setEtaDaysMin(serviceParams);
+		setEtaDaysMax(serviceParams);
+	}
+
+
+
+	private void setEtaDaysMax(Map<String, String> serviceParams) {
+		ofNullable(serviceParams.get(ETA_DAYS_MAX))
+				.flatMap(EntityUtils::parseLongSafely)
+				.map(Long::intValue)
+				.ifPresent(val -> etaDaysMax = val);
+	}
+
+
+
+	private void setEtaDaysMin(Map<String, String> serviceParams) {
+		ofNullable(serviceParams.get(ETA_DAYS_MIN))
+				.flatMap(EntityUtils::parseLongSafely)
+				.map(Long::intValue)
+				.ifPresent(val -> etaDaysMin = val);
+	}
+
+
+
+	private void setWarehouseId(Map<String, String> serviceParams) {
+		warehouseId =
+			ofNullable(serviceParams.get(WAREHOUSE_ID))
+				.flatMap(EntityUtils::parseLongSafely)
+				.orElseThrow(() -> new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0002, SERVICE_ID));
+	}
+
+
+
+	private void setAllowedShops(Map<String, String> serviceParams) {
+		String allowedShopsJson = ofNullable(serviceParams.get(PICKUP_POINTS_ID_LIST)).orElse("[]");
+		allowedShops =
+				streamJsonArrayElements(allowedShopsJson)
 				.map(Object::toString)
 				.map(EntityUtils::parseLongSafely)
 				.filter(Optional::isPresent)
 				.map(Optional::get)
 				.collect(toSet());
-		warehouseId = 
-				params
-				.stream()
-				.filter(param -> Objects.equals(param.getParameter(), WAREHOUSE_ID))
-				.map(ServiceParameter::getValue)
-				.findFirst()
-				.flatMap(EntityUtils::parseLongSafely)
-				.get();
 	}
-	
-	
+
+
+
+	Stream<Object> streamJsonArrayElements(String jsonString){
+		return ofNullable(jsonString)
+				.map(JSONArray::new)
+				.map(JSONArray::spliterator)
+				.map(iterator -> StreamSupport.stream(iterator, false))
+				.orElse(Stream.empty());
+	}
+
+
 
 	@Override
 	public Mono<ShippingOffer> createShippingOffer(List<ShippingDetails> items) {
