@@ -1084,8 +1084,38 @@ public class CartTest {
 		ResponseEntity<Order> res = template.postForEntity("/cart/checkout", request, Order.class);
 		assertEquals(406, res.getStatusCodeValue());
 	}
-	
-	
+
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_12.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void getCartRemovedProductAndVariant() {
+		HttpEntity<?> request =  getHttpEntity("123");
+		ResponseEntity<Cart> response =
+				template.exchange("/cart", GET, request, Cart.class);
+
+		assertEquals(OK, response.getStatusCode());
+		assertEquals(2, response.getBody().getItems().size());
+		assertProductNamesReturned(response);
+	}
+
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Cart_Test_Data_12.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
+	public void addCartItemRemovedProductAndVariant() {
+		//stock with removed variant
+		JSONObject item = createCartItem(603L, 1);
+		HttpEntity<?> request =  getHttpEntity(item.toString(),"123");
+		ResponseEntity<Cart> response = template.exchange("/cart/item", POST, request, Cart.class);
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+
+		//stock with removed product
+		item = createCartItem(605L, 1);
+		request =  getHttpEntity(item.toString(),"123");
+		response = template.exchange("/cart/item", POST, request, Cart.class);
+		assertEquals(NOT_ACCEPTABLE, response.getStatusCode());
+	}
 }
 
 

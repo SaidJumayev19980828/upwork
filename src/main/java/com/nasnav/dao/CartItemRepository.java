@@ -26,7 +26,7 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 			+ " LEFT JOIN stock.productVariantsEntity variant "
 			+ " LEFT JOIN variant.productEntity product "
 			+ " LEFT JOIN BrandsEntity brand on product.brandId = brand.id "
-			+ " WHERE user.id = :user_id")
+			+ " WHERE user.id = :user_id and product.removed = 0 and variant.removed = 0")
 	List<CartItemData> findCurrentCartItemsByUser_Id(@Param("user_id") Long userId);
 
 	@Query("SELECT NEW com.nasnav.persistence.dto.query.result.CartCheckoutData("
@@ -54,6 +54,26 @@ public interface  CartItemRepository extends JpaRepository<CartItemEntity, Long>
 	@Modifying
 	void deleteByQuantityAndUser_Id(Integer quantity, Long userId);
 
+	@Transactional
+	@Modifying
+	@Query("DELETE FROM CartItemEntity cart WHERE cart.id in" +
+			" (SELECT item.id " +
+			" FROM CartItemEntity item " +
+			" LEFT JOIN item.stock stock" +
+			" LEFT JOIN stock.organizationEntity org" +
+			" WHERE org.id = :orgId)")
+	void deleteByOrganizationId(@Param("orgId")Long orgId);
+
+	@Transactional
+	@Modifying
+	@Query("DELETE FROM CartItemEntity cart WHERE cart.id in" +
+			" (SELECT item.id " +
+			" FROM CartItemEntity item " +
+			" LEFT JOIN item.stock stock" +
+			" LEFT JOIN stock.productVariantsEntity variant" +
+			" LEFT JOIN variant.productEntity product" +
+			" WHERE product.id = :productId)")
+	void deleteByProductId(@Param("productId")Long productId);
 	
 	@Transactional
 	@Modifying

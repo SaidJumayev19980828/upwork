@@ -275,6 +275,8 @@ public class ProductService {
 
 	@Autowired
 	private RelatedProductsRepository relatedProductsRepo;
+	@Autowired
+	private CartItemRepository cartRepo;
 
 	@Autowired
 	private OrganizationService orgService;
@@ -2960,7 +2962,7 @@ public class ProductService {
 		}
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		
-		basketRepo.deleteByOrganizationIdAndStatus( NEW.getValue(), orgId);
+		cartRepo.deleteByOrganizationId(orgId);
 		ordersRepository.deleteByStatusAndOrgId( NEW.getValue(), orgId);
 		productVariantsRepository.deleteAllByProductEntity_organizationId(orgId);
 		productRepository.deleteAllByOrganizationId(orgId);

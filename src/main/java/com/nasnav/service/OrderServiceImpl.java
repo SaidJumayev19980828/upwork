@@ -1466,7 +1466,7 @@ public class OrderServiceImpl implements OrderService {
 		Long orgId = securityService.getCurrentUserOrganizationId();
 		StocksEntity stock = 
 				ofNullable(item.getStockId())
-				.map(id -> stockRepository.findByIdAndOrganizationEntity_Id(id, orgId))
+				.map(id -> stockRepository.findByIdAndOrganizationId(id, orgId))
 				.orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE ,P$STO$0001,item.getStockId()));
 		validateCartItem(stock, item);
 

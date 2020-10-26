@@ -1,13 +1,9 @@
 package com.nasnav.service;
 
-import com.nasnav.dao.StockRepository;
+import com.nasnav.dao.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.nasnav.dao.ProductImagesRepository;
-import com.nasnav.dao.ProductRepository;
-import com.nasnav.dao.ProductVariantsRepository;
 
 
 /**
@@ -32,9 +28,12 @@ public class ProductServiceTransactions {
 
 	@Autowired
 	private StockRepository stockRepo;
+	@Autowired
+	private CartItemRepository cartRepo;
 
 
 	public void deleteProduct(Long productId) {
+		cartRepo.deleteByProductId(productId);
 		stockRepo.setProductStocksQuantityZero(productId);
 		variantRepo.deleteByProductEntity_Id(productId);
 		productRepo.deleteById(productId);

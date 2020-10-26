@@ -3,9 +3,9 @@ package com.nasnav.dao;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import com.nasnav.dto.Prices;
@@ -14,7 +14,7 @@ import com.nasnav.persistence.dto.query.result.StockAdditionalData;
 
 import org.springframework.transaction.annotation.Transactional;
 
-public interface StockRepository extends CrudRepository<StocksEntity, Long> {
+public interface StockRepository extends JpaRepository<StocksEntity, Long> {
 
 	List<StocksEntity> findByShopsEntity_IdAndProductVariantsEntity_Id( Long shopId, Long variantId);
 
@@ -123,7 +123,13 @@ public interface StockRepository extends CrudRepository<StocksEntity, Long> {
 			+ " WHERE stock.id = :id")
 	Optional<StocksEntity> findWithAdditionalData(@Param("id")Long id);
 
-	StocksEntity findByIdAndOrganizationEntity_Id(Long id, Long orgId);
+	@Query("select stock from StocksEntity stock" +
+			" left join fetch stock.productVariantsEntity variant" +
+			" left join fetch variant.productEntity product" +
+			" where stock.id = :id and stock.organizationEntity.id = :orgId" +
+			" and product.removed = 0 and variant.removed = 0")
+	StocksEntity findByIdAndOrganizationId(@Param("id") Long id,
+										   @Param("orgId") Long orgId);
 
 
 	List<StocksEntity> findByIdInAndOrganizationEntity_Id(List<Long> itemStocks, Long orgId);

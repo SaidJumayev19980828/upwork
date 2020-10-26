@@ -311,7 +311,7 @@ public class NavboxController {
 	})
 	@GetMapping(value="/countries", produces=MediaType.APPLICATION_JSON_VALUE)
 	public Map<String, CountriesRepObj> getCountries(
-			@RequestParam(value = "hide_empty_cities", required = false, defaultValue = "false") Boolean hideEmptyCities) {
+			@RequestParam(value = "hide_empty_cities", required = false, defaultValue = "true") Boolean hideEmptyCities) {
 
 		return addressService.getCountries(hideEmptyCities);
 	}

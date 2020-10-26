@@ -55,7 +55,7 @@ public class WishlistServiceImpl implements WishlistService{
         Long orgId = securityService.getCurrentUserOrganizationId();
         StocksEntity stock =
                 ofNullable(item.getStockId())
-                        .map(id -> stockRepo.findByIdAndOrganizationEntity_Id(id, orgId))
+                        .map(id -> stockRepo.findByIdAndOrganizationId(id, orgId))
                         .orElseThrow(() -> new RuntimeBusinessException(NOT_ACCEPTABLE ,P$STO$0001,item.getStockId()));
 
         WishlistItemEntity wishlistItem =
