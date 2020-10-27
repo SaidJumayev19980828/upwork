@@ -163,6 +163,10 @@ public class DataImportApiTest {
 	
 	@Value("classpath:/files/product__list_multitag_upate.csv")
 	private Resource csvMulitagProductUpdate;
+
+	@Value("classpath:/files/product__list_multitag_different_case_update.csv")
+	private Resource csvMulitagDifferentCaseProductUpdate;
+
 	
 	@Autowired
 	private  MockMvc mockMvc;
@@ -1256,6 +1260,8 @@ public class DataImportApiTest {
 		assertEquals("Squishy shoes", product.getName());
 	}
 
+
+
 	@Test
 	public void uploadProductCSVExistingExternalIdAndBarcodeNoVariantEntity() throws Exception {
 		JSONObject importProperties = createDataImportProperties();
@@ -1301,6 +1307,34 @@ public class DataImportApiTest {
         assertProductDataImported(TEST_UPDATE_SHOP, expected);
         assertProductUpdatedDataSavedWithStock();        
 	}
+
+
+
+	@Test
+	@Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Data_Import_API_Test_Data_Insert_6.sql"})
+	@Sql(executionPhase=AFTER_TEST_METHOD, scripts= {"/sql/database_cleanup.sql"})
+	public void uploadProductCSVUpdateProductWithTagsWithDifferentCaseTest() throws IOException, Exception {
+		JSONObject importProperties = createDataImportProperties();
+		importProperties.put("shop_id", TEST_UPDATE_SHOP);
+		importProperties.put("update_product", true);
+		importProperties.put("update_stocks", true);
+		importProperties.put("insert_new_products", true);
+
+		ProductDataCount before = countProductData();
+
+		ResultActions result = uploadProductCsv(URL_UPLOAD_PRODUCTLIST , "edddre2", csvMulitagDifferentCaseProductUpdate, importProperties);
+
+		result.andExpect(status().is(200));
+
+		ProductDataCount after = countProductData();
+		assertExpectedRowNumInserted(before, after, 2);
+
+		ExpectedSavedData expected = getExpectedUpdatedDataForMultipleWithDifferentCaseTags();
+		assertProductDataImported(TEST_UPDATE_SHOP, expected);
+		assertProductUpdatedDataSavedWithStock();
+	}
+
+
 
 	@Test
 	public void uploadProductCSVWithBarcodesAndNewTagsOnly() throws IOException, Exception {
@@ -1419,7 +1453,7 @@ public class DataImportApiTest {
 	private void assertNewTagsAndBrandsImported() {
 		Set<String> newTags= setOf("new squish", "new hill equipment");
 		Set<String> newBrands = setOf("new brand","shiny new brand");
-		assertEquals(2, tagsRepo.findByNameInAndOrganizationEntity_Id(newTags, 99001L).size());
+		assertEquals(2, tagsRepo.findByNameLowerCaseInAndOrganizationEntity_Id(newTags, 99001L).size());
         assertEquals(2, brandsRepo.findByNameInAndRemoved(newBrands, 0).size());
 	}
 	
@@ -1817,6 +1851,31 @@ public class DataImportApiTest {
 		data.setStocksNum(1);
 		data.setDiscounts(setOf(ZERO));
 		
+		return data;
+	}
+
+
+
+
+	private ExpectedSavedData getExpectedUpdatedDataForMultipleWithDifferentCaseTags() {
+		ExpectedSavedData data = new ExpectedSavedData();
+
+		data.setQuantities( setOf(101) );
+		data.setPrices( setOf(new BigDecimal("10.25")));
+		data.setCurrencies( setOf(EGP));
+
+		data.setBarcodes( setOf("TT232222", "TT233333", "TT233344") );
+		data.setProductNames( setOf("Squishy shoes", "Mounty Squishy shoes", "Hardy Squishy shoes") );
+		data.setVariantsPNames(setOf("u_shoe", "color-lettuce-heart-size-xxl") );
+		data.setProductPNames(setOf("u_shoe", "mounty-squishy-shoes", "hardy-squishy-shoes") );
+		data.setDescriptions( setOf("squishy", "squishy but hard", "not hard") );
+		data.setTags( setOf("squishy things", "mOuntain Equipment") );
+		data.setBrands( setOf(101L) );
+		data.setFeatureSpecs(  createExpectedFeautreSpecForOnlyUpdatedProduct());
+		data.setExtraAttributes(  createExpectedExtraAttrForOnlyUpdatedProduct());
+		data.setStocksNum(3);
+		data.setDiscounts(setOf(ZERO));
+
 		return data;
 	}
 

@@ -62,6 +62,8 @@ public class TagsEntity extends AbstractPersistable<Long> implements BaseEntity{
     @OneToOne
     @JoinColumn(name = "organization_id", referencedColumnName = "id")
     @JsonIgnore
+    @Exclude
+    @lombok.ToString.Exclude
     private OrganizationEntity organizationEntity;
 
     @ManyToMany(mappedBy = "tags")

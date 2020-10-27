@@ -15,6 +15,7 @@ import static com.nasnav.constatnts.error.dataimport.ErrorMessages.ERR_TAGS_NOT_
 import static com.nasnav.enumerations.OrderStatus.NEW;
 import static com.nasnav.integration.enums.MappingType.PRODUCT_VARIANT;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Comparator.comparing;
@@ -30,13 +31,8 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -305,18 +301,29 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 
-	private Map<String, TagsEntity> getExistingTags(Set<String> tagNames) {
+	private Map<String, TagsEntity> getExistingTags(Set<String> tagsNames) {
 		Long orgId = security.getCurrentUserOrganizationId();
-		return 
+		Set<String> tagNamesInLowerCase = toLowerCase(tagsNames);
+		return
 			Flux
-			 .fromIterable(tagNames)
+			 .fromIterable(tagNamesInLowerCase)
 			 .window(500)
 			 .map(Flux::buffer)
 			 .flatMap(Flux::single)
 			 .map(HashSet::new)
-			 .flatMapIterable(tagNamesBatch -> tagsRepo.findByNameInAndOrganizationEntity_Id(tagNamesBatch, orgId))
+			 .flatMapIterable(tagNamesBatch -> findTagsNameLowerCaseInAndOrganizationId(tagNamesBatch, orgId))
 			 .collectMap(tag -> tag.getName().toLowerCase(), tag -> tag)
 			 .block();
+	}
+
+
+
+
+	private Set<TagsEntity> findTagsNameLowerCaseInAndOrganizationId(Set<String> tagNamesInLowerCase, Long orgId){
+    	if(tagNamesInLowerCase == null || tagNamesInLowerCase.isEmpty()){
+    		return emptySet();
+		}
+    	return tagsRepo.findByNameLowerCaseInAndOrganizationEntity_Id(tagNamesInLowerCase, orgId);
 	}
 
 
@@ -657,13 +664,29 @@ public class DataImportServiceImpl implements DataImportService {
 
 
 	private Map<String, TagsEntity> getTagsNamesMap(Long orgId, Set<String> tagsNames) {
-		return tagsRepo
-				.findByNameInAndOrganizationEntity_Id(tagsNames, orgId)
+    	Set<String> tagNamesInLowerCase = toLowerCase(tagsNames);
+		return findTagsNameLowerCaseInAndOrganizationId(tagNamesInLowerCase, orgId)
 				.stream()
-				.collect(toMap(t -> t.getName().toLowerCase(), t -> t));
+				.collect(toMap(t -> t.getName().toLowerCase(), Function.identity(), this::pickLowerId));
 	}
 
 
+
+	private  TagsEntity pickLowerId(TagsEntity tag1, TagsEntity tag2) {
+    	return Stream.of(tag1, tag2)
+				.min(Comparator.comparing(TagsEntity::getId))
+				.get();
+	}
+
+
+
+
+	private Set<String> toLowerCase(Set<String> tagsNames) {
+		return tagsNames
+				.stream()
+				.map(String::toLowerCase)
+				.collect(toSet());
+	}
 
 
 	private void saveProductsTagsToDB(Map<String, TagsEntity> tagsMap, List<ProductData> data, boolean isResetTags){

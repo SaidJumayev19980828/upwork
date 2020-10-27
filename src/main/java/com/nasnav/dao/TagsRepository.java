@@ -31,8 +31,13 @@ public interface TagsRepository extends CrudRepository<TagsEntity, Long> {
 
     @Query("select t from TagsEntity t  where t.organizationEntity = :org and t.graphId is not null ")
     List<TagsEntity> getTagsByOrgId(@Param("org") OrganizationEntity org);
-    
-	Set<TagsEntity> findByNameInAndOrganizationEntity_Id(Set<String> tags, Long orgId);
+
+
+    @Query("SELECT tag FROM TagsEntity tag " +
+            " LEFT JOIN tag.organizationEntity org " +
+            " WHERE org.id = :orgId " +
+            " AND lower(tag.name) in :tags ")
+	Set<TagsEntity> findByNameLowerCaseInAndOrganizationEntity_Id(@Param("tags")Set<String> tags, @Param("orgId")Long orgId);
 
 	@Transactional
     @Modifying
