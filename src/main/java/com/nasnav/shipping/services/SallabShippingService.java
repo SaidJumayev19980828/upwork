@@ -43,6 +43,8 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 public class SallabShippingService implements ShippingService{
 
+	public static final long ETA_DAYS_MIN = 1L;
+	public static final long ETA_DAYS_MAX = 3L;
 	Logger logger = LogManager.getLogger();
 	
 	static final public String TIERS = "TIERS";
@@ -157,10 +159,11 @@ public class SallabShippingService implements ShippingService{
 			return Mono.empty();
 		}
 
+		Integer shipmentsNum = shippingInfo.size();
 		List<Shipment> shipments =
 				shippingInfo
 				.stream()
-				.map(subOrderInfo -> createShipmentOfferForSubOrder(subOrderInfo, fee.get()))
+				.map(subOrderInfo -> createShipmentOfferForSubOrder(subOrderInfo, fee.get(), shipmentsNum))
 				.collect(toList());
 
 		correctCalculationError(fee, shipments);
@@ -187,27 +190,30 @@ public class SallabShippingService implements ShippingService{
 
 	private Optional<Fee> calcFeeData(List<ShippingDetails> shippingInfo) {
 		BigDecimal itemTotalValue = calcItemsTotalValue(shippingInfo);
-		Optional<BigDecimal> shippingFeePercentage = getShippingFeePercentage(itemTotalValue);
-		Optional<BigDecimal> totalFee =
-				shippingFeePercentage
-						.map(perc -> calcTotalFee(perc, itemTotalValue));
+		return getTier(itemTotalValue)
+				.map(tier -> createFee(tier,itemTotalValue));
+	}
 
-		Optional<BigDecimal> minFeePerOrder =
-				totalFee
-					.filter(total -> isBelowMinShippngFee(total, minFee))
-					.map( total -> calcMinFeePerOrder(shippingInfo));
 
-		return totalFee
-				.map(total -> new Fee(total, minFeePerOrder, shippingFeePercentage));
+
+	private Fee createFee(Tier tier, BigDecimal itemTotalValue){
+		boolean isFree = isFreeShipment(tier);
+		BigDecimal totalFee = calcTotalFee(tier, itemTotalValue, isFree);
+		return new Fee(totalFee, tier, isFree);
 	}
 
 
 
 
-	BigDecimal calcTotalFee(BigDecimal percentage, BigDecimal itemsVal){
+
+	BigDecimal calcTotalFee(Tier tier, BigDecimal itemsVal, boolean isFree){
+		BigDecimal percentage = tier.getPercentage();
 		BigDecimal totalFee = doCalcFee(percentage, itemsVal);
-		if(isBelowMinShippngFee(totalFee, minFee)){
+		if(isBelowMinShippngFee(totalFee)){
 			totalFee = minFee;
+		}
+		if(isFree) {
+			totalFee = ZERO;
 		}
 		return totalFee;
 	}
@@ -215,84 +221,93 @@ public class SallabShippingService implements ShippingService{
 
 
 
-	private boolean isBelowMinShippngFee(BigDecimal totalFee, BigDecimal minFee) {
+	private boolean isBelowMinShippngFee(BigDecimal totalFee) {
 		return totalFee.compareTo(minFee) <= 0;
 	}
 
 
-	private BigDecimal calcMinFeePerOrder(List<ShippingDetails> shippingInfo) {
-		BigDecimal shipmentsNum = BigDecimal.valueOf(shippingInfo.size());
+
+	private BigDecimal calcMinFeePerOrder(Integer shipmentsNumInt) {
+		BigDecimal shipmentsNum = BigDecimal.valueOf(shipmentsNumInt);
 		return minFee.divide(shipmentsNum, 2, FLOOR);
 	}
 
 
 
 
-	private Shipment createShipmentOfferForSubOrder(ShippingDetails shippingInfo, Fee feeData) {
-		BigDecimal feePercentage = feeData.getShippingFeePercentage().get();
-		Optional<BigDecimal> minFeePerOrder = feeData.getMinFeePerOrder();
-		BigDecimal fee = calcFeeForOrder(shippingInfo, feePercentage, minFeePerOrder);
-		ShippingEta eta = new ShippingEta(now().plusDays(1L), now().plusDays(3L));
-		List<Long> stockIds = 
-				shippingInfo
-				.getItems()
-				.stream()
-				.map(ShipmentItems::getStockId)
-				.collect(toList());
+	private Shipment createShipmentOfferForSubOrder(ShippingDetails shippingInfo, Fee feeData, Integer shipmentsNum) {
+		BigDecimal fee = calcFeeForOrder(shippingInfo, feeData, shipmentsNum);
+		ShippingEta eta = new ShippingEta(now().plusDays(ETA_DAYS_MIN), now().plusDays(ETA_DAYS_MAX));
+		List<Long> stockIds = getItemsStockId(shippingInfo);
 		return new Shipment(fee, eta, stockIds, shippingInfo.getSubOrderId());
 	}
 
 
-	
-	
-	
-	private BigDecimal calcFeeForOrder(ShippingDetails shippingInfo, BigDecimal feePercentage, Optional<BigDecimal> minFeePerOrder) {
-		BigDecimal itemsValue  = 
-				shippingInfo
+
+
+	private List<Long> getItemsStockId(ShippingDetails shippingInfo) {
+		return shippingInfo
 				.getItems()
 				.stream()
-				.map(this::getItemValue)
-				.reduce(ZERO, BigDecimal::add);
-		return minFeePerOrder
-				.orElseGet(() -> doCalcFee(feePercentage, itemsValue));
+				.map(ShipmentItems::getStockId)
+				.collect(toList());
 	}
 
 
 
 
+	private BigDecimal calcFeeForOrder(ShippingDetails shippingInfo, Fee fee, Integer shipmentsNum) {
+		if(fee.isFree()){
+			return ZERO;
+		}else if(isBelowMinShippngFee(fee.getTotalFee())){
+			return calcMinFeePerOrder(shipmentsNum);
+		}else{
+			BigDecimal feePercentage = fee.getShippingFeeTier().getPercentage();
+			BigDecimal itemsValue  = getItemsValueOfShipment(shippingInfo);
+			return doCalcFee(feePercentage, itemsValue);
+		}
+	}
 
-	private Optional<BigDecimal> getShippingFeePercentage(BigDecimal itemTotalValue) {
+
+
+	private BigDecimal getItemsValueOfShipment(ShippingDetails shippingInfo) {
+		return shippingInfo
+				.getItems()
+				.stream()
+				.map(this::getItemValue)
+				.reduce(ZERO, BigDecimal::add);
+	}
+
+
+
+	private Optional<Tier> getTier(BigDecimal itemTotalValue) {
 		return tiers
 				.getTiers()
 				.stream()
 				.filter(tier -> isValueInTier(tier, itemTotalValue))
-				.map(this::getTierPercentage)
 				.findFirst();
 	}
 
 	
 	
-	
-	private BigDecimal getTierPercentage(Tier tier) {
+
+
+
+	private boolean isFreeShipment(Tier tier) {
 		Integer maxFreeShipments = ofNullable(tier.getMaxFreeShipments()).orElse(0);
 		Optional<BaseUserEntity> user = securityService.getCurrentUserOptional();
 		if(maxFreeShipments == 0) {
-			return tier.getPercentage();
+			return false;
 		}
-
-		Integer perviousFreeOrdersNum =
+		Integer previousFreeOrdersNum =
 				user
 				.map(u -> shipmentRepo.countFreeShipments(u.getId(), SERVICE_ID))
 				.orElse(0);
-		if(perviousFreeOrdersNum < maxFreeShipments) {
-			return ZERO;
-		}
-		return tier.getPercentage();
+		return previousFreeOrdersNum < maxFreeShipments;
 	}
 
-	
-	
-	
+
+
 	private BigDecimal doCalcFee(BigDecimal percentage, BigDecimal val) {
 		return percentage
 				.multiply(new BigDecimal("0.01"))
@@ -436,6 +451,6 @@ class Tier{
 @AllArgsConstructor
 class Fee{
 	private BigDecimal totalFee;
-	private Optional<BigDecimal> minFeePerOrder;
-	private Optional<BigDecimal> shippingFeePercentage;
+	private Tier shippingFeeTier;
+	private boolean free;
 }

@@ -11,6 +11,7 @@ import com.nasnav.service.ShippingManagementService;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
 import com.nasnav.shipping.model.*;
+import com.nasnav.shipping.services.SallabShippingService;
 import net.jcip.annotations.NotThreadSafe;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -224,7 +225,8 @@ public class SallabShippingServiceTest {
     	JSONArray supportedCitiesJson = jsonArray().put(1L).put(3L); 
     			
         return asList(new ServiceParameter(TIERS, tiersJson)
-        		 , new ServiceParameter(SUPPORTED_CITIES, supportedCitiesJson.toString()));
+        		 , new ServiceParameter(SUPPORTED_CITIES, supportedCitiesJson.toString())
+                    , new ServiceParameter(MIN_SHIPPING_FEE, "50"));
     }
 
 
