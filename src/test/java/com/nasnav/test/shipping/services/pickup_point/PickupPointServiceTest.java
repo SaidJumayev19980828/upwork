@@ -4,7 +4,10 @@ import static com.nasnav.shipping.services.PickupPointsWithInternalLogistics.PIC
 import static com.nasnav.shipping.services.PickupPointsWithInternalLogistics.SERVICE_ID;
 import static com.nasnav.shipping.services.PickupPointsWithInternalLogistics.SHOP_ID;
 import static com.nasnav.shipping.services.PickupPointsWithInternalLogistics.WAREHOUSE_ID;
+import static com.nasnav.shipping.services.SallabShippingService.ETA_DAYS_MAX;
+import static com.nasnav.shipping.services.SallabShippingService.ETA_DAYS_MIN;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
+import static java.time.LocalDate.now;
 import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -21,6 +24,9 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 import java.util.List;
 import java.util.Map;
 
+import com.nasnav.dto.request.shipping.ShippingEtaDTO;
+import com.nasnav.shipping.model.*;
+import org.joda.time.LocalDate;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,12 +49,6 @@ import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
-import com.nasnav.shipping.model.ServiceParameter;
-import com.nasnav.shipping.model.ShipmentItems;
-import com.nasnav.shipping.model.ShipmentReceiver;
-import com.nasnav.shipping.model.ShipmentTracker;
-import com.nasnav.shipping.model.ShippingAddress;
-import com.nasnav.shipping.model.ShippingDetails;
 
 import net.jcip.annotations.NotThreadSafe;
 
@@ -60,6 +60,9 @@ import net.jcip.annotations.NotThreadSafe;
 @Sql(executionPhase=BEFORE_TEST_METHOD,  scripts={"/sql/Shipping_Test_Data_7.sql"})
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class PickupPointServiceTest {
+
+	private static final Integer ETA_FROM = 1;
+	private static final Integer ETA_TO = 4;
 	
 	@Autowired
     private TestRestTemplate template;
@@ -93,6 +96,10 @@ public class PickupPointServiceTest {
         		asList(501L,502L).stream().allMatch(pickupPoints::contains));
         assertTrue("The warehouse that will provide the stocks", 
         		asList(503L).stream().allMatch(shops::contains));
+        ShipmentDTO shipment = offers.get(0).getShipments().get(0);
+        ShippingEtaDTO eta = shipment.getEta();
+        assertEquals(now().plusDays(ETA_FROM), eta.getFrom());
+		assertEquals(now().plusDays(ETA_TO), eta.getTo());
 	}
 	
 	
@@ -203,7 +210,9 @@ public class PickupPointServiceTest {
 
 	private List<ServiceParameter> createServiceParams() {
 		return asList(new ServiceParameter(WAREHOUSE_ID,"503")
-				, new ServiceParameter(PICKUP_POINTS_ID_LIST, "[501,502]"));
+				, new ServiceParameter(PICKUP_POINTS_ID_LIST, "[501,502]")
+				, new ServiceParameter(ETA_DAYS_MIN, ETA_FROM.toString())
+				, new ServiceParameter(ETA_DAYS_MAX, ETA_TO.toString()));
 	}
 	
 	

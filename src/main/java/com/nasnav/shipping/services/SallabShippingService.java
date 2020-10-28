@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.nasnav.commons.utils.EntityUtils;
 import com.nasnav.dao.ShipmentRepository;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.BaseUserEntity;
@@ -28,8 +29,8 @@ import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
 import static com.nasnav.enumerations.ShippingStatus.DELIVERED;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0002;
 import static com.nasnav.exceptions.ErrorCodes.SHP$SRV$0010;
-import static com.nasnav.service.model.common.ParameterType.JSON;
-import static com.nasnav.service.model.common.ParameterType.LONG_ARRAY;
+import static com.nasnav.service.model.common.ParameterType.*;
+import static com.nasnav.service.model.common.ParameterType.NUMBER;
 import static java.math.BigDecimal.ZERO;
 import static java.math.RoundingMode.FLOOR;
 import static java.math.RoundingMode.HALF_EVEN;
@@ -43,8 +44,6 @@ import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
 
 public class SallabShippingService implements ShippingService{
 
-	public static final long ETA_DAYS_MIN = 1L;
-	public static final long ETA_DAYS_MAX = 3L;
 	Logger logger = LogManager.getLogger();
 	
 	static final public String TIERS = "TIERS";
@@ -53,15 +52,24 @@ public class SallabShippingService implements ShippingService{
 	static final public String SUPPORTED_CITIES = "SUPPORTED_CITIES";
 	static final public String MIN_SHIPPING_FEE = "MIN_SHIPPING_FEE";
 	private static final String RETURN_SHIPMENT_EMAIL_MSG = "Please call customer service to arrange a return shipment, and sorry again for any inconvenience!";
-	
+	public static final String ETA_DAYS_MIN = "ETA_DAYS_MIN";
+	public static final String ETA_DAYS_MAX = "ETA_DAYS_MAX";
+
+	private static final Integer ETA_DAYS_MIN_DEFAULT = 1;
+	private static final Integer ETA_DAYS_MAX_DEFAULT = 3;
 	
 	private static final List<Parameter> SERVICE_PARAM_DEFINITION =
-			asList(new Parameter(TIERS, JSON), new Parameter(SUPPORTED_CITIES , LONG_ARRAY));
+			asList(new Parameter(TIERS, JSON)
+					, new Parameter(SUPPORTED_CITIES , LONG_ARRAY)
+					, new Parameter(MIN_SHIPPING_FEE, NUMBER)
+					, new Parameter(ETA_DAYS_MIN, NUMBER, false)
+					, new Parameter(ETA_DAYS_MAX, NUMBER, false));
 
 	private ShippingTiers tiers;
 	private List<Long> supportedCities;
-	private Map<String,String> serviceParameters;
 	private BigDecimal minFee;
+	private Integer etaDaysMin;
+	private Integer etaDaysMax;
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -72,7 +80,12 @@ public class SallabShippingService implements ShippingService{
 	@Autowired
 	private ShipmentRepository shipmentRepo;
 
-	
+
+
+	public SallabShippingService() {
+		etaDaysMin = ETA_DAYS_MIN_DEFAULT;
+		etaDaysMax = ETA_DAYS_MAX_DEFAULT;
+	}
 	
 	
 	@Override
@@ -86,19 +99,18 @@ public class SallabShippingService implements ShippingService{
 
 	@Override
 	public void setServiceParameters(List<ServiceParameter> params) {
-		serviceParameters =
-				params
+		Map<String, String> serviceParameters = params
 				.stream()
 				.collect(
-						toMap(ServiceParameter::getParameter, ServiceParameter::getValue));
+					toMap(ServiceParameter::getParameter, ServiceParameter::getValue));
 
 		String tiersJsonString =
 				ofNullable(serviceParameters.get(TIERS))
-						.orElse("{}");
+				.orElse("{}");
 
 		String supportedCitiesString =
 				ofNullable(serviceParameters.get(SUPPORTED_CITIES))
-						.orElse("[]");
+				.orElse("[]");
 
 		String minFeeString =
 				ofNullable(serviceParameters.get(MIN_SHIPPING_FEE))
@@ -109,6 +121,8 @@ public class SallabShippingService implements ShippingService{
 			minFee = new BigDecimal(minFeeString);
 			validateServiceParameters(tiers);
 			validateSupportedCities(supportedCities);
+			setEtaDaysMin(serviceParameters);
+			setEtaDaysMax(serviceParameters);
 		} catch (Throwable e) {
 			logger.error(e,e);
 			throw new RuntimeBusinessException(INTERNAL_SERVER_ERROR, SHP$SRV$0002, SERVICE_ID);
@@ -166,20 +180,20 @@ public class SallabShippingService implements ShippingService{
 				.map(subOrderInfo -> createShipmentOfferForSubOrder(subOrderInfo, fee.get(), shipmentsNum))
 				.collect(toList());
 
-		correctCalculationError(fee, shipments);
+		correctCalculationError(fee.get(), shipments);
 
 		return Mono.just(new ShippingOffer(getServiceInfo(), shipments));
 	}
 
 
 
-	private void correctCalculationError(Optional<Fee> fee, List<Shipment> shipments) {
+	private void correctCalculationError(Fee fee, List<Shipment> shipments) {
 		BigDecimal accumlatedFeeTotal =
 				shipments
 				.stream()
 				.map(Shipment::getShippingFee)
 				.reduce(ZERO, BigDecimal::add);
-		BigDecimal error = fee.get().getTotalFee().subtract(accumlatedFeeTotal);
+		BigDecimal error = fee.getTotalFee().subtract(accumlatedFeeTotal);
 		shipments
 			.stream()
 			.peek( shipment -> shipment.setShippingFee(shipment.getShippingFee().add(error)))
@@ -237,12 +251,28 @@ public class SallabShippingService implements ShippingService{
 
 	private Shipment createShipmentOfferForSubOrder(ShippingDetails shippingInfo, Fee feeData, Integer shipmentsNum) {
 		BigDecimal fee = calcFeeForOrder(shippingInfo, feeData, shipmentsNum);
-		ShippingEta eta = new ShippingEta(now().plusDays(ETA_DAYS_MIN), now().plusDays(ETA_DAYS_MAX));
+		ShippingEta eta = new ShippingEta(now().plusDays(etaDaysMin), now().plusDays(etaDaysMax));
 		List<Long> stockIds = getItemsStockId(shippingInfo);
 		return new Shipment(fee, eta, stockIds, shippingInfo.getSubOrderId());
 	}
 
 
+
+	private void setEtaDaysMax(Map<String, String> serviceParams) {
+		ofNullable(serviceParams.get(ETA_DAYS_MAX))
+				.flatMap(EntityUtils::parseLongSafely)
+				.map(Long::intValue)
+				.ifPresent(val -> etaDaysMax = val);
+	}
+
+
+
+	private void setEtaDaysMin(Map<String, String> serviceParams) {
+		ofNullable(serviceParams.get(ETA_DAYS_MIN))
+				.flatMap(EntityUtils::parseLongSafely)
+				.map(Long::intValue)
+				.ifPresent(val -> etaDaysMin = val);
+	}
 
 
 	private List<Long> getItemsStockId(ShippingDetails shippingInfo) {
@@ -406,9 +436,9 @@ public class SallabShippingService implements ShippingService{
 	
 	
 	private List<Long> getCities(ShippingDetails details){
-		Long desitinationCity = details.getDestination().getCity();
+		Long destinationCity = details.getDestination().getCity();
 		Long sourceCity = details.getSource().getCity();
-		return asList(desitinationCity, sourceCity);
+		return asList(destinationCity, sourceCity);
 	}
 	
 	

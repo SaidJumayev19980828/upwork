@@ -8,6 +8,7 @@ import com.nasnav.dto.request.shipping.ShippingOfferDTO;
 import com.nasnav.exceptions.RuntimeBusinessException;
 import com.nasnav.persistence.OrganizationShippingServiceEntity;
 import com.nasnav.service.ShippingManagementService;
+import com.nasnav.service.model.common.Parameter;
 import com.nasnav.shipping.ShippingService;
 import com.nasnav.shipping.ShippingServiceFactory;
 import com.nasnav.shipping.model.*;
@@ -35,6 +36,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import static com.nasnav.service.model.common.ParameterType.NUMBER;
 import static com.nasnav.shipping.services.SallabShippingService.*;
 import static com.nasnav.test.commons.TestCommons.*;
 import static java.math.BigDecimal.ZERO;
@@ -57,6 +59,8 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TE
 @Sql(executionPhase=AFTER_TEST_METHOD, scripts={"/sql/database_cleanup.sql"})
 public class SallabShippingServiceTest {
 
+    public static final String ETA_FROM = "1";
+    public static final String ETA_TO = "1";
     @Autowired
     private ShippingServiceFactory shippingServiceFactory;
 
@@ -129,8 +133,8 @@ public class SallabShippingServiceTest {
         assertEquals(2, shipments.size());
         assertEquals(0, shipments.get(0).getShippingFee().compareTo(ZERO));
         assertEquals(0 , shipments.get(1).getShippingFee().compareTo(ZERO));
-        assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
-        assertEquals(now().plusDays(3) , shipments.get(0).getEta().getTo());
+        assertEquals(now().plusDays(Integer.parseInt(ETA_FROM)) , shipments.get(0).getEta().getFrom());
+        assertEquals(now().plusDays(Integer.parseInt(ETA_TO)) , shipments.get(0).getEta().getTo());
     }
 
 
@@ -150,7 +154,7 @@ public class SallabShippingServiceTest {
         assertEquals(0 , shipments.get(0).getShippingFee().compareTo(new BigDecimal("41")));
         assertEquals(0, shipments.get(1).getShippingFee().compareTo(new BigDecimal("50")));
         assertEquals(now().plusDays(1) , shipments.get(0).getEta().getFrom());
-        assertEquals(now().plusDays(3) , shipments.get(0).getEta().getTo());
+        assertEquals(now().plusDays(1) , shipments.get(0).getEta().getTo());
     }
 
 
@@ -225,8 +229,10 @@ public class SallabShippingServiceTest {
     	JSONArray supportedCitiesJson = jsonArray().put(1L).put(3L); 
     			
         return asList(new ServiceParameter(TIERS, tiersJson)
-        		 , new ServiceParameter(SUPPORTED_CITIES, supportedCitiesJson.toString())
-                    , new ServiceParameter(MIN_SHIPPING_FEE, "50"));
+        		     , new ServiceParameter(SUPPORTED_CITIES, supportedCitiesJson.toString())
+                    , new ServiceParameter(MIN_SHIPPING_FEE, "50")
+                    , new ServiceParameter(ETA_DAYS_MIN, ETA_FROM)
+                    , new ServiceParameter(ETA_DAYS_MAX, ETA_TO));
     }
 
 

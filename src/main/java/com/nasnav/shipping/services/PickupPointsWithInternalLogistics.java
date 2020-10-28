@@ -254,7 +254,7 @@ public class PickupPointsWithInternalLogistics implements ShippingService{
 	
 	private Shipment createShipment(ShippingDetails shippingDetails) {
 		BigDecimal fee = ZERO;
-		ShippingEta eta = new ShippingEta(now().plusDays(1), now().plusDays(7));
+		ShippingEta eta = new ShippingEta(now().plusDays(etaDaysMin), now().plusDays(etaDaysMax));
 		List<Long> stocks = 
 				shippingDetails
 				.getItems()
