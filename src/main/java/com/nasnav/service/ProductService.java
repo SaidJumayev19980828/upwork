@@ -782,18 +782,20 @@ public class ProductService {
 		SQLQuery<?> finalCollectionsQuery = productsCustomRepo.getCollectionsBaseQuery(predicate, finalParams);
 
 		SubQueryExpression products = queryFactory
-				.select(brand.id, brand.name)
+				.select(brand.id, brand.name, brand.priority)
 				.from(brand)
 				.where(brand.id.in(finalProductsQuery.select(product.brandId)));
 		SubQueryExpression collections = queryFactory
-				.select(brand.id, brand.name)
+				.select(brand.id, brand.name, brand.priority)
 				.from(brand)
 				.where(brand.id.in(finalCollectionsQuery.select(product.brandId)));
 
 		SQLQuery<?> sqlQuery = new SQLQuery<>();
 		SQLQuery<?> query = queryFactory
-				.select(Expressions.numberPath(Long.class, "id"),Expressions.stringPath("name"))
-				.from(sqlQuery.union(products, collections).as("total"));
+				.select(Expressions.numberPath(Long.class, "id"),Expressions.stringPath("name"),
+						Expressions.numberPath(Integer.class, "priority"))
+				.from(sqlQuery.union(products, collections).as("total"))
+				.orderBy(Expressions.numberPath(Integer.class, "priority").desc());
 
 		return template.query(query.getSQL().getSQL(),
 				new BeanPropertyRowMapper<>(Organization_BrandRepresentationObject.class));

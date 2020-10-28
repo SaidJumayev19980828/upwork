@@ -40,6 +40,8 @@ public class QBrands extends com.querydsl.sql.RelationalPathBase<QBrands> {
 
     public final StringPath facebook = createString("facebook");
 
+    public final NumberPath<Integer> priority = createNumber("priority", Integer.class);
+
     public final BooleanPath followingStandards = createBoolean("followingStandards");
 
     public final BooleanPath fri = createBoolean("fri");
@@ -162,6 +164,7 @@ public class QBrands extends com.querydsl.sql.RelationalPathBase<QBrands> {
         addMetadata(websites, ColumnMetadata.named("websites").withIndex(30).ofType(Types.ARRAY).withSize(2147483647));
         addMetadata(wed, ColumnMetadata.named("wed").withIndex(25).ofType(Types.BIT).withSize(1));
         addMetadata(youtube, ColumnMetadata.named("youtube").withIndex(18).ofType(Types.VARCHAR).withSize(2147483647));
+        addMetadata(priority, ColumnMetadata.named("priority").withIndex(35).ofType(Types.INTEGER).withSize(10).notNull());
     }
 
 }
