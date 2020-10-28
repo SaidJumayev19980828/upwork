@@ -14,10 +14,11 @@ import lombok.Getter;
 public enum PromotionStatus {
 	
 	INACTIVE(0),
-	ACTIVE(1);
-	
-	
-	@Getter
+	ACTIVE(1),
+    TERMINATED(2);
+
+
+    @Getter
     private Integer value;
 
 	PromotionStatus(Integer value) {

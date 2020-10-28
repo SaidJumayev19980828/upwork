@@ -1,19 +1,8 @@
 package com.nasnav.service;
 
 import static com.nasnav.commons.utils.EntityUtils.anyIsNull;
-import static com.nasnav.enumerations.PromotionStatus.INACTIVE;
-import static com.nasnav.enumerations.PromotionStatus.getPromotionStatusName;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$JSON$0001;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0001;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0002;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0003;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0004;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0005;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0006;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0007;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0008;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0009;
-import static com.nasnav.exceptions.ErrorCodes.PROMO$PARAM$0010;
+import static com.nasnav.enumerations.PromotionStatus.*;
+import static com.nasnav.exceptions.ErrorCodes.*;
 import static com.nasnav.persistence.PromotionsEntity.*;
 import static java.lang.Long.MAX_VALUE;
 import static java.math.BigDecimal.ZERO;
@@ -541,14 +530,17 @@ public class PromotionsServiceImpl implements PromotionsService {
 						.orElseThrow(()-> new RuntimeBusinessException(NOT_ACCEPTABLE
 								, PROMO$PARAM$0007, promotionId));
 
-		if(isInactivePromo(promo)){
+		if(isInactivePromo(promo)) {
 			promoRepo.delete(promo);
+		}else if (isTerminatedPromo(promo)) {
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, PROMO$PARAM$0011, promotionId);
 		}else{
 			if(isStartDateInFuture(promo)){
 				promo.setDateEnd(promo.getDateStart());
 			}else{
 				promo.setDateEnd(now());
 			}
+			promo.setStatus(TERMINATED.getValue());
 			promoRepo.save(promo);
 		}
 	}
@@ -556,6 +548,10 @@ public class PromotionsServiceImpl implements PromotionsService {
 
 	private boolean isInactivePromo(PromotionsEntity promo) {
 		return Objects.equals(INACTIVE.getValue(), promo.getStatus());
+	}
+
+	private boolean isTerminatedPromo(PromotionsEntity promo) {
+		return Objects.equals(TERMINATED.getValue(), promo.getStatus());
 	}
 
 

@@ -2,6 +2,8 @@ package com.nasnav.test;
 
 import static com.nasnav.commons.utils.CollectionUtils.setOf;
 import static com.nasnav.commons.utils.EntityUtils.DEFAULT_TIMESTAMP_PATTERN;
+import static com.nasnav.enumerations.PromotionStatus.INACTIVE;
+import static com.nasnav.enumerations.PromotionStatus.TERMINATED;
 import static com.nasnav.test.commons.TestCommons.getHttpEntity;
 import static com.nasnav.test.commons.TestCommons.json;
 import static java.lang.String.format;
@@ -14,6 +16,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -549,6 +552,7 @@ public class PromotionsTest {
 		assertTrue(promo.isPresent());
 		assertEquals("if the promo start date in future, its end date will be set as the start date"
 				, promo.get().getDateEnd(), promo.get().getDateStart());
+		assertTrue(Objects.equals(TERMINATED.getValue(), promo.get().getStatus()));
 	}
 
 
@@ -572,5 +576,20 @@ public class PromotionsTest {
 		assertTrue(promo.isPresent());
 		isEndDateInFuture = promo.get().getDateEnd().isAfter(now());
 		assertFalse("if the promo start date in past, its end date will be now",isEndDateInFuture);
+	}
+
+
+	@Test
+	public void deletePromotionTerminatedTest() {
+		Long id = 630001L;
+		// terminate the promotion first
+		HttpEntity<?> req = getHttpEntity("hijkllm");
+		ResponseEntity<String> res =
+				template.exchange("/organization/promotion?id="+id, DELETE, req, String.class);
+		assertEquals(200, res.getStatusCodeValue());
+		//reterminate the promotion
+		res = template.exchange("/organization/promotion?id="+id, DELETE, req, String.class);
+		assertEquals(406, res.getStatusCodeValue());
+		assertTrue( res.getBody().contains("PROMO$PARAM$0011"));
 	}
 }

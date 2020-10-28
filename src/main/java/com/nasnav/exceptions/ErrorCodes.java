@@ -212,6 +212,7 @@ public enum ErrorCodes {
 	,PROMO$PARAM$0008("No active Promo exists with code[%s]!")
 	,PROMO$PARAM$0009("Promo code [%s] is not applicable to the current cart!")
 	,PROMO$PARAM$0010("Promo code[%s] was already used!")
+	,PROMO$PARAM$0011("Promo code[%s] was already terminated!")
 	
 	,ORG$SETTING$0001("No setting exists with name[%s]!")
 
