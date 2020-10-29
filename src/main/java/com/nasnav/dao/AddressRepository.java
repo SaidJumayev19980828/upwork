@@ -43,9 +43,9 @@ public interface AddressRepository extends JpaRepository<AddressesEntity, Long> 
             " from UserEntity usr " +
             " left join  usr.userAddresses ua"+
             " left join ua.address a " +
-            " left join  a.areasEntity area " +
-            " left join  area.citiesEntity city " +
-            " left join  city.countriesEntity country "+
+            " left join fetch a.areasEntity area " +
+            " left join fetch area.citiesEntity city " +
+            " left join fetch city.countriesEntity country "+
             " where usr.id = :userId order by ua.principal desc")
     List<AddressesEntity> findAddressByUserId(@Param("userId") Long userId);
 
