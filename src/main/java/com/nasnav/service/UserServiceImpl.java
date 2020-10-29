@@ -16,14 +16,11 @@ import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.*;
 
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.nasnav.commons.utils.StringUtils;
 import com.nasnav.enumerations.UserStatus;
@@ -501,7 +498,11 @@ public class UserServiceImpl implements UserService {
 	
 	
 	private List<AddressRepObj> getUserAddresses(Long userId){
-		return addressRepo.findByUserId(userId);
+		return addressRepo.findAddressByUserId(userId)
+				.stream()
+				.filter(Objects::nonNull)
+				.map(a -> (AddressRepObj) a.getRepresentation())
+				.collect(toList());
 	}
 
 	
