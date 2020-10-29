@@ -404,7 +404,7 @@ public class UserServicesHelper {
 	public void validateNewPassword(String newPassword) {
 		if (isBlankOrNull(newPassword) || newPassword.length() > EntityConstants.PASSWORD_MAX_LENGTH
 				|| newPassword.length() < EntityConstants.PASSWORD_MIN_LENGTH) {
-			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0005,newPassword);
+			throw new RuntimeBusinessException(NOT_ACCEPTABLE, U$LOG$0005);
 		}
 	}
 

@@ -18,7 +18,7 @@ public enum ErrorCodes {
 	, U$LOG$0002("Invalid credentials!")
 	, U$LOG$0003("Need activation!")
 	, U$LOG$0004("Account is suspended!")
-	, U$LOG$0005("Invalid password[%s]!")
+	, U$LOG$0005("Invalid password!")
 	, U$LOG$0006("Expired token!")
 	, U$LOG$0007("User with email[%s] already exists for organization[%d]!")
 	, U$LOG$0008("Account is already activated!")
